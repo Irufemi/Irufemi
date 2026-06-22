@@ -1,0 +1,217 @@
+{
+  "name": "HitEffectRoot",
+  "isFolder": false,
+  "isActive": true,
+  "components": [
+    {
+      "type": "TransformComponent"
+    },
+    {
+      "type": "LifetimeComponent",
+      "data": {
+        "lifeTime": 0.5
+      }
+    }
+  ],
+  "children": [
+    {
+      "name": "ImplosionCore",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/circle.png",
+              "blendMode": 2,
+              "emitOnAwake": true,
+              "burstCountOnAwake": 1,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "lifeTimeMin": 0.15,
+              "lifeTimeMax": 0.15,
+              "startScale": [ 5.0, 5.0, 5.0 ],
+              "endScale": [ 0.0, 0.0, 0.0 ],
+              "color": [ 0.5, 0.0, 1.0, 1.0 ],
+              "endColor": [ 0.0, 0.0, 0.0, 0.0 ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "DarkCoreBurst",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/circle.png",
+              "blendMode": 2,
+              "midPoint": 0.3,
+              "emitOnAwake": true,
+              "showDebugArea": false,
+              "burstCountOnAwake": 1,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "radius": 0.01,
+              "direction": [ 0.0, 0.0, 0.0 ],
+              "lifeTimeMin": 0.15,
+              "lifeTimeMax": 0.2,
+              "startScale": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "midScale": [
+                2.0,
+                2.0,
+                2.0
+              ],
+              "endScale": [
+                2.2,
+                2.2,
+                2.2
+              ],
+              "color": [
+                0.8,
+                0.1,
+                1.0,
+                1.0
+              ],
+              "midColor": [
+                0.3,
+                0.0,
+                0.6,
+                0.8
+              ],
+              "endColor": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "velocity": 0.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "NeonFlash",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/circle.png",
+              "blendMode": 2,
+              "midPoint": 0.2,
+              "emitOnAwake": true,
+              "showDebugArea": false,
+              "burstCountOnAwake": 1,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "radius": 0.0,
+              "direction": [ 0.0, 0.0, 0.0 ],
+              "lifeTimeMin": 0.05,
+              "lifeTimeMax": 0.1,
+              "startScale": [
+                2.5,
+                2.5,
+                2.5
+              ],
+              "midScale": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "endScale": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "color": [
+                0.1,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "midColor": [
+                0.0,
+                0.5,
+                1.0,
+                0.8
+              ],
+              "endColor": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "velocity": 0.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "DistortionRing",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "ParticleEmitterComponent",
+          "data": {
+            "ParticleData": {
+              "texturePath": "resources/texture/ring.png",
+              "blendMode": 2,
+              "midPoint": 0.0,
+              "emitOnAwake": true,
+              "showDebugArea": false,
+              "burstCountOnAwake": 1,
+              "emitType": 0,
+              "emissionRate": 0.0,
+              "radius": 0.01,
+              "direction": [ 0.0, 0.0, 0.0 ],
+              "lifeTimeMin": 0.15,
+              "lifeTimeMax": 0.2,
+              "startScale": [
+                0.5,
+                0.5,
+                0.5
+              ],
+              "endScale": [
+                5.0,
+                5.0,
+                5.0
+              ],
+              "color": [
+                0.1,
+                0.5,
+                1.0,
+                0.7
+              ],
+              "endColor": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "billboardMode": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

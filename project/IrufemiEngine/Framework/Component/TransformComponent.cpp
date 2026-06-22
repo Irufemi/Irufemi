@@ -57,6 +57,18 @@ const Vector3& TransformComponent::GetWorldScale() const {
     return worldScale_;
 }
 
+Vector3 TransformComponent::GetWorldRight() const {
+    return Math::Normalize(Vector3{ worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] });
+}
+
+Vector3 TransformComponent::GetWorldUp() const {
+    return Math::Normalize(Vector3{ worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] });
+}
+
+Vector3 TransformComponent::GetWorldForward() const {
+    return Math::Normalize(Vector3{ worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] });
+}
+
 void TransformComponent::ComputeMatrix(bool force) {
     // 既に計算済みならスキップ
     if (!force && !isLocalDirty_ && !isWorldDirty_ && lastUpdateFrame_ == currentFrame_) {

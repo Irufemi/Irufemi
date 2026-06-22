@@ -21,6 +21,7 @@ public:
     ~BossComponent() override = default;
 
     void Initialize() override;
+    void Start() override;
     void Update() override;
 
     void OnRegisterProperties() override;
@@ -55,4 +56,11 @@ private:
     DebrisManagerComponent* debrisManager_ = nullptr;
     
     bool isShieldsInitialized_ = false;
+
+    // --- ビーム攻撃用 ---
+    class EnemyBeamComponent* beamComponent_ = nullptr;
+    float beamTimer_ = 0.0f;
+    float beamInterval_ = 10.0f; // 10秒おきに発射
+    float beamOffsetZ_ = 25.0f;  // 発射位置のZ前方オフセット
+    float beamOffsetY_ = -2.0f;  // 発射位置のYオフセット
 };

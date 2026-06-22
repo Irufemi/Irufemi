@@ -15,6 +15,7 @@ public:
     ~GravityPlayerComponent() override = default;
 
     void Initialize() override;
+    void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "GravityPlayerComponent"; }
@@ -32,4 +33,6 @@ private:
     float lockonRadius2D_ = 200.0f; ///< スクリーン上のロックオン半径（ピクセル）
     
     void UpdateAim();
+
+    class DebrisManagerComponent* debrisManager_ = nullptr;
 };

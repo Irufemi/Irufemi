@@ -278,6 +278,7 @@ void DirectXCommon::RegisterAllShaders() {
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
 
+
 #ifdef EditorMode
     auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
     auto psSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.PS.hlsl", options);
@@ -314,6 +315,7 @@ void DirectXCommon::RegisterAllShaders() {
     psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
 
     psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
+
     
     // シャドウマップ(通常) - 深度のみ
     PSOManager::PipelineStateDesc shadowDesc{};

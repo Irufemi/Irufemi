@@ -9,6 +9,7 @@
 #include "../../../Engine/Core/Math/Transform.h"
 #include "../../../Engine/Graphics/DirectX/DirectXCommon.h"
 #include "../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 class Camera;
 
@@ -47,7 +48,11 @@ public:
     TransformationMatrix transformationMatrix_{};
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
+    ResourceHandle textureHandle_;
+    D3D12_GPU_DESCRIPTOR_HANDLE rawTextureHandle_{0};
+    bool useRawTextureHandle_ = false;
+
+    static class TextureManager* sTextureManager;
 
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;

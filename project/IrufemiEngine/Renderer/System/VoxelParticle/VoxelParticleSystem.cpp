@@ -54,10 +54,10 @@ void VoxelParticleSystem::Initialize(const std::string &modelName,
 
   // スレッドプールのデッドロック（ワーカー枯渇）を防ぐため、ボクセル化タスクを積む前に
   // 元となるモデルデータを同期ロード（またはキャッシュから取得）しておく
-  auto managedModel = modelManager->GetModel(modelName);
+  ResourceHandle modelHandle = modelManager->LoadModel(modelName);
 
   // 非同期でボクセル化（またはキャッシュから取得）を開始
-  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager, managedModel]() {
+  initializeFuture_ = modelManager->EnqueueTask([asyncData, modelName, resolution, modelManager, modelHandle]() {
     // ModelManager側でキャッシュ済みのものがあればそれを返し、無ければ新規計算する
     auto vModel = modelManager->GetVoxelizedModel(modelName, resolution);
 

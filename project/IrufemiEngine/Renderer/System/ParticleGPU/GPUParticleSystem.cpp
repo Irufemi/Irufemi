@@ -47,6 +47,10 @@ GPUParticleSystem::~GPUParticleSystem() {
     dxCommon_->ReleaseAfterFence(freeListIndexResource_);
     dxCommon_->ReleaseAfterFence(freeListResource_);
     dxCommon_->ReleaseAfterFence(sortResource_);
+    
+    if (textureManager_ && textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
+    }
   }
 }
 
@@ -74,8 +78,11 @@ void GPUParticleSystem::Initialize(const std::string &textureName) {
       selectedTextureIndex_ =
           static_cast<int>(std::distance(textureNames.begin(), it));
     }
+    if (textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
+    }
+    textureHandle_ = textureManager_->LoadTexture(textureName);
   }
-  textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
   // デフォルトでスフィアエミッターを設定
   SetSphereEmitter(Vector3(0, 0, 0), 2.0f, 30.0f);
@@ -397,7 +404,7 @@ void GPUParticleSystem::Draw() {
   packet.perViewAddress = perViewBuffer_.GetGPUVirtualAddress(frameIndex);
   packet.particleSrvHandle = particleSrvHandleGPU_;
   packet.sortListSrvHandle = sortSrvHandleGPU_;
-  packet.textureHandle = textureHandle_;
+  packet.textureHandle = textureManager_ ? textureManager_->Resolve(textureHandle_) : D3D12_GPU_DESCRIPTOR_HANDLE{0};
   packet.instanceCount = kMaxParticles;
   packet.particleResource = particleResource_.Get();
   packet.blendMode = selectedBlend_;
@@ -432,6 +439,7 @@ void GPUParticleSystem::UpdateDebugLines() {
 
   if (showEmitterArea_) {
     for (const auto& em : emittersData_) {
+      if (em.showDebugArea == 0) continue;
       if (em.emit == 0 && em.burstCount == 0) continue;
       Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f};
       Vector3 translate = {em.translateX, em.translateY, em.translateZ};
@@ -678,8 +686,10 @@ void GPUParticleSystem::SetTexture(const std::string &textureFilePath) {
   if (!textureManager_)
     return;
 
-  // 無条件に GetTextureHandle を呼び出し、確実に読み込み＆ハンドル取得を行う
-  textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
+  if (textureHandle_.IsValid()) {
+    textureManager_->ReleaseTexture(textureHandle_);
+  }
+  textureHandle_ = textureManager_->LoadTexture(textureFilePath);
 
   // UIコンボボックス用のインデックス同期
   auto textureNames = textureManager_->GetTextureNamesForDebug();

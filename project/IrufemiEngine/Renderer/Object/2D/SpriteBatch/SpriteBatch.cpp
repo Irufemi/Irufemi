@@ -64,7 +64,10 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     }
 
     if (textureManager_) {
-        baseResource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+        if (baseResource_->textureHandle_.IsValid()) {
+            textureManager_->ReleaseTexture(baseResource_->textureHandle_);
+        }
+        baseResource_->textureHandle_ = textureManager_->LoadTexture(textureName);
         uint32_t tw = 0, th = 0;
         if (textureManager_->GetTextureSize(textureName, tw, th)) {
             textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };

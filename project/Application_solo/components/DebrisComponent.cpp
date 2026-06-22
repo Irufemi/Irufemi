@@ -7,9 +7,14 @@
 #include "RailShooterEnemyComponent.h"
 #include "BossComponent.h"
 #include "DebrisManagerComponent.h"
+#include "EffectManagerComponent.h"
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Engine/Graphics/Camera/Camera.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include <cmath>
 
 void DebrisComponent::OnRegisterProperties() {
@@ -44,8 +49,14 @@ void DebrisComponent::Initialize() {
             }
 
             if (hit) {
+                // 軽いカメラシェイクを追加
+                if (auto camera = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera()) {
+                    camera->Shake(0.5f, 10);
+                }
                 if (auto t = gameObject_->GetComponent<TransformComponent>()) {
-                    gameObject_->Instantiate("resources/prefabs/hit_effect.json", t->GetWorldPosition());
+                    if (auto effectManager = EffectManagerComponent::GetInstance()) {
+                        effectManager->PlayEffect("Hit", t->GetWorldPosition());
+                    }
                 }
                 if (manager_) {
                     manager_->ReleaseDebris(gameObject_->shared_from_this());
@@ -62,6 +73,37 @@ void DebrisComponent::Initialize() {
 
 void DebrisComponent::SetState(DebrisState newState) {
     state_ = newState;
+
+    // オーラ用子オブジェクトの表示切り替えと色の変更
+    if (gameObject_) {
+        for (auto& child : gameObject_->GetChildren()) {
+            if (child && child->GetName() == "DebrisAura") {
+                bool isActive = false;
+                Vector4 auraColor = { 1.0f, 1.0f, 1.0f, 0.7f };
+
+                if (state_ == DebrisState::Pulled || state_ == DebrisState::Orbiting || state_ == DebrisState::Thrown) {
+                    isActive = true;
+                    // Player (Smart Energy): シアン
+                    auraColor = { 0.0f, 0.8f, 1.0f, 0.4f };
+                } else if (state_ == DebrisState::BossOrbiting) {
+                    isActive = true;
+                    // Boss (Dark Energy): マゼンタ / ダークパープル
+                    auraColor = { 0.8f, 0.0f, 0.6f, 0.4f };
+                }
+
+                child->SetIsActive(isActive);
+
+                if (isActive) {
+                    if (auto auraModel = child->GetComponent<PrimitiveRendererComponent>()) {
+                        if (auto primitive = static_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
+                            primitive->SetColor(auraColor);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if (state_ == DebrisState::BossOrbiting) {
         bossOrbitAngleX_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
         bossOrbitAngleY_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);

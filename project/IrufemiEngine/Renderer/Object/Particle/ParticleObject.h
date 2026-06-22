@@ -19,8 +19,15 @@ public:
     ~ParticleObject();
 
     void Initialize();
+    
+    /**
+     * @brief GPUバッファの確保を事前に行い、実行中のラグを防ぐ（パラメータは送信しない安全なプレウォーム）
+     */
+    void PrewarmSystem();
+
     void Play();
     void Stop();
+    void Restart();
     void EmitBurst(int count);
     void Update();
 
@@ -146,6 +153,9 @@ public:
     void SetEnableRandomRotation(bool enable) { if (enableRandomRotation_ != enable) { enableRandomRotation_ = enable; MarkDirty(); } }
     bool GetEnableRandomRotation() const { return enableRandomRotation_; }
 
+    void SetShowDebugArea(bool show) { if (showDebugArea_ != show) { showDebugArea_ = show; MarkDirty(); } }
+    bool GetShowDebugArea() const { return showDebugArea_; }
+
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static TextureManager* GetTextureManager() { return textureManager_; }
 
@@ -170,7 +180,7 @@ private:
     float lifeTimeMin_ = 0.5f;
     float lifeTimeMax_ = 1.0f;
     float velocity_ = 1.0f;
-    float radius_ = 1.0f;
+    float radius_ = 0.0f;
     float spread_ = 0.1f;
     
     // アニメーション設定
@@ -189,6 +199,7 @@ private:
     float trailFrequency_ = 0.05f;
     bool enableDeathEmit_ = false;
     bool enableRandomRotation_ = false;
+    bool showDebugArea_ = true; // 追加：デバッグエリア表示フラグ
 
     // ビジュアル・ライフタイム
     int billboardMode_ = 1; // 0: None, 1: Billboard, 2: Y-Axis
@@ -199,7 +210,7 @@ private:
     Vector3 endScale_ = { 0.0f, 0.0f, 0.0f };
     float midPoint_ = 0.5f;                         // 中間点の位置(0.0~1.0)
     
-    Vector3 direction_ = { 0.0f, 0.0f, 1.0f };
+    Vector3 direction_ = { 0.0f, 0.0f, 0.0f };
     Vector3 areaSize_ = { 10.0f, 10.0f, 10.0f };    // Boxエミッター用サイズ
 
 private:

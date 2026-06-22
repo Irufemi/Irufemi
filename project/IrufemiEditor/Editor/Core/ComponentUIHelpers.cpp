@@ -291,8 +291,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     bool isTexture = (lowerName.find("texture") != std::string::npos || lowerName.find("image") != std::string::npos);
                     
                     std::vector<std::string> comboItems;
-                    IrufemiEngine* engine = nullptr; // TODO: how to get engine without BaseModel? In Editor mode, maybe use EditorManager or assume active scene.
-                    // Actually, the original code used BaseModel::GetIrufemiEngine(). I'll re-add it or use the GameObject's scene.
+                    IrufemiEngine* engine = nullptr;
                     if (component->GetGameObject() && component->GetGameObject()->GetScene()) {
                         engine = component->GetGameObject()->GetScene()->GetEngine();
                     }

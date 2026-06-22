@@ -73,7 +73,10 @@ void Sprite::Initialize(const std::string& textureName) {
 
     // テクスチャ設定
     if (textureManager_) {
-        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+        if (resource_->textureHandle_.IsValid()) {
+            textureManager_->ReleaseTexture(resource_->textureHandle_);
+        }
+        resource_->textureHandle_ = textureManager_->LoadTexture(textureName);
 
         // テクスチャサイズを直接取得して描画サイズに反映
         uint32_t tw = 0, th = 0;
@@ -229,7 +232,10 @@ void Sprite::ClearTextureRect() {
 void Sprite::SetTexture(const std::string& textureName) {
     if (!resource_ || !textureManager_) return;
     
-    resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+    if (resource_->textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(resource_->textureHandle_);
+    }
+    resource_->textureHandle_ = textureManager_->LoadTexture(textureName);
 
     // テクスチャサイズを直接取得して描画サイズに反映
     uint32_t tw = 0, th = 0;

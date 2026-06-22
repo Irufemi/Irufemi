@@ -29,6 +29,7 @@ namespace RenderPackets {
         ID3D12PipelineState* customPSO = nullptr;
         D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
         ID3D12Resource* vertexBufferResourceOverride = nullptr;
+        float distanceToCamera = 0.0f; // 半透明描画のZソート用
     };
 
     struct SpritePacket {

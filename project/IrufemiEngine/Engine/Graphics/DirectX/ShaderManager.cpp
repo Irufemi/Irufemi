@@ -69,8 +69,9 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
 #else
     // Releaseビルドでは .cso を読み込む
     std::filesystem::path path(filePath);
-    path.replace_extension(L".cso");
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    std::filesystem::path compiledPath = path.parent_path() / "compiled" / path.filename();
+    compiledPath.replace_extension(L".cso");
+    std::ifstream file(compiledPath, std::ios::binary | std::ios::ate);
     if (file.is_open()) {
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);

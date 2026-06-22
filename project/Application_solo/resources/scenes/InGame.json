@@ -105,6 +105,7 @@
         },
         {
           "data": {
+            "Lockon Radius 2D": 200.0,
             "Max Orbit Count": 10,
             "Pull Radius": 50.0
           },
@@ -112,59 +113,6 @@
         }
       ],
       "name": "Player",
-      "tag": "Untagged"
-    },
-    {
-      "components": [
-        {
-          "data": {
-            "position": [
-              0.0,
-              0.0,
-              45.0
-            ],
-            "rotation": [
-              0.0,
-              3.1415927410125732,
-              0.0
-            ],
-            "scale": [
-              1.2000000476837158,
-              1.2000000476837158,
-              1.2000000476837158
-            ]
-          },
-          "type": "TransformComponent"
-        },
-        {
-          "data": {
-            "currentTypeIndex": 9
-          },
-          "type": "PrimitiveRendererComponent"
-        },
-        {
-          "data": {
-            "HP": 1,
-            "SpawnProgress": 0.30000001192092896,
-            "Speed": 5.0
-          },
-          "type": "RailShooterEnemyComponent"
-        },
-        {
-          "data": {
-            "layer": 1,
-            "localOffset": [
-              0.0,
-              0.0,
-              0.0
-            ],
-            "localRadius": 1.5,
-            "mask": 4294967295
-          },
-          "type": "SphereColliderComponent"
-        }
-      ],
-      "name": "Enemy_Zako",
       "tag": "Untagged"
     },
     {
@@ -191,7 +139,10 @@
         },
         {
           "data": {
-            "currentTypeIndex": 1
+            "currentTypeIndex": 1,
+            "material": {
+              "texturePath": "resources/realistic_wasteland_ground.png"
+            }
           },
           "type": "PrimitiveRendererComponent"
         }
@@ -328,6 +279,9 @@
         },
         {
           "data": {
+            "Beam Interval": 10.0,
+            "Beam Offset Y": -2.0,
+            "Beam Offset Z": 25.0,
             "Max HP": 1000.0,
             "Max Shield Count": 100,
             "Shield Radius": 8.0
@@ -346,6 +300,15 @@
             "mask": 4294967295
           },
           "type": "SphereColliderComponent"
+        },
+        {
+          "data": {
+            "Beam Length": 200.0,
+            "Beam Max Radius": 1.0,
+            "Charge Duration": 1.5,
+            "Fire Duration": 0.800000011920929
+          },
+          "type": "EnemyBeamComponent"
         }
       ],
       "name": "Boss",
@@ -403,6 +366,38 @@
         }
       ],
       "name": "MainCamera",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "Hit Effect Path": "resources/prefabs/normal_attack_hit_effect.json"
+          },
+          "type": "EffectManagerComponent"
+        }
+      ],
+      "name": "EffectManager",
       "tag": "Untagged"
     }
   ],

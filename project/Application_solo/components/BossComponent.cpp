@@ -4,6 +4,8 @@
 #include "Framework/Component/TransformComponent.h"
 #include "DebrisManagerComponent.h"
 #include "DebrisComponent.h"
+#include "EnemyBeamComponent.h"
+#include "GravityPlayerComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
@@ -28,36 +30,80 @@ void BossComponent::Initialize() {
             collider->SetLocalRadius(10.0f); // モデルに隠れないよう少し大きめに設定
         }
     }
+
+    // ビームコンポーネントの追加・初期化
+    if (gameObject_) {
+        beamComponent_ = gameObject_->GetComponent<EnemyBeamComponent>();
+        if (!beamComponent_) {
+            auto comp = gameObject_->AddComponent<EnemyBeamComponent>();
+            beamComponent_ = comp.get();
+            beamComponent_->Initialize();
+        }
+    }
+    beamTimer_ = 0.0f;
+}
+
+void BossComponent::Start() {
+    if (!gameObject_) return;
+    auto scene = gameObject_->GetScene();
+    if (scene) {
+        auto managerObj = scene->FindGameObject("DebrisManager");
+        if (managerObj) {
+            debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
+            if (debrisManager_) {
+                auto setupDebris = [this](std::shared_ptr<GameObject> debrisObj) {
+                    auto debrisComp = debrisObj->GetComponent<DebrisComponent>();
+                    if (debrisComp) {
+                        debrisComp->SetTarget(gameObject_->shared_from_this());
+                        debrisComp->SetState(DebrisState::BossOrbiting); 
+                    }
+                    shields_.push_back(debrisObj);
+                };
+
+                for (int i = 0; i < maxShieldCount_; ++i) {
+                    auto debrisObj = debrisManager_->AcquireDebris();
+                    if (debrisObj) {
+                        setupDebris(debrisObj);
+                    }
+                }
+                isShieldsInitialized_ = true;
+            }
+        }
+    }
 }
 
 void BossComponent::Update() {
     if (!gameObject_) return;
     
-    // DebrisManagerから初回だけシールド用のガレキを取得する
-    if (!isShieldsInitialized_) {
-        auto scene = gameObject_->GetScene();
-        if (scene) {
-            auto managerObj = scene->FindGameObject("DebrisManager");
-            if (managerObj) {
-                debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
-                if (debrisManager_) {
-                    auto setupDebris = [this](std::shared_ptr<GameObject> debrisObj) {
-                        auto debrisComp = debrisObj->GetComponent<DebrisComponent>();
-                        if (debrisComp) {
-                            debrisComp->SetTarget(gameObject_->shared_from_this());
-                            debrisComp->SetState(DebrisState::BossOrbiting); 
-                        }
-                        shields_.push_back(debrisObj);
-                    };
-
-                    // 残りを取得してセットアップ
-                    for (int i = 0; i < maxShieldCount_; ++i) {
-                        auto debrisObj = debrisManager_->AcquireDebris();
-                        if (debrisObj) {
-                            setupDebris(debrisObj);
-                        }
-                    }
-                    isShieldsInitialized_ = true;
+    // --- ビーム攻撃のタイマー処理 ---
+    if (beamComponent_ && state_ != BossState::Destroyed) {
+        float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+        if (deltaTime <= 0.0f) deltaTime = 1.0f / 60.0f;
+        
+        // すでに撃っている最中（CHARGING/FIRING）はタイマーを進めず、撃ち終わってから次に備える等の制御も可能だが
+        // 今回はシンプルに10秒ごとにFireを呼ぶ。
+        if (!beamComponent_->IsActive()) {
+            beamTimer_ += deltaTime;
+            if (beamTimer_ >= beamInterval_) {
+                beamTimer_ = 0.0f;
+                
+                if (auto myTrans = gameObject_->GetComponent<TransformComponent>()) {
+                    Vector3 startPos = myTrans->GetWorldPosition();
+                    
+                    // ボスの向いている方向を取得（Z軸が背中を向いているため反転する）
+                    Matrix4x4 worldMat = myTrans->GetWorldMatrix();
+                    // ボスの顔が手前（-Z方向）を向いていると仮定して、ローカルZ軸を反転させる
+                    Vector3 forward = { -worldMat.m[2][0], -worldMat.m[2][1], -worldMat.m[2][2] };
+                    forward = Math::Normalize(forward);
+                    
+                    // ボスのモデルの中にコアが埋まらないようにオフセットを適用
+                    startPos = Math::Add(startPos, Math::Multiply(beamOffsetZ_, forward)); 
+                    startPos.y += beamOffsetY_;
+                    
+                    // ターゲットは距離に関係なくはるか正面
+                    Vector3 targetPos = Math::Add(startPos, Math::Multiply(1000.0f, forward));
+                    
+                    beamComponent_->Fire(startPos, targetPos);
                 }
             }
         }
@@ -73,6 +119,9 @@ void BossComponent::OnRegisterProperties() {
     RegisterProperty("Max HP", &maxHp_);
     RegisterProperty("Max Shield Count", &maxShieldCount_);
     RegisterProperty("Shield Radius", &shieldRadius_);
+    RegisterProperty("Beam Interval", &beamInterval_);
+    RegisterProperty("Beam Offset Z", &beamOffsetZ_);
+    RegisterProperty("Beam Offset Y", &beamOffsetY_);
 }
 
 std::shared_ptr<GameObject> BossComponent::ExtractDebris() {

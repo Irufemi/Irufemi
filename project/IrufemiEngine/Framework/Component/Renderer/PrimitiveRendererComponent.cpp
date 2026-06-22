@@ -10,12 +10,15 @@
 #include <cmath>
 
 PrimitiveRendererComponent::PrimitiveRendererComponent() {}
-PrimitiveRendererComponent::~PrimitiveRendererComponent() {}
+PrimitiveRendererComponent::~PrimitiveRendererComponent() {
+}
 
 void PrimitiveRendererComponent::Initialize() {
-    primitive_ = std::make_unique<Primitive3DObject>();
-    // 設定された形状（デフォルトはCube）で初期化
-    primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+    if (!primitive_) {
+        primitive_ = std::make_unique<Primitive3DObject>();
+        // 設定された形状（デフォルトはCube）で初期化
+        primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+    }
 
     if (gameObject_) {
         transform_ = gameObject_->GetComponent<TransformComponent>();
@@ -56,6 +59,42 @@ void PrimitiveRendererComponent::SetColor(const Vector4& color) {
 void PrimitiveRendererComponent::SetTexture(const std::string& texturePath) {
     if (primitive_) {
         primitive_->SetTexture(texturePath);
+    }
+}
+
+void PrimitiveRendererComponent::SetEnableLighting(bool enable) {
+    if (primitive_) {
+        primitive_->GetMaterial().enableLighting = enable;
+    }
+}
+
+void PrimitiveRendererComponent::SetLightingMode(int mode) {
+    if (primitive_) {
+        primitive_->GetMaterial().lightingMode = mode;
+    }
+}
+
+void PrimitiveRendererComponent::SetMetallic(float metallic) {
+    if (primitive_) {
+        primitive_->GetMaterial().metallic = metallic;
+    }
+}
+
+void PrimitiveRendererComponent::SetRoughness(float roughness) {
+    if (primitive_) {
+        primitive_->GetMaterial().roughness = roughness;
+    }
+}
+
+void PrimitiveRendererComponent::SetAlphaReference(float alphaRef) {
+    if (primitive_) {
+        primitive_->GetMaterial().alphaReference = alphaRef;
+    }
+}
+
+void PrimitiveRendererComponent::SetUseClampSampler(int32_t useClamp) {
+    if (primitive_) {
+        primitive_->GetMaterial().useClampSampler = useClamp;
     }
 }
 
@@ -153,11 +192,19 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("torusMajorSegments")) torusMajorSegments_ = j["torusMajorSegments"];
     if (j.contains("torusMinorSegments")) torusMinorSegments_ = j["torusMinorSegments"];
     
+    if (!primitive_) {
+        primitive_ = std::make_unique<Primitive3DObject>();
+        primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+    }
+
     // 形状を再構築
     PrimitiveType types[] = { PrimitiveType::Sphere, PrimitiveType::Plane, PrimitiveType::Cube, PrimitiveType::Cylinder, PrimitiveType::Cone, PrimitiveType::Torus };
     if (currentTypeIndex_ >= 0 && currentTypeIndex_ < 6) {
         SetShape(types[currentTypeIndex_]);
     }
+    
+    // カスタムパラメータでメッシュを生成し直す
+    RebuildMesh();
     
     // マテリアル情報の復元
     if (j.contains("material") && primitive_) {

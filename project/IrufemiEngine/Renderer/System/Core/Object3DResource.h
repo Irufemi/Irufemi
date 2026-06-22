@@ -7,8 +7,9 @@
 #include "../../../Engine/Graphics/Data/VertexData.h"
 #include "../../../Engine/Graphics/Data/Material.h"
 #include "../../../Engine/Graphics/Data/TransformationMatrix.h"
-#include "../../../Engine/Core/Math/Transform.h"
 #include "../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
+#include "Engine/Core/System/ResourceHandle.h"
+#include "Engine/Core/Math/Transform.h"
 
 class Camera;
 
@@ -70,7 +71,9 @@ public:
     }
 
     // --- テクスチャ ---
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
+    ResourceHandle textureHandle_;
+
+    static class TextureManager* sTextureManager;
 
     bool isFirstUpdate_ = true;
 

@@ -13,8 +13,9 @@
 #include <future>
 #include <type_traits>
 #include "../../Engine/Core/System/ThreadPool.h"
-#include "../../Engine/Core/System/TaskGroup.h"
 #include <d3d12.h>
+#include "../../Engine/Core/System/ResourceHandle.h"
+#include "../../Engine/Core/System/ResourceCachePool.h"
 #include "Data/ObjModel.h"
 #include "Data/ModelData.h"
 #include "Data/MaterialData.h"
@@ -61,8 +62,12 @@ struct GpuMesh {
  * @brief GPU上で使用されるマテリアルリソースを保持する構造体
  */
 struct GpuMaterial {
+    GpuMaterial() = default;
+    ~GpuMaterial();
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle{};
+    ResourceHandle textureHandle;
+    
+    static TextureManager* sTextureManager;
 };
 
 /**
@@ -128,16 +133,22 @@ public:
     /**
      * @brief モデルを取得する。キャッシュにあればそれを返し、なければロードする。
      * @param filename ファイル名（または相対パス）。拡張子を含む。
-     * @return 取得した ManagedModel への共有ポインタ。失敗時は nullptr。
+     * @return 取得した ResourceHandle
      */
-    std::shared_ptr<ManagedModel> GetModel(const std::string& filename);
+    ResourceHandle LoadModel(const std::string& filename);
 
     /**
-     * @brief モデルを非同期でロードする。即座に ManagedModel を返すが、 status を確認する必要がある。
-     * @param filename ファイル名
-     * @return 準備中の ManagedModel への共有ポインタ
+     * @brief モデルのリソースハンドルを解放する（参照カウントを減らす）
+     * @param handle リソースハンドル
      */
-    std::shared_ptr<ManagedModel> GetModelAsync(const std::string& filename);
+    void ReleaseModel(ResourceHandle handle);
+
+    /**
+     * @brief リソースハンドルからモデルオブジェクト本体を取得する
+     * @param handle リソースハンドル
+     * @return ManagedModelオブジェクトのポインタ（無効な場合はnullptr）
+     */
+    ManagedModel* Resolve(ResourceHandle handle) const;
 
     /**
      * @brief 指定したモデルと解像度のボクセル化データを取得する（キャッシュ対応）
@@ -210,11 +221,6 @@ public:
     }
 
     /**
-     * @brief 参照されなくなったキャッシュエントリーを削除する
-     */
-    void CollectGarbage();
-
-    /**
      * @brief すべてのキャッシュを破棄する
      */
     void ClearAll();
@@ -265,7 +271,7 @@ private:
     /**
      * @brief モデルの読み込み実体（内部用）
      */
-    void LoadInternal(std::shared_ptr<ManagedModel> model, const std::string& fullPath);
+    void LoadInternal(ManagedModel* model, const std::string& fullPath);
 
     /**
      * @brief 現在のシーンが初期化中かどうかを判定する
@@ -287,7 +293,9 @@ private:
     TextureManager* textureManager_ = nullptr;
     std::string rootDir_;
     mutable std::mutex mutex_;
-    std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
+    ResourceCachePool modelPool_;
+    mutable std::unordered_map<std::string, ResourceHandle> nameToHandleMap_;
+    std::vector<std::unique_ptr<ManagedModel>> managedModels_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     
     mutable std::vector<std::string> availableModelsCache_;

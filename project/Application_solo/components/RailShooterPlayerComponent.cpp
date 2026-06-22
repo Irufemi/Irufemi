@@ -24,6 +24,19 @@ void RailShooterPlayerComponent::Initialize() {
     isDummyBasePosInitialized_ = false;
 }
 
+void RailShooterPlayerComponent::Start() {
+    if (!gameObject_) return;
+    auto* scene = gameObject_->GetScene();
+    if (scene) {
+        for (auto obj : scene->GetGameObjects()) {
+            if (auto path = obj->GetComponent<SplineComponent>()) {
+                cachedPath_ = path;
+                break;
+            }
+        }
+    }
+}
+
 void RailShooterPlayerComponent::Update() {
     if (!gameObject_) return;
 
@@ -33,16 +46,7 @@ void RailShooterPlayerComponent::Update() {
         deltaTime = 1.0f / 60.0f; // 安全策として仮のフレーム時間を設定
     }
 
-    // シーン内からレール（軌道）のデータを持っているオブジェクトを自動で探し出す
-    auto* scene = gameObject_->GetScene();
-    if (!cachedPath_ && scene) {
-        for (auto obj : scene->GetGameObjects()) {
-            if (auto path = obj->GetComponent<SplineComponent>()) {
-                cachedPath_ = path;
-                break;
-            }
-        }
-    }
+    // Start()でキャッシュ済みの cachedPath_ をそのまま利用するため、Update() 内での検索は削除
 
     // レールデータが「本当に存在し、かつポイントが1点以上打たれているか」をチェック
     bool hasPath = false;

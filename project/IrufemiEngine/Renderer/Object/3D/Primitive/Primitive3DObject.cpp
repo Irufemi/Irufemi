@@ -125,6 +125,8 @@ void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
     // 描画実行
     if (isUI) {
         drawManager_->SubmitUI3D(mesh_.resource.get(), nullptr);
+    } else if (isTransparent_) {
+        drawManager_->SubmitTransparent3D(mesh_.resource.get(), nullptr, castShadows_);
     } else {
         drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
     }

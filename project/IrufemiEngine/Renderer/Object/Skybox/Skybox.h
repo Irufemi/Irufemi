@@ -15,6 +15,7 @@
 #include <array>
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 // 前方宣言
 class Camera;
@@ -48,7 +49,7 @@ public: // メンバ関数(セッター/ゲッター)
     // ID3D12Resource関連ゲッター
     const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
     const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetTextureHandle() const { return textureHandle_; }
+    ResourceHandle GetTextureHandle() const { return textureHandle_; }
     // indexのサイズ取得
     UINT GetIndexSize() const { return static_cast<UINT>(indexDataList_.size()); }
 private: // メンバ関数(内部ヘルパ)
@@ -99,7 +100,7 @@ private: // メンバ変数(resource)
     ConstantBuffer<SkyboxMaterial> materialBuffer_;
 
     // texture
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle_ = {};
+    ResourceHandle textureHandle_;
     int selectedTextureIndex_ = 0;
 
     // カメラ(ポインタ参照)

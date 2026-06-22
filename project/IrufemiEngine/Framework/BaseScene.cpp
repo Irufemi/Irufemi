@@ -233,6 +233,13 @@ void BaseScene::Update() {
         pendingRemoves_.clear();
     }
 
+    // --- Start() フェーズ ---
+    for (auto& obj : gameObjects_) {
+        if (obj && !obj->GetParent() && !obj->IsDestroyed() && !obj->IsStarted()) {
+            obj->Start();
+        }
+    }
+
     // --- Transform の DOD一括更新 (GameObject本体の更新前に行う) ---
     TransformComponent::UpdateAll();
 
@@ -296,7 +303,7 @@ void BaseScene::Draw() {
     }
     
     if (engine_) engine_->GetCollisionManager()->DrawDebug(selectedObj);
-#else
+#elif defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     engine_->GetCollisionManager()->DrawDebug();
 #endif
 }

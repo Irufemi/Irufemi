@@ -21,11 +21,28 @@ void ParticleObject::Initialize() {
     if (burstCountOnAwake_ > 0) {
         EmitBurst(burstCountOnAwake_);
     }
+    
+    // 実行時のラグ（Hitch）を防ぐため、初期化時に強制的にGPUバッファをプレウォーム（事前確保）する
+    PrewarmSystem();
+}
+
+void ParticleObject::PrewarmSystem() {
+    // パラメータは送信せず、単にマネージャーにテクスチャ等の登録（GPUバッファの確保）だけを依頼する
+    if (!emitterHandle_.IsValid() && gpuParticleManager_) {
+        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+    }
 }
 
 void ParticleObject::Play() {
     isPlaying_ = true;
     MarkDirty();
+}
+
+void ParticleObject::Restart() {
+    Play();
+    if (burstCountOnAwake_ > 0) {
+        EmitBurst(burstCountOnAwake_);
+    }
 }
 
 void ParticleObject::Stop() {
@@ -142,6 +159,7 @@ void ParticleObject::UpdateSystem() {
     
     data.enableTrail = enableTrail_ ? 1 : 0;
     data.trailFrequency = trailFrequency_;
+    data.showDebugArea = showDebugArea_ ? 1 : 0;
     data.enableDeathEmit = enableDeathEmit_ ? 1 : 0;
     data.enableRandomRotation = enableRandomRotation_ ? 1 : 0;
 
@@ -163,7 +181,7 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     if (lifeTimeMin_ != 0.5f) j["lifeTimeMin"] = lifeTimeMin_;
     if (lifeTimeMax_ != 1.0f) j["lifeTimeMax"] = lifeTimeMax_;
     if (velocity_ != 1.0f) j["velocity"] = velocity_;
-    if (radius_ != 1.0f) j["radius"] = radius_;
+    if (radius_ != 0.0f) j["radius"] = radius_;
     if (spread_ != 0.1f) j["spread"] = spread_;
     
     if (atlasRows_ != 1) j["atlasRows"] = atlasRows_;
@@ -179,6 +197,7 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     
     if (enableTrail_) j["enableTrail"] = enableTrail_;
     if (trailFrequency_ != 0.05f) j["trailFrequency"] = trailFrequency_;
+    if (!showDebugArea_) j["showDebugArea"] = showDebugArea_;
     if (enableDeathEmit_) j["enableDeathEmit"] = enableDeathEmit_;
     if (enableRandomRotation_) j["enableRandomRotation"] = enableRandomRotation_;
     
@@ -191,7 +210,7 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     if (endScale_.x != 0.0f || endScale_.y != 0.0f || endScale_.z != 0.0f) j["endScale"] = { endScale_.x, endScale_.y, endScale_.z };
     if (midPoint_ != 0.5f) j["midPoint"] = midPoint_;
     
-    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 1.0f) j["direction"] = { direction_.x, direction_.y, direction_.z };
+    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 0.0f) j["direction"] = { direction_.x, direction_.y, direction_.z };
     if (areaSize_.x != 10.0f || areaSize_.y != 10.0f || areaSize_.z != 10.0f) j["areaSize"] = { areaSize_.x, areaSize_.y, areaSize_.z };
 }
 
@@ -224,6 +243,7 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     
     if (j.contains("enableTrail")) enableTrail_ = j["enableTrail"].get<bool>();
     if (j.contains("trailFrequency")) trailFrequency_ = j["trailFrequency"].get<float>();
+    if (j.contains("showDebugArea")) showDebugArea_ = j["showDebugArea"].get<bool>();
     if (j.contains("enableDeathEmit")) enableDeathEmit_ = j["enableDeathEmit"].get<bool>();
     if (j.contains("enableRandomRotation")) enableRandomRotation_ = j["enableRandomRotation"].get<bool>();
     
@@ -320,6 +340,7 @@ void ParticleObject::RegisterProperties(Component* comp) {
     comp->RegisterPropertyRange("Mid Point", &midPoint_, 0.0f, 1.0f).SetTooltip("寿命の中で中間スケール・カラーに到達するタイミング（0.0～1.0）");
 
     comp->RegisterHeader("Special Features");
+    comp->RegisterProperty("Show Debug Area", &showDebugArea_).SetTooltip("エディタ上でパーティクルの発生範囲をワイヤーフレーム表示するか");
     comp->RegisterProperty("Enable Trail", &enableTrail_).SetTooltip("パーティクルの軌跡を描画するか");
     comp->RegisterPropertyRange("Trail Frequency", &trailFrequency_, 0.01f, 1.0f).SetTooltip("軌跡（トレイル）を生成する間隔の頻度");
     comp->RegisterProperty("Enable Death Emit", &enableDeathEmit_).SetTooltip("消滅時に別のパーティクルを発生させるか");

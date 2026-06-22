@@ -3,11 +3,15 @@
 #include "BaseScene.h"
 #include "Engine/IrufemiEngine.h"
 #include "GameObject.h"
+#include "Engine/Core/Utility/Log.h"
 #include <fstream>
+#include <iostream>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 
 namespace fs = std::filesystem;
+
+std::unordered_map<std::string, nlohmann::json> SceneSerializer::prefabCache_;
 
 bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
     if (!scene) return false;
@@ -48,9 +52,7 @@ bool SceneSerializer::Load(IScene* scene, const std::string& sceneName) {
     try {
         file >> root;
     } catch (const nlohmann::json::parse_error& e) {
-        // パースエラーをロギングする
-        // TODO: エンジンのロガーに切り替える
-        printf("JSON Parse Error in %s: %s\n", pathStr.c_str(), e.what());
+        Log::OutPutLog(std::cerr, "JSON Parse Error in " + pathStr + ": " + std::string(e.what()) + "\n");
         return false;
     }
     file.close();
@@ -88,26 +90,40 @@ bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::str
 }
 
 std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
-    fs::path path(filepath);
-    if (!fs::exists(path)) return nullptr;
-
-    std::ifstream file(path);
-    if (!file.is_open()) return nullptr;
-
     nlohmann::json root;
-    try {
-        file >> root;
-    } catch (const nlohmann::json::parse_error& e) {
-        printf("JSON Parse Error in Prefab %s: %s\n", filepath.c_str(), e.what());
-        return nullptr;
+
+    // キャッシュをチェック
+    auto it = prefabCache_.find(filepath);
+    if (it != prefabCache_.end()) {
+        root = it->second;
+    } else {
+        fs::path path(filepath);
+        if (!fs::exists(path)) return nullptr;
+
+        std::ifstream file(path);
+        if (!file.is_open()) return nullptr;
+
+        try {
+            file >> root;
+        } catch (const nlohmann::json::parse_error& e) {
+            Log::OutPutLog(std::cerr, "JSON Parse Error in Prefab " + filepath + ": " + std::string(e.what()) + "\n");
+            return nullptr;
+        }
+        file.close();
+
+        // キャッシュに保存
+        prefabCache_[filepath] = root;
     }
-    file.close();
 
     auto obj = std::make_shared<GameObject>();
     obj->Deserialize(root);
     obj->Initialize();
 
     return obj;
+}
+
+void SceneSerializer::ClearCache() {
+    prefabCache_.clear();
 }
 
 std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& sceneName) {

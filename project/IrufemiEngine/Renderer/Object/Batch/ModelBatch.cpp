@@ -10,20 +10,22 @@ ModelManager* ModelBatch::modelManager_ = nullptr;
 
 void ModelBatch::Initialize(const std::string& objFilename) {
     IRUFEMI_ASSERT(modelManager_ && "ModelBatch::Initialize: ModelManager is not set.");
-    managedModel_ = modelManager_->GetModelAsync(objFilename);
+    modelHandle_ = modelManager_->LoadModel(objFilename);
     isResourcesInitialized_ = false;
 
-    auto status = managedModel_->status.load();
-    if (status == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
-        InitializeResources();
+    if (auto m = modelManager_->Resolve(modelHandle_)) {
+        if (m->status.load() == ManagedModel::LoadingStatus::Loaded && m->cpuModel) {
+            InitializeResources();
+        }
     }
 }
 
 void ModelBatch::InitializeResources() {
-    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->meshes.empty()) {
+    auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+    if (!m || !m->cpuModel || m->cpuModel->meshes.empty()) {
         return;
     }
-    const auto& mesh = managedModel_->cpuModel->meshes.front();
+    const auto& mesh = m->cpuModel->meshes.front();
 
     CreateMaterialResources(mesh);
     EnsureSharedTexture(mesh);
@@ -32,8 +34,9 @@ void ModelBatch::InitializeResources() {
 }
 
 const GpuMesh* ModelBatch::GetGpuMesh() const {
-    if (managedModel_ && !managedModel_->gpuMeshes.empty()) {
-        return managedModel_->gpuMeshes.front().get();
+    auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+    if (m && !m->gpuMeshes.empty()) {
+        return m->gpuMeshes.front().get();
     }
     return nullptr;
 }
@@ -62,22 +65,26 @@ void ModelBatch::CreateMaterialResources(const ObjMesh& mesh) {
 }
 
 void ModelBatch::EnsureSharedTexture(const ObjMesh& mesh) {
-    if (!mesh.material.textureFilePath.empty()) {
-        textureHandle_ = textureManager_->GetTextureHandle(mesh.material.textureFilePath);
-    } else {
-        textureHandle_ = textureManager_->GetWhiteTextureHandle();
+    if (textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
     }
-    IRUFEMI_ASSERT(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
+    if (!mesh.material.textureFilePath.empty()) {
+        textureHandle_ = textureManager_->LoadTexture(mesh.material.textureFilePath);
+    } else {
+        textureHandle_ = ResourceHandle();
+    }
 }
 
 float ModelBatch::GetBoundingSphereRadius() const {
-    return managedModel_ && managedModel_->cpuModel ? managedModel_->cpuModel->boundingSphere.radius : 0.0f;
+    auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+    return m && m->cpuModel ? m->cpuModel->boundingSphere.radius : 0.0f;
 }
 
 void ModelBatch::Draw() {
     // If not initialized, attempt to init
     if (!isResourcesInitialized_) {
-        if (managedModel_ && managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
+        auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+        if (m && m->status.load() == ManagedModel::LoadingStatus::Loaded && m->cpuModel) {
             InitializeResources();
         } else {
             return; // Not loaded yet
@@ -93,7 +100,7 @@ void ModelBatch::Draw() {
     RenderPackets::ModelBatchPacket p{};
     p.gpuMesh = GetGpuMesh();
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = textureHandle_;
+    p.textureHandle = textureManager_->Resolve(textureHandle_);
 
     if (useGPUCulling_) {
         p.useGPUCulling = true;

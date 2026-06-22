@@ -146,9 +146,7 @@ exit 0</Command>
       <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
-copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
-xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+      <Command>xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
 if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
@@ -249,6 +247,8 @@ exit 0</Command>
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
     <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
+    <ClCompile Include="components\EffectManagerComponent.cpp" />
+    <ClCompile Include="components\EnemyBeamComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -269,6 +269,8 @@ exit 0</Command>
     <ClInclude Include="components\GravityPlayerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
     <ClInclude Include="components\SceneTransitionButtonComponent.h" />
+    <ClInclude Include="components\EffectManagerComponent.h" />
+    <ClInclude Include="components\EnemyBeamComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

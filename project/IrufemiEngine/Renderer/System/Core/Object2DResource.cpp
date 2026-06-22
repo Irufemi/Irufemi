@@ -3,6 +3,9 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/IrufemiEngine.h"
+#include "Resource/Texture/TextureManager.h"
+
+TextureManager* Object2DResource::sTextureManager = nullptr;
 
 Object2DResource::~Object2DResource() {
     Unmap();
@@ -15,6 +18,9 @@ Object2DResource::~Object2DResource() {
                 engine->GetTransformBufferManager()->Free(transformCbIndex_);
             }
         }
+    }
+    if (sTextureManager && textureHandle_.IsValid()) {
+        sTextureManager->ReleaseTexture(textureHandle_);
     }
 }
 

@@ -37,6 +37,6 @@ private:
     static ModelManager* modelManager_;
 
     // 共有モデルデータ(CPU/GPU)
-    std::shared_ptr<ManagedModel> managedModel_{};
+    ResourceHandle modelHandle_{};
     bool isResourcesInitialized_ = false;
 };

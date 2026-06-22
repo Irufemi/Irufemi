@@ -42,6 +42,11 @@ public:
     virtual void Initialize() {}
 
     /**
+     * @brief 開始処理 (最初のUpdateの直前に一度だけ呼ばれる)
+     */
+    virtual void Start() {}
+
+    /**
      * @brief 毎フレームの更新処理
      */
     virtual void Update() {}

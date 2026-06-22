@@ -37,10 +37,13 @@ void Circle2D::Initialize(const std::string& textureName, uint32_t subdiv) {
 
     // テクスチャ設定
     if (textureManager_) {
-        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+        if (resource_->textureHandle_.IsValid()) {
+            textureManager_->ReleaseTexture(resource_->textureHandle_);
+        }
+        resource_->textureHandle_ = textureManager_->LoadTexture(textureName);
 
         // デバッグUI用のインデックス更新
-        auto names = textureManager_->GetTextureNames();
+        auto names = textureManager_->GetTextureNamesForDebug();
         std::sort(names.begin(), names.end());
         auto it = std::find(names.begin(), names.end(), textureName);
         if (it != names.end()) {
@@ -182,12 +185,15 @@ void Circle2D::SetRadius(float radius) {
 
 bool Circle2D::SetTextureByName(const std::string& textureName) {
     if (!textureManager_) return false;
-    auto names = textureManager_->GetTextureNames();
+    auto names = textureManager_->GetTextureNamesForDebug();
     std::sort(names.begin(), names.end());
     auto it = std::find(names.begin(), names.end(), textureName);
     if (it == names.end()) return false;
     selectedTextureIndex_ = static_cast<int>(std::distance(names.begin(), it));
-    resource_->textureHandle_ = textureManager_->GetTextureHandle(*it);
+    if (resource_->textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(resource_->textureHandle_);
+    }
+    resource_->textureHandle_ = textureManager_->LoadTexture(*it);
     return true;
 }
 
@@ -204,7 +210,7 @@ void Circle2D::Debug([[maybe_unused]] const char* circleName) {
     }
 
     if (textureManager_) {
-        auto names = textureManager_->GetTextureNames();
+        auto names = textureManager_->GetTextureNamesForDebug();
         std::sort(names.begin(), names.end());
         if (!names.empty()) {
             const char* preview = names[selectedTextureIndex_].c_str();
@@ -213,7 +219,10 @@ void Circle2D::Debug([[maybe_unused]] const char* circleName) {
                     bool sel = (i == selectedTextureIndex_);
                     if (ImGui::Selectable(names[i].c_str(), sel)) {
                         selectedTextureIndex_ = i;
-                        resource_->textureHandle_ = textureManager_->GetTextureHandle(names[i]);
+                        if (resource_->textureHandle_.IsValid()) {
+                            textureManager_->ReleaseTexture(resource_->textureHandle_);
+                        }
+                        resource_->textureHandle_ = textureManager_->LoadTexture(names[i]);
                     }
                     if (sel) ImGui::SetItemDefaultFocus();
                 }

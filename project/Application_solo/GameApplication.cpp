@@ -17,6 +17,11 @@
 #include "components/DebugEnemySpawnerComponent.h"
 #include "components/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
+#include "components/EffectManagerComponent.h"
+
+// エンジン機能
+#include "Engine/Graphics/DirectX/ShaderManager.h"
+#include "Engine/Graphics/Pipeline/PSOManager.h"
 
 // UI
 #include "UI/LoadingScreen.h"
@@ -41,10 +46,10 @@ namespace {
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
     const std::wstring kTitle = L"Application_solo";
-    const Vector4 kClearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
+    const Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
     const char kInitialScene[]
-#if defined(_DEBUG) || defined(DEVELOPMENT)
-        = "Debug";
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+        = "InGame";
 #else
         = "Title";
 #endif
@@ -79,6 +84,27 @@ void GameApplication::Run() {
     // エンジンの初期化
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
 
+    // アプリ固有のシェーダー登録
+    {
+        ShaderCompileOptions options;
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+        options.isDebug = true;
+#endif
+        auto shaderManager = engine->GetDirectXCommon()->GetShaderManager();
+        auto psoManager = engine->GetPSOManager();
+        
+        auto vs3d = shaderManager->GetOrCompile(L"resources/shaders/Object3D.VS.hlsl", options);
+        auto psEnergyCore = shaderManager->GetOrCompile(L"resources/shaders/EnergyCore.PS.hlsl", options);
+        psoManager->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
+
+        // 追加: EnergyBeam と LightningCrawl の登録
+        auto psEnergyBeam = shaderManager->GetOrCompile(L"resources/shaders/EnergyBeam.PS.hlsl", options);
+        psoManager->RegisterShader("EnergyBeam", { { vs3d, psEnergyBeam } });
+
+        auto psLightningCrawl = shaderManager->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
+        psoManager->RegisterShader("LightningCrawl", { { vs3d, psLightningCrawl } });
+    }
+
     // 独自コンポーネントの登録
     ComponentFactory::Register("RailShooterPlayerComponent", "Game", []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
@@ -88,6 +114,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     ComponentFactory::Register("SceneTransitionButtonComponent", "Game", []() { return std::make_shared<SceneTransitionButtonComponent>(); });
+    ComponentFactory::Register("EffectManagerComponent", "Game", []() { return std::make_shared<EffectManagerComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

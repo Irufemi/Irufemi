@@ -12,6 +12,114 @@
 
 ---
 
+## GameObject とコンポーネントの基本操作
+
+本エンジンは、Unityなどのモダンなエンジンと同様のコンポーネント指向で設計されています。シーン内のオブジェクト（`GameObject`）に対して、様々な機能（`Component`）をアタッチ・取得することでゲームロジックを構築します。
+
+### 基本的なコンポーネントの取得
+アタッチされているコンポーネントを取得するには、`GetComponent<T>()` を使用します。
+```cpp
+// 自身にアタッチされている TransformComponent を取得する
+if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
+    transform->SetPosition(Vector3(0, 10, 0));
+}
+```
+
+### GetComponentsInChildren を使った子孫の探索
+`GameObject` 自身およびすべての子孫階層から特定のコンポーネントを一括検索する強力な機能が備わっています。特定のオブジェクト（プレハブのルートなど）の下に連なっているパーティクルやコライダーを一斉に操作したい場合に非常に便利です。
+
+```cpp
+auto obj = gameObject_->GetScene()->FindGameObject("Player");
+
+// 1. ツリー全体から、指定した型のコンポーネントを「すべて（配列で）」取得する
+auto emitters = obj->GetComponentsInChildren<ParticleEmitterComponent>();
+for (auto pe : emitters) {
+    pe->Restart(false); // 全てのエミッターを一斉に再発火
+}
+
+// 2. ツリー全体から、指定した型のコンポーネントを「1つだけ」取得する
+if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
+    collider->SetIsActive(false);
+}
+```
+
+**【重要】**
+この探索機能は「自身（ルート）にアタッチされているコンポーネント」も検索対象に含まれます。そのため、ルートに目的のコンポーネントがあるかどうかを事前に気にする必要はなく、非常にシンプルで堅牢なコードを記述できます。
+
+---
+
+## チーム開発ルール・コーディング規約
+
+チームでの共同開発（`Application_team` など）を進めるにあたり、以下のアーキテクチャ・コーディング規約を遵守してください。
+
+### 1. アーキテクチャと関心の分離
+- **エンジンの独立性**: `IrufemiEngine/` フォルダ配下のコア機能には、特定のゲームやシーンに依存する処理・固有のデータ・アクターを**絶対に含めない**でください。
+- **ゲームロジックの配置**: ゲーム固有のロジックやキャラクター制御は、必ず `Application_team/` (または各ゲームの Application フォルダ) 内に記述し、エンジンとアプリケーションの境界を厳格に保ちます。
+
+### 2. メモリ管理と安全性 (C++ / DirectX)
+- **スマートポインタの利用**: メモリリークを防ぐため、生ポインタ(`Raw Pointer`)の新規使用は極力避け、用途に合わせて `std::unique_ptr` や `std::shared_ptr` を優先してください。
+- **COMオブジェクト管理**: DirectXのオブジェクトを扱う際は、必ず `Microsoft::WRL::ComPtr` を使用して安全にライフサイクルを管理してください。
+- **エラーチェックとロギング**: DirectXのAPI呼び出し時やJSON等のパース時は必ずエラーチェックを行い、エラーメッセージの出力には `printf` や `std::cout` ではなく、エンジン標準の `Log::OutPutLog` を使用してください。
+  ```cpp
+  #include "Engine/Core/Utility/Log.h"
+  // エディタのコンソールウィンドウ等にも出力されるように、エンジン指定のロガーを使用する
+  Log::OutPutLog(std::cerr, "Error: Failed to load file.\n");
+  ```
+
+### 3. オブジェクトのライフサイクル管理とプールの安全な運用
+シューティングゲームの敵やヒットエフェクトなど、頻繁に生成と消滅を繰り返すオブジェクト（プーリング対象）を実装する際は、メモリ破壊やプールの崩壊を防ぐために以下の**厳密なルール**に従う必要があります。
+
+- **プール運用オブジェクトでは絶対に `Destroy()` を呼ばない**
+  `Destroy()` を呼ぶと `GameObject` がシーンから完全に削除（メモリ解放）されてしまいます。プール運用しているオブジェクトが削除されると、プール側にダングリングポインタが残り、次回取り出した際にクラッシュします。
+  **プーリング対象のオブジェクトが死ぬときは、必ず「非アクティブ化 (SetIsActive(false))」してプールへ返却（Release）してください。**
+  ```cpp
+  enemyComp->SetOnDeathCallback([this](GameObject* deadObj) {
+      deadObj->SetIsActive(false);
+      if (enemyPool_) {
+          enemyPool_->Release(deadObj->shared_from_this());
+      }
+  });
+  ```
+
+- **LifetimeComponent の TimeoutAction を活用する**
+  一定時間で消滅するエフェクトなどに `LifetimeComponent` をアタッチする場合、インスペクタ上で **Timeout Action** を変更できます。単発生成なら `Destroy` (デフォルト)、プール運用なら `Disable` を設定してください。コードから生成する際は以下のように上書きすると安全です。
+  ```cpp
+  auto obj = gameObject_->Instantiate(effectPrefabPath);
+  if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
+      lifetime->SetTimeoutAction(TimeoutAction::Disable);
+  }
+  ```
+
+### 4. GPUリソースの事前確保（Pre-warming）によるラグ防止
+リアルタイム性が命のゲームにおいて、実行中のテクスチャ読み込みやシェーダー・VRAMバッファの構築（遅延評価）は**画面のカクつき（Hitch / Stutter）を生む最大の原因**となります。一線級のエンジンと同様に、ゲーム開始前の初期化フェーズ（ロード画面や `Start()` のタイミング）で重い処理を強制的に終わらせる**プレウォーム（事前確保）**を徹底してください。
+
+- **安全なプレウォームの実装方法**
+  初期化時にフルセットの更新処理を呼ぶと、プールの中で休眠中のエフェクトが勝手に発生・消費されてしまう（いざ使うときに出なくなる）バグの原因になります。これを防ぐため、**「発生パラメータは一切送らず、GPUマネージャーに対してハンドルの取得（VRAM領域の予約）だけを行う」専用のメソッド**を用意・使用してください。
+  ```cpp
+  // ParticleObject.cpp の例
+  void ParticleObject::Initialize() {
+      // ...
+      // 実行中のラグを防ぐため、安全なプレウォーム（枠だけの事前確保）を行う
+      PrewarmSystem();
+  }
+
+  void ParticleObject::PrewarmSystem() {
+      // パラメータは送信せず、マネージャーに「このテクスチャとブレンドモードを使う」と登録だけ行う
+      if (!emitterHandle_.IsValid() && gpuParticleManager_) {
+          emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+      }
+  }
+  ```
+
+### 5. 命名規則・コードスタイル
+- **メンバ変数の命名**: `m_` などの接頭辞は使用せず、**キャメルケースの末尾にアンダーバー**をつけるスタイル (`variableName_`) に統一してください。
+- **ヘッダーの注釈**: 関数やクラスのコメントは「Doxygen形式」で記述してください。
+- **インクルードガード**: `#pragma once` を使用してください。
+- **既存への適応**: 新しくクラスや関数を追加する際は、必ず周囲の「既存のコードベースの命名規則」に合わせ、自己流のスタイルを混入させないでください。
+- **文字コードとフォーマット**: ファイルはすべて `UTF-8 (署名なし)` で保存し、`.clang-format` による自動整形を活用してください。
+
+---
+
 ## パーティクルシステム (GPUParticleSystem) の利用方法
 
 本エンジンのパーティクルシステムは、コンピュートシェーダー(CS)によってGPU上で高速に動作します。
@@ -225,27 +333,69 @@ float moveInputX = input->GetActionValue("MoveX").x;
 
 ---
 
-## チーム開発ルール・コーディング規約
-
-チームでの共同開発（`Application_team` など）を進めるにあたり、以下のアーキテクチャ・コーディング規約を遵守してください。
-
-### 1. アーキテクチャと関心の分離
-- **エンジンの独立性**: `IrufemiEngine/` フォルダ配下のコア機能には、特定のゲームやシーンに依存する処理・固有のデータ・アクターを**絶対に含めない**でください。
-- **ゲームロジックの配置**: ゲーム固有のロジックやキャラクター制御は、必ず `Application_team/` (または各ゲームの Application フォルダ) 内に記述し、エンジンとアプリケーションの境界を厳格に保ちます。
-
-### 2. メモリ管理と安全性 (C++ / DirectX)
-- **スマートポインタの利用**: メモリリークを防ぐため、生ポインタ(`Raw Pointer`)の新規使用は極力避け、用途に合わせて `std::unique_ptr` や `std::shared_ptr` を優先してください。
-- **COMオブジェクト管理**: DirectXのオブジェクトを扱う際は、必ず `Microsoft::WRL::ComPtr` を使用して安全にライフサイクルを管理してください。
-- **エラーチェック**: DirectXのAPI呼び出し時は `HRESULT` の戻り値を必ずチェックし、適切なエラーハンドリング（アサート等）を含めてください。
-
-### 3. 命名規則・コードスタイル
-- **メンバ変数の命名**: `m_` などの接頭辞は使用せず、**キャメルケースの末尾にアンダーバー**をつけるスタイル (`variableName_`) に統一してください。
-- **ヘッダーの注釈**: 関数やクラスのコメントは「Doxygen形式」で記述してください。
-- **インクルードガード**: `#pragma once` を使用してください。
-- **既存への適応**: 新しくクラスや関数を追加する際は、必ず周囲の「既存のコードベースの命名規則」に合わせ、自己流のスタイルを混入させないでください。
-- **文字コードとフォーマット**: ファイルはすべて `UTF-8 (署名なし)` で保存し、`.clang-format` による自動整形を活用してください。
-
 ---
+
+## 【NEW】リソース管理システム (ResourceHandle) の利用方法
+
+本エンジンでは、AAA規模の商用エンジン（メモリ予算の厳格な管理やLRUパージ機構）を見据え、テクスチャやモデルデータなどの巨大なリソースの管理を `std::shared_ptr` から独自の **`ResourceHandle` ベースのアーキテクチャ** へと完全移行しました。
+
+これにより、不用意な `shared_ptr` の循環参照によるメモリリークや、解放タイミングの制御不能といった問題を解決し、高速かつ安全なリソース参照が可能になっています。
+
+### コンポーネント開発時におけるリソースの持ち方
+自作のコンポーネント（RendererやEffectなど）でテクスチャやモデルを保持する場合、これまでのように `std::shared_ptr<ManagedModel>` をメンバ変数に持つことは禁止されています。代わりに `ResourceHandle` を保持してください。
+
+```cpp
+#include "Engine/Core/System/ResourceCachePool.h" // ResourceHandle用
+
+class MyCustomRenderer : public Component {
+private:
+    ResourceHandle myModelHandle_;
+    ResourceHandle myTextureHandle_;
+};
+```
+
+### リソースのロード（取得）と解放
+リソースのロードは、各Manager（`TextureManager`, `ModelManager` など）の `Load***` メソッドを使用します。**取得したハンドルは、コンポーネント破棄時に必ず手動で `Release***` を呼んで解放（参照カウントを下げる）してください。**
+
+```cpp
+void MyCustomRenderer::Initialize() {
+    // リソースをロードしてハンドルを保持
+    myModelHandle_ = engine_->GetObjModelManager()->LoadModel("EnemyModel");
+    myTextureHandle_ = engine_->GetTextureManager()->LoadTexture("EnemyTex");
+}
+
+void MyCustomRenderer::Finalize() {
+    // 破棄時にハンドルの参照カウントを減らす
+    if (myModelHandle_.IsValid()) {
+        engine_->GetObjModelManager()->ReleaseModel(myModelHandle_);
+    }
+    if (myTextureHandle_.IsValid()) {
+        engine_->GetTextureManager()->ReleaseTexture(myTextureHandle_);
+    }
+}
+```
+
+### 毎フレームの描画（ハンドルの解決）
+描画や更新（Update / Draw）のタイミングで初めて、ハンドルから実際の生ポインタ（実データ）を **解決 (Resolve)** します。
+※解決した生ポインタはメンバ変数に保持せず、その関数（スコープ）内だけで使い捨ててください。万が一リソースが裏でパージ（破棄）されても、安全にフォールバック（ダミー白テクスチャなど）が返る仕組みになっています。
+
+```cpp
+void MyCustomRenderer::Draw() {
+    // ハンドルから実体を解決（ポインタ取得）
+    auto model = engine_->GetObjModelManager()->Resolve(myModelHandle_);
+    
+    // データがまだロードされていない、または無効な場合は処理をスキップ（安全装置）
+    if (!model || !model->cpuModel) {
+        return; 
+    }
+    
+    // テクスチャのSRVハンドル（GPU用）を解決
+    auto srvHandle = engine_->GetTextureManager()->Resolve(myTextureHandle_);
+    
+    // 実際の描画処理へ...
+    model->Draw(srvHandle);
+}
+```
 
 ## 【NEW】GPU カリング (GPU Culling & ExecuteIndirect) の利用方法
 
@@ -378,6 +528,11 @@ Vector3 worldPos = transform->GetWorldPosition();
 Vector3 worldRot = transform->GetWorldRotation();
 Vector3 worldScl = transform->GetWorldScale();
 
+// ワールド空間の方向ベクトル（正規化済み）
+Vector3 right   = transform->GetWorldRight();
+Vector3 up      = transform->GetWorldUp();
+Vector3 forward = transform->GetWorldForward();
+
 // --- 更新 (Setter) ---
 // 値を更新すると、内部で Dirty フラグ (isLocalDirty_) が立ちます
 transform->SetPosition(Vector3(10, 5, 0));
@@ -391,3 +546,47 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 これにより、同じフレーム内で何度座標を変更しても、無駄な行列計算（sin/cosや行列乗算）が走らないため、非常に高速に動作します。
 ※ 特別な理由がない限り、自分で `ComputeMatrix()` を呼び出す必要はありません。エンジン側の `BaseScene::Update()` の直後に一括で最新化されます。
+
+---
+
+## 【NEW】半透明・エフェクトオブジェクトの描画とZソート
+
+本エンジンでは、地形やキャラクターなどの不透明オブジェクトの後に、オーラやレーザーなどの半透明エフェクトを正しい順番（奥から手前）で描画するための **独立した半透明描画パス (MainTransparentPass)** をサポートしました。
+
+これまで半透明オブジェクトを描画する際、Zバッファへの書き込み（DepthWrite）をDisableにすると、後から描画される不透明オブジェクトに上書きされて見えなくなる問題がありましたが、この機能を利用することで正しく描画されます。
+
+### 利用方法
+
+半透明や加算合成で描画したい Primitive3DObject （またはそれを保持するRendererComponent）に対して、初期化時に SetIsTransparent(true) を設定し、同時にPSO設定で DepthWrite::Disable を指定します。
+
+```cpp
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+
+// 1. オブジェクトの初期化
+auto aura = std::make_shared<Primitive3DObject>();
+aura->Initialize(PrimitiveType::Sphere);
+
+// 2. カスタムPSOの適用 (DepthWrite を Disable にする)
+auto pso = engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
+aura->SetCustomPSO(pso);
+
+// 3. 半透明フラグを有効にする (重要！)
+// これにより、不透明オブジェクトをすべて描き終わった後に、カメラからの距離でソートされて描画されます。
+aura->SetIsTransparent(true);
+```
+
+### 注意点
+- SetIsTransparent(true) を設定したオブジェクトは、自動的にカメラからの距離（distanceToCamera）を計算し、**Z値の降順（Back-to-Front）**でソートされて描画されます。
+- 不透明な通常のモデルに SetIsTransparent(true) を設定しないでください（Early-Zカリングなどの恩恵が受けられず、パフォーマンスが低下します）。
+
+---
+
+## 【NEW】デバッグ描画と当たり判定 (CollisionManager)
+
+コライダー（AABB, Sphere, OBB）のデバッグ描画（ワイヤーフレーム表示）は、各コンポーネント内で個別に実装・描画する必要はありません。
+すべてのコライダーのデバッグ描画は、`CollisionManager::DrawDebug()` にて一元管理・一括描画されるアーキテクチャに変更されています。
+
+- **デバッグ表示の自動化**:
+  `ColliderComponent` を継承してコンポーネントを作成し、`GetWorldAABB()` などの形状取得メソッドを正しくオーバーライドすれば、エディタ上で自動的にワイヤーフレームが表示されます。
+- **自分で `DrawDebug` を呼ばない**:
+  各コンポーネント内に独自の `DrawDebug` 等の描画命令（PrimitiveManager等の呼び出し）を記述すると、描画が重複したり描画ステートが壊れる原因となるため、当たり判定の描画は完全にマネージャに委譲してください。

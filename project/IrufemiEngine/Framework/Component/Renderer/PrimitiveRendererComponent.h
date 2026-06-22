@@ -38,6 +38,12 @@ public:
     void SetShape(PrimitiveType type);
     void SetColor(const struct Vector4& color);
     void SetTexture(const std::string& texturePath);
+    void SetEnableLighting(bool enable);
+    void SetLightingMode(int mode);
+    void SetMetallic(float metallic);
+    void SetRoughness(float roughness);
+    void SetAlphaReference(float alphaRef);
+    void SetUseClampSampler(int32_t useClamp);
 
 private:
     void RebuildMesh();

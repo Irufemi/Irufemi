@@ -47,12 +47,14 @@ void PrimitiveBatch::EnsureMaterialResources() {
 }
 
 void PrimitiveBatch::EnsureSharedTexture(const std::string& textureName) {
-    if (!textureName.empty()) {
-        textureHandle_ = textureManager_->GetTextureHandle(textureName);
-    } else {
-        textureHandle_ = textureManager_->GetWhiteTextureHandle();
+    if (textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
     }
-    IRUFEMI_ASSERT(textureHandle_.ptr != 0 && "PrimitiveBatch Texture SRV handle is invalid");
+    if (!textureName.empty()) {
+        textureHandle_ = textureManager_->LoadTexture(textureName);
+    } else {
+        textureHandle_ = ResourceHandle();
+    }
 }
 
 float PrimitiveBatch::GetBoundingSphereRadius() const {
@@ -82,7 +84,7 @@ void PrimitiveBatch::Draw() {
     p.indexCount = res->indexCount;
     
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = textureHandle_;
+    p.textureHandle = textureManager_->Resolve(textureHandle_);
     p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
     p.instanceCount = GetInstanceCount();
     

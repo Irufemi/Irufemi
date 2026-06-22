@@ -20,6 +20,9 @@ Skybox::Skybox() {}
 // デストラクタ
 Skybox::~Skybox() {
     UnMapResource();
+    if (engine_ && engine_->GetTextureManager() && textureHandle_.IsValid()) {
+        engine_->GetTextureManager()->ReleaseTexture(textureHandle_);
+    }
 }
 
 void Skybox::Initialize(const std::string& textureName) {
@@ -59,12 +62,15 @@ void Skybox::Initialize(const std::string& textureName) {
 
     TextureManager* textureManager = engine_->GetTextureManager();
 
-    if (textureName == "whiteCubeMap") {
-        textureHandle_ = textureManager->GetWhiteCubeMapHandle();
-    } else {
+    if (textureHandle_.IsValid()) {
+        textureManager->ReleaseTexture(textureHandle_);
+        textureHandle_ = ResourceHandle();
+    }
+
+    if (textureName != "whiteCubeMap" && !textureName.empty()) {
         auto textureNames = textureManager->GetCubeMapNamesForDebug();
         if (!textureNames.empty()) {
-            textureHandle_ = textureManager->GetTextureHandle(textureName);
+            textureHandle_ = textureManager->LoadTexture(textureName);
 
             // コンボボックス用に selectedIndex を初期化
             auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
@@ -73,10 +79,6 @@ void Skybox::Initialize(const std::string& textureName) {
             } else {
                 selectedTextureIndex_ = 0;
             }
-        } else {
-            // テクスチャが見つからない、またはリストが空の場合は白キューブマップを使用
-            textureHandle_ = textureManager->GetWhiteCubeMapHandle();
-            selectedTextureIndex_ = 0;
         }
     }
 }
@@ -122,8 +124,17 @@ void Skybox::Draw() {
 
     engine_->ApplyPSO("Skybox");
 
+    TextureManager* textureManager = engine_->GetTextureManager();
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager->GetWhiteCubeMapHandle();
+    if (textureHandle_.IsValid()) {
+        const Texture* tex = textureManager->GetTextureObject(textureHandle_);
+        if (tex && tex->IsCubemap()) {
+            gpuHandle = textureManager->Resolve(textureHandle_);
+        }
+    }
+
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), textureHandle_, static_cast<UINT>(indexDataList_.size()));
+    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), gpuHandle, static_cast<UINT>(indexDataList_.size()));
 
 }
 
@@ -141,12 +152,12 @@ void Skybox::Debug() {
             }, &textureNames, static_cast<int>(textureNames.size()))) {
                 // 選択が変更された
                 std::string selectedName = textureNames[selectedTextureIndex_];
-                if (selectedName == "whiteCubeMap") {
-                    textureHandle_ = textureManager->GetWhiteCubeMapHandle();
-                } else if (selectedName == "white") {
-                    textureHandle_ = textureManager->GetWhiteTextureHandle();
-                } else {
-                    textureHandle_ = textureManager->GetTextureHandle(selectedName);
+                if (textureHandle_.IsValid()) {
+                    textureManager->ReleaseTexture(textureHandle_);
+                    textureHandle_ = ResourceHandle();
+                }
+                if (selectedName != "whiteCubeMap" && selectedName != "white") {
+                    textureHandle_ = textureManager->LoadTexture(selectedName);
                 }
             }
             uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();

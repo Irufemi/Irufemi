@@ -36,6 +36,14 @@ GpuMesh::~GpuMesh() {
     }
 }
 
+TextureManager* GpuMaterial::sTextureManager = nullptr;
+
+GpuMaterial::~GpuMaterial() {
+    if (sTextureManager && textureHandle.IsValid()) {
+        sTextureManager->ReleaseTexture(textureHandle);
+    }
+}
+
 ModelManager::ModelManager() = default;
 ModelManager::~ModelManager() = default;
 
@@ -43,6 +51,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     dxCommon_ = dxCommon;
     GpuMesh::sDxCommon = dxCommon;
     textureManager_ = textureManager; // 追加
+    GpuMaterial::sTextureManager = textureManager; // 追加
     if (rootDir_.empty()) {
         rootDir_ = "resources/model";
     }
@@ -55,6 +64,9 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     if (!backgroundTaskGroup_) {
         backgroundTaskGroup_ = std::make_shared<TaskGroup>();
     }
+    
+    // メモリ予算の設定（例: 512MB）
+    modelPool_.SetMemoryBudget(512ULL * 1024ULL * 1024ULL);
 }
 
 void ModelManager::SetRootDirectory(std::string root) {
@@ -63,38 +75,38 @@ void ModelManager::SetRootDirectory(std::string root) {
     rootDir_ = std::move(root);
 }
 
-std::shared_ptr<ManagedModel> ModelManager::GetModel(const std::string& filename) {
-    auto managedModel = GetModelAsync(filename);
-    if (!managedModel) return nullptr;
-
-    // ロード中か待機中であれば、確定状態（Loaded or Failed）になるまで待機
-    while (true) {
-        auto status = managedModel->status.load();
-        if (status == ManagedModel::LoadingStatus::Loaded || status == ManagedModel::LoadingStatus::Failed) {
-            break;
-        }
-        std::this_thread::yield();
+ResourceHandle ModelManager::LoadModel(const std::string& filename) {
+    if (filename.empty()) {
+        return ResourceHandle(); // 無効なハンドル
     }
 
-    if (managedModel->status.load() == ManagedModel::LoadingStatus::Failed) {
-        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Load failed (waited): {}\n", GetCurrentThreadId(), filename).c_str());
-        return nullptr;
-    }
-
-    return managedModel;
-}
-
-std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& filename) {
     const std::string key = filename;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (auto it = cache_.find(key); it != cache_.end()) {
-            if (auto sp = it->second.lock()) {
-                // OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Cache hit: {}\n", GetCurrentThreadId(), filename).c_str());
-                return sp;
-            }
-        }
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (auto it = nameToHandleMap_.find(key); it != nameToHandleMap_.end() && modelPool_.IsValid(it->second)) {
+        modelPool_.RetainSlot(it->second);
+        return it->second;
     }
+
+    // 古いキャッシュを破棄
+    modelPool_.EnforceMemoryBudget([this](uint32_t index) {
+        if (index < managedModels_.size() && managedModels_[index]) {
+            managedModels_[index].reset();
+        }
+    });
+
+    // サイズを推定 (仮: 5MB)
+    size_t estimatedSize = 5 * 1024 * 1024;
+    ResourceHandle handle = modelPool_.AllocateSlot(estimatedSize);
+
+    if (handle.index >= managedModels_.size()) {
+        managedModels_.resize(handle.index + 1);
+    }
+    managedModels_[handle.index] = std::make_unique<ManagedModel>();
+    auto& managedModel = managedModels_[handle.index];
+    managedModel->status.store(ManagedModel::LoadingStatus::Pending);
+
+    nameToHandleMap_[key] = handle;
 
     // ファイルパスを解決
     std::string fullPath;
@@ -106,29 +118,39 @@ std::shared_ptr<ManagedModel> ModelManager::GetModelAsync(const std::string& fil
 
     if (fullPath.empty() || !std::filesystem::exists(fullPath)) {
         OutputDebugStringA(("[ModelManager] File not found: " + filename + "\n").c_str());
-        return nullptr;
-    }
-
-    // 非同期ロード用のプロキシ作成
-    auto managedModel = std::make_shared<ManagedModel>();
-    managedModel->status.store(ManagedModel::LoadingStatus::Pending);
-
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        cache_[key] = managedModel;
+        managedModel->status.store(ManagedModel::LoadingStatus::Failed);
+        return handle;
     }
 
     OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Request async load: {}\n", GetCurrentThreadId(), filename).c_str());
 
-    // タスクをキューイング (TaskGroup 経由)
-    threadPool_->Enqueue(taskGroup_, [this, managedModel, fullPath]() {
-        LoadInternal(managedModel, fullPath);
+    ManagedModel* rawPtr = managedModel.get();
+    const_cast<ModelManager*>(this)->EnqueueTask([rawPtr, fullPath, handle, this]() {
+        LoadInternal(rawPtr, fullPath);
+        modelPool_.SetLoaded(handle, true);
     });
 
-    return managedModel;
+    return handle;
 }
 
-void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, const std::string& fullPath) {
+void ModelManager::ReleaseModel(ResourceHandle handle) {
+    modelPool_.ReleaseSlot(handle);
+}
+
+ManagedModel* ModelManager::Resolve(ResourceHandle handle) const {
+    if (!modelPool_.IsValid(handle)) {
+        return nullptr;
+    }
+    const_cast<ModelManager*>(this)->modelPool_.TouchSlot(handle);
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (handle.index < managedModels_.size() && managedModels_[handle.index]) {
+        return managedModels_[handle.index].get();
+    }
+    return nullptr;
+}
+
+void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& fullPath) {
 
     std::string key = SplitDirectoryAndFile(fullPath).second;
     OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker START: {}\n", GetCurrentThreadId(), key).c_str());
@@ -213,9 +235,9 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
             if (materialData->color.w <= 0.0f) { materialData->color.w = 1.0f; }
 
             if (materialData->hasTexture) {
-                gpuMaterial->textureHandle = textureManager_->GetTextureHandle(cpuMesh.material.textureFilePath);
+                gpuMaterial->textureHandle = textureManager_->LoadTexture(cpuMesh.material.textureFilePath);
             } else {
-                gpuMaterial->textureHandle = textureManager_->GetWhiteTextureHandle();
+                gpuMaterial->textureHandle = ResourceHandle();
             }
             managedModel->gpuMaterials.push_back(std::move(gpuMaterial));
         }
@@ -274,7 +296,8 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
         std::transform(ext.begin(), ext.end(), ext.begin(),
             [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
         if (ext == ".obj" || ext == ".gltf" || ext == ".glb") {
-            GetModel(p.filename().string()); // ファイル名のみを渡す
+            ResourceHandle h = LoadModel(p.filename().string());
+            ReleaseModel(h); // すぐにReleaseして参照カウントを0にする（プールに残る）
         }
     }
 }
@@ -282,9 +305,8 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
 std::vector<std::string> ModelManager::GetCachedKeys() const {
     std::vector<std::string> out;
     std::lock_guard<std::mutex> lock(mutex_);
-    out.reserve(cache_.size());
-    for (auto& kv : cache_) {
-        if (!kv.second.expired()) {
+    for (const auto& kv : nameToHandleMap_) {
+        if (modelPool_.IsValid(kv.second)) {
             out.push_back(kv.first);
         }
     }
@@ -327,20 +349,11 @@ std::vector<std::string> ModelManager::GetAvailableModels() const {
     return availableModelsCache_;
 }
 
-void ModelManager::CollectGarbage() {
-    std::lock_guard<std::mutex> lock(mutex_);
-    for (auto it = cache_.begin(); it != cache_.end();) {
-        if (it->second.expired()) {
-            it = cache_.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
 void ModelManager::ClearAll() {
     std::lock_guard<std::mutex> lock(mutex_);
-    cache_.clear();
+    managedModels_.clear();
+    nameToHandleMap_.clear();
+    modelPool_.ClearAll([](uint32_t){});
     filePathCache_.clear();
 }
 
@@ -1491,8 +1504,18 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
 }
 
 std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution) {
-    auto managedModel = GetModel(filename);
-    if (!managedModel || !managedModel->cpuModel) {
+    ResourceHandle handle = LoadModel(filename);
+    ManagedModel* managedModel = Resolve(handle);
+
+    if (!managedModel) return nullptr;
+
+    while (true) {
+        auto status = managedModel->status.load();
+        if (status == ManagedModel::LoadingStatus::Loaded || status == ManagedModel::LoadingStatus::Failed) break;
+        std::this_thread::yield();
+    }
+
+    if (managedModel->status.load() == ManagedModel::LoadingStatus::Failed || !managedModel->cpuModel) {
         return nullptr;
     }
 
