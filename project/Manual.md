@@ -333,6 +333,70 @@ float moveInputX = input->GetActionValue("MoveX").x;
 
 ---
 
+---
+
+## 【NEW】リソース管理システム (ResourceHandle) の利用方法
+
+本エンジンでは、AAA規模の商用エンジン（メモリ予算の厳格な管理やLRUパージ機構）を見据え、テクスチャやモデルデータなどの巨大なリソースの管理を `std::shared_ptr` から独自の **`ResourceHandle` ベースのアーキテクチャ** へと完全移行しました。
+
+これにより、不用意な `shared_ptr` の循環参照によるメモリリークや、解放タイミングの制御不能といった問題を解決し、高速かつ安全なリソース参照が可能になっています。
+
+### コンポーネント開発時におけるリソースの持ち方
+自作のコンポーネント（RendererやEffectなど）でテクスチャやモデルを保持する場合、これまでのように `std::shared_ptr<ManagedModel>` をメンバ変数に持つことは禁止されています。代わりに `ResourceHandle` を保持してください。
+
+```cpp
+#include "Engine/Core/System/ResourceCachePool.h" // ResourceHandle用
+
+class MyCustomRenderer : public Component {
+private:
+    ResourceHandle myModelHandle_;
+    ResourceHandle myTextureHandle_;
+};
+```
+
+### リソースのロード（取得）と解放
+リソースのロードは、各Manager（`TextureManager`, `ModelManager` など）の `Load***` メソッドを使用します。**取得したハンドルは、コンポーネント破棄時に必ず手動で `Release***` を呼んで解放（参照カウントを下げる）してください。**
+
+```cpp
+void MyCustomRenderer::Initialize() {
+    // リソースをロードしてハンドルを保持
+    myModelHandle_ = engine_->GetObjModelManager()->LoadModel("EnemyModel");
+    myTextureHandle_ = engine_->GetTextureManager()->LoadTexture("EnemyTex");
+}
+
+void MyCustomRenderer::Finalize() {
+    // 破棄時にハンドルの参照カウントを減らす
+    if (myModelHandle_.IsValid()) {
+        engine_->GetObjModelManager()->ReleaseModel(myModelHandle_);
+    }
+    if (myTextureHandle_.IsValid()) {
+        engine_->GetTextureManager()->ReleaseTexture(myTextureHandle_);
+    }
+}
+```
+
+### 毎フレームの描画（ハンドルの解決）
+描画や更新（Update / Draw）のタイミングで初めて、ハンドルから実際の生ポインタ（実データ）を **解決 (Resolve)** します。
+※解決した生ポインタはメンバ変数に保持せず、その関数（スコープ）内だけで使い捨ててください。万が一リソースが裏でパージ（破棄）されても、安全にフォールバック（ダミー白テクスチャなど）が返る仕組みになっています。
+
+```cpp
+void MyCustomRenderer::Draw() {
+    // ハンドルから実体を解決（ポインタ取得）
+    auto model = engine_->GetObjModelManager()->Resolve(myModelHandle_);
+    
+    // データがまだロードされていない、または無効な場合は処理をスキップ（安全装置）
+    if (!model || !model->cpuModel) {
+        return; 
+    }
+    
+    // テクスチャのSRVハンドル（GPU用）を解決
+    auto srvHandle = engine_->GetTextureManager()->Resolve(myTextureHandle_);
+    
+    // 実際の描画処理へ...
+    model->Draw(srvHandle);
+}
+```
+
 ## 【NEW】GPU カリング (GPU Culling & ExecuteIndirect) の利用方法
 
 本エンジンでは、大量の同一モデル（がれき、草、パーティクルなど）を描画する際のCPU負荷（フラスタムカリングやメモリ転送）を劇的に削減するため、**Compute Shader による GPU フラスタムカリング** をサポートしました。

@@ -31,17 +31,20 @@ void AnimationModel::Initialize(const std::string& filename) {
 
     IRUFEMI_ASSERT(engine_ && "AnimationModel::Initialize: ModelManager is not set.");
     // 非同期で読み込みを開始し、メインスレッドをブロックしない
-    managedModel_ = engine_->GetObjModelManager()->GetModelAsync(filename);
+    modelHandle_ = engine_->GetObjModelManager()->LoadModel(filename);
 
     // StatusがLoadedであれば直ちに初期化を試みる
-    auto status = managedModel_->status.load();
-    if (status == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
-        InitializeResources();
+    if (auto m = engine_->GetObjModelManager()->Resolve(modelHandle_)) {
+        auto status = m->status.load();
+        if (status == ManagedModel::LoadingStatus::Loaded && m->cpuModel) {
+            InitializeResources();
+        }
     }
 }
 
 void AnimationModel::InitializeResources() {
-    if (!managedModel_ || !managedModel_->cpuModel) {
+    auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
+    if (!m || !m->cpuModel) {
         return;
     }
 
@@ -53,12 +56,12 @@ void AnimationModel::InitializeResources() {
 
     // 各メッシュ用リソースの生成
     meshResources_.clear();
-    for (size_t i = 0; i < managedModel_->gpuMeshes.size(); ++i) {
+    for (size_t i = 0; i < m->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
         
         res->SetExternalTransformCbIndex(&transformCbIndex_);
         
-        const auto& gpuMesh = managedModel_->gpuMeshes[i];
+        const auto& gpuMesh = m->gpuMeshes[i];
         res->vertexBufferView_ = gpuMesh->vertexBufferView;
         res->indexBufferView_ = gpuMesh->indexBufferView;
         res->indexCount_ = gpuMesh->indexCount;
@@ -66,7 +69,7 @@ void AnimationModel::InitializeResources() {
         res->CreateResource();
 
         // 初期テクスチャハンドルをコピー
-        const auto& gpuMaterial = (i < managedModel_->gpuMaterials.size()) ? managedModel_->gpuMaterials[i] : nullptr;
+        const auto& gpuMaterial = (i < m->gpuMaterials.size()) ? m->gpuMaterials[i] : nullptr;
         if (gpuMaterial) {
             res->textureHandle_ = gpuMaterial->textureHandle;
         }
@@ -78,11 +81,11 @@ void AnimationModel::InitializeResources() {
     animation_ = engine_->GetAnimationManager()->LoadAnimationFile(filename_);
 
     // Skeletonの生成
-    if (managedModel_ && managedModel_->cpuModel) {
-        skeleton_ = AnimationManager::CreateSkeleton(managedModel_->cpuModel->rootNode);
+    if (m && m->cpuModel) {
+        skeleton_ = AnimationManager::CreateSkeleton(m->cpuModel->rootNode);
 
-        if (!managedModel_->cpuModel->skinClusterData.empty()) {
-            skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *managedModel_->cpuModel);
+        if (!m->cpuModel->skinClusterData.empty()) {
+            skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *m->cpuModel);
         }
 
         jointSpheres_ = std::make_unique<PrimitiveBatch>();
@@ -105,12 +108,13 @@ void AnimationModel::InitializeResources() {
 // 更新
 void AnimationModel::Update() {
 
-    if (!managedModel_ || !engine_) return;
+    auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
+    if (!m || !engine_) return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
 
     // 非同期ロードが終わっていれば構築する (遅延初期化)
-    if (managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && meshResources_.empty()) {
+    if (m->status.load() == ManagedModel::LoadingStatus::Loaded && meshResources_.empty()) {
         InitializeResources();
     }
 
@@ -122,7 +126,7 @@ void AnimationModel::Update() {
     UpdateAnimation();
 
     // スキニングモデルかノードアニメーションモデルかで処理を分岐
-    if (!managedModel_->cpuModel->skinClusterData.empty()) {
+    if (!m->cpuModel->skinClusterData.empty()) {
         // --- スキニングモデルの更新 ---
         transformationMatrix_.world = worldMatrix_;
         Matrix4x4 worldForNormal = transformationMatrix_.world;
@@ -192,7 +196,7 @@ void AnimationModel::Update() {
     lastViewMatrix_ = activeCam->GetViewMatrix();
     lastProjectionMatrix_ = activeCam->GetPerspectiveFovMatrix();
     // スキニングモデルの場合はCompute Shaderの実行を予約する
-    if (!managedModel_->cpuModel->skinClusterData.empty() && engine_ && engine_->GetDrawManager()) {
+    if (!m->cpuModel->skinClusterData.empty() && engine_ && engine_->GetDrawManager()) {
         engine_->GetDrawManager()->RegisterComputeTask(this);
     }
 }
@@ -215,7 +219,8 @@ void AnimationModel::SyncBeforeDraw() {
     }
     
     // --- SkinCluster のマルチバッファ同期（ポーズ中の振動対策） ---
-    if (managedModel_ && managedModel_->cpuModel && !managedModel_->cpuModel->skinClusterData.empty()) {
+    auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
+    if (m && m->cpuModel && !m->cpuModel->skinClusterData.empty()) {
         AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
     }
     
@@ -223,7 +228,8 @@ void AnimationModel::SyncBeforeDraw() {
 }
 
 void AnimationModel::DispatchCompute() {
-    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->skinClusterData.empty() || !engine_) return;
+    auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
+    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_) return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
 
@@ -231,13 +237,13 @@ void AnimationModel::DispatchCompute() {
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
         Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
-        boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
+        boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
         if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 視錐台カリングされている場合はComputeもスキップ
         }
     }
 
-    engine_->GetDrawManager()->DispatchSkinning(skinCluster_, managedModel_.get(), skinCluster_.mappedSkinningInformation->numVertices);
+    engine_->GetDrawManager()->DispatchSkinning(skinCluster_, m, skinCluster_.mappedSkinningInformation->numVertices);
     uint32_t f = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     
     // スキニングが正常に実行されたフレームを記録（ポーズ中の遅延更新等による不整合を防ぐため）
@@ -246,7 +252,8 @@ void AnimationModel::DispatchCompute() {
 
 // 描画
 void AnimationModel::Draw() {
-    if (!managedModel_ || !engine_ || meshResources_.empty()) return;
+    auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
+    if (!m || !engine_ || meshResources_.empty()) return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
 
@@ -257,7 +264,7 @@ void AnimationModel::Draw() {
         Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         // アニメーションによる広がりを考慮し、モデル境界球の1.5倍のマージンを設定
-        boundingSphere.radius = managedModel_->cpuModel->boundingSphere.radius * maxScale * 1.5f;
+        boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
 
         if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 描画スキップ
@@ -293,7 +300,7 @@ void AnimationModel::Draw() {
         auto& res = meshResources_[i];
 
         // スキニング中なら VBV を差し替えて描画
-        if (!managedModel_->cpuModel->skinClusterData.empty()) {
+        if (!m->cpuModel->skinClusterData.empty()) {
             engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_, skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
         } else {
             engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
@@ -320,8 +327,9 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
         ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_, &enableLightingOverride_, "##AmOverrides");
 
         // ImGuiでマテリアルを編集
-        if (managedModel_ && managedModel_->cpuModel) {
-            for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+        auto m = engine_->GetObjModelManager()->Resolve(modelHandle_);
+        if (m && m->cpuModel) {
+            for (size_t i = 0; i < m->cpuModel->meshes.size(); ++i) {
                 std::string materialLabel = "Mesh " + std::to_string(i) + " Material";
                 if (ImGui::TreeNode(materialLabel.c_str())) {
                     ObjMaterial* mat = GetMaterial(i);
@@ -350,8 +358,11 @@ void AnimationModel::UpdateAnimation() {
     animationTime_ += engine_->GetGameDeltaTime();
     animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで行ったら最初からリピート再生。
 
+    auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
+    if (!m || !m->cpuModel) return;
+
     // スキニングアニメーションの場合
-    if (!managedModel_->cpuModel->skinClusterData.empty()) {
+    if (!m->cpuModel->skinClusterData.empty()) {
         // 1. 全Jointにアニメーションを適用
         AnimationManager::ApplyAnimation(skeleton_, animation_, animationTime_);
 
@@ -363,7 +374,7 @@ void AnimationModel::UpdateAnimation() {
         AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
     } else { // ノードアニメーションの場合
         // rootNodeのAnimationを取得
-        NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[managedModel_->cpuModel->rootNode.name];
+        NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[m->cpuModel->rootNode.name];
         // 指定時刻の値を取得
         Vector3 translate = AnimationManager::CalculateValue(rootNodeAnimation.translate, animationTime_);
         Quaternion rotate = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime_);

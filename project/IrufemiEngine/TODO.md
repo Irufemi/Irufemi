@@ -7,11 +7,6 @@
 より「ツール」として使いやすく、商用水準のパフォーマンスを発揮するための拡張機能群です。
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
-- [ ] **【AAA基準】リソース管理システムの抜本的改革 (現在進行中)**
-    - [ ] `ResourceHandle` および `ResourceCachePool` の実装。
-    - [ ] `TextureManager` の `shared_ptr` 依存排除と Handle 化。
-    - [ ] `ModelManager` の Handle 化と VRAM メモリ予算パージ機構の導入。
-    - [ ] 各種コンポーネント（MeshRenderer 等）の対応。
 - [ ] **製品版（Releaseビルド）におけるエディタ完全削除の検証**
     - `EditorMode` マクロがオフの時に、1バイトも不要なコードが含まれないことの確認。
 
@@ -32,6 +27,15 @@
 
 <details>
 <summary>▶ 完了したアーキテクチャと機能一覧を開く</summary>
+
+### フェーズ8: リソース管理システムの抜本的改革（AAA基準）
+- [x] **`ResourceHandle` および `ResourceCachePool` の実装**
+    - [x] `std::shared_ptr` の依存を排除し、独自の ID（Handle） ベースの高速なアロケータを構築。
+- [x] **`TextureManager` の Handle 化**
+    - [x] メモリリーク防止と非同期ロードの安定化。
+- [x] **`ModelManager` の Handle 化**
+    - [x] VRAM メモリパージ機構を想定したアーキテクチャへの刷新。
+- [x] **各種コンポーネント（MeshRenderer, AnimationModel 等）の対応**
 
 ### フェーズ7: アーキテクチャとパフォーマンスの最適化
 - [x] **GPUParticleSystemのパフォーマンス最適化と共有化**
