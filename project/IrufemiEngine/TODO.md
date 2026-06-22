@@ -7,8 +7,37 @@
 より「ツール」として使いやすく、商用水準のパフォーマンスを発揮するための拡張機能群です。
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
-- [ ] **製品版（Releaseビルド）におけるエディタ完全削除の検証**
-    - `EditorMode` マクロがオフの時に、1バイトも不要なコードが含まれないことの確認。
+### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)
+- [ ] **Bindless Resources (Descriptor Indexing) の導入**
+    - 全テクスチャ/リソースを巨大な Descriptor Heap に格納し、Shader にインデックス(uint)だけを渡す方式へ移行。描画時のバインド切り替えコストをゼロにする。
+- [ ] **マルチスレッドコマンド録画 (Multi-threaded Command Recording)**
+    - Job System と連携し、D3D12 の CommandList 構築を複数スレッドで並列に行い、CPUの描画ボトルネックを解消する。
+- [ ] **DirectStorage API / Virtual Texturing の対応**
+    - NVMe SSD から VRAM へのダイレクト転送（CPUバイパス）と、画面に映っているミップレベルだけをオンデマンドロードする Sampler Feedback 機構の実装。
+- [ ] **Clustered Shading (Forward+) または Deferred Rendering の実装**
+    - 現在の固定長定数バッファによるライト管理から脱却し、数百〜数千の動的ライトを効率的に処理するライティング基盤の構築。
+- [ ] **Compute Skinning (GPUスキニング) の実装**
+    - CPUで行っているアニメーションのボーン行列計算と頂点ブレンドを Compute Shader にオフロードする。
+- [ ] **PSO (Pipeline State Object) キャッシュとバックグラウンドコンパイル**
+    - ゲームプレイ中のカクつき（Stutter）を防ぐため、バックグラウンドでの事前コンパイルおよびディスクキャッシュ機構の構築。
+- [ ] **ハイブリッド型 ECS (Entity Component System) の導入 (Authoring & Baking)**
+    - エディタ上では扱いやすい既存のオブジェクト指向（`GameObject`）を維持しつつ、ゲーム再生時やビルド時に内部で純粋なデータ配列（SoA）へと自動変換（ベイク）する仕組みを導入。開発効率を一切落とさずにCPUキャッシュヒット率を最大化する。
+- [ ] **空間分割 (Spatial Partitioning: Octree / BVH) の導入**
+    - 現在 `CollisionManager` が総当りの二重ループ（$O(N^2)$）で判定しているため、大量の弾やオブジェクトが存在するとCPUが破綻する問題を解消。Broad-phase（広域判定）用のOctreeやBVHを構築し、計算量を $O(N \log N)$ に削減する。
+- [ ] **SIMD (DirectXMath / SSE) を活用した算術ライブラリの刷新**
+    - 現在の `Vector3` や行列計算がスカラ演算（float単位）で実装されているため、DirectXMath (`XMVECTOR`, `XMMATRIX`) などの SIMD 命令にバックエンドを差し替え、物理・Transform計算のボトルネックを解消する。
+- [ ] **`StringId` (高速な文字列ハッシュ化) システムの導入**
+    - `GameObject` の検索やタグ比較で多発している `std::string` のアロケーション・比較コストを削るため、コンパイル時ハッシュ等を利用したIDベースの文字列プールシステム（Unreal Engineの `FName` に相当）を導入する。
+- [ ] **エンジングローバルなメモリアロケータの最適化**
+    - `new / delete` のOS側のヒープ競合を防ぐため、汎用的なアロケータのオーバーライド（例: `mimalloc` や独自TLSFアロケータの組み込み）を行い、ゲームループ中の動的メモリ確保を高速化する。
+- [ ] **アセットのバイナリベイク（JSONシリアライズからの脱却）**
+    - 現在シーンデータや設定ファイルが `json` で保存・パースされているが、文字列パースはロード時間の大きなボトルネックになる。製品ビルド時には `FlatBuffers` や独自バイナリ形式にベイクし、ゼロコピーでメモリに展開する超高速ロードを実現する。
+- [ ] **イベント駆動（Delegate / Message Bus）システムの構築**
+    - コンポーネント同士のやり取り（例: 当たり判定から特定スクリプトを呼ぶ等）のハードコードな依存関係を無くすため、グローバルな Pub/Sub イベントバスや C++ Delegate 機構を導入し、疎結合なアーキテクチャにする。
+- [ ] **固定フレームレート物理演算 (Fixed Timestep) の実装**
+    - 現在のゲームループはフレームレート依存で Update が回っている。物理挙動の「抜け」や「デバイス毎の挙動の違い」を防ぐため、描画とは独立して必ず一定間隔（例: 60Hz/120Hz）で物理判定を回す `FixedUpdate` 機構を導入する。
+- [ ] **FMOD (オーディオミドルウェア) の統合**
+    - 現在のXAudio2ベースのオーディオ管理から、AAA業界標準である **FMOD** （NieR:Automata等で採用）へと完全に移行する。これにより、複雑なストリーミング再生や3D空間音響、動的なBGM遷移（インタラクティブオーディオ）を専用ツール(FMOD Studio)と連携して実現する。
 
 ### ✨ エディタの高度化と表現力の向上 (Editor & Rendering Features)
 - [ ] **パーティクルエディタの充実化**
