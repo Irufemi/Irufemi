@@ -20,7 +20,9 @@ void ComponentUIHelpers::DrawCollisionLayerGUI(Component* comp, EditorActionMana
     ImGui::Separator();
     ImGui::Text("Collision Settings");
 
-    auto* cm = comp->GetGameObject() ? comp->GetGameObject()->GetScene()->GetEngine()->GetCollisionManager() : nullptr;
+    auto* go = comp->GetGameObject();
+    auto* scene = go ? go->GetScene() : nullptr;
+    auto* cm = scene ? scene->GetEngine()->GetCollisionManager() : nullptr;
     if (!cm) return;
 
     const auto& layerNames = cm->GetLayerNames();

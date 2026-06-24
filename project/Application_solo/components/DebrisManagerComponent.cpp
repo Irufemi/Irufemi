@@ -65,9 +65,9 @@ void DebrisManagerComponent::Initialize() {
 
         obj->SetIsActive(false);
 
-        if (gameObject_) {
-            gameObject_->AddChild(obj);
-        }
+        // if (gameObject_) {
+        //     gameObject_->AddChild(obj);
+        // }
         return obj;
     };
 

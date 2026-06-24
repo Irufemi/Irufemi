@@ -3,6 +3,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Utility/ObjectPool.h"
 #include <memory>
+#include <unordered_map>
 
 class DebugEnemySpawnerComponent : public Component {
 public:
@@ -20,4 +21,5 @@ private:
 
     int maxEnemies_ = 50;
     std::unique_ptr<ObjectPool<GameObject>> enemyPool_;
+    std::unordered_map<GameObject*, ObjectPool<GameObject>::Handle> activeEnemyHandles_;
 };

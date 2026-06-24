@@ -7,6 +7,7 @@
 #include <vector>
 #include <functional>
 #include <queue>
+#include <unordered_map>
 
 class GameObject;
 class ModelBatchRendererComponent;
@@ -22,7 +23,7 @@ struct VirtualInstance {
     Vector3 scale_ = {1.0f, 1.0f, 1.0f};
     bool isPromoted_ = false;
     bool isDestroyed_;
-    std::shared_ptr<GameObject> promotedInstance_;
+    ObjectPool<GameObject>::Handle promotedHandle_;
 };
 
 /**
@@ -89,4 +90,6 @@ private:
     int maxPoolSize_ = 0;
     
     ModelBatchRendererComponent* batchRenderer_ = nullptr;
+    
+    std::unordered_map<GameObject*, ObjectPool<GameObject>::Handle> activeHandles_;
 };

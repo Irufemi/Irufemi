@@ -69,20 +69,32 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
 ### 3. オブジェクトのライフサイクル管理とプールの安全な運用
 シューティングゲームの敵やヒットエフェクトなど、頻繁に生成と消滅を繰り返すオブジェクト（プーリング対象）を実装する際は、メモリ破壊やプールの崩壊を防ぐために以下の**厳密なルール**に従う必要があります。
 
-- **プール運用オブジェクトでは絶対に `Destroy()` を呼ばない**
-  `Destroy()` を呼ぶと `GameObject` がシーンから完全に削除（メモリ解放）されてしまいます。プール運用しているオブジェクトが削除されると、プール側にダングリングポインタが残り、次回取り出した際にクラッシュします。
-  **プーリング対象のオブジェクトが死ぬときは、必ず「非アクティブ化 (SetIsActive(false))」してプールへ返却（Release）してください。**
+本エンジンでは、AAA基準の完全なゼロ・アロケーションを実現するため、オブジェクトプール (`ObjectPool<T>`) はポインタではなく **`Handle` (整理券)** による管理へ移行しました。
+
+- **プールへの返却は必ず `Release(handle)` を使用する**
+  プーリング対象のオブジェクトが死ぬとき（非アクティブ化されるとき）は、自身が生成時に受け取った `Handle` を用いてプールへ返却してください。`Destroy()` を呼ぶとメモリから消去されプールが崩壊します。
   ```cpp
+  // 敵の生成時に Handle をマップなどに記憶しておく
+  activeEnemyHandles_[enemy.get()] = handle;
+
   enemyComp->SetOnDeathCallback([this](GameObject* deadObj) {
       deadObj->SetIsActive(false);
       if (enemyPool_) {
-          enemyPool_->Release(deadObj->shared_from_this());
+          auto it = activeEnemyHandles_.find(deadObj);
+          if (it != activeEnemyHandles_.end()) {
+              enemyPool_->Release(it->second); // Handle を使って最速で返却
+              activeEnemyHandles_.erase(it);
+          }
       }
   });
   ```
 
+- **【重要】Handleの安全性 (Generation) とエディタ連携 (EditorMode)**
+  新しい Handle には **`generation` (世代)** という概念が組み込まれています。古い Handle（すでに返却済みのもの）を使って `Resolve(handle)` を呼び出しても、世代が不一致となるため自動的に弾かれて `nullptr` が返ります（ダングリングポインタの完全な防御）。
+  また、デバッグビルド（`EditorMode` 等）の時は、Handle 構造体の中に `debugPtr` という実体へのポインタが自動で含まれます。これにより、エディタ（ImGui）のインスペクタ上で「ただの数字の羅列」ではなく、実際のオブジェクトの名前（命名）を確認しながらデバッグを行うことができます。
+
 - **LifetimeComponent の TimeoutAction を活用する**
-  一定時間で消滅するエフェクトなどに `LifetimeComponent` をアタッチする場合、インスペクタ上で **Timeout Action** を変更できます。単発生成なら `Destroy` (デフォルト)、プール運用なら `Disable` を設定してください。コードから生成する際は以下のように上書きすると安全です。
+  一定時間で消滅するエフェクトなどに `LifetimeComponent` をアタッチする場合、インスペクタ上で **Timeout Action** を変更できます。プール運用なら必ず `Disable` を設定してください。コードから生成する際は以下のように上書きすると安全です。
   ```cpp
   auto obj = gameObject_->Instantiate(effectPrefabPath);
   if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
