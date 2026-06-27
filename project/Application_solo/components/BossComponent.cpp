@@ -27,7 +27,6 @@ void BossComponent::Initialize() {
         }
         if (collider) {
             collider->isTrigger_ = true;
-            collider->SetLocalRadius(10.0f); // モデルに隠れないよう少し大きめに設定
         }
     }
 
