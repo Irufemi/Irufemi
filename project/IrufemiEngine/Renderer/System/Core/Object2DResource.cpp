@@ -1,9 +1,10 @@
 #include "Object2DResource.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/Graphics/Camera/Camera.h"
+#include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
+
 
 TextureManager* Object2DResource::sTextureManager = nullptr;
 
@@ -25,7 +26,8 @@ Object2DResource::~Object2DResource() {
 }
 
 void Object2DResource::CreateResource() {
-    if (!s_dxCommon_) return;
+    if (!s_dxCommon_)
+        return;
 
     if (!vertexDataList_.empty()) {
         vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
@@ -44,15 +46,15 @@ void Object2DResource::CreateResource() {
 
     if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
         materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
-        
-        cpuMaterialData_.color = {1,1,1,1};
+
+        cpuMaterialData_.color = {1, 1, 1, 1};
         cpuMaterialData_.enableLighting = true;
         cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
         cpuMaterialData_.metallic = 0.0f;
         cpuMaterialData_.roughness = 0.5f;
         cpuMaterialData_.environmentCoefficient = 0.0f;
 
-        for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
             engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
         }
 
@@ -81,25 +83,30 @@ void Object2DResource::Unmap() {
 }
 
 void Object2DResource::UpdateTransform(const Camera& camera) {
-    
+
     transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // 2D なので正射影行列を掛ける
     transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
     // CPU側のマテリアルキャッシュにのみ反映させる
-    cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+    cpuMaterialData_.uvTransform =
+        Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
 
     MarkAsDirty();
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetTransformVAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    if (transformCbIndex_ == static_cast<uint32_t>(-1))
+        return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
+        transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetMaterialVAddress() const {
-    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    if (materialCbIndex_ == static_cast<uint32_t>(-1))
+        return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
+        materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
 
 void Object2DResource::SyncBeforeDraw() {
@@ -113,12 +120,10 @@ void Object2DResource::SyncBeforeDraw() {
                 engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
             }
         }
-        
+
         // 頂点データの更新があればGPUに転送
         if (vertexData_ && !vertexDataList_.empty()) {
             std::memcpy(vertexData_, vertexDataList_.data(), sizeof(VertexData) * vertexDataList_.size());
         }
-
-
     }
 }

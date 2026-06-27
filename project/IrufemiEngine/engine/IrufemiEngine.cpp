@@ -42,7 +42,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object/Line/LineClass.h"
 #include "Renderer/System/Core/LineResource.h"
 #include "Renderer/System/Core/Object2DResource.h"
-#include "Renderer/Object/2D/Primitive/Circle2D.h"
+#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
 #include "Renderer/Object/2D/Text/Text.h"
@@ -248,7 +248,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   }
   Sprite::SetDebugUI(ui_.get());
   Text::SetDebugUI(ui_.get());
-  Circle2D::SetDebugUI(ui_.get());
+  Primitive2DObject::SetDebugUI(ui_.get());
 
   Primitive3DObject::SetDebugUI(ui_.get());
 
@@ -268,7 +268,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   drawManager_->Initialize(dxCommon_.get());
   Sprite::SetDrawManager(drawManager_.get());
   Text::SetDrawManager(drawManager_.get());
-  Circle2D::SetDrawManager(drawManager_.get());
+  Primitive2DObject::SetDrawManager(drawManager_.get());
 
   BaseBatch::SetDrawManager(drawManager_.get());
   Line3DBatch::SetDrawManager(drawManager_.get());
@@ -284,7 +284,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   ui_->SetTextureManager(textureManager_.get());
   drawManager_->SetTextureManager(textureManager_.get());
   Sprite::SetTextureManager(textureManager_.get());
-  Circle2D::SetTextureManager(textureManager_.get());
+  Primitive2DObject::SetTextureManager(textureManager_.get());
 
   BaseBatch::SetTextureManager(textureManager_.get());
   SpriteBatch::SetTextureManager(textureManager_.get());
@@ -306,7 +306,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   voxelParticleManager_ = std::make_unique<VoxelParticleManager>();
   voxelParticleManager_->Initialize(this);
 
-  Circle2D::SetEngine(this);
+  Primitive2DObject::SetEngine(this);
   Line3DBatch::SetEngine(this);
   Primitive3DObject::SetEngine(this);
 
@@ -498,12 +498,12 @@ void IrufemiEngine::Finalize() {
 
   // DebugUI, DrawManager, TextureManager 等のクラスへの静的セットもクリア
   Sprite::SetDebugUI(nullptr);
-  Circle2D::SetDebugUI(nullptr);
+  Primitive2DObject::SetDebugUI(nullptr);
   Primitive3DObject::SetDebugUI(nullptr);
 
 
   Sprite::SetDrawManager(nullptr);
-  Circle2D::SetDrawManager(nullptr);
+  Primitive2DObject::SetDrawManager(nullptr);
   BaseBatch::SetDrawManager(nullptr);
   SpriteBatch::SetDrawManager(nullptr);
 
@@ -512,7 +512,7 @@ void IrufemiEngine::Finalize() {
   Line3DBatch::SetDrawManager(nullptr);
 
   Sprite::SetTextureManager(nullptr);
-  Circle2D::SetTextureManager(nullptr);
+  Primitive2DObject::SetTextureManager(nullptr);
   BaseBatch::SetTextureManager(nullptr);
   SpriteBatch::SetTextureManager(nullptr);
 
@@ -544,7 +544,7 @@ void IrufemiEngine::Finalize() {
   if (voxelParticleManager_) {
     voxelParticleManager_.reset();
   }
-  Circle2D::SetEngine(nullptr);
+  Primitive2DObject::SetEngine(nullptr);
   Line3DBatch::SetEngine(nullptr);
   Primitive3DObject::SetEngine(nullptr);
   Effect::SetEngine(nullptr);

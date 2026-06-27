@@ -750,8 +750,8 @@
     <ClCompile Include="Framework\UISelectionGroup.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object\2D\Primitive\Circle2D.cpp">
-      <Filter>Renderer\Object\2D\Primitive</Filter>
+    <ClCompile Include="Renderer\Object\2D\Primitive\Primitive2DObject.cpp">
+      <Filter>Engine\Renderer\Object\2D\Primitive</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp">
       <Filter>Renderer\Object\2D\SpriteBatch</Filter>
@@ -1260,8 +1260,11 @@
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h">
       <Filter>Framework\Component\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object\2D\Primitive\Circle2D.h">
-      <Filter>Renderer\Object\2D\Primitive</Filter>
+    <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h">
+      <Filter>Engine\Renderer\Object\2D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Type\Primitive2DType.h">
+      <Filter>Engine\Core\Type</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h">
       <Filter>Renderer\Object\2D\SpriteBatch</Filter>

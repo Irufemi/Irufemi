@@ -50,6 +50,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSneakWalk_ = false;
     isActiveSkybox_ = false;
     isActivePrimitiveObj_ = false;
+    isActivePrimitive2DObj_ = false;
 
     isActiveLightningCrawl_ = false;
     isActiveImGuiDemo_ = false;
@@ -167,6 +168,7 @@ void DebugScene::Update() {
 #ifdef USE_IMGUI
     ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
+    ImGui::Checkbox("Primitive2D Test", &isActivePrimitive2DObj_);
     ImGui::Checkbox("Primitive Test", &isActivePrimitiveObj_);
 
     ImGui::Checkbox("Obj", &isActiveObj_);
@@ -356,6 +358,23 @@ void DebugScene::Update() {
         sprite_->Update();
     }
 
+    if (isActivePrimitive2DObj_) {
+        if (!primitive2DObj_) {
+            primitive2DObj_ = std::make_unique<Primitive2DObject>();
+            primitive2DObj_->Initialize(Primitive2DType::Circle, "resources/uvChecker.png");
+            primitive2DObj_->SetSize({ 100.0f, 100.0f });
+            primitive2DObj_->SetPosition({ 640.0f, 360.0f, 0.0f });
+            primitive2DObj_->SetPivot({ 0.5f, 0.5f });
+            
+            OutputDebugStringA("[DebugScene] Primitive2D initialized.\n");
+        }
+        primitive2DObj_->Update();
+    } else {
+        if (primitive2DObj_) {
+            primitive2DObj_.reset();
+        }
+    }
+
     if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
 
         engine_->GetSceneManager()->Request("InGame");
@@ -480,6 +499,9 @@ void DebugScene::Draw() {
     if (isActiveSprite_) {
         sprite_->Draw();
     }
+    if (isActivePrimitive2DObj_) {
+        primitive2DObj_->Draw();
+    }
 
 }
 
@@ -493,6 +515,8 @@ void DebugScene::DrawDebugTab() {
 
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
+
+    if (isActivePrimitive2DObj_ && primitive2DObj_) primitive2DObj_->Debug("Primitive2D Test");
 
 
 

@@ -4,6 +4,7 @@
 
 #include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
 #include "Irufemi.h"
 #include "Graphics/Data/LightningParams.h"
 
@@ -32,6 +33,9 @@ private: // メンバ変数(ゲーム)
     // --- プリミティブ形状のテスト用（汎用クラスに統合済み） ---
     std::unique_ptr<Primitive3DObject> primitiveObj_ = nullptr;
     bool isActivePrimitiveObj_ = false;
+
+    std::unique_ptr<Primitive2DObject> primitive2DObj_ = nullptr;
+    bool isActivePrimitive2DObj_ = false;
 
     std::unique_ptr<StaticModelObject> obj_ = nullptr;
     bool isActiveObj_ = false;

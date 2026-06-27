@@ -713,7 +713,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Framework\UIAnimator.cpp" />
     <ClCompile Include="Framework\UISelectionGroup.cpp" />
-    <ClCompile Include="Renderer\Object\2D\Primitive\Circle2D.cpp" />
+    <ClCompile Include="Renderer\Object\2D\Primitive\Primitive2DObject.cpp" />
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp" />
     <ClCompile Include="Renderer\Object\2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object\2D\Text\Text.cpp" />
@@ -886,7 +886,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
 
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
-    <ClInclude Include="Renderer\Object\2D\Primitive\Circle2D.h" />
+    <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h" />
+    <ClInclude Include="Engine\Core\Type\Primitive2DType.h" />
     <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h" />
     <ClInclude Include="Renderer\Object\2D\Sprite\Sprite.h" />
     <ClInclude Include="Renderer\Object\2D\Text\Text.h" />
