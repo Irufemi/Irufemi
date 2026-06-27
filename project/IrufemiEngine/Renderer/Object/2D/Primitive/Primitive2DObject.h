@@ -63,6 +63,10 @@ public:
     const Vector3& GetRotation() const { return resource_->transform_.rotate; }
     const Vector3& GetScale() const { return resource_->transform_.scale; }
     const Vector4& GetColor() const { return resource_->GetMaterialData()->color; }
+    uint32_t GetSubdivision() const { return subdivision_; }
+    float GetThickness() const { return thickness_; }
+    bool IsTopMost() const { return isTopMost_; }
+    ResourceHandle GetTextureHandle() const { return resource_ ? resource_->textureHandle_ : ResourceHandle(); }
 
     // --- プロパティのセッター ---
 
@@ -115,9 +119,14 @@ public:
     void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
 
     /**
-     * @brief リング形状などでの「太さ（線幅など）」を設定する（ピクセル指定等）
+     * @brief リング形状などでの「太さ（線幅など）」を設定する（ピクセル単位等）
      */
     void SetThickness(float thickness);
+
+    /**
+     * @brief 円やリングなどの頂点分割数を設定する
+     */
+    void SetSubdivision(uint32_t subdiv);
 
     // --- 各種マネージャの静的設定 ---
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }

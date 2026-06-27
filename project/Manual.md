@@ -561,6 +561,48 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 ---
 
+## 【NEW】汎用2Dプリミティブ描画 (Primitive2DObject / Primitive2DRendererComponent) の利用方法
+
+2D空間での汎用的な図形（四角形、円、線、リングなど）を簡単に描画するための `Primitive2DObject` および、それをエディタで直感的に扱える `Primitive2DRendererComponent` が追加されました。
+デバッグ表示、UIの枠線、シンプルな2Dエフェクトなどに最適です。
+
+### コンポーネントからの利用
+GameObjectに `Primitive2DRendererComponent` をアタッチすることで、Inspectorからリアルタイムにパラメータを変更できます。
+
+- **Shape Type**: `Rect` (四角), `Triangle` (三角), `Circle` (円), `Ring` (ドーナツ状), `Line` (線) から選択可能。
+- **Size**: ベースとなる描画サイズ（TransformのScaleと掛け合わされて最終的なサイズになります）。
+- **Pivot**: 描画の基準点 (0.0 ～ 1.0)。デフォルトは 0.5, 0.5（中心）。
+- **Subdivision**: `Circle` や `Ring` などの滑らかさ（頂点分割数）を設定。
+- **Thickness**: `Ring` や `Line` の線の太さを設定。
+- **Texture / Color**: ドラッグ＆ドロップで任意のテクスチャを貼り付けたり、全体の色や透明度を変更可能。
+- **TopMost**: 他のすべての描画物よりも最前面に描画するかどうか。
+
+### プログラムからの直接利用
+コンポーネントを使わず、直接 `Primitive2DObject` を生成して描画することも可能です（これまでの `Circle2D` の完全な上位互換として動作します）。
+
+```cpp
+#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
+
+// 1. 生成と初期化
+Primitive2DObject myShape;
+myShape.Initialize(Primitive2DType::Circle); // 初期形状を円に指定
+
+// 2. パラメータの変更
+myShape.SetSize(Vector2(200.0f, 200.0f));
+myShape.SetColor(Vector4(1.0f, 0.0f, 0.0f, 0.5f)); // 半透明の赤
+myShape.SetThickness(5.0f); // 線の太さ（Line, Ring の場合）
+myShape.SetPosition(640.0f, 360.0f, 0.0f); // 画面中央に配置
+
+// 3. 毎フレーム Update と Draw を呼ぶ
+myShape.Update();
+myShape.SyncBeforeDraw(); // GPUへのデータ転送を確実に行う
+myShape.Draw();
+```
+
+※ `Primitive2DObject` は内部で頂点バッファを動的に再構築するため、パラメータ（種類や分割数など）を変更した場合は、次のフレームで自動的にGPUへの再アップロードが行われます。
+
+---
+
 ## 【NEW】半透明・エフェクトオブジェクトの描画とZソート
 
 本エンジンでは、地形やキャラクターなどの不透明オブジェクトの後に、オーラやレーザーなどの半透明エフェクトを正しい順番（奥から手前）で描画するための **独立した半透明描画パス (MainTransparentPass)** をサポートしました。
@@ -602,3 +644,4 @@ aura->SetIsTransparent(true);
   `ColliderComponent` を継承してコンポーネントを作成し、`GetWorldAABB()` などの形状取得メソッドを正しくオーバーライドすれば、エディタ上で自動的にワイヤーフレームが表示されます。
 - **自分で `DrawDebug` を呼ばない**:
   各コンポーネント内に独自の `DrawDebug` 等の描画命令（PrimitiveManager等の呼び出し）を記述すると、描画が重複したり描画ステートが壊れる原因となるため、当たり判定の描画は完全にマネージャに委譲してください。
+

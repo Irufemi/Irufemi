@@ -157,6 +157,15 @@ void Primitive2DObject::SetShape(Primitive2DType type) {
     }
 }
 
+
+
+void Primitive2DObject::SetSubdivision(uint32_t subdiv) {
+    if (subdivision_ != subdiv) {
+        subdivision_ = subdiv;
+        isMeshDirty_ = true;
+    }
+}
+
 void Primitive2DObject::SetSize(const Vector2& size) {
     size_ = size;
     isMeshDirty_ = true;
