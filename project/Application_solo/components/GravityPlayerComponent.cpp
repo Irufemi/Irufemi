@@ -155,8 +155,8 @@ void GravityPlayerComponent::HandleThrowInput() {
 void GravityPlayerComponent::UpdateAim() {
     lockedTarget_ = nullptr; // 毎フレームリセット
 
-    // ガレキを保持していない場合はロックオンしない
-    if (orbitingDebris_.empty()) return;
+    // ガレキを保持していなくても、奪う対象をハイライトするためにロックオンを許可する
+    // if (orbitingDebris_.empty()) return;
 
     auto cameraManager = BaseModel::GetIrufemiEngine()->GetCameraManager();
     if (!cameraManager) return;
