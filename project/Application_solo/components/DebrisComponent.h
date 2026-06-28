@@ -22,7 +22,9 @@ public:
     ~DebrisComponent() override = default;
 
     void Initialize() override;
+    void OnEnable() override;
     void Update() override;
+    void OnCollisionEnter(GameObject* hitObject) override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "DebrisComponent"; }
 

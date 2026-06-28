@@ -14,6 +14,7 @@
 #include "Engine/Core/Math/MathFunction.h"
 #include "RailShooterEnemyComponent.h"
 #include "BossComponent.h"
+#include "TargetableComponent.h"
 #include <algorithm>
 
 void GravityPlayerComponent::OnRegisterProperties() {
@@ -179,8 +180,9 @@ void GravityPlayerComponent::UpdateAim() {
     auto scene = gameObject_->GetScene();
     if (!scene) return;
 
-    auto checkObject = [&](auto& self, const std::shared_ptr<GameObject>& obj) -> void {
-        if (!obj || !obj->GetIsActive()) return;
+    for (auto targetComp : TargetableComponent::GetTargets()) {
+        auto obj = targetComp->GetGameObject();
+        if (!obj || !obj->GetIsActive()) continue;
 
         bool isTargetable = false;
         if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
@@ -210,18 +212,10 @@ void GravityPlayerComponent::UpdateAim() {
                     // 一番画面中央に近い敵をロックオン対象とする
                     if (distSq < closestDistSq) {
                         closestDistSq = distSq;
-                        lockedTarget_ = obj;
+                        lockedTarget_ = obj->shared_from_this();
                     }
                 }
             }
         }
-
-        for (auto& child : obj->GetChildren()) {
-            self(self, child);
-        }
-    };
-
-    for (auto& obj : scene->GetGameObjects()) {
-        checkObject(checkObject, obj);
     }
 }

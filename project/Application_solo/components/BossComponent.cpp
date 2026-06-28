@@ -7,6 +7,7 @@
 #include "EnemyBeamComponent.h"
 #include "GravityPlayerComponent.h"
 #include "Engine/IrufemiEngine.h"
+#include "TargetableComponent.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include <Windows.h>
@@ -17,6 +18,9 @@ BossComponent::BossComponent() {
 }
 
 void BossComponent::Initialize() {
+    if (!gameObject_->GetComponent<TargetableComponent>()) {
+        gameObject_->AddComponent<TargetableComponent>();
+    }
     hp_ = maxHp_;
     state_ = BossState::Idle;
     isShieldsInitialized_ = false;

@@ -3,6 +3,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h" // 描画オンオフ用
 #include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "TargetableComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 
@@ -13,6 +14,10 @@ void RailShooterEnemyComponent::OnRegisterProperties() {
 }
 
 void RailShooterEnemyComponent::Initialize() {
+    if (!gameObject_->GetComponent<TargetableComponent>()) {
+        gameObject_->AddComponent<TargetableComponent>();
+    }
+
     isActive_ = false;
     
     // 初期状態では非表示にしておく
