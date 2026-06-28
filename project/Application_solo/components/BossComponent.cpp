@@ -11,6 +11,7 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include <Windows.h>
 #include <string>
+#include <algorithm>
 
 BossComponent::BossComponent() {
 }
@@ -138,8 +139,14 @@ std::shared_ptr<GameObject> BossComponent::ExtractDebris() {
             debrisComp->SetTarget(std::weak_ptr<GameObject>());
         }
     }
-    
     return debris;
+}
+
+void BossComponent::RemoveShield(std::shared_ptr<GameObject> shield) {
+    auto it = std::find(shields_.begin(), shields_.end(), shield);
+    if (it != shields_.end()) {
+        shields_.erase(it);
+    }
 }
 
 void BossComponent::TakeDamage(float damage) {

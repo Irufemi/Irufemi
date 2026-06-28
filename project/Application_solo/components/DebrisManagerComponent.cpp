@@ -144,6 +144,7 @@ std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {
     if (obj) {
         auto comp = obj->GetComponent<DebrisComponent>();
         if (comp) {
+            comp->Initialize(); // これを呼ばないとコライダーのコールバックが登録されない
             comp->SetManager(this);
             comp->SetVirtualId(-1); // 使い捨て
         }

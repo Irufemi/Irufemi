@@ -18,6 +18,7 @@
 #include "components/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
 #include "components/EffectManagerComponent.h"
+#include "components/ReticleUIComponent.h"
 
 // エンジン機能
 #include "Engine/Graphics/DirectX/ShaderManager.h"
@@ -115,6 +116,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     ComponentFactory::Register("SceneTransitionButtonComponent", "Game", []() { return std::make_shared<SceneTransitionButtonComponent>(); });
     ComponentFactory::Register("EffectManagerComponent", "Game", []() { return std::make_shared<EffectManagerComponent>(); });
+    ComponentFactory::Register("ReticleUIComponent", "UI", []() { return std::make_shared<ReticleUIComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

@@ -46,6 +46,26 @@ void DebrisComponent::Initialize() {
             } else if (auto bossComp = otherObj->GetComponent<BossComponent>()) {
                 bossComp->TakeDamage(10.0f);
                 hit = true;
+            } else if (auto debrisComp = otherObj->GetComponent<DebrisComponent>()) {
+                if (debrisComp->GetState() == DebrisState::BossOrbiting) {
+                    // Bossからシールドを解除する
+                    if (auto bossTarget = debrisComp->targetObject_.lock()) {
+                        if (auto bossTargetComp = bossTarget->GetComponent<BossComponent>()) {
+                            bossTargetComp->RemoveShield(otherObj->shared_from_this());
+                        }
+                    }
+                    
+                    // シールド側を消滅させる
+                    if (debrisComp->manager_) {
+                        debrisComp->manager_->ReleaseDebris(otherObj->shared_from_this());
+                        if (debrisComp->virtualId_ >= 0) {
+                            debrisComp->manager_->NotifyDestroyed(debrisComp->virtualId_);
+                        }
+                    } else {
+                        otherObj->SetIsActive(false);
+                    }
+                    hit = true;
+                }
             }
 
             if (hit) {

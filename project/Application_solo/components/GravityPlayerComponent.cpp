@@ -72,22 +72,26 @@ void GravityPlayerComponent::HandlePullInput() {
         auto transform = gameObject_->GetComponent<TransformComponent>();
         if (!transform) return;
 
-        // 1. ロックオン対象がBossなら、Bossからガレキを奪う
+        // 1. ロックオン対象がBossのシールド(DebrisState::BossOrbiting)なら、Bossからシールドを奪う
         if (lockedTarget_) {
-            auto bossComp = lockedTarget_->GetComponent<BossComponent>();
-            if (bossComp && bossComp->GetState() == BossState::Idle) {
-                auto debrisObj = bossComp->ExtractDebris();
-                if (debrisObj) {
-                    if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
-                        debrisComp->SetState(DebrisState::Pulled);
-                        debrisComp->SetTarget(gameObject_->shared_from_this());
-                        debrisComp->SetOrbitParams(
-                            Random::GeneratorFloat(0.0f, 6.28f),
-                            Random::GeneratorFloat(2.0f, 4.0f)
-                        );
-                        orbitingDebris_.push_back(debrisObj);
-                        return; // Bossから奪った場合は野良ガレキ探索はスキップ
+            if (auto debrisComp = lockedTarget_->GetComponent<DebrisComponent>()) {
+                if (debrisComp->GetState() == DebrisState::BossOrbiting) {
+                    // Bossのシールドリストから該当のガレキを削除
+                    if (auto bossTarget = debrisComp->GetTarget().lock()) {
+                        if (auto bossComp = bossTarget->GetComponent<BossComponent>()) {
+                            bossComp->RemoveShield(lockedTarget_);
+                        }
                     }
+
+                    // プレイヤーの周回ガレキとして設定
+                    debrisComp->SetState(DebrisState::Pulled);
+                    debrisComp->SetTarget(gameObject_->shared_from_this());
+                    debrisComp->SetOrbitParams(
+                        Random::GeneratorFloat(0.0f, 6.28f),
+                        Random::GeneratorFloat(2.0f, 4.0f)
+                    );
+                    orbitingDebris_.push_back(lockedTarget_);
+                    return; // Bossから奪った場合は野良ガレキ探索はスキップ
                 }
             }
         }
@@ -167,45 +171,57 @@ void GravityPlayerComponent::UpdateAim() {
     float viewWidth = camera->GetViewportWidth();
     float viewHeight = camera->GetViewportHeight();
     
-    Vector2 screenCenter = { viewWidth * 0.5f, viewHeight * 0.5f };
+    // マウス座標をエイムの基準とする
+    auto inputManager = BaseModel::GetIrufemiEngine()->GetInputManager();
+    Vector2 screenCenter = inputManager ? inputManager->GetMousePosition() : Vector2{ viewWidth * 0.5f, viewHeight * 0.5f };
     float closestDistSq = lockonRadius2D_ * lockonRadius2D_;
 
     auto scene = gameObject_->GetScene();
     if (!scene) return;
 
-    for (auto& obj : scene->GetGameObjects()) {
-        if (!obj || !obj->GetIsActive()) continue;
+    auto checkObject = [&](auto& self, const std::shared_ptr<GameObject>& obj) -> void {
+        if (!obj || !obj->GetIsActive()) return;
 
         bool isTargetable = false;
         if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
             if (enemyComp->IsAlive()) isTargetable = true;
         } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-            if (bossComp->GetState() != BossState::Destroyed) isTargetable = true;
+            if (bossComp->GetState() == BossState::CoreExposed) isTargetable = true;
+        } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
+            if (debrisComp->GetState() == DebrisState::BossOrbiting) isTargetable = true;
         }
 
-        if (!isTargetable) continue;
+        if (isTargetable) {
+            auto transform = obj->GetComponent<TransformComponent>();
+            if (transform) {
+                // ワールド座標からNDC座標へ
+                Vector3 clipPos = Math::Transform(transform->GetWorldPosition(), viewProj);
+                
+                // Zが0～1の範囲外（カメラ後方など）なら除外
+                if (clipPos.z >= 0.0f && clipPos.z <= 1.0f) {
+                    // NDCからスクリーン座標へ変換
+                    float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
+                    float screenY = (1.0f - clipPos.y) * 0.5f * viewHeight;
 
-        auto transform = obj->GetComponent<TransformComponent>();
-        if (!transform) continue;
+                    float dx = screenX - screenCenter.x;
+                    float dy = screenY - screenCenter.y;
+                    float distSq = dx * dx + dy * dy;
 
-        // ワールド座標からNDC座標へ
-        Vector3 clipPos = Math::Transform(transform->GetPosition(), viewProj);
-        
-        // Zが0～1の範囲外（カメラ後方など）なら除外
-        if (clipPos.z < 0.0f || clipPos.z > 1.0f) continue;
-
-        // NDCからスクリーン座標へ変換
-        float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
-        float screenY = (1.0f - clipPos.y) * 0.5f * viewHeight;
-
-        float dx = screenX - screenCenter.x;
-        float dy = screenY - screenCenter.y;
-        float distSq = dx * dx + dy * dy;
-
-        // 一番画面中央に近い敵をロックオン対象とする
-        if (distSq < closestDistSq) {
-            closestDistSq = distSq;
-            lockedTarget_ = obj;
+                    // 一番画面中央に近い敵をロックオン対象とする
+                    if (distSq < closestDistSq) {
+                        closestDistSq = distSq;
+                        lockedTarget_ = obj;
+                    }
+                }
+            }
         }
+
+        for (auto& child : obj->GetChildren()) {
+            self(self, child);
+        }
+    };
+
+    for (auto& obj : scene->GetGameObjects()) {
+        checkObject(checkObject, obj);
     }
 }
