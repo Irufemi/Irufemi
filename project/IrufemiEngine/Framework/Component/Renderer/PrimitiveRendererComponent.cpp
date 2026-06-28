@@ -161,7 +161,7 @@ nlohmann::json PrimitiveRendererComponent::Serialize() {
         if (mat.texturePath != "resources/uvChecker.png") matJson["texturePath"] = mat.texturePath;
         
         if (mat.color.x != 1.0f || mat.color.y != 1.0f || mat.color.z != 1.0f || mat.color.w != 1.0f) {
-            matJson["color"] = { mat.color.x, mat.color.y, mat.color.z, mat.color.w };
+            matJson["color"] = nlohmann::json::array({ mat.color.x, mat.color.y, mat.color.z, mat.color.w });
         }
         if (mat.enableLighting != true) matJson["enableLighting"] = mat.enableLighting;
         if (mat.lightingMode != 3) matJson["lightingMode"] = mat.lightingMode;

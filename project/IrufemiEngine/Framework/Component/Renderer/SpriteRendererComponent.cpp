@@ -74,9 +74,9 @@ nlohmann::json SpriteRendererComponent::Serialize() {
     j["isTopMost"] = isTopMost_;
     j["isFlipX"] = isFlipX_;
     j["isFlipY"] = isFlipY_;
-    j["anchor"] = { anchor_[0], anchor_[1] };
-    j["size"] = { size_[0], size_[1] };
-    j["color"] = { color_.x, color_.y, color_.z, color_.w };
+    j["anchor"] = nlohmann::json::array({ anchor_[0], anchor_[1] });
+    j["size"] = nlohmann::json::array({ size_[0], size_[1] });
+    j["color"] = nlohmann::json::array({ color_.x, color_.y, color_.z, color_.w });
     return j;
 }
 

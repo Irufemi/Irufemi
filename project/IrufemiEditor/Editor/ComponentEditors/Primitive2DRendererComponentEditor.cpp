@@ -32,7 +32,7 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
             "Rect", "Triangle", "Circle", "Ring", "Line"
         };
         
-        int typeIndex = static_cast<int>(comp->GetPrimitive()->GetShape());
+        int typeIndex = static_cast<int>(comp->GetShape());
         int oldTypeIndex = typeIndex;
         if (ImGui::Combo("Shape Type", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
             ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, typeIndex, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<Primitive2DType>(v)); }));
@@ -41,14 +41,14 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
         Primitive2DType type = static_cast<Primitive2DType>(typeIndex);
         
         // Size
-        Vector2 size = comp->GetPrimitive()->GetSize();
+        Vector2 size = comp->GetSize();
         if (ImGui::DragFloat2("Size", &size.x, 1.0f, 0.0f, 10000.0f)) {
             comp->SetSize(size);
         }
         ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &size, std::function<void(const Vector2&)>([comp](const Vector2& v){ comp->SetSize(v); }));
 
         // Pivot
-        Vector2 pivot = comp->GetPrimitive()->GetPivot();
+        Vector2 pivot = comp->GetPivot();
         if (ImGui::DragFloat2("Pivot", &pivot.x, 0.01f, 0.0f, 1.0f)) {
             comp->SetPivot(pivot);
         }
@@ -58,7 +58,7 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
             case Primitive2DType::Circle:
             case Primitive2DType::Ring:
                 {
-                    int sub = comp->GetPrimitive()->GetSubdivision();
+                    int sub = comp->GetSubdivision();
                     if (ImGui::SliderInt("Subdivision", &sub, 3, 128)) {
                         comp->SetSubdivision(sub);
                     }
@@ -73,7 +73,7 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
             case Primitive2DType::Ring:
             case Primitive2DType::Line:
                 {
-                    float thick = comp->GetPrimitive()->GetThickness();
+                    float thick = comp->GetThickness();
                     if (ImGui::DragFloat("Thickness", &thick, 0.1f, 0.1f, 100.0f)) {
                         comp->SetThickness(thick);
                     }
@@ -88,13 +88,13 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
         ImGui::Text("Appearance");
 
         // TopMost
-        bool topMost = comp->GetPrimitive()->IsTopMost();
+        bool topMost = comp->IsTopMost();
         if (ImGui::Checkbox("TopMost", &topMost)) {
-            ComponentUIHelpers::PushInstantUndo(actionManager, comp->GetPrimitive()->IsTopMost(), topMost, std::function<void(const bool&)>([comp](const bool& v){ comp->SetTopMost(v); }));
+            ComponentUIHelpers::PushInstantUndo(actionManager, comp->IsTopMost(), topMost, std::function<void(const bool&)>([comp](const bool& v){ comp->SetTopMost(v); }));
         }
         
         // Color
-        Vector4 color = comp->GetPrimitive()->GetColor();
+        Vector4 color = comp->GetColor();
         if (ImGui::ColorEdit4("Color", &color.x)) {
             comp->SetColor(color);
         }
@@ -106,7 +106,7 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
             auto names = tm->GetTextureNamesForDebug();
             int currentIndex = 0;
             // Handle valid ResourceHandle to get the name, but our component stores texturePath directly
-            std::string currentTex = comp->GetPrimitive()->GetTextureHandle().IsValid() ? names[comp->GetPrimitive()->GetTextureHandle().index] : "";
+            std::string currentTex = comp->GetTexture();
             for (int i = 0; i < (int)names.size(); ++i) {
                 if (names[i] == currentTex) {
                     currentIndex = i;
@@ -146,7 +146,7 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
                         newTexName = newTexName.substr(10);
                     }
                     
-                    std::string oldTex = comp->GetPrimitive()->GetTextureHandle().IsValid() ? tm->GetTextureNamesForDebug()[comp->GetPrimitive()->GetTextureHandle().index] : "";
+                    std::string oldTex = comp->GetTexture();
                     ComponentUIHelpers::PushInstantUndo(actionManager, oldTex, newTexName, std::function<void(const std::string&)>([comp](const std::string& v){ comp->SetTexture(v); }));
                 }
             }

@@ -41,6 +41,16 @@ public:
     void SetSubdivision(int subdivision);
     void SetTopMost(bool isTopMost);
 
+    // プロパティ取得（Editor用など）
+    Primitive2DType GetShape() const { return static_cast<Primitive2DType>(currentTypeIndex_); }
+    const Vector4& GetColor() const { return color_; }
+    const std::string& GetTexture() const { return texturePath_; }
+    const Vector2& GetPivot() const { return pivot_; }
+    const Vector2& GetSize() const { return size_; }
+    float GetThickness() const { return thickness_; }
+    int GetSubdivision() const { return subdivision_; }
+    bool IsTopMost() const { return isTopMost_; }
+
     Primitive2DObject* GetPrimitive() const { return primitive_.get(); }
     std::string GetComponentName() const override { return "Primitive2DRendererComponent"; }
     

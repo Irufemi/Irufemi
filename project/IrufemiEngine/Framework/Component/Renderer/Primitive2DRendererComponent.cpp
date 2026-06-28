@@ -118,9 +118,9 @@ nlohmann::json Primitive2DRendererComponent::Serialize() {
     j["currentTypeIndex"] = currentTypeIndex_;
     j["texturePath"] = texturePath_;
     j["isTopMost"] = isTopMost_;
-    j["size"] = { size_.x, size_.y };
-    j["pivot"] = { pivot_.x, pivot_.y };
-    j["color"] = { color_.x, color_.y, color_.z, color_.w };
+    j["size"] = nlohmann::json::array({ size_.x, size_.y });
+    j["pivot"] = nlohmann::json::array({ pivot_.x, pivot_.y });
+    j["color"] = nlohmann::json::array({ color_.x, color_.y, color_.z, color_.w });
     j["thickness"] = thickness_;
     j["subdivision"] = subdivision_;
     return j;
