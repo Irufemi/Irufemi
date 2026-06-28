@@ -388,7 +388,7 @@ void DebugScene::Update() {
 
     // 環境マップをDrawManagerに設定
     if (isActiveSkybox_) {
-        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = engine_->GetTextureManager()->Resolve(skybox_->GetTextureHandle());
+        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = engine_->GetTextureManager()->ResolveCubeMap(skybox_->GetTextureHandle());
         engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
     }
 }

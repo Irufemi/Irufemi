@@ -77,6 +77,14 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE Resolve(ResourceHandle handle) const;
 
     /**
+     * @brief ハンドルからGPUのSRVハンドル(DescriptorHandle)を解決する（キューブマップ用）
+     * @details 未ロードまたは無効な場合は白のキューブマップを返します。
+     * @param[in] handle リソースハンドル
+     * @return GPUが参照可能なディスクリプタハンドル
+     */
+    D3D12_GPU_DESCRIPTOR_HANDLE ResolveCubeMap(ResourceHandle handle) const;
+
+    /**
      * @brief ハンドルからテクスチャオブジェクト自体を取得する
      * @param[in] handle リソースハンドル
      * @return Textureオブジェクトのポインタ（無効な場合はnullptr）
