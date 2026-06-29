@@ -126,3 +126,6 @@ debuglog.txt
 # ====================================================================
 **/resources/cache/
 *.temp_playmode.json
+
+# Ignore PSO cache files
+*.pso
