@@ -5,7 +5,7 @@
 #include "../../IrufemiEngine/Engine/Core/System/ILoadingScreen.h"
 class IrufemiEngine;
 class Sprite;
-class Circle2D;
+class Primitive2DObject;
 class Camera;
 
 /**
@@ -32,7 +32,7 @@ private:
     std::unique_ptr<Camera> camera_;
     std::unique_ptr<Sprite> bgSprite_;
     std::unique_ptr<Sprite> nowLoadingText_;
-    std::vector<std::unique_ptr<Circle2D>> dots_;
+    std::vector<std::unique_ptr<Primitive2DObject>> dots_;
     
     float animationTimer_ = 0.0f;
     int dotCount_ = 0;

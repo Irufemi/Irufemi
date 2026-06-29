@@ -296,10 +296,13 @@
               0.0,
               0.0
             ],
-            "localRadius": 10.0,
+            "localRadius": 4.599999904632568,
             "mask": 4294967295
           },
           "type": "SphereColliderComponent"
+        },
+        {
+          "type": "TargetableComponent"
         },
         {
           "data": {
@@ -398,6 +401,59 @@
         }
       ],
       "name": "EffectManager",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              0.20000000298023224,
+              0.20000000298023224,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "color": [
+              1.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "currentTypeIndex": 2,
+            "isTopMost": false,
+            "pivot": [
+              0.5,
+              0.5
+            ],
+            "size": [
+              100.0,
+              100.0
+            ],
+            "subdivision": 32,
+            "texturePath": "",
+            "thickness": 2.0
+          },
+          "type": "Primitive2DRendererComponent"
+        },
+        {
+          "type": "ReticleUIComponent"
+        }
+      ],
+      "name": "Reticle",
       "tag": "Untagged"
     }
   ],

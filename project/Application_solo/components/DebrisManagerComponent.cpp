@@ -16,6 +16,7 @@
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include "Engine/Core/Type/PrimitiveType.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
+#include "TargetableComponent.h"
 #include <cmath>
 
 
@@ -37,6 +38,7 @@ void DebrisManagerComponent::Initialize() {
         transform->SetScale({ 0.5f, 0.5f, 0.5f }); // 少し小さめに
         
         obj->AddComponent<DebrisComponent>();
+        obj->AddComponent<TargetableComponent>();
         
         auto collider = obj->AddComponent<SphereColliderComponent>();
         collider->isTrigger_ = true;
@@ -65,9 +67,9 @@ void DebrisManagerComponent::Initialize() {
 
         obj->SetIsActive(false);
 
-        if (gameObject_) {
-            gameObject_->AddChild(obj);
-        }
+        // if (gameObject_) {
+        //     gameObject_->AddChild(obj);
+        // }
         return obj;
     };
 
@@ -188,7 +190,6 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
         if (obj) {
             auto comp = obj->GetComponent<DebrisComponent>();
             if (comp) {
-                comp->Initialize();
                 comp->SetVirtualId(bestId);
                 comp->SetManager(this);
                 comp->SetState(DebrisState::Idle);

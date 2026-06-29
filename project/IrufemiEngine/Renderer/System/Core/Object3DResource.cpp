@@ -11,6 +11,13 @@ Object3DResource::~Object3DResource() {
     Unmap();
     
     if (auto dxCommon = BaseResource::GetDirectXCommon()) {
+        if (vertexResource_) {
+            dxCommon->ReleaseAfterFence(std::move(vertexResource_));
+        }
+        if (indexResource_) {
+            dxCommon->ReleaseAfterFence(std::move(indexResource_));
+        }
+
         if (auto engine = dxCommon->GetEngine()) {
             if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetMaterialBufferManager()->Free(materialCbIndex_);
@@ -29,6 +36,9 @@ void Object3DResource::CreateResource() {
     if (!s_dxCommon_) return;
 
     if (!vertexDataList_.empty()) {
+        if (vertexResource_) {
+            s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+        }
         vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
         vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexDataList_.size());
@@ -36,6 +46,9 @@ void Object3DResource::CreateResource() {
     }
 
     if (!indexDataList_.empty()) {
+        if (indexResource_) {
+            s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+        }
         indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexDataList_.size());
         indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
         indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexDataList_.size());
@@ -124,6 +137,13 @@ void Object3DResource::SyncBeforeDraw() {
             // 外部バッファがなければ自身を更新
             if (!externalTransformCbIndex_ && transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+            }
+            
+            // テクスチャのインデックスを解決して反映
+            if (sTextureManager) {
+                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+            } else {
+                cpuMaterialData_.textureIndex = 0;
             }
             
             // マテリアルデータを更新

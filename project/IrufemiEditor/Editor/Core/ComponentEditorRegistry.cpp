@@ -12,6 +12,7 @@
 #include "../ComponentEditors/MeshRendererComponentEditor.h"
 #include "../ComponentEditors/ModelBatchRendererComponentEditor.h"
 #include "../ComponentEditors/PrimitiveRendererComponentEditor.h"
+#include "../ComponentEditors/Primitive2DRendererComponentEditor.h"
 #include "../ComponentEditors/SpriteRendererComponentEditor.h"
 #include "../ComponentEditors/TextRendererComponentEditor.h"
 #include "../ComponentEditors/ColliderComponentEditors.h"
@@ -24,6 +25,7 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Component/Renderer/TextRendererComponent.h"
 #include "Framework/Component/Collider/AABBColliderComponent.h"
@@ -45,6 +47,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<MeshRendererComponent, MeshRendererComponentEditor>();
     RegisterEditor<ModelBatchRendererComponent, ModelBatchRendererComponentEditor>();
     RegisterEditor<PrimitiveRendererComponent, PrimitiveRendererComponentEditor>();
+    RegisterEditor<Primitive2DRendererComponent, Primitive2DRendererComponentEditor>();
     RegisterEditor<SpriteRendererComponent, SpriteRendererComponentEditor>();
     RegisterEditor<TextRendererComponent, TextRendererComponentEditor>();
     RegisterEditor<AABBColliderComponent, AABBColliderComponentEditor>();

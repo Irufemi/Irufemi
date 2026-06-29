@@ -24,6 +24,10 @@ void DebrisComponent::OnRegisterProperties() {
 }
 
 void DebrisComponent::Initialize() {
+    // 必要なコンポーネントのキャッシュや初期化のみ行う
+}
+
+void DebrisComponent::OnEnable() {
     state_ = DebrisState::Idle;
     targetObject_.reset();
     idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
@@ -31,43 +35,59 @@ void DebrisComponent::Initialize() {
     if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
         baseIdleY_ = transform->GetPosition().y;
     }
+}
 
-    if (auto collider = gameObject_->GetComponent<SphereColliderComponent>()) {
-        collider->onCollisionEnter_ = [this](ColliderComponent* other) {
-            if (state_ != DebrisState::Thrown) return;
+void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
+    if (state_ != DebrisState::Thrown) return;
+    if (!otherObj) return;
+
+    bool hit = false;
+    if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
+        enemyComp->TakeDamage(100);
+        hit = true;
+    } else if (auto bossComp = otherObj->GetComponent<BossComponent>()) {
+        bossComp->TakeDamage(10.0f);
+        hit = true;
+    } else if (auto debrisComp = otherObj->GetComponent<DebrisComponent>()) {
+        if (debrisComp->GetState() == DebrisState::BossOrbiting) {
+            // Bossからシールドを解除する
+            if (auto bossTarget = debrisComp->GetTarget().lock()) {
+                if (auto bossTargetComp = bossTarget->GetComponent<BossComponent>()) {
+                    bossTargetComp->RemoveShield(otherObj->shared_from_this());
+                }
+            }
             
-            auto otherObj = other->GetGameObject();
-            if (!otherObj) return;
-
-            bool hit = false;
-            if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
-                enemyComp->TakeDamage(100);
-                hit = true;
-            } else if (auto bossComp = otherObj->GetComponent<BossComponent>()) {
-                bossComp->TakeDamage(10.0f);
-                hit = true;
+            // シールド側を消滅させる
+            if (debrisComp->manager_) {
+                debrisComp->manager_->ReleaseDebris(otherObj->shared_from_this());
+                if (debrisComp->virtualId_ >= 0) {
+                    debrisComp->manager_->NotifyDestroyed(debrisComp->virtualId_);
+                }
+            } else {
+                otherObj->SetIsActive(false);
             }
+            hit = true;
+        }
+    }
 
-            if (hit) {
-                // 軽いカメラシェイクを追加
-                if (auto camera = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera()) {
-                    camera->Shake(0.5f, 10);
-                }
-                if (auto t = gameObject_->GetComponent<TransformComponent>()) {
-                    if (auto effectManager = EffectManagerComponent::GetInstance()) {
-                        effectManager->PlayEffect("Hit", t->GetWorldPosition());
-                    }
-                }
-                if (manager_) {
-                    manager_->ReleaseDebris(gameObject_->shared_from_this());
-                    if (virtualId_ >= 0) {
-                        manager_->NotifyDestroyed(virtualId_);
-                    }
-                } else {
-                    gameObject_->SetIsActive(false); 
-                }
+    if (hit) {
+        // 軽いカメラシェイクを追加
+        if (auto camera = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera()) {
+            camera->Shake(0.5f, 10);
+        }
+        if (auto t = gameObject_->GetComponent<TransformComponent>()) {
+            if (auto effectManager = EffectManagerComponent::GetInstance()) {
+                effectManager->PlayEffect("Hit", t->GetWorldPosition());
             }
-        };
+        }
+        if (manager_) {
+            manager_->ReleaseDebris(gameObject_->shared_from_this());
+            if (virtualId_ >= 0) {
+                manager_->NotifyDestroyed(virtualId_);
+            }
+        } else {
+            gameObject_->SetIsActive(false); 
+        }
     }
 }
 

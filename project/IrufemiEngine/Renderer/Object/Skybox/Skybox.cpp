@@ -100,6 +100,17 @@ void Skybox::Update() {
 
 void Skybox::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    
+    // [Bindless] テクスチャインデックスの反映
+    if (materialBuffer_[frameIndex]) {
+        TextureManager* tm = engine_->GetTextureManager();
+        if (textureHandle_.IsValid()) {
+            materialBuffer_[frameIndex]->textureIndex = tm->GetSrvIndex(textureHandle_);
+        } else {
+            materialBuffer_[frameIndex]->textureIndex = tm->GetWhiteCubeMapSrvIndex();
+        }
+    }
+    
     if (CheckAndClearDirty(frameIndex)) {
         transformationBuffer_.Update(transformationMatrix_, frameIndex);
     }
@@ -124,17 +135,9 @@ void Skybox::Draw() {
 
     engine_->ApplyPSO("Skybox");
 
-    TextureManager* textureManager = engine_->GetTextureManager();
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager->GetWhiteCubeMapHandle();
-    if (textureHandle_.IsValid()) {
-        const Texture* tex = textureManager->GetTextureObject(textureHandle_);
-        if (tex && tex->IsCubemap()) {
-            gpuHandle = textureManager->Resolve(textureHandle_);
-        }
-    }
-
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), gpuHandle, static_cast<UINT>(indexDataList_.size()));
+    // [Bindless] gpuHandle を渡さない
+    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), static_cast<UINT>(indexDataList_.size()));
 
 }
 

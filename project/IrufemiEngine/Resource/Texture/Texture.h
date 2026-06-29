@@ -82,6 +82,11 @@ public:
     const D3D12_GPU_DESCRIPTOR_HANDLE& GetTextureSrvHandleGPU()const { return textureSrvHandleGPU_; }
 
     /**
+     * @brief [Bindless] DescriptorPool における SRV のインデックスを取得
+     */
+    uint32_t GetSrvIndex() const { return srvIndex_; }
+
+    /**
      * @brief ScratchImage（CPU側の画像データ）を取得
      */
     const DirectX::ScratchImage* GetScratchImage() const { return &mipImages_; }

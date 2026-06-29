@@ -77,6 +77,22 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE Resolve(ResourceHandle handle) const;
 
     /**
+     * @brief [Bindless] リソースハンドルからSRVインデックスを取得する
+     * @details Bindlessアクセス用のインデックスを取得します。
+     * @param[in] handle リソースハンドル
+     * @return SRVのインデックス
+     */
+    uint32_t GetSrvIndex(ResourceHandle handle) const;
+
+    /**
+     * @brief ハンドルからGPUのSRVハンドル(DescriptorHandle)を解決する（キューブマップ用）
+     * @details 未ロードまたは無効な場合は白のキューブマップを返します。
+     * @param[in] handle リソースハンドル
+     * @return GPUが参照可能なディスクリプタハンドル
+     */
+    D3D12_GPU_DESCRIPTOR_HANDLE ResolveCubeMap(ResourceHandle handle) const;
+
+    /**
      * @brief ハンドルからテクスチャオブジェクト自体を取得する
      * @param[in] handle リソースハンドル
      * @return Textureオブジェクトのポインタ（無効な場合はnullptr）
@@ -135,9 +151,19 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
     /**
+     * @brief [Bindless] 白テクスチャのSRVインデックスを取得
+     */
+    uint32_t GetWhiteTextureSrvIndex() const;
+
+    /**
      * @brief 白CubeMapテクスチャのGPUハンドルを取得
      */
     D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteCubeMapHandle() const { return whiteCubeMapHandle_; }
+
+    /**
+     * @brief [Bindless] 白CubeMapテクスチャのSRVインデックスを取得
+     */
+    uint32_t GetWhiteCubeMapSrvIndex() const;
 
     /**
      * @brief テクスチャのロード状態を取得する

@@ -55,6 +55,7 @@ public:
     /** @name ゲッター */
     ///@{
     D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const { return srvHandleGPU_; }
+    uint32_t GetSrvIndex() const { return srvIndex_; }
     D3D12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const { return dsvHandleCPU_; }
     ID3D12Resource* GetResource() const { return resource_.Get(); }
     const Matrix4x4& GetViewProjection() const { return viewProjection_; }

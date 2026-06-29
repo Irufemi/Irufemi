@@ -7,15 +7,20 @@
 #include "EnemyBeamComponent.h"
 #include "GravityPlayerComponent.h"
 #include "Engine/IrufemiEngine.h"
+#include "TargetableComponent.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include <Windows.h>
 #include <string>
+#include <algorithm>
 
 BossComponent::BossComponent() {
 }
 
 void BossComponent::Initialize() {
+    if (!gameObject_->GetComponent<TargetableComponent>()) {
+        gameObject_->AddComponent<TargetableComponent>();
+    }
     hp_ = maxHp_;
     state_ = BossState::Idle;
     isShieldsInitialized_ = false;
@@ -27,7 +32,6 @@ void BossComponent::Initialize() {
         }
         if (collider) {
             collider->isTrigger_ = true;
-            collider->SetLocalRadius(10.0f); // モデルに隠れないよう少し大きめに設定
         }
     }
 
@@ -139,8 +143,14 @@ std::shared_ptr<GameObject> BossComponent::ExtractDebris() {
             debrisComp->SetTarget(std::weak_ptr<GameObject>());
         }
     }
-    
     return debris;
+}
+
+void BossComponent::RemoveShield(std::shared_ptr<GameObject> shield) {
+    auto it = std::find(shields_.begin(), shields_.end(), shield);
+    if (it != shields_.end()) {
+        shields_.erase(it);
+    }
 }
 
 void BossComponent::TakeDamage(float damage) {

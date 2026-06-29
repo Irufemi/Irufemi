@@ -47,6 +47,16 @@ public:
     virtual void Start() {}
 
     /**
+     * @brief コンポーネントが有効化された時に呼ばれる
+     */
+    virtual void OnEnable() {}
+
+    /**
+     * @brief コンポーネントが無効化された時に呼ばれる
+     */
+    virtual void OnDisable() {}
+
+    /**
      * @brief 毎フレームの更新処理
      */
     virtual void Update() {}

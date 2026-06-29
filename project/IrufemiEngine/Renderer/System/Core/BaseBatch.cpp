@@ -388,6 +388,20 @@ void BaseBatch::SyncBeforeDraw() {
     if (instanceDirty_) {
         BuildInstanceBuffer(false);
     }
+    
+    // [Bindless] テクスチャのインデックスを解決して反映
+    if (textureManager_) {
+        cpuMaterialData_.textureIndex = textureManager_->GetSrvIndex(textureHandle_);
+    } else {
+        cpuMaterialData_.textureIndex = 0;
+    }
+    
+    if (auto engine = dx_->GetEngine()) {
+        uint32_t frameIndex = dx_->GetFrameIndex();
+        if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
+            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
+        }
+    }
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS BaseBatch::GetMaterialVAddress() const {

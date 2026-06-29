@@ -22,4 +22,7 @@ struct Material {
     float roughness;             //!< 粗さ
     int32_t useClampSampler;     //!< パーティクル等で使用するサンプラー切替 (0:WRAP, 1:CLAMP)
     float alphaReference;        //!< ディスカード閾値 (0.0f = 全部描画, 1.0f = 全部棄却)
+    
+    uint32_t textureIndex;       //!< [Bindless] メインテクスチャのSRVインデックス (space1)
+    uint32_t padding[3];         //!< 16バイトアライメント用パディング
 };

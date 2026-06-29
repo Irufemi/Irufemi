@@ -43,7 +43,7 @@ int VirtualEntityManagerComponent::AddVirtualInstance(const Vector3& pos, const 
     vi.scale_ = scale;
     vi.isPromoted_ = false;
     vi.isDestroyed_ = false;
-    vi.promotedInstance_ = nullptr;
+    vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
     
     dense_.push_back(vi);
     sparse_[id] = static_cast<int>(dense_.size() - 1);
@@ -57,10 +57,14 @@ void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
     if (denseIndex == -1) return; // すでに存在しない
 
     auto& vi = dense_[denseIndex];
-    if (vi.isPromoted_ && vi.promotedInstance_) {
-        vi.promotedInstance_->SetIsActive(false);
-        if (pool_) pool_->Release(vi.promotedInstance_);
-        vi.promotedInstance_ = nullptr;
+    if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
+        auto obj = pool_ ? pool_->Resolve(vi.promotedHandle_) : nullptr;
+        if (obj) {
+            obj->SetIsActive(false);
+            activeHandles_.erase(obj.get());
+        }
+        if (pool_) pool_->Release(vi.promotedHandle_);
+        vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
     }
 
     // Sparse Setの実装：削除対象と末尾要素をスワップして削除（O(1)）
@@ -86,18 +90,23 @@ std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
 
     auto& vi = dense_[denseIndex];
     if (!vi.isDestroyed_ && !vi.isPromoted_) {
-        auto obj = pool_->Acquire();
-        if (obj) {
-            obj->SetIsActive(true);
-            auto t = obj->GetComponent<TransformComponent>();
-            if (t) {
-                t->SetPosition(vi.position_);
-                t->SetRotation(vi.rotation_);
-                t->SetScale(vi.scale_);
+        auto handle = pool_->Acquire();
+        if (handle.IsValid()) {
+            auto obj = pool_->Resolve(handle);
+            if (obj) {
+                obj->SetIsActive(true);
+                auto t = obj->GetComponent<TransformComponent>();
+                if (t) {
+                    t->SetPosition(vi.position_);
+                    t->SetRotation(vi.rotation_);
+                    t->SetScale(vi.scale_);
+                }
+                vi.isPromoted_ = true;
+                vi.promotedHandle_ = handle;
+                activeHandles_[obj.get()] = handle;
+                gameObject_->AddChild(obj);
+                return obj;
             }
-            vi.isPromoted_ = true;
-            vi.promotedInstance_ = obj;
-            return obj;
         }
     }
     return nullptr;
@@ -110,19 +119,25 @@ void VirtualEntityManagerComponent::Demote(int id) {
     if (denseIndex == -1) return;
 
     auto& vi = dense_[denseIndex];
-    if (vi.isPromoted_ && vi.promotedInstance_) {
-        // 現在のTransformをVirtualに書き戻す
-        auto t = vi.promotedInstance_->GetComponent<TransformComponent>();
-        if (t) {
-            vi.position_ = t->GetPosition();
-            vi.rotation_ = t->GetRotation();
-            vi.scale_ = t->GetScale();
+    if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
+        auto obj = pool_ ? pool_->Resolve(vi.promotedHandle_) : nullptr;
+        if (obj) {
+            // 現在のTransformをVirtualに書き戻す
+            auto t = obj->GetComponent<TransformComponent>();
+            if (t) {
+                vi.position_ = t->GetPosition();
+                vi.rotation_ = t->GetRotation();
+                vi.scale_ = t->GetScale();
+            }
+            
+            obj->SetIsActive(false);
+            activeHandles_.erase(obj.get());
+            gameObject_->RemoveChild(obj);
         }
         
-        vi.promotedInstance_->SetIsActive(false);
-        if (pool_) pool_->Release(vi.promotedInstance_);
+        if (pool_) pool_->Release(vi.promotedHandle_);
         
-        vi.promotedInstance_ = nullptr;
+        vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
         vi.isPromoted_ = false;
     }
 }
@@ -130,7 +145,14 @@ void VirtualEntityManagerComponent::Demote(int id) {
 void VirtualEntityManagerComponent::ReleaseGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
         obj->SetIsActive(false);
-        if (pool_) pool_->Release(obj);
+        if (pool_) {
+            auto it = activeHandles_.find(obj.get());
+            if (it != activeHandles_.end()) {
+                pool_->Release(it->second);
+                activeHandles_.erase(it);
+                gameObject_->RemoveChild(obj);
+            }
+        }
     }
 }
 
@@ -150,9 +172,8 @@ void VirtualEntityManagerComponent::Update() {
         }
     }
     
-    // 実体化済みのインスタンスの描画
-    // 子供のオブジェクト群（プールから取得されてアクティブなもの）を走査
-    for (const auto& child : gameObject_->GetChildren()) {
+    // 実体化済みのインスタンスの描画（Promote時にAddChildされているためGetChildrenで走査可能）
+    for (auto& child : gameObject_->GetChildren()) {
         if (child && child->GetIsActive() && !child->IsDestroyed()) {
             auto t = child->GetComponent<TransformComponent>();
             if (t) {

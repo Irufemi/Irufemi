@@ -22,7 +22,9 @@ public:
     ~DebrisComponent() override = default;
 
     void Initialize() override;
+    void OnEnable() override;
     void Update() override;
+    void OnCollisionEnter(GameObject* hitObject) override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "DebrisComponent"; }
 
@@ -31,6 +33,7 @@ public:
     DebrisState GetState() const { return state_; }
 
     void SetTarget(std::weak_ptr<GameObject> target) { targetObject_ = target; }
+    std::weak_ptr<GameObject> GetTarget() const { return targetObject_; }
     void SetOrbitParams(float angle, float radius) { orbitAngle_ = angle; orbitRadius_ = radius; }
     void SetThrowDirection(const Vector3& dir) { throwDirection_ = dir; }
 

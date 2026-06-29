@@ -2,6 +2,7 @@
 #include "TransformComponent.h"
 #include "Renderer/MeshRendererComponent.h"
 #include "Renderer/PrimitiveRendererComponent.h"
+#include "Renderer/Primitive2DRendererComponent.h"
 #include "Renderer/SpriteRendererComponent.h"
 #include "Renderer/TextRendererComponent.h"
 #include "Renderer/ModelBatchRendererComponent.h"
@@ -51,6 +52,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     });
     Register("MeshRendererComponent", "Renderer", []() { return std::make_shared<MeshRendererComponent>(); });
     Register("PrimitiveRendererComponent", "Renderer", []() { return std::make_shared<PrimitiveRendererComponent>(); });
+    Register("Primitive2DRendererComponent", "Renderer", []() { return std::make_shared<Primitive2DRendererComponent>(); });
     Register("ModelBatchRendererComponent", "Renderer", []() { return std::make_shared<ModelBatchRendererComponent>(); });
     Register("SpriteRendererComponent", "Renderer", []() { return std::make_shared<SpriteRendererComponent>(); });
     Register("TextRendererComponent", "Renderer", []() { return std::make_shared<TextRendererComponent>(); });

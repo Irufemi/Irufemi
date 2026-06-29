@@ -100,6 +100,14 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorPool::GetGPUHandle(uint32_t index) const {
     return handle;
 }
 
+uint32_t DescriptorPool::GetIndexFromGPUHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle) const {
+    if (gpuHandle.ptr == 0) return kInvalid;
+    uint64_t basePtr = heap_->GetGPUDescriptorHandleForHeapStart().ptr;
+    if (gpuHandle.ptr < basePtr) return kInvalid;
+    uint32_t offset = static_cast<uint32_t>(gpuHandle.ptr - basePtr);
+    return offset / descriptorSize_;
+}
+
 void DescriptorPool::CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels) {
     IRUFEMI_ASSERT(pResource);
     IRUFEMI_ASSERT(srvIndex < kMaxSRVCount);

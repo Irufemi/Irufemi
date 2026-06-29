@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Engine">
@@ -606,6 +606,9 @@
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
@@ -708,6 +711,9 @@
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Renderer\Primitive2DRendererComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
@@ -750,8 +756,8 @@
     <ClCompile Include="Framework\UISelectionGroup.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object\2D\Primitive\Circle2D.cpp">
-      <Filter>Renderer\Object\2D\Primitive</Filter>
+    <ClCompile Include="Renderer\Object\2D\Primitive\Primitive2DObject.cpp">
+      <Filter>Engine\Renderer\Object\2D\Primitive</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp">
       <Filter>Renderer\Object\2D\SpriteBatch</Filter>
@@ -1101,6 +1107,9 @@
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
@@ -1245,6 +1254,9 @@
     <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Framework\Component\Renderer\Primitive2DRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
@@ -1260,8 +1272,11 @@
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h">
       <Filter>Framework\Component\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object\2D\Primitive\Circle2D.h">
-      <Filter>Renderer\Object\2D\Primitive</Filter>
+    <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h">
+      <Filter>Engine\Renderer\Object\2D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Type\Primitive2DType.h">
+      <Filter>Engine\Core\Type</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h">
       <Filter>Renderer\Object\2D\SpriteBatch</Filter>
@@ -1550,3 +1565,4 @@
     </ClInclude>
   </ItemGroup>
 </Project>
+

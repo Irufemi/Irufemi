@@ -58,6 +58,9 @@ public:
         
         component->OnRegisterProperties();
         component->Initialize();
+        if (isActive_) {
+            component->OnEnable();
+        }
         return component;
     }
 
@@ -117,7 +120,7 @@ public:
     // --- アクセッサ ---
     const std::string& GetName() const { return name_; }
     void SetName(const std::string& name);
-    void SetIsActive(bool isActive) { isActive_ = isActive; }
+    void SetIsActive(bool isActive);
     bool GetIsActive() const { return isActive_; }
 
     void SetScene(BaseScene* scene);

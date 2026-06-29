@@ -34,6 +34,11 @@ public:
     std::shared_ptr<GameObject> ExtractDebris();
 
     /**
+     * @brief 特定のシールドをリストから除外する（破壊時など）
+     */
+    void RemoveShield(std::shared_ptr<GameObject> shield);
+
+    /**
      * @brief ボスにダメージを与える（シールドがない場合のみ通る）
      */
     void TakeDamage(float damage);

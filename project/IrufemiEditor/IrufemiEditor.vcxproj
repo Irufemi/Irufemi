@@ -211,6 +211,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Editor\ComponentEditors\TransformComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\MeshRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\SpriteRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\TextRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\ColliderComponentEditors.cpp" />
@@ -240,6 +241,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Editor\ComponentEditors\TransformComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\MeshRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\SpriteRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\TextRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\ColliderComponentEditors.h" />

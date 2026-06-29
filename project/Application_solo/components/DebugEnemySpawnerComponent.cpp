@@ -18,7 +18,7 @@ void DebugEnemySpawnerComponent::Start() {
 
     enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
         auto enemy = std::make_shared<GameObject>("DebugEnemy");
-        scene->AddGameObject(enemy);
+        // scene->AddGameObject(enemy);
         
         auto transform = enemy->AddComponent<TransformComponent>();
         transform->SetScale({1.2f, 1.2f, 1.2f});
@@ -27,11 +27,15 @@ void DebugEnemySpawnerComponent::Start() {
         auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
 
         // プール運用のため、エネミー死亡時は Destroy ではなくプールへ返却する
-        enemyComp->SetOnDeathCallback([this](GameObject* deadObj) {
+        enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
             deadObj->SetIsActive(false);
             if (enemyPool_) {
-                // deadObjが保持するshared_ptrを取得（GameObjectはenable_shared_from_thisを継承している前提）
-                enemyPool_->Release(deadObj->shared_from_this());
+                auto it = activeEnemyHandles_.find(deadObj);
+                if (it != activeEnemyHandles_.end()) {
+                    enemyPool_->Release(it->second);
+                    activeEnemyHandles_.erase(it);
+                    if (scene) scene->RemoveGameObject(deadObj->shared_from_this());
+                }
             }
         });
 
@@ -69,8 +73,18 @@ void DebugEnemySpawnerComponent::Update() {
 void DebugEnemySpawnerComponent::SpawnEnemy(const Vector3& position) {
     if (!enemyPool_) return;
 
-    auto enemy = enemyPool_->Acquire();
+    auto handle = enemyPool_->Acquire();
+    if (!handle.IsValid()) return;
+    
+    auto enemy = enemyPool_->Resolve(handle);
     if (enemy) {
+        // マップに登録
+        activeEnemyHandles_[enemy.get()] = handle;
+        
+        if (auto scene = gameObject_->GetScene()) {
+            scene->AddGameObject(enemy);
+        }
+
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
             transform->SetPosition(position);
             // プレイヤー側(Z負方向)を向くように回転

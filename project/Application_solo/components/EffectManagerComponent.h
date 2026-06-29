@@ -50,7 +50,7 @@ private:
     std::unique_ptr<ObjectPool<GameObject>> hitEffectPool_;
 
     struct ActiveEffect {
-        std::shared_ptr<GameObject> obj;
+        ObjectPool<GameObject>::Handle handle;
         float timer;
     };
     std::vector<ActiveEffect> activeEffects_;

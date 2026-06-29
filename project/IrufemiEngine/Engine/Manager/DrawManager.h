@@ -108,7 +108,6 @@ public:
 
     // --- Execute Queues ---
     void ExecuteRenderQueues(class IrufemiEngine* engine);
-    void ExecuteTopMostQueues(class IrufemiEngine* engine); // 最前面UIの描画キューを消化する
     void ClearRenderQueues();
     void ClearAllQueues() {
         ClearRenderQueues();
@@ -371,9 +370,9 @@ public:
     void DrawText(const RenderPackets::SpritePacket& packet);
 
     /**
-     * @brief スカイボックスの描画
+     * @brief スカイボックスの描画コマンドを送信する
      */
-    void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount);
+    void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, const UINT& indexCount);
     void DrawSkybox(const RenderPackets::SkyboxPacket& packet);
 
     /**

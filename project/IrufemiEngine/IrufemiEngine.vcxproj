@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -665,6 +665,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Pipeline\PSOManager.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.cpp" />
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp" />
@@ -699,6 +700,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ModelBatchRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\Primitive2DRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\SpriteRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\TextRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\TransformComponent.cpp" />
@@ -713,7 +715,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\SceneTransition.cpp" />
     <ClCompile Include="Framework\UIAnimator.cpp" />
     <ClCompile Include="Framework\UISelectionGroup.cpp" />
-    <ClCompile Include="Renderer\Object\2D\Primitive\Circle2D.cpp" />
+    <ClCompile Include="Renderer\Object\2D\Primitive\Primitive2DObject.cpp" />
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp" />
     <ClCompile Include="Renderer\Object\2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object\2D\Text\Text.cpp" />
@@ -832,6 +834,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.h" />
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h" />
@@ -880,13 +883,15 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\ModelBatchRendererComponent.h" />
     <ClInclude Include="Framework\Component\Effect\ParticleEmitterComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\PrimitiveRendererComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\Primitive2DRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h" />
     <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h" />
 
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
-    <ClInclude Include="Renderer\Object\2D\Primitive\Circle2D.h" />
+    <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h" />
+    <ClInclude Include="Engine\Core\Type\Primitive2DType.h" />
     <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h" />
     <ClInclude Include="Renderer\Object\2D\Sprite\Sprite.h" />
     <ClInclude Include="Renderer\Object\2D\Text\Text.h" />

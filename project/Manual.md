@@ -46,6 +46,12 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
 **【重要】**
 この探索機能は「自身（ルート）にアタッチされているコンポーネント」も検索対象に含まれます。そのため、ルートに目的のコンポーネントがあるかどうかを事前に気にする必要はなく、非常にシンプルで堅牢なコードを記述できます。
 
+### コンポーネントのライフサイクル (OnEnable / OnDisable)
+コンポーネントには初期化(`Initialize`)や毎フレームの更新(`Update`)に加えて、オブジェクトが有効化・無効化されたタイミングで呼ばれるフックが用意されています。
+
+- **`OnEnable()`**: `GameObject` の `SetIsActive(true)` が呼ばれた際や、アクティブな状態でコンポーネントがアタッチされた直後に呼ばれます。オブジェクトプールから復帰した際の状態リセットや、イベントの登録に最適です。
+- **`OnDisable()`**: `GameObject` の `SetIsActive(false)` が呼ばれた際や、破棄される直前に呼ばれます。イベントの解除などに使用します。
+
 ---
 
 ## チーム開発ルール・コーディング規約
@@ -69,20 +75,32 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
 ### 3. オブジェクトのライフサイクル管理とプールの安全な運用
 シューティングゲームの敵やヒットエフェクトなど、頻繁に生成と消滅を繰り返すオブジェクト（プーリング対象）を実装する際は、メモリ破壊やプールの崩壊を防ぐために以下の**厳密なルール**に従う必要があります。
 
-- **プール運用オブジェクトでは絶対に `Destroy()` を呼ばない**
-  `Destroy()` を呼ぶと `GameObject` がシーンから完全に削除（メモリ解放）されてしまいます。プール運用しているオブジェクトが削除されると、プール側にダングリングポインタが残り、次回取り出した際にクラッシュします。
-  **プーリング対象のオブジェクトが死ぬときは、必ず「非アクティブ化 (SetIsActive(false))」してプールへ返却（Release）してください。**
+本エンジンでは、AAA基準の完全なゼロ・アロケーションを実現するため、オブジェクトプール (`ObjectPool<T>`) はポインタではなく **`Handle` (整理券)** による管理へ移行しました。
+
+- **プールへの返却は必ず `Release(handle)` を使用する**
+  プーリング対象のオブジェクトが死ぬとき（非アクティブ化されるとき）は、自身が生成時に受け取った `Handle` を用いてプールへ返却してください。`Destroy()` を呼ぶとメモリから消去されプールが崩壊します。
   ```cpp
+  // 敵の生成時に Handle をマップなどに記憶しておく
+  activeEnemyHandles_[enemy.get()] = handle;
+
   enemyComp->SetOnDeathCallback([this](GameObject* deadObj) {
       deadObj->SetIsActive(false);
       if (enemyPool_) {
-          enemyPool_->Release(deadObj->shared_from_this());
+          auto it = activeEnemyHandles_.find(deadObj);
+          if (it != activeEnemyHandles_.end()) {
+              enemyPool_->Release(it->second); // Handle を使って最速で返却
+              activeEnemyHandles_.erase(it);
+          }
       }
   });
   ```
 
+- **【重要】Handleの安全性 (Generation) とエディタ連携 (EditorMode)**
+  新しい Handle には **`generation` (世代)** という概念が組み込まれています。古い Handle（すでに返却済みのもの）を使って `Resolve(handle)` を呼び出しても、世代が不一致となるため自動的に弾かれて `nullptr` が返ります（ダングリングポインタの完全な防御）。
+  また、デバッグビルド（`EditorMode` 等）の時は、Handle 構造体の中に `debugPtr` という実体へのポインタが自動で含まれます。これにより、エディタ（ImGui）のインスペクタ上で「ただの数字の羅列」ではなく、実際のオブジェクトの名前（命名）を確認しながらデバッグを行うことができます。
+
 - **LifetimeComponent の TimeoutAction を活用する**
-  一定時間で消滅するエフェクトなどに `LifetimeComponent` をアタッチする場合、インスペクタ上で **Timeout Action** を変更できます。単発生成なら `Destroy` (デフォルト)、プール運用なら `Disable` を設定してください。コードから生成する際は以下のように上書きすると安全です。
+  一定時間で消滅するエフェクトなどに `LifetimeComponent` をアタッチする場合、インスペクタ上で **Timeout Action** を変更できます。プール運用なら必ず `Disable` を設定してください。コードから生成する際は以下のように上書きすると安全です。
   ```cpp
   auto obj = gameObject_->Instantiate(effectPrefabPath);
   if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
@@ -111,7 +129,15 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
   }
   ```
 
-### 5. 命名規則・コードスタイル
+### 5. パフォーマンスと Data-Oriented な設計 (ターゲット管理)
+シーン内の特定のオブジェクト（敵やボスなど）を毎フレーム再帰的に検索する処理は、オブジェクト数が増えるにつれて急激なCPU負荷（O(N)問題）を引き起こします。
+これを防ぐため、ロックオン対象などの特定の性質を持つオブジェクトの管理には、**自己登録型コンポーネント（例: `TargetableComponent`）** を使用してください。
+
+- **`TargetableComponent` の利用**:
+  対象オブジェクトの生成時に `TargetableComponent` をアタッチしておくと、`OnEnable` 時に対象がグローバルな静的リストへ自動登録されます。
+  検索側は `TargetableComponent::GetTargets()` をループで回すだけになり、定数時間かつキャッシュ効率の良いアクセスが可能になります。
+
+### 6. 命名規則・コードスタイル
 - **メンバ変数の命名**: `m_` などの接頭辞は使用せず、**キャメルケースの末尾にアンダーバー**をつけるスタイル (`variableName_`) に統一してください。
 - **ヘッダーの注釈**: 関数やクラスのコメントは「Doxygen形式」で記述してください。
 - **インクルードガード**: `#pragma once` を使用してください。
@@ -549,6 +575,48 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 ---
 
+## 【NEW】汎用2Dプリミティブ描画 (Primitive2DObject / Primitive2DRendererComponent) の利用方法
+
+2D空間での汎用的な図形（四角形、円、線、リングなど）を簡単に描画するための `Primitive2DObject` および、それをエディタで直感的に扱える `Primitive2DRendererComponent` が追加されました。
+デバッグ表示、UIの枠線、シンプルな2Dエフェクトなどに最適です。
+
+### コンポーネントからの利用
+GameObjectに `Primitive2DRendererComponent` をアタッチすることで、Inspectorからリアルタイムにパラメータを変更できます。
+
+- **Shape Type**: `Rect` (四角), `Triangle` (三角), `Circle` (円), `Ring` (ドーナツ状), `Line` (線) から選択可能。
+- **Size**: ベースとなる描画サイズ（TransformのScaleと掛け合わされて最終的なサイズになります）。
+- **Pivot**: 描画の基準点 (0.0 ～ 1.0)。デフォルトは 0.5, 0.5（中心）。
+- **Subdivision**: `Circle` や `Ring` などの滑らかさ（頂点分割数）を設定。
+- **Thickness**: `Ring` や `Line` の線の太さを設定。
+- **Texture / Color**: ドラッグ＆ドロップで任意のテクスチャを貼り付けたり、全体の色や透明度を変更可能。
+- **TopMost**: 他のすべての描画物よりも最前面に描画するかどうか。
+
+### プログラムからの直接利用
+コンポーネントを使わず、直接 `Primitive2DObject` を生成して描画することも可能です（これまでの `Circle2D` の完全な上位互換として動作します）。
+
+```cpp
+#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
+
+// 1. 生成と初期化
+Primitive2DObject myShape;
+myShape.Initialize(Primitive2DType::Circle); // 初期形状を円に指定
+
+// 2. パラメータの変更
+myShape.SetSize(Vector2(200.0f, 200.0f));
+myShape.SetColor(Vector4(1.0f, 0.0f, 0.0f, 0.5f)); // 半透明の赤
+myShape.SetThickness(5.0f); // 線の太さ（Line, Ring の場合）
+myShape.SetPosition(640.0f, 360.0f, 0.0f); // 画面中央に配置
+
+// 3. 毎フレーム Update と Draw を呼ぶ
+myShape.Update();
+myShape.SyncBeforeDraw(); // GPUへのデータ転送を確実に行う
+myShape.Draw();
+```
+
+※ `Primitive2DObject` は内部で頂点バッファを動的に再構築するため、パラメータ（種類や分割数など）を変更した場合は、次のフレームで自動的にGPUへの再アップロードが行われます。
+
+---
+
 ## 【NEW】半透明・エフェクトオブジェクトの描画とZソート
 
 本エンジンでは、地形やキャラクターなどの不透明オブジェクトの後に、オーラやレーザーなどの半透明エフェクトを正しい順番（奥から手前）で描画するための **独立した半透明描画パス (MainTransparentPass)** をサポートしました。
@@ -590,3 +658,4 @@ aura->SetIsTransparent(true);
   `ColliderComponent` を継承してコンポーネントを作成し、`GetWorldAABB()` などの形状取得メソッドを正しくオーバーライドすれば、エディタ上で自動的にワイヤーフレームが表示されます。
 - **自分で `DrawDebug` を呼ばない**:
   各コンポーネント内に独自の `DrawDebug` 等の描画命令（PrimitiveManager等の呼び出し）を記述すると、描画が重複したり描画ステートが壊れる原因となるため、当たり判定の描画は完全にマネージャに委譲してください。
+

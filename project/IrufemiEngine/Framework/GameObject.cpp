@@ -22,6 +22,23 @@ GameObject::GameObject() : instanceId_(s_nextInstanceId++) {
 GameObject::GameObject(const std::string& name) : instanceId_(s_nextInstanceId++), name_(name) {
 }
 
+
+
+void GameObject::SetIsActive(bool isActive) {
+    if (isActive_ == isActive) return;
+    isActive_ = isActive;
+
+    if (isActive_) {
+        for (auto& comp : components_) {
+            comp->OnEnable();
+        }
+    } else {
+        for (auto& comp : components_) {
+            comp->OnDisable();
+        }
+    }
+}
+
 void GameObject::Initialize() {
     for (auto& comp : components_) {
         comp->Initialize();
@@ -169,6 +186,9 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     componentMap_[typeid(*component)].push_back(component.get());
     component->OnRegisterProperties();
     component->Initialize();
+    if (isActive_) {
+        component->OnEnable();
+    }
 }
 
 void GameObject::RemoveComponent(Component* component) {
@@ -272,6 +292,11 @@ void GameObject::Deserialize(const nlohmann::json& j) {
         // これにより、Initialize内でGetComponentした際に他のコンポーネントが見つかるようになる
         for (auto& comp : loadedComps) {
             comp->Initialize();
+        }
+        if (isActive_) {
+            for (auto& comp : loadedComps) {
+                comp->OnEnable();
+            }
         }
     }
     

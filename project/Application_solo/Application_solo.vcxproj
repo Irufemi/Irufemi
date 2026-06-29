@@ -242,6 +242,7 @@ exit 0</Command>
     <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
     <ClCompile Include="components\DebrisComponent.cpp" />
+    <ClCompile Include="components\TargetableComponent.cpp" />
     <ClCompile Include="components\BossComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
@@ -249,6 +250,7 @@ exit 0</Command>
     <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
     <ClCompile Include="components\EffectManagerComponent.cpp" />
     <ClCompile Include="components\EnemyBeamComponent.cpp" />
+    <ClCompile Include="components\ReticleUIComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -264,6 +266,7 @@ exit 0</Command>
     <ClInclude Include="components\RailShooterPlayerComponent.h" />
     <ClInclude Include="components\RailShooterEnemyComponent.h" />
     <ClInclude Include="components\DebrisComponent.h" />
+    <ClInclude Include="components\TargetableComponent.h" />
     <ClInclude Include="components\BossComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
@@ -271,6 +274,7 @@ exit 0</Command>
     <ClInclude Include="components\SceneTransitionButtonComponent.h" />
     <ClInclude Include="components\EffectManagerComponent.h" />
     <ClInclude Include="components\EnemyBeamComponent.h" />
+    <ClInclude Include="components\ReticleUIComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

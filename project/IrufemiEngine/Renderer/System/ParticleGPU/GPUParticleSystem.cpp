@@ -332,6 +332,13 @@ void GPUParticleSystem::SyncBeforeDraw() {
 
   // 転送処理完了。burstCountのクリアはDispatchComputeShaders実行後に行う。
 
+  // [Bindless] テクスチャインデックスの反映
+  if (engine_ && engine_->GetTextureManager()) {
+    cpuMaterialData_.textureIndex = engine_->GetTextureManager()->GetSrvIndex(textureHandle_);
+  } else {
+    cpuMaterialData_.textureIndex = 0;
+  }
+
   perFrameBuffer_.Update(*perFrameData_, frameIndex);
   materialBuffer_.Update(cpuMaterialData_, frameIndex);
 
@@ -404,7 +411,7 @@ void GPUParticleSystem::Draw() {
   packet.perViewAddress = perViewBuffer_.GetGPUVirtualAddress(frameIndex);
   packet.particleSrvHandle = particleSrvHandleGPU_;
   packet.sortListSrvHandle = sortSrvHandleGPU_;
-  packet.textureHandle = textureManager_ ? textureManager_->Resolve(textureHandle_) : D3D12_GPU_DESCRIPTOR_HANDLE{0};
+  packet.textureHandle = engine_->GetTextureManager()->Resolve(textureHandle_);
   packet.instanceCount = kMaxParticles;
   packet.particleResource = particleResource_.Get();
   packet.blendMode = selectedBlend_;
