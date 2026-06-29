@@ -139,6 +139,13 @@ void Object3DResource::SyncBeforeDraw() {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
             
+            // テクスチャのインデックスを解決して反映
+            if (sTextureManager) {
+                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+            } else {
+                cpuMaterialData_.textureIndex = 0;
+            }
+            
             // マテリアルデータを更新
             if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);

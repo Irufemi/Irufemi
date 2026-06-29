@@ -29,6 +29,7 @@ public:
 
     D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;
     D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const;
+    uint32_t GetIndexFromGPUHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle) const;
 
     // SRV作成
     void CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels);

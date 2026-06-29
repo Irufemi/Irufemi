@@ -95,7 +95,8 @@ private: // メンバ変数(resource)
     struct SkyboxMaterial {
         Vector4 color;
         float intensity;
-        float padding[3];
+        uint32_t textureIndex; // [Bindless]
+        uint32_t padding[2];
     };
     ConstantBuffer<SkyboxMaterial> materialBuffer_;
 

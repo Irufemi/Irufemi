@@ -161,6 +161,31 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::ResolveCubeMap(ResourceHandle handle
     return whiteCubeMapHandle_;
 }
 
+uint32_t TextureManager::GetSrvIndex(ResourceHandle handle) const {
+    if (!texturePool_.IsValid(handle)) {
+        return GetWhiteTextureSrvIndex();
+    }
+    
+    // 使用されたことをプールに通知（LRUアクセス時刻の更新）
+    const_cast<TextureManager*>(this)->texturePool_.TouchSlot(handle);
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (handle.index < textureResources_.size() && textureResources_[handle.index]) {
+        if (textureResources_[handle.index]->GetStatus() == Texture::LoadingStatus::Loaded) {
+            return textureResources_[handle.index]->GetSrvIndex();
+        }
+    }
+    return GetWhiteTextureSrvIndex();
+}
+
+uint32_t TextureManager::GetWhiteTextureSrvIndex() const {
+    return whiteTexture_ ? whiteTexture_->GetSrvIndex() : 0;
+}
+
+uint32_t TextureManager::GetWhiteCubeMapSrvIndex() const {
+    return whiteCubeMap_ ? whiteCubeMap_->GetSrvIndex() : 0;
+}
+
 const Texture* TextureManager::GetTextureObject(ResourceHandle handle) const {
     if (!texturePool_.IsValid(handle)) {
         return nullptr;

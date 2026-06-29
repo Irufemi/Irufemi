@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -665,6 +665,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Pipeline\PSOManager.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.cpp" />
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.cpp" />
@@ -833,6 +834,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ComputePass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\IRenderPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.h" />
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\PostProcessPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\RenderGraph.h" />

@@ -61,9 +61,9 @@ namespace RenderPackets {
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
         D3D12_GPU_VIRTUAL_ADDRESS perViewAddress;
         D3D12_GPU_VIRTUAL_ADDRESS emitterAddress;
+        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle;
-        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         uint32_t instanceCount;
         ID3D12Resource* particleResource;
         BlendMode blendMode;
@@ -89,7 +89,6 @@ namespace RenderPackets {
         D3D12_INDEX_BUFFER_VIEW indexBufferView;
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
         D3D12_GPU_VIRTUAL_ADDRESS transformationAddress;
-        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         UINT indexCount;
     };
 

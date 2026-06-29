@@ -6,76 +6,156 @@
 void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
     // --- 通常描画用 RootSignature ---
     {
-        // --- ディスクリプタレンジの定義 ---
+        // --- ディスクリプタレンジの定義 (Version 1.1) ---
+        // Bindless 用の無制限配列 (space1 ~ space6)
+        D3D12_DESCRIPTOR_RANGE1 bindlessRanges[6] = {};
 
-        D3D12_DESCRIPTOR_RANGE rangeTexture[1] = {};
-        rangeTexture[0].BaseShaderRegister = 0; // t0
-        rangeTexture[0].NumDescriptors = 1;
-        rangeTexture[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        rangeTexture[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        // space1: Texture2D (Material等)
+        bindlessRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        bindlessRanges[0].NumDescriptors = -1; // Unbounded
+        bindlessRanges[0].BaseShaderRegister = 0; // t0
+        bindlessRanges[0].RegisterSpace = 1;
+        bindlessRanges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+        bindlessRanges[0].OffsetInDescriptorsFromTableStart = 0; // Heapの先頭から
 
-        D3D12_DESCRIPTOR_RANGE rangeInstancing[1] = {};
+        // space2: TextureCube (EnvMap)
+        bindlessRanges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        bindlessRanges[1].NumDescriptors = -1;
+        bindlessRanges[1].BaseShaderRegister = 0; // t0
+        bindlessRanges[1].RegisterSpace = 2;
+        bindlessRanges[1].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+        bindlessRanges[1].OffsetInDescriptorsFromTableStart = 0;
+
+        // space3: Texture2D<float> (ShadowMap/DepthMap)
+        bindlessRanges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        bindlessRanges[2].NumDescriptors = -1;
+        bindlessRanges[2].BaseShaderRegister = 0; // t0
+        bindlessRanges[2].RegisterSpace = 3;
+        bindlessRanges[2].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+        bindlessRanges[2].OffsetInDescriptorsFromTableStart = 0;
+
+        // space4: StructuredBuffer<PointLight>
+        bindlessRanges[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        bindlessRanges[3].NumDescriptors = -1;
+        bindlessRanges[3].BaseShaderRegister = 0; // t0
+        bindlessRanges[3].RegisterSpace = 4;
+        bindlessRanges[3].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+        bindlessRanges[3].OffsetInDescriptorsFromTableStart = 0;
+
+        // space5: StructuredBuffer<SpotLight>
+        bindlessRanges[4].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        bindlessRanges[4].NumDescriptors = -1;
+        bindlessRanges[4].BaseShaderRegister = 0; // t0
+        bindlessRanges[4].RegisterSpace = 5;
+        bindlessRanges[4].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+        bindlessRanges[4].OffsetInDescriptorsFromTableStart = 0;
+
+        // space6: StructuredBuffer<AreaLight>
+        bindlessRanges[5].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        bindlessRanges[5].NumDescriptors = -1;
+        bindlessRanges[5].BaseShaderRegister = 0; // t0
+        bindlessRanges[5].RegisterSpace = 6;
+        bindlessRanges[5].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+        bindlessRanges[5].OffsetInDescriptorsFromTableStart = 0;
+
+        // 既存の空間 (space0) のレガシーレンジ
+        D3D12_DESCRIPTOR_RANGE1 rangeInstancing[1] = {};
         rangeInstancing[0].BaseShaderRegister = 0; // t0
         rangeInstancing[0].NumDescriptors = 1;
+        rangeInstancing[0].RegisterSpace = 0;
         rangeInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeInstancing[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
         rangeInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        D3D12_DESCRIPTOR_RANGE rangeEnv[1] = {};
+        D3D12_DESCRIPTOR_RANGE1 rangeTexture[1] = {};
+        rangeTexture[0].BaseShaderRegister = 0; // t0
+        rangeTexture[0].NumDescriptors = 1;
+        rangeTexture[0].RegisterSpace = 0;
+        rangeTexture[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeTexture[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+        rangeTexture[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+        D3D12_DESCRIPTOR_RANGE1 rangeEnv[1] = {};
         rangeEnv[0].BaseShaderRegister = 1; // t1
         rangeEnv[0].NumDescriptors = 1;
+        rangeEnv[0].RegisterSpace = 0;
         rangeEnv[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeEnv[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
         rangeEnv[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        D3D12_DESCRIPTOR_RANGE rangeLine[1] = {};
+        D3D12_DESCRIPTOR_RANGE1 rangeLine[1] = {};
         rangeLine[0].BaseShaderRegister = 1; // t1
         rangeLine[0].NumDescriptors = 1;
+        rangeLine[0].RegisterSpace = 0;
         rangeLine[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeLine[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
         rangeLine[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        // ライトSRVテーブル (t2, t3, t4 を一括バインド)
-        D3D12_DESCRIPTOR_RANGE rangeLights[1] = {};
-        rangeLights[0].BaseShaderRegister = 2; // t2 から開始
-        rangeLights[0].NumDescriptors = 3;     // t2, t3, t4 の3つ分
+        D3D12_DESCRIPTOR_RANGE1 rangeLights[3] = {};
+        rangeLights[0].BaseShaderRegister = 2; // t2
+        rangeLights[0].NumDescriptors = 1;
+        rangeLights[0].RegisterSpace = 0;
         rangeLights[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeLights[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
         rangeLights[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        rangeLights[1].BaseShaderRegister = 3; // t3
+        rangeLights[1].NumDescriptors = 1;
+        rangeLights[1].RegisterSpace = 0;
+        rangeLights[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeLights[1].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+        rangeLights[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        rangeLights[2].BaseShaderRegister = 4; // t4
+        rangeLights[2].NumDescriptors = 1;
+        rangeLights[2].RegisterSpace = 0;
+        rangeLights[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeLights[2].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+        rangeLights[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        // シャドウマップ (t5)
-        D3D12_DESCRIPTOR_RANGE rangeShadow[1] = {};
-        rangeShadow[0].BaseShaderRegister = 5; // t5
-        rangeShadow[0].NumDescriptors = 1;
-        rangeShadow[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        rangeShadow[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        D3D12_DESCRIPTOR_RANGE1 rangeShadowMap[1] = {};
+        rangeShadowMap[0].BaseShaderRegister = 5; // t5
+        rangeShadowMap[0].NumDescriptors = 1;
+        rangeShadowMap[0].RegisterSpace = 0;
+        rangeShadowMap[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeShadowMap[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+        rangeShadowMap[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        // メイン深度マップ (t6)
-        D3D12_DESCRIPTOR_RANGE rangeMainDepth[1] = {};
-        rangeMainDepth[0].BaseShaderRegister = 6; // t6
-        rangeMainDepth[0].NumDescriptors = 1;
-        rangeMainDepth[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        rangeMainDepth[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+        D3D12_DESCRIPTOR_RANGE1 rangeDepthMap[1] = {};
+        rangeDepthMap[0].BaseShaderRegister = 6; // t6
+        rangeDepthMap[0].NumDescriptors = 1;
+        rangeDepthMap[0].RegisterSpace = 0;
+        rangeDepthMap[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        rangeDepthMap[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE;
+        rangeDepthMap[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-        // --- ルートパラメータの定義 ---
-        D3D12_ROOT_PARAMETER rootParameters[12] = {};
+        // --- ルートパラメータの定義 (Version 1.1) ---
+        D3D12_ROOT_PARAMETER1 rootParameters[13] = {};
 
         // Slot 0: Material (b0, PS)
         rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Material].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[(UINT)RootSlot::Material].Descriptor.ShaderRegister = 0;
+        rootParameters[(UINT)RootSlot::Material].Descriptor.RegisterSpace = 0;
+        rootParameters[(UINT)RootSlot::Material].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         // Slot 1: Transform (b0, VS)
         rootParameters[(UINT)RootSlot::Transform].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Transform].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
         rootParameters[(UINT)RootSlot::Transform].Descriptor.ShaderRegister = 0;
+        rootParameters[(UINT)RootSlot::Transform].Descriptor.RegisterSpace = 0;
+        rootParameters[(UINT)RootSlot::Transform].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
-        // Slot 2: Texture (t0, PS)
-        rootParameters[(UINT)RootSlot::Texture].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[(UINT)RootSlot::Texture].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.pDescriptorRanges = rangeTexture;
-        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.NumDescriptorRanges = 1;
+        // Slot 2: BindlessSRV (t0, space1-6, ALL)
+        rootParameters[(UINT)RootSlot::BindlessSRV].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::BindlessSRV].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParameters[(UINT)RootSlot::BindlessSRV].DescriptorTable.pDescriptorRanges = bindlessRanges;
+        rootParameters[(UINT)RootSlot::BindlessSRV].DescriptorTable.NumDescriptorRanges = _countof(bindlessRanges);
 
         // Slot 3: LightCommon (b1, ALL)
         rootParameters[(UINT)RootSlot::LightCommon].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::LightCommon].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[(UINT)RootSlot::LightCommon].Descriptor.ShaderRegister = 1;
+        rootParameters[(UINT)RootSlot::LightCommon].Descriptor.RegisterSpace = 0;
+        rootParameters[(UINT)RootSlot::LightCommon].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         // Slot 4: Instancing (t0, VS)
         rootParameters[(UINT)RootSlot::Instancing].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -87,40 +167,50 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::Camera].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Camera].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[(UINT)RootSlot::Camera].Descriptor.ShaderRegister = 2;
+        rootParameters[(UINT)RootSlot::Camera].Descriptor.RegisterSpace = 0;
+        rootParameters[(UINT)RootSlot::Camera].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
-        // Slot 6: Lights (t2-t4, PS)
-        rootParameters[(UINT)RootSlot::Lights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[(UINT)RootSlot::Lights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::Lights].DescriptorTable.pDescriptorRanges = rangeLights;
-        rootParameters[(UINT)RootSlot::Lights].DescriptorTable.NumDescriptorRanges = 1;
-
-        // Slot 7: Special (b6, ALL)
+        // Slot 6: Special (b6, ALL)
         rootParameters[(UINT)RootSlot::Special].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Special].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[(UINT)RootSlot::Special].Descriptor.ShaderRegister = 6;
+        rootParameters[(UINT)RootSlot::Special].Descriptor.RegisterSpace = 0;
+        rootParameters[(UINT)RootSlot::Special].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
-        // Slot 8: EnvMap (t1, PS)
-        rootParameters[(UINT)RootSlot::EnvMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        rootParameters[(UINT)RootSlot::EnvMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::EnvMap].DescriptorTable.pDescriptorRanges = rangeEnv;
-        rootParameters[(UINT)RootSlot::EnvMap].DescriptorTable.NumDescriptorRanges = 1;
-
-        // Slot 9: LineInstancing (t1, VS)
+        // Slot 7: LineInstancing (t1, VS)
         rootParameters[(UINT)RootSlot::LineInstancing].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[(UINT)RootSlot::LineInstancing].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
         rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.pDescriptorRanges = rangeLine;
         rootParameters[(UINT)RootSlot::LineInstancing].DescriptorTable.NumDescriptorRanges = 1;
 
-        // Slot 10: ShadowMap (t5, PS)
+        // Slot 8: Texture (t0, PS)
+        rootParameters[(UINT)RootSlot::Texture].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::Texture].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.pDescriptorRanges = rangeTexture;
+        rootParameters[(UINT)RootSlot::Texture].DescriptorTable.NumDescriptorRanges = 1;
+
+        // Slot 9: EnvMap (t1, PS)
+        rootParameters[(UINT)RootSlot::EnvMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::EnvMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::EnvMap].DescriptorTable.pDescriptorRanges = rangeEnv;
+        rootParameters[(UINT)RootSlot::EnvMap].DescriptorTable.NumDescriptorRanges = 1;
+
+        // Slot 10: Lights (t2, t3, t4, PS)
+        rootParameters[(UINT)RootSlot::Lights].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParameters[(UINT)RootSlot::Lights].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::Lights].DescriptorTable.pDescriptorRanges = rangeLights;
+        rootParameters[(UINT)RootSlot::Lights].DescriptorTable.NumDescriptorRanges = 3;
+
+        // Slot 11: ShadowMap (t5, PS)
         rootParameters[(UINT)RootSlot::ShadowMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[(UINT)RootSlot::ShadowMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadow;
+        rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.pDescriptorRanges = rangeShadowMap;
         rootParameters[(UINT)RootSlot::ShadowMap].DescriptorTable.NumDescriptorRanges = 1;
 
-        // Slot 11: DepthMap (t6, PS)
+        // Slot 12: DepthMap (t6, PS)
         rootParameters[(UINT)RootSlot::DepthMap].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         rootParameters[(UINT)RootSlot::DepthMap].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-        rootParameters[(UINT)RootSlot::DepthMap].DescriptorTable.pDescriptorRanges = rangeMainDepth;
+        rootParameters[(UINT)RootSlot::DepthMap].DescriptorTable.pDescriptorRanges = rangeDepthMap;
         rootParameters[(UINT)RootSlot::DepthMap].DescriptorTable.NumDescriptorRanges = 1;
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
@@ -171,16 +261,20 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         staticSamplers[4].ShaderRegister = 4; // s4
         staticSamplers[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-        D3D12_ROOT_SIGNATURE_DESC rsDesc{};
-        rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-        rsDesc.pParameters = rootParameters;
-        rsDesc.NumParameters = _countof(rootParameters);
-        rsDesc.pStaticSamplers = staticSamplers;
-        rsDesc.NumStaticSamplers = _countof(staticSamplers);
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC rsDesc{};
+        rsDesc.Version = D3D_ROOT_SIGNATURE_VERSION_1_1;
+        rsDesc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+        rsDesc.Desc_1_1.pParameters = rootParameters;
+        rsDesc.Desc_1_1.NumParameters = _countof(rootParameters);
+        rsDesc.Desc_1_1.pStaticSamplers = staticSamplers;
+        rsDesc.Desc_1_1.NumStaticSamplers = _countof(staticSamplers);
 
         Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
         Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
-        HRESULT hr = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
+        
+        // D3D12SerializeVersionedRootSignature が古いSDKでない場合のチェック
+        HRESULT hr = D3D12SerializeVersionedRootSignature(&rsDesc, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
+        
         if (FAILED(hr)) {
             Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
             IRUFEMI_ASSERT(false);

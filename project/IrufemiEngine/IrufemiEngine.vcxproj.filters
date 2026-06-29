@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Engine">
@@ -606,6 +606,9 @@
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
@@ -1104,6 +1107,9 @@
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainOpaquePass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TopMostPass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\MainTransparentPass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
@@ -1559,3 +1565,4 @@
     </ClInclude>
   </ItemGroup>
 </Project>
+

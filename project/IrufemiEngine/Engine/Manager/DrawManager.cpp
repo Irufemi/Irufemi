@@ -372,7 +372,14 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float del
 void DrawManager::SyncCachedFrameData() {
     auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
 
-    if (fr.perFrameData) { *fr.perFrameData = cachedPerFrame_; }
+    if (fr.perFrameData) { 
+        *fr.perFrameData = cachedPerFrame_; 
+        // [Bindless] 環境マップとシャドウマップのインデックスを設定
+        fr.perFrameData->envMapIndex = dxCommon_->GetSrvPool()->GetIndexFromGPUHandle(environmentMapHandle_);
+        ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
+        fr.perFrameData->shadowMapIndex = shadowMap ? shadowMap->GetSrvIndex() : 0xFFFFFFFFu;
+        fr.perFrameData->depthMapIndex = 0xFFFFFFFFu; // 未実装
+    }
     if (fr.lightCommonData) {
         // ライト共通データの更新（b1）
         fr.lightCommonData->directionalLight = cachedDirectionalLight_;
@@ -387,6 +394,17 @@ void DrawManager::SyncCachedFrameData() {
             float orthoSize = useCustomShadowParams_ ? shadowOrthoSize_ : 128.0f;
             shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, targetPos, orthoSize);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
+        }
+        
+        // [Bindless] ライト用バッファのインデックスを設定
+        if (fr.lightSrvBaseIndex != 0xFFFFFFFFu) {
+            fr.lightCommonData->pointLightBufferIndex = fr.lightSrvBaseIndex + 0;
+            fr.lightCommonData->spotLightBufferIndex = fr.lightSrvBaseIndex + 1;
+            fr.lightCommonData->areaLightBufferIndex = fr.lightSrvBaseIndex + 2;
+        } else {
+            fr.lightCommonData->pointLightBufferIndex = 0xFFFFFFFFu;
+            fr.lightCommonData->spotLightBufferIndex = 0xFFFFFFFFu;
+            fr.lightCommonData->areaLightBufferIndex = 0xFFFFFFFFu;
         }
     }
 
@@ -700,40 +718,29 @@ void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
     DirectXUtils::UAVBarrier(commandList_, resource);
 }
 
-void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, D3D12_GPU_DESCRIPTOR_HANDLE textureHandle, const UINT& indexCount) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
-    SkyboxPacket p{};
-    p.vertexBufferView = vertexBufferView;
-    p.indexBufferView = indexBufferView;
-    p.materialAddress = materialAddress;
-    p.transformationAddress = transformationAddress;
-    p.textureHandle = textureHandle;
-    p.indexCount = indexCount;
-    skyboxQueue_.push_back(p);
+void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
+                               const D3D12_INDEX_BUFFER_VIEW& indexBufferView,
+                               D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
+                               D3D12_GPU_VIRTUAL_ADDRESS transformationAddress,
+                               const UINT& indexCount) {
+    RenderPackets::SkyboxPacket packet;
+    packet.vertexBufferView = vertexBufferView;
+    packet.indexBufferView = indexBufferView;
+    packet.materialAddress = materialAddress;
+    packet.transformationAddress = transformationAddress;
+    packet.indexCount = indexCount;
+    // packet.textureHandle is removed
+
+    skyboxQueue_.push_back(packet);
 }
 
 void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
-
-    commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView); // VBVを設定
-    //IBVを設定
-    commandList_->IASetIndexBuffer(&packet.indexBufferView);
-    //形状を設定。PSOに設定しているものとはまた別。同じものを設定すると考えておけば良い
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    ///CBVを設定する
-
-    //マテリアルCBufferの場所を設定(ここでの第一引数の0はRootParameter配列の0番目であり、registerの0ではない)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
-
-    //wvp用のCBufferの場所を設定(今回はRootParameter[1]に対してCBVの設定を行っている)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.transformationAddress);
-
-    ///DescriptorTableを設定する
-
-    //SRVのDescriptorTableの先頭を設定。2はRootParameter[2]である。
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
-
-    //描画！（DrawCall/ドローコール）。3頂点で1つのインスタンス。
+    commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView);
+    commandList_->IASetIndexBuffer(&packet.indexBufferView);
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress); // b0
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.transformationAddress); // b0 (VS)
+    // commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle); // deleted
     commandList_->DrawIndexedInstanced(packet.indexCount, 1, 0, 0, 0);
 }
 
@@ -1036,10 +1043,15 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
         commandList_->SetPipelineState(defaultPso);
     }
 
-    // 2. ルートシグネチャの設定
+    // --- ルートシグネチャのセット ---
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
 
-    // 3. 形状の設定 (三角形リスト)
+    // --- Bindless SRV用ディスクリプタテーブルのセット (Slot 2) ---
+    // [Bindless] srvPoolの先頭(index=0)から最大数までをバインドする
+    // descriptorTable の先頭アドレスをセット
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::BindlessSRV, dxCommon_->GetSrvPool()->GetGPUHandle(0));
+
+    // --- カメラ用 定数バッファのセット (Slot 5) ---
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 4. テクスチャの設定 (RootParameter[(UINT)RootSlot::Texture])
@@ -1068,12 +1080,15 @@ void DrawManager::BindCommonParameters() {
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Camera, fr.frameData.camera);
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, fr.frameData.lightCommon);
 
-    // 点光源、スポットライト、面光源を１つのテーブル（Slot 6）で一括設定
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, fr.lightSrvHandle);
+    // [Bindless] srvPoolの先頭(index=0)から最大数までをバインドする
+    // descriptorTable の先頭アドレスをセット
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::BindlessSRV, dxCommon_->GetSrvPool()->GetGPUHandle(0));
 
-    // シャドウマップをバインド (Slot 10 / register t5) - シャドウパス中はバインドしない
-    ShadowMap* shadowMap = GetShadowMap();
-    if (shadowMap && !isShadowPass_) {
+    // レガシー用バインド (HLSL側のBindless完全移行が終わるまで必要)
+    // 点光源、スポットライト、面光源を3つのテーブル(Slot 10等)で一括設定
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, fr.lightSrvHandle);
+    
+    if (ShadowMap* shadowMap = GetShadowMap()) {
         commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::ShadowMap, shadowMap->GetSrvHandle());
     }
 }
@@ -1150,63 +1165,6 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     ClearRenderQueues();
 }
 
-void DrawManager::ExecuteTopMostQueues(IrufemiEngine* engine) {
-    if (topMostSpriteQueue_.empty()) return;
-
-    BlendMode currentBlend = BlendMode::kBlendModeNormal;
-    PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
-    PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
-    bool first = true;
-    
-    for (const auto& p : topMostSpriteQueue_) {
-        if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
-            engine->SetBlend(p.blendMode);
-            engine->SetDepthWrite(p.depthWrite);
-            engine->SetCull(p.cullMode);
-            engine->ApplyPSO("SpriteForBackBuffer");
-            
-            currentBlend = p.blendMode;
-            currentDepth = p.depthWrite;
-            currentCull = p.cullMode;
-            first = false;
-        }
-        DrawSprite(p);
-    }
-
-    first = true;
-    for (const auto& p : topMostSpriteBatchQueue_) {
-        if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
-            engine->SetBlend(p.blendMode);
-            engine->SetDepthWrite(p.depthWrite);
-            engine->SetCull(p.cullMode);
-            engine->ApplyPSO("SpriteBatch");
-            
-            currentBlend = p.blendMode;
-            currentDepth = p.depthWrite;
-            currentCull = p.cullMode;
-            first = false;
-        }
-        DrawTopMostSpriteBatch(p);
-    }
-
-    first = true;
-    for (const auto& p : topMostTextQueue_) {
-        if (first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull) {
-            engine->SetBlend(p.blendMode);
-            engine->SetDepthWrite(p.depthWrite);
-            engine->SetCull(p.cullMode);
-            // 本来は TextForBackBuffer のようなPSOが望ましいが、最前面用の Text PSO がなければ通常の Text PSO を使用する
-            engine->ApplyPSO("Text");
-            
-            currentBlend = p.blendMode;
-            currentDepth = p.depthWrite;
-            currentCull = p.cullMode;
-            first = false;
-        }
-        DrawText(p);
-    }
-}
-
 void DrawManager::ClearRenderQueues() {
     std::lock_guard<std::mutex> lock(queueMutex_);
     standard3DQueue_.clear();
@@ -1224,8 +1182,5 @@ void DrawManager::ClearRenderQueues() {
     primitiveBatchQueue_.clear();
     modelBatchQueue_.clear();
     postRenderQueue_.clear();
-    topMostSpriteQueue_.clear();
-    topMostSpriteBatchQueue_.clear();
     textQueue_.clear();
-    topMostTextQueue_.clear();
 }

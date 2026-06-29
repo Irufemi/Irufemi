@@ -14,5 +14,10 @@ struct LightCommonData {
     uint32_t pointLightCount;          //!< 有効な点光源の数
     uint32_t spotLightCount;           //!< 有効なスポットライトの数
     uint32_t areaLightCount;           //!< 有効なエリアライトの数
-    uint32_t padding;                  //!< パディング (16進アライメント用)
+    
+    // [Bindless] ライト用 StructuredBuffer のインデックス
+    uint32_t pointLightBufferIndex;    //!< 点光源バッファ (StructuredBuffer, space4)
+    uint32_t spotLightBufferIndex;     //!< スポットライトバッファ (StructuredBuffer, space5)
+    uint32_t areaLightBufferIndex;     //!< エリアライトバッファ (StructuredBuffer, space6)
+    uint32_t padding[2];               //!< パディング (16進アライメント用)
 };
