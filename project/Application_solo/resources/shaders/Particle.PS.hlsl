@@ -4,6 +4,8 @@
 /*三角形の色を変えよう*/
 
 ConstantBuffer<Material> gMaterial : register(b0);
+#include "Bindless.hlsli"
+
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
@@ -13,7 +15,6 @@ struct PixelShaderOutput
 
 ///Textureを使う
 
-Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
 SamplerState gSamplerClamp : register(s1);
 
@@ -44,11 +45,11 @@ PixelShaderOutput main(VertexShaderOutput input)
 	float32_t4 textureColor;
 	if (gMaterial.useClampSampler != 0)
 	{
-		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
+		textureColor = gTextures[gMaterial.textureIndex].Sample(gSamplerClamp, transformedUV.xy);
 	}
 	else
 	{
-		textureColor = gTexture.Sample(gSamplerWrap, transformedUV.xy);
+		textureColor = gTextures[gMaterial.textureIndex].Sample(gSamplerWrap, transformedUV.xy);
 	}
 	output.color = gMaterial.color * textureColor * input.color;
 	

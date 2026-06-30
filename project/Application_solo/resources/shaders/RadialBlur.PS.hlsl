@@ -1,4 +1,6 @@
 #include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
 
 // ラジアルブラー用定数バッファ
 struct RadialBlurParams {
@@ -8,7 +10,6 @@ struct RadialBlurParams {
 };
 
 ConstantBuffer<RadialBlurParams> gParams : register(b0);
-Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
 struct PSOutput {

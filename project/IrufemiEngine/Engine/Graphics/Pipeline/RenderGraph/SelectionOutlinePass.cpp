@@ -5,6 +5,7 @@
 #include "../../DirectX/DirectXCommon.h"
 #include "../../DirectX/DirectXUtils.h"
 #include "../../DirectX/RenderTexture.h"
+#include "../../DirectX/RootSignatureConfig.h"
 
 void SelectionOutlinePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
 #ifdef EditorMode
@@ -77,7 +78,7 @@ void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engi
     if (compPso) {
         cmdList->SetPipelineState(compPso);
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        cmdList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, maskTex->GetSrvHandleGPU());
+        cmdList->SetGraphicsRootDescriptorTable((UINT)RootSlot::LegacyPSTexture, maskTex->GetSrvHandleGPU());
         // 3頂点でフルスクリーンを描画
         cmdList->DrawInstanced(3, 1, 0, 0);
     }

@@ -18,9 +18,8 @@ enum class RootSlot : UINT {
     Camera = 5,           ///< カメラ/PerFrameData (register b2) - VS/PS
     Special = 6,          ///< 特殊用 (GSなど) (register b6) - ALL
     LineInstancing = 7,   ///< ライン用インスタンシング (register t1, space0) - VS
-    Texture = 8,          ///< レガシーテクスチャ (register t0, space0) - PS
-    EnvMap = 9,           ///< レガシー環境マップ (register t1, space0) - PS
-    Lights = 10,          ///< レガシーライトSRVテーブル (register t2, t3, t4) - PS
-    ShadowMap = 11,       ///< レガシーシャドウマップ (register t5) - PS
-    DepthMap = 12,        ///< レガシーメイン深度マップ (register t6) - PS
+    Lights = 8,           ///< レガシーライトSRVテーブル (register t2, t3, t4) - PS
+    ShadowMap = 9,        ///< レガシーシャドウマップ (register t5) - PS
+    DepthMap = 10,        ///< レガシーメイン深度マップ (register t6) - PS
+    LegacyPSTexture = 11, ///< レガシーテクスチャ (register t0) - PS
 };

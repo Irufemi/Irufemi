@@ -100,7 +100,6 @@ void ModelBatch::Draw() {
     RenderPackets::ModelBatchPacket p{};
     p.gpuMesh = GetGpuMesh();
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = textureManager_->Resolve(textureHandle_);
 
     if (useGPUCulling_) {
         p.useGPUCulling = true;

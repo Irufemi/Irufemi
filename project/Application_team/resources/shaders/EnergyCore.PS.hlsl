@@ -146,6 +146,8 @@ float flare(float2 U, float time)
     return 0.2 / max(max(U.x, U.y), 0.001);
 }
 
+#include "Bindless.hlsli"
+
 struct PixelShaderOutput {
     float32_t4 color : SV_TARGET0;
 };

@@ -24,5 +24,6 @@ struct Material {
     float alphaReference;        //!< ディスカード閾値 (0.0f = 全部描画, 1.0f = 全部棄却)
     
     uint32_t textureIndex;       //!< [Bindless] メインテクスチャのSRVインデックス (space1)
-    uint32_t padding[3];         //!< 16バイトアライメント用パディング
+    uint32_t envMapIndex;        //!< [Bindless] 環境マップのSRVインデックス (space2)
+    uint32_t padding[2];         //!< 16バイトアライメント用パディング
 };

@@ -1,4 +1,6 @@
 #include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
 
 // --- 定数バッファ ---
 struct ToneMappingParams {
@@ -8,7 +10,6 @@ struct ToneMappingParams {
 
 ConstantBuffer<ToneMappingParams> gParams : register(b0);
 
-Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
 struct PixelShaderOutput {

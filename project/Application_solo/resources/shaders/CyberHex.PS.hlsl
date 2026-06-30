@@ -68,6 +68,8 @@ float4 hexagon(float2 p)
     return float4(pi + ca - cb * ma, e, f);
 }
 
+#include "Bindless.hlsli"
+
 struct PixelShaderOutput {
     float32_t4 color : SV_TARGET0;
 };

@@ -6,12 +6,13 @@
 
 ConstantBuffer<Material> gMaterial : register(b0);
 
+#include "Bindless.hlsli"
+
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
 };
 
-Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
 PixelShaderOutput main(VertexShaderOutput input)
@@ -24,7 +25,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 
     // hasTexture 時のみサンプル(帯域節約)
 	float32_t4 texColor = (gMaterial.hasTexture != 0)
-        ? gTexture.Sample(gSampler, uv)
+        ? gTextures[gMaterial.textureIndex].Sample(gSampler, uv)
         : float32_t4(1.0f, 1.0f, 1.0f, 1.0f);
 
     // ベースカラー

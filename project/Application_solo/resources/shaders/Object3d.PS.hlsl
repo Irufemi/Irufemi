@@ -6,6 +6,8 @@
 /*三角形の色を変えよう*/
 
 ConstantBuffer<Material> gMaterial : register(b0);
+#include "Bindless.hlsli"
+
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
@@ -15,7 +17,6 @@ struct PixelShaderOutput
 
 ///Textureを使う
 
-Texture2D<float32_t4> gTexture : register(t0); //SRVのregisterはt
 SamplerState gSamplerWrap : register(s0); //Samplerのregisterはs
 SamplerState gSamplerPointClamp : register(s1); // パーティクル用等POINT補間
 SamplerState gSamplerClamp : register(s3); // 新規: 完全クランプ・リニア補間
@@ -42,7 +43,6 @@ StructuredBuffer<AreaLight> gAreaLights : register(t4);
 
 /// 環境マップを追加する
 
-TextureCube<float32_t4> gEnvironmentTexture : register(t1);
 Texture2D<float32_t> gShadowMap : register(t5);
 
 /*テクスチャを貼ろう*/
@@ -59,13 +59,13 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	float32_t4 textureColor;
 	if (gMaterial.useClampSampler == 1) {
-		textureColor = gTexture.Sample(gSamplerClamp, transformedUV.xy);
+		textureColor = gTextures[gMaterial.textureIndex].Sample(gSamplerClamp, transformedUV.xy);
 	} else if (gMaterial.useClampSampler == 2) {
-		textureColor = gTexture.Sample(gSamplerPointClamp, transformedUV.xy);
+		textureColor = gTextures[gMaterial.textureIndex].Sample(gSamplerPointClamp, transformedUV.xy);
 	} else if (gMaterial.useClampSampler == 3) {
-		textureColor = gTexture.Sample(gSamplerWrapClamp, transformedUV.xy);
+		textureColor = gTextures[gMaterial.textureIndex].Sample(gSamplerWrapClamp, transformedUV.xy);
 	} else {
-		textureColor = gTexture.Sample(gSamplerWrap, transformedUV.xy);
+		textureColor = gTextures[gMaterial.textureIndex].Sample(gSamplerWrap, transformedUV.xy);
 	}
 	
     // sRGB -> Linear はハードウェアサンプラー（_SRGB形式）に任せるため削除
@@ -146,10 +146,10 @@ PixelShaderOutput main(VertexShaderOutput input)
 		float32_t3 reflectedVector = reflect(-context.toEye, context.normal);
 		
 		uint envWidth, envHeight, envMipLevels;
-		gEnvironmentTexture.GetDimensions(0, envWidth, envHeight, envMipLevels);
+		gTextureCubes[gMaterial.envMapIndex].GetDimensions(0, envWidth, envHeight, envMipLevels);
 		float mipLevel = gMaterial.roughness * float(envMipLevels - 1);
 		
-		float32_t4 environmentColor = gEnvironmentTexture.SampleLevel(gSamplerWrap, reflectedVector, mipLevel);
+		float32_t4 environmentColor = gTextureCubes[gMaterial.envMapIndex].SampleLevel(gSamplerWrap, reflectedVector, mipLevel);
 		// ガンマ解除はハードウェアに任せるため削除
 		environmentColor.rgb = environmentColor.rgb;
 		
@@ -185,4 +185,4 @@ PixelShaderOutput main(VertexShaderOutput input)
     output.color.rgb = output.color.rgb;
 
 	return output;
-}
+}

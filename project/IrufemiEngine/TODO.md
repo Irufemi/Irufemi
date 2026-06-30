@@ -8,11 +8,12 @@
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
 ### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)
-- [ ] **Bindless Resources (Descriptor Indexing) の導入 (HLSL側の完全移行)**
-    - 全テクスチャ/リソースを巨大な Descriptor Heap に格納し、Shader にインデックス(uint)だけを渡す方式へ移行。描画時のバインド切り替えコストをゼロにする。
-    - **進行状況**: C++側の基盤（インデックス管理、構造体への同期、ルートシグネチャの更新）は完了。
-    - **残タスク**: `PostProcess.PS.hlsl`、`Sprite.PS.hlsl` などのレガシーなHLSLコードを Bindless 配列 (`gTextures[] : register(t0, space1)`) からインデックス参照でテクスチャを取得する形へ書き換える。
-    - **現状**: 未対応シェーダーのクラッシュを防ぐため、互換用として `RootSlot::Texture` (Slot 8) および `RootSlot::EnvMap` (Slot 9) をルートシグネチャに残している。全HLSLの移行完了後にこれらを削除する。
+- [ ] **Bindless Resources (Descriptor Indexing) の完全移行完了**
+    - 全テクスチャ/リソースを巨大な Descriptor Heap に格納し、Shader にインデックス(uint)だけを渡す方式へ移行。
+    - **進行状況**: C++基盤、および `Application_solo` / `Application_team` 双方のほぼすべてのHLSLファイルの移行が完了。
+    - **残タスク**: エディタ用シェーダー `OutlineComposite.PS.hlsl` と `SelectionOutlinePass.cpp` を Bindless 経由でテクスチャを読むように修正する。
+    - **残タスク**: 上記の完了後、互換維持のために復刻した `RootSlot::LegacyPSTexture` を削除し、真の Bindless Root Signature を完成させる。
+    - **残タスク**: 既存の `RenderPackets` 系（PrimitiveBatchPacket, ModelBatchPacket 等）に残存している明示的なテクスチャバインドのコードを完全に撤去し、コードをシンプルにする。
 - [ ] **マルチスレッドコマンド録画 (Multi-threaded Command Recording)**
     - Job System と連携し、D3D12 の CommandList 構築を複数スレッドで並列に行い、CPUの描画ボトルネックを解消する。
 - [ ] **DirectStorage API / Virtual Texturing の対応**
@@ -123,6 +124,5 @@
 - [x] **ランタイムMSDF動的生成によるテキスト描画 (`TextComponent`)**
 - [x] **コライダーの視覚化と直感的なリサイズ操作** (ImGuizmo連携)
 - [x] **アプリケーション終了時のリソースリーク（LIVE_DEVICE）の解消**
-- [x] **ShaderToyからの高度なエフェクト移植とマテリアル化** (EnergyCore)
-
 </details>
+

@@ -411,7 +411,6 @@ void GPUParticleSystem::Draw() {
   packet.perViewAddress = perViewBuffer_.GetGPUVirtualAddress(frameIndex);
   packet.particleSrvHandle = particleSrvHandleGPU_;
   packet.sortListSrvHandle = sortSrvHandleGPU_;
-  packet.textureHandle = engine_->GetTextureManager()->Resolve(textureHandle_);
   packet.instanceCount = kMaxParticles;
   packet.particleResource = particleResource_.Get();
   packet.blendMode = selectedBlend_;

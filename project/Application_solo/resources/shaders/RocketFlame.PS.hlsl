@@ -1,9 +1,11 @@
+#include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
 #include "Object3d.hlsli"
 #include "PerFrame.hlsli"
 
 ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
-Texture2D<float4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
 float4 main(VertexShaderOutput input) : SV_TARGET {

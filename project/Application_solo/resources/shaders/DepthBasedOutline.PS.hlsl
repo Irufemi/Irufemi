@@ -1,4 +1,6 @@
 #include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
 
 struct OutlineParams {
     float32_t intensity;
@@ -7,8 +9,6 @@ struct OutlineParams {
 };
 
 ConstantBuffer<OutlineParams> gOutline : register(b0);
-Texture2D<float32_t4> gTexture : register(t0);
-Texture2D<float32_t> gDepthTexture : register(t1);
 SamplerState gSampler : register(s0);
 SamplerState gSamplerPoint : register(s1);
 
@@ -44,7 +44,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
     for (int32_t x = 0; x < 3; ++x) {
         for (int32_t y = 0; y < 3; ++y) {
             float32_t2 texcoord = input.texcoord + kIndex3x3[x][y] * uvStepSize;
-            float32_t ndcDepth = gDepthTexture.Sample(gSamplerPoint, texcoord);
+            float32_t ndcDepth = gExtraTexture.Sample(gSamplerPoint, texcoord).r;
             // NDC -> View。P^{-1}においてxとyはzwに影響を与えないので0で良い
             float32_t4 viewSpace = mul(float32_t4(0.0f, 0.0f, ndcDepth, 1.0f), gOutline.projectionInverse);
             float32_t viewZ = viewSpace.z * rcp(viewSpace.w);
