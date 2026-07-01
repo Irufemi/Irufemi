@@ -251,12 +251,12 @@ public:
         // Slide
         Vector4 slideColor;
         float slideThreshold;
-        float pad4[3]; // HLSLの Matrix(projectionInverse) 用に16バイト境界までパディング
+        float pad4[2]; // HLSLの float4(outlineInverseProjection) 用に16バイト境界までパディング
 
         // Outline
         Matrix4x4 projectionInverse;
         float outlineIntensity;
-        float pad_outline[3]; // HLSLの float4境界に合わせるためのパディング
+        float pad_outline[3]; // HLSLの float2(radialBlurCenter) 用に16バイト境界までパディング
 
         // RadialBlur
         Vector2 radialBlurCenter;
@@ -266,7 +266,18 @@ public:
         // Glitch
         float glitchIntensity;
         float glitchTime;
-        float pad6[2]; // HLSLの float4 境界に合わせるためのパディング
+        float pad_glitch[2]; // パディング
+
+        // [Bindless]
+        uint32_t mainTextureIndex;
+        uint32_t extraTextureIndex;
+        uint32_t padding_bindless[2];
+    };
+
+    struct BindlessParams {
+        uint32_t mainTextureIndex;
+        uint32_t extraTextureIndex;
+        uint32_t padding[62]; // 256バイトアライメント (64 * 4 = 256)
     };
 
 public:
@@ -362,11 +373,11 @@ public:
     BloomParams& GetBloomParams() { return bloomParams_; }
     GlitchParams& GetGlitchParams() { return glitchParams_; }
 
-    void SetDissolveNoiseHandle(int index, D3D12_GPU_DESCRIPTOR_HANDLE handle) {
-        if (index >= 0 && index < 2) dissolveNoiseHandle_[index] = handle;
+    void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
+        if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
     }
     
-    void SetDepthSrvHandle(D3D12_GPU_DESCRIPTOR_HANDLE handle) { depthSrvHandle_ = handle; }
+    void SetDepthSrvIndex(uint32_t srvIndex) { depthSrvIndex_ = srvIndex; }
 
 private:
     void CreatePSOs();
@@ -469,8 +480,12 @@ private:
     CombinedParams* mappedCombined_ = nullptr;
     CombinedParams combinedParams_;
 
-    D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle_{};
-    std::array<D3D12_GPU_DESCRIPTOR_HANDLE, 2> dissolveNoiseHandle_{};
+    Microsoft::WRL::ComPtr<ID3D12Resource> bindlessCB_;
+    BindlessParams* mappedBindless_ = nullptr;
+    uint32_t bindlessBufferOffset_ = 0;
+
+    uint32_t depthSrvIndex_ = 0;
+    uint32_t dissolveNoiseIndex_[2]{ 0 };
 
     // 状態追跡用は上に移動済み
 };

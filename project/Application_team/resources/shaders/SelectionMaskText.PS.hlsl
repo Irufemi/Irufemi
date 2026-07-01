@@ -3,8 +3,9 @@
 
 ConstantBuffer<Material> gMaterial : register(b0);
 
-Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
+
+#include "Bindless.hlsli"
 
 struct PixelShaderOutput
 {
@@ -22,7 +23,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     float32_t4 uvw = mul(float32_t4(input.texcoord, 0.0f, 1.0f), gMaterial.uvTransform);
     float32_t2 uv = uvw.xy;
 
-    float32_t3 sampleColor = gTexture.Sample(gSampler, uv).rgb;
+    float32_t3 sampleColor = gTextures[gMaterial.textureIndex].Sample(gSampler, uv).rgb;
     float sd = median(sampleColor.r, sampleColor.g, sampleColor.b) - 0.5f;
 
     // 不透明度がほぼ無い場合はピクセルを破棄する

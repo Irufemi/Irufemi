@@ -1,4 +1,6 @@
 #include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
 
 struct VignetteParams {
     float4 color;
@@ -8,7 +10,6 @@ struct VignetteParams {
 };
 
 ConstantBuffer<VignetteParams> gVignette : register(b0);
-Texture2D<float4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
 
 struct PixelShaderOutput {

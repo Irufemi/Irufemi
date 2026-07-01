@@ -294,9 +294,7 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
 
     // 環境マップをバインド
     if (environmentMapHandle_.ptr != 0) {
-        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, environmentMapHandle_);
     } else if (textureManager_) {
-        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, textureManager_->GetWhiteCubeMapHandle());
     }
 }
 
@@ -474,7 +472,6 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     } else {
         gpuHandle = textureManager_->Resolve(resource->textureHandle_);
     }
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, gpuHandle);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -492,7 +489,6 @@ void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet
     commandList_->IASetIndexBuffer(&packet.resource->indexBufferView_);
 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.resource->GetMaterialVAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureManager_->Resolve(packet.resource->textureHandle_));
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU); // VS t0
 
     commandList_->DrawIndexedInstanced(packet.resource->indexCount_, packet.instanceCount, 0, 0, 0);
@@ -549,7 +545,6 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     } else {
         gpuHandle = textureManager_->Resolve(resource->textureHandle_);
     }
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, gpuHandle);
     
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -575,7 +570,6 @@ void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
 
     // Texture (SRV)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
 
     // Instances (SRV)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);
@@ -649,8 +643,7 @@ void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& 
     // CBV (PS)
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);          // PS b0
 
-    // SRV (PS t0 / VS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);            // PS t0
+    // SRV (PS t0 / VS t0)            // PS t0
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);   // VS t0
 
     // Draw
@@ -740,7 +733,7 @@ void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
     commandList_->IASetIndexBuffer(&packet.indexBufferView);
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress); // b0
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.transformationAddress); // b0 (VS)
-    // commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle); // deleted
+    // // deleted
     commandList_->DrawIndexedInstanced(packet.indexCount, 1, 0, 0, 0);
 }
 
@@ -855,7 +848,6 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     // 各種リソースのバインド
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, textureManager_->Resolve(resource->textureHandle_));
 
     // customCBVAddress が設定されていれば Special (b6) にバインドする
     if (packet.customCBVAddress != 0) {
@@ -902,7 +894,6 @@ void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet
 
     // --- SRVのバインド ---
     // テクスチャ (PS t0)
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, packet.textureHandle);
     // パーティクルデータ (VS t0 -> Slot 5: Instancing)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.particleSrvHandle);
     
@@ -1055,11 +1046,9 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 4. テクスチャの設定 (RootParameter[(UINT)RootSlot::Texture])
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, renderTexture->GetSrvHandleGPU());
 
     // 深度テクスチャの設定 (RootParameter[(UINT)RootSlot::EnvMap])
     if (depthSrvHandle.ptr != 0) {
-        commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, depthSrvHandle);
     }
 
     // 追加: ConstantBuffer の設定 (引数があれば RootParameter[(UINT)RootSlot::Material] にセット)

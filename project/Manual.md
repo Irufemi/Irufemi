@@ -659,3 +659,18 @@ aura->SetIsTransparent(true);
 - **自分で `DrawDebug` を呼ばない**:
   各コンポーネント内に独自の `DrawDebug` 等の描画命令（PrimitiveManager等の呼び出し）を記述すると、描画が重複したり描画ステートが壊れる原因となるため、当たり判定の描画は完全にマネージャに委譲してください。
 
+---
+
+## 【NEW】Bindless Resources (Descriptor Indexing) 完全移行について
+
+現在、IrufemiEngine はパフォーマンス向上を目的とした **Bindless Resources** (Descriptor Indexing) への移行を完了しました。
+
+### テクスチャバインドのルール（完全移行後）
+C++側の基盤構築およびHLSL側の対応がすべて完了しており、全テクスチャが巨大な配列 (gTextures および gTextureCubes) に格納されています。
+**HLSL（シェーダー）側はレガシーな register(t0) への個別バインドを廃止し、定数バッファ（MaterialやParams）経由で渡された textureIndex を用いて配列からテクスチャを参照します。**
+
+エンジンのルートシグネチャからは互換性維持のためのレガシースロット (RootSlot::Texture, RootSlot::EnvMap) が完全に削除されました。
+これにより、各バッチ処理やレンダラーの実装から手動でのテクスチャバインド処理（SetGraphicsRootDescriptorTable）は不要になっています。
+
+- **C++側の変更**: 各種描画コマンド（PrimitiveBatch, ModelBatch, GPUParticleSystem等）や RenderPackets から textureHandle が削除されました。テクスチャの切り替えは自動的に Material バッファ内の textureIndex の更新によって行われます。
+- **PostProcess側の変更**: PostProcessManager は各エフェクトの描画前に PostProcessBindlessParams 定数バッファ (b1) を更新し、mainTextureIndex および extraTextureIndex をシェーダーへ渡します。シェーダー内では gTexture マクロが自動的にインデックス解決を行うため、既存のエフェクト計算コードを書き直すことなくBindlessの恩恵を受けられます。

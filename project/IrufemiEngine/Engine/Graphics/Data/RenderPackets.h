@@ -61,7 +61,6 @@ namespace RenderPackets {
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
         D3D12_GPU_VIRTUAL_ADDRESS perViewAddress;
         D3D12_GPU_VIRTUAL_ADDRESS emitterAddress;
-        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE particleSrvHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle;
         uint32_t instanceCount;
@@ -96,7 +95,6 @@ namespace RenderPackets {
         D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
         D3D12_INDEX_BUFFER_VIEW indexBufferView;
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
-        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT indexCount;
         UINT instanceCount;
@@ -111,7 +109,6 @@ namespace RenderPackets {
     struct ModelBatchPacket {
         const struct GpuMesh* gpuMesh;
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
-        D3D12_GPU_DESCRIPTOR_HANDLE textureHandle;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT instanceCount;
         BlendMode blendMode;

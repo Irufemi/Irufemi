@@ -1,4 +1,6 @@
 #include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
 
 /**
  * @file BloomCombine.PS.hlsl
@@ -15,11 +17,6 @@ struct BloomParams {
 
 ConstantBuffer<BloomParams> gBloom : register(b0);
 
-// t0: オリジナル画像
-Texture2D<float32_t4> gOriginalTexture : register(t0);
-// t1: ボケた高輝度画像 (EnvMapスロットを流用)
-Texture2D<float32_t4> gBlurredTexture : register(t1);
-
 SamplerState gSampler : register(s0);
 
 struct PSOutput {
@@ -29,8 +26,8 @@ struct PSOutput {
 PSOutput main(VertexShaderOutput input) {
     PSOutput output;
     
-    float32_t4 original = gOriginalTexture.Sample(gSampler, input.texcoord);
-    float32_t4 blurred = gBlurredTexture.Sample(gSampler, input.texcoord);
+    float32_t4 original = gTexture.Sample(gSampler, input.texcoord);
+    float32_t4 blurred = gExtraTexture.Sample(gSampler, input.texcoord);
     
     // 加算合成 (Intensity を掛けて強調)
     float32_t3 finalRGB = original.rgb + blurred.rgb * gBloom.intensity;

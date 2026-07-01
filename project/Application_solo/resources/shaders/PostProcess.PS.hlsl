@@ -54,8 +54,6 @@ struct PostProcessParams {
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
-Texture2D<float32_t4> gTexture : register(t0);
-Texture2D<float32_t> gExtraTexture : register(t1); // Depth or Mask
 SamplerState gSampler : register(s0);
 SamplerState gSamplerPoint : register(s1);
 
@@ -109,7 +107,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
 
             case kPostProcessMode_Dissolve:
                 {
-                    float32_t mask = gExtraTexture.Sample(gSampler, uv);
+                    float32_t mask = gExtraTexture.Sample(gSampler, uv).r;
                     float32_t3 res = ApplyDissolve(color.rgb, mask, gParams.dissolveThreshold, gParams.dissolveEdgeRange, gParams.dissolveEdgeColor.rgb);
                     if (res.r < 0) return (PixelShaderOutput)gParams.dissolveBackgroundColor;
                     color.rgb = res;

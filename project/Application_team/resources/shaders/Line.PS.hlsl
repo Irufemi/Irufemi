@@ -3,6 +3,8 @@
 // material を PS 側で参照(register を b0 に合わせる)
 ConstantBuffer<Material> gMaterial : register(b0);
 
+#include "Bindless.hlsli"
+
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;

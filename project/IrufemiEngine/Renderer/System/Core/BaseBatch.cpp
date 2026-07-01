@@ -392,8 +392,10 @@ void BaseBatch::SyncBeforeDraw() {
     // [Bindless] テクスチャのインデックスを解決して反映
     if (textureManager_) {
         cpuMaterialData_.textureIndex = textureManager_->GetSrvIndex(textureHandle_);
+        cpuMaterialData_.envMapIndex = textureManager_->GetWhiteCubeMapSrvIndex();
     } else {
         cpuMaterialData_.textureIndex = 0;
+        cpuMaterialData_.envMapIndex = 0;
     }
     
     if (auto engine = dx_->GetEngine()) {

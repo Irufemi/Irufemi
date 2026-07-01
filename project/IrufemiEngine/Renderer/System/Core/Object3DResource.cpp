@@ -142,8 +142,10 @@ void Object3DResource::SyncBeforeDraw() {
             // テクスチャのインデックスを解決して反映
             if (sTextureManager) {
                 cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+                cpuMaterialData_.envMapIndex = sTextureManager->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
             } else {
                 cpuMaterialData_.textureIndex = 0;
+                cpuMaterialData_.envMapIndex = 0;
             }
             
             // マテリアルデータを更新

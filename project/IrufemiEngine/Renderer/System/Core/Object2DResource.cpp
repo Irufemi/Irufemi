@@ -37,41 +37,46 @@ void Object2DResource::CreateResource() {
         return;
 
     if (!vertexDataList_.empty()) {
-        if (vertexResource_) {
-            s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+        if (vertexCapacity_ < vertexDataList_.size()) {
+            if (vertexResource_) {
+                Unmap();
+                s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+            }
+            vertexCapacity_ = static_cast<uint32_t>(vertexDataList_.size() + 32);
+            vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexCapacity_);
+            vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
+            vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexCapacity_);
+            vertexBufferView_.StrideInBytes = sizeof(VertexData);
         }
-        vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
-        vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
-        vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexDataList_.size());
-        vertexBufferView_.StrideInBytes = sizeof(VertexData);
     }
 
     if (!indexDataList_.empty()) {
-        if (indexResource_) {
-            s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+        if (indexCapacity_ < indexDataList_.size()) {
+            if (indexResource_) {
+                Unmap();
+                s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+            }
+            indexCapacity_ = static_cast<uint32_t>(indexDataList_.size() + 64);
+            indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexCapacity_);
+            indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
+            indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexCapacity_);
+            indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
         }
-        indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexDataList_.size());
-        indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
-        indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexDataList_.size());
-        indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
     if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
-        materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
+        if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
+            materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
 
-        cpuMaterialData_.color = {1, 1, 1, 1};
-        cpuMaterialData_.enableLighting = true;
-        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
-        cpuMaterialData_.metallic = 0.0f;
-        cpuMaterialData_.roughness = 0.5f;
-        cpuMaterialData_.environmentCoefficient = 0.0f;
-
-        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+            for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+                engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
+            }
         }
 
-        transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
+        if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
+            transformCbIndex_ = engine->GetTransformBufferManager()->Allocate();
+        }
     }
 }
 
@@ -142,9 +147,12 @@ void Object2DResource::SyncBeforeDraw() {
             }
         }
 
-        // 頂点データの更新があればGPUに転送
+        // 頂点・インデックスデータの更新があればGPUに転送
         if (vertexData_ && !vertexDataList_.empty()) {
             std::memcpy(vertexData_, vertexDataList_.data(), sizeof(VertexData) * vertexDataList_.size());
+        }
+        if (indexData_ && !indexDataList_.empty()) {
+            std::memcpy(indexData_, indexDataList_.data(), sizeof(uint32_t) * indexDataList_.size());
         }
     }
 }

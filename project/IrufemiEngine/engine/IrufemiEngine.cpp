@@ -324,10 +324,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // ノイズテクスチャのロードとハンドル設定
   noise0Handle_ = textureManager_->LoadTexture("resources/noise0.png");
   noise1Handle_ = textureManager_->LoadTexture("resources/noise1.png");
-  postProcessManager_->SetDissolveNoiseHandle(
-      0, textureManager_->Resolve(noise0Handle_));
-  postProcessManager_->SetDissolveNoiseHandle(
-      1, textureManager_->Resolve(noise1Handle_));
+  postProcessManager_->SetDissolveNoiseIndex(
+      0, textureManager_->GetTextureObject(noise0Handle_)->GetSrvIndex());
+  postProcessManager_->SetDissolveNoiseIndex(
+      1, textureManager_->GetTextureObject(noise1Handle_)->GetSrvIndex());
 
   // --- 深度バッファの SRV 作成とマネージャーへの設定 ---
   depthSrvIndex_ = dxCommon_->GetSrvPool()->Allocate();
@@ -344,7 +344,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       dxCommon_->GetDepthStencilResource(), &depthSrvDesc,
       dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
 
-  postProcessManager_->SetDepthSrvHandle(depthSrvHandleGPU);
+  postProcessManager_->SetDepthSrvIndex(depthSrvIndex_);
 
   // --- SceneTransition の初期化 ---
   sceneTransition_ = std::make_unique<SceneTransition>();
@@ -800,8 +800,7 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
         dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
 
     // ポストプロセスマネージャーに新しいSRVハンドルを設定
-    postProcessManager_->SetDepthSrvHandle(
-        dxCommon_->GetSrvPool()->GetGPUHandle(depthSrvIndex_));
+    postProcessManager_->SetDepthSrvIndex(depthSrvIndex_);
   }
   
   // 4. カメラの解像度更新 (3D空間の歪み防止)

@@ -3,8 +3,9 @@
 
 ConstantBuffer<Material> gMaterial : register(b0);
 
-Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
+
+#include "Bindless.hlsli"
 
 struct PixelShaderOutput
 {
@@ -25,7 +26,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     float32_t2 uv = uvw.xy;
 
     // アトラステクスチャからRGB(MSDF)をサンプリング
-    float32_t3 sampleColor = gTexture.Sample(gSampler, uv).rgb;
+    float32_t3 sampleColor = gTextures[gMaterial.textureIndex].Sample(gSampler, uv).rgb;
 
     // 距離場を計算し、0.5 を基準値として内外を判定
     float sd = median(sampleColor.r, sampleColor.g, sampleColor.b) - 0.5f;

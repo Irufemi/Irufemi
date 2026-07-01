@@ -102,6 +102,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
                                D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
                                const PostProcessWorkspace& workspace) {
   RenderTexture *currentSource = srcTexture;
+  bindlessBufferOffset_ = 0; // フレーム開始時にリセット
 
   if (!activeModes_.empty()) {
     size_t modeIdx = 0;
@@ -147,8 +148,12 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         commandList->SetPipelineState(isLastBatch ? finalBloomCombinePSO_.Get() : bloomCombinePSO_.Get());
         commandList->SetGraphicsRootSignature(rootSig_);
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
-        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, blurV->GetSrvHandleGPU());
+        // Bindless パラメータの更新
+        mappedBindless_[bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
+        mappedBindless_[bindlessBufferOffset_].extraTextureIndex = blurV ? blurV->GetSrvIndex() : 0;
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+        bindlessBufferOffset_++;
+        
         commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, bloomCB_->GetGPUVirtualAddress());
         commandList->DrawInstanced(3, 1, 0, 0);
 
@@ -237,15 +242,8 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         }
 
         combinedParams_.effectCount = (int32_t)batch.size();
-        D3D12_GPU_DESCRIPTOR_HANDLE extraSrv = { 0 };
         for (int i = 0; i < (int)batch.size(); ++i) {
           combinedParams_.effects[i] = (int32_t)batch[i];
-          if (batch[i] == Mode::DepthBasedOutline) {
-              extraSrv = depthSrvHandle_;
-          } else if (batch[i] == Mode::Dissolve) {
-              int noiseIdx = (dissolveParams_.noiseType <= 0) ? 0 : 1;
-              extraSrv = dissolveNoiseHandle_[noiseIdx];
-          }
         }
         if (mappedCombined_) { *mappedCombined_ = combinedParams_; }
 
@@ -256,12 +254,24 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         commandList->SetPipelineState(isLastBatch ? finalCombinedPSO_.Get() : combinedPSO_.Get());
         commandList->SetGraphicsRootSignature(rootSig_);
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
-        if (extraSrv.ptr != 0) {
-          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, extraSrv);
-        } else {
-          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, currentSource->GetSrvHandleGPU());
+
+        // Bindless パラメータの更新
+        mappedBindless_[bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
+        // wait, we need to handle dissolveNoise and depthSrv for combined pass
+        uint32_t extraIdx = 0;
+        for (int i = 0; i < (int)batch.size(); ++i) {
+            if (batch[i] == Mode::DepthBasedOutline) {
+                extraIdx = depthSrvIndex_;
+            } else if (batch[i] == Mode::Dissolve) {
+                int noiseIdx = (dissolveParams_.noiseType <= 0) ? 0 : 1;
+                extraIdx = dissolveNoiseIndex_[noiseIdx];
+            }
         }
+        mappedBindless_[bindlessBufferOffset_].extraTextureIndex = extraIdx;
+        
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+        bindlessBufferOffset_++;
+        
         commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, combinedCB_->GetGPUVirtualAddress());
         commandList->DrawInstanced(3, 1, 0, 0);
 
@@ -313,7 +323,24 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   // ソーステクスチャのバインド (Root2 -> t0)
-  commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, srcTexture->GetSrvHandleGPU());
+
+  
+  // -------------------------------------------------------------
+  // Bindless パラメータの更新
+  mappedBindless_[bindlessBufferOffset_].mainTextureIndex = srcTexture ? srcTexture->GetSrvIndex() : 0;
+  
+  uint32_t extraIdx = 0;
+  if (mode == Mode::DepthBasedOutline) {
+      extraIdx = depthSrvIndex_;
+  } else if (mode == Mode::Dissolve) {
+      int noiseIdx = (dissolveParams_.noiseType <= 0) ? 0 : 1;
+      extraIdx = dissolveNoiseIndex_[noiseIdx];
+  }
+  mappedBindless_[bindlessBufferOffset_].extraTextureIndex = extraIdx;
+  
+  commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+  bindlessBufferOffset_++;
+  // -------------------------------------------------------------
 
   // 定数バッファのバインド (Root0 -> b0)
   D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0;
@@ -366,10 +393,8 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
 
   // 追加のリソース（深度、ノイズテクスチャ）のバインド (Root12 -> t1)
   if (mode == Mode::DepthBasedOutline) {
-    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, depthSrvHandle_);
   } else if (mode == Mode::Dissolve) {
     int32_t noiseIdx = (std::max)(int32_t(0), (std::min)(int32_t(1), dissolveParams_.noiseType));
-    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, dissolveNoiseHandle_[noiseIdx]);
   }
 
   // 描画実行 (3頂点インデックスなし)
@@ -542,6 +567,8 @@ void PostProcessManager::CreatePSOs() {
 
 void PostProcessManager::CreateConstantBuffers() {
     combinedCB_ = CreateBuffer(sizeof(CombinedParams));
+    bindlessCB_ = CreateBuffer(256 * 64);
+    bindlessCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBindless_));
     combinedCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCombined_));
   noiseCB_ = CreateBuffer(sizeof(NoiseParams));
   noiseCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedNoise_));

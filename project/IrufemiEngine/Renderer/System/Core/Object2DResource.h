@@ -17,6 +17,12 @@ class Object2DResource : public BaseResource {
 public:
     virtual ~Object2DResource();
 
+    /**
+     * @brief 頂点・インデックス・定数バッファの生成またはサイズ調整を行う
+     * @details 実行時、要求サイズが現在の Capacity(容量) に収まる場合は
+     *          バッファの再生成をスキップし、パフォーマンス低下を防ぎます。
+     *          定数バッファは未割り当ての場合のみ新規に Allocate します。
+     */
     void CreateResource() override;
     void Map() override;
     void Unmap() override;
@@ -69,4 +75,8 @@ public:
     D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
 
     void SyncBeforeDraw();
+
+private:
+    uint32_t vertexCapacity_ = 0; //!< 現在確保されている頂点バッファの最大要素数
+    uint32_t indexCapacity_ = 0;  //!< 現在確保されているインデックスバッファの最大要素数
 };
