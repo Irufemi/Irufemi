@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -716,6 +716,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\UIAnimator.cpp" />
     <ClCompile Include="Framework\UISelectionGroup.cpp" />
     <ClCompile Include="Renderer\Object\2D\Primitive\Primitive2DObject.cpp" />
+    <ClCompile Include="Renderer\Object\2D\PrimitiveBatch\Primitive2DBatch.cpp" />
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp" />
     <ClCompile Include="Renderer\Object\2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object\2D\Text\Text.cpp" />
@@ -891,6 +892,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
     <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h" />
+    <ClInclude Include="Renderer\Object\2D\PrimitiveBatch\Primitive2DBatch.h" />
     <ClInclude Include="Engine\Core\Type\Primitive2DType.h" />
     <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h" />
     <ClInclude Include="Renderer\Object\2D\Sprite\Sprite.h" />
