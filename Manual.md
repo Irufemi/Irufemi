@@ -11,10 +11,12 @@
 
 - **`IrufemiEngine/` (エンジンコア)**
   - 描画パイプラインや汎用的なマネージャーが置かれます。**ゲーム特有のロジックやアクターは絶対にここに書かないでください。**
-- **`Application/` (ゲームロジック)**
-  - プレイヤーの動き、敵のAI、各種シーン（Title, InGame等）の処理はすべてここに作成します。
+- **`IrufemiEditor/` (エディタUI・ツール)**
+  - ImGuiを用いたエディタ画面の構築や、シーンビュー、インスペクター等の実装ロジックが置かれます。
+- **`Application_solo/` / `Application_team/` (ゲームロジック)**
+  - プレイヤーの動き、敵のAI、各種シーン（Title, InGame等）の処理はすべてプロジェクトに応じたこれらのディレクトリ内に作成します。
 - **`resources/` (リソースデータ)**
-  - 3Dモデル（`.obj`, `.gltf`）やテクスチャ（`.png`）、音声（`.wav`）は必ずこのフォルダ以下の適切なディレクトリ（`model/`, `ui/`, `audio/` 等）に配置してください。
+  - 3Dモデル（`.obj`, `.gltf`）やテクスチャ（`.png`）、音声（`.wav`）は必ず各Applicationディレクトリ直下の `resources/` 内（`model/`, `ui/`, `audio/` 等）に配置してください。
 
 ---
 
@@ -294,12 +296,12 @@ line_->Draw(); // ライン専用のキューに登録される
   
   // 描画したい数だけインスタンスを追加
   for (int i = 0; i < 100; ++i) {
-      batch2D_->AddInstanceData({
+      batch2D_->AddInstance(
           Vector3(10.0f * i, 100.0f, 0.0f), // 座標
+          1.0f,                             // スケール
           Vector3(0.0f, 0.0f, 0.0f),        // 回転
-          Vector3(10.0f, 10.0f, 1.0f),      // スケール
           Vector4(1.0f, 1.0f, 1.0f, 1.0f)   // カラー
-      });
+      );
   }
   
   // 更新と描画
@@ -672,15 +674,16 @@ DirectX 12 でフレーム間のマルチバッファリング（`kMaxFramesInFl
 
 ### 3.1 TextureManager (テクスチャ管理)
 `Sprite` などの描画に必要な画像をロードし、GPU用のハンドルを取得します。同じ画像を何度ロードしても、1度だけメモリに乗るようになっています。
+C++のコードから直接テクスチャを管理する場合は、戻り値として `ResourceHandle` を受け取ります。
 
 ```cpp
 // 1. 画像のロード (resources/ フォルダからの相対パス)
-engine_->GetTextureManager()->Load("ui/title_logo.png");
+ResourceHandle handle = engine_->GetTextureManager()->LoadTexture("ui/title_logo.png");
 
 // 2. フォルダ内の画像一括ロード (ローディング画面などで使用)
 engine_->GetTextureManager()->LoadAllFromFolder("resources/ui");
 
-// ※ Sprite等の Initialize にファイル名を渡せば、内部で自動的にロードされます。
+// ※ Sprite等の Initialize に文字列でファイル名を渡せば、内部で自動的にロードされます。
 ```
 
 ### 3.2 ModelManager (3Dモデル管理)
@@ -688,9 +691,9 @@ engine_->GetTextureManager()->LoadAllFromFolder("resources/ui");
 
 ```cpp
 // モデルの事前ロード（インゲーム開始前などに呼ぶとカクつきを防げます）
-engine_->GetModelManager()->LoadModel("enemy/enemy.obj");
+ResourceHandle handle = engine_->GetModelManager()->LoadModel("enemy/enemy.obj");
 
-// ※ ObjClass::Initialize("enemy/enemy.obj") を呼べば内部で自動ロードされます。
+// ※ コンポーネント等に文字列で "enemy/enemy.obj" を渡せば、内部で自動ロードされます。
 ```
 
 ### 3.3 AudioManager (サウンド管理)
@@ -1021,11 +1024,12 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 ### 6.3.5 エディタのショートカットキー
 エディタ上では、操作を快適にするために以下のショートカットキーがサポートされています。
 - **`Ctrl + Z`**: 元に戻す (Undo)
-- **`Ctrl + Y`**: やり直し (Redo)
+- **`Ctrl + Y` / `Ctrl + Shift + Z`**: やり直し (Redo)
 - **`Ctrl + D`**: 選択中の GameObject を複製 (Duplicate)
 - **`Delete`**: 選択中の GameObject を削除
 - **`F2`**: 選択中の GameObject の名前変更 (Rename)
-- **`W / E / R`**: ギズモの操作モード切り替え (Translate / Rotate / Scale)
+- **`F`**: 選択中の GameObject にカメラをフォーカス (Focus)
+※ギズモの操作モード（移動・回転・拡縮・Bounds）は、ショートカットキーではなく Scene View 右上のツールバーから切り替えます。
 
 ### 6.3.6 コンソールパネル (Console)
 エンジンからのログ出力（エラー、警告、情報）は、エディタ下部の **Console** パネルに表示されます。
@@ -1059,6 +1063,7 @@ if (ImGui::Checkbox("TopMost", &isTopMost)) {
 4. **Scene View のオーバーレイUI (Overlay UI)**
    - Scene View の右上に、半透明のオーバーレイパネルが常駐しています。
    - ここから、ギズモの操作モード（Local/World）、操作ツール（Translate, Rotate, Scale, Bounds）の切り替えや、コライダーのデバッグ表示のON/OFFが素早く行えます。
+   - **Bounds ツール**: AABBやOBBコライダーなどのサイズを、Scene View上のハンドルをドラッグして視覚的に調整できる便利なツールです。
 
 ### 6.6 メニューバーの便利機能
 画面最上部のメニューバーからも、様々なアクションにアクセスできます。
@@ -1119,6 +1124,31 @@ Releaseビルドでは、`dxcompiler.dll` などのコンパイラを一切ロ�
 - Visual Studio で F5（またはビルド）を押した直後に、裏で自動的に `CompileShaders.bat` が走り、すべての `.hlsl` をコンパイルして `.cso`（コンパイル済みバイナリ）を生成します。
 - 実行時には `.hlsl` ではなく生成された `.cso` を直接メモリに読み込みます。
 - そのため、最終的にプレイヤーに配布（リリース）する際は、**「すべての `.hlsl` / `.hlsli` ファイルは削除して `.cso` だけを含める」** ことで、ソースコードの秘匿化と容量削減が可能です（Compute Shaderも含む）。
+
+### 8.4 Bindless Resources とカスタムシェーダーでのテクスチャアクセス
+本エンジンは最新の **Bindless アーキテクチャ (Descriptor Indexing)** に移行しています。
+C++ 側でシェーダーごとにテクスチャを個別にバインドするのではなく、すべてのテクスチャが1つの巨大な配列に登録されており、シェーダー側からは **「テクスチャのインデックス（番号）」** さえ分かれば自由にアクセスできます。
+
+独自のシェーダー (`xxx.PS.hlsl` など) を書く場合は、以下のようにお作法に従って記述してください。
+
+```hlsl
+// 1. エンジン標準の Bindless 定義をインクルードする
+#include "Bindless.hlsli"
+#include "Material.hlsli"
+#include "PerFrame.hlsli"
+
+// マテリアル定数バッファ（ここに textureIndex が入っている）
+ConstantBuffer<Material> gMaterial : register(b0);
+// 共通サンプラ
+SamplerState gSampler : register(s0);
+
+float4 main(VertexShaderOutput input) : SV_TARGET {
+    // 2. gTextures (Bindless配列) から、テクスチャインデックスを使って色を取得する
+    float4 color = gTextures[gMaterial.textureIndex].Sample(gSampler, input.texcoord);
+    return color;
+}
+```
+※このように書くことで、C++ 側でマテリアルにテクスチャパスを指定するだけで、自動的に適切なインデックスがシェーダーに渡るようになります。
 
 ---
 > **ドキュメント更新履歴**
