@@ -11,6 +11,7 @@
 #include "Engine/Manager/CollisionManager.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"
+#include "../Core/EditorCommands.h"
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/GameObject.h"
@@ -42,7 +43,7 @@ void SceneViewPanel::Draw() {
     if (engine && engine->GetMainRenderTexture()) {
         auto mainTexture = engine->GetMainRenderTexture();
         
-        // 繝代ロ繝ｫ縺ｮ螟ｧ縺阪＆繧貞叙蠕励＠縺ｦ逕ｻ蜒上ｒ繝輔ぅ繝・ヨ縺輔○繧具ｼ・6:9繧堤ｶｭ謖√☆繧具ｼ・
+        // パネルの大きさを取得して画像をフィットさせる（16:9を維持する）
         ImVec2 avail = ImGui::GetContentRegionAvail();
         float aspect = 1280.0f / 720.0f;
         ImVec2 size;
@@ -54,7 +55,7 @@ void SceneViewPanel::Draw() {
             size.y = size.x / aspect;
         }
 
-        // 荳ｭ螟ｮ謠・∴縺ｫ縺吶ｋ縺溘ａ縺ｮ繧ｫ繝ｼ繧ｽ繝ｫ菴咲ｽｮ隱ｿ謨ｴ
+        // 中央揃えにするためのカーソル位置調整
         ImVec2 cursor = ImGui::GetCursorPos();
         cursor.x += (avail.x - size.x) * 0.5f;
         cursor.y += (avail.y - size.y) * 0.5f;
@@ -62,10 +63,10 @@ void SceneViewPanel::Draw() {
 
         ImGui::Image((ImTextureID)mainTexture->GetImGuiSrvHandleGPU().ptr, size);
         
-        ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() 縺ｮ蟾ｦ荳・
-        ImVec2 maxPos = ImGui::GetItemRectMax(); // ImGui::Image() 縺ｮ蜿ｳ荳・
+        ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() の左上
+        ImVec2 maxPos = ImGui::GetItemRectMax(); // ImGui::Image() の右下
 
-        // --- 驕ｸ謚樔ｸｭ縺ｮSprite縺ｫ蟇ｾ縺吶ｋ繧｢繧ｦ繝医Λ繧､繝ｳ・亥ｼｷ隱ｿ譫・画緒逕ｻ ---
+        // --- 選択中のSpriteに対するアウトライン（強調枠）描画 ---
         if (auto selectedObj = editorManager_->GetSelectedObject()) {
             // ビューポート領域でクリッピングを行い、アウトラインが画面外（他のパネル等）にはみ出さないようにする
             ImGui::GetWindowDrawList()->PushClipRect(minPos, maxPos, true);
@@ -119,9 +120,9 @@ void SceneViewPanel::Draw() {
         DrawImGuizmo(minPos, size);
         HandleDragAndDrop(minPos, size);
 
-        // --- UI逕ｨ縺ｮ莉ｮ諠ｳ繝槭え繧ｹ蠎ｧ讓呎峩譁ｰ & 繧ｯ繝ｪ繝・け縺ｫ繧医ｋ3D繝斐ャ繧ｭ繝ｳ繧ｰ ---
+        // --- UI用の仮想マウス座標更新 & クリックによる3Dピッキング ---
         if (ImGui::IsWindowHovered()) {
-            ImVec2 mousePos = ImGui::GetMousePos(); // 逕ｻ髱｢蜈ｨ菴薙・蠎ｧ讓・
+            ImVec2 mousePos = ImGui::GetMousePos(); // 画面全体の座標
 
             if (mousePos.x >= minPos.x && mousePos.x <= maxPos.x &&
                 mousePos.y >= minPos.y && mousePos.y <= maxPos.y) {
@@ -159,41 +160,76 @@ void SceneViewPanel::Draw() {
         }
 
         // --- オーバーレイUI（SceneViewの右上） ---
-        ImVec2 overlayPos = ImVec2(maxPos.x - 300.0f, minPos.y + 10.0f);
-        ImGui::SetCursorScreenPos(overlayPos);
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.8f)); // 半透明背景
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
-        if (ImGui::BeginChild("SceneOverlay", ImVec2(290.0f, 65.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-            bool* drawCollider = engine->GetCollisionManager()->GetIsDrawDebugLinePtr();
-            if (drawCollider) {
-                ImGui::Checkbox("Draw Colliders", drawCollider);
-            }
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Local", currentGizmoMode_ == ImGuizmo::LOCAL)) currentGizmoMode_ = ImGuizmo::LOCAL;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("World", currentGizmoMode_ == ImGuizmo::WORLD)) currentGizmoMode_ = ImGuizmo::WORLD;
-
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
-            if (ImGui::RadioButton(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT "##T", currentGizmoOperation_ == ImGuizmo::TRANSLATE)) currentGizmoOperation_ = ImGuizmo::TRANSLATE;
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Translate");
-            ImGui::SameLine();
-            if (ImGui::RadioButton(ICON_FA_ROTATE "##R", currentGizmoOperation_ == ImGuizmo::ROTATE)) currentGizmoOperation_ = ImGuizmo::ROTATE;
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rotate");
-            ImGui::SameLine();
-            if (ImGui::RadioButton(ICON_FA_EXPAND "##S", currentGizmoOperation_ == ImGuizmo::SCALE)) currentGizmoOperation_ = ImGuizmo::SCALE;
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scale");
-            ImGui::SameLine();
-            if (ImGui::RadioButton(ICON_FA_VECTOR_SQUARE "##B", currentGizmoOperation_ == ImGuizmo::BOUNDS)) currentGizmoOperation_ = ImGuizmo::BOUNDS;
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bounds");
-            ImGui::PopStyleVar();
-
-            ImGui::EndChild();
-        }
-        ImGui::PopStyleVar();
-        ImGui::PopStyleColor();
+        DrawToolbar(minPos, maxPos);
     }
 
     ImGui::End();
+}
+
+void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
+    auto* engine = editorManager_->GetEngine();
+    
+    ImVec2 overlayPos = ImVec2(maxPos.x - 300.0f, minPos.y + 10.0f);
+    ImGui::SetCursorScreenPos(overlayPos);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.15f, 0.15f, 0.15f, 0.85f));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+
+    if (ImGui::BeginChild("SceneToolbar", ImVec2(290.0f, 40.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6, 4));
+
+        // Tools
+        bool isTranslate = currentGizmoOperation_ == ImGuizmo::TRANSLATE;
+        bool isRotate = currentGizmoOperation_ == ImGuizmo::ROTATE;
+        bool isScale = currentGizmoOperation_ == ImGuizmo::SCALE;
+        bool isBounds = currentGizmoOperation_ == ImGuizmo::BOUNDS;
+
+        auto DrawToolBtn = [](const char* icon, bool selected, ImGuizmo::OPERATION op, ImGuizmo::OPERATION& currentOp, const char* tooltip) {
+            if (selected) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            else ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+            if (ImGui::Button(icon, ImVec2(24, 24))) currentOp = op;
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tooltip);
+        };
+
+        DrawToolBtn(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, isTranslate, ImGuizmo::TRANSLATE, currentGizmoOperation_, "Translate");
+        ImGui::SameLine();
+        DrawToolBtn(ICON_FA_ROTATE, isRotate, ImGuizmo::ROTATE, currentGizmoOperation_, "Rotate");
+        ImGui::SameLine();
+        DrawToolBtn(ICON_FA_EXPAND, isScale, ImGuizmo::SCALE, currentGizmoOperation_, "Scale");
+        ImGui::SameLine();
+        DrawToolBtn(ICON_FA_VECTOR_SQUARE, isBounds, ImGuizmo::BOUNDS, currentGizmoOperation_, "Bounds");
+
+        ImGui::SameLine(); ImGui::TextDisabled("|"); ImGui::SameLine();
+
+        // Local / World
+        const char* modeText = currentGizmoMode_ == ImGuizmo::LOCAL ? "Local" : "World";
+        if (ImGui::Button(modeText, ImVec2(50, 24))) {
+            currentGizmoMode_ = (currentGizmoMode_ == ImGuizmo::LOCAL) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
+        }
+
+        ImGui::SameLine(); ImGui::TextDisabled("|"); ImGui::SameLine();
+
+        // Collider Draw
+        bool* drawCollider = engine->GetCollisionManager()->GetIsDrawDebugLinePtr();
+        if (drawCollider) {
+            bool isActive = *drawCollider;
+            if (isActive) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            else ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+            
+            if (ImGui::Button("Col", ImVec2(35, 24))) {
+                *drawCollider = !isActive;
+            }
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle Collider Debug Draw");
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
+    }
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(2);
 }
 
 void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
@@ -213,8 +249,26 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                 Matrix4x4 world = transform->GetWorldMatrix();
                 bool manipulated = false;
                 
+                bool isUsingGizmo = ImGuizmo::IsUsing();
+
+                if (isUsingGizmo && !wasUsingGizmo_) {
+                    gizmoStartPos_ = transform->GetPosition();
+                    gizmoStartRot_ = transform->GetRotation();
+                    gizmoStartScale_ = transform->GetScale();
+                    
+                    if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
+                        if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
+                            gizmoStartColliderOffset_ = aabbCol->GetLocalOffset();
+                            gizmoStartColliderSize_ = aabbCol->GetLocalSize();
+                        } else if (auto obbCol = selectedObj->GetComponent<OBBColliderComponent>()) {
+                            gizmoStartColliderOffset_ = obbCol->GetLocalOffset();
+                            gizmoStartColliderSize_ = obbCol->GetLocalSize();
+                        }
+                    }
+                }
+
                 if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
-                    // 繧ｳ繝ｩ繧､繝繝ｼ縺ｮ繝ｪ繧ｵ繧､繧ｺ謫堺ｽ・
+                    // コライダーのリサイズ操作
                     if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
                         Vector3 offset = aabbCol->GetLocalOffset();
                         Vector3 csize = aabbCol->GetLocalSize();
@@ -269,6 +323,71 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                         manipulated = true;
                     }
                 }
+
+                if (!isUsingGizmo && wasUsingGizmo_) {
+                    auto IsNotEqual = [](const Vector3& a, const Vector3& b) {
+                        return a.x != b.x || a.y != b.y || a.z != b.z;
+                    };
+                    auto actionManager = editorManager_->GetActionManager();
+                    if (actionManager) {
+                        if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
+                            if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
+                                Vector3 endOffset = aabbCol->GetLocalOffset();
+                                Vector3 endSize = aabbCol->GetLocalSize();
+                                using BoundsPair = std::pair<Vector3, Vector3>;
+                                if (IsNotEqual(endOffset, gizmoStartColliderOffset_) || IsNotEqual(endSize, gizmoStartColliderSize_)) {
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<BoundsPair>>(
+                                        BoundsPair(gizmoStartColliderOffset_, gizmoStartColliderSize_),
+                                        BoundsPair(endOffset, endSize),
+                                        [aabbCol](const BoundsPair& v) {
+                                            aabbCol->SetLocalOffset(v.first);
+                                            aabbCol->SetLocalSize(v.second);
+                                        }
+                                    ));
+                                }
+                            } else if (auto obbCol = selectedObj->GetComponent<OBBColliderComponent>()) {
+                                Vector3 endOffset = obbCol->GetLocalOffset();
+                                Vector3 endSize = obbCol->GetLocalSize();
+                                using BoundsPair = std::pair<Vector3, Vector3>;
+                                if (IsNotEqual(endOffset, gizmoStartColliderOffset_) || IsNotEqual(endSize, gizmoStartColliderSize_)) {
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<BoundsPair>>(
+                                        BoundsPair(gizmoStartColliderOffset_, gizmoStartColliderSize_),
+                                        BoundsPair(endOffset, endSize),
+                                        [obbCol](const BoundsPair& v) {
+                                            obbCol->SetLocalOffset(v.first);
+                                            obbCol->SetLocalSize(v.second);
+                                        }
+                                    ));
+                                }
+                            } else {
+                                Vector3 endScale = transform->GetScale();
+                                if (IsNotEqual(endScale, gizmoStartScale_)) {
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                                        gizmoStartScale_, endScale,
+                                        [transform](const Vector3& v) { transform->SetScale(v); }
+                                    ));
+                                }
+                            }
+                        } else {
+                            Vector3 endPos = transform->GetPosition();
+                            Vector3 endRot = transform->GetRotation();
+                            Vector3 endScale = transform->GetScale();
+                            if (IsNotEqual(endPos, gizmoStartPos_)) {
+                                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                                    gizmoStartPos_, endPos, [transform](const Vector3& v){ transform->SetPosition(v); }));
+                            }
+                            if (IsNotEqual(endRot, gizmoStartRot_)) {
+                                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                                    gizmoStartRot_, endRot, [transform](const Vector3& v){ transform->SetRotation(v); }));
+                            }
+                            if (IsNotEqual(endScale, gizmoStartScale_)) {
+                                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3>>(
+                                    gizmoStartScale_, endScale, [transform](const Vector3& v){ transform->SetScale(v); }));
+                            }
+                        }
+                    }
+                }
+                wasUsingGizmo_ = isUsingGizmo;
 
                 if (manipulated) {
                     Vector3 pos, rot, mscale;
@@ -328,7 +447,7 @@ void SceneViewPanel::HandleDragAndDrop(ImVec2 minPos, ImVec2 size) {
 }
 
 void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos, ImVec2 size) {
-    // 繝励Ξ繧､繝｢繝ｼ繝我ｸｭ・医ご繝ｼ繝騾ｲ陦御ｸｭ・峨・繧､繝ｳ繧ｲ繝ｼ繝縺ｮ繧ｯ繝ｪ繝・け謫堺ｽ懶ｼ亥ｰ・茶縺ｪ縺ｩ・峨→遶ｶ蜷医☆繧九◆繧√ヴ繝・く繝ｳ繧ｰ繧堤┌蜉ｹ縺ｫ縺吶ｋ
+    // プレイモード中（ゲーム進行中）のインゲームのクリック操作（射撃など）と競合するためピッキングを無効にする
     if (editorManager_->IsPlayMode()) {
         return;
     }
@@ -345,7 +464,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
         float scaleY = 720.0f / size.y;
         Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
 
-        // --- 1. 縺ｾ縺・2D (Sprite) 縺ｮ繝斐ャ繧ｭ繝ｳ繧ｰ蛻､螳壹ｒ陦後≧ ---
+        // --- 1. まず 2D (Sprite) のピッキング判定を行う ---
         // --- 1. Sprite や Text などの 2D UI 要素を先に判定 ---
         if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
             auto gameObjects = scene->GetGameObjects();
@@ -410,7 +529,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
             }
         }
 
-        // --- 2. Sprite 縺ｫ蠖薙◆繧峨↑縺九▲縺溷ｴ蜷医・縺ｿ 3D 縺ｮ繝斐ャ繧ｭ繝ｳ繧ｰ繧定｡後≧ ---
+        // --- 2. Sprite に当たらなかった場合のみ 3D のピッキングを行う ---
         if (!isHit) {
             if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
                 Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();

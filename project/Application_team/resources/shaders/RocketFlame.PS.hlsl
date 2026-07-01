@@ -1,9 +1,9 @@
-#include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
-#include "PostProcessBindlessParams.hlsli"
 #include "Object3d.hlsli"
 #include "PerFrame.hlsli"
+#include "Material.hlsli"
 
+ConstantBuffer<Material> gMaterial : register(b0);
 ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
 SamplerState gSampler : register(s0);
@@ -17,8 +17,8 @@ float4 main(VertexShaderOutput input) : SV_TARGET {
     float2 scrollUV1 = uv * float2(1.0, 0.5) + float2(0.0, -time * 3.0);
     float2 scrollUV2 = uv * float2(2.0, 1.0) + float2(0.0, -time * 5.0);
     
-    float noise1 = gTexture.Sample(gSampler, scrollUV1).r;
-    float noise2 = gTexture.Sample(gSampler, scrollUV2).r;
+    float noise1 = gTextures[gMaterial.textureIndex].Sample(gSampler, scrollUV1).r;
+    float noise2 = gTextures[gMaterial.textureIndex].Sample(gSampler, scrollUV2).r;
     float combinedNoise = (noise1 + noise2) * 0.5;
     
     // 形状のマスク（上が太く、下に行くほど細く、かつノイズで削れる）
