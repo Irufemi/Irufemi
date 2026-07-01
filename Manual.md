@@ -5,7 +5,9 @@
 
 ---
 
-## 0. プロジェクト構造とコーディングルール (Project Structure)
+## 1. 導入とエディタ操作 (Introduction & Editor)
+
+### 0. プロジェクト構造とコーディングルール (Project Structure)
 
 新しくコードを書いたり、リソースを追加する際は以下の配置ルールに必ず従ってください。
 
@@ -20,12 +22,110 @@
 
 ---
 
-## 1. エンジンの基本アーキテクチャ (Core Architecture)
+### 6. エディタ (IrufemiEngine Editor) の使い方
 
-### 1.1 IrufemiEngine クラス
+### Project Browser の新機能
+IrufemiEngine のエディタは、モダンなゲームエンジン（Unity等）ライクなアセット管理をサポートしています。
+
+1. **2ペイン・タイル表示**
+   - **左ペイン (ツリー表示)**: フォルダの階層構造のみを表示します。クリックするとその中身が右ペインに表示されます。
+   - **右ペイン (タイル表示)**: FontAwesome アイコン付きで、ファイルとフォルダがグリッド状に並びます。画面幅に合わせて自動で折り返されます。
+
+2. **コンテキストメニュー (右クリック操作)**
+   - ファイル/フォルダ上で右クリックすると、「**Rename (名前変更)**」や「**Delete (削除)**」が可能です。
+   - 余白を右クリックすると、「**Create Folder (新規フォルダ作成)**」ができます。
+   - ※これらの操作はOSの実ファイルシステム（Windowsのフォルダ等）に即座に反映されます。
+
+3. **ドラッグ＆ドロップによるアセットの即時配置**
+   - **画像の配置**: Project Browser にある `.png` や `.jpg` などの画像を **Hierarchy** にドラッグ＆ドロップすると、`SpriteRendererComponent` がアタッチされた GameObject が自動生成されます。
+   - **3Dモデルの配置**: `.obj` や `.fbx` などをドラッグ＆ドロップすると、`MeshRendererComponent` がアタッチされた GameObject が自動生成されます。
+   - D&D 時にアセットの相対パスが自動的にコンポーネントへセットされるため、すぐに画面上でプレビュー可能です。
+
+#### 1.2.2 プレハブ (Prefab) システム
+Unityライクな「オブジェクトのテンプレート化」をサポートしています。
+
+1. **Prefabの作成・保存**:
+   - Hierarchy パネルでオブジェクトを右クリックし、「**Save as Prefab**」を選択します。
+   - `resources/prefabs/` 以下に `.prefab.json` として、コンポーネントやパラメータがすべて保存されます。
+2. **エディタからの配置**:
+   - Project Browser に青いキューブのアイコンで表示されます。これを **Scene View** にドラッグ＆ドロップすると、即座にインスタンス化（実体化）して配置されます。
+3. **C++コードからの動的生成 (ランタイム)**:
+   - ゲーム中に「敵」や「弾」をスポーンさせるには、C++コードで以下のように呼び出します。
+   ```cpp
+   #include "Framework/SceneSerializer.h"
+
+   // Prefabをロードしてインスタンス化
+   auto bullet = SceneSerializer::LoadPrefab("resources/prefabs/Bullet.prefab.json");
+   if (bullet) {
+       bullet->GetComponent<TransformComponent>()->position_ = spawnPos;
+       scene->AddGameObject(bullet);
+   }
+   ```
+
+#### 1.2.3.6 コンソールパネル (Console)
+エンジンからのログ出力（エラー、警告、情報）は、エディタ下部の **Console** パネルに表示されます。
+コード内で `Log::Info()`, `Log::Warning()`, `Log::Error()` を呼び出すとリアルタイムに反映され、パネル上の「Clear」ボタンでログを消去できます。
+
+#### 1.2.4 インスペクター (Inspector) の便利な操作機能
+インスペクター上で作業を効率化するための便利な機能が備わっています。これらはすべて **Undo/Redo (Ctrl+Z / Ctrl+Y)** に対応しています。
+
+1. **コンポーネントの削除 (Remove Component)**
+   - インスペクターに追加されている各コンポーネントの「ヘッダー（名前が書かれた帯の部分）」を **右クリック** すると、コンテキストメニューが表示されます。
+   - そこから「**Remove Component**」を選択することで、不要なコンポーネントを安全に削除できます。
+2. **Transform の一括リセット**
+   - `TransformComponent` のヘッダーの右端にある「**Reset**」ボタンをクリックすると、Position (0, 0, 0)、Rotation (0, 0, 0)、Scale (1, 1, 1) へ一括で初期化されます。
+3. **テクスチャのドラッグ＆ドロップ割り当て**
+   - `SpriteRendererComponent` などのテクスチャ項目（コンボボックス等のUI）に対して、Project Browser から画像ファイル（`.png` や `.jpg` など）を直接 **ドラッグ＆ドロップ** することで、すぐにテクスチャを適用できます。
+
+#### 1.2.5 Hierarchy と Scene View の便利な操作機能
+シーンが複雑になりオブジェクトが増えてきた場合、以下の機能を使って整理・保護や効率的な操作を行うことができます。
+
+1. **インライン・リネーム (Inline Rename)**
+   - Hierarchy 上でオブジェクトの名前部分を **ダブルクリック** すると、その場で名前を直接編集モード（テキスト入力）に入ることができます。Inspector を開かなくても素早い名前変更が可能です。
+2. **可視アイコンとロックアイコン (Eye & Lock)**
+   - **目のアイコン (可視性)**: Hierarchy の右端にある目のアイコン（👁/🚫）をクリックすると、オブジェクトの Active/Inactive を即座に切り替えられます。
+   - **南京錠アイコン (保護)**: 鍵アイコン（🔒/🔓）をクリックすると編集がロックされます。ロックされたオブジェクトは以下の操作が制限されます：
+     - Scene View 上でのギズモ操作の無効化（動かせなくなる）
+     - Inspector 上での全パラメータ編集、コンポーネントの追加・削除の無効化（Read-Onlyになる）
+     - ドラッグ＆ドロップによる階層移動の禁止（間違って他のオブジェクトの子にしてしまう事故を防ぐ）
+3. **フォルダ機能 (Folder)**
+   - Hierarchy 上の空白部分を **右クリック** し、「**Create Folder**」を選択すると、空のフォルダ（`isFolder_ = true` の GameObject）が作成されます。
+   - 専用のアイコン（📂）が付き、他のオブジェクトを見やすくグループ化できます。フォルダは Scene View 上でギズモが非表示になります。
+4. **Scene View のオーバーレイUI (Overlay UI)**
+   - Scene View の右上に、半透明のオーバーレイパネルが常駐しています。
+   - ここから、ギズモの操作モード（Local/World）、操作ツール（Translate, Rotate, Scale, Bounds）の切り替えや、コライダーのデバッグ表示のON/OFFが素早く行えます。
+   - **Bounds ツール**: AABBやOBBコライダーなどのサイズを、Scene View上のハンドルをドラッグして視覚的に調整できる便利なツールです。
+
+#### 1.2.6 メニューバーの便利機能
+画面最上部のメニューバーからも、様々なアクションにアクセスできます。
+
+- **GameObject メニュー**: 
+  - ここから即座にプリミティブオブジェクト（Cube, Sphere, 2D Spriteなど）や空のオブジェクトをシーンに追加できます。Hierarchyの右クリックメニューと同じ機能です。
+- **Window メニュー**:
+  - **Performance**: オンにすると、現在のフレームレート（FPS）やデルタタイム、フレームごとの処理時間（ms）を確認できる「Performance」ウィンドウが表示されます。ゲームの最適化時の確認に便利です。
+  - **Layout**: UIレイアウトを初期状態に戻したり、現在の配置をデフォルトとして保存できます。
+    - **Reset Layout**: パネルを誤って閉じてしまったり、配置がおかしくなった場合に、ドッキング状態を強制的に初期配置へ復元します。
+
+#### 1.2.7 Play / Pause コントロールとゲーム時間の管理
+メニューバーの中央にあるコントロールから、エディタ上でのゲームの進行を制御できます。
+
+1. **Play / Stop (▶ / ■)**
+   - **Play**: Editモードからゲームを実行状態（Playモード）に移行します。移行した瞬間に現在のシーン状態が自動でバックアップされ、**Stop** を押すと変更が破棄されて Editモードの初期状態に完全にリセットされます。
+2. **Pause (⏸)**
+   - ゲーム実行中に時間を一時停止します。
+   - ポーズ中はゲーム内の `GetDeltaTime()` が常に `0.0f` を返すようになるため、キャラクターの移動や物理演算などの更新処理がすべて止まります。
+   - 一方、エディタのUIやカメラ操作などは実時間である `GetRealDeltaTime()` を使用しているため、ゲームが止まっている状態でもシーンを自由に観察したり、Inspectorからパラメータを調整することが可能です。
+
+---
+## 2. コアシステムとコンポーネント指向 (Core & Components)
+
+### 2.1 エンジンの基本アーキテクチャ
+
+
+#### 2.1.1 IrufemiEngine クラス
 エンジン全体を統括するコアクラスです。`WinApp`（ウィンドウ管理）や `DirectXCommon`（DirectX12初期化）を保持し、メインループ（`Update` と `Draw`）を回します。ゲームアプリケーション全体で1つのインスタンスのみが存在します。
 
-### 1.2 SceneManager と IScene (シーン管理)
+#### 2.1.2 SceneManager と IScene (シーン管理)
 ゲームの画面（タイトル、インゲーム、リザルトなど）を切り替えるための仕組みです。
 新しいシーンを追加する場合は `IScene` または `BaseScene` を継承したクラスを作成します。
 
@@ -133,11 +233,11 @@ auto obj = scene->FindGameObjectByID(targetId);
 * さらに Clone → `"Enemy(2)"`
 これにより、プレハブから動的生成した敵などもインスペクター上で個別に識別しやすくなっています。
 
-### 1.3 RenderGraph と DrawManager (描画パイプライン)
+#### 2.1.3 RenderGraph と DrawManager (描画パイプライン)
 本エンジンの描画は **RenderGraph（レンダーグラフ）** という仕組みで自動管理されています。
 ユーザーが `Draw()` を呼ぶと、すぐに画面に描画されるわけではなく、**DrawManagerのキュー（予約リスト）に登録（Submit）** されます。その後、エンジン側が適切な順序（Opaque → Transparent → UIなど）でまとめてGPUへ描画命令を出します。
 
-### 1.4 カメラの操作 (CameraManager / Camera)
+#### 2.1.4 カメラの操作 (CameraManager / Camera)
 3D空間を描画するための「視点」を管理します。
 
 ```cpp
@@ -159,183 +259,7 @@ camera->UpdateMatrix();
 
 ---
 
-## 2. 描画・オブジェクトシステム (Rendering System)
-
-画面にモノを表示するための主要なクラス群です。
-
-### 2.1 描画コンポーネント (Renderer Components)
-画面にオブジェクトを表示するためには、`GameObject` に適切なレンダラーコンポーネントをアタッチします。
-
-#### MeshRendererComponent (3Dモデル)
-`.obj` や静的な `.gltf` 形式の3Dモデルを描画します。
-*(※ボーンアニメーションを持つモデルを描画する場合は、現状はコンポーネントではなく手動生成の `AnimationModel` クラスを使用してください。コンポーネント版は将来追加予定です。)*
-```cpp
-auto obj = std::make_shared<GameObject>("Enemy");
-auto* renderer = obj->AddComponent<MeshRendererComponent>();
-renderer->LoadModel("enemy/enemy.obj"); // resources/model/ 以下のパス
-// scene->AddGameObject(obj);
-```
-
-#### ModelBatchRendererComponent (大量の同一モデル)
-草や破片など、同じモデルを大量に描画する際に使用します。インスタンシング描画によりGPU負荷を激減させます。
-```cpp
-auto obj = std::make_shared<GameObject>("GrassBatch");
-auto* batchRenderer = obj->AddComponent<ModelBatchRendererComponent>();
-batchRenderer->LoadModel("env/grass.obj"); // resources/model/ 以下のパス
-// 描画するインスタンスの追加・更新処理等は Component 内で行います
-```
-
-#### PrimitiveRendererComponent (基本図形)
-モデルデータなしでキューブ、球体、円柱などのプリミティブ形状を描画します。当たり判定のデバッグ表示等に便利です。
-```cpp
-auto primitiveObj = std::make_shared<GameObject>("Cube");
-auto* primitive = primitiveObj->AddComponent<PrimitiveRendererComponent>();
-primitive->SetPrimitiveType(PrimitiveType::Cube);
-primitive->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f });
-```
-
-#### SpriteRendererComponent (2Dスプライト)
-画面にUIなどの2D画像を表示します。
-```cpp
-auto spriteObj = std::make_shared<GameObject>("TitleLogo");
-auto* sprite = spriteObj->AddComponent<SpriteRendererComponent>();
-sprite->LoadTexture("ui/title_logo.png"); // resources/ 以下のパス
-sprite->SetAnchorPoint({ 0.5f, 0.5f });
-// ※ポストプロセス（ブルーム等）の影響を受けない最前面UIとして描画したい場合
-sprite->SetTopMost(true);
-```
-
-### 2.2 カメラとライト (Camera & Lights)
-シーンの視点や照明は以下の方法で管理されます。
-- **`CameraComponent`**: 視点と投影行列を管理します。GameObjectにアタッチして使用します。
-- **ライト管理 (Directional/Point/Spot/Area)**: ライトはコンポーネントとしてではなく、`BaseScene` が直接管理します。デバッグや調整を行う場合は、エディタのデバッグタブ「Camera & Lights」から各パラメータを直接編集できます。
-
-### 2.3 物理・当たり判定 (Colliders & Raycast)
-3D空間での衝突判定には、以下のコライダーコンポーネントを使用します。
-- **`AABBColliderComponent` / `OBBColliderComponent`**: ボックス形状での当たり判定（軸平行 または 有向境界箱）。
-- **`SphereColliderComponent`**: 球体形状での当たり判定。
-- **`RaycastComponent`**: 指定した方向へレイ（光線）を飛ばし、オブジェクトとの交差判定を行います。
-
-```cpp
-auto obj = std::make_shared<GameObject>("PlayerCollider");
-auto* collider = obj->AddComponent<OBBColliderComponent>();
-collider->SetSize({ 1.0f, 2.0f, 1.0f });
-```
-*(※衝突時に処理を行いたい場合は、後述の `OnCollisionEnter` コールバックを利用します)*
-
-### 2.4 手動生成の描画クラス (Manual Rendering Classes)
-※ 以下のクラス群は現在も使用可能ですが、基本的にはコンポーネント版（PrimitiveRendererComponent等）の使用が推奨されています。
-
-#### 背景描画 (`Skybox`)
-3D空間の全天球背景（空など）を描画します。
-```cpp
-std::unique_ptr<Skybox> skybox_ = std::make_unique<Skybox>();
-// resources/ 以下のテクスチャ（.dds等のキューブマップ形式が推奨）を指定して初期化
-skybox_->Initialize("skybox/sky.dds"); 
-
-// 毎フレームの更新と描画
-skybox_->Update();
-skybox_->Draw();
-```
-
-#### プリミティブ形状 (`Primitive3DObject`, `LineClass`)
-当たり判定のデバッグ表示や、プロトタイプの作成に便利な組み込み図形です。
-以前は `CubeClass` や `SphereClass` などの専用クラスに分かれていましたが、現在は `Primitive3DObject` に統合されており、１つのクラスで複数の形状（Cube, Sphere, Cylinder, Plane, Torus 等）を自由に切り替えて表示できます。
-
-```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<Primitive3DObject> primitive_;
-std::unique_ptr<LineClass> line_;
-
-// 2. 初期化 (Initialize)
-primitive_ = std::make_unique<Primitive3DObject>();
-// (PrimitiveType::Cube などを指定して初期化)
-primitive_->Initialize(PrimitiveType::Cube);
-// 形状固有のパラメータ変更 (例：Cubeの場合は不要だがSphereならRadiusを変える等)
-primitive_->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f }); // 赤色で半透明
-
-line_ = std::make_unique<LineClass>();
-line_->Initialize();
-line_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f }); // 緑色の線
-
-// 3. 更新と描画 (Update & Draw)
-// 位置を更新（内部で自動的に isDirty = true がセットされます）
-primitive_->SetPosition(playerPos);
-primitive_->Update();
-primitive_->Draw();
-
-line_->SetStartAndEnd(startPos, endPos);
-line_->Update();
-line_->Draw(); // ライン専用のキューに登録される
-```
-
-#### 2D図形の描画 (`Primitive2DObject`, `Primitive2DBatch`)
-2D画面上（UIやHUDなど）で図形を描画するためのクラスです。用途に応じて2種類のクラスを使い分けます。
-
-- **`Primitive2DObject` (柔軟な単体描画)**
-  頂点情報（サイズやピボット）を動的に変更したり、単体で細かく制御したい場合に使用します。
-  ```cpp
-  std::unique_ptr<Primitive2DObject> primitive2D_;
-  primitive2D_ = std::make_unique<Primitive2DObject>();
-  primitive2D_->Initialize(Primitive2DType::Circle);
-  primitive2D_->SetColor({ 0.0f, 0.5f, 1.0f, 1.0f });
-  primitive2D_->SetSize({ 100.0f, 100.0f }); // ピクセルサイズ相当
-  
-  // 更新と描画
-  primitive2D_->SetPosition({ 640.0f, 360.0f, 0.0f });
-  primitive2D_->Update();
-  primitive2D_->Draw();
-  ```
-
-- **`Primitive2DBatch` (高速な大量描画 / インスタンシング)**
-  弾幕やパーティクル表現など、同じ形状の図形を大量に描画する場合に使用します。GPUインスタンシングにより描画負荷を大幅に削減できます。
-  ```cpp
-  std::unique_ptr<Primitive2DBatch> batch2D_;
-  batch2D_ = std::make_unique<Primitive2DBatch>();
-  batch2D_->Initialize(Primitive2DType::Rect);
-  
-  // 描画したい数だけインスタンスを追加
-  for (int i = 0; i < 100; ++i) {
-      batch2D_->AddInstance(
-          Vector3(10.0f * i, 100.0f, 0.0f), // 座標
-          1.0f,                             // スケール
-          Vector3(0.0f, 0.0f, 0.0f),        // 回転
-          Vector4(1.0f, 1.0f, 1.0f, 1.0f)   // カラー
-      );
-  }
-  
-  // 更新と描画
-  batch2D_->Update();
-  batch2D_->Draw();
-  ```
-
-※ **内部データ構造の変更について**：
-これまで使われていた `MeshModule` や `MaterialModule` は、それぞれ `MeshDesc` と `MaterialDesc` に名称変更され、`Renderer/Data/RenderData.h` に統合されています。描画パイプラインのコードを独自にカスタマイズする際はこの変更にご注意ください。
-
-#### パーティクル (`GPUParticleSystem`)
-コンピュートシェーダを利用して数万個のパーティクルを高速に描画するシステムです。
-
-```cpp
-// 1. 宣言 (ヘッダー)
-std::unique_ptr<GPUParticleSystem> gpuParticle_;
-
-// 2. 初期化 (Initialize)
-gpuParticle_ = std::make_unique<GPUParticleSystem>();
-gpuParticle_->Initialize("effect/particle_tex.png");
-gpuParticle_->SetColor({ 1.0f, 0.5f, 0.1f, 1.0f });
-gpuParticle_->SetParticleLife(0.5f, 1.0f); // 寿命(最小, 最大)
-
-// 3. 放出設定と更新 (Update)
-// 発生源の位置、進行方向、広がり、速度、拡散、1フレームの発生数
-gpuParticle_->SetBeamEmitter(position, direction, 1.0f, 0.5f, 0.1f, 100);
-gpuParticle_->SetEmit(true); // 放出ON
-gpuParticle_->Update();
-
-// 4. 描画 (Draw)
-gpuParticle_->Draw();
-```
-
-### 2.5 コンポーネントシステム (Component System)
+### 2.2 コンポーネントシステム (Component System)
 `ObjClass` などの単体クラスに代わる、モダンなオブジェクト構築手法です。`GameObject` に必要な `Component` を組み合わせて機能を構築します。
 
 ```cpp
@@ -489,7 +413,133 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - *(※ボタン押下によるシーン遷移機能はエンジン側の責務ではなく、`Application/` 側の `SceneTransitionButtonComponent` などで個別に実装してアタッチしてください)*
 - **`CanvasComponent`**: UI要素をグループ化し、アルファ値（透明度）などを一括管理します。
   - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
-### 2.6 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
+### 9. マルチスレッド化とコンポーネント設計 (Multithreading & Components)
+
+本エンジンの `BaseScene` では、パフォーマンス向上のため **すべての `GameObject` の `Update` および `Draw` が `ThreadPool` を用いて並列実行（マルチスレッド処理）** されます。
+そのため、コンポーネントを設計・実装する際は、スレッドセーフ（競合が起きない安全なコード）を意識する必要があります。
+
+#### 2.3.1 他の GameObject への参照とダングリングポインタ対策
+マルチスレッド環境下では、参照していた他の `GameObject`（例：敵がプレイヤーを追いかける際のプレイヤー情報）が、別のスレッドで同時に破壊（GCによってメモリ解放）される可能性があります。
+**生ポインタ (`GameObject*`) をメンバ変数として長期間保持することは厳禁です（Use-After-Free の原因になります）。**
+
+必ず `std::weak_ptr<GameObject>` を使用し、アクセスする瞬間だけ `lock()` を取得して生存確認を行ってください。
+
+```cpp
+// ❌ 悪い例（生ポインタ保持はクラッシュの原因）
+// GameObject* targetObject_ = nullptr; 
+
+// ⭕ 良い例（weak_ptr で保持）
+std::weak_ptr<GameObject> targetObject_;
+
+// --- 使い方 ---
+// 1. 他のオブジェクトを設定する時 (shared_from_this() を渡す)
+debrisComp->SetTarget(playerObj->shared_from_this());
+
+// 2. 毎フレーム Update でアクセスする時
+if (auto target = targetObject_.lock()) { // lock()で生存確認
+    if (target->GetIsActive()) {
+        auto transform = target->GetComponent<TransformComponent>();
+        // targetの座標へ移動する処理など...
+    }
+} else {
+    // ターゲットは既に破壊された場合の処理
+}
+```
+
+#### 2.3.2 コンポーネント実行中の構造変更 (AddChild / AddComponent) について
+`GameObject::Update` は並列実行されていますが、「自分自身」の子リスト（`children_`）やコンポーネントリストを変更するような操作（例えば、Update 中に自身へ `AddComponent` したり `AddChild` すること）は、内部配列の再確保（Reallocation）を引き起こす可能性があるため、十分に注意してください。
+
+- **新規オブジェクトの生成**: 新しいオブジェクトをシーンにスポーンさせる場合、`scene->AddGameObject(obj)` は内部でスレッドセーフなキュー(`pendingAdds_`)に積まれるため、Update 中に呼んでも安全です。
+- **オブジェクトの破棄**: `gameObject_->Destroy()` も破棄フラグ (`isDestroyed_`) を立てるだけなので、Update 中に呼んでも安全です（次フレームの開始前に一括削除されます）。
+### 2.4 Data-Oriented Design (DOD) と ComponentPool
+
+コンポーネントシステムにおいて、同じ種類のコンポーネントを連続したメモリ空間（プール）に配置し、CPUキャッシュヒット率を劇的に向上させるための最適化の仕組みです。
+何万個もの弾やパーティクル、多数の敵を同時に処理する場合に、標準の `std::make_shared` によるメモリの断片化を防ぎます。
+
+#### プール対応コンポーネントの作り方
+特定のコンポーネントを `ComponentPool` の管理下に置くには、対象のコンポーネントクラスの宣言の下で `IsPooledComponent` のテンプレート特化を行います。
+
+**例: `TransformComponent.h` の場合**
+```cpp
+#pragma once
+#include "Component.h"
+#include "Engine/Core/System/ComponentPool.h"
+
+class TransformComponent : public Component {
+    // ... 通常のコンポーネント実装 ...
+};
+
+// ComponentPool 対応を宣言（ファイルの末尾に記述）
+template<> struct IsPooledComponent<TransformComponent> : std::true_type {};
+```
+
+この一行を追加するだけで、`GameObject::AddComponent<TransformComponent>()` や、エディタ・JSONからの自動ロード（`ComponentFactory`）が**すべて自動的にプール経由での生成**に切り替わります。
+
+#### DODの恩恵を最大限に受ける一括更新処理
+プール化されたコンポーネントは、`ComponentPool::ForEach` を使って全インスタンスを一気に処理（バッチ処理）することができます。
+現在、`TransformComponent` の座標行列計算はこの機能を用いて `BaseScene::Update` 内で毎フレーム最初に一括で計算 (`TransformComponent::UpdateAll()`) されています。
+これにより、何万ものオブジェクトの Transform 行列計算がキャッシュミスなしで爆速で行われるようになっています。
+
+```cpp
+void TransformComponent::UpdateAll() {
+    currentFrame_++;
+    ComponentPool<TransformComponent>::GetInstance().ForEach([](TransformComponent& transform) {
+        transform.ComputeMatrix();
+    });
+}
+```
+※注意: プール対応にしたコンポーネントは、ゲーム終了時にプールから安全にメモリ解放されます。ユーザー側で特別なメモリ管理コード（`delete`など）を書く必要はありません。
+
+## 3. グラフィックスと描画 (Graphics & Rendering)
+
+### 3.1 描画コンポーネント (Renderer Components)
+画面にオブジェクトを表示するためには、`GameObject` に適切なレンダラーコンポーネントをアタッチします。
+
+#### MeshRendererComponent (3Dモデル)
+`.obj` や静的な `.gltf` 形式の3Dモデルを描画します。
+*(※ボーンアニメーションを持つモデルを描画する場合は、現状はコンポーネントではなく手動生成の `AnimationModel` クラスを使用してください。コンポーネント版は将来追加予定です。)*
+```cpp
+auto obj = std::make_shared<GameObject>("Enemy");
+auto* renderer = obj->AddComponent<MeshRendererComponent>();
+renderer->LoadModel("enemy/enemy.obj"); // resources/model/ 以下のパス
+// scene->AddGameObject(obj);
+```
+
+#### ModelBatchRendererComponent (大量の同一モデル)
+草や破片など、同じモデルを大量に描画する際に使用します。インスタンシング描画によりGPU負荷を激減させます。
+```cpp
+auto obj = std::make_shared<GameObject>("GrassBatch");
+auto* batchRenderer = obj->AddComponent<ModelBatchRendererComponent>();
+batchRenderer->LoadModel("env/grass.obj"); // resources/model/ 以下のパス
+// 描画するインスタンスの追加・更新処理等は Component 内で行います
+```
+
+#### PrimitiveRendererComponent (基本図形)
+モデルデータなしでキューブ、球体、円柱などのプリミティブ形状を描画します。当たり判定のデバッグ表示等に便利です。
+```cpp
+auto primitiveObj = std::make_shared<GameObject>("Cube");
+auto* primitive = primitiveObj->AddComponent<PrimitiveRendererComponent>();
+primitive->SetPrimitiveType(PrimitiveType::Cube);
+primitive->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f });
+```
+
+#### SpriteRendererComponent (2Dスプライト)
+画面にUIなどの2D画像を表示します。
+```cpp
+auto spriteObj = std::make_shared<GameObject>("TitleLogo");
+auto* sprite = spriteObj->AddComponent<SpriteRendererComponent>();
+sprite->LoadTexture("ui/title_logo.png"); // resources/ 以下のパス
+sprite->SetAnchorPoint({ 0.5f, 0.5f });
+// ※ポストプロセス（ブルーム等）の影響を受けない最前面UIとして描画したい場合
+sprite->SetTopMost(true);
+```
+
+### 3.2 カメラとライト (Camera & Lights)
+シーンの視点や照明は以下の方法で管理されます。
+- **`CameraComponent`**: 視点と投影行列を管理します。GameObjectにアタッチして使用します。
+- **ライト管理 (Directional/Point/Spot/Area)**: ライトはコンポーネントとしてではなく、`BaseScene` が直接管理します。デバッグや調整を行う場合は、エディタのデバッグタブ「Camera & Lights」から各パラメータを直接編集できます。
+
+### 3.3 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
 
 敵や障害物に弾丸・ミサイルが着弾した際に使用するリッチなエフェクト機能です。`Effect` クラスは `EffectType` 列挙型により複数の表現をサポートしています。
 
@@ -572,46 +622,148 @@ if (Collision::IsOBBSphereCollision(part->GetOBB(), bulletSphere)) {
 }
 ```
 
-### 2.7 Data-Oriented Design (DOD) と ComponentPool
-
-コンポーネントシステムにおいて、同じ種類のコンポーネントを連続したメモリ空間（プール）に配置し、CPUキャッシュヒット率を劇的に向上させるための最適化の仕組みです。
-何万個もの弾やパーティクル、多数の敵を同時に処理する場合に、標準の `std::make_shared` によるメモリの断片化を防ぎます。
-
-#### プール対応コンポーネントの作り方
-特定のコンポーネントを `ComponentPool` の管理下に置くには、対象のコンポーネントクラスの宣言の下で `IsPooledComponent` のテンプレート特化を行います。
-
-**例: `TransformComponent.h` の場合**
-```cpp
-#pragma once
-#include "Component.h"
-#include "Engine/Core/System/ComponentPool.h"
-
-class TransformComponent : public Component {
-    // ... 通常のコンポーネント実装 ...
-};
-
-// ComponentPool 対応を宣言（ファイルの末尾に記述）
-template<> struct IsPooledComponent<TransformComponent> : std::true_type {};
-```
-
-この一行を追加するだけで、`GameObject::AddComponent<TransformComponent>()` や、エディタ・JSONからの自動ロード（`ComponentFactory`）が**すべて自動的にプール経由での生成**に切り替わります。
-
-#### DODの恩恵を最大限に受ける一括更新処理
-プール化されたコンポーネントは、`ComponentPool::ForEach` を使って全インスタンスを一気に処理（バッチ処理）することができます。
-現在、`TransformComponent` の座標行列計算はこの機能を用いて `BaseScene::Update` 内で毎フレーム最初に一括で計算 (`TransformComponent::UpdateAll()`) されています。
-これにより、何万ものオブジェクトの Transform 行列計算がキャッシュミスなしで爆速で行われるようになっています。
+### 3.4 ポストプロセス (PostProcessManager)
+画面全体にさまざまなエフェクト（ブルーム、ビネット、ノイズ、ディゾルブなど）をかけます。複数のエフェクトをスタック（重ね掛け）することが可能です。
 
 ```cpp
-void TransformComponent::UpdateAll() {
-    currentFrame_++;
-    ComponentPool<TransformComponent>::GetInstance().ForEach([](TransformComponent& transform) {
-        transform.ComputeMatrix();
-    });
-}
-```
-※注意: プール対応にしたコンポーネントは、ゲーム終了時にプールから安全にメモリ解放されます。ユーザー側で特別なメモリ管理コード（`delete`など）を書く必要はありません。
+auto* pp = engine_->GetPostProcessManager();
 
-### 2.8 カスタムパラメータの渡し方 (Custom Constant Buffer)
+// 1. エフェクトのリセットと適用
+pp->ClearActiveModes();
+pp->AddActiveMode(PostProcessMode::Bloom);
+pp->AddActiveMode(PostProcessMode::Vignette);
+
+// 2. パラメータの調整
+// ブルーム（発光）の強度を調整
+pp->GetBloomParams().intensity = 1.2f;
+// ビネット（画面端の暗転）の強さを調整
+pp->GetVignetteParams().power = 0.8f;
+
+// ※ シーン遷移時のフェードなどもこれを利用して実装できます
+```
+
+#### サポートされているポストプロセスモード
+`PostProcessMode` 列挙型には、以下の多彩なエフェクトが用意されています。複数のモードを `AddActiveMode()` でスタックすることが可能です。
+- **色調補正系**: `ToneMapping` (ACES露出補正), `Grayscale`, `Sepia`, `HSV`
+- **空間・ぼかし系**: `Smoothing`, `GaussianFilter`, `RadialBlur` (放射状ぼかし)
+- **画面演出系**: `Bloom` (発光), `Vignette` (暗転), `DepthBasedOutline` (アウトライン抽出), `Dissolve` (消失演出), `Noise`, `Glitch` (画面の乱れ)
+- **画面遷移系**: `Fade`, `Slide`
+
+### 3.5 [上級者向け] 手動生成クラスと高度な描画
+
+#### 2.4 手動生成の描画クラス (Manual Rendering Classes)
+※ 以下のクラス群は現在も使用可能ですが、基本的にはコンポーネント版（PrimitiveRendererComponent等）の使用が推奨されています。
+
+#### 背景描画 (`Skybox`)
+3D空間の全天球背景（空など）を描画します。
+```cpp
+std::unique_ptr<Skybox> skybox_ = std::make_unique<Skybox>();
+// resources/ 以下のテクスチャ（.dds等のキューブマップ形式が推奨）を指定して初期化
+skybox_->Initialize("skybox/sky.dds"); 
+
+// 毎フレームの更新と描画
+skybox_->Update();
+skybox_->Draw();
+```
+
+#### プリミティブ形状 (`Primitive3DObject`, `LineClass`)
+当たり判定のデバッグ表示や、プロトタイプの作成に便利な組み込み図形です。
+以前は `CubeClass` や `SphereClass` などの専用クラスに分かれていましたが、現在は `Primitive3DObject` に統合されており、１つのクラスで複数の形状（Cube, Sphere, Cylinder, Plane, Torus 等）を自由に切り替えて表示できます。
+
+```cpp
+// 1. 宣言 (ヘッダー)
+std::unique_ptr<Primitive3DObject> primitive_;
+std::unique_ptr<LineClass> line_;
+
+// 2. 初期化 (Initialize)
+primitive_ = std::make_unique<Primitive3DObject>();
+// (PrimitiveType::Cube などを指定して初期化)
+primitive_->Initialize(PrimitiveType::Cube);
+// 形状固有のパラメータ変更 (例：Cubeの場合は不要だがSphereならRadiusを変える等)
+primitive_->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f }); // 赤色で半透明
+
+line_ = std::make_unique<LineClass>();
+line_->Initialize();
+line_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f }); // 緑色の線
+
+// 3. 更新と描画 (Update & Draw)
+// 位置を更新（内部で自動的に isDirty = true がセットされます）
+primitive_->SetPosition(playerPos);
+primitive_->Update();
+primitive_->Draw();
+
+line_->SetStartAndEnd(startPos, endPos);
+line_->Update();
+line_->Draw(); // ライン専用のキューに登録される
+```
+
+#### 2D図形の描画 (`Primitive2DObject`, `Primitive2DBatch`)
+2D画面上（UIやHUDなど）で図形を描画するためのクラスです。用途に応じて2種類のクラスを使い分けます。
+
+- **`Primitive2DObject` (柔軟な単体描画)**
+  頂点情報（サイズやピボット）を動的に変更したり、単体で細かく制御したい場合に使用します。
+  ```cpp
+  std::unique_ptr<Primitive2DObject> primitive2D_;
+  primitive2D_ = std::make_unique<Primitive2DObject>();
+  primitive2D_->Initialize(Primitive2DType::Circle);
+  primitive2D_->SetColor({ 0.0f, 0.5f, 1.0f, 1.0f });
+  primitive2D_->SetSize({ 100.0f, 100.0f }); // ピクセルサイズ相当
+  
+  // 更新と描画
+  primitive2D_->SetPosition({ 640.0f, 360.0f, 0.0f });
+  primitive2D_->Update();
+  primitive2D_->Draw();
+  ```
+
+- **`Primitive2DBatch` (高速な大量描画 / インスタンシング)**
+  弾幕やパーティクル表現など、同じ形状の図形を大量に描画する場合に使用します。GPUインスタンシングにより描画負荷を大幅に削減できます。
+  ```cpp
+  std::unique_ptr<Primitive2DBatch> batch2D_;
+  batch2D_ = std::make_unique<Primitive2DBatch>();
+  batch2D_->Initialize(Primitive2DType::Rect);
+  
+  // 描画したい数だけインスタンスを追加
+  for (int i = 0; i < 100; ++i) {
+      batch2D_->AddInstance(
+          Vector3(10.0f * i, 100.0f, 0.0f), // 座標
+          1.0f,                             // スケール
+          Vector3(0.0f, 0.0f, 0.0f),        // 回転
+          Vector4(1.0f, 1.0f, 1.0f, 1.0f)   // カラー
+      );
+  }
+  
+  // 更新と描画
+  batch2D_->Update();
+  batch2D_->Draw();
+  ```
+
+※ **内部データ構造の変更について**：
+これまで使われていた `MeshModule` や `MaterialModule` は、それぞれ `MeshDesc` と `MaterialDesc` に名称変更され、`Renderer/Data/RenderData.h` に統合されています。描画パイプラインのコードを独自にカスタマイズする際はこの変更にご注意ください。
+
+#### パーティクル (`GPUParticleSystem`)
+コンピュートシェーダを利用して数万個のパーティクルを高速に描画するシステムです。
+
+```cpp
+// 1. 宣言 (ヘッダー)
+std::unique_ptr<GPUParticleSystem> gpuParticle_;
+
+// 2. 初期化 (Initialize)
+gpuParticle_ = std::make_unique<GPUParticleSystem>();
+gpuParticle_->Initialize("effect/particle_tex.png");
+gpuParticle_->SetColor({ 1.0f, 0.5f, 0.1f, 1.0f });
+gpuParticle_->SetParticleLife(0.5f, 1.0f); // 寿命(最小, 最大)
+
+// 3. 放出設定と更新 (Update)
+// 発生源の位置、進行方向、広がり、速度、拡散、1フレームの発生数
+gpuParticle_->SetBeamEmitter(position, direction, 1.0f, 0.5f, 0.1f, 100);
+gpuParticle_->SetEmit(true); // 放出ON
+gpuParticle_->Update();
+
+// 4. 描画 (Draw)
+gpuParticle_->Draw();
+```
+
+#### 2.8 カスタムパラメータの渡し方 (Custom Constant Buffer)
 エンジン標準の `Material` には含まれない独自のパラメータ（演出用の色やアニメーションフラグなど）をシェーダーに渡したい場合、エンジンの `Material` を汚染するのではなく、専用の定数バッファ枠 (`RootSlot::Special` / レジスタ `b6`) を利用します。
 
 ```cpp
@@ -636,7 +788,7 @@ model_->GetResource()->SetCustomCBVAddress(myCb_->GetGPUVirtualAddress());
 // ConstantBuffer<MyCustomParams> gMyParams : register(b6);
 ```
 
-### 2.9 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
+#### 2.9 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
 DirectX 12 でフレーム間のマルチバッファリング（`kMaxFramesInFlight`）を行う際、CPUからGPUへの定数バッファの更新タイミングを管理するために `MultiBufferSyncState` 基底クラスを利用します。
 `BaseResource` や `BaseModel` などの描画リソースクラスは、すでにこのクラスを継承しています。
 
@@ -668,75 +820,37 @@ DirectX 12 でフレーム間のマルチバッファリング（`kMaxFramesInFl
 
 ---
 
-## 3. リソース管理 (Resource Management)
+## 4. 物理と衝突判定 (Physics & Collision)
 
-ゲームに必要なテクスチャ、3Dモデル、サウンドデータは、エンジン内の各 Manager を通して一元管理（ロード・キャッシュ）されます。
-
-### 3.1 TextureManager (テクスチャ管理)
-`Sprite` などの描画に必要な画像をロードし、GPU用のハンドルを取得します。同じ画像を何度ロードしても、1度だけメモリに乗るようになっています。
-C++のコードから直接テクスチャを管理する場合は、戻り値として `ResourceHandle` を受け取ります。
-
-```cpp
-// 1. 画像のロード (resources/ フォルダからの相対パス)
-ResourceHandle handle = engine_->GetTextureManager()->LoadTexture("ui/title_logo.png");
-
-// 2. フォルダ内の画像一括ロード (ローディング画面などで使用)
-engine_->GetTextureManager()->LoadAllFromFolder("resources/ui");
-
-// ※ Sprite等の Initialize に文字列でファイル名を渡せば、内部で自動的にロードされます。
-```
-
-### 3.2 ModelManager (3Dモデル管理)
-`.obj` や `.gltf` 形式の3Dモデルを読み込み、最適化してキャッシュします。
+### 4.1 物理・当たり判定 (Colliders & Raycast)
+3D空間での衝突判定には、以下のコライダーコンポーネントを使用します。
+- **`AABBColliderComponent` / `OBBColliderComponent`**: ボックス形状での当たり判定（軸平行 または 有向境界箱）。
+- **`SphereColliderComponent`**: 球体形状での当たり判定。
+- **`RaycastComponent`**: 指定した方向へレイ（光線）を飛ばし、オブジェクトとの交差判定を行います。
 
 ```cpp
-// モデルの事前ロード（インゲーム開始前などに呼ぶとカクつきを防げます）
-ResourceHandle handle = engine_->GetModelManager()->LoadModel("enemy/enemy.obj");
-
-// ※ コンポーネント等に文字列で "enemy/enemy.obj" を渡せば、内部で自動ロードされます。
+auto obj = std::make_shared<GameObject>("PlayerCollider");
+auto* collider = obj->AddComponent<OBBColliderComponent>();
+collider->SetSize({ 1.0f, 2.0f, 1.0f });
 ```
+*(※衝突時に処理を行いたい場合は、後述の `OnCollisionEnter` コールバックを利用します)*
 
-### 3.3 AudioManager (サウンド管理)
-BGMやSEの再生・停止・音量調節を行います。
+### 4.2 Collision (当たり判定)
+`OBB` (有向境界箱) や `Sphere` などの定義と交差判定を行います。
 
 ```cpp
-// 1. サウンドの事前ロード
-engine_->GetAudioManager()->GetOrLoadSoundByFile("resources/audio/bgm_title.wav");
+#include "Core/Math/Geometry/OBB.h"
+#include "Core/Math/Geometry/Sphere.h"
 
-// 2. フォルダごとの一括ロード (カテゴリ分け)
-engine_->GetAudioManager()->LoadSoundsFromFolder("resources/audio/se", "SE");
-
-// 3. 再生
-auto soundData = engine_->GetAudioManager()->GetOrLoadSoundByFile("resources/audio/bgm_title.wav");
-// (サウンドデータ, ループフラグ, 音量 0.0f~1.0f)
-std::weak_ptr<VoiceInstance> voice = engine_->GetAudioManager()->Play(soundData, true, 0.8f);
-
-// 4. 停止
-engine_->GetAudioManager()->Stop(voice);
+// 衝突判定の実装例
+if (IsCollision(playerOBB, enemySphere)) {
+    // プレイヤーと敵の球が当たった時の処理
+}
 ```
 
-### 3.4 FontManager (フォントとテキストの管理)
-TTF等のフォントファイルを読み込み、テキスト描画用の高品質なMSDF画像を動的に生成・キャッシュします。
+## 5. 入力とUI (Input & UI)
 
-```cpp
-// 1. フォルダ内の全フォント一括ロード
-engine_->GetFontManager()->LoadAllFromFolder("resources/fonts");
-
-// 2. 【超重要】スパイク（処理落ち）防止のための事前生成
-// ゲーム中に「まだ生成されていない全く新しい文字（複雑な漢字など）」が出現すると、
-// メインスレッドでMSDF画像生成が行われ、一瞬ゲームがカクつく（スパイクする）可能性があります。
-// プレイスルーを滑らかにするため、シーン開始時のロード中などに「使う予定の全文字」を事前生成してください。
-engine_->GetFontManager()->PrecacheText("my_font", L"このシーンで使う予定の会話テキストや、よく使う漢字一覧など...");
-```
-
-
----
-
-## 4. 入力・演算・ユーティリティ (Input & Utility)
-
-プレイヤーの操作を受け取ったり、ゲームに必要な計算を行うクラス群です。
-
-### 4.1 入力システム (InputManager / InputMappingContext)
+### 5.1 入力システム (InputManager / InputMappingContext)
 プレイヤーからの入力を取得する方法は、従来からの「直接キー・ボタンを指定する方法」と、より柔軟な「アクションバインディング」を利用する方法の2つがあります。
 
 #### 1. 新しいアクションバインディング (推奨)
@@ -785,41 +899,9 @@ if (input->IsMouseButtonPressed(Mouse::Button::Left)) { ... }
 Vector2 mousePos = input->GetMousePosition();
 ```
 
-### 4.2 Math ユーティリティ (算術演算)
-`Math` 名前空間に関数がまとまっています。`Vector3` や `Matrix4x4` を安全に計算します。
+### 5.2 UI便利機能
 
-```cpp
-#include "Core/Math/Math.h"
-
-Vector3 playerPos = { 0.0f, 0.0f, 0.0f };
-Vector3 enemyPos  = { 10.0f, 0.0f, 10.0f };
-
-// 距離の計算
-Vector3 diff = Math::Subtract(enemyPos, playerPos);
-float distance = Math::Length(diff);
-
-// 正規化 (方向ベクトルの取得)
-Vector3 direction = Math::Normalize(diff);
-
-// 加算と乗算
-Vector3 offset = Math::Multiply(5.0f, direction);
-Vector3 targetPos = Math::Add(playerPos, offset);
-```
-
-### 4.3 Collision (当たり判定)
-`OBB` (有向境界箱) や `Sphere` などの定義と交差判定を行います。
-
-```cpp
-#include "Core/Math/Geometry/OBB.h"
-#include "Core/Math/Geometry/Sphere.h"
-
-// 衝突判定の実装例
-if (IsCollision(playerOBB, enemySphere)) {
-    // プレイヤーと敵の球が当たった時の処理
-}
-```
-
-### 4.4 UIメニュー構築の定石 (UISelectionGroup)
+#### 4.4 UIメニュー構築の定石 (UISelectionGroup)
 タイトル画面やポーズメニューなど、「上下で選んで決定する」UIを作るための便利なクラスです。手動でカーソル管理や長押し防止を書く必要がなくなります。
 
 ```cpp
@@ -848,7 +930,7 @@ if (uiGroup_.IsTriggered()) {
 // ※描画時は uiGroup_.GetSelectedIndex() に応じて、選ばれている項目の色やスプライトを変えます。
 ```
 
-### 4.5 UIのアニメーション演出 (`UIAnimator`)
+#### 4.5 UIのアニメーション演出 (`UIAnimator`)
 UIの「明滅」や「浮遊」といった数学的なアニメーション（サイン波ベース）を簡単に計算してくれる便利なユーティリティクラスです。自分で時間を管理して計算式を書く必要がなくなります。
 
 ```cpp
@@ -877,241 +959,82 @@ if (uiAnimator_.GetFlashVisibility(40.0f)) {
 
 ---
 
-## 5. 高度な機能と拡張 (Advanced Features)
+## 6. リソース管理 (Resource Management)
 
-ゲームをさらにリッチにするためのポストプロセス設定や、デバッグ用のUI機能、およびエンジンを独自に拡張する際のお作法です。
+ゲームに必要なテクスチャ、3Dモデル、サウンドデータは、エンジン内の各 Manager を通して一元管理（ロード・キャッシュ）されます。
 
-### 5.1 ポストプロセス (PostProcessManager)
-画面全体にさまざまなエフェクト（ブルーム、ビネット、ノイズ、ディゾルブなど）をかけます。複数のエフェクトをスタック（重ね掛け）することが可能です。
-
-```cpp
-auto* pp = engine_->GetPostProcessManager();
-
-// 1. エフェクトのリセットと適用
-pp->ClearActiveModes();
-pp->AddActiveMode(PostProcessMode::Bloom);
-pp->AddActiveMode(PostProcessMode::Vignette);
-
-// 2. パラメータの調整
-// ブルーム（発光）の強度を調整
-pp->GetBloomParams().intensity = 1.2f;
-// ビネット（画面端の暗転）の強さを調整
-pp->GetVignetteParams().power = 0.8f;
-
-// ※ シーン遷移時のフェードなどもこれを利用して実装できます
-```
-
-#### サポートされているポストプロセスモード
-`PostProcessMode` 列挙型には、以下の多彩なエフェクトが用意されています。複数のモードを `AddActiveMode()` でスタックすることが可能です。
-- **色調補正系**: `ToneMapping` (ACES露出補正), `Grayscale`, `Sepia`, `HSV`
-- **空間・ぼかし系**: `Smoothing`, `GaussianFilter`, `RadialBlur` (放射状ぼかし)
-- **画面演出系**: `Bloom` (発光), `Vignette` (暗転), `DepthBasedOutline` (アウトライン抽出), `Dissolve` (消失演出), `Noise`, `Glitch` (画面の乱れ)
-- **画面遷移系**: `Fade`, `Slide`
-
-### 5.2 デバッグ機能 (DebugUI / ImGui)
-パラメータの調整や変数の確認を行うために、ImGuiを利用してデバッグウィンドウを表示できます。
-`BaseScene` を継承したクラスでは、`DrawDebugTab()` をオーバーライドするだけで自動的にタブが追加されます。
+### 6.1 TextureManager (テクスチャ管理)
+`Sprite` などの描画に必要な画像をロードし、GPU用のハンドルを取得します。同じ画像を何度ロードしても、1度だけメモリに乗るようになっています。
+C++のコードから直接テクスチャを管理する場合は、戻り値として `ResourceHandle` を受け取ります。
 
 ```cpp
-void ExampleScene::DrawDebugTab() {
-#if defined USE_IMGUI
-    // 親クラスの処理を呼ぶ
-    BaseScene::DrawDebugTab();
+// 1. 画像のロード (resources/ フォルダからの相対パス)
+ResourceHandle handle = engine_->GetTextureManager()->LoadTexture("ui/title_logo.png");
 
-    // 独自のタブを追加
-    if (ImGui::BeginTabItem("Example Scene")) {
-        // パラメータ調整用スライダー
-        static float playerSpeed = 5.0f;
-        ImGui::SliderFloat("Player Speed", &playerSpeed, 1.0f, 10.0f);
+// 2. フォルダ内の画像一括ロード (ローディング画面などで使用)
+engine_->GetTextureManager()->LoadAllFromFolder("resources/ui");
 
-        // ボタンの配置
-        if (ImGui::Button("Reset Player")) {
-            playerObj_->SetPosition({0, 0, 0});
-        }
-        ImGui::EndTabItem();
-    }
-#endif
-}
+// ※ Sprite等の Initialize に文字列でファイル名を渡せば、内部で自動的にロードされます。
 ```
 
-### 5.3 カスタム機能の追加ルール (エンジンの拡張)
-エンジンに新しい機能を追加する際は、以下のルールを守ってください。
+### 6.2 ModelManager (3Dモデル管理)
+`.obj` や `.gltf` 形式の3Dモデルを読み込み、最適化してキャッシュします。
 
-1. **アーキテクチャの分離**
-   - エンジンコア (`IrufemiEngine/`) には、特定のゲームロジック（プレイヤークラスや固有のシーン）を含めないでください。
-   - ゲームロジックは必ず `Application/` ディレクトリ配下に作成します。
+```cpp
+// モデルの事前ロード（インゲーム開始前などに呼ぶとカクつきを防げます）
+ResourceHandle handle = engine_->GetModelManager()->LoadModel("enemy/enemy.obj");
 
-2. **新しい描画表現 (RenderPass) の追加**
-   - 独自のシェーダーや特殊な描画パイプラインを追加したい場合は、`DrawManager` に直接書くのではなく、`IRenderPass` を継承したクラスを作成し、`RenderGraph` に登録してください。
-   - これにより、他の描画パスに影響を与えずに安全に機能を追加できます。
+// ※ コンポーネント等に文字列で "enemy/enemy.obj" を渡せば、内部で自動ロードされます。
+```
 
-3. **ドキュメントの更新**
-   - `Manager` の関数名を変えたり、全く新しい機能（例: ECSシステム）を導入した場合は、必ずこの `Manual.md` も合わせて更新し、チームメンバーがすぐに使えるようにしてください。
+### 6.3 AudioManager (サウンド管理)
+BGMやSEの再生・停止・音量調節を行います。
+
+```cpp
+// 1. サウンドの事前ロード
+engine_->GetAudioManager()->GetOrLoadSoundByFile("resources/audio/bgm_title.wav");
+
+// 2. フォルダごとの一括ロード (カテゴリ分け)
+engine_->GetAudioManager()->LoadSoundsFromFolder("resources/audio/se", "SE");
+
+// 3. 再生
+auto soundData = engine_->GetAudioManager()->GetOrLoadSoundByFile("resources/audio/bgm_title.wav");
+// (サウンドデータ, ループフラグ, 音量 0.0f~1.0f)
+std::weak_ptr<VoiceInstance> voice = engine_->GetAudioManager()->Play(soundData, true, 0.8f);
+
+// 4. 停止
+engine_->GetAudioManager()->Stop(voice);
+```
+
+### 6.4 FontManager (フォントとテキストの管理)
+TTF等のフォントファイルを読み込み、テキスト描画用の高品質なMSDF画像を動的に生成・キャッシュします。
+
+```cpp
+// 1. フォルダ内の全フォント一括ロード
+engine_->GetFontManager()->LoadAllFromFolder("resources/fonts");
+
+// 2. 【超重要】スパイク（処理落ち）防止のための事前生成
+// ゲーム中に「まだ生成されていない全く新しい文字（複雑な漢字など）」が出現すると、
+// メインスレッドでMSDF画像生成が行われ、一瞬ゲームがカクつく（スパイクする）可能性があります。
+// プレイスルーを滑らかにするため、シーン開始時のロード中などに「使う予定の全文字」を事前生成してください。
+engine_->GetFontManager()->PrecacheText("my_font", L"このシーンで使う予定の会話テキストや、よく使う漢字一覧など...");
+```
+
 
 ---
 
-## 6. エディタ (IrufemiEngine Editor) の使い方
+## 7. シェーダー開発と拡張機能 (Advanced & Extension)
 
-### Project Browser の新機能
-IrufemiEngine のエディタは、モダンなゲームエンジン（Unity等）ライクなアセット管理をサポートしています。
-
-1. **2ペイン・タイル表示**
-   - **左ペイン (ツリー表示)**: フォルダの階層構造のみを表示します。クリックするとその中身が右ペインに表示されます。
-   - **右ペイン (タイル表示)**: FontAwesome アイコン付きで、ファイルとフォルダがグリッド状に並びます。画面幅に合わせて自動で折り返されます。
-
-2. **コンテキストメニュー (右クリック操作)**
-   - ファイル/フォルダ上で右クリックすると、「**Rename (名前変更)**」や「**Delete (削除)**」が可能です。
-   - 余白を右クリックすると、「**Create Folder (新規フォルダ作成)**」ができます。
-   - ※これらの操作はOSの実ファイルシステム（Windowsのフォルダ等）に即座に反映されます。
-
-3. **ドラッグ＆ドロップによるアセットの即時配置**
-   - **画像の配置**: Project Browser にある `.png` や `.jpg` などの画像を **Hierarchy** にドラッグ＆ドロップすると、`SpriteRendererComponent` がアタッチされた GameObject が自動生成されます。
-   - **3Dモデルの配置**: `.obj` や `.fbx` などをドラッグ＆ドロップすると、`MeshRendererComponent` がアタッチされた GameObject が自動生成されます。
-   - D&D 時にアセットの相対パスが自動的にコンポーネントへセットされるため、すぐに画面上でプレビュー可能です。
-
-### 6.2 プレハブ (Prefab) システム
-Unityライクな「オブジェクトのテンプレート化」をサポートしています。
-
-1. **Prefabの作成・保存**:
-   - Hierarchy パネルでオブジェクトを右クリックし、「**Save as Prefab**」を選択します。
-   - `resources/prefabs/` 以下に `.prefab.json` として、コンポーネントやパラメータがすべて保存されます。
-2. **エディタからの配置**:
-   - Project Browser に青いキューブのアイコンで表示されます。これを **Scene View** にドラッグ＆ドロップすると、即座にインスタンス化（実体化）して配置されます。
-3. **C++コードからの動的生成 (ランタイム)**:
-   - ゲーム中に「敵」や「弾」をスポーンさせるには、C++コードで以下のように呼び出します。
-   ```cpp
-   #include "Framework/SceneSerializer.h"
-
-   // Prefabをロードしてインスタンス化
-   auto bullet = SceneSerializer::LoadPrefab("resources/prefabs/Bullet.prefab.json");
-   if (bullet) {
-       bullet->GetComponent<TransformComponent>()->position_ = spawnPos;
-       scene->AddGameObject(bullet);
-   }
-   ```
-
-### 6.3 カスタムエディタUI構築と Undo/Redo (Ctrl+Z) 対応
-エンジン標準の `GetProperties()` （簡易リフレクション）を使わずに、複雑なカスタムUIを構築したい場合は、`IComponentEditor` を継承したクラスを作成します（実装は `ComponentEditorRegistry.cpp` に記述）。
-この際、インスペクターでの値の変更を Undo/Redo (Ctrl+Z) に対応させるため、以下の専用のヘルパー関数を使用してください。
-
-**1. ドラッグ操作など連続する値の変更 (`CheckUndoRedoDrag`)**
-`ImGui::DragFloat` や `ImGui::ColorEdit` など、ドラッグ中に値が連続的に変わるUIでは、操作の「開始」と「終了」のタイミングを自動判定してコマンドを発行する `CheckUndoRedoDrag` を呼び出します。
-
-```cpp
-// UI描画と値の更新
-if (ImGui::DragFloat("Base Scale", &scale, 0.1f, 0.1f, 1000.0f)) {
-    comp->SetBaseScale(scale); // ドラッグ中のリアルタイム反映
-}
-// ドラッグ終了時に自動でUndo/Redoコマンドを発行
-CheckUndoRedoDrag(actionManager, &scale, [comp](const float& v) { 
-    comp->SetBaseScale(v); 
-});
-```
-
-**2. チェックボックスやコンボボックスなど即時確定する変更 (`PushInstantUndo`)**
-`ImGui::Checkbox` や `ImGui::BeginCombo` など、クリックした瞬間に値が確定するUIでは、変更前後の値を使って `PushInstantUndo` を呼び出します。
-
-```cpp
-bool isTopMost = comp->IsTopMost();
-if (ImGui::Checkbox("TopMost", &isTopMost)) {
-    // 変更前の値、変更後の値、値をもとに戻すためのセッター関数（ラムダ）を渡す
-    PushInstantUndo(actionManager, comp->IsTopMost(), isTopMost, [comp](const bool& v) { 
-        comp->SetTopMost(v); 
-    });
-}
-```
-
-### 6.3.5 エディタのショートカットキー
-エディタ上では、操作を快適にするために以下のショートカットキーがサポートされています。
-- **`Ctrl + Z`**: 元に戻す (Undo)
-- **`Ctrl + Y` / `Ctrl + Shift + Z`**: やり直し (Redo)
-- **`Ctrl + D`**: 選択中の GameObject を複製 (Duplicate)
-- **`Delete`**: 選択中の GameObject を削除
-- **`F2`**: 選択中の GameObject の名前変更 (Rename)
-- **`F`**: 選択中の GameObject にカメラをフォーカス (Focus)
-※ギズモの操作モード（移動・回転・拡縮・Bounds）は、ショートカットキーではなく Scene View 右上のツールバーから切り替えます。
-
-### 6.3.6 コンソールパネル (Console)
-エンジンからのログ出力（エラー、警告、情報）は、エディタ下部の **Console** パネルに表示されます。
-コード内で `Log::Info()`, `Log::Warning()`, `Log::Error()` を呼び出すとリアルタイムに反映され、パネル上の「Clear」ボタンでログを消去できます。
-
-### 6.4 インスペクター (Inspector) の便利な操作機能
-インスペクター上で作業を効率化するための便利な機能が備わっています。これらはすべて **Undo/Redo (Ctrl+Z / Ctrl+Y)** に対応しています。
-
-1. **コンポーネントの削除 (Remove Component)**
-   - インスペクターに追加されている各コンポーネントの「ヘッダー（名前が書かれた帯の部分）」を **右クリック** すると、コンテキストメニューが表示されます。
-   - そこから「**Remove Component**」を選択することで、不要なコンポーネントを安全に削除できます。
-2. **Transform の一括リセット**
-   - `TransformComponent` のヘッダーの右端にある「**Reset**」ボタンをクリックすると、Position (0, 0, 0)、Rotation (0, 0, 0)、Scale (1, 1, 1) へ一括で初期化されます。
-3. **テクスチャのドラッグ＆ドロップ割り当て**
-   - `SpriteRendererComponent` などのテクスチャ項目（コンボボックス等のUI）に対して、Project Browser から画像ファイル（`.png` や `.jpg` など）を直接 **ドラッグ＆ドロップ** することで、すぐにテクスチャを適用できます。
-
-### 6.5 Hierarchy と Scene View の便利な操作機能
-シーンが複雑になりオブジェクトが増えてきた場合、以下の機能を使って整理・保護や効率的な操作を行うことができます。
-
-1. **インライン・リネーム (Inline Rename)**
-   - Hierarchy 上でオブジェクトの名前部分を **ダブルクリック** すると、その場で名前を直接編集モード（テキスト入力）に入ることができます。Inspector を開かなくても素早い名前変更が可能です。
-2. **可視アイコンとロックアイコン (Eye & Lock)**
-   - **目のアイコン (可視性)**: Hierarchy の右端にある目のアイコン（👁/🚫）をクリックすると、オブジェクトの Active/Inactive を即座に切り替えられます。
-   - **南京錠アイコン (保護)**: 鍵アイコン（🔒/🔓）をクリックすると編集がロックされます。ロックされたオブジェクトは以下の操作が制限されます：
-     - Scene View 上でのギズモ操作の無効化（動かせなくなる）
-     - Inspector 上での全パラメータ編集、コンポーネントの追加・削除の無効化（Read-Onlyになる）
-     - ドラッグ＆ドロップによる階層移動の禁止（間違って他のオブジェクトの子にしてしまう事故を防ぐ）
-3. **フォルダ機能 (Folder)**
-   - Hierarchy 上の空白部分を **右クリック** し、「**Create Folder**」を選択すると、空のフォルダ（`isFolder_ = true` の GameObject）が作成されます。
-   - 専用のアイコン（📂）が付き、他のオブジェクトを見やすくグループ化できます。フォルダは Scene View 上でギズモが非表示になります。
-4. **Scene View のオーバーレイUI (Overlay UI)**
-   - Scene View の右上に、半透明のオーバーレイパネルが常駐しています。
-   - ここから、ギズモの操作モード（Local/World）、操作ツール（Translate, Rotate, Scale, Bounds）の切り替えや、コライダーのデバッグ表示のON/OFFが素早く行えます。
-   - **Bounds ツール**: AABBやOBBコライダーなどのサイズを、Scene View上のハンドルをドラッグして視覚的に調整できる便利なツールです。
-
-### 6.6 メニューバーの便利機能
-画面最上部のメニューバーからも、様々なアクションにアクセスできます。
-
-- **GameObject メニュー**: 
-  - ここから即座にプリミティブオブジェクト（Cube, Sphere, 2D Spriteなど）や空のオブジェクトをシーンに追加できます。Hierarchyの右クリックメニューと同じ機能です。
-- **Window メニュー**:
-  - **Performance**: オンにすると、現在のフレームレート（FPS）やデルタタイム、フレームごとの処理時間（ms）を確認できる「Performance」ウィンドウが表示されます。ゲームの最適化時の確認に便利です。
-  - **Layout**: UIレイアウトを初期状態に戻したり、現在の配置をデフォルトとして保存できます。
-    - **Reset Layout**: パネルを誤って閉じてしまったり、配置がおかしくなった場合に、ドッキング状態を強制的に初期配置へ復元します。
-
-### 6.7 Play / Pause コントロールとゲーム時間の管理
-メニューバーの中央にあるコントロールから、エディタ上でのゲームの進行を制御できます。
-
-1. **Play / Stop (▶ / ■)**
-   - **Play**: Editモードからゲームを実行状態（Playモード）に移行します。移行した瞬間に現在のシーン状態が自動でバックアップされ、**Stop** を押すと変更が破棄されて Editモードの初期状態に完全にリセットされます。
-2. **Pause (⏸)**
-   - ゲーム実行中に時間を一時停止します。
-   - ポーズ中はゲーム内の `GetDeltaTime()` が常に `0.0f` を返すようになるため、キャラクターの移動や物理演算などの更新処理がすべて止まります。
-   - 一方、エディタのUIやカメラ操作などは実時間である `GetRealDeltaTime()` を使用しているため、ゲームが止まっている状態でもシーンを自由に観察したり、Inspectorからパラメータを調整することが可能です。
-
----
-## 7. トラブルシューティング (Troubleshooting)
-
-### 7.1 アプリケーション終了時に `LIVE_DEVICE` エラーでクラッシュする
-**現象**: Visual Studio の出力ウィンドウに `D3D12 WARNING: Live ID3D12Device` と表示され、`D3DResourceLeakChecker` でブレークポイントが止まる。
-
-**原因**: 
-- `PrimitiveManager` などのシングルトンクラスが GPU リソース（頂点バッファ等）を保持したまま、DirectX のデバイスが破棄されようとした際に発生します。
-- または、`RenderTexture` や `DescriptorPool` から確保したリソースが解放されていない場合や、`TransientResourceManager` 等でフレーム終了時の遅延破棄(`ReleaseAfterFence`) キューに積まれたリソースがアプリケーション終了時にクリアされていない場合に発生します。
-- 注意点として、エラー追跡用に追加した `ID3D12InfoQueue` などの COMポインタ自体のスコープが長すぎて、`ReportLiveObjects` の時点でデバイスの参照を保持してしまう（見かけ上のリーク）こともあります。
-
-**解決策**:
-- `IrufemiEngine::Finalize()` 内で、`dxCommon_` が破棄される前に、すべてのマネージャーの `Finalize()` または `reset()` を呼ぶようにしてください。シングルトンの場合は `PrimitiveManager::Finalize()` のように明示的に呼び出します。
-- **フレーム遅延破棄の注意**: `dxCommon_->ReleaseAfterFence(resource)` で破棄を予約したリソースは、`DirectXCommon::pendingResources_` に保持されます。エンジン終了時には、必ずGPU同期待ち（`WaitForGPU()`）の直後に `pendingResources_.clear()` を呼び出して完全に破棄してください。
-- COMポインタ（`ComPtr`）を使用する場合は、不要になったら `Reset()` を呼ぶか、寿命を強制的に限定するためローカルスコープ `{}` 内で宣言するようにしてください。
----
-
-## 8. シェーダーの追加・変更とコンパイル構成 (Shaders & Compilation)
+### 8. シェーダーの追加・変更とコンパイル構成 (Shaders & Compilation)
 
 本エンジンでは、パフォーマンスと開発効率の両立のため、ビルド構成（Configuration）によってシェーダーのコンパイル方式が完全に切り替わる「ハイブリッド構成」を採用しています。
 
-### 8.1 開発時のホットリロード (Editor / Debug ビルド)
+#### 7.1.1 開発時のホットリロード (Editor / Debug ビルド)
 Editor または Debug モードで起動している場合、ゲームを実行したまま（エディタを立ち上げたまま）、シェーダーファイル（`.hlsl` または `.hlsli`）を上書き保存するだけで、自動的に **ホットリロード** が行われます。
 - バックグラウンドでフォルダを監視しており、保存を検知すると安全に古いシェーダーとPSOキャッシュを破棄し、再コンパイルして即座に描画に反映します。
 - 一々ビルドし直す必要がないため、ライティングの微調整やエフェクト作成のイテレーションが非常に高速です。
 
-### 8.2 シェーダーの追加手順と命名規則
+#### 7.1.2 シェーダーの追加手順と命名規則
 新しいシェーダー（`.hlsl`）を追加する際は、必ずファイル名の中に「プロファイル名」を含めるようにしてください。ビルド時の自動コンパイルバッチ（`CompileShaders.bat`）がこのファイル名を見て適切なコンパイルを行います。
 
 - **頂点シェーダー**: `xxx.VS.hlsl`
@@ -1119,13 +1042,13 @@ Editor または Debug モードで起動している場合、ゲームを実行
 - **コンピュートシェーダー**: `xxx.CS.hlsl`
 - **ジオメトリシェーダー**: `xxx.GS.hlsl`
 
-### 8.3 配布環境 (Release ビルド) と CSOファイル
+#### 7.1.3 配布環境 (Release ビルド) と CSOファイル
 Releaseビルドでは、`dxcompiler.dll` などのコンパイラを一切ロードせず、最速で起動させる仕組みになっています。
 - Visual Studio で F5（またはビルド）を押した直後に、裏で自動的に `CompileShaders.bat` が走り、すべての `.hlsl` をコンパイルして `.cso`（コンパイル済みバイナリ）を生成します。
 - 実行時には `.hlsl` ではなく生成された `.cso` を直接メモリに読み込みます。
 - そのため、最終的にプレイヤーに配布（リリース）する際は、**「すべての `.hlsl` / `.hlsli` ファイルは削除して `.cso` だけを含める」** ことで、ソースコードの秘匿化と容量削減が可能です（Compute Shaderも含む）。
 
-### 8.4 Bindless Resources とカスタムシェーダーでのテクスチャアクセス
+#### 7.1.4 Bindless Resources とカスタムシェーダーでのテクスチャアクセス
 本エンジンは最新の **Bindless アーキテクチャ (Descriptor Indexing)** に移行しています。
 C++ 側でシェーダーごとにテクスチャを個別にバインドするのではなく、すべてのテクスチャが1つの巨大な配列に登録されており、シェーダー側からは **「テクスチャのインデックス（番号）」** さえ分かれば自由にアクセスできます。
 
@@ -1169,41 +1092,63 @@ float4 main(VertexShaderOutput input) : SV_TARGET {
 
 ---
 
-## 9. マルチスレッド化とコンポーネント設計 (Multithreading & Components)
+### 7.2 エンジン拡張とDebugUI
 
-本エンジンの `BaseScene` では、パフォーマンス向上のため **すべての `GameObject` の `Update` および `Draw` が `ThreadPool` を用いて並列実行（マルチスレッド処理）** されます。
-そのため、コンポーネントを設計・実装する際は、スレッドセーフ（競合が起きない安全なコード）を意識する必要があります。
-
-### 9.1 他の GameObject への参照とダングリングポインタ対策
-マルチスレッド環境下では、参照していた他の `GameObject`（例：敵がプレイヤーを追いかける際のプレイヤー情報）が、別のスレッドで同時に破壊（GCによってメモリ解放）される可能性があります。
-**生ポインタ (`GameObject*`) をメンバ変数として長期間保持することは厳禁です（Use-After-Free の原因になります）。**
-
-必ず `std::weak_ptr<GameObject>` を使用し、アクセスする瞬間だけ `lock()` を取得して生存確認を行ってください。
+#### 5.2 デバッグ機能 (DebugUI / ImGui)
+パラメータの調整や変数の確認を行うために、ImGuiを利用してデバッグウィンドウを表示できます。
+`BaseScene` を継承したクラスでは、`DrawDebugTab()` をオーバーライドするだけで自動的にタブが追加されます。
 
 ```cpp
-// ❌ 悪い例（生ポインタ保持はクラッシュの原因）
-// GameObject* targetObject_ = nullptr; 
+void ExampleScene::DrawDebugTab() {
+#if defined USE_IMGUI
+    // 親クラスの処理を呼ぶ
+    BaseScene::DrawDebugTab();
 
-// ⭕ 良い例（weak_ptr で保持）
-std::weak_ptr<GameObject> targetObject_;
+    // 独自のタブを追加
+    if (ImGui::BeginTabItem("Example Scene")) {
+        // パラメータ調整用スライダー
+        static float playerSpeed = 5.0f;
+        ImGui::SliderFloat("Player Speed", &playerSpeed, 1.0f, 10.0f);
 
-// --- 使い方 ---
-// 1. 他のオブジェクトを設定する時 (shared_from_this() を渡す)
-debrisComp->SetTarget(playerObj->shared_from_this());
-
-// 2. 毎フレーム Update でアクセスする時
-if (auto target = targetObject_.lock()) { // lock()で生存確認
-    if (target->GetIsActive()) {
-        auto transform = target->GetComponent<TransformComponent>();
-        // targetの座標へ移動する処理など...
+        // ボタンの配置
+        if (ImGui::Button("Reset Player")) {
+            playerObj_->SetPosition({0, 0, 0});
+        }
+        ImGui::EndTabItem();
     }
-} else {
-    // ターゲットは既に破壊された場合の処理
+#endif
 }
 ```
 
-### 9.2 コンポーネント実行中の構造変更 (AddChild / AddComponent) について
-`GameObject::Update` は並列実行されていますが、「自分自身」の子リスト（`children_`）やコンポーネントリストを変更するような操作（例えば、Update 中に自身へ `AddComponent` したり `AddChild` すること）は、内部配列の再確保（Reallocation）を引き起こす可能性があるため、十分に注意してください。
+#### 5.3 カスタム機能の追加ルール (エンジンの拡張)
+エンジンに新しい機能を追加する際は、以下のルールを守ってください。
 
-- **新規オブジェクトの生成**: 新しいオブジェクトをシーンにスポーンさせる場合、`scene->AddGameObject(obj)` は内部でスレッドセーフなキュー(`pendingAdds_`)に積まれるため、Update 中に呼んでも安全です。
-- **オブジェクトの破棄**: `gameObject_->Destroy()` も破棄フラグ (`isDestroyed_`) を立てるだけなので、Update 中に呼んでも安全です（次フレームの開始前に一括削除されます）。
+1. **アーキテクチャの分離**
+   - エンジンコア (`IrufemiEngine/`) には、特定のゲームロジック（プレイヤークラスや固有のシーン）を含めないでください。
+   - ゲームロジックは必ず `Application/` ディレクトリ配下に作成します。
+
+2. **新しい描画表現 (RenderPass) の追加**
+   - 独自のシェーダーや特殊な描画パイプラインを追加したい場合は、`DrawManager` に直接書くのではなく、`IRenderPass` を継承したクラスを作成し、`RenderGraph` に登録してください。
+   - これにより、他の描画パスに影響を与えずに安全に機能を追加できます。
+
+3. **ドキュメントの更新**
+   - `Manager` の関数名を変えたり、全く新しい機能（例: ECSシステム）を導入した場合は、必ずこの `Manual.md` も合わせて更新し、チームメンバーがすぐに使えるようにしてください。
+
+---
+
+## 8. トラブルシューティング (Troubleshooting)
+
+### 8.1 アプリケーション終了時に `LIVE_DEVICE` エラーでクラッシュする
+**現象**: Visual Studio の出力ウィンドウに `D3D12 WARNING: Live ID3D12Device` と表示され、`D3DResourceLeakChecker` でブレークポイントが止まる。
+
+**原因**: 
+- `PrimitiveManager` などのシングルトンクラスが GPU リソース（頂点バッファ等）を保持したまま、DirectX のデバイスが破棄されようとした際に発生します。
+- または、`RenderTexture` や `DescriptorPool` から確保したリソースが解放されていない場合や、`TransientResourceManager` 等でフレーム終了時の遅延破棄(`ReleaseAfterFence`) キューに積まれたリソースがアプリケーション終了時にクリアされていない場合に発生します。
+- 注意点として、エラー追跡用に追加した `ID3D12InfoQueue` などの COMポインタ自体のスコープが長すぎて、`ReportLiveObjects` の時点でデバイスの参照を保持してしまう（見かけ上のリーク）こともあります。
+
+**解決策**:
+- `IrufemiEngine::Finalize()` 内で、`dxCommon_` が破棄される前に、すべてのマネージャーの `Finalize()` または `reset()` を呼ぶようにしてください。シングルトンの場合は `PrimitiveManager::Finalize()` のように明示的に呼び出します。
+- **フレーム遅延破棄の注意**: `dxCommon_->ReleaseAfterFence(resource)` で破棄を予約したリソースは、`DirectXCommon::pendingResources_` に保持されます。エンジン終了時には、必ずGPU同期待ち（`WaitForGPU()`）の直後に `pendingResources_.clear()` を呼び出して完全に破棄してください。
+- COMポインタ（`ComPtr`）を使用する場合は、不要になったら `Reset()` を呼ぶか、寿命を強制的に限定するためローカルスコープ `{}` 内で宣言するようにしてください。
+---
+
