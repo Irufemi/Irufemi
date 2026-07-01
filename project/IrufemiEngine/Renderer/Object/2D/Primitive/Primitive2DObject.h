@@ -137,6 +137,8 @@ public:
 private:
     /**
      * @brief 現在の type_, size_, pivot_ に基づいてメッシュ（頂点・インデックス）を再構築する
+     * @details 構築したデータは Object2DResource に渡し、バッファ再生成が必要かどうかの判断は
+     *          Object2DResource 側に委譲します。
      */
     void RebuildMesh();
 

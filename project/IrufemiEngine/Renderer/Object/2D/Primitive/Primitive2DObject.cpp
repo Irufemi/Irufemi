@@ -50,15 +50,6 @@ void Primitive2DObject::Update() {
             }
         }
     }
-    
-    // 描画がうまくいかない場合のデバッグ用
-    static int frameCount = 0;
-    if (frameCount++ % 60 == 0) {
-        char buf[512];
-        sprintf_s(buf, "[Primitive2D] IndexCount: %d, VertData: %p, MatIndex: %u\n", 
-            resource_->indexCount_, (void*)resource_->vertexData_, resource_->materialCbIndex_);
-        OutputDebugStringA(buf);
-    }
 }
 
 void Primitive2DObject::SyncBeforeDraw() {
@@ -246,17 +237,10 @@ void Primitive2DObject::RebuildMesh() {
         break;
     }
 
-    // リソース再生成（頂点・インデックス）
+    // Capacity に基づく最適なリソース生成または維持
     resource_->CreateResource();
     resource_->Map();
-
-    // データのコピー
-    if (resource_->vertexData_) {
-        std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
-    }
-    if (resource_->indexData_) {
-        std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
-    }
+    resource_->MarkAsDirty(); // SyncBeforeDraw で GPU へ転送させる
 }
 
 void Primitive2DObject::BuildRect() {
