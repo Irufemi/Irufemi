@@ -54,6 +54,9 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // 8.01 SpriteBatch
     DrawWithPSO(drawManager->GetSpriteBatchQueue(), [&](const auto& p) { drawManager->DrawSpriteBatch(p); }, "SpriteBatch");
 
+    // 8.02 Primitive2DBatch
+    DrawWithPSO(drawManager->GetPrimitive2DBatchQueue(), [&](const auto& p) { drawManager->DrawPrimitive2DBatch(p); }, "SpriteBatch");
+
     // 8.1 Texts
     DrawWithPSO(drawManager->GetTextQueue(), [&](const auto& p) { drawManager->DrawText(p); }, "Text");
 

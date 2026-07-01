@@ -70,6 +70,7 @@ private:
     std::vector<RenderPackets::VoxelParticlePacket> voxelParticleQueue_;
     std::vector<RenderPackets::SkyboxPacket> skyboxQueue_;
     std::vector<RenderPackets::PrimitiveBatchPacket> primitiveBatchQueue_;
+    std::vector<RenderPackets::Primitive2DBatchPacket> primitive2DBatchQueue_;
     std::vector<RenderPackets::ModelBatchPacket> modelBatchQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
     
@@ -97,6 +98,7 @@ public:
     const std::vector<RenderPackets::VoxelParticlePacket>& GetVoxelParticleQueue() const { return voxelParticleQueue_; }
     const std::vector<RenderPackets::SkyboxPacket>& GetSkyboxQueue() const { return skyboxQueue_; }
     const std::vector<RenderPackets::PrimitiveBatchPacket>& GetPrimitiveBatchQueue() const { return primitiveBatchQueue_; }
+    const std::vector<RenderPackets::Primitive2DBatchPacket>& GetPrimitive2DBatchQueue() const { return primitive2DBatchQueue_; }
     const std::vector<RenderPackets::ModelBatchPacket>& GetModelBatchQueue() const { return modelBatchQueue_; }
     const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
@@ -329,6 +331,12 @@ public:
      */
     void SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet);
     void DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet);
+
+    /**
+     * @brief 2D汎用図形領域描画（インスタンシング対応の2Dプリミティブバッチ）
+     */
+    void SubmitPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet);
+    void DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet);
 
     /**
      * @brief インスタンス化された線の描画

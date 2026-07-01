@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Engine">
@@ -132,6 +132,9 @@
     </Filter>
     <Filter Include="Renderer\Object\2D\Primitive">
       <UniqueIdentifier>{D5D71096-A112-50CC-A106-1ED6568375A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Object\2D\PrimitiveBatch">
+      <UniqueIdentifier>{F5D71096-A112-50CC-A106-1ED6568375A2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\Object\2D\Sprite">
       <UniqueIdentifier>{A2AA1105-752A-5735-BA93-32F6B189EAC4}</UniqueIdentifier>
@@ -759,6 +762,9 @@
     <ClCompile Include="Renderer\Object\2D\Primitive\Primitive2DObject.cpp">
       <Filter>Engine\Renderer\Object\2D\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object\2D\PrimitiveBatch\Primitive2DBatch.cpp">
+      <Filter>Renderer\Object\2D\PrimitiveBatch</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp">
       <Filter>Renderer\Object\2D\SpriteBatch</Filter>
     </ClCompile>
@@ -1274,6 +1280,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h">
       <Filter>Engine\Renderer\Object\2D\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object\2D\PrimitiveBatch\Primitive2DBatch.h">
+      <Filter>Renderer\Object\2D\PrimitiveBatch</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Type\Primitive2DType.h">
       <Filter>Engine\Core\Type</Filter>

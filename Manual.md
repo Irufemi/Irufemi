@@ -267,6 +267,46 @@ line_->Update();
 line_->Draw(); // ライン専用のキューに登録される
 ```
 
+#### 2D図形の描画 (`Primitive2DObject`, `Primitive2DBatch`)
+2D画面上（UIやHUDなど）で図形を描画するためのクラスです。用途に応じて2種類のクラスを使い分けます。
+
+- **`Primitive2DObject` (柔軟な単体描画)**
+  頂点情報（サイズやピボット）を動的に変更したり、単体で細かく制御したい場合に使用します。
+  ```cpp
+  std::unique_ptr<Primitive2DObject> primitive2D_;
+  primitive2D_ = std::make_unique<Primitive2DObject>();
+  primitive2D_->Initialize(Primitive2DType::Circle);
+  primitive2D_->SetColor({ 0.0f, 0.5f, 1.0f, 1.0f });
+  primitive2D_->SetSize({ 100.0f, 100.0f }); // ピクセルサイズ相当
+  
+  // 更新と描画
+  primitive2D_->SetPosition({ 640.0f, 360.0f, 0.0f });
+  primitive2D_->Update();
+  primitive2D_->Draw();
+  ```
+
+- **`Primitive2DBatch` (高速な大量描画 / インスタンシング)**
+  弾幕やパーティクル表現など、同じ形状の図形を大量に描画する場合に使用します。GPUインスタンシングにより描画負荷を大幅に削減できます。
+  ```cpp
+  std::unique_ptr<Primitive2DBatch> batch2D_;
+  batch2D_ = std::make_unique<Primitive2DBatch>();
+  batch2D_->Initialize(Primitive2DType::Rect);
+  
+  // 描画したい数だけインスタンスを追加
+  for (int i = 0; i < 100; ++i) {
+      batch2D_->AddInstanceData({
+          Vector3(10.0f * i, 100.0f, 0.0f), // 座標
+          Vector3(0.0f, 0.0f, 0.0f),        // 回転
+          Vector3(10.0f, 10.0f, 1.0f),      // スケール
+          Vector4(1.0f, 1.0f, 1.0f, 1.0f)   // カラー
+      });
+  }
+  
+  // 更新と描画
+  batch2D_->Update();
+  batch2D_->Draw();
+  ```
+
 ※ **内部データ構造の変更について**：
 これまで使われていた `MeshModule` や `MaterialModule` は、それぞれ `MeshDesc` と `MaterialDesc` に名称変更され、`Renderer/Data/RenderData.h` に統合されています。描画パイプラインのコードを独自にカスタマイズする際はこの変更にご注意ください。
 

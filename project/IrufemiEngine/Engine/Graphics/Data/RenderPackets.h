@@ -130,6 +130,20 @@ namespace RenderPackets {
         UINT maxInstanceCount = 0;
     };
 
+    struct Primitive2DBatchPacket {
+        D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+        D3D12_INDEX_BUFFER_VIEW indexBufferView;
+        D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
+        D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+        UINT indexCount;
+        UINT instanceCount;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
+    };
+
     struct SpriteBatchPacket {
         const class Object2DResource* resource;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;

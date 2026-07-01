@@ -650,6 +650,29 @@ void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& 
     commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
 }
 
+void DrawManager::SubmitPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
+    primitive2DBatchQueue_.push_back(packet);
+}
+
+void DrawManager::DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet) {
+    if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
+
+    // IA
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView);
+    commandList_->IASetIndexBuffer(&packet.indexBufferView);
+
+    // CBV (PS b0)
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);
+
+    // SRV (VS t0 -> Instancing Data)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);
+
+    // Draw
+    commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
+}
+
 void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
     std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource || instanceCount == 0) return;
@@ -1169,6 +1192,7 @@ void DrawManager::ClearRenderQueues() {
     voxelParticleQueue_.clear();
     skyboxQueue_.clear();
     primitiveBatchQueue_.clear();
+    primitive2DBatchQueue_.clear();
     modelBatchQueue_.clear();
     postRenderQueue_.clear();
     textQueue_.clear();
