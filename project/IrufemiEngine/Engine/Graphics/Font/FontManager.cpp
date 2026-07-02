@@ -44,6 +44,7 @@ struct FontManager::Impl {
     // DirectX12 用の動的テクスチャリソース
     Microsoft::WRL::ComPtr<ID3D12Resource> atlasTexture;
     D3D12_GPU_DESCRIPTOR_HANDLE atlasSrv{};
+    uint32_t atlasSrvIndex = 0;
 
     static const int ATLAS_WIDTH = 2048;
     static const int ATLAS_HEIGHT = 2048;
@@ -92,6 +93,7 @@ void FontManager::Initialize(IrufemiEngine* engine) {
     uint32_t srvIndex = pool->Allocate();
     pool->CreateSRVForTexture2D(srvIndex, impl_->atlasTexture.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, 1);
     impl_->atlasSrv = pool->GetGPUHandle(srvIndex);
+    impl_->atlasSrvIndex = srvIndex;
 
     // テクスチャ作成直後は COPY_DEST なので、後続の更新処理（GENERIC_READ -> COPY_DEST）に
     // 合わせるために一度 GENERIC_READ に遷移しておく
@@ -356,4 +358,8 @@ const GlyphInfo* FontManager::GetGlyph(const std::string& fontId, char32_t chara
 
 D3D12_GPU_DESCRIPTOR_HANDLE FontManager::GetAtlasSRV() const {
     return impl_->atlasSrv;
+}
+
+uint32_t FontManager::GetAtlasSrvIndex() const {
+    return impl_->atlasSrvIndex;
 }

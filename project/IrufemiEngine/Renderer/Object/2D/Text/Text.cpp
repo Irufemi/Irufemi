@@ -173,6 +173,11 @@ void Text::GenerateVertices() {
     resource_->rawTextureHandle_ = fontManager_->GetAtlasSRV();
     resource_->useRawTextureHandle_ = true;
 
+    // Bindless用にSRVインデックスをマテリアルに設定
+    if (resource_->GetMaterialData()) {
+        resource_->GetMaterialData()->textureIndex = fontManager_->GetAtlasSrvIndex();
+    }
+
     // 頂点がなければ終了
     if (resource_->vertexDataList_.empty()) return;
 

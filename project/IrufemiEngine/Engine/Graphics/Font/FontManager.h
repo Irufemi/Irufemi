@@ -55,6 +55,9 @@ public:
     // シェーダに渡すための動的アトラスSRV(テクスチャ)を取得
     D3D12_GPU_DESCRIPTOR_HANDLE GetAtlasSRV() const;
 
+    // シェーダに渡すための動的アトラスSRVのインデックスを取得
+    uint32_t GetAtlasSrvIndex() const;
+
     // 非同期生成タスクがすべて完了しているかを取得
     bool IsAllLoaded() const;
 
