@@ -4,6 +4,7 @@
 #include <memory>
 
 class GameObject;
+class LockonMarkerUIComponent;
 
 /**
  * @class GravityPlayerComponent
@@ -24,13 +25,16 @@ private:
     void HandlePullInput();
     void HandleThrowInput();
 
+
 private:
     std::vector<std::shared_ptr<GameObject>> orbitingDebris_; ///< 現在プレイヤーの周囲を回転しているガレキのリスト
     int maxOrbitCount_ = 5; ///< 最大保持数
     float pullRadius_ = 100.0f; ///< 引き寄せ検知半径
 
-    std::shared_ptr<GameObject> lockedTarget_ = nullptr;
+    std::vector<std::shared_ptr<GameObject>> lockedTargets_;
     float lockonRadius2D_ = 200.0f; ///< スクリーン上のロックオン半径（ピクセル）
+    
+    LockonMarkerUIComponent* lockonMarkerUI_ = nullptr;
     
     void UpdateAim();
 

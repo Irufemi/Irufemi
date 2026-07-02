@@ -72,6 +72,11 @@ void SpriteBatch::Initialize(const std::string& textureName) {
         if (textureManager_->GetTextureSize(textureName, tw, th)) {
             textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
         }
+        
+        // Bindless用にtextureIndexをマテリアルに設定
+        if (baseResource_->GetMaterialData()) {
+            baseResource_->GetMaterialData()->textureIndex = textureManager_->GetSrvIndex(baseResource_->textureHandle_);
+        }
     }
 
     // SRV確保
@@ -186,6 +191,9 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
 }
 
 void SpriteBatch::SyncBeforeDraw() {
+    if (textureManager_ && baseResource_->GetMaterialData()) {
+        baseResource_->GetMaterialData()->textureIndex = textureManager_->GetSrvIndex(baseResource_->textureHandle_);
+    }
     baseResource_->SyncBeforeDraw();
 }
 
@@ -205,6 +213,8 @@ void SpriteBatch::Draw(bool isTopMost) {
     packet.blendMode = BlendMode::kBlendModeNormal;
     packet.depthWrite = PSOManager::DepthWrite::Off;
     packet.cullMode = PSOManager::CullMode::None;
+    packet.customPSO = customPSO_;
+    packet.customCBVAddress = customCBVAddress_;
 
     if (isTopMost) {
         drawManager_->SubmitTopMostSpriteBatch(packet);

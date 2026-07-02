@@ -455,6 +455,35 @@
       ],
       "name": "Reticle",
       "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "type": "LockonMarkerUIComponent"
+        }
+      ],
+      "name": "LockonMarkerUI",
+      "tag": "Untagged"
     }
   ],
   "settings": {

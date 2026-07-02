@@ -1,0 +1,34 @@
+#pragma once
+#include "Framework/Component/Component.h"
+#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
+#include "Engine/Core/Math/Vector2.h"
+#include <memory>
+#include <vector>
+#include <string>
+
+class GameObject;
+
+struct LockonMarkerState {
+    std::weak_ptr<GameObject> target;
+    float currentScale = 2.0f; // 初期は大きく（シュッと縮小させるため）
+    float targetScale = 1.0f;  // 最終的なスケール（距離に依存）
+    float animationT = 0.0f;   // イージング用タイマー (0.0 ～ 1.0)
+};
+
+class LockonMarkerUIComponent : public Component {
+public:
+    LockonMarkerUIComponent() = default;
+    ~LockonMarkerUIComponent() override = default;
+
+    void Initialize() override;
+    void Update() override;
+
+    // ターゲットのリストを同期する（GravityPlayerComponent等から呼ばれる）
+    void SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets);
+
+    std::string GetComponentName() const override { return "LockonMarkerUIComponent"; }
+
+private:
+    std::vector<LockonMarkerState> activeMarkers_;
+    std::unique_ptr<SpriteBatch> markerBatch_;
+};
