@@ -427,6 +427,10 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - `Timeout Action`: 0(Destroy), 1(Disable)
 - **`SplineComponent`**: 複数のウェイポイント（座標リスト）をセットし、Catmull-Rom スプライン補間による滑らかな曲線パスを作成します。
   - C++コードから `GetPointAt(t)` や `GetTangentAt(t)` を呼ぶことで、曲線上の座標や進行方向ベクトルを取得できます。
+- **`VirtualEntityManagerComponent`**: 大量のオブジェクト（弾幕、草、群集など）の座標やスケールを「仮想データ」として超軽量な密配列で管理し、必要なときだけ実体の GameObject として生成（Promote）したり、プールに戻す（Demote）ことができる最適化コンポーネントです。
+  - `Setup()` で最大数と実体化用のファクトリ関数（GameObjectの生成処理）を渡して初期化します。
+  - `AddVirtualInstance()` で座標などを登録するとIDが返され、そのIDを使って `Promote(id)` を呼ぶことでプールから GameObject が貸し出されます。
+  - `ModelBatchRendererComponent` と組み合わせることで、何万ものオブジェクトをGPUインスタンシングで描画しつつ、プレイヤーの近くにあるものだけを実体化して当たり判定を行う、といった高度な最適化が可能です。
 ### 2.3 マルチスレッド化とコンポーネント設計 (Multithreading & Components)
 
 本エンジンの `BaseScene` では、パフォーマンス向上のため **すべての `GameObject` の `Update` および `Draw` が `ThreadPool` を用いて並列実行（マルチスレッド処理）** されます。
