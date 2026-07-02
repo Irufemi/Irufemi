@@ -123,6 +123,42 @@ ResourceHandle TextureManager::LoadTexture(const std::string& name) {
     return handle;
 }
 
+ResourceHandle TextureManager::RegisterExternalTexture(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // 既に同じ名前があれば参照カウントを増やして返す
+    auto it = nameToHandleMap_.find(name);
+    if (it != nameToHandleMap_.end()) {
+        ResourceHandle handle = it->second;
+        if (texturePool_.IsValid(handle)) {
+            texturePool_.RetainSlot(handle);
+            return handle;
+        }
+    }
+
+    // 新規登録
+    size_t memorySize = 0;
+    if (resource) {
+        auto desc = resource->GetDesc();
+        memorySize = desc.Width * desc.Height * 4;
+    }
+    ResourceHandle handle = texturePool_.AllocateSlot(memorySize);
+    if (!handle.IsValid()) {
+        return handle; // エラー
+    }
+
+    if (textureResources_.size() <= handle.index) {
+        textureResources_.resize(handle.index + 1);
+    }
+
+    auto tex = std::make_unique<Texture>();
+    tex->InitializeFromExternalResource(name, resource, srvIndex, srvHandle);
+    textureResources_[handle.index] = std::move(tex);
+    nameToHandleMap_[name] = handle;
+
+    return handle;
+}
+
 void TextureManager::ReleaseTexture(ResourceHandle handle) {
     texturePool_.ReleaseSlot(handle);
 }

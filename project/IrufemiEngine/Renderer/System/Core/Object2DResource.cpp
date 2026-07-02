@@ -136,12 +136,10 @@ void Object2DResource::SyncBeforeDraw() {
             }
             
             // テクスチャのインデックスを解決して反映
-            if (!useRawTextureHandle_) {
-                if (sTextureManager) {
-                    cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
-                } else {
-                    cpuMaterialData_.textureIndex = 0;
-                }
+            if (sTextureManager) {
+                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+            } else {
+                cpuMaterialData_.textureIndex = 0;
             }
             
             if (materialCbIndex_ != static_cast<uint32_t>(-1)) {

@@ -55,8 +55,6 @@ public:
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
     ResourceHandle textureHandle_;
-    D3D12_GPU_DESCRIPTOR_HANDLE rawTextureHandle_{0};
-    bool useRawTextureHandle_ = false;
 
     static class TextureManager* sTextureManager;
 

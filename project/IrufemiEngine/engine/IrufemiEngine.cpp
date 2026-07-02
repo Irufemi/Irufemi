@@ -208,11 +208,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       if (auto idx = toIndex(whiteCube); idx != DescriptorPool::kInvalid)
         used.push_back(idx);
     }
-    // フォントアトラス
-    if (fontManager_) {
-      if (auto idx = toIndex(fontManager_->GetAtlasSRV()); idx != DescriptorPool::kInvalid)
-        used.push_back(idx);
-    }
+    // フォントアトラスはTextureManagerに統合されたため、下の GetAllAllocatedSrvHandles に含まれる
     // 深度バッファ SRV
     if (auto idx = toIndex(dxCommon_->GetDepthSRVGPUHandle()); idx != DescriptorPool::kInvalid) {
         used.push_back(idx);

@@ -169,3 +169,26 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
         status_.store(LoadingStatus::Failed);
     }
 }
+
+void Texture::InitializeFromExternalResource(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle) {
+    this->filePath_ = name;
+    this->textureResource_ = resource;
+
+    // Textureコンストラクタで確保済みの古いsrvIndexを解放する
+    if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
+        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+    }
+
+    // 新しいインデックスとハンドルを保持
+    this->srvIndex_ = srvIndex;
+    this->textureSrvHandleGPU_ = srvHandle;
+    this->textureSrvHandleCPU_.ptr = 0;
+
+    if (resource) {
+        auto desc = resource->GetDesc();
+        this->width_ = static_cast<uint32_t>(desc.Width);
+        this->height_ = static_cast<uint32_t>(desc.Height);
+    }
+
+    status_.store(LoadingStatus::Loaded);
+}

@@ -6,6 +6,7 @@
 #include <d3d12.h>
 #include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/System/TaskGroup.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 class IrufemiEngine;
 
@@ -52,11 +53,8 @@ public:
     // 文字のグリフ情報を取得する (キャッシュにない場合は非同期または即座に生成する)
     const GlyphInfo* GetGlyph(const std::string& fontId, char32_t character);
 
-    // シェーダに渡すための動的アトラスSRV(テクスチャ)を取得
-    D3D12_GPU_DESCRIPTOR_HANDLE GetAtlasSRV() const;
-
-    // シェーダに渡すための動的アトラスSRVのインデックスを取得
-    uint32_t GetAtlasSrvIndex() const;
+    // シェーダに渡すための動的アトラスのテクスチャハンドルを取得
+    ResourceHandle GetAtlasHandle() const;
 
     // 非同期生成タスクがすべて完了しているかを取得
     bool IsAllLoaded() const;
