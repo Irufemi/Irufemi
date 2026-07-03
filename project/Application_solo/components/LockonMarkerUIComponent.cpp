@@ -14,6 +14,7 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <unordered_map>
 
 void LockonMarkerUIComponent::Initialize() {
     auto engine = BaseModel::GetIrufemiEngine();
@@ -34,20 +35,24 @@ void LockonMarkerUIComponent::Initialize() {
 }
 
 void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets) {
-    // 現在のターゲットリストと新しいターゲットリストを比較し、
-    // 新規追加されたターゲットにはアニメーションの初期値（T=0）を設定する
     std::vector<LockonMarkerState> nextMarkers;
+    std::unordered_map<GameObject*, int> targetCounts;
 
     for (const auto& target : targets) {
         if (!target) continue;
 
+        int occurrenceIndex = targetCounts[target.get()]++;
+
         bool found = false;
+        int activeOccurrence = 0;
         for (const auto& active : activeMarkers_) {
             if (active.target.lock() == target) {
-                // 既存のマーカー状態を引き継ぐ
-                nextMarkers.push_back(active);
-                found = true;
-                break;
+                if (activeOccurrence == occurrenceIndex) {
+                    nextMarkers.push_back(active);
+                    found = true;
+                    break;
+                }
+                activeOccurrence++;
             }
         }
 
@@ -89,6 +94,7 @@ void LockonMarkerUIComponent::Update() {
     }
 
     int markerIndex = 0;
+    std::unordered_map<GameObject*, int> drawCounts;
 
     for (auto& marker : activeMarkers_) {
         auto target = marker.target.lock();
@@ -136,9 +142,24 @@ void LockonMarkerUIComponent::Update() {
         float easedT = EaseOutCubic(marker.animationT);
         marker.currentScale = std::lerp(3.0f, marker.targetScale, easedT);
 
+        int idx = drawCounts[target.get()]++;
+        float finalScale = marker.currentScale;
+        Vector2 finalPos = { screenPos.x, screenPos.y };
+
+        if (idx > 0) {
+            // サテライト配置
+            // 最大5発なのでサテライトは最大4つ（十字または四角形の配置になる）
+            float angle = (idx - 1) * (6.283185f / 4.0f) + (engine->GetTotalTime() * 1.5f); // クルクル回す
+            float offset = 50.0f * marker.targetScale; // 距離に応じてオフセットも縮める
+            finalPos.x += std::cos(angle) * offset;
+            finalPos.y += std::sin(angle) * offset;
+            
+            finalScale *= 0.6f; // サテライトは少し小さくする
+        }
+
         // バッチにインスタンスを追加 (SpriteBatchのAddInstanceはVector2, Vector2, rotation, color, anchor)
-        float size = 100.0f * marker.currentScale;
-        markerBatch_->AddInstance(Vector2{screenPos.x, screenPos.y}, Vector2{size, size}, 0.1f, Vector4{1.0f, 1.0f, 1.0f, 1.0f});
+        float size = 100.0f * finalScale;
+        markerBatch_->AddInstance(finalPos, Vector2{size, size}, 0.1f, Vector4{1.0f, 1.0f, 1.0f, 1.0f});
         
         markerIndex++;
     }

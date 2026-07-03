@@ -94,6 +94,9 @@
     <ClCompile Include="components\EnemyBeamComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\PlayerTargetingComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\Debug\DebugScene.h">
       <Filter>scene\Debug</Filter>
@@ -152,6 +155,9 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\EnemyBeamComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\PlayerTargetingComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <None Include="packages.config" />

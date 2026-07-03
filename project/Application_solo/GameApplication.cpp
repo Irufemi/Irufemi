@@ -14,6 +14,7 @@
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
+#include "components/PlayerTargetingComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
 #include "components/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
@@ -118,6 +119,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
+    ComponentFactory::Register("PlayerTargetingComponent", "Game", []() { return std::make_shared<PlayerTargetingComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     ComponentFactory::Register("SceneTransitionButtonComponent", "Game", []() { return std::make_shared<SceneTransitionButtonComponent>(); });
