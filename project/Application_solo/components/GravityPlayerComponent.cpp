@@ -56,6 +56,11 @@ void GravityPlayerComponent::Update() {
     if (isThrowing_) {
         UpdateThrowing();
     } else {
+        if (targetingComp_) {
+            size_t maxLockOn = orbitingDebris_.size();
+            if (maxLockOn == 0) maxLockOn = 1;
+            targetingComp_->SetMaxLockonCount(maxLockOn);
+        }
         HandlePullInput();
         HandleMarkInput();
         HandleThrowInput();

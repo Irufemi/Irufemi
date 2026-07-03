@@ -25,10 +25,12 @@ public:
 
     // ターゲットのリストを同期する（GravityPlayerComponent等から呼ばれる）
     void SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets);
+    void SetMaxLockonCount(size_t count) { maxLockonCount_ = count; }
 
     std::string GetComponentName() const override { return "LockonMarkerUIComponent"; }
 
 private:
+    size_t maxLockonCount_ = 1;
     std::vector<LockonMarkerState> activeMarkers_;
     std::unique_ptr<SpriteBatch> markerBatch_;
 

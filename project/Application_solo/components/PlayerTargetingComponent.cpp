@@ -71,6 +71,7 @@ void PlayerTargetingComponent::Update() {
     }
 
     if (lockonMarkerUI_) {
+        lockonMarkerUI_->SetMaxLockonCount(maxLockonCount_);
         std::vector<std::shared_ptr<GameObject>> displayTargets = queuedTargets_;
         if (hoverTarget_) {
             displayTargets.push_back(hoverTarget_);

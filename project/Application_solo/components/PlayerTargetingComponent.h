@@ -43,7 +43,10 @@ public:
      */
     std::shared_ptr<GameObject> PopTarget();
 
+    void SetMaxLockonCount(size_t count) { maxLockonCount_ = count; }
+
 private:
+    size_t maxLockonCount_ = 1;
     std::vector<std::shared_ptr<GameObject>> queuedTargets_;
     std::shared_ptr<GameObject> hoverTarget_ = nullptr;
     
