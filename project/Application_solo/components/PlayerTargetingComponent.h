@@ -39,6 +39,11 @@ public:
     const std::vector<std::shared_ptr<GameObject>>& GetQueuedTargets() const { return queuedTargets_; }
     
     /**
+     * @brief 現在レティクルが合っているホバー中のターゲットを取得する
+     */
+    std::shared_ptr<GameObject> GetHoverTarget() const { return hoverTarget_; }
+    
+    /**
      * @brief キューの先頭を取り出して返す（発射用）
      */
     std::shared_ptr<GameObject> PopTarget();

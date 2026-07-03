@@ -83,29 +83,56 @@ void GravityPlayerComponent::HandlePullInput() {
         auto transform = gameObject_->GetComponent<TransformComponent>();
         if (!transform) return;
 
-        // ボスのシールドを奪う処理
+        // 1. ロックオン済み、またはホバー中のターゲットを取得
+        std::shared_ptr<GameObject> targetToSteal = nullptr;
+        bool isQueuedTarget = false;
+
         if (targetingComp_) {
+            // A. まずは手動ロックオン済みのキューをチェック
             auto& targets = targetingComp_->GetQueuedTargets();
-            for (auto& target : targets) {
-                if (!target) continue;
-                if (auto debrisComp = target->GetComponent<DebrisComponent>()) {
+            for (auto& t : targets) {
+                if (!t) continue;
+                if (auto debrisComp = t->GetComponent<DebrisComponent>()) {
                     if (debrisComp->GetState() == DebrisState::BossOrbiting) {
-                        if (auto bossTarget = debrisComp->GetTarget().lock()) {
-                            if (auto bossComp = bossTarget->GetComponent<BossComponent>()) {
-                                bossComp->RemoveShield(target);
-                            }
-                        }
-                        debrisComp->SetState(DebrisState::Pulled);
-                        debrisComp->SetTarget(gameObject_->shared_from_this());
-                        debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, 6.28f), Random::GeneratorFloat(2.0f, 4.0f));
-                        orbitingDebris_.push_back(target);
-                        
-                        // 一つ奪ったらキューをクリアして終了
-                        targetingComp_->ClearTargets();
-                        return;
+                        targetToSteal = t;
+                        isQueuedTarget = true;
+                        break; // 1つだけ奪う
                     }
                 }
             }
+
+            // B. 手動ロックが無い場合、現在ホバー中のシールドをチェック
+            if (!targetToSteal) {
+                auto hover = targetingComp_->GetHoverTarget();
+                if (hover) {
+                    if (auto debrisComp = hover->GetComponent<DebrisComponent>()) {
+                        if (debrisComp->GetState() == DebrisState::BossOrbiting) {
+                            targetToSteal = hover;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. ターゲットが見つかった場合、ボスのシールドを奪う実行処理
+        if (targetToSteal) {
+            auto debrisComp = targetToSteal->GetComponent<DebrisComponent>();
+            if (auto bossTarget = debrisComp->GetTarget().lock()) {
+                if (auto bossComp = bossTarget->GetComponent<BossComponent>()) {
+                    bossComp->RemoveShield(targetToSteal);
+                }
+            }
+            
+            debrisComp->SetState(DebrisState::Pulled);
+            debrisComp->SetTarget(gameObject_->shared_from_this());
+            debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, 6.28f), Random::GeneratorFloat(2.0f, 4.0f));
+            orbitingDebris_.push_back(targetToSteal);
+            
+            // キューにあったものを奪った場合は、手動ロックを解除する
+            if (isQueuedTarget) {
+                targetingComp_->ClearTargets();
+            }
+            return; // ボスから奪った場合はフリーガレキは吸わない
         }
 
         if (!debrisManager_) return;
