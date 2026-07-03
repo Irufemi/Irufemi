@@ -2,9 +2,12 @@
 #include "Framework/Component/Component.h"
 #include <vector>
 #include <memory>
+#include <future>
+#include <unordered_map>
 
 class GameObject;
 class LockonMarkerUIComponent;
+struct RaycastHit;
 
 /**
  * @class PlayerTargetingComponent
@@ -43,6 +46,14 @@ public:
 private:
     std::vector<std::shared_ptr<GameObject>> queuedTargets_;
     std::shared_ptr<GameObject> hoverTarget_ = nullptr;
+    
+    /** @brief 非同期レイキャストの結果待機用と時間間引き(Amortization)用キャッシュ構造体 */
+    struct TargetVisibilityCache {
+        bool canSee = true;
+        float lastCheckTime = -1.0f;
+        std::shared_ptr<std::future<std::pair<bool, RaycastHit>>> pendingTask;
+    };
+    std::unordered_map<GameObject*, TargetVisibilityCache> visibilityCache_;
 
     void UpdateHoverTarget();
 

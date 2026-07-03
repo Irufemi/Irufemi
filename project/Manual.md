@@ -137,7 +137,50 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
   対象オブジェクトの生成時に `TargetableComponent` をアタッチしておくと、`OnEnable` 時に対象がグローバルな静的リストへ自動登録されます。
   検索側は `TargetableComponent::GetTargets()` をループで回すだけになり、定数時間かつキャッシュ効率の良いアクセスが可能になります。
 
-### 6. 命名規則・コードスタイル
+### 6. 非同期レイキャスト (Async Raycast) と物理クエリの最適化
+毎フレーム大量のオブジェクトに対して同期的にレイキャスト（視線判定など）を行うと、メインスレッドの処理落ち（フレームドロップ）の大きな原因となります。
+これを防ぐため、`CollisionManager` にはスレッドプールを利用した非同期レイキャストAPI `RaycastAsync` が用意されています。
+
+- **非同期クエリの発行と Amortization (分散処理)**
+  毎フレーム全ての判定を行うのではなく、`std::future` を用いてバックグラウンドで処理させ、結果が出たタイミングでキャッシュを更新する **Time-Slicing** の設計を強く推奨します。
+
+  ```cpp
+  // 1. ヘッダ側で future と結果を保持するキャッシュ変数を用意
+  #include <future>
+  struct TargetVisibilityCache {
+      bool canSee = true;
+      float lastCheckTime = -1.0f;
+      std::shared_ptr<std::future<std::pair<bool, RaycastHit>>> pendingTask;
+  };
+  std::unordered_map<GameObject*, TargetVisibilityCache> visibilityCache_;
+
+  // 2. 実装側 (Update)
+  float currentTime = engine->GetTotalTime();
+
+  // 既に投げている非同期判定の終了をポーリング (ノンブロッキング)
+  for (auto& [objPtr, cache] : visibilityCache_) {
+      if (cache.pendingTask && cache.pendingTask->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+          auto result = cache.pendingTask->get();
+          bool hit = result.first;
+          RaycastHit hitInfo = result.second;
+          
+          // 判定結果をキャッシュに保存
+          cache.canSee = (hit && hitInfo.hitObject == objPtr); // 簡易例
+          cache.pendingTask.reset();
+      }
+  }
+
+  // ターゲットへの判定発行（例: 0.1秒間隔に分散）
+  if (currentTime - cache.lastCheckTime > 0.1f && !cache.pendingTask) {
+      cache.lastCheckTime = currentTime;
+      Ray ray = { cameraPos, dir };
+      cache.pendingTask = std::make_shared<std::future<std::pair<bool, RaycastHit>>>(
+          engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray, maxDistance, layerMask)
+      );
+  }
+  ```
+
+### 7. 命名規則・コードスタイル
 - **メンバ変数の命名**: `m_` などの接頭辞は使用せず、**キャメルケースの末尾にアンダーバー**をつけるスタイル (`variableName_`) に統一してください。
 - **ヘッダーの注釈**: 関数やクラスのコメントは「Doxygen形式」で記述してください。
 - **インクルードガード**: `#pragma once` を使用してください。

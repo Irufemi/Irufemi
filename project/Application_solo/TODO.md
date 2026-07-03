@@ -45,6 +45,9 @@
 - [x] **DX12 Instancing / Batching 描画の対応**
   - [x] 無数のガレキや破片を低負荷で描画するためのインスタンシング描画基盤の構築（※既存の描画エンジンの拡張）
   - [x] マルチロックオン時のレティクル等、UI（Sprite）の大量描画に向けた SpriteBatch（またはUIインスタンシング）の実装
+- [x] **フレームドロップ最適化 (Async & Zero Allocation)**
+  - [x] 非同期レイキャスト (Async Raycast) の導入による視線判定のマルチスレッド化
+  - [x] 毎フレーム生成されるコンテナのメンバ変数化（Zero Allocation化）によるGC負荷の根絶
 
 ## 4. データ駆動設計 (Editor / Application)
 - [ ] **外部データ（CSV/JSON）読み込み機構**

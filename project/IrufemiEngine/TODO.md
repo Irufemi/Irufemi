@@ -8,6 +8,8 @@
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
 ### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)
+- [x] **CollisionManager のスレッドセーフ化と Async Raycast の実装**
+    - `shared_mutex` を用いたRead-Write Lockの導入と、ThreadPoolと連携した非同期物理クエリAPIの提供。（完了）
 - [ ] **Bindless Resources (Descriptor Indexing) の完全移行完了**
     - 全テクスチャ/リソースを巨大な Descriptor Heap に格納し、Shader にインデックス(uint)だけを渡す方式へ移行。
     - **進行状況**: C++基盤、および `Application_solo` / `Application_team` 双方のほぼすべてのHLSLファイルの移行が完了。

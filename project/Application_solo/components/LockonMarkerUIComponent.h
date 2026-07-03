@@ -31,4 +31,9 @@ public:
 private:
     std::vector<LockonMarkerState> activeMarkers_;
     std::unique_ptr<SpriteBatch> markerBatch_;
+
+    // ゼロアロケーション用のキャッシュコンテナ
+    std::vector<LockonMarkerState> nextMarkersCache_;
+    std::unordered_map<GameObject*, int> targetCountsCache_;
+    std::unordered_map<GameObject*, int> drawCountsCache_;
 };

@@ -35,20 +35,20 @@ void LockonMarkerUIComponent::Initialize() {
 }
 
 void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets) {
-    std::vector<LockonMarkerState> nextMarkers;
-    std::unordered_map<GameObject*, int> targetCounts;
+    nextMarkersCache_.clear();
+    targetCountsCache_.clear();
 
     for (const auto& target : targets) {
         if (!target) continue;
 
-        int occurrenceIndex = targetCounts[target.get()]++;
+        int occurrenceIndex = targetCountsCache_[target.get()]++;
 
         bool found = false;
         int activeOccurrence = 0;
         for (const auto& active : activeMarkers_) {
             if (active.target.lock() == target) {
                 if (activeOccurrence == occurrenceIndex) {
-                    nextMarkers.push_back(active);
+                    nextMarkersCache_.push_back(active);
                     found = true;
                     break;
                 }
@@ -62,11 +62,11 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
             newState.target = target;
             newState.currentScale = 3.0f; // 初期スケール（大きめに出現）
             newState.animationT = 0.0f;
-            nextMarkers.push_back(newState);
+            nextMarkersCache_.push_back(newState);
         }
     }
 
-    activeMarkers_ = std::move(nextMarkers);
+    activeMarkers_ = nextMarkersCache_;
 }
 
 void LockonMarkerUIComponent::Update() {
@@ -94,7 +94,7 @@ void LockonMarkerUIComponent::Update() {
     }
 
     int markerIndex = 0;
-    std::unordered_map<GameObject*, int> drawCounts;
+    drawCountsCache_.clear();
 
     for (auto& marker : activeMarkers_) {
         auto target = marker.target.lock();
@@ -142,7 +142,7 @@ void LockonMarkerUIComponent::Update() {
         float easedT = EaseOutCubic(marker.animationT);
         marker.currentScale = std::lerp(3.0f, marker.targetScale, easedT);
 
-        int idx = drawCounts[target.get()]++;
+        int idx = drawCountsCache_[target.get()]++;
         float finalScale = marker.currentScale;
         Vector2 finalPos = { screenPos.x, screenPos.y };
 

@@ -14,6 +14,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include "Engine/Core/Math/MathFunction.h"
+#include "Engine/Core/System/ThreadPool.h"
 
 
 void CollisionManager::Initialize() {
@@ -29,12 +30,14 @@ void CollisionManager::Initialize() {
 CollisionManager::~CollisionManager() = default;
 
 void CollisionManager::Clear() {
+    std::unique_lock<std::shared_mutex> lock(collidersMutex_);
     colliders_.clear();
     previousCollisions_.clear();
 }
 
 void CollisionManager::RegisterCollider(ColliderComponent* collider) {
     if (!collider) return;
+    std::unique_lock<std::shared_mutex> lock(collidersMutex_);
     // 重複登録防止
     auto it = std::find(colliders_.begin(), colliders_.end(), collider);
     if (it == colliders_.end()) {
@@ -44,6 +47,9 @@ void CollisionManager::RegisterCollider(ColliderComponent* collider) {
 
 void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
     if (!collider) return;
+    
+    std::unique_lock<std::shared_mutex> lock(collidersMutex_);
+    
     auto it = std::find(colliders_.begin(), colliders_.end(), collider);
     if (it != colliders_.end()) {
         colliders_.erase(it);
@@ -420,6 +426,8 @@ bool CollisionManager::Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDis
     hitInfo.isHit = false;
     hitInfo.distance = maxDistance;
 
+    std::shared_lock<std::shared_mutex> lock(collidersMutex_);
+
     for (ColliderComponent* collider : colliders_) {
         if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
 
@@ -464,4 +472,20 @@ bool CollisionManager::Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDis
 
 void CollisionManager::DrawDebugRay(const Ray& ray, float distance, const Vector4& color) {
     debugRays_.push_back({ ray, distance, color });
+}
+
+std::future<std::pair<bool, RaycastHit>> CollisionManager::RaycastAsync(ThreadPool* pool, const Ray& ray, float maxDistance, uint32_t layerMask, GameObject* ignoreObject) {
+    if (!pool) {
+        std::promise<std::pair<bool, RaycastHit>> prom;
+        RaycastHit hit;
+        bool result = Raycast(ray, hit, maxDistance, layerMask, ignoreObject);
+        prom.set_value({result, hit});
+        return prom.get_future();
+    }
+    
+    return pool->Enqueue([this, ray, maxDistance, layerMask, ignoreObject]() -> std::pair<bool, RaycastHit> {
+        RaycastHit hit;
+        bool result = this->Raycast(ray, hit, maxDistance, layerMask, ignoreObject);
+        return {result, hit};
+    });
 }
