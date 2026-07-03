@@ -106,6 +106,7 @@
         {
           "data": {
             "Max Orbit Count": 10,
+            "NoLock Throw Dist": 1000.0,
             "Pull Radius": 50.0,
             "Throw Interval": 0.15000000596046448
           },

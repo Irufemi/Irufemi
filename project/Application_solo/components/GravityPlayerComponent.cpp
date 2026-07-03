@@ -13,6 +13,7 @@
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/MathFunction.h"
+#include "Engine/Manager/CollisionManager.h"
 #include "BossComponent.h"
 #include <algorithm>
 
@@ -20,6 +21,7 @@ void GravityPlayerComponent::OnRegisterProperties() {
     RegisterProperty("Max Orbit Count", &maxOrbitCount_);
     RegisterProperty("Pull Radius", &pullRadius_);
     RegisterProperty("Throw Interval", &throwInterval_);
+    RegisterProperty("NoLock Throw Dist", &noLockThrowDistance_);
 }
 
 void GravityPlayerComponent::Initialize() {
@@ -131,7 +133,7 @@ void GravityPlayerComponent::HandleMarkInput() {
     }
 
     // 右クリックでマーキング
-    if (input->IsMouseButtonDown(Mouse::Button::Right)) {
+    if (input->IsMouseButtonPressed(Mouse::Button::Right)) {
         size_t maxLockOn = orbitingDebris_.size();
         if (maxLockOn == 0) maxLockOn = 1; // シールド奪取用に最低1つはロック許可
         targetingComp_->MarkTarget(maxLockOn);
@@ -142,18 +144,29 @@ void GravityPlayerComponent::HandleThrowInput() {
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
     if (!input) return;
 
-    // 左クリックで一斉掃射モードへ
-    if (input->IsMouseButtonDown(Mouse::Button::Left) || input->IsKeyPressed('Q')) {
+    // 左クリックで射撃
+    if (input->IsMouseButtonPressed(Mouse::Button::Left) || input->IsKeyPressed('Q')) {
         if (orbitingDebris_.empty()) return;
+        
+        size_t lockonCount = targetingComp_ ? targetingComp_->GetQueuedTargets().size() : 0;
+        
+        if (lockonCount > 0) {
+            // ロックオンしている場合は、ターゲットの数だけ発射する
+            throwRemainingCount_ = static_cast<int>((std::min)(orbitingDebris_.size(), lockonCount));
+        } else {
+            // ノーロック時は1発だけ撃つ
+            throwRemainingCount_ = 1;
+        }
+
         isThrowing_ = true;
         throwTimer_ = throwInterval_; // 即座に1発目を撃つため
     }
 }
 
 void GravityPlayerComponent::UpdateThrowing() {
-    if (orbitingDebris_.empty()) {
+    if (throwRemainingCount_ <= 0 || orbitingDebris_.empty()) {
         isThrowing_ = false;
-        if (targetingComp_) targetingComp_->ClearTargets(); // 弾切れで残ったマークをクリア
+        if (targetingComp_) targetingComp_->ClearTargets(); // 弾切れ・または予定数撃ち切りでマークをクリア
         return;
     }
 
@@ -162,6 +175,7 @@ void GravityPlayerComponent::UpdateThrowing() {
 
     if (throwTimer_ >= throwInterval_) {
         throwTimer_ = 0.0f;
+        throwRemainingCount_--;
 
         auto debris = orbitingDebris_.back();
         orbitingDebris_.pop_back();
@@ -175,15 +189,41 @@ void GravityPlayerComponent::UpdateThrowing() {
                 }
 
                 comp->SetState(DebrisState::Thrown);
-                comp->SetTarget(throwTarget);
+                if (throwTarget && throwTarget->GetIsActive()) {
+                    comp->SetTarget(throwTarget);
+                } else {
+                    comp->SetTarget(std::weak_ptr<GameObject>());
+                    Vector3 debrisPos = debris->GetComponent<TransformComponent>()->GetWorldPosition();
 
-                if (!throwTarget) {
-                    auto cameraManager = engine->GetCameraManager();
-                    if (cameraManager && cameraManager->GetActiveCamera()) {
-                        auto camera = cameraManager->GetActiveCamera();
-                        Matrix4x4 viewMat = camera->GetViewMatrix();
-                        Vector3 forward = { viewMat.m[0][2], viewMat.m[1][2], viewMat.m[2][2] };
-                        comp->SetThrowDirection({ forward.x, forward.y, forward.z });
+                    if (throwTarget) {
+                        // ターゲットはいたが死んでいた場合、その死んだ座標へ直進させる
+                        Vector3 deadPos = throwTarget->GetComponent<TransformComponent>()->GetWorldPosition();
+                        Vector3 throwDir = Math::Normalize(Math::Subtract(deadPos, debrisPos));
+                        comp->SetThrowDirection(throwDir);
+                    } else {
+                        // 完全なノーロック時の場合、マウスカーソルの奥へレイキャスト
+                        auto cameraManager = engine->GetCameraManager();
+                        auto inputManager = engine->GetInputManager();
+                        if (cameraManager && cameraManager->GetActiveCamera() && inputManager) {
+                            auto camera = cameraManager->GetActiveCamera();
+                            float width = camera->GetViewportWidth();
+                            float height = camera->GetViewportHeight();
+                            Vector2 mousePos = inputManager->GetMousePosition();
+                            
+                            Matrix4x4 viewProjInv = Math::Inverse(camera->GetViewProjectionMatrix3D());
+                            Ray ray = Math::ScreenPointToRay(mousePos, width, height, viewProjInv);
+                            
+                            RaycastHit hitInfo;
+                            Vector3 targetPoint;
+                            if (engine->GetCollisionManager()->Raycast(ray, hitInfo, noLockThrowDistance_)) {
+                                targetPoint = hitInfo.hitPoint;
+                            } else {
+                                targetPoint = Math::Add(ray.origin, Math::Multiply(noLockThrowDistance_, ray.diff));
+                            }
+                            
+                            Vector3 throwDir = Math::Normalize(Math::Subtract(targetPoint, debrisPos));
+                            comp->SetThrowDirection(throwDir);
+                        }
                     }
                 }
             }
