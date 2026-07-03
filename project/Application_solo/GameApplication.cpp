@@ -14,11 +14,13 @@
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
+#include "components/PlayerTargetingComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
 #include "components/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
 #include "components/EffectManagerComponent.h"
 #include "components/ReticleUIComponent.h"
+#include "components/LockonMarkerUIComponent.h"
 
 // エンジン機能
 #include "Engine/Graphics/DirectX/ShaderManager.h"
@@ -104,6 +106,11 @@ void GameApplication::Run() {
 
         auto psLightningCrawl = shaderManager->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
         psoManager->RegisterShader("LightningCrawl", { { vs3d, psLightningCrawl } });
+
+        // LockonMarker用シェーダー (SpriteBatch.VS.hlsl を使う)
+        auto vsSpriteBatch = shaderManager->GetOrCompile(L"resources/shaders/SpriteBatch.VS.hlsl", options);
+        auto psLuminanceAlpha = shaderManager->GetOrCompile(L"resources/shaders/LuminanceAlpha2D.PS.hlsl", options);
+        psoManager->RegisterShader("LuminanceAlpha2D", { { vsSpriteBatch, psLuminanceAlpha } });
     }
 
     // 独自コンポーネントの登録
@@ -112,11 +119,13 @@ void GameApplication::Run() {
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
+    ComponentFactory::Register("PlayerTargetingComponent", "Game", []() { return std::make_shared<PlayerTargetingComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     ComponentFactory::Register("SceneTransitionButtonComponent", "Game", []() { return std::make_shared<SceneTransitionButtonComponent>(); });
     ComponentFactory::Register("EffectManagerComponent", "Game", []() { return std::make_shared<EffectManagerComponent>(); });
     ComponentFactory::Register("ReticleUIComponent", "UI", []() { return std::make_shared<ReticleUIComponent>(); });
+    ComponentFactory::Register("LockonMarkerUIComponent", "UI", []() { return std::make_shared<LockonMarkerUIComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

@@ -105,11 +105,14 @@
         },
         {
           "data": {
-            "Lockon Radius 2D": 200.0,
             "Max Orbit Count": 10,
-            "Pull Radius": 50.0
+            "Pull Radius": 50.0,
+            "Throw Interval": 0.15000000596046448
           },
           "type": "GravityPlayerComponent"
+        },
+        {
+          "type": "PlayerTargetingComponent"
         }
       ],
       "name": "Player",
@@ -454,6 +457,35 @@
         }
       ],
       "name": "Reticle",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "type": "LockonMarkerUIComponent"
+        }
+      ],
+      "name": "LockonMarkerUI",
       "tag": "Untagged"
     }
   ],

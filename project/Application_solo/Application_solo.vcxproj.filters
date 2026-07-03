@@ -88,7 +88,13 @@
     </ClCompile>
     <ClCompile Include="components\EffectManagerComponent.cpp">
     </ClCompile>
+    <ClCompile Include="components\LockonMarkerUIComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClCompile Include="components\EnemyBeamComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\PlayerTargetingComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
     <ClInclude Include="GameApplication.h" />
@@ -145,7 +151,13 @@
     </ClInclude>
     <ClInclude Include="components\EffectManagerComponent.h">
     </ClInclude>
+    <ClInclude Include="components\LockonMarkerUIComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
     <ClInclude Include="components\EnemyBeamComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\PlayerTargetingComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <None Include="packages.config" />

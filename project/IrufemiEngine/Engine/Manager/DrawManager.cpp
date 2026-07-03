@@ -466,12 +466,7 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
 
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
-    if (resource->useRawTextureHandle_) {
-        gpuHandle = resource->rawTextureHandle_;
-    } else {
-        gpuHandle = textureManager_->Resolve(resource->textureHandle_);
-    }
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->textureHandle_);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -539,12 +534,7 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
-    if (resource->useRawTextureHandle_) {
-        gpuHandle = resource->rawTextureHandle_;
-    } else {
-        gpuHandle = textureManager_->Resolve(resource->textureHandle_);
-    }
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->textureHandle_);
     
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }

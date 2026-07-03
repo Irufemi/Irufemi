@@ -170,8 +170,7 @@ void Text::GenerateVertices() {
     }
 
     // SRVを設定
-    resource_->rawTextureHandle_ = fontManager_->GetAtlasSRV();
-    resource_->useRawTextureHandle_ = true;
+    resource_->textureHandle_ = fontManager_->GetAtlasHandle();
 
     // 頂点がなければ終了
     if (resource_->vertexDataList_.empty()) return;
@@ -191,10 +190,10 @@ void Text::Update() {
     if (!resource_ || !cameraManager_ || !fontManager_) return;
     
     // AtlasのSRVが変わったか(リビルドされた等)、テキストに変更があった場合は再生成
-    D3D12_GPU_DESCRIPTOR_HANDLE currentAtlas = fontManager_->GetAtlasSRV();
-    if (lastAtlasSrv_.ptr != currentAtlas.ptr) {
+    ResourceHandle currentAtlas = fontManager_->GetAtlasHandle();
+    if (lastAtlasHandle_ != currentAtlas) {
         isTextDirty_ = true;
-        lastAtlasSrv_ = currentAtlas;
+        lastAtlasHandle_ = currentAtlas;
     }
 
     if (isTextDirty_) {

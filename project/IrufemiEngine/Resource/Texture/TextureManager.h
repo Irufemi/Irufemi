@@ -62,6 +62,16 @@ public:
     ResourceHandle LoadTexture(const std::string& name);
 
     /**
+     * @brief 外部で生成されたテクスチャを登録し、リソースハンドルを発行する
+     * @param[in] name 識別名
+     * @param[in] resource ID3D12Resource
+     * @param[in] srvIndex 割り当て済みのSRVインデックス
+     * @param[in] srvHandle GPUディスクリプタハンドル
+     * @return リソースハンドル
+     */
+    ResourceHandle RegisterExternalTexture(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle);
+
+    /**
      * @brief テクスチャのリソースハンドルを解放する（参照カウントを減らす）
      * @details コンポーネントの破棄時などに必ず呼び出してください。
      * @param[in] handle リソースハンドル

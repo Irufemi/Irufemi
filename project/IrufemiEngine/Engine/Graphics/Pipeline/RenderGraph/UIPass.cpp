@@ -28,7 +28,12 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
-                engine->ApplyPSO(psoName);
+                
+                if (p.customPSO) {
+                    engine->GetCommandList()->SetPipelineState(p.customPSO);
+                } else {
+                    engine->ApplyPSO(psoName);
+                }
                 
                 currentBlend = p.blendMode;
                 currentDepth = p.depthWrite;

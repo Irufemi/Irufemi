@@ -1,0 +1,200 @@
+#include "PlayerTargetingComponent.h"
+#include "TargetableComponent.h"
+#include "RailShooterEnemyComponent.h"
+#include "BossComponent.h"
+#include "DebrisComponent.h"
+#include "LockonMarkerUIComponent.h"
+#include "Framework/GameObject.h"
+#include "Framework/BaseScene.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Platform/Input/InputManager.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Engine/Graphics/Camera/Camera.h"
+#include "Engine/Manager/CollisionManager.h"
+#include "Engine/Core/Math/MathFunction.h"
+#include "Engine/Core/Shape/LinePrimitive.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include <algorithm>
+#include <limits>
+#include <cmath>
+
+void PlayerTargetingComponent::Initialize() {
+    // UIコンポーネントを検索
+    auto scene = gameObject_->GetScene();
+    if (scene) {
+        for (auto obj : scene->GetGameObjects()) {
+            if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
+                lockonMarkerUI_ = ui;
+                break;
+            }
+        }
+    }
+}
+
+void PlayerTargetingComponent::Start() {
+}
+
+void PlayerTargetingComponent::Update() {
+    // 死んだオブジェクトなどをキューから削除する
+    queuedTargets_.erase(
+        std::remove_if(queuedTargets_.begin(), queuedTargets_.end(),
+            [](const std::shared_ptr<GameObject>& obj) {
+                if (!obj || !obj->GetIsActive()) return true;
+                
+                // 生死判定
+                if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
+                    if (!enemyComp->IsAlive()) return true;
+                } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
+                    if (bossComp->GetState() != BossState::CoreExposed) return true;
+                } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
+                    if (debrisComp->GetState() != DebrisState::BossOrbiting) return true;
+                }
+                
+                return false;
+            }),
+        queuedTargets_.end()
+    );
+
+    UpdateHoverTarget();
+
+    if (!lockonMarkerUI_) {
+        auto scene = gameObject_->GetScene();
+        if (scene) {
+            for (auto obj : scene->GetGameObjects()) {
+                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
+                    lockonMarkerUI_ = ui;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (lockonMarkerUI_) {
+        std::vector<std::shared_ptr<GameObject>> displayTargets = queuedTargets_;
+        if (hoverTarget_) {
+            displayTargets.push_back(hoverTarget_);
+        }
+        lockonMarkerUI_->SyncTargets(displayTargets);
+    }
+}
+
+void PlayerTargetingComponent::OnRegisterProperties() {
+}
+
+void PlayerTargetingComponent::UpdateHoverTarget() {
+    hoverTarget_ = nullptr;
+
+    auto engine = BaseModel::GetIrufemiEngine();
+    auto cameraManager = engine->GetCameraManager();
+    if (!cameraManager || !cameraManager->GetActiveCamera()) return;
+    auto camera = cameraManager->GetActiveCamera();
+
+    Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
+    float viewWidth = camera->GetViewportWidth();
+    float viewHeight = camera->GetViewportHeight();
+
+    auto inputManager = engine->GetInputManager();
+    Vector2 screenCenter = inputManager ? inputManager->GetMousePosition() : Vector2{ viewWidth * 0.5f, viewHeight * 0.5f };
+
+    std::shared_ptr<GameObject> bestTarget = nullptr;
+    float bestScore = (std::numeric_limits<float>::max)();
+
+    auto scene = gameObject_->GetScene();
+    if (!scene) return;
+    
+    auto playerObj = gameObject_;
+
+    for (auto targetComp : TargetableComponent::GetTargets()) {
+        auto obj = targetComp->GetGameObject();
+        if (!obj || !obj->GetIsActive()) continue;
+
+        bool isTargetable = false;
+        if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
+            if (enemyComp->IsAlive()) isTargetable = true;
+        } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
+            if (bossComp->GetState() == BossState::CoreExposed) isTargetable = true;
+        } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
+            if (debrisComp->GetState() == DebrisState::BossOrbiting) isTargetable = true;
+        }
+
+        if (isTargetable) {
+            auto transform = obj->GetComponent<TransformComponent>();
+            if (transform) {
+                Vector3 worldPos = transform->GetWorldPosition();
+                Vector3 clipPos = Math::Transform(worldPos, viewProj);
+                
+                if (clipPos.z >= 0.0f && clipPos.z <= 1.0f) {
+                    float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
+                    float screenY = (1.0f - clipPos.y) * 0.5f * viewHeight;
+
+                    float dx = screenX - screenCenter.x;
+                    float dy = screenY - screenCenter.y;
+                    float dist2DSq = dx * dx + dy * dy;
+
+                    if (dist2DSq <= lockonRadius2D_ * lockonRadius2D_) {
+                        Vector3 cameraPos = camera->GetTranslate();
+                        Vector3 toTarget = worldPos - cameraPos;
+                        float dist3D = Math::Length(toTarget);
+
+                        float score = std::sqrt(dist2DSq) * weight2D_ + dist3D * weight3D_;
+                        
+                        char debugBuf[256];
+                        sprintf_s(debugBuf, "[PlayerTargeting] Target in radius! dist2D: %.1f, score: %.1f\n", std::sqrt(dist2DSq), score);
+                        OutputDebugStringA(debugBuf);
+
+                        if (score < bestScore) {
+                            Vector3 dir = Math::Normalize(toTarget);
+                            Ray ray;
+                            ray.origin = cameraPos;
+                            ray.diff = dir;
+
+                            RaycastHit hitInfo;
+                            bool hit = engine->GetCollisionManager()->Raycast(ray, hitInfo, dist3D + 10.0f, 0xFFFFFFFF, playerObj);
+                            
+                            bool canSee = true;
+                            if (hit && hitInfo.hitObject != nullptr) {
+                                if (hitInfo.hitObject != obj && hitInfo.distance < dist3D - 1.0f) {
+                                    canSee = false;
+                                    sprintf_s(debugBuf, "[PlayerTargeting] Occluded by: %p, dist: %.1f < %.1f\n", hitInfo.hitObject, hitInfo.distance, dist3D - 1.0f);
+                                    OutputDebugStringA(debugBuf);
+                                }
+                            }
+
+                            if (canSee) {
+                                OutputDebugStringA("[PlayerTargeting] Target can be seen and is best so far.\n");
+                                bestScore = score;
+                                bestTarget = obj->shared_from_this();
+                            }
+                        }
+                    } else {
+                        // char debugBuf[256];
+                        // sprintf_s(debugBuf, "[PlayerTargeting] Out of radius! dist2D: %.1f > %.1f\n", std::sqrt(dist2DSq), lockonRadius2D_);
+                        // OutputDebugStringA(debugBuf);
+                    }
+                }
+            }
+        }
+    }
+
+    hoverTarget_ = bestTarget;
+}
+
+void PlayerTargetingComponent::MarkTarget(size_t maxLockOn) {
+    if (queuedTargets_.size() >= maxLockOn) return;
+    
+    if (hoverTarget_) {
+        queuedTargets_.push_back(hoverTarget_);
+    }
+}
+
+void PlayerTargetingComponent::ClearTargets() {
+    queuedTargets_.clear();
+}
+
+std::shared_ptr<GameObject> PlayerTargetingComponent::PopTarget() {
+    if (queuedTargets_.empty()) return nullptr;
+    auto target = queuedTargets_.front();
+    queuedTargets_.erase(queuedTargets_.begin());
+    return target;
+}

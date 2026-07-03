@@ -7,24 +7,24 @@
 
 ## 1. 導入とエディタ操作 (Introduction & Editor)
 
-### 0. プロジェクト構造とコーディングルール (Project Structure)
+### 1.1 プロジェクト構造とコーディングルール (Project Structure)
 
 新しくコードを書いたり、リソースを追加する際は以下の配置ルールに必ず従ってください。
 
-- **`IrufemiEngine/` (エンジンコア)**
+- **`project/IrufemiEngine/` (エンジンコア)**
   - 描画パイプラインや汎用的なマネージャーが置かれます。**ゲーム特有のロジックやアクターは絶対にここに書かないでください。**
-- **`IrufemiEditor/` (エディタUI・ツール)**
+- **`project/IrufemiEditor/` (エディタUI・ツール)**
   - ImGuiを用いたエディタ画面の構築や、シーンビュー、インスペクター等の実装ロジックが置かれます。
-- **`Application_solo/` / `Application_team/` (ゲームロジック)**
+- **`project/Application_solo/` / `project/Application_team/` (ゲームロジック)**
   - プレイヤーの動き、敵のAI、各種シーン（Title, InGame等）の処理はすべてプロジェクトに応じたこれらのディレクトリ内に作成します。
 - **`resources/` (リソースデータ)**
   - 3Dモデル（`.obj`, `.gltf`）やテクスチャ（`.png`）、音声（`.wav`）は必ず各Applicationディレクトリ直下の `resources/` 内（`model/`, `ui/`, `audio/` 等）に配置してください。
 
 ---
 
-### 6. エディタ (IrufemiEngine Editor) の使い方
+### 1.2 エディタ (IrufemiEngine Editor) の使い方
 
-### Project Browser の新機能
+#### 1.2.1 Project Browser の新機能
 IrufemiEngine のエディタは、モダンなゲームエンジン（Unity等）ライクなアセット管理をサポートしています。
 
 1. **2ペイン・タイル表示**
@@ -62,7 +62,7 @@ Unityライクな「オブジェクトのテンプレート化」をサポート
    }
    ```
 
-#### 1.2.3.6 コンソールパネル (Console)
+#### 1.2.3 コンソールパネル (Console)
 エンジンからのログ出力（エラー、警告、情報）は、エディタ下部の **Console** パネルに表示されます。
 コード内で `Log::Info()`, `Log::Warning()`, `Log::Error()` を呼び出すとリアルタイムに反映され、パネル上の「Clear」ボタンでログを消去できます。
 
@@ -306,8 +306,13 @@ public:
 ```
 *※作成したコンポーネントは、必ず `ComponentFactory.cpp` の `RegisterAllCoreComponents` 関数内（またはゲーム側の初期化処理）でファクトリに登録してください。*
 ```cpp
-// 登録例
-ComponentFactory::Register("PlayerStatusComponent", []() { return std::make_shared<PlayerStatusComponent>(); });
+// 登録例 (通常)
+ComponentFactory::Register("PlayerStatusComponent", "Utility", []() { return std::make_shared<PlayerStatusComponent>(); });
+
+// 登録例 (DOD対応 / IsPooledComponent の場合)
+ComponentFactory::Register("TransformComponent", "Core", []() { 
+    return std::static_pointer_cast<Component>(ComponentPool<TransformComponent>::GetInstance().Create());
+});
 ```
 
 #### 衝突判定とコールバック (OnCollisionEnter / Destroy)
@@ -413,7 +418,20 @@ BGMやSEを鳴らしたり、エフェクトを発生させるには、インス
   - *(※ボタン押下によるシーン遷移機能はエンジン側の責務ではなく、`Application/` 側の `SceneTransitionButtonComponent` などで個別に実装してアタッチしてください)*
 - **`CanvasComponent`**: UI要素をグループ化し、アルファ値（透明度）などを一括管理します。
   - `Group Alpha`: このコンポーネントを持つGameObject自身と、そのすべての子要素にある `SpriteRendererComponent` のアルファ値を一括で制御します。フェードイン・フェードアウトの演出に便利です。
-### 9. マルチスレッド化とコンポーネント設計 (Multithreading & Components)
+
+#### ユーティリティ・コンポーネント (Lifetime / Spline)
+ゲームプレイの実装を補助する便利なコンポーネント群です。
+
+- **`LifetimeComponent`**: 指定した時間（秒）が経過すると、自動的にオブジェクトを破棄 (`Destroy`) または非アクティブ化 (`Disable`) します。弾やエフェクトの寿命管理に最適です。
+  - `Life Time`: 寿命（秒）
+  - `Timeout Action`: 0(Destroy), 1(Disable)
+- **`SplineComponent`**: 複数のウェイポイント（座標リスト）をセットし、Catmull-Rom スプライン補間による滑らかな曲線パスを作成します。
+  - C++コードから `GetPointAt(t)` や `GetTangentAt(t)` を呼ぶことで、曲線上の座標や進行方向ベクトルを取得できます。
+- **`VirtualEntityManagerComponent`**: 大量のオブジェクト（弾幕、草、群集など）の座標やスケールを「仮想データ」として超軽量な密配列で管理し、必要なときだけ実体の GameObject として生成（Promote）したり、プールに戻す（Demote）ことができる最適化コンポーネントです。
+  - `Setup()` で最大数と実体化用のファクトリ関数（GameObjectの生成処理）を渡して初期化します。
+  - `AddVirtualInstance()` で座標などを登録するとIDが返され、そのIDを使って `Promote(id)` を呼ぶことでプールから GameObject が貸し出されます。
+  - `ModelBatchRendererComponent` と組み合わせることで、何万ものオブジェクトをGPUインスタンシングで描画しつつ、プレイヤーの近くにあるものだけを実体化して当たり判定を行う、といった高度な最適化が可能です。
+### 2.3 マルチスレッド化とコンポーネント設計 (Multithreading & Components)
 
 本エンジンの `BaseScene` では、パフォーマンス向上のため **すべての `GameObject` の `Update` および `Draw` が `ThreadPool` を用いて並列実行（マルチスレッド処理）** されます。
 そのため、コンポーネントを設計・実装する際は、スレッドセーフ（競合が起きない安全なコード）を意識する必要があります。
@@ -523,6 +541,17 @@ primitive->SetPrimitiveType(PrimitiveType::Cube);
 primitive->SetColor({ 1.0f, 0.0f, 0.0f, 0.5f });
 ```
 
+#### Primitive2DRendererComponent (2Dプリミティブ描画)
+UIやHUDとして、2D画面上に四角・円・線などの図形を直接描画します。
+```cpp
+auto primitive2DObj = std::make_shared<GameObject>("HealthBarBackground");
+auto* primitive2D = primitive2DObj->AddComponent<Primitive2DRendererComponent>();
+primitive2D->SetShape(Primitive2DType::Rect);
+primitive2D->SetSize({ 200.0f, 20.0f });
+primitive2D->SetColor({ 0.2f, 0.2f, 0.2f, 1.0f });
+primitive2D->SetTopMost(true); // ポストプロセスを無視して最前面に描画
+```
+
 #### SpriteRendererComponent (2Dスプライト)
 画面にUIなどの2D画像を表示します。
 ```cpp
@@ -537,6 +566,7 @@ sprite->SetTopMost(true);
 ### 3.2 カメラとライト (Camera & Lights)
 シーンの視点や照明は以下の方法で管理されます。
 - **`CameraComponent`**: 視点と投影行列を管理します。GameObjectにアタッチして使用します。
+- **`TargetFollowComponent`**: 指定した名前の GameObject（プレイヤーなど）を、一定の距離と遅延（ディレイ）を持って滑らかに追従するカメラ制御コンポーネントです。`CameraComponent` と一緒にアタッチして使用します。
 - **ライト管理 (Directional/Point/Spot/Area)**: ライトはコンポーネントとしてではなく、`BaseScene` が直接管理します。デバッグや調整を行う場合は、エディタのデバッグタブ「Camera & Lights」から各パラメータを直接編集できます。
 
 ### 3.3 汎用エフェクトシステム (`Effect`) と 3D爆発エフェクト (`kExplosion`)
@@ -649,10 +679,20 @@ pp->GetVignetteParams().power = 0.8f;
 - **画面演出系**: `Bloom` (発光), `Vignette` (暗転), `DepthBasedOutline` (アウトライン抽出), `Dissolve` (消失演出), `Noise`, `Glitch` (画面の乱れ)
 - **画面遷移系**: `Fade`, `Slide`
 
-### 3.5 [上級者向け] 手動生成クラスと高度な描画
+### 3.5 「コンポーネント」と「コア描画オブジェクト」のアーキテクチャ設計
+IrufemiEngineでは、開発効率とパフォーマンス・高度な制御を両立させるため、描画オブジェクトに対して「二重構造」を採用しています。
 
-#### 2.4 手動生成の描画クラス (Manual Rendering Classes)
-※ 以下のクラス群は現在も使用可能ですが、基本的にはコンポーネント版（PrimitiveRendererComponent等）の使用が推奨されています。
+1. **Components (エディタ連携・データ駆動用)**
+   - 例: `ParticleEmitterComponent`, `Primitive2DRendererComponent`, `MeshRendererComponent` など (`Framework/Component/` 配下)
+   - **用途**: エディタ（インスペクター）上でパラメータを直感的に調整し、JSONとして保存・ロードする一般的な用途に使用します。内部に後述の Core Object をカプセル化して保持しています。
+
+2. **Core Objects (プログラマ向け・高度な制御用)**
+   - 例: `ParticleObject`, `Primitive2DObject`, `StaticModelObject`, `Skybox` など (`Renderer/Object/` 配下)
+   - **用途**: コンポーネントシステムを通さず、C++コードから `std::make_unique<ParticleObject>()` のように直接生成します。独自の寿命管理を行いたい場合や、数万のオブジェクトをインスタンシング等で描画する際のパフォーマンス最適化、エディタに公開されていないマニアックなパラメータの制御を行いたい上級者向けです。
+   - ※コンポーネントからこのコアオブジェクトを取り出して直接制御することも可能です（例: `GetComponent<ParticleEmitterComponent>()->GetParticleObject()`）。
+
+#### 3.5.1 手動生成の描画クラス (Manual Rendering Classes)
+※ 以下のクラス群は現在も使用可能ですが、基本的にはコンポーネント版の使用が推奨されています。
 
 #### 背景描画 (`Skybox`)
 3D空間の全天球背景（空など）を描画します。
@@ -740,30 +780,31 @@ line_->Draw(); // ライン専用のキューに登録される
 ※ **内部データ構造の変更について**：
 これまで使われていた `MeshModule` や `MaterialModule` は、それぞれ `MeshDesc` と `MaterialDesc` に名称変更され、`Renderer/Data/RenderData.h` に統合されています。描画パイプラインのコードを独自にカスタマイズする際はこの変更にご注意ください。
 
-#### パーティクル (`GPUParticleSystem`)
-コンピュートシェーダを利用して数万個のパーティクルを高速に描画するシステムです。
+#### 3.5.3 パーティクルエフェクト (`ParticleObject`)
+GPUパーティクルを直接プログラマブルに制御したい場合に使用します。
+※エディタからGUIで設定したい場合は、前述の `ParticleEmitterComponent` を使用してください。
 
 ```cpp
+#include "Renderer/Object/Particle/ParticleObject.h"
+
 // 1. 宣言 (ヘッダー)
-std::unique_ptr<GPUParticleSystem> gpuParticle_;
+std::unique_ptr<ParticleObject> particle_;
 
 // 2. 初期化 (Initialize)
-gpuParticle_ = std::make_unique<GPUParticleSystem>();
-gpuParticle_->Initialize("effect/particle_tex.png");
-gpuParticle_->SetColor({ 1.0f, 0.5f, 0.1f, 1.0f });
-gpuParticle_->SetParticleLife(0.5f, 1.0f); // 寿命(最小, 最大)
+particle_ = std::make_unique<ParticleObject>();
+particle_->Initialize("effect/particle_tex.png");
 
 // 3. 放出設定と更新 (Update)
-// 発生源の位置、進行方向、広がり、速度、拡散、1フレームの発生数
-gpuParticle_->SetBeamEmitter(position, direction, 1.0f, 0.5f, 0.1f, 100);
-gpuParticle_->SetEmit(true); // 放出ON
-gpuParticle_->Update();
+// 発生源の位置、進行方向、広がり、速度、拡散、1フレームの発生数などを直接制御
+particle_->SetBeamEmitter(position, direction, 1.0f, 0.5f, 0.1f, 100);
+particle_->SetEmit(true); // 放出ON
+particle_->Update();
 
 // 4. 描画 (Draw)
-gpuParticle_->Draw();
+particle_->Draw();
 ```
 
-#### 2.8 カスタムパラメータの渡し方 (Custom Constant Buffer)
+#### 3.5.4 カスタムパラメータの渡し方 (Custom Constant Buffer)
 エンジン標準の `Material` には含まれない独自のパラメータ（演出用の色やアニメーションフラグなど）をシェーダーに渡したい場合、エンジンの `Material` を汚染するのではなく、専用の定数バッファ枠 (`RootSlot::Special` / レジスタ `b6`) を利用します。
 
 ```cpp
@@ -788,7 +829,7 @@ model_->GetResource()->SetCustomCBVAddress(myCb_->GetGPUVirtualAddress());
 // ConstantBuffer<MyCustomParams> gMyParams : register(b6);
 ```
 
-#### 2.9 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
+#### 3.5.5 マルチバッファ同期と基底クラス (`MultiBufferSyncState`)
 DirectX 12 でフレーム間のマルチバッファリング（`kMaxFramesInFlight`）を行う際、CPUからGPUへの定数バッファの更新タイミングを管理するために `MultiBufferSyncState` 基底クラスを利用します。
 `BaseResource` や `BaseModel` などの描画リソースクラスは、すでにこのクラスを継承しています。
 
@@ -901,7 +942,7 @@ Vector2 mousePos = input->GetMousePosition();
 
 ### 5.2 UI便利機能
 
-#### 4.4 UIメニュー構築の定石 (UISelectionGroup)
+#### 5.2.1 UIメニュー構築の定石 (UISelectionGroup)
 タイトル画面やポーズメニューなど、「上下で選んで決定する」UIを作るための便利なクラスです。手動でカーソル管理や長押し防止を書く必要がなくなります。
 
 ```cpp
@@ -930,7 +971,7 @@ if (uiGroup_.IsTriggered()) {
 // ※描画時は uiGroup_.GetSelectedIndex() に応じて、選ばれている項目の色やスプライトを変えます。
 ```
 
-#### 4.5 UIのアニメーション演出 (`UIAnimator`)
+#### 5.2.2 UIのアニメーション演出 (`UIAnimator`)
 UIの「明滅」や「浮遊」といった数学的なアニメーション（サイン波ベース）を簡単に計算してくれる便利なユーティリティクラスです。自分で時間を管理して計算式を書く必要がなくなります。
 
 ```cpp

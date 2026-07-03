@@ -77,6 +77,15 @@ public:
     void InitializeCubeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height);
 
     /**
+     * @brief 外部で作成されたテクスチャリソースから初期化
+     * @param[in] name 識別名
+     * @param[in] resource ID3D12Resource
+     * @param[in] srvIndex 割り当て済みのSRVインデックス
+     * @param[in] srvHandle GPUディスクリプタハンドル
+     */
+    void InitializeFromExternalResource(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle);
+
+    /**
      * @brief GPU側のSRVハンドルを取得
      */
     const D3D12_GPU_DESCRIPTOR_HANDLE& GetTextureSrvHandleGPU()const { return textureSrvHandleGPU_; }

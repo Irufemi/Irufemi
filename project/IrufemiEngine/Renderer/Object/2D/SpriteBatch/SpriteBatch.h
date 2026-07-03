@@ -51,6 +51,8 @@ public:
     UINT GetInstanceCount() const { return static_cast<UINT>(visibleInstanceCount_); }
     
     void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
+    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    void SetCustomCBV(D3D12_GPU_VIRTUAL_ADDRESS cbv) { customCBVAddress_ = cbv; }
 
     static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
     static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
@@ -83,6 +85,9 @@ private:
     bool instanceDirty_ = false;
     bool isTopMost_ = false;
     Vector2 textureSize_{0.0f, 0.0f};
+    
+    ID3D12PipelineState* customPSO_ = nullptr;
+    D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
     
     // インスタンシング用バッファ
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_;

@@ -251,6 +251,8 @@ exit 0</Command>
     <ClCompile Include="components\EffectManagerComponent.cpp" />
     <ClCompile Include="components\EnemyBeamComponent.cpp" />
     <ClCompile Include="components\ReticleUIComponent.cpp" />
+    <ClCompile Include="components\LockonMarkerUIComponent.cpp" />
+    <ClCompile Include="components\PlayerTargetingComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -275,6 +277,8 @@ exit 0</Command>
     <ClInclude Include="components\EffectManagerComponent.h" />
     <ClInclude Include="components\EnemyBeamComponent.h" />
     <ClInclude Include="components\ReticleUIComponent.h" />
+    <ClInclude Include="components\LockonMarkerUIComponent.h" />
+    <ClInclude Include="components\PlayerTargetingComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
