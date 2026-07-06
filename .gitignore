@@ -126,3 +126,13 @@ debuglog.txt
 # ====================================================================
 **/resources/cache/
 *.temp_playmode.json
+
+# ====================================================================
+# Repository Cleanup (Build Outputs & Temp Files)
+# ====================================================================
+*.exp
+*.lib
+!project/externals/assimp/lib/**/*.lib
+shader_error.txt
+~AutoRecover*
+
