@@ -8,6 +8,8 @@
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
 ### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)
+- [x] **CollisionManager のスレッドセーフ化と Async Raycast の実装**
+    - `shared_mutex` を用いたRead-Write Lockの導入と、ThreadPoolと連携した非同期物理クエリAPIの提供。（完了）
 - [ ] **Bindless Resources (Descriptor Indexing) の完全移行完了**
     - 全テクスチャ/リソースを巨大な Descriptor Heap に格納し、Shader にインデックス(uint)だけを渡す方式へ移行。
     - **進行状況**: C++基盤、および `Application_solo` / `Application_team` 双方のほぼすべてのHLSLファイルの移行が完了。
@@ -55,7 +57,10 @@
 - [ ] **エディタの選択状態（Selection）の安全な破棄・クリア機構**
     - シーンからオブジェクトが `RemoveGameObject` または `Destroy` された際に、エディタのインスペクター描画対象（選択中オブジェクト）に残存してクラッシュ（`GetScene()` == nullptr 等）を引き起こす問題の根本解決。破棄イベントのフックや Weak_ptr による管理を導入する。
 
-
+### 🛠️ 開発環境とビルドパイプラインの最適化 (Development & Build Pipeline)
+- [ ] **パッケージマネージャー (vcpkg / NuGet) の導入と外部ライブラリの自動管理**
+    - 現在手動で `externals/` に配置している巨大な `.lib` ファイル（assimp等）を Git リポジトリから完全に排除する。
+    - vcpkg などを導入し、プロジェクトビルド時に自動でソースのダウンロードおよびビルド（またはバイナリ復元）を行ってリンクする仕組みを構築し、リポジトリをクリーンに保つ。
 
 ---
 <br><br><br><br>

@@ -4,6 +4,9 @@
 #include <memory>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <shared_mutex>
+#include <future>
+#include <utility>
 #include "Renderer/Object/Line/LineClass.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Shape/LinePrimitive.h"
@@ -11,7 +14,6 @@
 class ColliderComponent;
 class GameObject;
 
-/// @brief レイキャストの結果を格納する構造体
 struct RaycastHit {
     bool isHit = false;
     GameObject* hitObject = nullptr;
@@ -19,6 +21,8 @@ struct RaycastHit {
     Vector3 hitPoint;
     float distance = 0.0f;
 };
+
+class ThreadPool;
 
 /**
  * @class CollisionManager
@@ -68,6 +72,13 @@ public:
     /// @return 何かに当たった場合はtrue
     bool Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
 
+    /**
+     * @brief スレッドプールを利用した非同期レイキャスト
+     * @param pool 使用するエンジンのThreadPool
+     * @return 判定結果とHitInfoのペアを返すstd::future
+     */
+    std::future<std::pair<bool, RaycastHit>> RaycastAsync(ThreadPool* pool, const Ray& ray, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+
     /// @brief デバッグ用のレイを描画キューに追加する
     void DrawDebugRay(const Ray& ray, float distance, const Vector4& color = {1,0,0,1});
 
@@ -75,6 +86,8 @@ private:
     CollisionManager(const CollisionManager&) = delete;
     CollisionManager& operator=(const CollisionManager&) = delete;
 
+    /** @brief マルチスレッドからの物理クエリを安全に行うためのRead-Writeロック */
+    mutable std::shared_mutex collidersMutex_;
     std::vector<ColliderComponent*> colliders_;
     std::unique_ptr<Line3DBatch> debugLine_;
     

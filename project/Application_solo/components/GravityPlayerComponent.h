@@ -38,4 +38,8 @@ private:
     bool isThrowing_ = false;
     float throwTimer_ = 0.0f;
     float throwInterval_ = 0.15f; // 0.15秒間隔
+    int throwRemainingCount_ = 0; // 今回の射撃ループで撃つ弾数
+    
+    // ノーロック射撃時に、レイキャストが何にも当たらなかった場合の最大飛距離
+    float noLockThrowDistance_ = 1000.0f; 
 };

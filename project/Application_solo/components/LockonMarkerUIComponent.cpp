@@ -10,6 +10,7 @@
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Core/Utility/ErrorUtility.h"
+#define NOMINMAX
 #include <windows.h>
 #include <string>
 #include <cmath>
@@ -35,20 +36,20 @@ void LockonMarkerUIComponent::Initialize() {
 }
 
 void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets) {
-    std::vector<LockonMarkerState> nextMarkers;
-    std::unordered_map<GameObject*, int> targetCounts;
+    nextMarkersCache_.clear();
+    targetCountsCache_.clear();
 
     for (const auto& target : targets) {
         if (!target) continue;
 
-        int occurrenceIndex = targetCounts[target.get()]++;
+        int occurrenceIndex = targetCountsCache_[target.get()]++;
 
         bool found = false;
         int activeOccurrence = 0;
         for (const auto& active : activeMarkers_) {
             if (active.target.lock() == target) {
                 if (activeOccurrence == occurrenceIndex) {
-                    nextMarkers.push_back(active);
+                    nextMarkersCache_.push_back(active);
                     found = true;
                     break;
                 }
@@ -62,11 +63,11 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
             newState.target = target;
             newState.currentScale = 3.0f; // 初期スケール（大きめに出現）
             newState.animationT = 0.0f;
-            nextMarkers.push_back(newState);
+            nextMarkersCache_.push_back(newState);
         }
     }
 
-    activeMarkers_ = std::move(nextMarkers);
+    activeMarkers_ = nextMarkersCache_;
 }
 
 void LockonMarkerUIComponent::Update() {
@@ -94,7 +95,7 @@ void LockonMarkerUIComponent::Update() {
     }
 
     int markerIndex = 0;
-    std::unordered_map<GameObject*, int> drawCounts;
+    drawCountsCache_.clear();
 
     for (auto& marker : activeMarkers_) {
         auto target = marker.target.lock();
@@ -128,8 +129,10 @@ void LockonMarkerUIComponent::Update() {
             continue;
         }
 
-        // 距離に応じた基本スケールの計算（遠いほど小さく）
-        float distanceScale = std::clamp(1.0f - screenPos.z, 0.2f, 1.0f);
+        // 距離に応じた基本スケールの計算（遠近法: 基準距離50.0fとして反比例）
+        Vector3 cameraPos = camera->GetTranslate();
+        float dist3D = Math::Length(Math::Subtract(worldPos, cameraPos));
+        float distanceScale = std::clamp(50.0f / (std::max)(dist3D, 1.0f), 0.3f, 1.2f);
         marker.targetScale = distanceScale;
 
         // アニメーション（イージング）の進行
@@ -142,24 +145,34 @@ void LockonMarkerUIComponent::Update() {
         float easedT = EaseOutCubic(marker.animationT);
         marker.currentScale = std::lerp(3.0f, marker.targetScale, easedT);
 
-        int idx = drawCounts[target.get()]++;
+        int idx = drawCountsCache_[target.get()]++;
         float finalScale = marker.currentScale;
         Vector2 finalPos = { screenPos.x, screenPos.y };
+        
+        // 回転と色の設定
+        float maxLocks = (std::max)(1.0f, static_cast<float>(maxLockonCount_));
+        float angleStep = 6.283185f / maxLocks;
+        float rotation = 0.0f;
+        
+        // ターゲットを重ねるごとに G と B 成分を減らし、赤みを強くする (White -> Orange -> Red)
+        float intensity = std::clamp(1.0f - (idx * 0.25f), 0.1f, 1.0f);
+        Vector4 color = { 1.0f, intensity, intensity, 1.0f };
 
         if (idx > 0) {
-            // サテライト配置
-            // 最大5発なのでサテライトは最大4つ（十字または四角形の配置になる）
-            float angle = (idx - 1) * (6.283185f / 4.0f) + (engine->GetTotalTime() * 1.5f); // クルクル回す
-            float offset = 50.0f * marker.targetScale; // 距離に応じてオフセットも縮める
-            finalPos.x += std::cos(angle) * offset;
-            finalPos.y += std::sin(angle) * offset;
+            // 同心円（スタック）方式：重なるごとに少しずつ小さくする
+            finalScale *= (1.0f - idx * 0.15f);
             
-            finalScale *= 0.6f; // サテライトは少し小さくする
+            // 上限数で分割した角度ずつずらして回転させる
+            float rotationSpeed = (idx % 2 == 0) ? 2.0f : -2.0f;
+            rotation = idx * angleStep + (engine->GetTotalTime() * rotationSpeed);
+        } else {
+            // ベースのマーカーもゆっくり回転
+            rotation = engine->GetTotalTime() * 1.5f;
         }
 
         // バッチにインスタンスを追加 (SpriteBatchのAddInstanceはVector2, Vector2, rotation, color, anchor)
-        float size = 100.0f * finalScale;
-        markerBatch_->AddInstance(finalPos, Vector2{size, size}, 0.1f, Vector4{1.0f, 1.0f, 1.0f, 1.0f});
+        float size = 64.0f * finalScale;
+        markerBatch_->AddInstance(finalPos, Vector2{size, size}, rotation, color);
         
         markerIndex++;
     }
