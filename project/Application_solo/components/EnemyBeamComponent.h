@@ -48,6 +48,19 @@ private:
     float chargeDuration_ = 1.5f;   // 溜め時間
     float fireDuration_ = 0.8f;     // 発射時間
 
+    Vector4 chargeColor_ = { 0.7f, 0.0f, 0.9f, 1.0f };
+
+    Vector4 beamColor_ = { 0.8f, 0.0f, 1.0f, 1.0f };
+    Vector4 beamCoreColor_ = { 0.0f, 1.0f, 1.0f, 1.0f };
+    float beamIntensity_ = 6.0f;
+    float beamCoreIntensity_ = 40.0f;
+    float beamSpeed_ = 3.0f;
+
+    Vector4 auraColor_ = { 0.1f, 0.0f, 0.2f, 1.0f };
+    Vector4 auraCoreColor_ = { 0.8f, 0.0f, 1.0f, 1.0f };
+    float auraIntensity_ = 12.0f;
+    float auraSpeed_ = 0.8f;
+
     float stateTimer_ = 0.0f;
 
     // 描画オブジェクト

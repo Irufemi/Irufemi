@@ -33,6 +33,18 @@ void EnemyBeamComponent::OnRegisterProperties() {
     RegisterProperty("Beam Max Radius", &beamMaxRadius_);
     RegisterProperty("Charge Duration", &chargeDuration_);
     RegisterProperty("Fire Duration", &fireDuration_);
+    
+    RegisterProperty("Charge Sphere Color", &chargeColor_);
+    RegisterProperty("Beam Color", &beamColor_);
+    RegisterProperty("Beam Core Color", &beamCoreColor_);
+    RegisterProperty("Beam Intensity", &beamIntensity_);
+    RegisterProperty("Beam Core Intensity", &beamCoreIntensity_);
+    RegisterProperty("Beam Speed", &beamSpeed_);
+    
+    RegisterProperty("Aura Color", &auraColor_);
+    RegisterProperty("Aura Core Color", &auraCoreColor_);
+    RegisterProperty("Aura Intensity", &auraIntensity_);
+    RegisterProperty("Aura Speed", &auraSpeed_);
 }
 
 void EnemyBeamComponent::Initialize() {
@@ -43,7 +55,7 @@ void EnemyBeamComponent::Initialize() {
     chargeSphere_ = std::make_unique<Primitive3DObject>();
     chargeSphere_->Initialize(PrimitiveType::Sphere);
     // 警戒色と赤黒さを混ぜたベース色（アルファ値は中心コアの透明度として利用）
-    chargeSphere_->SetColor({ 0.7f, 0.0f, 0.9f, 1.0f }); // ダークなマゼンタパープル
+    chargeSphere_->SetColor(chargeColor_); // プロパティから適用
     chargeSphere_->SetCullingEnabled(false);
     chargeSphere_->SetCustomPSO(
         engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back)
@@ -118,6 +130,24 @@ void EnemyBeamComponent::Fire(const Vector3& startPos, const Vector3& targetPos)
 }
 
 void EnemyBeamComponent::Update() {
+    // パラメータのリアルタイム反映（エディタからの調整用）
+    if (chargeSphere_) {
+        chargeSphere_->SetColor(chargeColor_);
+    }
+    if (beamParamsData_) {
+        beamParamsData_->color = beamColor_;
+        beamParamsData_->coreColor = beamCoreColor_;
+        beamParamsData_->intensity = beamIntensity_;
+        beamParamsData_->coreIntensity = beamCoreIntensity_;
+        beamParamsData_->speed = beamSpeed_;
+    }
+    if (auraParamsData_) {
+        auraParamsData_->color = auraColor_;
+        auraParamsData_->coreColor = auraCoreColor_;
+        auraParamsData_->intensity = auraIntensity_;
+        auraParamsData_->speed = auraSpeed_;
+    }
+
     if (state_ == State::IDLE) return;
 
     auto engine = BaseModel::GetIrufemiEngine();

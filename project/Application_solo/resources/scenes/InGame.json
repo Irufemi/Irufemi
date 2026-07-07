@@ -107,6 +107,9 @@
           "data": {
             "Max Orbit Count": 10,
             "NoLock Throw Dist": 1000.0,
+            "Orbit Angle Max": 6.28000020980835,
+            "Orbit Radius Max": 4.0,
+            "Orbit Radius Min": 2.0,
             "Pull Radius": 50.0,
             "Throw Interval": 0.15000000596046448
           },
@@ -178,7 +181,47 @@
         },
         {
           "data": {
+            "Boss Aura Color": [
+              0.800000011920929,
+              0.0,
+              0.6000000238418579,
+              0.4000000059604645
+            ],
+            "Boss Shield Radius": 8.0,
+            "Camera Shake Duration(Frames)": 10,
+            "Camera Shake Intensity": 10.0,
+            "Catch Distance Sq": 2.0,
+            "Debris Aura Scale": [
+              2.200000047683716,
+              2.200000047683716,
+              2.200000047683716
+            ],
+            "Debris Base Scale": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "Debris Collider Radius": 0.5,
+            "Debris Damage (Boss)": 10.0,
+            "Debris Damage (Enemy)": 100.0,
+            "Debris Orbit Radius": 2.0,
+            "Debris Orbit Speed": 2.0,
+            "Debris Pull Speed": 10.0,
+            "Debris Pull Y Offset": 2.0,
+            "Debris Throw Speed": 50.0,
+            "Idle Aura Color": [
+              0.6000000238418579,
+              0.20000000298023224,
+              1.0,
+              0.4000000059604645
+            ],
             "Max Virtual Instances": 20000,
+            "Player Aura Color": [
+              0.0,
+              0.800000011920929,
+              1.0,
+              0.4000000059604645
+            ],
             "Pool Size": 500
           },
           "type": "DebrisManagerComponent"
@@ -286,6 +329,7 @@
             "Beam Interval": 10.0,
             "Beam Offset Y": -2.0,
             "Beam Offset Z": 25.0,
+            "Beam Range": 1000.0,
             "Max HP": 1000.0,
             "Max Shield Count": 100,
             "Shield Radius": 8.0
@@ -310,9 +354,44 @@
         },
         {
           "data": {
+            "Aura Color": [
+              0.10000000149011612,
+              0.0,
+              0.20000000298023224,
+              1.0
+            ],
+            "Aura Core Color": [
+              0.800000011920929,
+              0.0,
+              1.0,
+              1.0
+            ],
+            "Aura Intensity": 12.0,
+            "Aura Speed": 0.800000011920929,
+            "Beam Color": [
+              0.800000011920929,
+              0.0,
+              1.0,
+              1.0
+            ],
+            "Beam Core Color": [
+              0.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "Beam Core Intensity": 40.0,
+            "Beam Intensity": 6.0,
             "Beam Length": 200.0,
             "Beam Max Radius": 1.0,
+            "Beam Speed": 3.0,
             "Charge Duration": 1.5,
+            "Charge Sphere Color": [
+              0.699999988079071,
+              0.0,
+              0.8999999761581421,
+              1.0
+            ],
             "Fire Duration": 0.800000011920929
           },
           "type": "EnemyBeamComponent"

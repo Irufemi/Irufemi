@@ -35,6 +35,11 @@ private:
     PlayerTargetingComponent* targetingComp_ = nullptr;
     class DebrisManagerComponent* debrisManager_ = nullptr;
 
+    // Orbit parameters for pulled debris
+    float orbitRadiusMin_ = 2.0f;
+    float orbitRadiusMax_ = 4.0f;
+    float orbitAngleRandomMax_ = 6.28f;
+
     bool isThrowing_ = false;
     float throwTimer_ = 0.0f;
     float throwInterval_ = 0.15f; // 0.15秒間隔

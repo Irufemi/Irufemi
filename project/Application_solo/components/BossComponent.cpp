@@ -104,10 +104,11 @@ void BossComponent::Update() {
                     startPos = Math::Add(startPos, Math::Multiply(beamOffsetZ_, forward)); 
                     startPos.y += beamOffsetY_;
                     
-                    // ターゲットは距離に関係なくはるか正面
-                    Vector3 targetPos = Math::Add(startPos, Math::Multiply(1000.0f, forward));
-                    
-                    beamComponent_->Fire(startPos, targetPos);
+                    // TODO: プレイヤー方向へのホーミングや偏差射撃など
+                    if (auto beam = beamComponent_) {
+                        Vector3 targetPos = Math::Add(startPos, Math::Multiply(beamRange_, forward));
+                        beam->Fire(startPos, targetPos);
+                    }
                 }
             }
         }
@@ -126,6 +127,7 @@ void BossComponent::OnRegisterProperties() {
     RegisterProperty("Beam Interval", &beamInterval_);
     RegisterProperty("Beam Offset Z", &beamOffsetZ_);
     RegisterProperty("Beam Offset Y", &beamOffsetY_);
+    RegisterProperty("Beam Range", &beamRange_);
 }
 
 std::shared_ptr<GameObject> BossComponent::ExtractDebris() {

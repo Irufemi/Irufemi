@@ -39,6 +39,26 @@ public:
     // 破壊通知
     void NotifyDestroyed(int virtualId);
 
+    // Debris パラメータのゲッター
+    float GetDebrisPullSpeed() const { return debrisPullSpeed_; }
+    float GetDebrisThrowSpeed() const { return debrisThrowSpeed_; }
+    float GetDebrisOrbitSpeed() const { return debrisOrbitSpeed_; }
+    float GetDebrisOrbitRadius() const { return debrisOrbitRadius_; }
+    float GetDebrisDamage() const { return debrisDamage_; }
+    float GetDebrisEnemyDamage() const { return debrisEnemyDamage_; }
+    float GetDebrisPullYOffset() const { return debrisPullYOffset_; }
+    float GetCameraShakeIntensity() const { return cameraShakeIntensity_; }
+    int GetCameraShakeDurationFrames() const { return cameraShakeDurationFrames_; }
+    Vector4 GetPlayerAuraColor() const { return playerAuraColor_; }
+    Vector4 GetBossAuraColor() const { return bossAuraColor_; }
+    Vector4 GetIdleAuraColor() const { return idleAuraColor_; }
+    float GetCatchDistanceSq() const { return catchDistanceSq_; }
+    float GetBossShieldRadius() const { return bossShieldRadius_; }
+
+    Vector3 GetDebrisBaseScale() const { return debrisBaseScale_; }
+    float GetColliderRadius() const { return colliderRadius_; }
+    Vector3 GetAuraScale() const { return auraScale_; }
+
 private:
     int poolSize_ = 500;
     int maxVirtualInstances_ = 20000; // 仮想インスタンスの最大予約数
@@ -51,4 +71,24 @@ private:
 
     // 生成順を追跡するためのキュー（最古のインスタンスをO(1)で特定するため）
     std::queue<int> activeIds_;
+
+    // --- Debris Settings ---
+    float debrisPullSpeed_ = 10.0f;
+    float debrisThrowSpeed_ = 50.0f;
+    float debrisOrbitSpeed_ = 2.0f;
+    float debrisOrbitRadius_ = 2.0f;
+    float debrisDamage_ = 10.0f;
+    float debrisEnemyDamage_ = 100.0f;
+    float debrisPullYOffset_ = 2.0f;
+    float cameraShakeIntensity_ = 0.5f;
+    int cameraShakeDurationFrames_ = 10;
+    Vector4 playerAuraColor_ = { 0.0f, 0.8f, 1.0f, 0.4f };
+    Vector4 bossAuraColor_ = { 0.8f, 0.0f, 0.6f, 0.4f };
+    Vector4 idleAuraColor_ = { 0.6f, 0.2f, 1.0f, 0.4f };
+    float catchDistanceSq_ = 2.0f;
+    float bossShieldRadius_ = 8.0f;
+
+    Vector3 debrisBaseScale_ = { 0.5f, 0.5f, 0.5f };
+    float colliderRadius_ = 0.5f;
+    Vector3 auraScale_ = { 2.2f, 2.2f, 2.2f };
 };

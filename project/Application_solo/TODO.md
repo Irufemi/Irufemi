@@ -75,7 +75,7 @@
   - [ ] `BossComponent` の状態遷移（enum + if文）に State パターンを適用し、状態ごとの振る舞いをクラスとして分離する
   - [ ] `EffectManagerComponent` などの静的インスタンス管理（シングルトン）を排除し、DIまたはエンジン側のマネージャ経由の管理へ移行する
   - [ ] 責務が集中している長大なクラス・関数（Update等）の分割・移譲を行う
-- [ ] **安全性とパフォーマンスの向上**
-  - [ ] `BossComponent.cpp`, `DebrisComponent.cpp` などのマジックナンバー（1000.0f, 10.0f等）を定数化（`constexpr`等）する
+- [x] **安全性とパフォーマンスの向上**
+  - [x] `BossComponent.cpp`, `DebrisComponent.cpp` などのマジックナンバーをメンバ変数化（プロパティ化）し、JSON/Editorから調整可能にする
 - [ ] **コード規則・構成の整理**
   - [ ] `Application_solo/components` 内のファイル数が増加している場合、機能単位でサブフォルダに分割して管理する
