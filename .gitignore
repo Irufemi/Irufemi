@@ -136,3 +136,5 @@ debuglog.txt
 shader_error.txt
 ~AutoRecover*
 
+# Ignore PSO cache files
+*.pso
