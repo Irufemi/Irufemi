@@ -68,4 +68,7 @@ private:
     float beamInterval_ = 10.0f; // 10秒おきに発射
     float beamOffsetZ_ = 25.0f;  // 発射位置のZ前方オフセット
     float beamOffsetY_ = -2.0f;  // 発射位置のYオフセット
+    
+    /** @brief ボスのビーム攻撃の最大射程距離 */
+    float beamRange_ = 1000.0f;
 };

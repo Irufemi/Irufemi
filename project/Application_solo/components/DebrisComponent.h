@@ -25,7 +25,6 @@ public:
     void OnEnable() override;
     void Update() override;
     void OnCollisionEnter(GameObject* hitObject) override;
-    void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "DebrisComponent"; }
 
     // 状態変更用のインターフェース
@@ -50,10 +49,21 @@ private:
     // 追従・目標用の対象
     std::weak_ptr<GameObject> targetObject_;
     
-    // パラメータ
-    float pullSpeed_ = 10.0f;
-    float throwSpeed_ = 50.0f;
-    float orbitSpeed_ = 2.0f;
+    // パラメータ取得用ヘルパー（Managerから取得）
+    float GetPullSpeed() const;
+    float GetThrowSpeed() const;
+    float GetOrbitSpeed() const;
+    float GetBossDamage() const;
+    float GetEnemyDamage() const;
+    float GetCameraShakeIntensity() const;
+    int GetCameraShakeDurationFrames() const;
+    Vector4 GetPlayerAuraColor() const;
+    Vector4 GetBossAuraColor() const;
+    float GetCatchDistanceSq() const;
+    float GetBossShieldRadius() const;
+    float GetPullYOffset() const;
+
+    // Orbit Radiusは動的に設定されるためローカルに保持
     float orbitRadius_ = 2.0f;
 
     // 内部状態

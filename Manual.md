@@ -22,6 +22,27 @@
 
 ---
 
+### 1.1.1 外部ライブラリの手動セットアップ（クローン直後の手順）
+
+現在、GitHubのファイル容量制限により、`curl` や `assimp` などの実体バイナリ（`.lib`）はリポジトリから除外（手動管理）されています。
+そのため、新しく `git clone` してきた際は、**初めに一度だけ以下の手順でライブラリをビルド（または配置）する必要があります。**
+
+**【curl のビルド・配置手順】**
+1. [curl 公式ダウンロードページ](https://curl.se/download.html) から最新のソースコード（`.zip`）をダウンロードして解凍します。
+2. Windowsのスタートメニューから **「x64 Native Tools Command Prompt for VS 2022」**（開発者用コマンドプロンプト）を開きます。
+3. 解凍した curl のディレクトリ内にある `winbuild` フォルダへ `cd` コマンドで移動します。
+4. 以下のコマンドを実行し、スタティックライブラリ（静的リンク用）としてビルドします。
+   ```cmd
+   nmake /f Makefile.vc mode=static VC=17 MACHINE=x64 DEBUG=yes
+   nmake /f Makefile.vc mode=static VC=17 MACHINE=x64 DEBUG=no
+   ```
+5. `builds` フォルダ内に生成される `libcurl_a_debug.lib` と `libcurl_a.lib` を、プロジェクトの `project/externals/curl/lib/Debug/` および `Release/` フォルダにそれぞれ配置します。（※必要に応じて .vcxproj の設定に合わせてファイル名を変更してください）
+6. `include/curl/` フォルダの中身も `project/externals/curl/include/` にコピーします。
+
+※ `assimp` などの他のライブラリについても同様に、CMake でビルドするか、メンバー間でビルド済みの `.lib` を直接共有（Google Drive等）して各々の `externals/` に配置してください。
+
+---
+
 ### 1.2 エディタ (IrufemiEngine Editor) の使い方
 
 #### 1.2.1 Project Browser の新機能

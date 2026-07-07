@@ -22,6 +22,9 @@ void GravityPlayerComponent::OnRegisterProperties() {
     RegisterProperty("Pull Radius", &pullRadius_);
     RegisterProperty("Throw Interval", &throwInterval_);
     RegisterProperty("NoLock Throw Dist", &noLockThrowDistance_);
+    RegisterProperty("Orbit Radius Min", &orbitRadiusMin_);
+    RegisterProperty("Orbit Radius Max", &orbitRadiusMax_);
+    RegisterProperty("Orbit Angle Max", &orbitAngleRandomMax_);
 }
 
 void GravityPlayerComponent::Initialize() {
@@ -125,7 +128,7 @@ void GravityPlayerComponent::HandlePullInput() {
             
             debrisComp->SetState(DebrisState::Pulled);
             debrisComp->SetTarget(gameObject_->shared_from_this());
-            debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, 6.28f), Random::GeneratorFloat(2.0f, 4.0f));
+            debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, orbitAngleRandomMax_), Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
             orbitingDebris_.push_back(targetToSteal);
             
             // キューにあったものを奪った場合は、手動ロックを解除する
@@ -142,7 +145,7 @@ void GravityPlayerComponent::HandlePullInput() {
             if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
                 debrisComp->SetState(DebrisState::Pulled);
                 debrisComp->SetTarget(gameObject_->shared_from_this());
-                debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, 6.28f), Random::GeneratorFloat(2.0f, 4.0f));
+                debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, orbitAngleRandomMax_), Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
                 orbitingDebris_.push_back(debrisObj);
             }
         }

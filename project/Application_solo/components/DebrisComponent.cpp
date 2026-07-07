@@ -17,11 +17,20 @@
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include <cmath>
 
-void DebrisComponent::OnRegisterProperties() {
-    RegisterProperty("Pull Speed", &pullSpeed_);
-    RegisterProperty("Throw Speed", &throwSpeed_);
-    RegisterProperty("Orbit Speed", &orbitSpeed_);
-}
+
+
+float DebrisComponent::GetPullSpeed() const { return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f; }
+float DebrisComponent::GetThrowSpeed() const { return manager_ ? manager_->GetDebrisThrowSpeed() : 50.0f; }
+float DebrisComponent::GetOrbitSpeed() const { return manager_ ? manager_->GetDebrisOrbitSpeed() : 2.0f; }
+float DebrisComponent::GetBossDamage() const { return manager_ ? manager_->GetDebrisDamage() : 10.0f; }
+float DebrisComponent::GetEnemyDamage() const { return manager_ ? manager_->GetDebrisEnemyDamage() : 100.0f; }
+float DebrisComponent::GetCameraShakeIntensity() const { return manager_ ? manager_->GetCameraShakeIntensity() : 0.5f; }
+int DebrisComponent::GetCameraShakeDurationFrames() const { return manager_ ? manager_->GetCameraShakeDurationFrames() : 10; }
+Vector4 DebrisComponent::GetPlayerAuraColor() const { return manager_ ? manager_->GetPlayerAuraColor() : Vector4{0.0f, 0.8f, 1.0f, 0.4f}; }
+Vector4 DebrisComponent::GetBossAuraColor() const { return manager_ ? manager_->GetBossAuraColor() : Vector4{0.8f, 0.0f, 0.6f, 0.4f}; }
+float DebrisComponent::GetCatchDistanceSq() const { return manager_ ? manager_->GetCatchDistanceSq() : 2.0f; }
+float DebrisComponent::GetBossShieldRadius() const { return manager_ ? manager_->GetBossShieldRadius() : 8.0f; }
+float DebrisComponent::GetPullYOffset() const { return manager_ ? manager_->GetDebrisPullYOffset() : 2.0f; }
 
 void DebrisComponent::Initialize() {
     // 必要なコンポーネントのキャッシュや初期化のみ行う
@@ -43,10 +52,10 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
 
     bool hit = false;
     if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
-        enemyComp->TakeDamage(100);
+        enemyComp->TakeDamage(static_cast<int>(GetEnemyDamage()));
         hit = true;
     } else if (auto bossComp = otherObj->GetComponent<BossComponent>()) {
-        bossComp->TakeDamage(10.0f);
+        bossComp->TakeDamage(GetBossDamage());
         hit = true;
     } else if (auto debrisComp = otherObj->GetComponent<DebrisComponent>()) {
         if (debrisComp->GetState() == DebrisState::BossOrbiting) {
@@ -73,7 +82,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     if (hit) {
         // 軽いカメラシェイクを追加
         if (auto camera = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera()) {
-            camera->Shake(0.5f, 10);
+            camera->Shake(GetCameraShakeIntensity(), GetCameraShakeDurationFrames());
         }
         if (auto t = gameObject_->GetComponent<TransformComponent>()) {
             if (auto effectManager = EffectManagerComponent::GetInstance()) {
@@ -101,14 +110,19 @@ void DebrisComponent::SetState(DebrisState newState) {
                 bool isActive = false;
                 Vector4 auraColor = { 1.0f, 1.0f, 1.0f, 0.7f };
 
-                if (state_ == DebrisState::Pulled || state_ == DebrisState::Orbiting || state_ == DebrisState::Thrown) {
+                switch (state_) {
+                case DebrisState::Pulled:
+                case DebrisState::Orbiting:
+                case DebrisState::Thrown:
                     isActive = true;
-                    // Player (Smart Energy): シアン
-                    auraColor = { 0.0f, 0.8f, 1.0f, 0.4f };
-                } else if (state_ == DebrisState::BossOrbiting) {
+                    auraColor = GetPlayerAuraColor();
+                    break;
+                case DebrisState::BossOrbiting:
                     isActive = true;
-                    // Boss (Dark Energy): マゼンタ / ダークパープル
-                    auraColor = { 0.8f, 0.0f, 0.6f, 0.4f };
+                    auraColor = GetBossAuraColor();
+                    break;
+                default:
+                    break;
                 }
 
                 child->SetIsActive(isActive);
@@ -128,9 +142,9 @@ void DebrisComponent::SetState(DebrisState newState) {
         bossOrbitAngleX_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
         bossOrbitAngleY_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
         bossOrbitAngleZ_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
-        bossOrbitSpeedX_ = Random::GeneratorFloat(-0.02f, 0.02f);
-        bossOrbitSpeedY_ = Random::GeneratorFloat(-0.05f, 0.05f);
-        bossOrbitSpeedZ_ = Random::GeneratorFloat(-0.02f, 0.02f);
+        bossOrbitSpeedX_ = Random::GeneratorFloat(-1.2f, 1.2f);
+        bossOrbitSpeedY_ = Random::GeneratorFloat(-3.0f, 3.0f);
+        bossOrbitSpeedZ_ = Random::GeneratorFloat(-1.2f, 1.2f);
         bossOrbitRadiusOffset_ = Random::GeneratorFloat(-1.0f, 1.0f);
     }
 }
@@ -152,22 +166,23 @@ void DebrisComponent::Update() {
             if (auto target = targetObject_.lock()) {
                 auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
+                    Vector3 targetPos = targetTransform->GetPosition();
                     // ターゲット(プレイヤー)に向かってLerpで移動
                     Vector3 diff = {
-                        targetTransform->GetPosition().x - transform->GetPosition().x,
-                        targetTransform->GetPosition().y + 2.0f - transform->GetPosition().y, // 少し上に引き寄せる
-                        targetTransform->GetPosition().z - transform->GetPosition().z
+                        targetPos.x - transform->GetPosition().x,
+                        targetPos.y + GetPullYOffset() - transform->GetPosition().y, // 少し上に引き寄せる
+                        targetPos.z - transform->GetPosition().z
                     };
                     Vector3 pos = transform->GetPosition();
-                    pos.x += diff.x * pullSpeed_ * deltaTime;
-                    pos.y += diff.y * pullSpeed_ * deltaTime;
-                    pos.z += diff.z * pullSpeed_ * deltaTime;
+                    pos.x += diff.x * GetPullSpeed() * deltaTime;
+                    pos.y += diff.y * GetPullSpeed() * deltaTime;
+                    pos.z += diff.z * GetPullSpeed() * deltaTime;
                     transform->SetPosition(pos);
 
                     // 一定距離に近づいたらOrbitingへ自動遷移
-                    float distSq = diff.x*diff.x + diff.y*diff.y + diff.z*diff.z;
-                    if (distSq < 2.0f) {
-                        state_ = DebrisState::Orbiting;
+                    float distSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+                    if (distSq < GetCatchDistanceSq()) {
+                        SetState(DebrisState::Orbiting);
                     }
                 }
             }
@@ -177,7 +192,7 @@ void DebrisComponent::Update() {
             if (auto target = targetObject_.lock()) {
                 auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
-                    orbitAngle_ += orbitSpeed_ * deltaTime;
+                    orbitAngle_ += GetOrbitSpeed() * deltaTime;
                     
                     // プレイヤーの周囲を回転するローカル座標を計算
                     Vector3 offset = {
@@ -200,13 +215,13 @@ void DebrisComponent::Update() {
                 auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
                     float shieldRotationSpeed = 1.0f; // ボス側のパラメータを取得してもよいがとりあえず固定値
-                    bossOrbitAngleX_ += bossOrbitSpeedX_ * shieldRotationSpeed;
-                    bossOrbitAngleY_ += bossOrbitSpeedY_ * shieldRotationSpeed;
-                    bossOrbitAngleZ_ += bossOrbitSpeedZ_ * shieldRotationSpeed;
+                    bossOrbitAngleX_ += bossOrbitSpeedX_ * shieldRotationSpeed * deltaTime;
+                    bossOrbitAngleY_ += bossOrbitSpeedY_ * shieldRotationSpeed * deltaTime;
+                    bossOrbitAngleZ_ += bossOrbitSpeedZ_ * shieldRotationSpeed * deltaTime;
 
                     Matrix4x4 rotMatrix = Math::MakeRotateXYZMatrix(Vector3{bossOrbitAngleX_, bossOrbitAngleY_, bossOrbitAngleZ_});
-                    float bossShieldRadius = 8.0f; // 基本半径
-                    Vector3 baseOffset = { 0, 0, bossShieldRadius + bossOrbitRadiusOffset_ };
+                    float currentRadius = GetBossShieldRadius() + bossOrbitRadiusOffset_;
+                    Vector3 baseOffset = { 0, 0, currentRadius };
                     Vector3 localPos = Math::TransformNormal(baseOffset, rotMatrix);
 
                     Vector3 pos = transform->GetPosition();
@@ -241,9 +256,9 @@ void DebrisComponent::Update() {
             
             // ターゲットがない（または既に死んだ）場合でも、計算された(または初期設定された)方向に飛び続ける
             Vector3 pos = transform->GetPosition();
-            pos.x += throwDirection_.x * throwSpeed_ * deltaTime;
-            pos.y += throwDirection_.y * throwSpeed_ * deltaTime;
-            pos.z += throwDirection_.z * throwSpeed_ * deltaTime;
+            pos.x += throwDirection_.x * GetThrowSpeed() * deltaTime;
+            pos.y += throwDirection_.y * GetThrowSpeed() * deltaTime;
+            pos.z += throwDirection_.z * GetThrowSpeed() * deltaTime;
             transform->SetPosition(pos);
             
             // TODO: 一定距離/時間で消滅させる等の処理が必要

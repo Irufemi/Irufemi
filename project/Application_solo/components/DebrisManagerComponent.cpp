@@ -24,6 +24,24 @@ void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Pool Size", &poolSize_);
     RegisterProperty("Max Virtual Instances", &maxVirtualInstances_);
+    RegisterProperty("Debris Pull Speed", &debrisPullSpeed_);
+    RegisterProperty("Debris Throw Speed", &debrisThrowSpeed_);
+    RegisterProperty("Debris Orbit Speed", &debrisOrbitSpeed_);
+    RegisterProperty("Debris Orbit Radius", &debrisOrbitRadius_);
+    RegisterProperty("Debris Damage (Boss)", &debrisDamage_);
+    RegisterProperty("Debris Damage (Enemy)", &debrisEnemyDamage_);
+    RegisterProperty("Debris Pull Y Offset", &debrisPullYOffset_);
+    RegisterProperty("Camera Shake Intensity", &cameraShakeIntensity_);
+    RegisterProperty("Camera Shake Duration(Frames)", &cameraShakeDurationFrames_);
+    RegisterProperty("Player Aura Color", &playerAuraColor_);
+    RegisterProperty("Boss Aura Color", &bossAuraColor_);
+    RegisterProperty("Idle Aura Color", &idleAuraColor_);
+    RegisterProperty("Catch Distance Sq", &catchDistanceSq_);
+    RegisterProperty("Boss Shield Radius", &bossShieldRadius_);
+    
+    RegisterProperty("Debris Base Scale", &debrisBaseScale_);
+    RegisterProperty("Debris Collider Radius", &colliderRadius_);
+    RegisterProperty("Debris Aura Scale", &auraScale_);
 }
 
 void DebrisManagerComponent::Initialize() {
@@ -35,19 +53,19 @@ void DebrisManagerComponent::Initialize() {
     auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
         auto obj = std::make_shared<GameObject>("Debris");
         auto transform = obj->AddComponent<TransformComponent>();
-        transform->SetScale({ 0.5f, 0.5f, 0.5f }); // 少し小さめに
+        transform->SetScale(debrisBaseScale_); 
         
         obj->AddComponent<DebrisComponent>();
         obj->AddComponent<TargetableComponent>();
         
         auto collider = obj->AddComponent<SphereColliderComponent>();
         collider->isTrigger_ = true;
-        collider->SetLocalRadius(0.5f);
+        collider->SetLocalRadius(colliderRadius_);
         
         // --- Aura (EnergyCore) ---
         auto aura = std::make_shared<GameObject>("DebrisAura");
         auto auraTransform = aura->AddComponent<TransformComponent>();
-        auraTransform->SetScale({ 2.2f, 2.2f, 2.2f }); // 瓦礫をすっぽり覆う大きさに設定（少し縮小）
+        auraTransform->SetScale(auraScale_);
         
         auto auraModel = aura->AddComponent<PrimitiveRendererComponent>();
         auraModel->Initialize();
@@ -57,8 +75,7 @@ void DebrisManagerComponent::Initialize() {
             auto pso = BaseModel::GetIrufemiEngine()->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
             primitive->SetCustomPSO(pso);
             primitive->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
-            // オーラの中の模様（マグマパターン）が見えるようにアルファ値を0.4に設定
-            primitive->SetColor({0.6f, 0.2f, 1.0f, 0.4f});
+            primitive->SetColor(idleAuraColor_);
         }
         
         aura->SetIsActive(false); // 通常時は非表示
