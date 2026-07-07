@@ -209,7 +209,10 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
             };
 
             bool hasValue = (prop.type != ComponentPropertyType::Header && prop.type != ComponentPropertyType::Separator);
-            if (hasValue) ImGui::PushItemWidth(-30.0f);
+            if (hasValue) {
+                float availableWidth = ImGui::GetContentRegionAvail().x;
+                ImGui::PushItemWidth(availableWidth * 0.55f);
+            }
 
             switch (prop.type) {
                 case ComponentPropertyType::Header: {
