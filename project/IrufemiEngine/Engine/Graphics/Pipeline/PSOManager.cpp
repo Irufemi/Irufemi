@@ -138,17 +138,19 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
     
     // キャッシュが古くて生成に失敗した場合は、キャッシュ無しで再試行
+    bool usedFallback = false;
     if (FAILED(hr) && !cachedData.empty()) {
         desc.CachedPSO.pCachedBlob = nullptr;
         desc.CachedPSO.CachedBlobSizeInBytes = 0;
         hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+        usedFallback = true;
     }
 
     ASSERT_IF_FAILED(hr);
     if (FAILED(hr)) return nullptr;
 
     // 新規コンパイルした場合はキャッシュを保存
-    if (cachedData.empty()) {
+    if (cachedData.empty() || usedFallback) {
         SaveCachedBlob(cacheFileName, pso.Get());
     }
 
@@ -197,16 +199,18 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
     
+    bool usedFallback = false;
     if (FAILED(hr) && !cachedData.empty()) {
         desc.CachedPSO.pCachedBlob = nullptr;
         desc.CachedPSO.CachedBlobSizeInBytes = 0;
         hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+        usedFallback = true;
     }
     
     IRUFEMI_ASSERT(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
     
     if (SUCCEEDED(hr)) {
-        if (cachedData.empty()) SaveCachedBlob(cacheFileName, pso.Get());
+        if (cachedData.empty() || usedFallback) SaveCachedBlob(cacheFileName, pso.Get());
         cache_[key] = pso;
         return pso.Get();
     }
@@ -233,15 +237,17 @@ void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft:
     ComPtr pso;
     HRESULT hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
     
+    bool usedFallback = false;
     if (FAILED(hr) && !cachedData.empty()) {
         desc.CachedPSO.pCachedBlob = nullptr;
         desc.CachedPSO.CachedBlobSizeInBytes = 0;
         hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
+        usedFallback = true;
     }
 
     ASSERT_IF_FAILED(hr);
     if (SUCCEEDED(hr)) {
-        if (cachedData.empty()) {
+        if (cachedData.empty() || usedFallback) {
             SaveCachedBlob(cacheFileName, pso.Get());
         }
         computeCache_[name] = pso;
