@@ -168,10 +168,10 @@ void LockonMarkerUIComponent::Update() {
             
             // 上限数で分割した角度ずつずらして回転させる
             float rotationSpeed = (idx % 2 == 0) ? 2.0f : -2.0f;
-            rotation = idx * angleStep + (engine->GetTotalTime() * rotationSpeed);
+            rotation = idx * angleStep + (engine->GetGameTime() * rotationSpeed);
         } else {
             // ベースのマーカーもゆっくり回転
-            rotation = engine->GetTotalTime() * 1.5f;
+            rotation = engine->GetGameTime() * 1.5f;
         }
 
         // バッチにインスタンスを追加 (SpriteBatchのAddInstanceはVector2, Vector2, rotation, color, anchor)

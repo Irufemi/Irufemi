@@ -632,7 +632,7 @@ void IrufemiEngine::Execute() {
     sceneManager_->Update();
     // ローディング画面のアニメーション進行（Update相当）は描画時にまとめて行います
     totalTime_ += deltaTime_;
-    postProcessManager_->Update(totalTime_);
+    postProcessManager_->Update(gameTime_);
     sceneTransition_->Update(deltaTime_);
     
    // 4) ParticleのUpdate (GPU)

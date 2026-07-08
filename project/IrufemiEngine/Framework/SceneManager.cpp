@@ -175,7 +175,8 @@ bool SceneManager::UpdateLoadStatus() {
     bool isLoading = IsLoading();
 
     if (isLoading) {
-        loadingTimer_ += engine_->GetDeltaTime();
+        // ロード画面のアニメーションなどのための時間加算は実時間で行う
+        loadingTimer_ += engine_->GetRealDeltaTime();
     } else {
         loadingTimer_ = 0.0f;
     }

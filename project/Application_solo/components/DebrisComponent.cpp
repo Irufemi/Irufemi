@@ -155,7 +155,7 @@ void DebrisComponent::Update() {
     if (!transform) return;
 
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-    if (deltaTime <= 0.0f) deltaTime = 1.0f / 60.0f;
+    if (deltaTime <= 0.0f) return;
 
     switch (state_) {
         case DebrisState::Idle: {

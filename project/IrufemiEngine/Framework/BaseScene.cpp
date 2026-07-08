@@ -377,7 +377,7 @@ void BaseScene::SubmitFrameData() {
     }
 
     if (directionalLight_) {
-        engine_->GetDrawManager()->SetFrameData(cameraForGpu, engine_->GetTotalTime(), engine_->GetDeltaTime(), *directionalLight_, pLights, sLights, aLights, { activeCam->GetViewportWidth(), activeCam->GetViewportHeight() });
+        engine_->GetDrawManager()->SetFrameData(cameraForGpu, engine_->GetGameTime(), engine_->GetGameDeltaTime(), *directionalLight_, pLights, sLights, aLights, { activeCam->GetViewportWidth(), activeCam->GetViewportHeight() });
     }
 }
 
