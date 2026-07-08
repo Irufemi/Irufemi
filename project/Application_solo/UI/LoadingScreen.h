@@ -19,6 +19,7 @@ public:
     ~LoadingScreen();
 
     void Initialize(IrufemiEngine* engine);
+    void Finalize();
     void Update(float deltaTime);
     void Draw(IrufemiEngine* engine);
 

@@ -18,10 +18,15 @@ class DescriptorPool;
 /**
  * @class DebugPrimitiveRenderer
  * @brief GPUインスタンシングを用いた高速なデバッグ用プリミティブ描画クラス
+ * @details 以前はシングルトンでしたが、破棄順序の安全性を確保するため IrufemiEngine 管理に変更されました。
  */
 class DebugPrimitiveRenderer {
 public:
-    static DebugPrimitiveRenderer* GetInstance();
+    /**
+     * @brief コンストラクタ
+     */
+    DebugPrimitiveRenderer() = default;
+
     ~DebugPrimitiveRenderer();
 
     void Initialize(DirectXCommon* dx, DrawManager* drawM, DescriptorPool* srvAlloc);
@@ -36,8 +41,6 @@ public:
     void Draw();
 
 private:
-    DebugPrimitiveRenderer() = default;
-
     struct InstanceData {
         Matrix4x4 WVP;
         Vector4 color;

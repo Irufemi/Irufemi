@@ -32,6 +32,12 @@ namespace {
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
 }
 
+SceneManager::~SceneManager() {
+    if (initFuture_.valid()) {
+        initFuture_.wait();
+    }
+}
+
 // 登録順を保持しつつ登録
 void SceneManager::Register(const Key& name, Factory f) {
     auto it = factories_.find(name);

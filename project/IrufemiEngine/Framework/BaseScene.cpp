@@ -177,7 +177,7 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
     directionalLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
     directionalLight_->direction = { 0.5f, -0.7f, 1.0f };
     if (engine_) {
-        engine_->GetCollisionManager()->Initialize();
+        engine_->GetCollisionManager()->Initialize(engine_->GetDebugPrimitiveRenderer());
     }
 }
 

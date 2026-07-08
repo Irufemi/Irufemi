@@ -8,6 +8,13 @@
 LoadingScreen::LoadingScreen() = default;
 LoadingScreen::~LoadingScreen() = default;
 
+void LoadingScreen::Finalize() {
+    dots_.clear();
+    nowLoadingText_.reset();
+    bgSprite_.reset();
+    camera_.reset();
+}
+
 void LoadingScreen::Initialize(IrufemiEngine* engine) {
     if (!engine) return;
 

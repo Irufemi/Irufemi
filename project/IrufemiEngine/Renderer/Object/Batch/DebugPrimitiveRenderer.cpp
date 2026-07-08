@@ -7,11 +7,6 @@
 #include "Engine/Core/Math/Math.h"
 #include "Engine/IrufemiEngine.h"
 
-DebugPrimitiveRenderer* DebugPrimitiveRenderer::GetInstance() {
-    static DebugPrimitiveRenderer instance;
-    return &instance;
-}
-
 DebugPrimitiveRenderer::~DebugPrimitiveRenderer() {
     if (srvAllocator_ && dx_) {
         for (uint32_t& idx : sphereSrvIndex_) {

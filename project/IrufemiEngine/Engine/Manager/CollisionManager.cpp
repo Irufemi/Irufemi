@@ -18,7 +18,8 @@
 #include "Engine/Core/System/ThreadPool.h"
 
 
-void CollisionManager::Initialize() {
+void CollisionManager::Initialize(DebugPrimitiveRenderer* debugRenderer) {
+    debugPrimitiveRenderer_ = debugRenderer;
     if (!debugLine_) {
         debugLine_ = std::make_unique<Line3DBatch>();
         debugLine_->Initialize();
@@ -224,7 +225,9 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
     if (!debugLine_) return;
     
     debugLine_->ClearInstances();
-    DebugPrimitiveRenderer::GetInstance()->ClearInstances();
+    if (debugPrimitiveRenderer_) {
+        debugPrimitiveRenderer_->ClearInstances();
+    }
     
     for (ColliderComponent* collider : colliders_) {
         if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
@@ -268,13 +271,17 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             Vector3 center = { (aabb.max.x + aabb.min.x) * 0.5f, (aabb.max.y + aabb.min.y) * 0.5f, (aabb.max.z + aabb.min.z) * 0.5f };
             Matrix4x4 transform = Math::MakeAffineMatrix(size, Vector3{0, 0, 0}, center);
             
-            DebugPrimitiveRenderer::GetInstance()->AddCube(transform, color);
+            if (debugPrimitiveRenderer_) {
+                debugPrimitiveRenderer_->AddCube(transform, color);
+            }
         }
         else if (collider->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
             SphereColliderComponent* sphereCol = static_cast<SphereColliderComponent*>(collider);
             Sphere sphere = sphereCol->GetWorldSphere();
             
-            DebugPrimitiveRenderer::GetInstance()->AddSphere(sphere.center, sphere.radius, color);
+            if (debugPrimitiveRenderer_) {
+                debugPrimitiveRenderer_->AddSphere(sphere.center, sphere.radius, color);
+            }
         }
         else if (collider->GetColliderType() == ColliderComponent::ColliderType::OBB) {
             OBBColliderComponent* obbCol = static_cast<OBBColliderComponent*>(collider);
@@ -298,7 +305,9 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             transform.m[3][2] = obb.center.z;
             transform.m[3][3] = 1.0f;
             
-            DebugPrimitiveRenderer::GetInstance()->AddCube(transform, color);
+            if (debugPrimitiveRenderer_) {
+                debugPrimitiveRenderer_->AddCube(transform, color);
+            }
         }
     } // end for colliders_
     
@@ -314,8 +323,10 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
     debugLine_->Update();
     debugLine_->Draw();
 
-    DebugPrimitiveRenderer::GetInstance()->Update();
-    DebugPrimitiveRenderer::GetInstance()->Draw();
+    if (debugPrimitiveRenderer_) {
+        debugPrimitiveRenderer_->Update();
+        debugPrimitiveRenderer_->Draw();
+    }
 }
 
 
