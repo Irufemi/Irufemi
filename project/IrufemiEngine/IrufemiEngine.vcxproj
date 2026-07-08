@@ -723,6 +723,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimationModel.cpp" />
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp" />
     <ClCompile Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.cpp" />
+    <ClCompile Include="Renderer\Object\Batch\DebugPrimitiveRenderer.cpp" />
     <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp" />
     <ClCompile Include="Renderer\Object\Batch\PrimitiveBatch.cpp" />
     <ClCompile Include="Renderer\Object\Effect\Effect.cpp" />
@@ -905,6 +906,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\Line\LineClass.h" />
     <ClInclude Include="Renderer\Object\Line\Data\LineVertexData.h" />
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h" />
+    <ClInclude Include="Renderer\Object\Batch\DebugPrimitiveRenderer.h" />
     <ClInclude Include="Renderer\Object\Batch\ModelBatch.h" />
     <ClInclude Include="Renderer\Object\Batch\PrimitiveBatch.h" />
     <ClInclude Include="Renderer\Object\Skybox\Skybox.h" />

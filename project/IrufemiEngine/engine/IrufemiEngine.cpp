@@ -4,6 +4,7 @@
 #include "Platform/Input/InputManager.h"
 #include "Platform/WindowsAPI/WinApp.h"
 #include "Manager/DrawManager.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "Core/System/IEngineExtension.h"
 #include "../Resource/Texture/TextureManager.h"
 #include "../Resource/Audio/AudioManager.h"
@@ -262,6 +263,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // 描画
   drawManager_ = std::make_unique<DrawManager>();
   drawManager_->Initialize(dxCommon_.get());
+  
+  DebugPrimitiveRenderer::GetInstance()->Initialize(dxCommon_.get(), drawManager_.get(), dxCommon_->GetSrvPool());
+
   Sprite::SetDrawManager(drawManager_.get());
   Text::SetDrawManager(drawManager_.get());
   Primitive2DObject::SetDrawManager(drawManager_.get());

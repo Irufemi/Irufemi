@@ -667,6 +667,7 @@ void DrawManager::DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPack
 void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
     std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource || instanceCount == 0) return;
+    using namespace RenderPackets;
     LinePacket p{};
     p.resource = resource;
     p.instancingSrvHandleGPU = instancingSrvHandleGPU;
@@ -691,6 +692,31 @@ void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
 
     // Draw
     commandList_->DrawIndexedInstanced(2, packet.instanceCount, 0, 0, 0);
+}
+
+void DrawManager::SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
+    std::lock_guard<std::mutex> lock(queueMutex_);
+    if (packet.indexCount == 0 || packet.instanceCount == 0) return;
+    RenderPackets::DebugPrimitivePacket p = packet;
+    p.blendMode = dxCommon_->GetEngine()->currentBlend_;
+    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.cullMode = dxCommon_->GetEngine()->currentCull_;
+    debugPrimitiveQueue_.push_back(p);
+}
+
+void DrawManager::DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
+    if (packet.indexCount == 0 || packet.instanceCount == 0) return;
+
+    // IA
+    commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+    commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView);
+    commandList_->IASetIndexBuffer(&packet.indexBufferView);
+
+    // SRV (VS t1)
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.instancingSrvHandleGPU);
+
+    // Draw
+    commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
 }
 
 void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const ManagedModel* model, uint32_t numVertices) {
@@ -1185,6 +1211,7 @@ void DrawManager::ClearRenderQueues() {
     primitiveBatchQueue_.clear();
     primitive2DBatchQueue_.clear();
     modelBatchQueue_.clear();
+    debugPrimitiveQueue_.clear();
     postRenderQueue_.clear();
     textQueue_.clear();
 }

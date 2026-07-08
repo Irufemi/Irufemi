@@ -72,6 +72,7 @@ private:
     std::vector<RenderPackets::PrimitiveBatchPacket> primitiveBatchQueue_;
     std::vector<RenderPackets::Primitive2DBatchPacket> primitive2DBatchQueue_;
     std::vector<RenderPackets::ModelBatchPacket> modelBatchQueue_;
+    std::vector<RenderPackets::DebugPrimitivePacket> debugPrimitiveQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
     
     // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
@@ -100,6 +101,7 @@ public:
     const std::vector<RenderPackets::PrimitiveBatchPacket>& GetPrimitiveBatchQueue() const { return primitiveBatchQueue_; }
     const std::vector<RenderPackets::Primitive2DBatchPacket>& GetPrimitive2DBatchQueue() const { return primitive2DBatchQueue_; }
     const std::vector<RenderPackets::ModelBatchPacket>& GetModelBatchQueue() const { return modelBatchQueue_; }
+    const std::vector<RenderPackets::DebugPrimitivePacket>& GetDebugPrimitiveQueue() const { return debugPrimitiveQueue_; }
     const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
     const std::vector<RenderPackets::SpriteBatchPacket>& GetTopMostSpriteBatchQueue() const { return topMostSpriteBatchQueue_; }
@@ -343,6 +345,9 @@ public:
      */
     void SubmitLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
     void DrawLineInstanced(const RenderPackets::LinePacket& packet);
+
+    void SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet);
+    void DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet);
 
     /**
      * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
