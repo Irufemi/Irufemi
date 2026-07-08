@@ -128,6 +128,13 @@ public: // メンバ関数
      */
     void DrawDebugContents();
 
+    /**
+     * @brief スクリーンのピクセル座標を、2D(UI)の論理空間座標に変換します。
+     * @details ウィンドウサイズが変更された場合でも、正射影行列による描画解像度（UI空間）に対応した座標を返します。
+     * @param screenPos マウスなどのスクリーンピクセル座標
+     * @return Vector2 変換後のUI空間座標
+     */
+    Vector2 ScreenToUIPosition(const Vector2& screenPos) const;
 
     //セッター
 

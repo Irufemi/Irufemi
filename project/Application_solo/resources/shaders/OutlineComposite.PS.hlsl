@@ -1,5 +1,9 @@
+#include "PerFrame.hlsli"
+
 Texture2D<float4> tex : register(t0);
 SamplerState smp : register(s0);
+
+ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
 struct PixelInput {
     float4 pos : SV_POSITION;
@@ -7,7 +11,7 @@ struct PixelInput {
 };
 
 float4 main(PixelInput input) : SV_TARGET {
-    float2 offset = 1.0f / float2(1280.0f, 720.0f); // TODO: 解像度を動的に
+    float2 offset = 1.0f / gPerFrame.resolution;
     
     // 画面端のピクセルでは強制的にエッジを無視する（画面ふちに線が出るのを防ぐ）
     if (input.uv.x <= offset.x || input.uv.x >= 1.0f - offset.x ||

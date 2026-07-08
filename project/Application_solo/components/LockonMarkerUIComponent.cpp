@@ -114,6 +114,10 @@ void LockonMarkerUIComponent::Update() {
         screenPos.x = (clipPos.x + 1.0f) * 0.5f * camera->GetViewportWidth();
         screenPos.y = (1.0f - clipPos.y) * 0.5f * camera->GetViewportHeight();
         
+        Vector2 uiPos = camera->ScreenToUIPosition({ screenPos.x, screenPos.y });
+        screenPos.x = uiPos.x;
+        screenPos.y = uiPos.y;
+        
         if (shouldLog) {
             char buf[256];
             snprintf(buf, sizeof(buf), "[LockonMarkerUI] Marker %d: Target %p, WorldPos(%.1f, %.1f, %.1f), ScreenPos(%.1f, %.1f, %.3f), Scale %.2f\n",

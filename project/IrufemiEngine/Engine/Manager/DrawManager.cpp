@@ -349,10 +349,11 @@ void DrawManager::PostDraw() {
     dxCommon_->UpdateFixFPS();
 }
 
-void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights) {
+void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Vector2& resolution) {
     cachedPerFrame_.camera = camera;
     cachedPerFrame_.time = time;
     cachedPerFrame_.deltaTime = deltaTime;
+    cachedPerFrame_.resolution = resolution;
     cachedDirectionalLight_ = light;
     
     cachedPointLights_.clear();

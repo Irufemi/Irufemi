@@ -43,9 +43,16 @@ void SceneViewPanel::Draw() {
     if (engine && engine->GetMainRenderTexture()) {
         auto mainTexture = engine->GetMainRenderTexture();
         
-        // パネルの大きさを取得して画像をフィットさせる（16:9を維持する）
+        float targetWidth = 1280.0f;
+        float targetHeight = 720.0f;
+        if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+            targetWidth = camera->GetViewportWidth();
+            targetHeight = camera->GetViewportHeight();
+        }
+
+        // パネルの大きさを取得して画像をフィットさせる（アスペクト比を維持する）
         ImVec2 avail = ImGui::GetContentRegionAvail();
-        float aspect = 1280.0f / 720.0f;
+        float aspect = targetWidth / targetHeight;
         ImVec2 size;
         if (avail.x / avail.y > aspect) {
             size.y = avail.y;
@@ -84,8 +91,8 @@ void SceneViewPanel::Draw() {
                         float right = pos.x + sizeScaled.x * (1.0f - anchor.x);
                         float bottom = pos.y + sizeScaled.y * (1.0f - anchor.y);
                         
-                        float scaleX = size.x / 1280.0f;
-                        float scaleY = size.y / 720.0f;
+                        float scaleX = size.x / targetWidth;
+                        float scaleY = size.y / targetHeight;
                         
                         ImVec2 pMin = ImVec2(minPos.x + left * scaleX, minPos.y + top * scaleY);
                         ImVec2 pMax = ImVec2(minPos.x + right * scaleX, minPos.y + bottom * scaleY);
@@ -104,8 +111,8 @@ void SceneViewPanel::Draw() {
                     float top = pos.y + minBounds.y * transform->GetWorldScale().y;
                     float bottom = pos.y + maxBounds.y * transform->GetWorldScale().y;
                     
-                    float scaleX = size.x / 1280.0f;
-                    float scaleY = size.y / 720.0f;
+                    float scaleX = size.x / targetWidth;
+                    float scaleY = size.y / targetHeight;
                     
                     ImVec2 pMin = ImVec2(minPos.x + left * scaleX, minPos.y + top * scaleY);
                     ImVec2 pMax = ImVec2(minPos.x + right * scaleX, minPos.y + bottom * scaleY);
@@ -128,8 +135,8 @@ void SceneViewPanel::Draw() {
                 mousePos.y >= minPos.y && mousePos.y <= maxPos.y) {
                 
                 Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
-                float scaleX = 1280.0f / size.x;
-                float scaleY = 720.0f / size.y;
+                float scaleX = targetWidth / size.x;
+                float scaleY = targetHeight / size.y;
                 Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
                 
                 engine->GetInputManager()->SetVirtualMousePosition(scaledVirtualPos, true);
@@ -417,13 +424,15 @@ void SceneViewPanel::HandleDragAndDrop(ImVec2 minPos, ImVec2 size) {
                 if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
                     ImVec2 mousePos = ImGui::GetMousePos();
                     Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
-                    float scaleX = 1280.0f / size.x;
-                    float scaleY = 720.0f / size.y;
+                    float targetWidth = camera->GetViewportWidth();
+                    float targetHeight = camera->GetViewportHeight();
+                    float scaleX = targetWidth / size.x;
+                    float scaleY = targetHeight / size.y;
                     Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
                     
                     Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
                     Matrix4x4 invViewProj = Math::Inverse(viewProj);
-                    Ray ray = Math::ScreenPointToRay(scaledVirtualPos, 1280.0f, 720.0f, invViewProj);
+                    Ray ray = Math::ScreenPointToRay(scaledVirtualPos, targetWidth, targetHeight, invViewProj);
                     
                     if (std::abs(ray.diff.y) > 0.001f) {
                         float t = -ray.origin.y / ray.diff.y;
@@ -459,9 +468,15 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
         GameObject* closestObj = nullptr;
         float closestDist = 1000.0f;
         
+        float targetWidth = 1280.0f;
+        float targetHeight = 720.0f;
+        if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
+            targetWidth = camera->GetViewportWidth();
+            targetHeight = camera->GetViewportHeight();
+        }
         Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
-        float scaleX = 1280.0f / size.x;
-        float scaleY = 720.0f / size.y;
+        float scaleX = targetWidth / size.x;
+        float scaleY = targetHeight / size.y;
         Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
 
         // --- 1. まず 2D (Sprite) のピッキング判定を行う ---

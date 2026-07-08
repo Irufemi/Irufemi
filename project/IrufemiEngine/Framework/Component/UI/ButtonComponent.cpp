@@ -7,6 +7,8 @@
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "../../SceneTransition.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Engine/Graphics/Camera/Camera.h"
 
 void ButtonComponent::OnRegisterProperties() {
     RegisterProperty("Normal Color", &normalColor_);
@@ -63,9 +65,13 @@ void ButtonComponent::Update() {
     if (!engine) return;
     
     auto input = engine->GetInputManager();
-    Vector2 mousePos = input->GetMousePosition();
+    auto cameraManager = engine->GetCameraManager();
+    if (!input || !cameraManager || !cameraManager->GetActiveCamera()) return;
     
-    isHovered_ = CheckBounds(mousePos);
+    Vector2 mousePos = input->GetMousePosition();
+    Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
+    
+    isHovered_ = CheckBounds(uiPos);
     isClicked_ = false;
 
     // アニメーターの更新（1/60固定とするか deltaTime を取得するか。簡易的に1/60）
