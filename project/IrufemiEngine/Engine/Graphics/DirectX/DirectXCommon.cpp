@@ -279,6 +279,7 @@ void DirectXCommon::RegisterAllShaders() {
     auto psVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.PS.hlsl", options);
     auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
     auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
+    auto vsShadowBatch = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapBatch.VS.hlsl", options);
 
 
 #ifdef EditorMode
@@ -330,6 +331,12 @@ void DirectXCommon::RegisterAllShaders() {
     shadowSkinDesc.shaders = { vsShadowSkin, nullptr };
     shadowSkinDesc.isDepthOnly = true;
     psoManager_->RegisterShader("ShadowSkinning", shadowSkinDesc);
+
+    // シャドウマップ(バッチ) - 深度のみ
+    PSOManager::PipelineStateDesc shadowBatchDesc{};
+    shadowBatchDesc.shaders = { vsShadowBatch, nullptr };
+    shadowBatchDesc.isDepthOnly = true;
+    psoManager_->RegisterShader("ShadowBatch", shadowBatchDesc);
 
 
 

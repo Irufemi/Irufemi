@@ -81,7 +81,7 @@ ResourceHandle ModelManager::LoadModel(const std::string& filename) {
     }
 
     const std::string key = filename;
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
 
     if (auto it = nameToHandleMap_.find(key); it != nameToHandleMap_.end() && modelPool_.IsValid(it->second)) {
         modelPool_.RetainSlot(it->second);
@@ -143,7 +143,7 @@ ManagedModel* ModelManager::Resolve(ResourceHandle handle) const {
     }
     const_cast<ModelManager*>(this)->modelPool_.TouchSlot(handle);
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (handle.index < managedModels_.size() && managedModels_[handle.index]) {
         return managedModels_[handle.index].get();
     }
@@ -304,7 +304,7 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
 
 std::vector<std::string> ModelManager::GetCachedKeys() const {
     std::vector<std::string> out;
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     for (const auto& kv : nameToHandleMap_) {
         if (modelPool_.IsValid(kv.second)) {
             out.push_back(kv.first);
@@ -315,7 +315,7 @@ std::vector<std::string> ModelManager::GetCachedKeys() const {
 
 void ModelManager::RefreshAvailableModels() {
     namespace fs = std::filesystem;
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     availableModelsCache_.clear();
     
     const fs::path rootPath = rootDir_.empty() ? "resources/model" : rootDir_;
@@ -345,12 +345,12 @@ std::vector<std::string> ModelManager::GetAvailableModels() const {
     if (!isAvailableModelsCached_) {
         const_cast<ModelManager*>(this)->RefreshAvailableModels();
     }
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     return availableModelsCache_;
 }
 
 void ModelManager::ClearAll() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     managedModels_.clear();
     nameToHandleMap_.clear();
     modelPool_.ClearAll([](uint32_t){});
@@ -398,7 +398,7 @@ std::string ModelManager::FindFileRecursive(const std::string& filename) const {
         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
         if (auto it = filePathCache_.find(lowerFilename); it != filePathCache_.end()) {
             return it->second;
         }
@@ -419,7 +419,7 @@ std::string ModelManager::FindFileRecursive(const std::string& filename) const {
                 std::string foundPath = entry.path().string();
                 std::replace(foundPath.begin(), foundPath.end(), '\\', '/');
                 {
-                    std::lock_guard<std::mutex> lock(mutex_);
+                    std::lock_guard<std::recursive_mutex> lock(mutex_);
                     filePathCache_[lowerFilename] = foundPath;
                 }
                 return foundPath;

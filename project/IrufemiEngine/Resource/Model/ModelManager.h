@@ -292,7 +292,7 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
     TextureManager* textureManager_ = nullptr;
     std::string rootDir_;
-    mutable std::mutex mutex_;
+    mutable std::recursive_mutex mutex_;
     ResourceCachePool modelPool_;
     mutable std::unordered_map<std::string, ResourceHandle> nameToHandleMap_;
     std::vector<std::unique_ptr<ManagedModel>> managedModels_;

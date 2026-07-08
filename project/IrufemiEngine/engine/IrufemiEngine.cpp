@@ -856,6 +856,11 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
+      else if (shaderName == "Batch") {
+          auto* pso = GetPSOManager()->GetPSO("ShadowBatch", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          if (pso) drawManager_->BindPSO(pso);
+          return;
+      }
       // それ以外はシャドウパスでは描画しない(無視)
       return;
   }

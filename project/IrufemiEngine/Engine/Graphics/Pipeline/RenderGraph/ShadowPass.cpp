@@ -13,7 +13,7 @@ void ShadowPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, Ir
 void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     drawManager->BeginShadowPass();
 
-    auto DrawShadowsWithPSO = [&](const auto& queue, auto drawFunc) {
+    auto DrawShadowsWithPSO = [&](const auto& queue, const std::string& psoName, auto drawFunc) {
         if (queue.empty()) return;
         
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
@@ -24,7 +24,7 @@ void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
             
             if (first || p.cullMode != currentCull) {
                 engine->SetCull(p.cullMode);
-                engine->ApplyPSO("Object3D"); // BeginShadowPass中なので自動的にShadowPSOが適用される
+                engine->ApplyPSO(psoName);
                 currentCull = p.cullMode;
                 first = false;
             }
@@ -32,9 +32,9 @@ void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         }
     };
 
-    DrawShadowsWithPSO(drawManager->GetStandard3DQueue(), [&](const auto& p) { drawManager->DrawStandard3D(p); });
-    DrawShadowsWithPSO(drawManager->GetPrimitiveBatchQueue(), [&](const auto& p) { drawManager->DrawPrimitiveBatch(p); });
-    DrawShadowsWithPSO(drawManager->GetModelBatchQueue(), [&](const auto& p) { drawManager->DrawModelBatch(p); });
+    DrawShadowsWithPSO(drawManager->GetStandard3DQueue(), "Object3D", [&](const auto& p) { drawManager->DrawStandard3D(p); });
+    DrawShadowsWithPSO(drawManager->GetPrimitiveBatchQueue(), "Batch", [&](const auto& p) { drawManager->DrawPrimitiveBatch(p); });
+    DrawShadowsWithPSO(drawManager->GetModelBatchQueue(), "Batch", [&](const auto& p) { drawManager->DrawModelBatch(p); });
 
     drawManager->EndShadowPass();
 }
