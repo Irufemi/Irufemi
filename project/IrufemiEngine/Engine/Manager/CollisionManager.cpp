@@ -7,6 +7,7 @@
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -17,7 +18,8 @@
 #include "Engine/Core/System/ThreadPool.h"
 
 
-void CollisionManager::Initialize() {
+void CollisionManager::Initialize(DebugPrimitiveRenderer* debugRenderer) {
+    debugPrimitiveRenderer_ = debugRenderer;
     if (!debugLine_) {
         debugLine_ = std::make_unique<Line3DBatch>();
         debugLine_->Initialize();
@@ -223,6 +225,9 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
     if (!debugLine_) return;
     
     debugLine_->ClearInstances();
+    if (debugPrimitiveRenderer_) {
+        debugPrimitiveRenderer_->ClearInstances();
+    }
     
     for (ColliderComponent* collider : colliders_) {
         if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
@@ -262,99 +267,47 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             AABBColliderComponent* aabbCol = static_cast<AABBColliderComponent*>(collider);
             AABB aabb = aabbCol->GetWorldAABB();
             
-            Vector3 p[8] = {
-                { aabb.min.x, aabb.min.y, aabb.min.z },
-                { aabb.max.x, aabb.min.y, aabb.min.z },
-                { aabb.min.x, aabb.max.y, aabb.min.z },
-                { aabb.max.x, aabb.max.y, aabb.min.z },
-                { aabb.min.x, aabb.min.y, aabb.max.z },
-                { aabb.max.x, aabb.min.y, aabb.max.z },
-                { aabb.min.x, aabb.max.y, aabb.max.z },
-                { aabb.max.x, aabb.max.y, aabb.max.z }
-            };
-
-            // AABB
-            // 底面
-            debugLine_->AddInstance(p[0], p[1], color);
-            debugLine_->AddInstance(p[1], p[3], color);
-            debugLine_->AddInstance(p[3], p[2], color);
-            debugLine_->AddInstance(p[2], p[0], color);
-            // 上面
-            debugLine_->AddInstance(p[4], p[5], color);
-            debugLine_->AddInstance(p[5], p[7], color);
-            debugLine_->AddInstance(p[7], p[6], color);
-            debugLine_->AddInstance(p[6], p[4], color);
-            // 縦
-            debugLine_->AddInstance(p[0], p[4], color);
-            debugLine_->AddInstance(p[1], p[5], color);
-            debugLine_->AddInstance(p[2], p[6], color);
-            debugLine_->AddInstance(p[3], p[7], color);
+            Vector3 size = { aabb.max.x - aabb.min.x, aabb.max.y - aabb.min.y, aabb.max.z - aabb.min.z };
+            Vector3 center = { (aabb.max.x + aabb.min.x) * 0.5f, (aabb.max.y + aabb.min.y) * 0.5f, (aabb.max.z + aabb.min.z) * 0.5f };
+            Matrix4x4 transform = Math::MakeAffineMatrix(size, Vector3{0, 0, 0}, center);
+            
+            if (debugPrimitiveRenderer_) {
+                debugPrimitiveRenderer_->AddCube(transform, color);
+            }
         }
         else if (collider->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
             SphereColliderComponent* sphereCol = static_cast<SphereColliderComponent*>(collider);
             Sphere sphere = sphereCol->GetWorldSphere();
             
-            // 簡単な3軸の円弧近似を描画
-            int segments = 32;
-            for (int i = 0; i < segments; ++i) {
-                float theta1 = (static_cast<float>(i) / segments) * 2.0f * 3.14159265f;
-                float theta2 = (static_cast<float>(i + 1) / segments) * 2.0f * 3.14159265f;
-                
-                // X-Y plane
-                Vector3 p1_xy = sphere.center + Vector3{ std::cos(theta1), std::sin(theta1), 0.0f } * sphere.radius;
-                Vector3 p2_xy = sphere.center + Vector3{ std::cos(theta2), std::sin(theta2), 0.0f } * sphere.radius;
-                debugLine_->AddInstance(p1_xy, p2_xy, color);
-                
-                // Y-Z plane
-                Vector3 p1_yz = sphere.center + Vector3{ 0.0f, std::cos(theta1), std::sin(theta1) } * sphere.radius;
-                Vector3 p2_yz = sphere.center + Vector3{ 0.0f, std::cos(theta2), std::sin(theta2) } * sphere.radius;
-                debugLine_->AddInstance(p1_yz, p2_yz, color);
-                
-                // Z-X plane
-                Vector3 p1_zx = sphere.center + Vector3{ std::sin(theta1), 0.0f, std::cos(theta1) } * sphere.radius;
-                Vector3 p2_zx = sphere.center + Vector3{ std::sin(theta2), 0.0f, std::cos(theta2) } * sphere.radius;
-                debugLine_->AddInstance(p1_zx, p2_zx, color);
+            if (debugPrimitiveRenderer_) {
+                debugPrimitiveRenderer_->AddSphere(sphere.center, sphere.radius, color);
             }
         }
         else if (collider->GetColliderType() == ColliderComponent::ColliderType::OBB) {
             OBBColliderComponent* obbCol = static_cast<OBBColliderComponent*>(collider);
             OBB obb = obbCol->GetWorldOBB();
             
-            // 8頂点を計算
-            Vector3 axes[3] = { obb.orientations[0], obb.orientations[1], obb.orientations[2] };
-            Vector3 extents = obb.size;
-            Vector3 center = obb.center;
+            Matrix4x4 transform;
+            transform.m[0][0] = obb.orientations[0].x * obb.size.x;
+            transform.m[0][1] = obb.orientations[0].y * obb.size.x;
+            transform.m[0][2] = obb.orientations[0].z * obb.size.x;
+            transform.m[0][3] = 0.0f;
+            transform.m[1][0] = obb.orientations[1].x * obb.size.y;
+            transform.m[1][1] = obb.orientations[1].y * obb.size.y;
+            transform.m[1][2] = obb.orientations[1].z * obb.size.y;
+            transform.m[1][3] = 0.0f;
+            transform.m[2][0] = obb.orientations[2].x * obb.size.z;
+            transform.m[2][1] = obb.orientations[2].y * obb.size.z;
+            transform.m[2][2] = obb.orientations[2].z * obb.size.z;
+            transform.m[2][3] = 0.0f;
+            transform.m[3][0] = obb.center.x;
+            transform.m[3][1] = obb.center.y;
+            transform.m[3][2] = obb.center.z;
+            transform.m[3][3] = 1.0f;
             
-            Vector3 dx = axes[0] * extents.x;
-            Vector3 dy = axes[1] * extents.y;
-            Vector3 dz = axes[2] * extents.z;
-            
-            Vector3 p[8] = {
-                center - dx - dy - dz,
-                center + dx - dy - dz,
-                center - dx + dy - dz,
-                center + dx + dy - dz,
-                center - dx - dy + dz,
-                center + dx - dy + dz,
-                center - dx + dy + dz,
-                center + dx + dy + dz
-            };
-            
-            // 底面
-            debugLine_->AddInstance(p[0], p[1], color);
-            debugLine_->AddInstance(p[1], p[3], color);
-            debugLine_->AddInstance(p[3], p[2], color);
-            debugLine_->AddInstance(p[2], p[0], color);
-            // 上面
-            debugLine_->AddInstance(p[4], p[5], color);
-            debugLine_->AddInstance(p[5], p[7], color);
-            debugLine_->AddInstance(p[7], p[6], color);
-            debugLine_->AddInstance(p[6], p[4], color);
-            // 縦
-            debugLine_->AddInstance(p[0], p[4], color);
-            debugLine_->AddInstance(p[1], p[5], color);
-            debugLine_->AddInstance(p[2], p[6], color);
-            debugLine_->AddInstance(p[3], p[7], color);
+            if (debugPrimitiveRenderer_) {
+                debugPrimitiveRenderer_->AddCube(transform, color);
+            }
         }
     } // end for colliders_
     
@@ -369,7 +322,13 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
 
     debugLine_->Update();
     debugLine_->Draw();
+
+    if (debugPrimitiveRenderer_) {
+        debugPrimitiveRenderer_->Update();
+        debugPrimitiveRenderer_->Draw();
+    }
 }
+
 
 void CollisionManager::LoadLayers(const std::string& filepath) {
     std::ifstream file(filepath);

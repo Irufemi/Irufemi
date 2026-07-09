@@ -24,10 +24,16 @@ struct PerFrameData
     float32_t4x4 projection;
     float32_t3 cameraWorldPosition;
     
-    // --- Time / DeltaTime ---
+    // --- Time / DeltaTime / Resolution ---
     float32_t time;
     float32_t deltaTime;
+    float32_t2 resolution;
+    
+    // --- Bindless Indices ---
+    uint envMapIndex;
+    uint shadowMapIndex;
+    uint depthMapIndex;
     
     // --- Padding ---
-    float32_t2 padding;
+    uint padding;
 };

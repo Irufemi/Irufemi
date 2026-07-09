@@ -72,6 +72,7 @@ private:
     std::vector<RenderPackets::PrimitiveBatchPacket> primitiveBatchQueue_;
     std::vector<RenderPackets::Primitive2DBatchPacket> primitive2DBatchQueue_;
     std::vector<RenderPackets::ModelBatchPacket> modelBatchQueue_;
+    std::vector<RenderPackets::DebugPrimitivePacket> debugPrimitiveQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
     
     // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
@@ -100,6 +101,7 @@ public:
     const std::vector<RenderPackets::PrimitiveBatchPacket>& GetPrimitiveBatchQueue() const { return primitiveBatchQueue_; }
     const std::vector<RenderPackets::Primitive2DBatchPacket>& GetPrimitive2DBatchQueue() const { return primitive2DBatchQueue_; }
     const std::vector<RenderPackets::ModelBatchPacket>& GetModelBatchQueue() const { return modelBatchQueue_; }
+    const std::vector<RenderPackets::DebugPrimitivePacket>& GetDebugPrimitiveQueue() const { return debugPrimitiveQueue_; }
     const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
     const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
     const std::vector<RenderPackets::SpriteBatchPacket>& GetTopMostSpriteBatchQueue() const { return topMostSpriteBatchQueue_; }
@@ -262,7 +264,7 @@ public: //メンバ関数
     /**
      * @brief フレーム単位の共通データを定数バッファに書き込む
      */
-    void SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights);
+    void SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Vector2& resolution = {1280.0f, 720.0f});
 
     /**
      * @brief キャッシュされたフレームデータを用いて現在のフレームバッファを同期する（ポーズなどでSetFrameDataが呼ばれなかった時用）
@@ -343,6 +345,9 @@ public:
      */
     void SubmitLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
     void DrawLineInstanced(const RenderPackets::LinePacket& packet);
+
+    void SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet);
+    void DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet);
 
     /**
      * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)

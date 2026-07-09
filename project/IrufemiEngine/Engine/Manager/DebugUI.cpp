@@ -757,7 +757,7 @@ void DebugUI::FPSDebug() {
     // エンジン側の PerFrame 時間管理 (DeltaTime) を使用して計算する
     float dt = io.DeltaTime;
     if (dxCommon_ && dxCommon_->GetEngine()) {
-        dt = dxCommon_->GetEngine()->GetDeltaTime();
+        dt = dxCommon_->GetEngine()->GetRealDeltaTime();
     }
     
     const float frameMsNow = dt * 1000.0f;

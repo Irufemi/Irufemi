@@ -5,6 +5,7 @@
 class InputManager;
 class WinApp;
 class DrawManager;
+class DebugPrimitiveRenderer;
 class DebugUI;
 class IEngineExtension;
 class TextureManager;
@@ -206,6 +207,7 @@ public: // ゲッター
     DirectXCommon* GetDirectXCommon() { return this->dxCommon_.get(); }
     InputManager* GetInputManager() { return this->inputManager_.get(); }
     DrawManager* GetDrawManager() { return this->drawManager_.get(); }
+    DebugPrimitiveRenderer* GetDebugPrimitiveRenderer() const { return this->debugPrimitiveRenderer_.get(); }
     DebugUI* GetDebugUI() { return this->ui_.get(); }
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
     FontManager* GetFontManager() { return this->fontManager_.get(); }
@@ -341,6 +343,9 @@ private: // メンバ変数
     
     // DrawManager
     std::unique_ptr<DrawManager> drawManager_ = nullptr;
+    
+    // DebugPrimitiveRenderer
+    std::unique_ptr<DebugPrimitiveRenderer> debugPrimitiveRenderer_ = nullptr;
     
     // DebugUI
     std::unique_ptr<DebugUI> ui_ = nullptr;

@@ -318,7 +318,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
                 CullingData cullData{};
                 cullData.maxInstanceCount = totalCount;
                 cullData.localRadius = modelRadius;
-                cullData.time = dx_->GetEngine() ? dx_->GetEngine()->GetTotalTime() : 0.0f;
+                cullData.time = dx_->GetEngine() ? dx_->GetEngine()->GetGameTime() : 0.0f;
 
                 if (frustum) {
                     for (int i = 0; i < 6; ++i) {

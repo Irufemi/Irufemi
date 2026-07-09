@@ -4,6 +4,7 @@
 #include "Platform/Input/InputManager.h"
 #include "Platform/WindowsAPI/WinApp.h"
 #include "Manager/DrawManager.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "Core/System/IEngineExtension.h"
 #include "../Resource/Texture/TextureManager.h"
 #include "../Resource/Audio/AudioManager.h"
@@ -249,10 +250,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Primitive3DObject::SetDebugUI(ui_.get());
 
 
-  // コリジョン管理
-  collisionManager_ = std::make_unique<CollisionManager>();
-  collisionManager_->Initialize();
-  ColliderComponent::SetCollisionManager(collisionManager_.get());
+  // コリジョン管琁Eの初期化は後回し（DebugPrimitiveRenderer生成後）
 
   // GPUパーティクル管理
   gpuParticleManager_ = std::make_unique<GPUParticleManager>();
@@ -262,6 +260,15 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // 描画
   drawManager_ = std::make_unique<DrawManager>();
   drawManager_->Initialize(dxCommon_.get());
+  
+  debugPrimitiveRenderer_ = std::make_unique<DebugPrimitiveRenderer>();
+  debugPrimitiveRenderer_->Initialize(dxCommon_.get(), drawManager_.get(), dxCommon_->GetSrvPool());
+
+  // コリジョン管琁E (描画に依存するためここで初期化)
+  collisionManager_ = std::make_unique<CollisionManager>();
+  collisionManager_->Initialize(debugPrimitiveRenderer_.get());
+  ColliderComponent::SetCollisionManager(collisionManager_.get());
+
   Sprite::SetDrawManager(drawManager_.get());
   Text::SetDrawManager(drawManager_.get());
   Primitive2DObject::SetDrawManager(drawManager_.get());
@@ -413,6 +420,7 @@ void IrufemiEngine::Finalize() {
     sceneManager_.reset();
   }
   if (loadingScreen_) {
+    loadingScreen_->Finalize();
     loadingScreen_.reset();
   }
   if (sceneTransition_) {
@@ -438,6 +446,10 @@ void IrufemiEngine::Finalize() {
   extensions_.clear();
 
   // 2. 描画・ポストプロセス系 (DirectX基盤に依存)
+  if (debugPrimitiveRenderer_) {
+    debugPrimitiveRenderer_.reset();
+  }
+
   if (drawManager_) {
     drawManager_->Finalize();
     drawManager_.reset();
@@ -632,7 +644,7 @@ void IrufemiEngine::Execute() {
     sceneManager_->Update();
     // ローディング画面のアニメーション進行（Update相当）は描画時にまとめて行います
     totalTime_ += deltaTime_;
-    postProcessManager_->Update(totalTime_);
+    postProcessManager_->Update(gameTime_);
     sceneTransition_->Update(deltaTime_);
     
    // 4) ParticleのUpdate (GPU)

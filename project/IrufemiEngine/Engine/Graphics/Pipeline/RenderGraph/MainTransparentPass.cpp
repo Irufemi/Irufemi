@@ -88,6 +88,9 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
 
     // 4. Line
     DrawWithPSO(drawManager->GetLineQueue(), [&](const auto& p) { drawManager->DrawLineInstanced(p); }, false, true);
+    
+    // 4.5 DebugPrimitive
+    DrawWithPSO(drawManager->GetDebugPrimitiveQueue(), [&](const auto& p) { drawManager->DrawDebugPrimitive(p); }, false, true);
 
 
 

@@ -24,6 +24,8 @@ struct RaycastHit {
 
 class ThreadPool;
 
+class DebugPrimitiveRenderer;
+
 /**
  * @class CollisionManager
  * @brief シーン内のすべての当たり判定を管理し、衝突判定を処理するマネージャ
@@ -34,7 +36,8 @@ public:
     ~CollisionManager();
 
     /// @brief 初期化
-    void Initialize();
+    /// @param[in] debugRenderer デバッグ描画用のレンダラーポインタ
+    void Initialize(DebugPrimitiveRenderer* debugRenderer);
 
     /// @brief 登録されたコライダーをすべてクリアする（シーン切り替え時などに呼ぶ）
     void Clear();
@@ -89,7 +92,8 @@ private:
     /** @brief マルチスレッドからの物理クエリを安全に行うためのRead-Writeロック */
     mutable std::shared_mutex collidersMutex_;
     std::vector<ColliderComponent*> colliders_;
-    std::unique_ptr<Line3DBatch> debugLine_;
+    std::unique_ptr<Line3DBatch> debugLine_ = nullptr;
+    DebugPrimitiveRenderer* debugPrimitiveRenderer_ = nullptr;
     
     // レイヤー名（最大32個）
     std::vector<std::string> layerNames_;

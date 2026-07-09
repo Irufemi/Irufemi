@@ -4,6 +4,8 @@
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Engine/Graphics/Camera/Camera.h"
 
 void ReticleUIComponent::Initialize() {
     // 初期化処理が必要であればここに記述
@@ -16,12 +18,15 @@ void ReticleUIComponent::Update() {
     if (!transform) return;
 
     // マウスカーソルの座標を取得
-    auto inputManager = BaseModel::GetIrufemiEngine()->GetInputManager();
-    if (inputManager) {
+    auto engine = BaseModel::GetIrufemiEngine();
+    auto inputManager = engine->GetInputManager();
+    auto cameraManager = engine->GetCameraManager();
+    if (inputManager && cameraManager && cameraManager->GetActiveCamera()) {
         Vector2 mousePos = inputManager->GetMousePosition();
+        Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
         
         // Transformのポジションをマウス座標に合わせる
         // Zは一番手前（カメラの手前）などに適宜設定
-        transform->SetPosition(Vector3{ mousePos.x, mousePos.y, 0.0f });
+        transform->SetPosition(Vector3{ uiPos.x, uiPos.y, 0.0f });
     }
 }

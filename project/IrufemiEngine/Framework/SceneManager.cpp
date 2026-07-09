@@ -32,6 +32,12 @@ namespace {
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
 }
 
+SceneManager::~SceneManager() {
+    if (initFuture_.valid()) {
+        initFuture_.wait();
+    }
+}
+
 // 登録順を保持しつつ登録
 void SceneManager::Register(const Key& name, Factory f) {
     auto it = factories_.find(name);
@@ -175,7 +181,8 @@ bool SceneManager::UpdateLoadStatus() {
     bool isLoading = IsLoading();
 
     if (isLoading) {
-        loadingTimer_ += engine_->GetDeltaTime();
+        // ロード画面のアニメーションなどのための時間加算は実時間で行う
+        loadingTimer_ += engine_->GetRealDeltaTime();
     } else {
         loadingTimer_ = 0.0f;
     }
