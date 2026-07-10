@@ -377,9 +377,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
 #if defined(_DEBUG) || defined(EditorMode)
   // シェーダーのホットリロード監視（別スレッドで動作）
-  shaderWatcher_ = std::make_unique<DirectoryWatcher>("resources/shaders", [this]() {
+  auto reloadCallback = [this]() {
       shouldReloadShaders_ = true;
-  });
+  };
+  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>("resources/shaders", reloadCallback));
+  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>("../IrufemiEngine/EngineResources/shaders", reloadCallback));
 #endif
 }
 

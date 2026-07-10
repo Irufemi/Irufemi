@@ -120,7 +120,7 @@ exit 0</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>call "$(SolutionDir)CompileShaders.bat" "$(ProjectDir)resources\shaders"</Command>
+      <Command>call "$(SolutionDir)CompileShaders.bat" "$(ProjectDir)..\IrufemiEngine\EngineResources\shaders" "$(ProjectDir)resources\shaders\compiled"&#x0D;&#x0A;call "$(SolutionDir)CompileShaders.bat" "$(ProjectDir)resources\shaders" "$(ProjectDir)resources\shaders\compiled"</Command>
       <Message>Compiling Shaders for Release...</Message>
     </PreBuildEvent>
     <ClCompile>

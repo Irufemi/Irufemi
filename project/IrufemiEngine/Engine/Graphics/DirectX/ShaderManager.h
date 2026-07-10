@@ -19,6 +19,18 @@ public:
     void Initialize();
 
     /**
+     * @brief シェーダーのソース検索パスを追加する（開発ビルド用）
+     * @param[in] path 検索対象のディレクトリパス
+     */
+    void AddSearchPath(const std::wstring& path);
+
+    /**
+     * @brief コンパイル済みバイナリ(.cso)の読み込みパスを設定する（リリースビルド用）
+     * @param[in] path コンパイル済みシェーダーが格納されるディレクトリ
+     */
+    void SetBinaryPath(const std::wstring& path);
+
+    /**
      * @brief シェーダーを取得またはコンパイルする
      * @param[in] filePath HLSLファイルへのパス
      * @param[in] options コンパイルオプション
@@ -68,4 +80,12 @@ private:
     std::unique_ptr<ShaderCompiler> compiler_;
     std::map<ShaderKey, Microsoft::WRL::ComPtr<IDxcBlob>> cache_;
     std::mutex mutex_;
+
+    std::vector<std::wstring> searchPaths_;
+    std::wstring binaryPath_;
+
+    /**
+     * @brief 検索パスからソースファイルのフルパスを解決する
+     */
+    std::wstring ResolveSourcePath(const std::wstring& filename) const;
 };

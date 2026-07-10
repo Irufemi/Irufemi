@@ -4,14 +4,20 @@ setlocal enabledelayedexpansion
 REM ========================================================
 REM IrufemiEngine Offline Shader Compiler Script
 REM ========================================================
-REM Usage: CompileShaders.bat <ShadersDirectory> [DxcExePath]
+REM Usage: CompileShaders.bat <ShadersDirectory> <OutputDirectory> [DxcExePath]
 REM ========================================================
 
 set "SHADERS_DIR=%~1"
-set "DXC_PATH=%~2"
+set "OUTPUT_DIR=%~2"
+set "DXC_PATH=%~3"
 
 if "%SHADERS_DIR%"=="" (
     echo [Error] Shaders directory not specified.
+    exit /b 1
+)
+
+if "%OUTPUT_DIR%"=="" (
+    echo [Error] Output directory not specified.
     exit /b 1
 )
 
@@ -21,6 +27,7 @@ if "%DXC_PATH%"=="" (
 
 echo [Info] Starting offline shader compilation...
 echo [Info] Shaders Directory: %SHADERS_DIR%
+echo [Info] Output Directory: %OUTPUT_DIR%
 echo [Info] DXC Path: %DXC_PATH%
 
 pushd "%SHADERS_DIR%"
@@ -50,8 +57,8 @@ for /r %%f in (*.hlsl) do (
 
     if not "!PROFILE!"=="" (
         echo [DXC] Compiling !FILENAME! as !PROFILE!...
-        if not exist "compiled" mkdir "compiled"
-        "%DXC_PATH%" /Zpr /O3 /T !PROFILE! /E main "%%f" /Fo "compiled\%%~nf.cso"
+        if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
+        "%DXC_PATH%" /Zpr /O3 /T !PROFILE! /E main "%%f" /Fo "%OUTPUT_DIR%\%%~nf.cso" -I "%SHADERS_DIR%" -I "..\IrufemiEngine\EngineResources\shaders"
         if errorlevel 1 (
             echo [Error] Failed to compile !FILENAME!
             popd
