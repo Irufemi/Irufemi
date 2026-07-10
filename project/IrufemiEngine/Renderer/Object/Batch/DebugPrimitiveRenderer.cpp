@@ -154,7 +154,7 @@ void DebugPrimitiveRenderer::ClearInstances() {
 void DebugPrimitiveRenderer::AddSphere(const Vector3& center, float radius, const Vector4& color) {
     if (activeSphereCount_ < maxSphereInstances_) {
         auto& instance = sphereInstances_[activeSphereCount_];
-        instance.WVP = Math::MakeScaleMatrix({radius, radius, radius}) * Math::MakeTranslateMatrix(center);
+        instance.world = Math::MakeScaleMatrix({radius, radius, radius}) * Math::MakeTranslateMatrix(center);
         instance.color = color;
         activeSphereCount_++;
     }
@@ -163,7 +163,7 @@ void DebugPrimitiveRenderer::AddSphere(const Vector3& center, float radius, cons
 void DebugPrimitiveRenderer::AddCube(const Matrix4x4& transform, const Vector4& color) {
     if (activeCubeCount_ < maxCubeInstances_) {
         auto& instance = cubeInstances_[activeCubeCount_];
-        instance.WVP = transform;
+        instance.world = transform;
         instance.color = color;
         activeCubeCount_++;
     }
@@ -197,7 +197,6 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
 
     Camera* activeCam = dx_->GetEngine()->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
-    Matrix4x4 viewProj = activeCam->GetViewMatrix() * activeCam->GetPerspectiveFovMatrix();
 
     // Sphere Buffer
     if (activeSphereCount_ > 0) {
@@ -222,7 +221,7 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
         }
 
         for (size_t i = 0; i < activeSphereCount_; ++i) {
-            sphereInstanceDataMap_[frameIndex][i].WVP = sphereInstances_[i].WVP * viewProj;
+            sphereInstanceDataMap_[frameIndex][i].world = sphereInstances_[i].world;
             sphereInstanceDataMap_[frameIndex][i].color = sphereInstances_[i].color;
         }
     }
@@ -250,7 +249,7 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
         }
 
         for (size_t i = 0; i < activeCubeCount_; ++i) {
-            cubeInstanceDataMap_[frameIndex][i].WVP = cubeInstances_[i].WVP * viewProj;
+            cubeInstanceDataMap_[frameIndex][i].world = cubeInstances_[i].world;
             cubeInstanceDataMap_[frameIndex][i].color = cubeInstances_[i].color;
         }
     }

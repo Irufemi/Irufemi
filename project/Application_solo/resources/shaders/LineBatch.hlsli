@@ -1,7 +1,7 @@
-// インスタンスごとのデータ
 struct InstanceData
 {
-	float32_t4x4 WVP;
+	float32_t4 start;
+	float32_t4 end;
 	float32_t4 color;
 };
 

@@ -1,4 +1,4 @@
-#include "LineInstanced.hlsli"
+#include "DebugPrimitive.hlsli"
 
 struct PixelShaderOutput
 {

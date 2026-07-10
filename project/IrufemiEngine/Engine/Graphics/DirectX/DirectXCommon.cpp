@@ -266,8 +266,10 @@ void DirectXCommon::RegisterAllShaders() {
     auto vsBatch = shaderManager_->GetOrCompile(L"resources/shaders/Batch.VS.hlsl", options);
     auto vsLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.VS.hlsl", options);
     auto psLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.PS.hlsl", options);
-    auto vsLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.VS.hlsl", options);
-    auto psLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.PS.hlsl", options);
+    auto vsLineBatch = shaderManager_->GetOrCompile(L"resources/shaders/LineBatch.VS.hlsl", options);
+    auto psLineBatch = shaderManager_->GetOrCompile(L"resources/shaders/LineBatch.PS.hlsl", options);
+    auto vsDebugPrimitive = shaderManager_->GetOrCompile(L"resources/shaders/DebugPrimitive.VS.hlsl", options);
+    auto psDebugPrimitive = shaderManager_->GetOrCompile(L"resources/shaders/DebugPrimitive.PS.hlsl", options);
     auto vsSkin = shaderManager_->GetOrCompile(L"resources/shaders/SkinningObject3D.VS.hlsl", options);
     auto vsSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.VS.hlsl", options);
     auto psSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.PS.hlsl", options);
@@ -307,9 +309,10 @@ void DirectXCommon::RegisterAllShaders() {
     psoManager_->RegisterShader("Text", { { vsText, psText } });
     psoManager_->RegisterShader("Batch", { { vsBatch, ps3d } });
     
-    // LineとLineInstancedはLINEトポロジ
+    // LineとLineBatchとDebugPrimitiveはLINEトポロジ
     psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    psoManager_->RegisterShader("LineInstanced", { { vsLineInst, psLineInst }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    psoManager_->RegisterShader("LineBatch", { { vsLineBatch, psLineBatch }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    psoManager_->RegisterShader("DebugPrimitive", { { vsDebugPrimitive, psDebugPrimitive }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
     
     psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
     psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
