@@ -35,6 +35,7 @@ void CollisionManager::Clear() {
     std::unique_lock<std::shared_mutex> lock(collidersMutex_);
     colliders_.clear();
     previousCollisions_.clear();
+    dynamicBVH_.Clear();
 }
 
 void CollisionManager::RegisterCollider(ColliderComponent* collider) {
@@ -44,6 +45,7 @@ void CollisionManager::RegisterCollider(ColliderComponent* collider) {
     auto it = std::find(colliders_.begin(), colliders_.end(), collider);
     if (it == colliders_.end()) {
         colliders_.push_back(collider);
+        collider->bvhNodeId_ = dynamicBVH_.Insert(collider, collider->GetBoundingBox());
     }
 }
 
@@ -55,6 +57,8 @@ void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
     auto it = std::find(colliders_.begin(), colliders_.end(), collider);
     if (it != colliders_.end()) {
         colliders_.erase(it);
+        dynamicBVH_.Remove(collider->bvhNodeId_);
+        collider->bvhNodeId_ = -1;
     }
 
     // 削除されるコライダーが含まれているペアをpreviousCollisions_から削除し、Exitを呼ぶ
@@ -85,25 +89,39 @@ void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
 void CollisionManager::CheckAllCollisions() {
     std::set<std::pair<ColliderComponent*, ColliderComponent*>> currentCollisions;
 
-    if (colliders_.size() >= 2) {
-        for (size_t i = 0; i < colliders_.size(); ++i) {
-            ColliderComponent* colA = colliders_[i];
-            if (!colA || !colA->GetGameObject() || !colA->GetGameObject()->GetIsActive()) continue;
+    // --- BVH Update Phase ---
+    for (ColliderComponent* collider : colliders_) {
+        if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
+        dynamicBVH_.Update(collider->bvhNodeId_, collider->GetBoundingBox());
+    }
 
-            for (size_t j = i + 1; j < colliders_.size(); ++j) {
-                ColliderComponent* colB = colliders_[j];
-                if (!colB || !colB->GetGameObject() || !colB->GetGameObject()->GetIsActive()) continue;
+    // --- Broad Phase ---
+    std::vector<ColliderComponent*> potentialHits;
 
-                // フィルタリング
-                if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
-                    continue;
-                }
+    for (size_t i = 0; i < colliders_.size(); ++i) {
+        ColliderComponent* colA = colliders_[i];
+        if (!colA || !colA->GetGameObject() || !colA->GetGameObject()->GetIsActive()) continue;
 
-                // アドレスでソートしてペアを作成
-                auto pair = colA < colB ? std::make_pair(colA, colB) : std::make_pair(colB, colA);
+        potentialHits.clear();
+        dynamicBVH_.Query(colA->GetBoundingBox(), potentialHits);
 
-                // --- 判定ディスパッチ ---
-                Collision::CollisionResult result;
+        for (ColliderComponent* colB : potentialHits) {
+            if (!colB || colA == colB) continue;
+            if (!colB->GetGameObject() || !colB->GetGameObject()->GetIsActive()) continue;
+
+            // 重複判定を防ぐため、アドレスが小さい方から大きい方へのみ判定を行う
+            if (colA >= colB) continue;
+
+            // フィルタリング
+            if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
+                continue;
+            }
+
+            // アドレスでソートしてペアを作成 (colA < colB is guaranteed)
+            auto pairKey = std::make_pair(colA, colB);
+
+            // --- Narrow Phase (判定ディスパッチ) ---
+            Collision::CollisionResult result;
 
                 if (colA->GetColliderType() == ColliderComponent::ColliderType::AABB) {
                     AABB boxA = static_cast<AABBColliderComponent*>(colA)->GetWorldAABB();
@@ -158,10 +176,10 @@ void CollisionManager::CheckAllCollisions() {
                 }
 
                 if (result.isHit) {
-                    currentCollisions.insert(pair);
+                    currentCollisions.insert(pairKey);
 
                     // --- コールバック呼び出し (Enter / Stay) ---
-                    if (previousCollisions_.find(pair) == previousCollisions_.end()) {
+                    if (previousCollisions_.find(pairKey) == previousCollisions_.end()) {
                         // 新規衝突 (Enter)
                         if (colA->onCollisionEnter_) colA->onCollisionEnter_(colB);
                         if (colB->onCollisionEnter_) colB->onCollisionEnter_(colA);
@@ -200,7 +218,6 @@ void CollisionManager::CheckAllCollisions() {
                 }
             }
         }
-    }
 
     // --- 離脱処理 (Exit) ---
     for (const auto& pair : previousCollisions_) {
@@ -387,7 +404,10 @@ bool CollisionManager::Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDis
 
     std::shared_lock<std::shared_mutex> lock(collidersMutex_);
 
-    for (ColliderComponent* collider : colliders_) {
+    std::vector<ColliderComponent*> potentialHits;
+    dynamicBVH_.RaycastQuery(ray, maxDistance, potentialHits);
+
+    for (ColliderComponent* collider : potentialHits) {
         if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
 
         // 除外オブジェクトならスキップ

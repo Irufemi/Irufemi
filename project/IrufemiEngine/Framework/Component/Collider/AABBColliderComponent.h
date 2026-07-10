@@ -23,6 +23,7 @@ public:
 
     std::string GetComponentName() const override { return "AABBColliderComponent"; }
     ColliderType GetColliderType() const override { return ColliderType::AABB; }
+    AABB GetBoundingBox() const override { return GetWorldAABB(); }
 
     /// @brief ワールド空間上での現在のAABBを取得
     AABB GetWorldAABB() const;

@@ -55,6 +55,14 @@ Sphere SphereColliderComponent::GetWorldSphere() const {
     return sphere;
 }
 
+AABB SphereColliderComponent::GetBoundingBox() const {
+    Sphere sphere = GetWorldSphere();
+    AABB aabb;
+    aabb.min = { sphere.center.x - sphere.radius, sphere.center.y - sphere.radius, sphere.center.z - sphere.radius };
+    aabb.max = { sphere.center.x + sphere.radius, sphere.center.y + sphere.radius, sphere.center.z + sphere.radius };
+    return aabb;
+}
+
 nlohmann::json SphereColliderComponent::Serialize() {
     nlohmann::json j;
     j["localOffset"] = { localOffset_.x, localOffset_.y, localOffset_.z };

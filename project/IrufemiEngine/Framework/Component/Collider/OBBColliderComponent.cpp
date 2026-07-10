@@ -57,6 +57,20 @@ OBB OBBColliderComponent::GetWorldOBB() const {
     return obb;
 }
 
+AABB OBBColliderComponent::GetBoundingBox() const {
+    OBB obb = GetWorldOBB();
+    AABB aabb;
+    // OBBを包含するAABBの半径(各軸ごとの最大投影長)を計算
+    Vector3 extents;
+    extents.x = std::abs(obb.orientations[0].x * obb.size.x) + std::abs(obb.orientations[1].x * obb.size.y) + std::abs(obb.orientations[2].x * obb.size.z);
+    extents.y = std::abs(obb.orientations[0].y * obb.size.x) + std::abs(obb.orientations[1].y * obb.size.y) + std::abs(obb.orientations[2].y * obb.size.z);
+    extents.z = std::abs(obb.orientations[0].z * obb.size.x) + std::abs(obb.orientations[1].z * obb.size.y) + std::abs(obb.orientations[2].z * obb.size.z);
+
+    aabb.min = { obb.center.x - extents.x, obb.center.y - extents.y, obb.center.z - extents.z };
+    aabb.max = { obb.center.x + extents.x, obb.center.y + extents.y, obb.center.z + extents.z };
+    return aabb;
+}
+
 nlohmann::json OBBColliderComponent::Serialize() {
     nlohmann::json j;
     j["localOffset"] = { localOffset_.x, localOffset_.y, localOffset_.z };
