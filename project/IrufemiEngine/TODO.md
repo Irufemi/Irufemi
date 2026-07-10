@@ -30,8 +30,28 @@
     - 現在の「ツリー構造（親子関係）＋ポインタベースのComponent」というオブジェクト指向の限界を突破するため、AAA基準の純粋な ECS (Entity Component System) へとエンジン根幹のアーキテクチャを書き換える。
     - EntityはただのID（数値）とし、全てのComponentを種類ごとの巨大な連続配列（SoA: Structure of Arrays）で管理。これによりCPUのキャッシュミスを極限まで減らし、数万〜数十万のオブジェクト更新をフレームレート低下なしで処理可能にする。
     - ※段階的移行として、エディタ上では従来の GameObject の見た目を保ちつつ、ランタイム実行時やビルド時に内部で純粋なデータ配列へと自動変換（Baking）する「ハイブリッド方式」から導入する。
-- [ ] **空間分割 (Spatial Partitioning: Octree / BVH) の導入**
-    - 現在 `CollisionManager` が総当りの二重ループ（$O(N^2)$）で判定しているため、大量の弾やオブジェクトが存在するとCPUが破綻する問題を解消。Broad-phase（広域判定）用のOctreeやBVHを構築し、計算量を $O(N \log N)$ に削減する。
+- [ ] **空間分割 (AAA水準: TLAS & BLAS 動的BVH) の完全導入とGJK/EPAポリゴン判定**
+    - 現在 `CollisionManager` が総当りループ（$O(N^2)$）で判定している問題の解消、および MeshCollider（メッシュ単位の高精度判定）への対応を見据えた次世代アーキテクチャ。
+    - **【アーキテクチャ設計 (TLAS & BLAS)】**
+      1. **BLAS (Bottom-Level Acceleration Structure)**:
+         - 個別の3Dモデルが持つポリゴン（三角形）を内包する静的なBVH。
+         - **SAH (Surface Area Heuristic)** を用いて構築コストよりも走査(Traversal)速度を最大化するようノードを分割する。ロード時に1回だけ構築。
+      2. **TLAS (Top-Level Acceleration Structure)**:
+         - ゲーム空間内の全コライダーの「World AABB」を管理する動的BVH（Dynamic AABB Tree）。
+         - **Fattened AABB (マージン付きAABB) と Refitting**: AABBに10%の余白を持たせ、オブジェクトが微動した際のツリー再構築(Remove/Insert)をスキップして境界更新(Refit)のみで済ませる最適化を導入。
+    - **【衝突判定アルゴリズム（2段階判定）】**
+      - **Broad-Phase (広域判定)**: TLAS に自己交差クエリを投げ、交差するインスタンスのペアを $O(N \log N)$ で抽出する。（※将来的にJob Systemと連携し非同期化する）
+      - **Narrow-Phase (狭域判定)**: 抽出されたペアに対して正確な判定を行う。MeshColliderが含まれる場合は相手をローカル空間に逆変換してBLASを走査し、業界標準の **GJK (Gilbert-Johnson-Keerthi)** および **EPA (Expanding Polytope Algorithm)** を用いて最終的な交差判定と押し出しベクトル(貫通深度)の算出を行う。
+    - **【ゲーム開発者向けUXと最適化 (Convex Hullの自動生成)】**
+      - 生の凹型(Concave)メッシュは物理判定が極めて不安定かつ重いため、エンジン使用者には生の判定を意識させず、モデルから自動で **Convex Hull (凸包)** を生成する仕組み（Quickhullアルゴリズム等）を提供する。これにより「ただ MeshCollider をアタッチするだけで、安全かつ最速な凸形状としてGJK判定に乗る」という最高のDeveloper Experienceを実現する。
+    - **【実装ステップとロードマップ】**
+      - **Step 1: Broad-Phase (TLAS) の先行導入**
+        - 現行のプリミティブ判定の総当たりを TLAS のみに置き換える。
+        - **※最重要アピール機能**: 「BVH ON/OFFトグル」と「処理時間のリアルタイム表示(マイクロ秒)」を実装し、10,000オブジェクト環境での劇的なFPS改善を比較動画化できるようにする。ノード群はポインタ参照を避け `std::vector<BVHNode>` (配列プール)で管理しキャッシュミスを防ぐ。
+      - **Step 2: Convex Hull 生成と BLAS 基盤の作成**
+        - モデルから凸包を自動生成し、SAHに基づき静的ポリゴンツリーを構築するジェネレータを作成。
+      - **Step 3: GJK / EPA 判定の統合 (Narrow-Phase)**
+        - 任意の凸形状および三角形に対する GJK/EPA 数学ライブラリを実装し、BLAS走査ロジックと結合する。
 - [ ] **SIMD (DirectXMath / SSE) を活用した算術ライブラリの刷新**
     - 現在の `Vector3` や行列計算がスカラ演算（float単位）で実装されているため、DirectXMath (`XMVECTOR`, `XMMATRIX`) などの SIMD 命令にバックエンドを差し替え、物理・Transform計算のボトルネックを解消する。
 - [ ] **`StringId` (高速な文字列ハッシュ化) システムの導入**
