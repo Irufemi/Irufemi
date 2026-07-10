@@ -136,7 +136,7 @@ void BaseBatch::ClearInstances() {
 }
 
 void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
-    const UINT stride = sizeof(InstanceData);
+    const UINT stride = useGPUCulling_ ? sizeof(TransformData) : sizeof(InstanceData);
     const UINT sizeInBytes = std::max<UINT>(stride * instanceCount, stride);
     uint32_t frameIndex = dx_->GetFrameIndex();
 
@@ -322,7 +322,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
 
                 if (frustum) {
                     for (int i = 0; i < 6; ++i) {
-                        cullData.planes[i] = { frustum->planes[i].normal.x, frustum->planes[i].normal.y, frustum->planes[i].normal.z, frustum->planes[i].distance };
+                        cullData.planes[i] = { frustum->planes[i].normal.x, frustum->planes[i].normal.y, frustum->planes[i].normal.z, -frustum->planes[i].distance };
                     }
                 } else {
                     for (int i = 0; i < 6; ++i) cullData.planes[i] = { 0,0,0, -10000.0f };

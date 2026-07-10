@@ -46,25 +46,28 @@ void main(uint3 DTid : SV_DispatchThreadID) {
 
     TransformData td = InputInstances[instanceID];
 
-    // --- GPU Animation Calculation ---
-    // CPU側の 2.0f 倍速のアニメーションに合わせる。instanceIDで位相を少しずらす。
-    float phaseOffset = (float)(instanceID % 100) * 0.1f;
-    float animTime = time * 2.0f + phaseOffset;
-    
+    /**
+     * @brief インスタンスのワールド座標とバウンディングスフィアの計算
+     * @details 不用意なアニメーション操作を排除し、正確なTransform座標を取得します。
+     *          また、浮動小数点誤差によるカリングのチラつきを防ぐため、保守的なマージン(1.1倍)を持たせます。
+     */
     float3 pos = td.position.xyz;
-    pos.y += sin(animTime) * 0.5f;
-    
     float3 rot = td.rotation.xyz;
     float3 scale = td.scale.xyz;
+
+    float maxScale = max(scale.x, max(scale.y, scale.z));
+    // 保守的カリング (Conservative Culling) として 10% のマージンを追加
+    float worldRadius = localRadius * maxScale * 1.1f;
 
     // --- Matrix Construction ---
     matrix world = MakeAffineMatrix(scale, rot, pos);
     matrix worldInvTrans = MakeInverseTransposeMatrix(scale, rot);
 
-    float maxScale = max(scale.x, max(scale.y, scale.z));
-    float worldRadius = localRadius * maxScale;
-
-    // 球とFrustumの6平面での交差判定
+    // --- Frustum Culling ---
+    /**
+     * @brief 視錐台(Frustum)カリング判定
+     * @details C++側で D成分 (-distance) が正しく計算されているため、標準の点と平面の距離公式を使用します。
+     */
     bool isVisible = true;
     for (int i = 0; i < 6; ++i) {
         float dist = dot(pos, planes[i].xyz) + planes[i].w;
