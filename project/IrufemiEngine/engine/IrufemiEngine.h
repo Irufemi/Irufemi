@@ -430,7 +430,7 @@ private: // メンバ変数
     bool isPlayMode_ = true;
     std::weak_ptr<GameObject> selectedObject_;
 #if defined(_DEBUG) || defined(EditorMode)
-    std::unique_ptr<class DirectoryWatcher> shaderWatcher_ = nullptr;
+    std::vector<std::unique_ptr<class DirectoryWatcher>> shaderWatchers_;
     std::atomic<bool> shouldReloadShaders_{false};
 #endif
 };

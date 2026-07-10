@@ -80,31 +80,10 @@ void Line3DBatch::BuildInstanceBuffer(bool force) {
     lastUpdateFrameIndex_ = frameIndex;
     if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex] || !engine_) return;
 
-    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
-
-    const Matrix4x4& viewProjection = Math::Multiply(activeCam->GetViewMatrix(), activeCam->GetPerspectiveFovMatrix());
-
     for (size_t i = 0; i < activeCount_; ++i) {
         const auto& inst = instances_[i];
-        Vector3 vec = inst.end - inst.start;
-        float length = Math::Length(vec);
-        if (length < 1e-6f) { // ゼロ除算を避ける
-            length = 1e-6f;
-        }
-        Matrix4x4 scale = Math::MakeScaleMatrix({ length, 1.0f, 1.0f });
-
-        Vector3 up = { 0.0f, 1.0f, 0.0f };
-        Vector3 dir = Math::Normalize(vec);
-        if (abs(Math::Dot(dir, up)) > 0.999f) {
-            up = { 1.0f, 0.0f, 0.0f };
-        }
-        Matrix4x4 rotate = Math::DirectionToDirection({ 1.0f, 0.0f, 0.0f }, dir);
-
-        Matrix4x4 translate = Math::MakeTranslateMatrix(inst.start);
-        Matrix4x4 world = scale * rotate * translate;
-
-        instanceData_[frameIndex][i].WVP = world * viewProjection;
+        instanceData_[frameIndex][i].start = { inst.start.x, inst.start.y, inst.start.z, 1.0f };
+        instanceData_[frameIndex][i].end = { inst.end.x, inst.end.y, inst.end.z, 1.0f };
         instanceData_[frameIndex][i].color = inst.color;
     }
 }

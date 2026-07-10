@@ -59,7 +59,8 @@ private:
 
     // VS 側が読む1インスタンス分のデータ
     struct InstanceData {
-        Matrix4x4 WVP;
+        Vector4 start;
+        Vector4 end;
         Vector4 color;
     };
 

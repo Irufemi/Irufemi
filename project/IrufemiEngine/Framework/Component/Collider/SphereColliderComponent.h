@@ -19,6 +19,7 @@ public:
 
     std::string GetComponentName() const override { return "SphereColliderComponent"; }
     ColliderType GetColliderType() const override { return ColliderType::Sphere; }
+    AABB GetBoundingBox() const override;
 
     Sphere GetWorldSphere() const;
 

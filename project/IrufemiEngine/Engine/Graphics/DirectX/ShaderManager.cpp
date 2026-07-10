@@ -64,12 +64,13 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
     // 3. コンパイルまたはCSO読み込み
     Microsoft::WRL::ComPtr<IDxcBlob> blob;
 #ifdef RUNTIME_SHADER_COMPILE
-    std::wstring profile = profileOverride ? profileOverride : ShaderCompiler::GetInferredProfile(filePath);
-    blob = compiler_->Compile(filePath, profile.c_str(), options);
+    std::wstring resolvedPath = ResolveSourcePath(filePath);
+    std::wstring profile = profileOverride ? profileOverride : ShaderCompiler::GetInferredProfile(resolvedPath);
+    blob = compiler_->Compile(resolvedPath, profile.c_str(), options, searchPaths_);
 #else
-    // Releaseビルドでは .cso を読み込む
+    // Releaseビルドでは binaryPath_ に格納された .cso を読み込む
     std::filesystem::path path(filePath);
-    std::filesystem::path compiledPath = path.parent_path() / "compiled" / path.filename();
+    std::filesystem::path compiledPath = std::filesystem::path(binaryPath_) / path.filename();
     compiledPath.replace_extension(L".cso");
     std::ifstream file(compiledPath, std::ios::binary | std::ios::ate);
     if (file.is_open()) {
@@ -117,4 +118,31 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::ReloadShader(
 void ShaderManager::ClearCache() {
     std::lock_guard<std::mutex> lock(mutex_);
     cache_.clear();
+}
+
+/**
+ * @brief シェーダーのソース検索パスを追加する（開発ビルド用）
+ */
+void ShaderManager::AddSearchPath(const std::wstring& path) {
+    searchPaths_.push_back(path);
+}
+
+/**
+ * @brief コンパイル済みバイナリ(.cso)の読み込みパスを設定する（リリースビルド用）
+ */
+void ShaderManager::SetBinaryPath(const std::wstring& path) {
+    binaryPath_ = path;
+}
+
+/**
+ * @brief 検索パスからソースファイルのフルパスを解決する
+ */
+std::wstring ShaderManager::ResolveSourcePath(const std::wstring& filename) const {
+    for (const auto& path : searchPaths_) {
+        std::filesystem::path fullPath = std::filesystem::path(path) / filename;
+        if (std::filesystem::exists(fullPath)) {
+            return fullPath.wstring();
+        }
+    }
+    return filename; // 見つからない場合はそのまま返す
 }

@@ -513,6 +513,9 @@
     <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\Math\Geometry\DynamicBVH.cpp">
+      <Filter>Engine\Core\Math\Geometry</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Core\Math\MathFunction.cpp">
       <Filter>Engine\Core\Math</Filter>
     </ClCompile>
@@ -910,6 +913,9 @@
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h">
+      <Filter>Engine\Core\Math\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Math\Geometry\DynamicBVH.h">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h">

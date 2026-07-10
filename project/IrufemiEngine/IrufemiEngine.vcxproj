@@ -632,7 +632,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="..\externals\msdfgen\ext\import-svg.cpp" />
     <ClCompile Include="..\externals\msdfgen\ext\resolve-shape-geometry.cpp" />
     <ClCompile Include="..\externals\msdfgen\ext\save-png.cpp" />
-  <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp" />
+    <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp" />
+    <ClCompile Include="Engine\Core\Math\Geometry\DynamicBVH.cpp" />
     <ClCompile Include="Engine\Core\Math\MathFunction.cpp" />
     <ClCompile Include="Engine\Core\Math\Matrix4x4.cpp" />
     <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp" />
@@ -768,6 +769,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Math\Vector4.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\AABB.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h" />
+    <ClInclude Include="Engine\Core\Math\Geometry\DynamicBVH.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\OBB.h" />
     <ClInclude Include="Engine\Core\Math\Random\Random.h" />

@@ -19,6 +19,7 @@ public:
 
     std::string GetComponentName() const override { return "OBBColliderComponent"; }
     ColliderType GetColliderType() const override { return ColliderType::OBB; }
+    AABB GetBoundingBox() const override;
 
     OBB GetWorldOBB() const;
 

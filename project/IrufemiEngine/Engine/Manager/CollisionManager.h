@@ -10,6 +10,7 @@
 #include "Renderer/Object/Line/LineClass.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Shape/LinePrimitive.h"
+#include "Engine/Core/Math/Geometry/DynamicBVH.h"
 
 class ColliderComponent;
 class GameObject;
@@ -111,4 +112,6 @@ private:
 
     // 前フレームの衝突ペアを保持（Enter / Stay / Exit 用）
     std::set<std::pair<ColliderComponent*, ColliderComponent*>> previousCollisions_;
+
+    DynamicBVH dynamicBVH_;
 };
