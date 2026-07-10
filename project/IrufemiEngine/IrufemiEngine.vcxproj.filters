@@ -513,6 +513,9 @@
     <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\Math\Geometry\DynamicBVH.cpp">
+      <Filter>Engine\Core\Math\Geometry</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Core\Math\MathFunction.cpp">
       <Filter>Engine\Core\Math</Filter>
     </ClCompile>
@@ -783,6 +786,9 @@
     <ClCompile Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.cpp">
       <Filter>Renderer\Object\3D\StaticModelObject</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Object\Batch\DebugPrimitiveRenderer.cpp">
+      <Filter>Renderer\Object\Batch</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp">
       <Filter>Renderer\Object\Batch</Filter>
     </ClCompile>
@@ -907,6 +913,9 @@
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h">
+      <Filter>Engine\Core\Math\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Math\Geometry\DynamicBVH.h">
       <Filter>Engine\Core\Math\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h">
@@ -1316,6 +1325,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h">
       <Filter>Renderer\Object\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Object\Batch\DebugPrimitiveRenderer.h">
+      <Filter>Renderer\Object\Batch</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Object\Batch\ModelBatch.h">
       <Filter>Renderer\Object\Batch</Filter>

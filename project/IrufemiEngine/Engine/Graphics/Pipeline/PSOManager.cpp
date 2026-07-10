@@ -297,7 +297,8 @@ void PSOManager::PreWarmCommonPSOs() {
         GetPSO("StompExplosion", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("AOEWarning", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Line", blend, DepthWrite::Disable, CullMode::None);
-        GetPSO("LineInstanced", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("LineBatch", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("DebugPrimitive", blend, DepthWrite::Disable, CullMode::None);
     }
 
     // 3. シャドウマップ出力用

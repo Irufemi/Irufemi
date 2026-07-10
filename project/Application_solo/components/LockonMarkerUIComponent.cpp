@@ -85,14 +85,7 @@ void LockonMarkerUIComponent::Update() {
     auto camera = cameraManager->GetActiveCamera();
     IRUFEMI_ASSERT(camera != nullptr && "camera is null");
 
-    // デバッグログが大量に出るのを防ぐため、60フレームに1回だけ出力
-    static int frameCounter = 0;
-    bool shouldLog = (frameCounter++ % 60 == 0);
 
-    if (shouldLog) {
-        std::string logMsg = "[LockonMarkerUI] Active Markers: " + std::to_string(activeMarkers_.size()) + "\n";
-        OutputDebugStringA(logMsg.c_str());
-    }
 
     int markerIndex = 0;
     drawCountsCache_.clear();
@@ -114,18 +107,15 @@ void LockonMarkerUIComponent::Update() {
         screenPos.x = (clipPos.x + 1.0f) * 0.5f * camera->GetViewportWidth();
         screenPos.y = (1.0f - clipPos.y) * 0.5f * camera->GetViewportHeight();
         
-        if (shouldLog) {
-            char buf[256];
-            snprintf(buf, sizeof(buf), "[LockonMarkerUI] Marker %d: Target %p, WorldPos(%.1f, %.1f, %.1f), ScreenPos(%.1f, %.1f, %.3f), Scale %.2f\n",
-                     markerIndex, target.get(), worldPos.x, worldPos.y, worldPos.z, screenPos.x, screenPos.y, screenPos.z, marker.currentScale);
-            OutputDebugStringA(buf);
-        }
+        Vector2 uiPos = camera->ScreenToUIPosition({ screenPos.x, screenPos.y });
+        screenPos.x = uiPos.x;
+        screenPos.y = uiPos.y;
+        
+
 
         // 画面奥に行っている場合はスキップ（Z > 1.0 または Z < 0.0）
         if (screenPos.z >= 1.0f || screenPos.z <= 0.0f) {
-            if (shouldLog) {
-                OutputDebugStringA("[LockonMarkerUI] -> Clipped due to Z value out of range (0.0 - 1.0)\n");
-            }
+
             continue;
         }
 
@@ -164,10 +154,10 @@ void LockonMarkerUIComponent::Update() {
             
             // 上限数で分割した角度ずつずらして回転させる
             float rotationSpeed = (idx % 2 == 0) ? 2.0f : -2.0f;
-            rotation = idx * angleStep + (engine->GetTotalTime() * rotationSpeed);
+            rotation = idx * angleStep + (engine->GetGameTime() * rotationSpeed);
         } else {
             // ベースのマーカーもゆっくり回転
-            rotation = engine->GetTotalTime() * 1.5f;
+            rotation = engine->GetGameTime() * 1.5f;
         }
 
         // バッチにインスタンスを追加 (SpriteBatchのAddInstanceはVector2, Vector2, rotation, color, anchor)

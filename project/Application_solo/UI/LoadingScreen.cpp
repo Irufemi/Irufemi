@@ -8,6 +8,13 @@
 LoadingScreen::LoadingScreen() = default;
 LoadingScreen::~LoadingScreen() = default;
 
+void LoadingScreen::Finalize() {
+    dots_.clear();
+    nowLoadingText_.reset();
+    bgSprite_.reset();
+    camera_.reset();
+}
+
 void LoadingScreen::Initialize(IrufemiEngine* engine) {
     if (!engine) return;
 
@@ -88,7 +95,7 @@ void LoadingScreen::Update(float deltaTime) {
 void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
-    // ウィンドウのリサイズに対応するため、描画時に画面サイズに合わせて位置とサイズを動的に更新する
+    // ウィンドウのサイズに対応するため、描画時に画面サイズに合わせて位置やサイズを動的に更新する
     float screenW = static_cast<float>(engine->GetClientWidth());
     float screenH = static_cast<float>(engine->GetClientHeight());
     float uiScale = screenH / 720.0f;

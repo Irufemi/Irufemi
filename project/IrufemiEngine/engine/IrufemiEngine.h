@@ -5,6 +5,7 @@
 class InputManager;
 class WinApp;
 class DrawManager;
+class DebugPrimitiveRenderer;
 class DebugUI;
 class IEngineExtension;
 class TextureManager;
@@ -206,6 +207,7 @@ public: // ゲッター
     DirectXCommon* GetDirectXCommon() { return this->dxCommon_.get(); }
     InputManager* GetInputManager() { return this->inputManager_.get(); }
     DrawManager* GetDrawManager() { return this->drawManager_.get(); }
+    DebugPrimitiveRenderer* GetDebugPrimitiveRenderer() const { return this->debugPrimitiveRenderer_.get(); }
     DebugUI* GetDebugUI() { return this->ui_.get(); }
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
     FontManager* GetFontManager() { return this->fontManager_.get(); }
@@ -342,6 +344,9 @@ private: // メンバ変数
     // DrawManager
     std::unique_ptr<DrawManager> drawManager_ = nullptr;
     
+    // DebugPrimitiveRenderer
+    std::unique_ptr<DebugPrimitiveRenderer> debugPrimitiveRenderer_ = nullptr;
+    
     // DebugUI
     std::unique_ptr<DebugUI> ui_ = nullptr;
     
@@ -425,7 +430,7 @@ private: // メンバ変数
     bool isPlayMode_ = true;
     std::weak_ptr<GameObject> selectedObject_;
 #if defined(_DEBUG) || defined(EditorMode)
-    std::unique_ptr<class DirectoryWatcher> shaderWatcher_ = nullptr;
+    std::vector<std::unique_ptr<class DirectoryWatcher>> shaderWatchers_;
     std::atomic<bool> shouldReloadShaders_{false};
 #endif
 };

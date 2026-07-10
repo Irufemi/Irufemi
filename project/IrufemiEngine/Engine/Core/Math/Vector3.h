@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 /**
  * @struct Vector3
  * @brief 3次元ベクトル
@@ -8,6 +10,13 @@ struct Vector3 final {
 	float x;
 	float y;
 	float z;
+
+	// 定数
+	static const Vector3 zero;
+	static const Vector3 one;
+	static const Vector3 right;
+	static const Vector3 up;
+	static const Vector3 forward;
 
 	/**
 	 * @brief 添え字演算子
@@ -25,49 +34,72 @@ struct Vector3 final {
 
 	/** @name 複合代入演算子 */
 	/** @{ */
-	Vector3& operator+=(Vector3 rhs);
-	Vector3& operator-=(Vector3 rhs);
+	Vector3& operator+=(const Vector3& rhs);
+	Vector3& operator-=(const Vector3& rhs);
 	Vector3& operator*=(float s);
 	Vector3& operator/=(float s);
+	Vector3& operator*=(const Vector3& rhs);
+	Vector3& operator/=(const Vector3& rhs);
+	/** @} */
+
+	/** @name 比較演算子 */
+	/** @{ */
+	bool operator==(const Vector3& rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
+	bool operator!=(const Vector3& rhs) const { return !(*this == rhs); }
+	bool Equals(const Vector3& other, float epsilon = 1e-5f) const {
+		return std::abs(x - other.x) <= epsilon && std::abs(y - other.y) <= epsilon && std::abs(z - other.z) <= epsilon;
+	}
+	/** @} */
+
+	/** @name 数学関数 */
+	/** @{ */
+	inline float LengthSquared() const { return x * x + y * y + z * z; }
+	inline float Length() const { return std::sqrt(LengthSquared()); }
+	inline void Normalize() {
+		float lenSq = LengthSquared();
+		if (lenSq > 0.0f) {
+			float invLen = 1.0f / std::sqrt(lenSq);
+			x *= invLen;
+			y *= invLen;
+			z *= invLen;
+		}
+	}
+	inline Vector3 GetNormalized() const {
+		Vector3 v = *this;
+		v.Normalize();
+		return v;
+	}
+	inline float Dot(const Vector3& rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z; }
+	inline Vector3 Cross(const Vector3& rhs) const {
+		return {
+			y * rhs.z - z * rhs.y,
+			z * rhs.x - x * rhs.z,
+			x * rhs.y - y * rhs.x
+		};
+	}
+	/** @} */
+
+	/** @name データアクセサ */
+	/** @{ */
+	const float* data() const { return &x; }
+	float* data() { return &x; }
 	/** @} */
 };
 
 /** @name 非メンバ演算子 */
 /** @{ */
 
-/**
- * @brief ベクトル同士の加算
- */
-Vector3 operator+(Vector3 lhs, Vector3 rhs);
+Vector3 operator+(const Vector3& lhs, const Vector3& rhs);
+Vector3 operator-(const Vector3& lhs, const Vector3& rhs);
+Vector3 operator+(const Vector3& v);
+Vector3 operator-(const Vector3& v);
+Vector3 operator*(const Vector3& v, float s);
+Vector3 operator*(float s, const Vector3& v);
+Vector3 operator/(const Vector3& v, float s);
 
-/**
- * @brief ベクトル同士の減算
- */
-Vector3 operator-(Vector3 lhs, Vector3 rhs);
+// 要素ごとの乗除算
+Vector3 operator*(const Vector3& lhs, const Vector3& rhs);
+Vector3 operator/(const Vector3& lhs, const Vector3& rhs);
 
-/**
- * @brief 単項演算子 +
- */
-Vector3 operator+(Vector3 v);
-
-/**
- * @brief 単項演算子 - (符号反転)
- */
-Vector3 operator-(Vector3 v);
-
-/**
- * @brief スカラー乗算
- */
-Vector3 operator*(Vector3 v, float s);
-
-/**
- * @brief スカラー乗算 (可換)
- */
-Vector3 operator*(float s, Vector3 v);
-
-/**
- * @brief スカラー除算
- */
-Vector3 operator/(Vector3 v, float s);
-
-/** @} */
+/** @} */
+

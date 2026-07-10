@@ -6,6 +6,7 @@
 #include "Framework/BaseScene.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Texture/TextureManager.h"
+#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include <algorithm>
 
 std::shared_ptr<Component> ComponentUIHelpers::GetSharedComponent(GameObject* go, Component* comp) {
@@ -17,61 +18,89 @@ std::shared_ptr<Component> ComponentUIHelpers::GetSharedComponent(GameObject* go
 }
 
 void ComponentUIHelpers::DrawCollisionLayerGUI(Component* comp, EditorActionManager* actionManager, uint32_t& layer, uint32_t& mask) {
-    ImGui::Separator();
-    ImGui::Text("Collision Settings");
-
     auto* go = comp->GetGameObject();
     auto* scene = go ? go->GetScene() : nullptr;
     auto* cm = scene ? scene->GetEngine()->GetCollisionManager() : nullptr;
     if (!cm) return;
 
     const auto& layerNames = cm->GetLayerNames();
-
     if (layerNames.empty()) return;
 
-    int currentLayerIndex = 0;
-    for (int i = 0; i < layerNames.size(); ++i) {
-        if (layer == (1u << i)) {
-            currentLayerIndex = i;
-            break;
-        }
-    }
+    if (BeginPropertyTable("CollisionLayerTable")) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0.8f, 0.8f, 1.0f, 1.0f), "Collision Settings");
+        ImGui::TableSetColumnIndex(1); ImGui::Separator();
+        ImGui::TableSetColumnIndex(2); ImGui::Separator();
 
-    if (ImGui::BeginCombo("Layer", layerNames[currentLayerIndex].c_str())) {
+        int currentLayerIndex = 0;
         for (int i = 0; i < layerNames.size(); ++i) {
-            bool isSelected = (currentLayerIndex == i);
-            if (ImGui::Selectable(layerNames[i].c_str(), isSelected)) {
-                uint32_t newLayer = (1u << i);
-                PushInstantUndo(actionManager, layer, newLayer, &layer);
-            }
-            if (isSelected) ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-
-    if (ImGui::TreeNode("Collision Mask")) {
-        if (ImGui::Button("All")) {
-            PushInstantUndo(actionManager, mask, 0xFFFFFFFF, &mask);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("None")) {
-            PushInstantUndo(actionManager, mask, 0u, &mask);
-        }
-
-        for (int i = 0; i < layerNames.size(); ++i) {
-            bool isMasked = (mask & (1u << i)) != 0;
-            if (ImGui::Checkbox(layerNames[i].c_str(), &isMasked)) {
-                uint32_t newMask = mask;
-                if (isMasked) newMask |= (1u << i);
-                else          newMask &= ~(1u << i);
-                PushInstantUndo(actionManager, mask, newMask, &mask);
+            if (layer == (1u << i)) {
+                currentLayerIndex = i;
+                break;
             }
         }
-        ImGui::TreePop();
-    }
 
-    if (ImGui::Button("Edit Layers...")) {
-        ImGui::OpenPopup("Edit Layers");
+        ImGui::TableNextRow();
+        DrawPropertyLabel("Layer");
+        ImGui::TableSetColumnIndex(1);
+        ImGui::PushItemWidth(-1);
+        if (ImGui::BeginCombo("##Layer", layerNames[currentLayerIndex].c_str())) {
+            for (int i = 0; i < layerNames.size(); ++i) {
+                bool isSelected = (currentLayerIndex == i);
+                if (ImGui::Selectable(layerNames[i].c_str(), isSelected)) {
+                    uint32_t newLayer = (1u << i);
+                    PushInstantUndo(actionManager, layer, newLayer, &layer);
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::PopItemWidth();
+        DrawPropertyResetButton("##LayerReset", layer != 1u, [&]() {
+            uint32_t oldL = layer;
+            PushInstantUndo(actionManager, oldL, 1u, &layer);
+        });
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        bool treeOpen = ImGui::TreeNodeEx("Collision Mask", ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_AllowOverlap);
+        
+        if (treeOpen) {
+            ImGui::TableSetColumnIndex(1);
+            if (ImGui::Button("All", ImVec2(50, 0))) {
+                PushInstantUndo(actionManager, mask, 0xFFFFFFFF, &mask);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("None", ImVec2(50, 0))) {
+                PushInstantUndo(actionManager, mask, 0u, &mask);
+            }
+            
+            for (int i = 0; i < layerNames.size(); ++i) {
+                ImGui::TableNextRow();
+                DrawPropertyLabel(layerNames[i].c_str());
+                ImGui::TableSetColumnIndex(1);
+                
+                bool isMasked = (mask & (1u << i)) != 0;
+                if (ImGui::Checkbox((std::string("##Mask") + std::to_string(i)).c_str(), &isMasked)) {
+                    uint32_t newMask = mask;
+                    if (isMasked) newMask |= (1u << i);
+                    else          newMask &= ~(1u << i);
+                    PushInstantUndo(actionManager, mask, newMask, &mask);
+                }
+            }
+            ImGui::TreePop();
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Button("Edit Layers...")) {
+            ImGui::OpenPopup("Edit Layers");
+        }
+        
+        EndPropertyTable();
     }
 
     if (ImGui::BeginPopupModal("Edit Layers", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -136,265 +165,132 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
     }
 
     if (headerOpen) {
-        for (const auto& prop : props) {
-            auto showTooltipAndReset = [&]() {
-                if (!prop.tooltip.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                    ImGui::SetTooltip("%s", prop.tooltip.c_str());
-                }
-                
-                bool isModified = false;
-                if (!prop.defaultValue.is_null()) {
-                    switch (prop.type) {
-                        case ComponentPropertyType::Float: isModified = (*static_cast<float*>(prop.data) != prop.defaultValue.get<float>()); break;
-                        case ComponentPropertyType::Enum:
-                        case ComponentPropertyType::Int: isModified = (*static_cast<int*>(prop.data) != prop.defaultValue.get<int>()); break;
-                        case ComponentPropertyType::Bool: isModified = (*static_cast<bool*>(prop.data) != prop.defaultValue.get<bool>()); break;
-                        case ComponentPropertyType::String: isModified = (*static_cast<std::string*>(prop.data) != prop.defaultValue.get<std::string>()); break;
-                        case ComponentPropertyType::Float2: {
-                            auto* v = static_cast<Vector2*>(prop.data);
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 2) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
-                            break;
-                        }
-                        case ComponentPropertyType::Float3: {
-                            auto* v = static_cast<Vector3*>(prop.data);
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 3) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>());
-                            break;
-                        }
-                        case ComponentPropertyType::Float4: {
-                            auto* v = static_cast<Vector4*>(prop.data);
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 4) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
-                            break;
-                        }
-                        default: break;
-                    }
-                }
+        ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV;
+        if (ImGui::BeginTable("PropertiesTable", 3, flags)) {
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.4f);
+            ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.6f);
+            ImGui::TableSetupColumn("Reset", ImGuiTableColumnFlags_WidthFixed, 24.0f);
 
-                if (isModified) {
-                    ImGui::SameLine();
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f)); // Yellow
-                    if (ImGui::Button(("↺##" + prop.name).c_str())) {
+            for (const auto& prop : props) {
+                ImGui::PushID(prop.name.c_str());
+
+                auto drawResetButton = [&]() {
+                    if (!prop.defaultValue.is_null()) {
+                        bool isModified = false;
                         switch (prop.type) {
-                            case ComponentPropertyType::Float: *static_cast<float*>(prop.data) = prop.defaultValue.get<float>(); break;
+                            case ComponentPropertyType::Float: isModified = (*static_cast<float*>(prop.data) != prop.defaultValue.get<float>()); break;
                             case ComponentPropertyType::Enum:
-                            case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = prop.defaultValue.get<int>(); break;
-                            case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = prop.defaultValue.get<bool>(); break;
-                            case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = prop.defaultValue.get<std::string>(); break;
+                            case ComponentPropertyType::Int: isModified = (*static_cast<int*>(prop.data) != prop.defaultValue.get<int>()); break;
+                            case ComponentPropertyType::Bool: isModified = (*static_cast<bool*>(prop.data) != prop.defaultValue.get<bool>()); break;
+                            case ComponentPropertyType::String: isModified = (*static_cast<std::string*>(prop.data) != prop.defaultValue.get<std::string>()); break;
                             case ComponentPropertyType::Float2: {
                                 auto* v = static_cast<Vector2*>(prop.data);
                                 auto arr = prop.defaultValue;
-                                v->x = arr[0].get<float>(); v->y = arr[1].get<float>();
+                                if (arr.is_array() && arr.size() >= 2) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
                                 break;
                             }
                             case ComponentPropertyType::Float3: {
                                 auto* v = static_cast<Vector3*>(prop.data);
                                 auto arr = prop.defaultValue;
-                                v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
+                                if (arr.is_array() && arr.size() >= 3) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>());
                                 break;
                             }
                             case ComponentPropertyType::Float4: {
                                 auto* v = static_cast<Vector4*>(prop.data);
                                 auto arr = prop.defaultValue;
-                                v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
+                                if (arr.is_array() && arr.size() >= 4) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
                                 break;
                             }
                             default: break;
                         }
+
+                        if (isModified) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+                            if (ImGui::Button((std::string(ICON_FA_ARROW_ROTATE_LEFT) + "##" + prop.name).c_str(), ImVec2(20, 0))) {
+                                switch (prop.type) {
+                                    case ComponentPropertyType::Float: *static_cast<float*>(prop.data) = prop.defaultValue.get<float>(); break;
+                                    case ComponentPropertyType::Enum:
+                                    case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = prop.defaultValue.get<int>(); break;
+                                    case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = prop.defaultValue.get<bool>(); break;
+                                    case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = prop.defaultValue.get<std::string>(); break;
+                                    case ComponentPropertyType::Float2: {
+                                        auto* v = static_cast<Vector2*>(prop.data);
+                                        auto arr = prop.defaultValue;
+                                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>();
+                                        break;
+                                    }
+                                    case ComponentPropertyType::Float3: {
+                                        auto* v = static_cast<Vector3*>(prop.data);
+                                        auto arr = prop.defaultValue;
+                                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
+                                        break;
+                                    }
+                                    case ComponentPropertyType::Float4: {
+                                        auto* v = static_cast<Vector4*>(prop.data);
+                                        auto arr = prop.defaultValue;
+                                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
+                                        break;
+                                    }
+                                    default: break;
+                                }
+                            }
+                            ImGui::PopStyleColor();
+                            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset to Default");
+                        }
                     }
-                    ImGui::PopStyleColor();
-                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset to Default");
-                }
-            };
+                };
 
-            bool hasValue = (prop.type != ComponentPropertyType::Header && prop.type != ComponentPropertyType::Separator);
-            if (hasValue) {
-                float availableWidth = ImGui::GetContentRegionAvail().x;
-                ImGui::PushItemWidth(availableWidth * 0.55f);
-            }
+                ImGui::TableNextRow();
 
-            switch (prop.type) {
-                case ComponentPropertyType::Header: {
+                if (prop.type == ComponentPropertyType::Header) {
+                    ImGui::TableSetColumnIndex(0);
                     ImGui::Separator();
                     ImGui::TextColored(ImVec4(0.8f, 0.8f, 1.0f, 1.0f), "%s", prop.name.c_str());
-                    break;
-                }
-                case ComponentPropertyType::Separator: {
-                    ImGui::Separator();
-                    break;
-                }
-                case ComponentPropertyType::Float: {
-                    float* ptr = static_cast<float*>(prop.data);
-                    if (prop.minVal != prop.maxVal) {
-                        ImGui::SliderFloat(prop.name.c_str(), ptr, prop.minVal, prop.maxVal);
-                    } else {
-                        ImGui::DragFloat(prop.name.c_str(), ptr, 0.1f);
-                    }
-                    CheckUndoRedoDrag(actionManager, ptr);
-                    break;
-                }
-                case ComponentPropertyType::Enum: {
-                    int* ptr = static_cast<int*>(prop.data);
-                    if (!prop.enumNames.empty()) {
-                        std::vector<const char*> cStrs;
-                        for (const auto& s : prop.enumNames) cStrs.push_back(s.c_str());
-                        int oldVal = *ptr;
-                        if (ImGui::Combo(prop.name.c_str(), ptr, cStrs.data(), static_cast<int>(cStrs.size()))) {
-                            PushInstantUndo(actionManager, oldVal, *ptr, ptr);
-                        }
-                    }
-                    break;
-                }
-                case ComponentPropertyType::Int: {
-                    int* ptr = static_cast<int*>(prop.data);
-                    if (prop.minVal != prop.maxVal) {
-                        ImGui::SliderInt(prop.name.c_str(), ptr, static_cast<int>(prop.minVal), static_cast<int>(prop.maxVal));
-                    } else {
-                        ImGui::DragInt(prop.name.c_str(), ptr, 1);
-                    }
-                    CheckUndoRedoDrag(actionManager, ptr);
-                    break;
-                }
-                case ComponentPropertyType::Bool: {
-                    bool* ptr = static_cast<bool*>(prop.data);
-                    bool oldVal = *ptr;
-                    if (ImGui::Checkbox(prop.name.c_str(), ptr)) {
-                        PushInstantUndo(actionManager, oldVal, *ptr, ptr);
-                    }
-                    break;
-                }
-                case ComponentPropertyType::Float2: {
-                    Vector2* ptr = reinterpret_cast<Vector2*>(prop.data);
-                    ImGui::DragFloat2(prop.name.c_str(), &ptr->x, 0.1f);
-                    CheckUndoRedoDrag(actionManager, ptr);
-                    break;
-                }
-                case ComponentPropertyType::Float3: {
-                    Vector3* ptr = reinterpret_cast<Vector3*>(prop.data);
-                    ImGui::DragFloat3(prop.name.c_str(), &ptr->x, 0.1f);
-                    CheckUndoRedoDrag(actionManager, ptr);
-                    break;
-                }
-                case ComponentPropertyType::Float4: {
-                    Vector4* ptr = reinterpret_cast<Vector4*>(prop.data);
-                    if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
-                        ImGui::ColorEdit4(prop.name.c_str(), &ptr->x);
-                    } else {
-                        ImGui::DragFloat4(prop.name.c_str(), &ptr->x, 0.1f);
-                    }
-                    CheckUndoRedoDrag(actionManager, ptr);
-                    break;
-                }
-                case ComponentPropertyType::String: {
-                    auto* str = static_cast<std::string*>(prop.data);
-                    
-                    std::string lowerName = prop.name;
-                    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
-                    
-                    bool isModel = (lowerName.find("model") != std::string::npos || lowerName.find("mesh") != std::string::npos);
-                    bool isTexture = (lowerName.find("texture") != std::string::npos || lowerName.find("image") != std::string::npos);
-                    
-                    std::vector<std::string> comboItems;
-                    IrufemiEngine* engine = nullptr;
-                    if (component->GetGameObject() && component->GetGameObject()->GetScene()) {
-                        engine = component->GetGameObject()->GetScene()->GetEngine();
+                    ImGui::TableSetColumnIndex(1); ImGui::Separator();
+                    ImGui::TableSetColumnIndex(2); ImGui::Separator();
+                } else if (prop.type == ComponentPropertyType::Separator) {
+                    ImGui::TableSetColumnIndex(0); ImGui::Separator();
+                    ImGui::TableSetColumnIndex(1); ImGui::Separator();
+                    ImGui::TableSetColumnIndex(2); ImGui::Separator();
+                } else if (prop.type == ComponentPropertyType::Float3Array) {
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    bool treeOpen = ImGui::TreeNodeEx(("##Tree" + prop.name).c_str(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap, "%s", prop.name.c_str());
+                    if (!prop.tooltip.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                        ImGui::SetTooltip("%s", prop.tooltip.c_str());
                     }
                     
-                    if (engine && isModel && engine->GetObjModelManager()) {
-                        auto* mgr = engine->GetObjModelManager();
-#ifndef NDEBUG
-                        mgr->RefreshAvailableModels();
-#endif
-                        comboItems = mgr->GetAvailableModels();
-                    } else if (engine && isTexture && engine->GetTextureManager()) {
-                        comboItems = engine->GetTextureManager()->GetTextureNamesForDebug();
-                    }
-
-                    if (!comboItems.empty()) {
-                        if (ImGui::BeginCombo(prop.name.c_str(), str->c_str())) {
-                            for (const auto& item : comboItems) {
-                                bool isSelected = (*str == item);
-                                if (ImGui::Selectable(item.c_str(), isSelected)) {
-                                    std::string oldVal = *str;
-                                    *str = item;
-                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
-                                        oldVal, *str, [str](const std::string& v) { *str = v; }));
-                                }
-                                if (isSelected) {
-                                    ImGui::SetItemDefaultFocus();
-                                }
-                            }
-                            ImGui::EndCombo();
-                        }
-                    } else {
-                        char buffer[256];
-                        strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
-                        
-                        static std::string startStr;
-                        if (ImGui::InputText(prop.name.c_str(), buffer, sizeof(buffer))) {
-                            *str = buffer;
-                        }
-                        if (ImGui::IsItemActivated()) {
-                            startStr = *str;
-                        }
-                        if (ImGui::IsItemDeactivatedAfterEdit()) {
-                            std::string endStr = *str;
-                            actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
-                                startStr, endStr, [str](const std::string& v) { *str = v; }));
-                        }
-                    }
-
-                    // --- Drag & Drop Support for Asset References ---
-                    if (ImGui::BeginDragDropTarget()) {
-                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-                            const char* path = (const char*)payload->Data;
-                            std::string droppedPathStr = path;
-                            std::replace(droppedPathStr.begin(), droppedPathStr.end(), '\\', '/');
-                            
-                            std::string lowerPath = droppedPathStr;
-                            std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
-                            
-                            size_t resPos = lowerPath.find("resources/");
-                            if (resPos != std::string::npos) {
-                                droppedPathStr = droppedPathStr.substr(resPos);
-                            }
-                            
-                            std::string oldVal = *str;
-                            *str = droppedPathStr;
-                            actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
-                                oldVal, droppedPathStr, [str](const std::string& v) { *str = v; }));
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                    break;
-                }
-                case ComponentPropertyType::Float3Array: {
+                    ImGui::TableSetColumnIndex(1);
                     auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
-                    if (ImGui::TreeNode(prop.name.c_str())) {
-                        int size = static_cast<int>(arr->size());
-                        if (ImGui::InputInt("Size", &size)) {
-                            if (size >= 0) {
-                                std::vector<Vector3> oldArr = *arr;
-                                arr->resize(size);
-                                std::vector<Vector3> newArr = *arr;
-                                PushInstantUndo(actionManager, oldArr, newArr, arr);
-                            }
-                        }
-                        ImGui::SameLine();
-                        if (ImGui::Button("+")) {
+                    int size = static_cast<int>(arr->size());
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::InputInt(("##Size" + prop.name).c_str(), &size)) {
+                        if (size >= 0) {
                             std::vector<Vector3> oldArr = *arr;
-                            arr->push_back(Vector3{0, 0, 0});
+                            arr->resize(size);
                             std::vector<Vector3> newArr = *arr;
                             PushInstantUndo(actionManager, oldArr, newArr, arr);
                         }
+                    }
+                    ImGui::PopItemWidth();
+                    
+                    if (treeOpen) {
                         for (size_t i = 0; i < arr->size(); ++i) {
                             ImGui::PushID(static_cast<int>(i));
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::TreeNodeEx("ElementNode", ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_Bullet, "Element %d", (int)i);
+                            
+                            ImGui::TableSetColumnIndex(1);
+                            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
                             ImGui::DragFloat3("##Element", &(*arr)[i].x, 0.1f);
                             CheckUndoRedoDrag(actionManager, &(*arr)[i]);
+                            ImGui::PopItemWidth();
                             
                             ImGui::SameLine();
-                            if (ImGui::Button("-")) {
+                            if (ImGui::Button("-", ImVec2(24, 0))) {
                                 std::vector<Vector3> oldArr = *arr;
                                 arr->erase(arr->begin() + i);
                                 std::vector<Vector3> newArr = *arr;
@@ -404,19 +300,213 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             }
                             ImGui::PopID();
                         }
+                        ImGui::TableNextRow();
+                        ImGui::TableSetColumnIndex(1);
+                        if (ImGui::Button("+", ImVec2(-1, 0))) {
+                            std::vector<Vector3> oldArr = *arr;
+                            arr->push_back(Vector3{0, 0, 0});
+                            std::vector<Vector3> newArr = *arr;
+                            PushInstantUndo(actionManager, oldArr, newArr, arr);
+                        }
                         ImGui::TreePop();
                     }
-                    break;
+                } else {
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("%s", prop.name.c_str());
+                    if (!prop.tooltip.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                        ImGui::SetTooltip("%s", prop.tooltip.c_str());
+                    }
+
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::PushItemWidth(-1);
+                    std::string hiddenName = "##" + prop.name;
+
+                    switch (prop.type) {
+                        case ComponentPropertyType::Float: {
+                            float* ptr = static_cast<float*>(prop.data);
+                            if (prop.minVal != prop.maxVal) {
+                                ImGui::SliderFloat(hiddenName.c_str(), ptr, prop.minVal, prop.maxVal);
+                            } else {
+                                ImGui::DragFloat(hiddenName.c_str(), ptr, 0.1f);
+                            }
+                            CheckUndoRedoDrag(actionManager, ptr);
+                            break;
+                        }
+                        case ComponentPropertyType::Enum: {
+                            int* ptr = static_cast<int*>(prop.data);
+                            if (!prop.enumNames.empty()) {
+                                std::vector<const char*> cStrs;
+                                for (const auto& s : prop.enumNames) cStrs.push_back(s.c_str());
+                                int oldVal = *ptr;
+                                if (ImGui::Combo(hiddenName.c_str(), ptr, cStrs.data(), static_cast<int>(cStrs.size()))) {
+                                    PushInstantUndo(actionManager, oldVal, *ptr, ptr);
+                                }
+                            }
+                            break;
+                        }
+                        case ComponentPropertyType::Int: {
+                            int* ptr = static_cast<int*>(prop.data);
+                            if (prop.minVal != prop.maxVal) {
+                                ImGui::SliderInt(hiddenName.c_str(), ptr, static_cast<int>(prop.minVal), static_cast<int>(prop.maxVal));
+                            } else {
+                                ImGui::DragInt(hiddenName.c_str(), ptr, 1);
+                            }
+                            CheckUndoRedoDrag(actionManager, ptr);
+                            break;
+                        }
+                        case ComponentPropertyType::Bool: {
+                            bool* ptr = static_cast<bool*>(prop.data);
+                            bool oldVal = *ptr;
+                            if (ImGui::Checkbox(hiddenName.c_str(), ptr)) {
+                                PushInstantUndo(actionManager, oldVal, *ptr, ptr);
+                            }
+                            break;
+                        }
+                        case ComponentPropertyType::Float2: {
+                            Vector2* ptr = reinterpret_cast<Vector2*>(prop.data);
+                            ImGui::DragFloat2(hiddenName.c_str(), &ptr->x, 0.1f);
+                            CheckUndoRedoDrag(actionManager, ptr);
+                            break;
+                        }
+                        case ComponentPropertyType::Float3: {
+                            Vector3* ptr = reinterpret_cast<Vector3*>(prop.data);
+                            ImGui::DragFloat3(hiddenName.c_str(), &ptr->x, 0.1f);
+                            CheckUndoRedoDrag(actionManager, ptr);
+                            break;
+                        }
+                        case ComponentPropertyType::Float4: {
+                            Vector4* ptr = reinterpret_cast<Vector4*>(prop.data);
+                            if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
+                                ImGui::ColorEdit4(hiddenName.c_str(), &ptr->x);
+                            } else {
+                                ImGui::DragFloat4(hiddenName.c_str(), &ptr->x, 0.1f);
+                            }
+                            CheckUndoRedoDrag(actionManager, ptr);
+                            break;
+                        }
+                        case ComponentPropertyType::String: {
+                            auto* str = static_cast<std::string*>(prop.data);
+                            std::string lowerName = prop.name;
+                            std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+                            
+                            bool isModel = (lowerName.find("model") != std::string::npos || lowerName.find("mesh") != std::string::npos);
+                            bool isTexture = (lowerName.find("texture") != std::string::npos || lowerName.find("image") != std::string::npos);
+                            
+                            std::vector<std::string> comboItems;
+                            IrufemiEngine* engine = nullptr;
+                            if (component->GetGameObject() && component->GetGameObject()->GetScene()) {
+                                engine = component->GetGameObject()->GetScene()->GetEngine();
+                            }
+                            
+                            if (engine && isModel && engine->GetObjModelManager()) {
+                                auto* mgr = engine->GetObjModelManager();
+#ifndef NDEBUG
+                                mgr->RefreshAvailableModels();
+#endif
+                                comboItems = mgr->GetAvailableModels();
+                            } else if (engine && isTexture && engine->GetTextureManager()) {
+                                comboItems = engine->GetTextureManager()->GetTextureNamesForDebug();
+                            }
+
+                            if (!comboItems.empty()) {
+                                if (ImGui::BeginCombo(hiddenName.c_str(), str->c_str())) {
+                                    for (const auto& item : comboItems) {
+                                        bool isSelected = (*str == item);
+                                        if (ImGui::Selectable(item.c_str(), isSelected)) {
+                                            std::string oldVal = *str;
+                                            *str = item;
+                                            actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                                                oldVal, *str, [str](const std::string& v) { *str = v; }));
+                                        }
+                                        if (isSelected) ImGui::SetItemDefaultFocus();
+                                    }
+                                    ImGui::EndCombo();
+                                }
+                            } else {
+                                char buffer[256];
+                                strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
+                                
+                                static std::string startStr;
+                                if (ImGui::InputText(hiddenName.c_str(), buffer, sizeof(buffer))) {
+                                    *str = buffer;
+                                }
+                                if (ImGui::IsItemActivated()) startStr = *str;
+                                if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                    std::string endStr = *str;
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                                        startStr, endStr, [str](const std::string& v) { *str = v; }));
+                                }
+                            }
+
+                            if (ImGui::BeginDragDropTarget()) {
+                                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                                    const char* path = (const char*)payload->Data;
+                                    std::string droppedPathStr = path;
+                                    std::replace(droppedPathStr.begin(), droppedPathStr.end(), '\\', '/');
+                                    
+                                    std::string lowerPath = droppedPathStr;
+                                    std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
+                                    
+                                    size_t resPos = lowerPath.find("resources/");
+                                    if (resPos != std::string::npos) droppedPathStr = droppedPathStr.substr(resPos);
+                                    
+                                    std::string oldVal = *str;
+                                    *str = droppedPathStr;
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
+                                        oldVal, droppedPathStr, [str](const std::string& v) { *str = v; }));
+                                }
+                                ImGui::EndDragDropTarget();
+                            }
+                            break;
+                        }
+                        default: break;
+                    }
+                    ImGui::PopItemWidth();
+
+                    ImGui::TableSetColumnIndex(2);
+                    drawResetButton();
                 }
-                default: break;
+                ImGui::PopID();
             }
-            
-            if (hasValue) {
-                ImGui::PopItemWidth();
-                showTooltipAndReset();
-            }
-        }
+            ImGui::EndTable();
+        } 
     }
     ImGui::PopID();
+}
+bool ComponentUIHelpers::BeginPropertyTable(const char* tableId) {
+    ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV;
+    if (ImGui::BeginTable(tableId, 3, flags)) {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.4f);
+        ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0.6f);
+        ImGui::TableSetupColumn("Reset", ImGuiTableColumnFlags_WidthFixed, 24.0f);
+        return true;
+    }
+    return false;
+}
+
+void ComponentUIHelpers::EndPropertyTable() {
+    ImGui::EndTable();
+}
+
+void ComponentUIHelpers::DrawPropertyLabel(const char* label, const char* tooltip) {
+    ImGui::TableSetColumnIndex(0);
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", label);
+    if (tooltip && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", tooltip);
+    }
+}
+
+void ComponentUIHelpers::DrawPropertyResetButton(const char* id, bool isModified, std::function<void()> resetAction) {
+    ImGui::TableSetColumnIndex(2);
+    if (isModified) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+        if (ImGui::Button((std::string(ICON_FA_ARROW_ROTATE_LEFT) + id).c_str(), ImVec2(20, 0))) {
+            if (resetAction) resetAction();
+        }
+        ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset to Default");
+    }
 }
 #endif // EditorMode

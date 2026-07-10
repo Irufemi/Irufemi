@@ -6,12 +6,18 @@
 #include <algorithm>
 
 
+/**
+ * @brief 初期化処理
+ * @details JSONシリアライズ等で既にアタッチされている場合も考慮し、
+ *          VirtualEntityManagerが必要とするGPUカリング設定を確実にオーバーライドします。
+ */
 void VirtualEntityManagerComponent::Initialize() {
     batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
     if (!batchRenderer_) {
         batchRenderer_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();
-        batchRenderer_->SetUseGPUCulling(true);
     }
+    // 依存関係にあるレンダラに対して、インスタンス生成元に依存せず確実にGPUカリングを有効化する
+    batchRenderer_->SetUseGPUCulling(true);
 }
 
 void VirtualEntityManagerComponent::Setup(int poolSize, int maxVirtualInstances, std::function<std::shared_ptr<GameObject>()> factory) {

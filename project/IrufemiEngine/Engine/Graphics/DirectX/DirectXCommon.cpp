@@ -112,6 +112,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     InitializeFixFPS();
     shaderManager_->Initialize();
 
+    // シェーダーの検索パスとバイナリパスを登録
+    shaderManager_->AddSearchPath(L"resources/shaders/");
+    shaderManager_->AddSearchPath(L"../IrufemiEngine/EngineResources/shaders/");
+    shaderManager_->SetBinaryPath(L"resources/shaders/compiled/");
+
     EnableDebugLayer();
     InitializeDXGI();
     CreateDevice();
@@ -255,51 +260,53 @@ void DirectXCommon::RegisterAllShaders() {
 #endif
 
     // --- シェーダコンパイル ---
-    auto vs3d = shaderManager_->GetOrCompile(L"resources/shaders/Object3D.VS.hlsl", options);
-    auto ps3d = shaderManager_->GetOrCompile(L"resources/shaders/Object3D.PS.hlsl", options);
-    auto vsParticle = shaderManager_->GetOrCompile(L"resources/shaders/Particle.VS.hlsl", options);
-    auto psParticle = shaderManager_->GetOrCompile(L"resources/shaders/Particle.PS.hlsl", options);
-    auto vsSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.VS.hlsl", options);
-    auto vsSpriteBatch = shaderManager_->GetOrCompile(L"resources/shaders/SpriteBatch.VS.hlsl", options);
-    auto psSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.PS.hlsl", options);
-    auto vsText = shaderManager_->GetOrCompile(L"resources/shaders/Text.VS.hlsl", options);
-    auto psText = shaderManager_->GetOrCompile(L"resources/shaders/Text.PS.hlsl", options);
-    auto vsBatch = shaderManager_->GetOrCompile(L"resources/shaders/Batch.VS.hlsl", options);
-    auto vsLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.VS.hlsl", options);
-    auto psLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.PS.hlsl", options);
-    auto vsLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.VS.hlsl", options);
-    auto psLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.PS.hlsl", options);
-    auto vsSkin = shaderManager_->GetOrCompile(L"resources/shaders/SkinningObject3D.VS.hlsl", options);
-    auto vsSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.VS.hlsl", options);
-    auto psSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.PS.hlsl", options);
-    auto vsGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.VS.hlsl", options);
-    auto psGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.PS.hlsl", options);
+    auto vs3d = shaderManager_->GetOrCompile(L"Object3D.VS.hlsl", options);
+    auto ps3d = shaderManager_->GetOrCompile(L"Object3D.PS.hlsl", options);
+    auto vsParticle = shaderManager_->GetOrCompile(L"Particle.VS.hlsl", options);
+    auto psParticle = shaderManager_->GetOrCompile(L"Particle.PS.hlsl", options);
+    auto vsSprite = shaderManager_->GetOrCompile(L"Object2D.VS.hlsl", options);
+    auto vsSpriteBatch = shaderManager_->GetOrCompile(L"SpriteBatch.VS.hlsl", options);
+    auto psSprite = shaderManager_->GetOrCompile(L"Object2D.PS.hlsl", options);
+    auto vsText = shaderManager_->GetOrCompile(L"Text.VS.hlsl", options);
+    auto psText = shaderManager_->GetOrCompile(L"Text.PS.hlsl", options);
+    auto vsBatch = shaderManager_->GetOrCompile(L"Batch.VS.hlsl", options);
+    auto vsLine = shaderManager_->GetOrCompile(L"Line.VS.hlsl", options);
+    auto psLine = shaderManager_->GetOrCompile(L"Line.PS.hlsl", options);
+    auto vsLineBatch = shaderManager_->GetOrCompile(L"LineBatch.VS.hlsl", options);
+    auto psLineBatch = shaderManager_->GetOrCompile(L"LineBatch.PS.hlsl", options);
+    auto vsDebugPrimitive = shaderManager_->GetOrCompile(L"DebugPrimitive.VS.hlsl", options);
+    auto psDebugPrimitive = shaderManager_->GetOrCompile(L"DebugPrimitive.PS.hlsl", options);
+    auto vsSkin = shaderManager_->GetOrCompile(L"SkinningObject3D.VS.hlsl", options);
+    auto vsSkybox = shaderManager_->GetOrCompile(L"Skybox.VS.hlsl", options);
+    auto psSkybox = shaderManager_->GetOrCompile(L"Skybox.PS.hlsl", options);
+    auto vsGpuParticle = shaderManager_->GetOrCompile(L"ParticleGPU.VS.hlsl", options);
+    auto psGpuParticle = shaderManager_->GetOrCompile(L"ParticleGPU.PS.hlsl", options);
 
-    auto vsVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.VS.hlsl", options);
-    auto psVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.PS.hlsl", options);
-    auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
-    auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
-    auto vsShadowBatch = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapBatch.VS.hlsl", options);
+    auto vsVoxel = shaderManager_->GetOrCompile(L"VoxelParticle.VS.hlsl", options);
+    auto psVoxel = shaderManager_->GetOrCompile(L"VoxelParticle.PS.hlsl", options);
+    auto vsShadow = shaderManager_->GetOrCompile(L"ShadowMap.VS.hlsl", options);
+    auto vsShadowSkin = shaderManager_->GetOrCompile(L"ShadowMapSkinning.VS.hlsl", options);
+    auto vsShadowBatch = shaderManager_->GetOrCompile(L"ShadowMapBatch.VS.hlsl", options);
 
 
 #ifdef EditorMode
-    auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
-    auto psSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.PS.hlsl", options);
-    auto psSelectionText = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMaskText.PS.hlsl", options);
-    auto vsFullscreen = shaderManager_->GetOrCompile(L"resources/shaders/Fullscreen.VS.hlsl", options);
-    auto psOutlineComp = shaderManager_->GetOrCompile(L"resources/shaders/OutlineComposite.PS.hlsl", options);
+    auto vsSelection = shaderManager_->GetOrCompile(L"SelectionMask.VS.hlsl", options);
+    auto psSelection = shaderManager_->GetOrCompile(L"SelectionMask.PS.hlsl", options);
+    auto psSelectionText = shaderManager_->GetOrCompile(L"SelectionMaskText.PS.hlsl", options);
+    auto vsFullscreen = shaderManager_->GetOrCompile(L"Fullscreen.VS.hlsl", options);
+    auto psOutlineComp = shaderManager_->GetOrCompile(L"OutlineComposite.PS.hlsl", options);
 #endif
 
-    auto csSkin = shaderManager_->GetOrCompile(L"resources/shaders/Skinning.CS.hlsl", options);
-    auto csGpuInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeParticle.CS.hlsl", options);
-    auto csGpuEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitParticle.CS.hlsl", options);
-    auto csGpuUpdate = shaderManager_->GetOrCompile(L"resources/shaders/UpdateParticle.CS.hlsl", options);
-    auto csGpuInitSort = shaderManager_->GetOrCompile(L"resources/shaders/InitParticleSort.CS.hlsl", options);
-    auto csGpuBitonicSort = shaderManager_->GetOrCompile(L"resources/shaders/BitonicSort.CS.hlsl", options);
-    auto csVoxelInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeVoxel.CS.hlsl", options);
-    auto csVoxelEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitVoxel.CS.hlsl", options);
-    auto csVoxelUpdate = shaderManager_->GetOrCompile(L"resources/shaders/UpdateVoxel.CS.hlsl", options);
-    auto csGpuCulling = shaderManager_->GetOrCompile(L"resources/shaders/GPUCulling.CS.hlsl", options);
+    auto csSkin = shaderManager_->GetOrCompile(L"Skinning.CS.hlsl", options);
+    auto csGpuInit = shaderManager_->GetOrCompile(L"InitializeParticle.CS.hlsl", options);
+    auto csGpuEmit = shaderManager_->GetOrCompile(L"EmitParticle.CS.hlsl", options);
+    auto csGpuUpdate = shaderManager_->GetOrCompile(L"UpdateParticle.CS.hlsl", options);
+    auto csGpuInitSort = shaderManager_->GetOrCompile(L"InitParticleSort.CS.hlsl", options);
+    auto csGpuBitonicSort = shaderManager_->GetOrCompile(L"BitonicSort.CS.hlsl", options);
+    auto csVoxelInit = shaderManager_->GetOrCompile(L"InitializeVoxel.CS.hlsl", options);
+    auto csVoxelEmit = shaderManager_->GetOrCompile(L"EmitVoxel.CS.hlsl", options);
+    auto csVoxelUpdate = shaderManager_->GetOrCompile(L"UpdateVoxel.CS.hlsl", options);
+    auto csGpuCulling = shaderManager_->GetOrCompile(L"GPUCulling.CS.hlsl", options);
 
     // --- 各種シェーダの登録 ---
     psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
@@ -309,9 +316,10 @@ void DirectXCommon::RegisterAllShaders() {
     psoManager_->RegisterShader("Text", { { vsText, psText } });
     psoManager_->RegisterShader("Batch", { { vsBatch, ps3d } });
     
-    // LineとLineInstancedはLINEトポロジ
+    // LineとLineBatchとDebugPrimitiveはLINEトポロジ
     psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    psoManager_->RegisterShader("LineInstanced", { { vsLineInst, psLineInst }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    psoManager_->RegisterShader("LineBatch", { { vsLineBatch, psLineBatch }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
+    psoManager_->RegisterShader("DebugPrimitive", { { vsDebugPrimitive, psDebugPrimitive }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
     
     psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
     psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });

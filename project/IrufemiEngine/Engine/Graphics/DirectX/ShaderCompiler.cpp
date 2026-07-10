@@ -28,7 +28,8 @@ void ShaderCompiler::Initialize() {
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     const std::wstring& filePath,
     const wchar_t* profile,
-    const ShaderCompileOptions& options
+    const ShaderCompileOptions& options,
+    const std::vector<std::wstring>& includeDirs
 ) {
     // 1. HLSLファイルの読み込み
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
@@ -70,6 +71,12 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
             macroStorage.push_back(macro.first + L"=" + macro.second);
         }
         arguments.push_back(macroStorage.back().c_str());
+    }
+
+    // インクルードディレクトリの追加
+    for (const auto& dir : includeDirs) {
+        arguments.push_back(L"-I");
+        arguments.push_back(dir.c_str());
     }
 
     // 3. コンパイル実行

@@ -96,20 +96,20 @@ void GameApplication::Run() {
         auto shaderManager = engine->GetDirectXCommon()->GetShaderManager();
         auto psoManager = engine->GetPSOManager();
         
-        auto vs3d = shaderManager->GetOrCompile(L"resources/shaders/Object3D.VS.hlsl", options);
-        auto psEnergyCore = shaderManager->GetOrCompile(L"resources/shaders/EnergyCore.PS.hlsl", options);
+        auto vs3d = shaderManager->GetOrCompile(L"Object3D.VS.hlsl", options);
+        auto psEnergyCore = shaderManager->GetOrCompile(L"EnergyCore.PS.hlsl", options);
         psoManager->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
 
         // 追加: EnergyBeam と LightningCrawl の登録
-        auto psEnergyBeam = shaderManager->GetOrCompile(L"resources/shaders/EnergyBeam.PS.hlsl", options);
+        auto psEnergyBeam = shaderManager->GetOrCompile(L"EnergyBeam.PS.hlsl", options);
         psoManager->RegisterShader("EnergyBeam", { { vs3d, psEnergyBeam } });
 
-        auto psLightningCrawl = shaderManager->GetOrCompile(L"resources/shaders/LightningCrawl.PS.hlsl", options);
+        auto psLightningCrawl = shaderManager->GetOrCompile(L"LightningCrawl.PS.hlsl", options);
         psoManager->RegisterShader("LightningCrawl", { { vs3d, psLightningCrawl } });
 
         // LockonMarker用シェーダー (SpriteBatch.VS.hlsl を使う)
-        auto vsSpriteBatch = shaderManager->GetOrCompile(L"resources/shaders/SpriteBatch.VS.hlsl", options);
-        auto psLuminanceAlpha = shaderManager->GetOrCompile(L"resources/shaders/LuminanceAlpha2D.PS.hlsl", options);
+        auto vsSpriteBatch = shaderManager->GetOrCompile(L"SpriteBatch.VS.hlsl", options);
+        auto psLuminanceAlpha = shaderManager->GetOrCompile(L"LuminanceAlpha2D.PS.hlsl", options);
         psoManager->RegisterShader("LuminanceAlpha2D", { { vsSpriteBatch, psLuminanceAlpha } });
     }
 

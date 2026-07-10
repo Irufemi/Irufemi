@@ -32,7 +32,7 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
 
     cmdList->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::DepthMap), dxCommon->GetDepthSRVGPUHandle());
 
-    auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false) {
+    auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false, bool isDebugPrimitive = false) {
         if (queue.empty()) return;
         
         BlendMode currentBlend = BlendMode::kBlendModeNormal;
@@ -56,7 +56,8 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
                     drawManager->BindPSO(p.customPSO);
                 } else {
                     if (isParticle) engine->ApplyPSO("Particle");
-                    else if (isLine) engine->ApplyPSO("LineInstanced");
+                    else if (isLine) engine->ApplyPSO("LineBatch");
+                    else if (isDebugPrimitive) engine->ApplyPSO("DebugPrimitive");
                 }
                 
                 currentBlend = p.blendMode;
@@ -86,8 +87,10 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     );
     DrawWithPSO(transparentQueue, [&](const auto& p) { drawManager->DrawStandard3D(p); }, false, false);
 
-    // 4. Line
-    DrawWithPSO(drawManager->GetLineQueue(), [&](const auto& p) { drawManager->DrawLineInstanced(p); }, false, true);
+    DrawWithPSO(drawManager->GetLineQueue(), [&](const auto& p) { drawManager->DrawLineInstanced(p); }, false, true, false);
+
+    // 4.5 DebugPrimitive
+    DrawWithPSO(drawManager->GetDebugPrimitiveQueue(), [&](const auto& p) { drawManager->DrawDebugPrimitive(p); }, false, false, true);
 
 
 

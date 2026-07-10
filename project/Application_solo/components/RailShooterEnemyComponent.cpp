@@ -48,7 +48,7 @@ void RailShooterEnemyComponent::Update() {
         // エンジンから正確なゲーム内時間差を取得
         float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
         if (deltaTime <= 0.0f) {
-            deltaTime = 1.0f / 60.0f;
+            return;
         } 
         if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
             // 前方(Z軸正方向など)に進む

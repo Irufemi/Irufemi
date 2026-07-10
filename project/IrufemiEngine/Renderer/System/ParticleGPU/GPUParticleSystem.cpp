@@ -203,7 +203,7 @@ void GPUParticleSystem::Update() {
   }
 
   // タイムスケールに応じた時間取得
-  float dt = isUnscaledTime_ ? engine_->GetDeltaTime() : engine_->GetGameDeltaTime();
+  float dt = isUnscaledTime_ ? engine_->GetRealDeltaTime() : engine_->GetGameDeltaTime();
   float currentTime = isUnscaledTime_ ? engine_->GetTotalTime() : engine_->GetGameTime();
 
   // 持続時間制御

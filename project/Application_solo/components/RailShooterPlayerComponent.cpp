@@ -43,7 +43,7 @@ void RailShooterPlayerComponent::Update() {
     // 1フレームの経過時間 (エンジンから正確なゲーム内時間差を取得)
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (deltaTime <= 0.0f) {
-        deltaTime = 1.0f / 60.0f; // 安全策として仮のフレーム時間を設定
+        return; // 全ての処理を停止
     }
 
     // Start()でキャッシュ済みの cachedPath_ をそのまま利用するため、Update() 内での検索は削除

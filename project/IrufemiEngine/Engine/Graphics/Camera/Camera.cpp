@@ -123,6 +123,16 @@ void Camera::UpdateMatrix() {
     frustum_.SetFromViewProjection(viewMatrix_ * perspectiveFovMatrix_);
 }
 
+Vector2 Camera::ScreenToUIPosition(const Vector2& screenPos) const {
+    if (width_ <= 0.0f || height_ <= 0.0f) return screenPos;
+
+    return {
+        screenPos.x * (right_ / width_),
+        screenPos.y * (bottom_ / height_)
+    };
+}
+
+
 // カメラ行列を取得する
 const Matrix4x4& Camera::GetCameraMatrix() { 
     worldMatrix_ = Math::MakeAffineMatrix(scale_, rotate_, translate_);

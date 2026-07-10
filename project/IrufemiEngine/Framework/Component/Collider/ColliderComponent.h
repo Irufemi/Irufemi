@@ -40,6 +40,9 @@ public:
     /// @brief 自身の当たり判定の種類を返す
     virtual ColliderType GetColliderType() const = 0;
 
+    /// @brief BVH等空間分割用の大まかなAABBを返す
+    virtual struct AABB GetBoundingBox() const = 0;
+
     // --- コールバック機能 ---
     // 衝突時に呼ばれる関数を登録できる
     std::function<void(ColliderComponent*)> onCollisionEnter_; // 衝突した瞬間に呼ばれる
@@ -52,4 +55,7 @@ public:
 
     // --- 物理設定 ---
     bool isTrigger_ = false; ///< trueならすり抜ける(判定のみ), falseなら物理的に押し戻す
+
+    // --- BVH (空間分割) 連携 ---
+    int32_t bvhNodeId_ = -1; //!< 自身が登録されている DynamicBVH 内のノードインデックス
 };

@@ -410,29 +410,29 @@ void PostProcessManager::CreatePSOs() {
   options.isDebug = true;
 #endif
 
-  auto vsBlob = shaderManager->GetOrCompile(L"resources/shaders/Fullscreen.VS.hlsl", options);
+  auto vsBlob = shaderManager->GetOrCompile(L"Fullscreen.VS.hlsl", options);
 
   struct ShaderPath {
     Mode mode;
     std::wstring path;
   };
   std::vector<ShaderPath> shaders = {
-      {Mode::None, L"resources/shaders/CopyImage.PS.hlsl"},
-      {Mode::Grayscale, L"resources/shaders/Grayscale.PS.hlsl"},
-      {Mode::Sepia, L"resources/shaders/Sepia.PS.hlsl"},
-      {Mode::Vignette, L"resources/shaders/Vignette.PS.hlsl"},
-      {Mode::Smoothing, L"resources/shaders/Smoothing.PS.hlsl"},
-      {Mode::GaussianFilter, L"resources/shaders/GaussianFilter.PS.hlsl"},
-      {Mode::DepthBasedOutline, L"resources/shaders/DepthBasedOutline.PS.hlsl"},
-      {Mode::RadialBlur, L"resources/shaders/RadialBlur.PS.hlsl"},
-      {Mode::Dissolve, L"resources/shaders/Dissolve.PS.hlsl"},
-      {Mode::Noise, L"resources/shaders/Noise.PS.hlsl"},
-      {Mode::HSV, L"resources/shaders/HSV.PS.hlsl"},
-      {Mode::ToneMapping, L"resources/shaders/ToneMapping.PS.hlsl"},
-      {Mode::Fade, L"resources/shaders/Fade.PS.hlsl"},
-      {Mode::Slide, L"resources/shaders/Slide.PS.hlsl"},
-      {Mode::Bloom, L"resources/shaders/CopyImage.PS.hlsl"},
-      {Mode::Glitch, L"resources/shaders/Glitch.PS.hlsl"},
+      {Mode::None, L"CopyImage.PS.hlsl"},
+      {Mode::Grayscale, L"Grayscale.PS.hlsl"},
+      {Mode::Sepia, L"Sepia.PS.hlsl"},
+      {Mode::Vignette, L"Vignette.PS.hlsl"},
+      {Mode::Smoothing, L"Smoothing.PS.hlsl"},
+      {Mode::GaussianFilter, L"GaussianFilter.PS.hlsl"},
+      {Mode::DepthBasedOutline, L"DepthBasedOutline.PS.hlsl"},
+      {Mode::RadialBlur, L"RadialBlur.PS.hlsl"},
+      {Mode::Dissolve, L"Dissolve.PS.hlsl"},
+      {Mode::Noise, L"Noise.PS.hlsl"},
+      {Mode::HSV, L"HSV.PS.hlsl"},
+      {Mode::ToneMapping, L"ToneMapping.PS.hlsl"},
+      {Mode::Fade, L"Fade.PS.hlsl"},
+      {Mode::Slide, L"Slide.PS.hlsl"},
+      {Mode::Bloom, L"CopyImage.PS.hlsl"},
+      {Mode::Glitch, L"Glitch.PS.hlsl"},
   };
 
   for (const auto &s : shaders) {
@@ -469,9 +469,9 @@ void PostProcessManager::CreatePSOs() {
   }
 
   // --- ブルーム用個別 PSO ---
-    auto extractPS = shaderManager->GetOrCompile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", options);
-    auto blurPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianBlur.PS.hlsl", options);
-    auto combinePS = shaderManager->GetOrCompile(L"resources/shaders/BloomCombine.PS.hlsl", options);
+    auto extractPS = shaderManager->GetOrCompile(L"HighLuminanceExtract.PS.hlsl", options);
+    auto blurPS = shaderManager->GetOrCompile(L"GaussianBlur.PS.hlsl", options);
+    auto combinePS = shaderManager->GetOrCompile(L"BloomCombine.PS.hlsl", options);
 
     if (extractPS && blurPS && combinePS) {
       D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
@@ -505,7 +505,7 @@ void PostProcessManager::CreatePSOs() {
     }
 
     // --- 統合ポストプロセス用 PSO ---
-    auto combinedPS = shaderManager->GetOrCompile(L"resources/shaders/PostProcess.PS.hlsl", options);
+    auto combinedPS = shaderManager->GetOrCompile(L"PostProcess.PS.hlsl", options);
     if (combinedPS) {
         D3D12_GRAPHICS_PIPELINE_STATE_DESC combinedDesc{}; // ベースを流用
         combinedDesc.pRootSignature = rootSig_;
@@ -531,8 +531,8 @@ void PostProcessManager::CreatePSOs() {
     }
 
     // --- 分離可能フィルタ用 PSO ---
-    auto boxBlurPS = shaderManager->GetOrCompile(L"resources/shaders/BoxBlur.PS.hlsl", options);
-    auto gaussianPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianFilter.PS.hlsl", options);
+    auto boxBlurPS = shaderManager->GetOrCompile(L"BoxBlur.PS.hlsl", options);
+    auto gaussianPS = shaderManager->GetOrCompile(L"GaussianFilter.PS.hlsl", options);
     
     if (boxBlurPS && gaussianPS) {
         D3D12_GRAPHICS_PIPELINE_STATE_DESC sepDesc{};

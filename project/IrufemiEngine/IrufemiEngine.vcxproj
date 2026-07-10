@@ -632,7 +632,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="..\externals\msdfgen\ext\import-svg.cpp" />
     <ClCompile Include="..\externals\msdfgen\ext\resolve-shape-geometry.cpp" />
     <ClCompile Include="..\externals\msdfgen\ext\save-png.cpp" />
-  <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp" />
+    <ClCompile Include="Engine\Core\Math\Geometry\Collision.cpp" />
+    <ClCompile Include="Engine\Core\Math\Geometry\DynamicBVH.cpp" />
     <ClCompile Include="Engine\Core\Math\MathFunction.cpp" />
     <ClCompile Include="Engine\Core\Math\Matrix4x4.cpp" />
     <ClCompile Include="Engine\Core\Math\NumericalSequence.cpp" />
@@ -723,6 +724,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimationModel.cpp" />
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp" />
     <ClCompile Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.cpp" />
+    <ClCompile Include="Renderer\Object\Batch\DebugPrimitiveRenderer.cpp" />
     <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp" />
     <ClCompile Include="Renderer\Object\Batch\PrimitiveBatch.cpp" />
     <ClCompile Include="Renderer\Object\Effect\Effect.cpp" />
@@ -767,6 +769,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Math\Vector4.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\AABB.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\Collision.h" />
+    <ClInclude Include="Engine\Core\Math\Geometry\DynamicBVH.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\Frustum.h" />
     <ClInclude Include="Engine\Core\Math\Geometry\OBB.h" />
     <ClInclude Include="Engine\Core\Math\Random\Random.h" />
@@ -905,6 +908,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\Line\LineClass.h" />
     <ClInclude Include="Renderer\Object\Line\Data\LineVertexData.h" />
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h" />
+    <ClInclude Include="Renderer\Object\Batch\DebugPrimitiveRenderer.h" />
     <ClInclude Include="Renderer\Object\Batch\ModelBatch.h" />
     <ClInclude Include="Renderer\Object\Batch\PrimitiveBatch.h" />
     <ClInclude Include="Renderer\Object\Skybox\Skybox.h" />

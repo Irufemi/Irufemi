@@ -155,4 +155,17 @@ namespace RenderPackets {
         D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
     };
 
+    struct DebugPrimitivePacket {
+        D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+        D3D12_INDEX_BUFFER_VIEW indexBufferView;
+        UINT indexCount;
+        UINT instanceCount;
+        D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
+        BlendMode blendMode;
+        PSOManager::DepthWrite depthWrite;
+        PSOManager::CullMode cullMode;
+        ID3D12PipelineState* customPSO = nullptr;
+        D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress = 0;
+    };
+
 } // namespace RenderPackets
