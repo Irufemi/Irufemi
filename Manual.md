@@ -90,12 +90,16 @@ Unityライクな「オブジェクトのテンプレート化」をサポート
 #### 1.2.4 インスペクター (Inspector) の便利な操作機能
 インスペクター上で作業を効率化するための便利な機能が備わっています。これらはすべて **Undo/Redo (Ctrl+Z / Ctrl+Y)** に対応しています。
 
-1. **コンポーネントの削除 (Remove Component)**
+1. **3カラムレイアウトと全プロパティの初期化リセット機能**
+   - コンポーネントのパラメータは、「プロパティ名」「値」「リセットボタン」の3カラムレイアウトで表示されます。
+   - すべての値の右端に「矢印アイコン（リセットボタン）」が付いており、クリックするだけでその値を安全に初期状態へ戻すことができます。この操作も含め、全てUndo/Redoが可能です。
+   - また、ウィンドウの幅を変更しても、プロパティ名が見切れないように自動で動的にサイズ調整（55%幅確保）が行われます。
+2. **コンポーネントの削除 (Remove Component)**
    - インスペクターに追加されている各コンポーネントの「ヘッダー（名前が書かれた帯の部分）」を **右クリック** すると、コンテキストメニューが表示されます。
    - そこから「**Remove Component**」を選択することで、不要なコンポーネントを安全に削除できます。
-2. **Transform の一括リセット**
+3. **Transform の一括リセット**
    - `TransformComponent` のヘッダーの右端にある「**Reset**」ボタンをクリックすると、Position (0, 0, 0)、Rotation (0, 0, 0)、Scale (1, 1, 1) へ一括で初期化されます。
-3. **テクスチャのドラッグ＆ドロップ割り当て**
+4. **テクスチャのドラッグ＆ドロップ割り当て**
    - `SpriteRendererComponent` などのテクスチャ項目（コンボボックス等のUI）に対して、Project Browser から画像ファイル（`.png` や `.jpg` など）を直接 **ドラッグ＆ドロップ** することで、すぐにテクスチャを適用できます。
 
 #### 1.2.5 Hierarchy と Scene View の便利な操作機能
@@ -336,6 +340,13 @@ ComponentFactory::Register("TransformComponent", "Core", []() {
 });
 ```
 
+#### 【ベストプラクティス】マジックナンバーの排除とManagerへのパラメータ集約
+ゲームのバランス調整に関わる数値（移動速度、ダメージ量、発光の色など）をC++のコード内に直接ハードコード（マジックナンバー化）することは避けてください。
+必ず上記のように `OnRegisterProperties` で変数を露出させ、**Inspectorからリアルタイムに調整・保存できるようにする**のが基本方針です。これにより、ゲーム実行中（ポーズ中も含む）に値を変更し、再コンパイルなしで最適なバランスを探ることができます。
+
+さらに、大量にスポーンするオブジェクト（敵の弾やガレキなど）が共通のパラメータを持つ場合、個々のオブジェクトが別々にパラメータを持つのは非効率です。
+このような場合は、**Managerコンポーネント（例: `DebrisManagerComponent`）を新設して全体のパラメータを集約管理**し、各オブジェクトは生成時にManagerから値を動的に取得する設計パターン（データ指向アーキテクチャ）を採用してください。
+
 #### 衝突判定とコールバック (OnCollisionEnter / Destroy)
 ゲームロジックとして「何かにぶつかったら壊れる」「ダメージを受ける」といった処理は、Component 内の仮想関数をオーバーライドして実装します。
 
@@ -529,6 +540,66 @@ void TransformComponent::UpdateAll() {
 ```
 ※注意: プール対応にしたコンポーネントは、ゲーム終了時にプールから安全にメモリ解放されます。ユーザー側で特別なメモリ管理コード（`delete`など）を書く必要はありません。
 
+### 2.5 高度な当たり判定と非同期レイキャスト (Physics & Raycast)
+
+#### 動的BVH(TLAS)による当たり判定の自動最適化
+本エンジンでは、数万のオブジェクトが同時に存在しても当たり判定が破綻しないよう、内部で **動的BVH (Dynamic Bounding Volume Hierarchy)** と呼ばれる空間分割木が自動的に構築されています。
+開発者は、各オブジェクトに `SphereColliderComponent` や `OBBColliderComponent` などをアタッチするだけで、`CollisionManager` が裏側でO(N^2)の判定を **O(N log N)** に高速化し、不要な計算を自動で枝刈りします。
+特別な空間分割のコーディングをゲーム側で行う必要はありません。
+
+*(※開発コラム：BVHとデータ指向設計における「最適なオブジェクトプール」)*
+> ゲーム開発において、大量のガレキや敵を管理する際に `ObjectPool<T>` (ポインタの使い回し) を使うのは常識ですが、BVHのような極めて高速なツリー走査が求められるシステムにおいては、ポインタベースのプールはフラグメンテーションによるキャッシュミスを引き起こし逆効果となります。
+> そのため本エンジンの `DynamicBVH` 等では、ポインタの代わりに「インデックスベースの配列プール (`std::vector` とフリーリストの組み合わせ)」を採用し、完全なゼロアロケーションと極大のL1/L2キャッシュヒット率を実現しています。
+
+#### 非同期レイキャスト (RaycastAsync) によるタイムスライシング
+敵のロックオンや地形判定などで毎フレーム大量の `Raycast` を発行すると、BVHで高速化されているとはいえCPUスパイク（処理落ち）の原因になります。
+そのため、即座に結果が必要ない判定（例：定期的な索敵など）には、エンジンの `ThreadPool` を用いて別スレッドで判定を行う **`RaycastAsync`** を使用してください。
+
+```cpp
+// 毎フレーム判定するのではなく、一定時間ごとに非同期でRaycastを発行する例
+if (timeSinceLastCheck > 0.1f) {
+    auto* collisionManager = engine_->GetCollisionManager();
+    // 非同期でレイキャストを発行し、結果を future として受け取る
+    raycastFuture_ = collisionManager->RaycastAsync(engine_->GetThreadPool(), ray, maxDistance, layerMask);
+    timeSinceLastCheck = 0.0f;
+}
+
+// 別のフレームで、判定が完了しているかチェックして結果を受け取る
+if (raycastFuture_.valid() && raycastFuture_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+    auto [isHit, hitInfo] = raycastFuture_.get();
+    if (isHit) {
+        // ヒットした場合の処理
+    }
+}
+```
+
+### 2.6 数学・ベクトル演算のベストプラクティス (Math & Vectors)
+
+本エンジンの数学クラス（`Vector2`, `Vector3`, `Vector4`）は、AAAエンジンの標準仕様に合わせて大幅に拡張されており、IDEの入力補完（インテリセンス）に最適化されています。
+グローバル関数（例: `Normalize(v)`）を探す必要はなく、すべて直感的なメンバ関数や定数としてアクセス可能です。
+
+```cpp
+// 1. 便利な標準定数の利用
+Vector3 up = Vector3::up;       // (0, 1, 0)
+Vector3 zero = Vector3::zero;   // (0, 0, 0)
+Vector3 right = Vector3::right; // (1, 0, 0)
+
+// 2. 直感的なメンバ関数
+float len = direction.Length();
+direction.Normalize();          // 破壊的変更
+Vector3 norm = direction.Normalized(); // 非破壊的変更
+
+// 3. 内積 (Dot) と 外積 (Cross)
+float d = Vector3::Dot(forward, targetDir);
+Vector3 c = Vector3::Cross(up, right);
+
+// 4. 浮動小数点の安全な比較
+// == 演算子は厳密な一致(ビット完全一致)を判定しますが、計算誤差が含まれる場合は Equals を使います。
+if (currentPos.Equals(targetPos, 0.001f)) {
+    // 目標地点に到達した
+}
+```
+
 ## 3. グラフィックスと描画 (Graphics & Rendering)
 
 ### 3.1 描画コンポーネント (Renderer Components)
@@ -552,6 +623,10 @@ auto* batchRenderer = obj->AddComponent<ModelBatchRendererComponent>();
 batchRenderer->LoadModel("env/grass.obj"); // resources/model/ 以下のパス
 // 描画するインスタンスの追加・更新処理等は Component 内で行います
 ```
+
+**【保守的GPUカリングによる劇的な軽量化】**
+`ModelBatchRendererComponent` や `VirtualEntityManagerComponent` を使用して大量のインスタンスを描画する場合、**自動的にGPUカリング（フラスタムカリング）が有効になります。**
+視界カメラ外にあるオブジェクトはCompute Shaderによって判定され、描画パイプラインから除外（枝刈り）されるため、CPU・GPUともに大幅なパフォーマンス向上が見込めます（開発者側でカリングのコードを書く必要はありません）。
 
 #### PrimitiveRendererComponent (基本図形)
 モデルデータなしでキューブ、球体、円柱などのプリミティブ形状を描画します。当たり判定のデバッグ表示等に便利です。
