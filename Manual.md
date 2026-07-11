@@ -547,6 +547,49 @@ void TransformComponent::UpdateAll() {
 開発者は、各オブジェクトに `SphereColliderComponent` や `OBBColliderComponent` などをアタッチするだけで、`CollisionManager` が裏側でO(N^2)の判定を **O(N log N)** に高速化し、不要な計算を自動で枝刈りします。
 特別な空間分割のコーディングをゲーム側で行う必要はありません。
 
+#### C++コード上での手動コライダー追加（プレハブを使わない場合）
+JSONプレハブを使用せず、C++から直接オブジェクトを生成してBVHによる当たり判定を適用する場合は、以下のように記述します。マネージャーへの手動登録は不要で、`AddComponent` するだけで完結します。
+
+```cpp
+#include "Framework/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Framework/Component/Component.h"
+
+// 衝突時の処理を記述したカスタムコンポーネント
+class MyEnemyComponent : public Component {
+public:
+    std::string GetComponentName() const override { return "MyEnemyComponent"; }
+
+    // 他のコライダーと接触した瞬間に自動で呼ばれる
+    void OnCollisionEnter(GameObject* hitObject) override {
+        if (hitObject->GetName() == "PlayerBullet") {
+            GetGameObject()->Destroy(); 
+        }
+    }
+};
+
+// シーンの Initialize 等でオブジェクトをスポーンさせる関数
+void SpawnEnemyFromCode(BaseScene* scene) {
+    // 1. オブジェクト生成
+    auto enemyObj = std::make_shared<GameObject>("Enemy");
+
+    // 2. Transformの追加と座標設定
+    auto* transform = enemyObj->AddComponent<TransformComponent>();
+    transform->position_ = {0.0f, 0.0f, 5.0f};
+
+    // 3. コライダーの追加（これだけで自動的にBVHツリーに組み込まれます）
+    auto* collider = enemyObj->AddComponent<SphereColliderComponent>();
+    collider->SetLocalRadius(2.0f);
+
+    // 4. カスタムロジックコンポーネントの追加
+    enemyObj->AddComponent<MyEnemyComponent>();
+
+    // 5. シーンへの登録（以降、毎フレームBVHによる当たり判定が走ります）
+    scene->AddGameObject(enemyObj);
+}
+```
+
 *(※開発コラム：BVHとデータ指向設計における「最適なオブジェクトプール」)*
 > ゲーム開発において、大量のガレキや敵を管理する際に `ObjectPool<T>` (ポインタの使い回し) を使うのは常識ですが、BVHのような極めて高速なツリー走査が求められるシステムにおいては、ポインタベースのプールはフラグメンテーションによるキャッシュミスを引き起こし逆効果となります。
 > そのため本エンジンの `DynamicBVH` 等では、ポインタの代わりに「インデックスベースの配列プール (`std::vector` とフリーリストの組み合わせ)」を採用し、完全なゼロアロケーションと極大のL1/L2キャッシュヒット率を実現しています。
