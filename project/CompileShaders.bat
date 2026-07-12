@@ -58,7 +58,7 @@ for /r %%f in (*.hlsl) do (
     if not "!PROFILE!"=="" (
         echo [DXC] Compiling !FILENAME! as !PROFILE!...
         if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
-        "%DXC_PATH%" /Zpr /O3 /T !PROFILE! /E main "%%f" /Fo "%OUTPUT_DIR%\%%~nf.cso" -I "%SHADERS_DIR%" -I "..\IrufemiEngine\EngineResources\shaders"
+        "%DXC_PATH%" /Zpr /O3 /T !PROFILE! /E main "%%f" /Fo "%OUTPUT_DIR%\%%~nf.cso" -I "%SHADERS_DIR%" -I "%~dp0IrufemiEngine\EngineResources\shaders"
         if errorlevel 1 (
             echo [Error] Failed to compile !FILENAME!
             popd

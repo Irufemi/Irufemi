@@ -61,7 +61,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float theta = r_pos.y * 3.141592f;
                 float3 offset = float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * (r_pos.z * emitter.radius);
                 gParticles[particleIndex].translate = emitter.translate + offset;
-                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                float3 radialDir = (length(offset) > 0.0001f) ? normalize(offset) : normalize(rng.Generate3d() * 2.0f - 1.0f);
                 gParticles[particleIndex].velocity = (emitter.direction + radialDir * emitter.spread) * emitter.velocity;
             }
             else if (emitter.type == 1) // Beam
@@ -94,7 +94,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 float3 offset = float3(cos(angle), 0, sin(angle)) * r;
                 
                 gParticles[particleIndex].translate = emitter.translate + offset;
-                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                float3 radialDir = (length(offset) > 0.0001f) ? normalize(offset) : normalize(rng.Generate3d() * 2.0f - 1.0f);
                 gParticles[particleIndex].velocity = (emitter.direction + radialDir * emitter.spread) * emitter.velocity;
             }
             else if (emitter.type == 3) // Cylinder
@@ -117,7 +117,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
             {
                 float3 offset = (r_pos - float3(0.5f, 0.5f, 0.5f)) * emitter.areaSize;
                 gParticles[particleIndex].translate = emitter.translate + offset;
-                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                float3 radialDir = (length(offset) > 0.0001f) ? normalize(offset) : normalize(rng.Generate3d() * 2.0f - 1.0f);
                 gParticles[particleIndex].velocity = (emitter.direction + radialDir * emitter.spread) * emitter.velocity;
             }
             else if (emitter.type == 5) // Hemisphere (Burst)
@@ -136,7 +136,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 gParticles[particleIndex].translate = emitter.translate + offset;
                 
                 // 放射状に広がる速度
-                float3 radialDir = normalize(offset + float3(0.0001f, 0.0001f, 0.0001f));
+                float3 radialDir = (length(offset) > 0.0001f) ? normalize(offset) : normalize(rng.Generate3d() * 2.0f - 1.0f);
                 // spreadパラメータを横方向への押し出し係数として利用する
                 radialDir.xz *= (1.0f + emitter.spread);
                 radialDir = normalize(radialDir);
