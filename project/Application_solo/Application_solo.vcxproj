@@ -240,6 +240,7 @@ exit 0</Command>
     <ClCompile Include="UI\LoadingScreen.cpp" />
     <ClCompile Include="UI\PromptController.cpp" />
     <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
+    <ClCompile Include="components\SplineFollowerComponent.cpp" />
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
     <ClCompile Include="components\DebrisComponent.cpp" />
     <ClCompile Include="components\TargetableComponent.cpp" />
@@ -266,6 +267,7 @@ exit 0</Command>
     <ClInclude Include="UI\LoadingScreen.h" />
     <ClInclude Include="UI\PromptController.h" />
     <ClInclude Include="components\RailShooterPlayerComponent.h" />
+    <ClInclude Include="components\SplineFollowerComponent.h" />
     <ClInclude Include="components\RailShooterEnemyComponent.h" />
     <ClInclude Include="components\DebrisComponent.h" />
     <ClInclude Include="components\TargetableComponent.h" />
