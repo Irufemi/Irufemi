@@ -18,8 +18,13 @@
     - **残タスク**: 既存の `RenderPackets` 系（PrimitiveBatchPacket, ModelBatchPacket 等）に残存している明示的なテクスチャバインドのコードを完全に撤去し、コードをシンプルにする。
 - [ ] **マルチスレッドコマンド録画 (Multi-threaded Command Recording)**
     - Job System と連携し、D3D12 の CommandList 構築を複数スレッドで並列に行い、CPUの描画ボトルネックを解消する。
-- [ ] **DirectStorage API / Virtual Texturing の対応**
-    - NVMe SSD から VRAM へのダイレクト転送（CPUバイパス）と、画面に映っているミップレベルだけをオンデマンドロードする Sampler Feedback 機構の実装。
+- [ ] **DirectStorage API / GDeflate による超高速リソースロードの対応**
+    - NVMe SSD から VRAM へのダイレクト転送（CPUバイパス）と、GPU上での並列解凍(GDeflate)の実装。
+    - 画面に映っているミップレベルだけをオンデマンドロードする Sampler Feedback 機構の実装。
+    - 大量のアセットを一括ロードする際の大幅なパフォーマンス向上（ロード時間の短縮）と、高度な最新グラフィックスAPIへのキャッチアップによる技術アピールを目的とする。
+- [ ] **自動アセット圧縮ツール群 (ビルドパイプライン) の構築**
+    - **テクスチャの自動DDS化**: ビルド前イベントを利用し、画像(PNGやHDR)を自動的に DDSフォーマット (BC7等) に圧縮するツール（ResourceCooker等）を自作または統合し、VRAMの節約とロード高速化を図る。
+    - **Resourceパッケージ化**: DirectStorageの性能を最大限引き出すため、全アセットを直接GPUへ流せるレイアウト（D3D12placed-footprint等）に変換・パディングし、1つのパックファイルにまとめるシステムの構築。
 - [ ] **Clustered Shading (Forward+) または Deferred Rendering の実装**
     - 現在の固定長定数バッファによるライト管理から脱却し、数百〜数千の動的ライトを効率的に処理するライティング基盤の構築。
 - [ ] **Compute Skinning (GPUスキニング) の実装**
