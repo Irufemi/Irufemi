@@ -31,29 +31,63 @@ void RailShooterPlayerComponent::Update() {
     auto* input = BaseModel::GetIrufemiEngine()->GetInputManager();
     Vector3 moveDir = {0.0f, 0.0f, 0.0f};
 
-    // WASD または 矢印キーで移動方向を入力
-    if (input->IsKeyPressedDIK(DIK_W) || input->IsKeyPressedDIK(DIK_UP)) moveDir.y += 1.0f;
-    if (input->IsKeyPressedDIK(DIK_S) || input->IsKeyPressedDIK(DIK_DOWN)) moveDir.y -= 1.0f;
-    if (input->IsKeyPressedDIK(DIK_A) || input->IsKeyPressedDIK(DIK_LEFT)) moveDir.x -= 1.0f;
-    if (input->IsKeyPressedDIK(DIK_D) || input->IsKeyPressedDIK(DIK_RIGHT)) moveDir.x += 1.0f;
+    // WASD または 矢印キーで移動方向を入力 (長押し判定のため IsKeyDownDIK を使用)
+    if (input->IsKeyDownDIK(DIK_W) || input->IsKeyDownDIK(DIK_UP)) moveDir.y += 1.0f;
+    if (input->IsKeyDownDIK(DIK_S) || input->IsKeyDownDIK(DIK_DOWN)) moveDir.y -= 1.0f;
+    if (input->IsKeyDownDIK(DIK_A) || input->IsKeyDownDIK(DIK_LEFT)) moveDir.x -= 1.0f;
+    if (input->IsKeyDownDIK(DIK_D) || input->IsKeyDownDIK(DIK_RIGHT)) moveDir.x += 1.0f;
+
+    // ゲームパッド（左スティック）の入力
+    float padX = input->GetLeftStickX();
+    float padY = input->GetLeftStickY();
+    if (std::abs(padX) > 0.1f) moveDir.x += padX;
+    if (std::abs(padY) > 0.1f) moveDir.y += padY;
 
     // 斜め移動したときに移動速度が速くならないように、ベクトルの長さを1に抑える
-    if (moveDir.x != 0.0f || moveDir.y != 0.0f) {
-        float len = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+    float len = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+    if (len > 1.0f) {
         moveDir.x /= len;
         moveDir.y /= len;
-
-        // レール中心からのズレ幅（オフセット値）を増やす
-        currentOffset_.x += moveDir.x * xySpeed_ * deltaTime;
-        currentOffset_.y += moveDir.y * xySpeed_ * deltaTime;
-
-        // 指定した画面内の限界範囲（クランプ範囲）を超えないように制限する
-        currentOffset_.x = std::clamp(currentOffset_.x, moveLimitMin_.x, moveLimitMax_.x);
-        currentOffset_.y = std::clamp(currentOffset_.y, moveLimitMin_.y, moveLimitMax_.y);
+        len = 1.0f;
     }
 
-    // --- ローカル座標の更新 ---
-    // 親オブジェクト（SplineFollowerComponent）がレール上の位置と回転（進行方向）を決定しているため、
-    // 子であるこのコンポーネントはローカル座標のXYを変更するだけで、自動的に「レールから見た上下左右」に移動します。
-    transform->SetPosition({currentOffset_.x, currentOffset_.y, 0.0f});
+    // --- 慣性と速度の計算 ---
+    if (len > 0.1f) {
+        // 入力がある場合、加速度を足して加速
+        currentVelocity_.x += moveDir.x * acceleration_ * deltaTime;
+        currentVelocity_.y += moveDir.y * acceleration_ * deltaTime;
+        
+        // 最高速度でクリップ
+        float vLen = std::sqrt(currentVelocity_.x * currentVelocity_.x + currentVelocity_.y * currentVelocity_.y);
+        if (vLen > maxSpeed_) {
+            currentVelocity_.x = (currentVelocity_.x / vLen) * maxSpeed_;
+            currentVelocity_.y = (currentVelocity_.y / vLen) * maxSpeed_;
+        }
+    } else {
+        // 入力がない場合、摩擦（減衰）で急制動
+        currentVelocity_.x = std::lerp(currentVelocity_.x, 0.0f, friction_ * deltaTime);
+        currentVelocity_.y = std::lerp(currentVelocity_.y, 0.0f, friction_ * deltaTime);
+    }
+
+    // レール中心からのズレ幅（オフセット値）を更新
+    currentOffset_.x += currentVelocity_.x * deltaTime;
+    currentOffset_.y += currentVelocity_.y * deltaTime;
+
+    // 指定した画面内の限界範囲（クランプ範囲）を超えないように制限する
+    currentOffset_.x = std::clamp(currentOffset_.x, moveLimitMin_.x, moveLimitMax_.x);
+    currentOffset_.y = std::clamp(currentOffset_.y, moveLimitMin_.y, moveLimitMax_.y);
+
+    // --- 機体の傾き（ロール角）の計算 ---
+    // 横移動の速度（currentVelocity_.x）に応じて機体を傾ける (右移動なら右傾き)
+    // -zで傾くか+zで傾くかは座標系によるが、基本は符号反転
+    float targetRoll = -(currentVelocity_.x / maxSpeed_) * maxRollAngle_;
+    rollAngle_ = std::lerp(rollAngle_, targetRoll, 10.0f * deltaTime);
+
+    // --- 浮遊感（サイン波）の計算 ---
+    hoverTimer_ += deltaTime * hoverFrequency_;
+    float hoverY = std::sin(hoverTimer_) * hoverAmplitude_;
+
+    // --- ローカル座標・回転の更新 ---
+    transform->SetPosition({currentOffset_.x, currentOffset_.y + hoverY, 0.0f});
+    transform->SetRotation({0.0f, 0.0f, rollAngle_});
 }
