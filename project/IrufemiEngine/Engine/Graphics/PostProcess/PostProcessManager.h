@@ -38,6 +38,7 @@ enum class PostProcessMode {
     Slide,              ///< スライド（ワイプ演出）
     Bloom,              ///< ブルーム（高輝度抽出による発光）
     Glitch,             ///< グリッチ（ノイズや色収差による映像の乱れ）
+    DualKawaseBlur,     ///< カワセブラー（軽量で広範囲なぼかし）
 };
 
 class DirectXCommon;
@@ -73,10 +74,13 @@ class PostProcessManager {
 public:
     using Mode = PostProcessMode;
 
+    static constexpr int32_t kMaxKawaseIterations = 8; // 最大ダウンサンプル回数
+
     struct PostProcessWorkspace {
         class RenderTexture* workTextures[2] = { nullptr, nullptr };
         class RenderTexture* bloomExtract = nullptr;
         class RenderTexture* bloomBlur = nullptr;
+        class RenderTexture* kawaseTextures[kMaxKawaseIterations] = { nullptr };
     };
 
     /**
@@ -206,6 +210,17 @@ public:
     struct GlitchParams {
         float intensity = 1.0f; ///< グリッチの強さ
         float time = 0.0f;      ///< 時間経過（内部で更新される）
+    };
+
+    /**
+     * @struct DualKawaseBlurParams
+     * @brief カワセブラー用パラメータ
+     */
+    struct DualKawaseBlurParams {
+        float blurRadius = 1.0f;    ///< ぼかしのサンプリング半径オフセット
+        float intensity = 1.0f;     ///< ブラーの最終的な強度
+        int32_t iterationCount = 4; ///< ダウン/アップサンプルの繰り返し回数（最大8等）
+        float pad;                  // 16バイトアライメント用
     };
 
     /**
@@ -372,6 +387,7 @@ public:
     SlideParams& GetSlideParams() { return slideParams_; }
     BloomParams& GetBloomParams() { return bloomParams_; }
     GlitchParams& GetGlitchParams() { return glitchParams_; }
+    DualKawaseBlurParams& GetDualKawaseBlurParams() { return dualKawaseParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -422,6 +438,11 @@ private:
     Microsoft::WRL::ComPtr<ID3D12PipelineState> finalSmoothingBlurPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> gaussianBlurPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> finalGaussianBlurPSO_;
+
+    // DualKawaseBlur PSO
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> dualKawaseDownsamplePSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> dualKawaseUpsamplePSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalDualKawaseUpsamplePSO_;
 
     // Constant Buffers
     Microsoft::WRL::ComPtr<ID3D12Resource> noiseCB_;
@@ -475,6 +496,10 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> glitchCB_;
     GlitchParams* mappedGlitch_ = nullptr;
     GlitchParams glitchParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> dualKawaseCB_;
+    DualKawaseBlurParams* mappedDualKawase_ = nullptr;
+    DualKawaseBlurParams dualKawaseParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

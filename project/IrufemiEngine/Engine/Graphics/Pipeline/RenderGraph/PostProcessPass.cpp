@@ -23,6 +23,7 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     workTextureHandles_.clear();
     bloomExtractHandle_ = kInvalidHandle;
     bloomBlurHandle_ = kInvalidHandle;
+    kawaseTextureHandles_.fill(kInvalidHandle);
 
     D3D12_RESOURCE_DESC desc = mainRenderTex->GetResource()->GetDesc();
 
@@ -36,10 +37,12 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         bool hasOutline = false;
         bool hasBloom = false;
         bool hasSeparableBlur = false;
+        bool hasKawaseBlur = false;
         for (auto mode : activeModes) {
             if (mode == PostProcessMode::Bloom) hasBloom = true;
             if (mode == PostProcessMode::DepthBasedOutline) hasOutline = true;
             if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) hasSeparableBlur = true;
+            if (mode == PostProcessMode::DualKawaseBlur) hasKawaseBlur = true;
         }
 
         if (hasOutline) {
@@ -60,6 +63,17 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
             bloomBlurHandle_ = builder.CreateTransientResource("BloomBlur", workDesc);
         }
 
+        if (hasKawaseBlur) {
+            D3D12_RESOURCE_DESC kwDesc = desc;
+            kwDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            for (int i = 0; i < PostProcessManager::kMaxKawaseIterations; ++i) {
+                kwDesc.Width = (std::max<UINT64>)(1, kwDesc.Width / 2);
+                kwDesc.Height = (std::max<UINT>)(1, kwDesc.Height / 2);
+                std::string name = "PP_Kawase_" + std::to_string(i);
+                kawaseTextureHandles_[i] = builder.CreateTransientResource(name, kwDesc);
+            }
+        }
+
         // 初期ステートは全て SRV (内部で書き込み前に RTV に遷移させる)
         for (auto handle : workTextureHandles_) {
             builder.RequireTransientState(handle, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -69,6 +83,13 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         if (hasBloom || hasSeparableBlur) {
             builder.RequireTransientState(bloomBlurHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (hasKawaseBlur) {
+            for (int i = 0; i < PostProcessManager::kMaxKawaseIterations; ++i) {
+                if (kawaseTextureHandles_[i] != kInvalidHandle) {
+                    builder.RequireTransientState(kawaseTextureHandles_[i], D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                }
+            }
         }
     }
 }
@@ -89,6 +110,13 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     }
     if (bloomBlurHandle_ != kInvalidHandle) {
         workspace.bloomBlur = renderGraph->GetTransientRenderTexture(bloomBlurHandle_);
+    }
+    for (int i = 0; i < PostProcessManager::kMaxKawaseIterations; ++i) {
+        if (kawaseTextureHandles_[i] != kInvalidHandle) {
+            workspace.kawaseTextures[i] = renderGraph->GetTransientRenderTexture(kawaseTextureHandles_[i]);
+        } else {
+            workspace.kawaseTextures[i] = nullptr;
+        }
     }
 
     // Outline のための逆投影行列更新

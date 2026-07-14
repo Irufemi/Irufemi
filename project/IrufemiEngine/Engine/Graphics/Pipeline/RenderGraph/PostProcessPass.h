@@ -2,6 +2,7 @@
 #include "IRenderPass.h"
 #include "RenderGraphBuilder.h"
 #include <vector>
+#include <array>
 
 class PostProcessPass : public IRenderPass {
 public:
@@ -15,6 +16,7 @@ private:
     std::vector<TransientResourceHandle> workTextureHandles_;
     TransientResourceHandle bloomExtractHandle_ = kInvalidHandle;
     TransientResourceHandle bloomBlurHandle_ = kInvalidHandle;
+    std::array<TransientResourceHandle, 8> kawaseTextureHandles_;
 
 #ifdef EditorMode
     TransientResourceHandle editorSrcHandle_ = kInvalidHandle;
