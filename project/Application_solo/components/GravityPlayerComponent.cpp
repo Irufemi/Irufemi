@@ -140,7 +140,7 @@ void GravityPlayerComponent::HandlePullInput() {
 
         if (!debrisManager_) return;
 
-        auto debrisObj = debrisManager_->ExtractNearestIdleDebris(transform->GetPosition(), pullRadius_);
+        auto debrisObj = debrisManager_->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_);
         if (debrisObj) {
             if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
                 debrisComp->SetState(DebrisState::Pulled);

@@ -166,14 +166,14 @@ void DebrisComponent::Update() {
             if (auto target = targetObject_.lock()) {
                 auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
-                    Vector3 targetPos = targetTransform->GetPosition();
+                    Vector3 targetPos = targetTransform->GetWorldPosition();
                     // ターゲット(プレイヤー)に向かってLerpで移動
                     Vector3 diff = {
-                        targetPos.x - transform->GetPosition().x,
-                        targetPos.y + GetPullYOffset() - transform->GetPosition().y, // 少し上に引き寄せる
-                        targetPos.z - transform->GetPosition().z
+                        targetPos.x - transform->GetWorldPosition().x,
+                        targetPos.y + GetPullYOffset() - transform->GetWorldPosition().y, // 少し上に引き寄せる
+                        targetPos.z - transform->GetWorldPosition().z
                     };
-                    Vector3 pos = transform->GetPosition();
+                    Vector3 pos = transform->GetWorldPosition();
                     pos.x += diff.x * GetPullSpeed() * deltaTime;
                     pos.y += diff.y * GetPullSpeed() * deltaTime;
                     pos.z += diff.z * GetPullSpeed() * deltaTime;
@@ -201,10 +201,10 @@ void DebrisComponent::Update() {
                         std::sin(orbitAngle_) * orbitRadius_
                     };
                     
-                    Vector3 pos = transform->GetPosition();
-                    pos.x = targetTransform->GetPosition().x + offset.x;
-                    pos.y = targetTransform->GetPosition().y + offset.y;
-                    pos.z = targetTransform->GetPosition().z + offset.z;
+                    Vector3 pos = transform->GetWorldPosition();
+                    pos.x = targetTransform->GetWorldPosition().x + offset.x;
+                    pos.y = targetTransform->GetWorldPosition().y + offset.y;
+                    pos.z = targetTransform->GetWorldPosition().z + offset.z;
                     transform->SetPosition(pos);
                 }
             }
@@ -224,10 +224,10 @@ void DebrisComponent::Update() {
                     Vector3 baseOffset = { 0, 0, currentRadius };
                     Vector3 localPos = Math::TransformNormal(baseOffset, rotMatrix);
 
-                    Vector3 pos = transform->GetPosition();
-                    pos.x = targetTransform->GetPosition().x + localPos.x;
-                    pos.y = targetTransform->GetPosition().y + localPos.y;
-                    pos.z = targetTransform->GetPosition().z + localPos.z;
+                    Vector3 pos = transform->GetWorldPosition();
+                    pos.x = targetTransform->GetWorldPosition().x + localPos.x;
+                    pos.y = targetTransform->GetWorldPosition().y + localPos.y;
+                    pos.z = targetTransform->GetWorldPosition().z + localPos.z;
                     transform->SetPosition(pos);
 
                     // 自身の回転も反映（2倍の速度で自転）
@@ -242,9 +242,9 @@ void DebrisComponent::Update() {
                 if (targetTransform) {
                     // 敵に向かって高速ホーミング移動
                     Vector3 diff = {
-                        targetTransform->GetPosition().x - transform->GetPosition().x,
-                        targetTransform->GetPosition().y - transform->GetPosition().y,
-                        targetTransform->GetPosition().z - transform->GetPosition().z
+                        targetTransform->GetWorldPosition().x - transform->GetWorldPosition().x,
+                        targetTransform->GetWorldPosition().y - transform->GetWorldPosition().y,
+                        targetTransform->GetWorldPosition().z - transform->GetWorldPosition().z
                     };
                     // 正規化して一定速度で飛ばす
                     float len = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
@@ -255,7 +255,7 @@ void DebrisComponent::Update() {
             }
             
             // ターゲットがない（または既に死んだ）場合でも、計算された(または初期設定された)方向に飛び続ける
-            Vector3 pos = transform->GetPosition();
+            Vector3 pos = transform->GetWorldPosition();
             pos.x += throwDirection_.x * GetThrowSpeed() * deltaTime;
             pos.y += throwDirection_.y * GetThrowSpeed() * deltaTime;
             pos.z += throwDirection_.z * GetThrowSpeed() * deltaTime;

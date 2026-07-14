@@ -75,18 +75,18 @@
                   0.0
                 ],
                 "scale": [
-                  1.5,
-                  1.5,
-                  1.5
+                  5.0,
+                  5.0,
+                  5.0
                 ]
               },
               "type": "TransformComponent"
             },
             {
               "data": {
-                "currentTypeIndex": 2
+                "modelName": "resources/model/sci-fi+armored+robot+3d+model/tripo_convert_9e0a1eca-82b5-4145-953d-1f043ce8f5b3.obj"
               },
-              "type": "PrimitiveRendererComponent"
+              "type": "MeshRendererComponent"
             },
             {
               "data": {
