@@ -251,7 +251,7 @@ public:
         // Slide
         Vector4 slideColor;
         float slideThreshold;
-        float pad4[2]; // HLSLの float4(outlineInverseProjection) 用に16バイト境界までパディング
+        float pad4[3]; // HLSLの float4x4(projectionInverse) 用に16バイト境界までパディング
 
         // Outline
         Matrix4x4 projectionInverse;
