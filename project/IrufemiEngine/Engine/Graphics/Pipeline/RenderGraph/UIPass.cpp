@@ -9,6 +9,10 @@ void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, Irufem
 }
 
 void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+    if (auto scm = engine->GetScreenCaptureManager()) {
+        scm->OnPreUIDraw(engine->GetCommandList(), engine->GetMainRenderTexture());
+    }
+
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
         if (queue.empty()) return;
         

@@ -24,7 +24,7 @@ BaseBatch::~BaseBatch() {
     if (srvPool_ && dx_) {
         auto freeIndex = [&](uint32_t& idx) {
             if (idx != UINT32_MAX) {
-                srvPool_->FreeAfterFence(idx, dx_->GetFenceValue());
+                srvPool_->FreeAfterFence(idx, dx_->GetCurrentFrameFenceValue());
                 idx = UINT32_MAX;
             }
         };

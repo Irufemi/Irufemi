@@ -7,20 +7,20 @@
 RenderTexture::~RenderTexture() {
     if (dxCommon_) {
         if (dxCommon_->GetSrvPool() && srvIndex_ != 0xFFFFFFFF) {
-            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         }
         if (rtvIndex_ != 0xFFFFFFFF) {
             dxCommon_->FreeRTVIndex(rtvIndex_);
         }
         if (dxCommon_->GetSrvPool() && imGuiSrvIndex_ != 0xFFFFFFFF) {
-            dxCommon_->GetSrvPool()->FreeAfterFence(imGuiSrvIndex_, dxCommon_->GetFenceValue());
+            dxCommon_->GetSrvPool()->FreeAfterFence(imGuiSrvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         }
     }
 }
 
 void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor, DXGI_FORMAT srvFormat) {
     if (dxCommon_ && srvIndex_ != 0xFFFFFFFF) {
-        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = 0xFFFFFFFF;
     }
 
@@ -77,11 +77,11 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
 void RenderTexture::InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resource* resource, DXGI_FORMAT format, DXGI_FORMAT srvFormat) {
     if (dxCommon_ && srvIndex_ != 0xFFFFFFFF) {
         // 以前のフレームでGPUが参照している可能性があるため、フェンス解放キューに入れる
-        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = 0xFFFFFFFF;
     }
     if (dxCommon_ && imGuiSrvIndex_ != 0xFFFFFFFF) {
-        dxCommon_->GetSrvPool()->FreeAfterFence(imGuiSrvIndex_, dxCommon_->GetFenceValue());
+        dxCommon_->GetSrvPool()->FreeAfterFence(imGuiSrvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         imGuiSrvIndex_ = 0xFFFFFFFF;
     }
 

@@ -220,6 +220,11 @@ public: // メンバ関数
     void ThreadPoolTab(ThreadPool* pool);
 
     /**
+     * @brief ScreenCaptureManager 用のデバッグタブ
+     */
+    void ScreenCaptureTab(class ScreenCaptureManager* captureManager);
+
+    /**
      * @brief 統合デバッグウィンドウの開始
      */
     void BeginEngineDebugWindow();

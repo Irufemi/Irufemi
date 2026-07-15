@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -679,6 +679,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Manager\CollisionManager.cpp" />
     <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Manager\DrawManager.cpp" />
+    <ClCompile Include="Engine\Manager\ScreenCaptureManager.cpp" />
     <ClCompile Include="Engine\Manager\PrimitiveManager.cpp" />
     <ClCompile Include="Engine\Platform\Input\GamePad.cpp" />
     <ClCompile Include="Engine\Platform\Input\InputManager.cpp" />
@@ -855,6 +856,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Manager\CollisionManager.h" />
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
+    <ClInclude Include="Engine\Manager\ScreenCaptureManager.h" />
     <ClInclude Include="Engine\Manager\IComputeTask.h" />
     <ClInclude Include="Engine\Manager\PrimitiveManager.h" />
     <ClInclude Include="Engine\Platform\Input\GamePad.h" />
@@ -1002,3 +1004,4 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="..\externals\msdfgen\ext\save-png.h" />
   <ClInclude Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.h" /></ItemGroup>
 </Project>
+

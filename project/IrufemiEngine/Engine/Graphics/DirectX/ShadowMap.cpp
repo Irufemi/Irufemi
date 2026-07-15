@@ -18,7 +18,7 @@ ShadowMap::~ShadowMap() {
     // SRV の解放
     if (dxCommon_ && dxCommon_->GetSrvPool()) {
         if (srvIndex_ != 0xFFFFFFFF) {
-            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         }
     }
     // DSV の解放
