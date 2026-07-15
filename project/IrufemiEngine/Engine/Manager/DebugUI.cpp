@@ -45,7 +45,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Graphics/Pipeline/RenderGraph/RenderGraph.h"
 #include "Engine/Core/System/ThreadPool.h"
-
+#include "Engine/Manager/ScreenCaptureManager.h"
+#include <chrono>
+#include <iomanip>
 // 静的宣言
 std::unique_ptr<PointLight> DebugUI::templatePointLight_;
 std::unique_ptr<SpotLight> DebugUI::templateSpotLight_;
@@ -1393,6 +1395,42 @@ void DebugUI::ThreadPoolTab(ThreadPool* pool) {
         ImGui::ProgressBar(usage, ImVec2(-1.0f, 24.0f), overlay);
         ImGui::PopStyleColor();
 
+        ImGui::EndTabItem();
+    }
+#endif
+}
+
+namespace {
+    std::wstring GenerateScreenshotPath(const std::wstring& prefix) {
+        auto now = std::chrono::system_clock::now();
+        auto time = std::chrono::system_clock::to_time_t(now);
+        struct tm timeinfo;
+        localtime_s(&timeinfo, &time);
+        std::wstringstream wss;
+        wss << L"resources/screenshots/" << prefix << L"_";
+        wss << std::put_time(&timeinfo, L"%Y%m%d_%H%M%S");
+        wss << L".png";
+        return wss.str();
+    }
+}
+
+void DebugUI::ScreenCaptureTab(ScreenCaptureManager* captureManager) {
+#ifdef USE_IMGUI
+    if (!captureManager) return;
+
+    if (ImGui::BeginTabItem("Screen Capture")) {
+        if (ImGui::Button("Capture (Scene Only)")) {
+            captureManager->RequestCapture(GenerateScreenshotPath(L"scene"), ScreenCaptureType::SceneOnly);
+        }
+        if (ImGui::Button("Capture (With UI)")) {
+            captureManager->RequestCapture(GenerateScreenshotPath(L"ui"), ScreenCaptureType::WithUI);
+        }
+        if (ImGui::Button("Capture (Alpha)")) {
+            captureManager->RequestCaptureWithAlpha(GenerateScreenshotPath(L"alpha"));
+        }
+        if (ImGui::Button("Capture (Depth)")) {
+            captureManager->RequestCaptureDepth(GenerateScreenshotPath(L"depth"));
+        }
         ImGui::EndTabItem();
     }
 #endif

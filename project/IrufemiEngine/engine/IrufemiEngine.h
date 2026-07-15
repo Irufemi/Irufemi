@@ -49,6 +49,7 @@ class CollisionManager;
 class GPUParticleManager;
 class PrimitiveManager;
 #include "Core/System/ThreadPool.h"
+#include "Manager/ScreenCaptureManager.h"
 
 /**
  * @class IrufemiEngine
@@ -179,6 +180,17 @@ public: // メンバ関数
      */
     void EndFrame();
 
+public: // スクリーンショットAPI
+
+    /** @name スクリーンショット機能 */
+    ///@{
+    bool SaveScreenShot(const std::wstring& filePath);
+    bool SaveScreenShotWithUI(const std::wstring& filePath);
+    bool SaveScreenShotWithMetadata(const std::wstring& filePath);
+    bool SaveScreenShotWithAlpha(const std::wstring& filePath);
+    bool SaveScreenShotDepth(const std::wstring& filePath);
+    ///@}
+
 public: // ゲッター
 
     /** @name グラフィックス関連の取得 */
@@ -220,6 +232,7 @@ public: // ゲッター
     ThreadPool* GetThreadPool() const { return threadPool_.get(); }
     GPUParticleManager* GetGPUParticleManager() { return gpuParticleManager_.get(); }
     PrimitiveManager* GetPrimitiveManager() { return primitiveManager_.get(); }
+    ScreenCaptureManager* GetScreenCaptureManager() const { return screenCaptureManager_.get(); }
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
@@ -391,6 +404,9 @@ private: // メンバ変数
 
     // PrimitiveManager
     std::unique_ptr<PrimitiveManager> primitiveManager_ = nullptr;
+
+    // ScreenCaptureManager
+    std::unique_ptr<ScreenCaptureManager> screenCaptureManager_ = nullptr;
 
     // ThreadPool
     std::unique_ptr<ThreadPool> threadPool_ = nullptr;

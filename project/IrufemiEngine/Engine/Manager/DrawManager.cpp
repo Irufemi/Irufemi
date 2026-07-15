@@ -305,6 +305,10 @@ void DrawManager::PostDraw() {
 
     /*完璧な画面クリアを目指して*/
 
+    if (auto scm = dxCommon_->GetEngine()->GetScreenCaptureManager()) {
+        scm->OnPostUIDraw(commandList_, backBuffer);
+    }
+
     //画面に描く処理はすべて終わり、画面に映すので、状態を遷移（RenderTarget -> Present）
     DirectXUtils::TransitionBarrier(commandList_, backBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
@@ -768,6 +772,8 @@ void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
 }
 
 void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
+    if (dxCommon_->GetEngine()->GetScreenCaptureManager() && dxCommon_->GetEngine()->GetScreenCaptureManager()->IsCaptureWithAlphaRequested()) return;
+
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView);
     commandList_->IASetIndexBuffer(&packet.indexBufferView);
@@ -1190,6 +1196,10 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
 
     // RenderGraph 終了後はバックバッファを描画対象とする (TopMost UI など用)
     SetRenderTargetToBackBuffer(false);
+
+    if (auto scm = engine->GetScreenCaptureManager()) {
+        scm->OnPostDepthDraw(engine->GetCommandList(), dxCommon_->GetDepthStencilResource());
+    }
 
     ClearRenderQueues();
 }

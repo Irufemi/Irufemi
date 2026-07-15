@@ -113,6 +113,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   workerThreads = (std::min)(workerThreads, static_cast<size_t>(16));
   
   threadPool_ = std::make_unique<ThreadPool>(workerThreads);
+  
+  // ScreenCaptureManagerの生成 (この時点では初期化待ち)
+  screenCaptureManager_ = std::make_unique<ScreenCaptureManager>();
 
   // 乱数エンジンのシードを設定
   Random::SeedEngine();
@@ -133,6 +136,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   BaseBatch::SetDirectXCommon(dxCommon_.get());
   Line3DBatch::SetDirectXCommon(dxCommon_.get());
   SpriteBatch::SetDirectXCommon(dxCommon_.get());
+
+  // ScreenCaptureManagerの初期化
+  if (screenCaptureManager_) {
+      screenCaptureManager_->Initialize(dxCommon_.get(), threadPool_.get());
+  }
 
   // --- Dynamic Constant Buffer の初期化 ---
   materialBufferManager_ = std::make_unique<DynamicConstantBuffer<Material>>();
@@ -438,6 +446,10 @@ void IrufemiEngine::Finalize() {
   }
 
   // 1. エディタとUI (描画マネージャ等に依存)
+  if (screenCaptureManager_) {
+      screenCaptureManager_->Finalize();
+      screenCaptureManager_.reset();
+  }
   if (ui_) {
     ui_->Shutdown();
     ui_.reset();
@@ -631,6 +643,7 @@ void IrufemiEngine::Execute() {
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
     ui_->ThreadPoolTab(threadPool_.get());
+    ui_->ScreenCaptureTab(screenCaptureManager_.get());
   // デバッグ機能の追加
   if (gpuParticleManager_) {
     gpuParticleManager_->Debug();
@@ -775,6 +788,10 @@ void IrufemiEngine::EndFrame() {
   ui_->QueuePostDrawCommands();
   drawManager_->PostDraw();
 
+  if (screenCaptureManager_) {
+      screenCaptureManager_->Update();
+  }
+
   // 5) フレーム終端で遅延解放の回収(フェンス完了値を渡す)
   if (auto *srvPool = dxCommon_->GetSrvPool()) {
     const uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
@@ -907,3 +924,28 @@ bool IrufemiEngine::IsAssetLoading() const {
   return !modelsLoaded || !texturesLoaded || !fontsLoaded;
 }
 
+
+bool IrufemiEngine::SaveScreenShot(const std::wstring& filePath) {
+    if (screenCaptureManager_) return screenCaptureManager_->RequestCapture(filePath, ScreenCaptureType::SceneOnly);
+    return false;
+}
+
+bool IrufemiEngine::SaveScreenShotWithUI(const std::wstring& filePath) {
+    if (screenCaptureManager_) return screenCaptureManager_->RequestCapture(filePath, ScreenCaptureType::WithUI);
+    return false;
+}
+
+bool IrufemiEngine::SaveScreenShotWithMetadata(const std::wstring& filePath) {
+    if (screenCaptureManager_) return screenCaptureManager_->RequestCaptureWithMetadata(filePath, ScreenCaptureType::SceneOnly);
+    return false;
+}
+
+bool IrufemiEngine::SaveScreenShotWithAlpha(const std::wstring& filePath) {
+    if (screenCaptureManager_) return screenCaptureManager_->RequestCaptureWithAlpha(filePath);
+    return false;
+}
+
+bool IrufemiEngine::SaveScreenShotDepth(const std::wstring& filePath) {
+    if (screenCaptureManager_) return screenCaptureManager_->RequestCaptureDepth(filePath);
+    return false;
+}
