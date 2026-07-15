@@ -105,6 +105,9 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
     rid[0].hwndTarget = hwnd_;
     RegisterRawInputDevices(rid, 1, sizeof(rid[0]));
 
+    // ドラッグ＆ドロップの受け入れを許可
+    DragAcceptFiles(hwnd_, TRUE);
+
     return true;
 }
 
@@ -197,6 +200,18 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+    case WM_DROPFILES: {
+        HDROP hDrop = reinterpret_cast<HDROP>(wParam);
+        UINT fileCount = DragQueryFileA(hDrop, 0xFFFFFFFF, nullptr, 0);
+        if (fileCount > 0) {
+            char filePath[MAX_PATH];
+            if (DragQueryFileA(hDrop, 0, filePath, MAX_PATH)) {
+                droppedFilePath_ = filePath;
+            }
+        }
+        DragFinish(hDrop);
+        return 0;
+    }
     case WM_INPUT: {
         UINT dwSize = 0;
         GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));

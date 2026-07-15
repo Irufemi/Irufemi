@@ -138,3 +138,16 @@ shader_error.txt
 
 # Ignore PSO cache files
 *.pso
+
+# ====================================================================
+# Python & AI Tools temporary files
+# ====================================================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Magic Brush temporary files
+magic_brush_temp_req.json
+resources/shaders/generated/

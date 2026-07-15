@@ -155,6 +155,7 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend
     }
 
     cache_[key] = pso;
+    cacheKeysByName_[name].push_back(key);
     return pso.Get();
 }
 
@@ -460,6 +461,16 @@ void PSOManager::SaveCachedBlob(const std::string& cacheFileName, ID3D12Pipeline
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     if (file.is_open()) {
         file.write(reinterpret_cast<const char*>(blob->GetBufferPointer()), blob->GetBufferSize());
+    }
+}
+
+void PSOManager::ClearCacheByName(const std::string& name) {
+    auto it = cacheKeysByName_.find(name);
+    if (it != cacheKeysByName_.end()) {
+        for (const auto& key : it->second) {
+            cache_.erase(key);
+        }
+        it->second.clear(); // ベクターをクリア
     }
 }
 

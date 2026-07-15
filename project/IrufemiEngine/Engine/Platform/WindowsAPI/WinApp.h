@@ -59,6 +59,10 @@ public:
     int GetClientWidth() const { return clientWidth_; }
     int GetClientHeight() const { return clientHeight_; }
     bool IsCursorLocked() const { return cursorLocked_; }
+    
+    // ドラッグ＆ドロップで取得したファイルパス
+    std::string GetDroppedFilePath() const { return droppedFilePath_; }
+    void ClearDroppedFilePath() { droppedFilePath_.clear(); }
     ///@}
 
     /**
@@ -109,5 +113,7 @@ private:
     bool didRegisterClass_ = false;
     InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
     IrufemiEngine* engine_ = nullptr;      // IrufemiEngineへのポインタ
+    
+    std::string droppedFilePath_ = ""; // 最後にドロップされたファイルのパス
     bool cursorLocked_ = true; // カーソル固定状態デフォルト真
 };
