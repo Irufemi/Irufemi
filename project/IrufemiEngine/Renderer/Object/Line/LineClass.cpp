@@ -17,7 +17,7 @@ Line3DBatch::~Line3DBatch() {
     if (s_srvAllocator_ && dx_) {
         for (uint32_t& idx : instancingSrvIndex_) {
             if (idx != UINT32_MAX) {
-                s_srvAllocator_->FreeAfterFence(idx, dx_->GetFenceValue());
+                s_srvAllocator_->FreeAfterFence(idx, dx_->GetCurrentFrameFenceValue());
                 idx = UINT32_MAX;
             }
         }

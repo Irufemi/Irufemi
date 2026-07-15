@@ -30,7 +30,7 @@ DirectXCommon* GpuMesh::sDxCommon = nullptr;
 
 GpuMesh::~GpuMesh() {
     if (sDxCommon && sDxCommon->GetSrvPool() && srvIndex != 0xFFFFFFFF) {
-        sDxCommon->GetSrvPool()->FreeAfterFence(srvIndex, sDxCommon->GetFenceValue());
+        sDxCommon->GetSrvPool()->FreeAfterFence(srvIndex, sDxCommon->GetCurrentFrameFenceValue());
     }
 }
 

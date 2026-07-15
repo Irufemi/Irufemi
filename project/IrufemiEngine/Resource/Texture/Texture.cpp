@@ -35,7 +35,7 @@ Texture::Texture() {
 Texture::~Texture() {
     if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
         // GPU が参照し終わるまで遅延解放
-        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = UINT32_MAX;
     }
 }
@@ -176,7 +176,7 @@ void Texture::InitializeFromExternalResource(const std::string& name, Microsoft:
 
     // Textureコンストラクタで確保済みの古いsrvIndexを解放する
     if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
-        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
     }
 
     // 新しいインデックスとハンドルを保持

@@ -11,13 +11,13 @@ DebugPrimitiveRenderer::~DebugPrimitiveRenderer() {
     if (srvAllocator_ && dx_) {
         for (uint32_t& idx : sphereSrvIndex_) {
             if (idx != UINT32_MAX) {
-                srvAllocator_->FreeAfterFence(idx, dx_->GetFenceValue());
+                srvAllocator_->FreeAfterFence(idx, dx_->GetCurrentFrameFenceValue());
                 idx = UINT32_MAX;
             }
         }
         for (uint32_t& idx : cubeSrvIndex_) {
             if (idx != UINT32_MAX) {
-                srvAllocator_->FreeAfterFence(idx, dx_->GetFenceValue());
+                srvAllocator_->FreeAfterFence(idx, dx_->GetCurrentFrameFenceValue());
                 idx = UINT32_MAX;
             }
         }

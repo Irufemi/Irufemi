@@ -189,7 +189,7 @@ void DrawManager::Finalize() {
         // SRVの解放
         if (srvPool && fr.lightSrvBaseIndex != 0xFFFFFFFFu) {
             for (uint32_t j = 0; j < 3; ++j) {
-                srvPool->FreeAfterFence(fr.lightSrvBaseIndex + j, dxCommon_->GetFenceValue(i));
+                srvPool->FreeAfterFence(fr.lightSrvBaseIndex + j, dxCommon_->GetCurrentFrameFenceValue());
             }
             fr.lightSrvBaseIndex = 0xFFFFFFFFu;
         }

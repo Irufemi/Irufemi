@@ -458,11 +458,11 @@ uint32_t DirectXCommon::AllocateDSVIndex() {
 }
 
 void DirectXCommon::FreeRTVIndex(uint32_t index) {
-    swapChainManager_->FreeRTVIndex(index, commandManager_->GetGlobalFenceValue());
+    swapChainManager_->FreeRTVIndex(index, GetCurrentFrameFenceValue());
 }
 
 void DirectXCommon::FreeDSVIndex(uint32_t index) {
-    swapChainManager_->FreeDSVIndex(index, commandManager_->GetGlobalFenceValue());
+    swapChainManager_->FreeDSVIndex(index, GetCurrentFrameFenceValue());
 }
 
 /*三角形の色を変えよう*/

@@ -584,7 +584,7 @@ void IrufemiEngine::Finalize() {
   if (dxCommon_) {
     if (dxCommon_->GetSrvPool() && depthSrvIndex_ != 0xFFFFFFFF) {
       dxCommon_->GetSrvPool()->FreeAfterFence(depthSrvIndex_,
-                                              dxCommon_->GetFenceValue());
+                                              dxCommon_->GetCurrentFrameFenceValue());
       depthSrvIndex_ = 0xFFFFFFFF;
     }
     dxCommon_->Finalize();

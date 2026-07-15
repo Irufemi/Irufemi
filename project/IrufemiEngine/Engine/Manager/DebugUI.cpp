@@ -200,7 +200,7 @@ void DebugUI::Shutdown() {
     ImGui::DestroyContext();
 
     if (dxCommon_ && dxCommon_->GetSrvPool()) {
-        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = DescriptorPool::kInvalid;
     }
 
