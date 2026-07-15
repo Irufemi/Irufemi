@@ -63,7 +63,7 @@ private: // メンバ変数
 
     Matrix4x4 worldMatrix_;
 
-    Animation animation_;
+    std::shared_ptr<Animation> animation_;
 
     float animationTime_ = 0.0f;
 

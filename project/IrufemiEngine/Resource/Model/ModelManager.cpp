@@ -6,10 +6,8 @@
 #include <chrono>
 #include <thread>
 #include <format>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/material.h>
+#include "ModelImporter.h"
+#include "ModelSerializer.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
 #include "Resource/Texture/TextureManager.h"
@@ -73,6 +71,11 @@ void ModelManager::SetRootDirectory(std::string root) {
     std::replace(root.begin(), root.end(), '\\', '/');
     if (!root.empty() && root.back() == '/') root.pop_back();
     rootDir_ = std::move(root);
+
+    // DirectoryWatcherの初期化
+    directoryWatcher_ = std::make_unique<DirectoryWatcher>(rootDir_, [this]() {
+        OnDirectoryChanged();
+    });
 }
 
 ResourceHandle ModelManager::LoadModel(const std::string& filename) {
@@ -158,9 +161,34 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
     managedModel->status.store(ManagedModel::LoadingStatus::Loading);
 
     try {
-        // CPUモデルロード
-        auto pair = SplitDirectoryAndFile(fullPath);
-        managedModel->cpuModel = std::make_shared<ObjModel>(ModelManager::LoadModelFromFile(pair.first, pair.second));
+        uint64_t currentLwt = 0;
+        std::error_code ec;
+        if (std::filesystem::exists(fullPath, ec)) {
+            auto lastWrite = std::filesystem::last_write_time(fullPath, ec);
+            currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
+        }
+        managedModel->lastLoadTime = currentLwt;
+        managedModel->sourceFilePath = fullPath;
+
+        std::string binPath = fullPath + ".ibin";
+        bool shouldImport = true;
+
+        if (std::filesystem::exists(binPath, ec)) {
+            auto loaded = std::make_shared<ObjModel>();
+            uint64_t cachedLwt = 0;
+            if (ModelSerializer::Deserialize(binPath, *loaded, cachedLwt) && cachedLwt == currentLwt) {
+                managedModel->cpuModel = loaded;
+                shouldImport = false;
+                OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Loaded from Cache: {}\n", GetCurrentThreadId(), key).c_str());
+            }
+        }
+
+        if (shouldImport) {
+            managedModel->cpuModel = std::make_shared<ObjModel>(ModelImporter::Import(fullPath));
+            if (!managedModel->cpuModel->meshes.empty()) {
+                ModelSerializer::Serialize(binPath, *managedModel->cpuModel, currentLwt);
+            }
+        }
 
         // GPUリソース生成
         managedModel->gpuMeshes.reserve(managedModel->cpuModel->meshes.size());
@@ -357,6 +385,43 @@ void ModelManager::ClearAll() {
     filePathCache_.clear();
 }
 
+void ModelManager::OnDirectoryChanged() {
+    // 変更が複数回呼ばれることを防ぐため少し待つ
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::vector<ManagedModel*> modelsToReload;
+    {
+        std::lock_guard<std::recursive_mutex> lock(mutex_);
+        for (const auto& modelPtr : managedModels_) {
+            if (modelPtr && modelPtr->status.load() == ManagedModel::LoadingStatus::Loaded) {
+                if (modelPtr->sourceFilePath.empty()) continue;
+
+                std::error_code ec;
+                if (std::filesystem::exists(modelPtr->sourceFilePath, ec)) {
+                    auto lastWrite = std::filesystem::last_write_time(modelPtr->sourceFilePath, ec);
+                    uint64_t currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
+                    
+                    // タイムスタンプが新しければリロード対象
+                    if (currentLwt > modelPtr->lastLoadTime) {
+                        modelsToReload.push_back(modelPtr.get());
+                        modelPtr->lastLoadTime = currentLwt; // 二重検知を防ぐ
+                    }
+                }
+            }
+        }
+    }
+
+    for (auto* model : modelsToReload) {
+        OutputDebugStringA(("[ModelManager] Hot-Reloading: " + model->sourceFilePath + "\n").c_str());
+        // Criticalタスクとして積むことで、Sceneの更新を止めて安全にリソースをスワップする
+        EnqueueTask(true, [this, model]() {
+            model->gpuMeshes.clear();
+            model->gpuMaterials.clear();
+            LoadInternal(model, model->sourceFilePath);
+        });
+    }
+}
+
 std::string ModelManager::NormalizeAndResolve(const std::string& filename) const {
     std::string f = filename;
     std::replace(f.begin(), f.end(), '\\', '/');
@@ -434,732 +499,9 @@ std::string ModelManager::FindFileRecursive(const std::string& filename) const {
 // 静的ロード関数群(旧 Function.h 移植)
 //======================
 
-MaterialData ModelManager::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename) {
-    // 1. 中で必要となる変数の宣言
-    // 2. ファイルを開く
-    // 3. 実際にファイルを読み、MaterialDataを構築していく
-    // 4. MaterialDataを返す
 
-    ///1.2. 必要な宣言とファイルを開く
 
-    MaterialData materialData;
-    std::string line; //ファイルから読んだ1行を格納するもの
-    std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
-    if (!file.is_open()) {
-        IRUFEMI_WARNING(false, "Failed to open material file: " + directoryPath + "/" + filename);
-        return materialData;
-    }
 
-    ///3. ファイルを読み、MaterialDataを構築
-
-    while (std::getline(file, line)) {
-        std::string identifier;
-        std::istringstream s(line);
-        s >> identifier;
-
-        // identifierに応じた処理
-        if (identifier == "map_Kd") {
-            std::string textureFilename;
-            s >> textureFilename;
-            //連結してファイルパスにする
-            materialData.textureFilePath = directoryPath + "/" + textureFilename;
-        }
-    }
-    return materialData;
-}
-
-ModelData ModelManager::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
-    // 1. 中で必要となる変数の宣言
-    // 2. ファイルを開く
-    // 3. 実際にファイルを読み、ModelDataを構築していく
-    // 4. ModelDataを返す
-
-    /// 1.2.必要な変数の宣言とファイルを開く
-
-    ModelData modelData; //構築するModelData
-    std::vector<Vector4> positions; //位置
-    std::vector<Vector3> normals; //法線
-    std::vector<Vector2> texcoords; //テクスチャ座標
-    std::string line; //ファイルから読んだ1行を格納するもの
-
-    std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
-    if (!file.is_open()) {
-        IRUFEMI_WARNING(false, "Failed to open obj file: " + directoryPath + "/" + filename);
-        return modelData;
-    }
-
-    ///3.ファイルを読み、ModelDataを構築
-    while (std::getline(file, line)) {
-        std::string identifier;
-        std::istringstream s(line);
-        s >> identifier; //先頭の識別子を読む
-
-
-        //identifierに応じた処理
-
-        ///頂点情報を読む
-        if (identifier == "v") {
-            Vector4 position;
-            s >> position.x >> position.y >> position.z;
-            position.w = 1.0f;
-            positions.push_back(position);
-        } else if (identifier == "vt") {
-            Vector2 texcoord;
-            s >> texcoord.x >> texcoord.y;
-            texcoords.push_back(texcoord);
-        } else if (identifier == "vn") {
-            Vector3 normal;
-            s >> normal.x >> normal.y >> normal.z;
-            normals.push_back(normal);
-        }
-
-        ///三角形を作る
-
-        else if (identifier == "f") {
-            VertexData triangle[3];
-            //面は三角形限定。その他は未対応
-            for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-                std::string vertexDefinition;
-                s >> vertexDefinition;
-                //頂点の要素のIndexは「位置/UV/法線」で格納されているので、分解してIndexを取得する
-                std::istringstream v(vertexDefinition);
-                uint32_t elementIndices[3];
-                for (int32_t element = 0; element < 3; ++element) {
-                    std::string index;
-                    std::getline(v, index, '/'); //区切りでインデックスを読んでいく
-                    elementIndices[element] = std::stoi(index);
-                }
-                //要素へのIndexから、実際の要素の値を取得して、頂点を構築する
-                Vector4 position = positions[elementIndices[0] - 1];
-                Vector2 texcoord = texcoords[elementIndices[1] - 1];
-                Vector3 normal = normals[elementIndices[2] - 1];
-                //VertexData vertex = { position,texcoord,normal };
-                //modelData.vertices.push_back(vertex);
-
-                ///右手系から左手系へ
-
-                position.x *= -1.0f;
-                normal.x *= -1.0f;
-
-                ///Texture座標の原点
-
-                texcoord.y = 1.0f - texcoord.y;
-
-                ///右手系から左手系へ
-
-                triangle[faceVertex] = { position,texcoord,normal };
-
-            }
-
-            //頂点を逆順で登録することで、回り順を逆にする
-            modelData.indices.push_back(static_cast<uint32_t>(modelData.vertices.size()));
-            modelData.vertices.push_back(triangle[2]);
-            modelData.indices.push_back(static_cast<uint32_t>(modelData.vertices.size()));
-            modelData.vertices.push_back(triangle[1]);
-            modelData.indices.push_back(static_cast<uint32_t>(modelData.vertices.size()));
-            modelData.vertices.push_back(triangle[0]);
-        }
-
-        ///obj読み込みにmaterial読み込みを追加
-
-        else if (identifier == "mtllib") {
-            //materialTemplateLibraryファイルの名前を取得する
-            std::string materialFilename;
-            s >> materialFilename;
-            //基本的にobjファイルと同一階層にmtlは存在させるので、ディレクトリ名とファイルを渡す
-            modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
-        }
-    }
-
-    modelData.rootNode = Node{};
-
-    return modelData;
-}
-
-// f行の頂点データを安全にパースする関数例
-bool ModelManager::ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx) {
-    posIdx = uvIdx = normIdx = -1; // デフォルト値(0開始なら0に)
-
-    size_t firstSlash = token.find('/');
-    size_t secondSlash = token.find('/', firstSlash + 1);
-
-    // 位置インデックス
-    if (firstSlash == std::string::npos) {
-        // 例: "1"
-        if (!token.empty()) posIdx = std::stoi(token);
-    } else {
-        // 例: "1/2/3", "1//3", "1/2"
-        if (firstSlash > 0) posIdx = std::stoi(token.substr(0, firstSlash));
-        // UVインデックス
-        if (secondSlash != std::string::npos) {
-            // "1/2/3"
-            if (secondSlash > firstSlash + 1) uvIdx = std::stoi(token.substr(firstSlash + 1, secondSlash - firstSlash - 1));
-            // 法線インデックス
-            if (token.size() > secondSlash + 1) normIdx = std::stoi(token.substr(secondSlash + 1));
-        } else {
-            // "1/2"
-            if (token.size() > firstSlash + 1) uvIdx = std::stoi(token.substr(firstSlash + 1));
-        }
-    }
-    return true;
-}
-
-ObjModel ModelManager::LoadObjFileM(const std::string& directoryPath, const std::string& filename) {
-    ObjModel objModel;
-    std::vector<Vector4> positions;
-    std::vector<Vector3> normals;
-    std::vector<Vector2> texcoords;
-    std::map<std::string, ObjMaterial> materialMap;
-
-    std::ifstream file(directoryPath + "/" + filename);
-    if (!file.is_open()) {
-        IRUFEMI_WARNING(false, "Failed to open obj file M: " + directoryPath + "/" + filename);
-        return objModel;
-    }
-
-    std::string line;
-    ObjMesh currentMesh;
-
-    while (std::getline(file, line)) {
-        std::istringstream s(line);
-        std::string id;
-        s >> id;
-
-        if (id == "v") {
-            Vector4 pos;
-            s >> pos.x >> pos.y >> pos.z;
-            pos.w = 1.0f;
-            // 左手系変換はここだけ
-            pos.x *= -1.0f;
-            positions.push_back(pos);
-        } else if (id == "vt") {
-            Vector2 uv;
-            s >> uv.x >> uv.y;
-            // y反転のみここで
-            uv.y = 1.0f - uv.y;
-            texcoords.push_back(uv);
-        } else if (id == "vn") {
-            Vector3 n;
-            s >> n.x >> n.y >> n.z;
-            // 左手系変換はここだけ
-            n.x *= -1.0f;
-            normals.push_back(n);
-        } else if (id == "f") {
-            VertexData tri[3];
-            for (int i = 0; i < 3; ++i) {
-                std::string def;
-                s >> def;
-                int pIdx = -1, tIdx = -1, nIdx = -1;
-                ParseObjFaceToken(def, pIdx, tIdx, nIdx);
-
-                Vector4 position = (pIdx > 0) ? positions[pIdx - 1] : Vector4{};
-                Vector2 texcoord = (tIdx > 0) ? texcoords[tIdx - 1] : Vector2{ 0.5f, 0.5f };
-                Vector3 normal = (nIdx > 0) ? normals[nIdx - 1] : Vector3{};
-
-                tri[i] = { position, texcoord, normal };
-            }
-            // 三角形の回り順は逆にしている(必要な場合のみ)
-            currentMesh.indices.push_back(static_cast<uint32_t>(currentMesh.vertices.size()));
-            currentMesh.vertices.push_back(tri[2]);
-            currentMesh.indices.push_back(static_cast<uint32_t>(currentMesh.vertices.size()));
-            currentMesh.vertices.push_back(tri[1]);
-            currentMesh.indices.push_back(static_cast<uint32_t>(currentMesh.vertices.size()));
-            currentMesh.vertices.push_back(tri[0]);
-        } else if (id == "usemtl") {
-            if (!currentMesh.vertices.empty()) {
-                objModel.meshes.push_back(currentMesh);
-                currentMesh = ObjMesh();
-            }
-            std::string matName;
-            s >> matName;
-            if (materialMap.count(matName)) {
-                currentMesh.material = materialMap[matName];
-            } else {
-                currentMesh.material = ObjMaterial(); // デフォルト値
-            }
-        } else if (id == "mtllib") {
-            std::string mtlFilename;
-            s >> mtlFilename;
-            std::ifstream mtlFile(directoryPath + "/" + mtlFilename);
-            if (!mtlFile.is_open()) {
-                IRUFEMI_WARNING(false, "Failed to open mtl file: " + directoryPath + "/" + mtlFilename);
-                continue;
-            }
-
-            std::string mtlLine, currentName;
-            while (std::getline(mtlFile, mtlLine)) {
-                std::istringstream ms(mtlLine);
-                std::string mtlId;
-                ms >> mtlId;
-
-                if (mtlId == "newmtl") {
-                    ms >> currentName;
-                    materialMap[currentName] = ObjMaterial();
-                } else if (mtlId == "Kd") {
-                    ms >> materialMap[currentName].color.x
-                        >> materialMap[currentName].color.y
-                        >> materialMap[currentName].color.z;
-                    materialMap[currentName].color.w = 1.0f;
-                } else if (mtlId == "Ka") {
-                    ms >> materialMap[currentName].ambient.x
-                        >> materialMap[currentName].ambient.y
-                        >> materialMap[currentName].ambient.z;
-                } else if (mtlId == "Ks") {
-                    ms >> materialMap[currentName].specular.x
-                        >> materialMap[currentName].specular.y
-                        >> materialMap[currentName].specular.z;
-                } else if (mtlId == "Ns") {
-                    float ns = 0.0f;
-                    ms >> ns;
-                    // Ns (0-1000) を Roughness (0-1) に変換 (簡易的な近似)
-                    materialMap[currentName].roughness = std::clamp(1.0f - (ns / 1000.0f), 0.0f, 1.0f);
-                } else if (mtlId == "d" || mtlId == "Tr") {
-                    ms >> materialMap[currentName].alpha;
-                } else if (mtlId == "map_Kd") {
-                    std::string token;
-                    bool hasTransform = false;
-                    // テクスチャオプション対応
-                    while (ms >> token) {
-                        if (token == "-o") {
-                            ms >> materialMap[currentName].uvTransform.m[3][0]
-                                >> materialMap[currentName].uvTransform.m[3][1];
-                            hasTransform = true;
-                        } else if (token == "-s") {
-                            ms >> materialMap[currentName].uvTransform.m[0][0]
-                                >> materialMap[currentName].uvTransform.m[1][1];
-                            hasTransform = true;
-                        } else {
-                            materialMap[currentName].textureFilePath = directoryPath + "/" + token;
-                            break;
-                        }
-                    }
-                    // デフォルト値セット
-                    if (!hasTransform) {
-                        materialMap[currentName].uvTransform = Math::MakeAffineMatrix(
-                            { 1.0f, 1.0f, 1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
-                    }
-                } else if (mtlId == "map_Bump" || mtlId == "bump") {
-                    std::string token;
-                    bool hasTransform = false;
-                    // テクスチャオプション対応
-                    while (ms >> token) {
-                        if (token == "-o" || token == "-s" || token == "-bm") {
-                            // UVTransformやバンプ係数の読み飛ばし
-                            std::string dummy;
-                            ms >> dummy;
-                            if (token != "-bm") ms >> dummy; // -o, -sは2要素
-                        } else {
-                            materialMap[currentName].normalMapFilePath = directoryPath + "/" + token;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (!currentMesh.vertices.empty()) {
-        objModel.meshes.push_back(currentMesh);
-    }
-
-    // 手書きパーサでは階層情報はないため空 Node
-    objModel.rootNode = Node{};
-
-    // 境界球を計算
-    CalculateBoundingSphere(objModel);
-
-    return objModel;
-}
-
-ModelData ModelManager::LoadModelFile(const std::string& directoryPath, const std::string& filename) {
-
-    ModelData modelData; //構築するModelData
-
-    /*いろんなフォーマットのモデルが読みたい*/
-
-    /// assimpでobjを読む
-
-    // ファイルからassimpのSceneを構築する
-    // assimpのデータ構造 → https://learnopengl.com/Model-Loading/Assimp
-    Assimp::Importer importer;
-    std::string filePath = directoryPath + "/" + filename;
-    // assimpでは読み込む際にオプションを指定することができる
-    // 今回はobjからDirectX12の形式に合わせるために
-    // ・ aiProcess_FlipWindingOrder : 三角形の並び順を逆にする
-    // ・ aiProcess_FlipUVs : UVをフリップする(texcoord.y = 1.0f - texcoord.y;の処理)
-    // を指定した。
-    // ほかのオプション → https://github.com/assimp/assimp/blob/master/include/assimp/postprocess.h#L60
-    const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
-
-    /// meshを解析する
-
-    for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
-        aiMesh* mesh = scene->mMeshes[meshIndex];
-        IRUFEMI_ASSERT(mesh->HasNormals()); // 法線がないMeshは今回は非対応
-        IRUFEMI_ASSERT(mesh->HasTextureCoords(0)); // TexcoordがないMeshは今回は非対応
-        // ここからMeshの中身(Face)の解析を行っていく
-
-        /// vertexを解析する
-        modelData.vertices.resize(mesh->mNumVertices);
-        for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex) {
-            aiVector3D& position = mesh->mVertices[vertexIndex];
-            aiVector3D& normal = mesh->mNormals[vertexIndex];
-            aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
-            // 右手系->左手系への変換を忘れずに
-            modelData.vertices[vertexIndex].position = { -position.x, position.y, position.z, 1.0f };
-            modelData.vertices[vertexIndex].normal = { -normal.x, normal.y, normal.z };
-            modelData.vertices[vertexIndex].texcoord = { texcoord.x, texcoord.y };
-        }
-
-        /*DrawIndexed*/
-
-        /// Indexを解析する
-        for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
-            aiFace& face = mesh->mFaces[faceIndex];
-            IRUFEMI_ASSERT(face.mNumIndices == 3); // 三角形のみサポート
-
-            for (uint32_t element = 0; element < face.mNumIndices; ++element) {
-                uint32_t vertexIndex = face.mIndices[element];
-                modelData.indices.push_back(vertexIndex);
-            }
-        }
-
-        /*Skinning*/
-
-
-        /// SkinCluster構築用のデータ取得を追加
-
-        for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
-
-            /// Jointごとの格納領域を作る
-
-            // meshに関連付けられたJointから情報を取得する
-            // assimpではJointをBoneと呼び、Skinningに必要なデータが保持されている
-            aiBone* bone = mesh->mBones[boneIndex];
-            std::string jointName = bone->mName.C_Str();
-            JointWeightData& jointWeightData = modelData.skinClusterData[jointName];
-
-            /// InverseBindPoseMatrixの抽出
-
-            // assimpでは、JointのInverseBindPoseMatrixはmOffsetMatrixによって保持される。
-            // assimpは右手系の列ベクトルなので、左手系で直接使用することは適さない。
-            // したがって、BindPose時の各成分を抽出し、必要な変換を施す必要がある
-            aiMatrix4x4 bindPoseMatrixAssimp = bone->mOffsetMatrix.Inverse();
-            aiVector3D scale, translate;
-            aiQuaternion rotate;
-            bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
-            Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix(Vector3{ scale.x,scale.y,scale.z }, Quaternion{ rotate.x,-rotate.y,-rotate.z,rotate.w }, Vector3{ -translate.x,translate.y,translate.z });
-            jointWeightData.inverseBindPoseMatrix = Math::Inverse(bindPoseMatrix);
-
-            /// Weight情報を取り出す
-
-            // Jointに関連付けられた頂点のweightとその頂点のindexを取り出して格納する
-            // mVertexIdは該当Mesh内でのIndexである
-            //  MultiMesh/MultiMaterial対応する際にはこのまま保存するのではなく、全体を通して改良が必要である
-            for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {
-                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight,bone->mWeights[weightIndex].mVertexId });
-            }
-        }
-    }
-
-    /*いろんなフォーマットのモデルが読みたい*/
-
-    /// materialを解析する
-
-    for (uint32_t materialIndex = 0; materialIndex < scene->mNumMaterials; ++materialIndex) {
-        aiMaterial* material = scene->mMaterials[materialIndex];
-        if (material->GetTextureCount(aiTextureType_DIFFUSE) != 0) {
-            aiString textureFilePath;
-            material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFilePath);
-            modelData.material.textureFilePath = directoryPath + "/" + textureFilePath.C_Str();
-        }
-    }
-
-    /*glTFを読み込んでみよう*/
-
-    /// assimpでNodを解析する
-
-    modelData.rootNode = ReadNode(scene->mRootNode);
-
-    return modelData;
-
-}
-
-// ノードとメッシュの関連を解析するヘルパー関数
-void ProcessNode(aiNode* node, const aiScene* scene, std::vector<ObjMesh>& meshes) {
-    // 現在のノードが持つメッシュを処理
-    for (UINT i = 0; i < node->mNumMeshes; i++) {
-        UINT meshIndex = node->mMeshes[i];
-        if (meshIndex < meshes.size()) {
-            meshes[meshIndex].nodeName = node->mName.C_Str();
-        }
-    }
-    // 子ノードを再帰的に処理
-    for (UINT i = 0; i < node->mNumChildren; i++) {
-        ProcessNode(node->mChildren[i], scene, meshes);
-    }
-}
-
-// ObjModel Node 対応 Assimp 版
-ObjModel ModelManager::LoadModelFromFile(const std::string& directoryPath, const std::string& filename) {
-    ObjModel objModel;
-
-    /* いろんなフォーマットのモデルが読みたい */
-
-    /// assimpでobj(glTF等も含む汎用)を読む
-
-    Assimp::Importer importer;
-    const std::string filePath = directoryPath + "/" + filename;
-
-    // 読み込み時オプション:
-    // ・ aiProcess_Triangulate        : 非三角形ポリゴンを三角化
-    // ・ aiProcess_FlipWindingOrder  : 三角形の並び順を逆にして表裏判定を左手系用に合わせる
-    // ・ aiProcess_FlipUVs           : UVのV(y)成分を反転
-    // ・ aiProcess_MakeLeftHanded    : 右手座標系から左手座標系へ変換(Z反転、行列の調整など全て行う)
-    const unsigned int flags =
-        aiProcess_Triangulate |
-        aiProcess_FlipWindingOrder |
-        aiProcess_FlipUVs |
-        aiProcess_MakeLeftHanded; // このフラグを追加
-
-    const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
-    if (!scene || !scene->HasMeshes()) {
-        IRUFEMI_WARNING(false, "Assimp failed to load model or no meshes found: " + std::string(importer.GetErrorString()));
-        return ObjModel();
-    }
-
-    /// material(assimpのaiMaterial)をObjMaterialへ変換
-
-    std::vector<ObjMaterial> convertedMaterials(scene->mNumMaterials);
-
-    for (uint32_t i = 0; i < scene->mNumMaterials; ++i) {
-        const aiMaterial* m = scene->mMaterials[i];
-        ObjMaterial out{};
-
-        // デフォルト初期化 (※ 読み込めなかったパラメータを安全値で埋める)
-        out.textureFilePath = "";
-        out.color = { 1.0f,1.0f,1.0f,1.0f };
-        out.ambient = { 0.0f,0.0f,0.0f };
-        out.specular = { 0.0f,0.0f,0.0f };
-        out.roughness = 0.5f;
-        out.metallic = 0.0f;
-        out.alpha = 1.0f;
-        out.enableLighting = true;
-        out.lightingMode = 3; // PBR
-        out.environmentCoefficient = 0.0f;
-        out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
-
-        // Diffuse テクスチャ (埋め込み "*0" 等は今回は未対応)
-        if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-            aiString texPath;
-            if (m->GetTexture(aiTextureType_DIFFUSE, 0, &texPath) == aiReturn_SUCCESS) {
-                std::string p = texPath.C_Str();
-                if (!p.empty() && p[0] != '*') {
-                    // テクスチャのパスをモデルファイルからの相対パスとして解決
-                    std::filesystem::path modelPath(filePath);
-                    std::filesystem::path texturePath = modelPath.parent_path() / p;
-                    out.textureFilePath = texturePath.string();
-                    std::replace(out.textureFilePath.begin(), out.textureFilePath.end(), '\\', '/');
-                }
-            }
-        }
-
-        // Normal テクスチャ
-        if (m->GetTextureCount(aiTextureType_NORMALS) > 0 || m->GetTextureCount(aiTextureType_HEIGHT) > 0) {
-            aiString texPath;
-            // NORMALSを優先し、なければHEIGHT(Bump)を取得
-            if (m->GetTexture(aiTextureType_NORMALS, 0, &texPath) == aiReturn_SUCCESS ||
-                m->GetTexture(aiTextureType_HEIGHT,  0, &texPath) == aiReturn_SUCCESS) {
-                std::string p = texPath.C_Str();
-                if (!p.empty() && p[0] != '*') {
-                    std::filesystem::path modelPath(filePath);
-                    std::filesystem::path texturePath = modelPath.parent_path() / p;
-                    out.normalMapFilePath = texturePath.string();
-                    std::replace(out.normalMapFilePath.begin(), out.normalMapFilePath.end(), '\\', '/');
-                }
-            }
-        }
-
-        // 色/光沢/不透明度 (取得できたもののみ上書き)
-        aiColor3D kd;
-        if (m->Get(AI_MATKEY_COLOR_DIFFUSE, kd) == aiReturn_SUCCESS) {
-            out.color.x = kd.r; out.color.y = kd.g; out.color.z = kd.b; out.color.w = 1.0f;
-        }
-        aiColor3D ka;
-        if (m->Get(AI_MATKEY_COLOR_AMBIENT, ka) == aiReturn_SUCCESS) {
-            out.ambient.x = ka.r; out.ambient.y = ka.g; out.ambient.z = ka.b;
-        }
-        aiColor3D ks;
-        if (m->Get(AI_MATKEY_COLOR_SPECULAR, ks) == aiReturn_SUCCESS) {
-            out.specular.x = ks.r; out.specular.y = ks.g; out.specular.z = ks.b;
-        }
-        float shininess = 0.0f;
-        if (m->Get(AI_MATKEY_SHININESS, shininess) == aiReturn_SUCCESS) {
-            // Shininess (Blinn-Phong) から Roughness への変換
-            // Roughness = sqrt(2 / (shininess + 2)) が一般的な近似
-            out.roughness = std::clamp(std::sqrt(2.0f / (shininess + 2.0f)), 0.0f, 1.0f);
-        }
-        float opacity = 1.0f;
-        if (m->Get(AI_MATKEY_OPACITY, opacity) == aiReturn_SUCCESS) {
-            out.alpha = opacity;
-            out.color.w = opacity;
-        }
-
-        convertedMaterials[i] = out;
-    }
-
-    /// mesh(aiMesh)を解析し ObjMesh を構築
-
-    for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
-        aiMesh* mesh = scene->mMeshes[meshIndex];
-        ObjMesh outMesh;
-
-        // マテリアル割り当て (安全に index 範囲内か確認)
-        if (mesh->mMaterialIndex < convertedMaterials.size()) {
-            outMesh.material = convertedMaterials[mesh->mMaterialIndex];
-        }
-
-        // 頂点データの読み込み
-        outMesh.vertices.resize(mesh->mNumVertices);
-        for (uint32_t i = 0; i < mesh->mNumVertices; ++i) {
-            const aiVector3D& p = mesh->mVertices[i];
-            const aiVector3D& n = mesh->HasNormals() ? mesh->mNormals[i] : aiVector3D(0, 1, 0);
-            const aiVector3D& t = mesh->HasTextureCoords(0) ? mesh->mTextureCoords[0][i] : aiVector3D(0.5f, 0.5f, 0);
-
-            VertexData& v = outMesh.vertices[i];
-            // Assimpが変換してくれるので、手動での反転は不要になる
-            v.position = { p.x, p.y, p.z, 1.0f };
-            v.normal = { n.x, n.y, n.z };
-            v.texcoord = { t.x, t.y };
-        }
-
-        // インデックスデータの読み込み
-        for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
-            const aiFace& face = mesh->mFaces[faceIndex];
-            IRUFEMI_ASSERT(face.mNumIndices == 3);
-            outMesh.indices.push_back(face.mIndices[0]);
-            outMesh.indices.push_back(face.mIndices[1]);
-            outMesh.indices.push_back(face.mIndices[2]);
-        }
-
-        // SkinCluster構築用のデータ取得を追加
-        for (uint32_t boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex) {
-            aiBone* bone = mesh->mBones[boneIndex];
-            std::string jointName = bone->mName.C_Str();
-            JointWeightData& jointWeightData = objModel.skinClusterData[jointName];
-
-            // InverseBindPoseMatrixの抽出
-            aiMatrix4x4 bindPoseMatrixAssimp = bone->mOffsetMatrix.Inverse();
-            aiVector3D scale, translate;
-            aiQuaternion rotate;
-            bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
-            // Assimpは左手座標系変換済みなので、そのままMatrixを作成
-            Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix({ scale.x, scale.y, scale.z }, { rotate.x, rotate.y, rotate.z, rotate.w }, { translate.x, translate.y, translate.z });
-            jointWeightData.inverseBindPoseMatrix = Math::Inverse(bindPoseMatrix);
-
-            // Weight情報を取り出す
-            for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {
-                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight, bone->mWeights[weightIndex].mVertexId });
-            }
-        }
-
-        objModel.meshes.push_back(std::move(outMesh));
-    }
-
-    // ノードとメッシュの関連付けを解析
-    ProcessNode(scene->mRootNode, scene, objModel.meshes);
-
-    /// Node 階層(structure)を解析 (シーンルートから再帰構築)
-
-    objModel.rootNode = ReadNode(scene->mRootNode);
-
-    // 境界球を計算
-    CalculateBoundingSphere(objModel);
-
-    return objModel;
-}
-
-
-/*glTFを読み込んでみよう*/
-
-/// 前準備
-
-Node ModelManager::ReadNode(aiNode* node) {
-    Node result;
-
-    // aiProcess_MakeLeftHandedフラグにより、Assimpが座標系変換をすでに行っている。
-    // そのため、ここでの手動変換は不要。
-    // Assimpから渡される行列をそのままローカル行列として使用する。
-    aiMatrix4x4 aiLocalMatrix = node->mTransformation; // nodeのlocalMatrixを取得
-    aiLocalMatrix.Transpose(); // Assimpの列ベクトル形式を行ベクトル形式に転置
-
-    // Matrix4x4にコピー
-    for (int r = 0; r < 4; ++r) {
-        for (int c = 0; c < 4; ++c) {
-            result.localMatrix.m[r][c] = aiLocalMatrix[r][c];
-        }
-    }
-
-    // SRTの分解もAssimpの変換後の値から行う
-    aiVector3D scale, translate;
-    aiQuaternion rotate;
-    node->mTransformation.Decompose(scale, rotate, translate);
-    result.transform.scale = { scale.x, scale.y, scale.z };
-    result.transform.rotate = { rotate.x, rotate.y, rotate.z, rotate.w };
-    result.transform.translate = { translate.x, translate.y, translate.z };
-
-    result.name = node->mName.C_Str(); // Node名を格納
-    result.children.resize(node->mNumChildren); // 子供の数だけメモリを確保
-    for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex) {
-        // 再帰的にReadNodeを呼び出し、階層構造を構築する
-        result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
-    }
-    return result;
-}
-
-void ModelManager::CalculateBoundingSphere(ObjModel& model) {
-    Vector3 minV = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
-    Vector3 maxV = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
-    bool hasVertices = false;
-
-    // 1pass: 全メッシュの頂点を走査してAABBを求める
-    for (const auto& mesh : model.meshes) {
-        for (const auto& vertex : mesh.vertices) {
-            minV.x = (std::min)(minV.x, vertex.position.x);
-            minV.y = (std::min)(minV.y, vertex.position.y);
-            minV.z = (std::min)(minV.z, vertex.position.z);
-            maxV.x = (std::max)(maxV.x, vertex.position.x);
-            maxV.y = (std::max)(maxV.y, vertex.position.y);
-            maxV.z = (std::max)(maxV.z, vertex.position.z);
-            hasVertices = true;
-        }
-    }
-
-    if (!hasVertices) {
-        model.boundingBox = AABB{ {0,0,0}, {0,0,0} };
-        model.boundingSphere.center = { 0, 0, 0 };
-        model.boundingSphere.radius = 0.0f;
-        return;
-    }
-
-    model.boundingBox = AABB{ minV, maxV };
-
-    // 中心点をAABBの重心とする
-    model.boundingSphere.center = (minV + maxV) * 0.5f;
-
-    // 2pass: 中心点から最も遠い頂点までの距離を半径とする
-    float maxDistSq = 0.0f;
-    for (const auto& mesh : model.meshes) {
-        for (const auto& vertex : mesh.vertices) {
-            Vector3 pos = { vertex.position.x, vertex.position.y, vertex.position.z };
-            Vector3 diff = pos - model.boundingSphere.center;
-            float distSq = Math::Dot(diff, diff);
-            maxDistSq = (std::max)(maxDistSq, distSq);
-        }
-    }
-
-    model.boundingSphere.radius = std::sqrt(maxDistSq);
-}
 
 namespace {
     // レイと三角形の交差判定

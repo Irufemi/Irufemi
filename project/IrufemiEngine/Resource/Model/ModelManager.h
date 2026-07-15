@@ -17,7 +17,6 @@
 #include "../../Engine/Core/System/ResourceHandle.h"
 #include "../../Engine/Core/System/ResourceCachePool.h"
 #include "Data/ObjModel.h"
-#include "Data/ModelData.h"
 #include "Data/MaterialData.h"
 #include "Data/VoxelizedModel.h"
 #include "../../Engine/Core/Math/Vector3Int.h"
@@ -27,13 +26,8 @@
 #include "../../Engine/Core/Math/Vector2.h"
 #include "../../Engine/Core/Math/Math.h"
 #include <atomic>
+#include "../../Engine/Core/System/DirectoryWatcher.h"
 
-// 前方宣言
-struct aiNode;
-namespace Assimp { class Importer; }
-struct aiScene;
-struct aiMesh;
-struct aiMaterial;
 struct Node;
 class DirectXCommon;
 class TextureManager;
@@ -96,6 +90,8 @@ struct ManagedModel {
     std::mutex voxelMutex;
     
     std::atomic<LoadingStatus> status = LoadingStatus::Pending;
+    uint64_t lastLoadTime = 0; // ホットリロード用のタイムスタンプ
+    std::string sourceFilePath; // ロード元のファイルパス
 };
 
 /**
@@ -227,15 +223,9 @@ public:
 
     // --- ロード関数群 (内部的または特殊用途で使用) ---
 
-    /**
-     * @brief 個別のOBJファイルをロードする (複数メッシュ・マテリアル対応)
-     */
-    static ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
 
-    /**
-     * @brief 汎用モデルファイルをロードする (Assimp使用)
-     */
-    static ObjModel LoadModelFromFile(const std::string& directoryPath, const std::string& filename);
+
+
 
     /**
      * @brief ヴォクセル化モデルを生成する
@@ -278,15 +268,7 @@ private:
      */
     bool IsCurrentSceneInitializing() const;
 
-    // --- 旧形式との互換性用もしくは内部ユーティリティ ---
-    static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
-    static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
-    static Node ReadNode(aiNode* node);
-    static void CalculateBoundingSphere(ObjModel& model);
-
-    // 以下の古い形式は非推奨または内部管理用に限定
-    static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
-    static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
+    // --- 内部ユーティリティ ---
 
 private:
     DirectXCommon* dxCommon_ = nullptr;
@@ -303,4 +285,7 @@ private:
     std::unique_ptr<ThreadPool> threadPool_;
     std::shared_ptr<TaskGroup> taskGroup_;           ///< 重要タスク用（シーンを止める）
     std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用（シーンを止めない）
+    
+    std::unique_ptr<DirectoryWatcher> directoryWatcher_;
+    void OnDirectoryChanged();
 };

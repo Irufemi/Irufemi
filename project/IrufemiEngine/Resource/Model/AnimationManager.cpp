@@ -3,7 +3,6 @@
 #include "Data/Animation.h"
 #include "Engine/Core/Utility/Ease.h"
 #include "Engine/Core/Math/Math.h"
-#include "Data/ModelData.h"
 #include "Data/ObjModel.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
@@ -11,12 +10,8 @@
 
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include <filesystem>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <algorithm>
-#include <Windows.h>
-#include <assimp/postprocess.h>
-#include <numeric>
+#include "AnimationImporter.h"
+#include "AnimationSerializer.h"
 
 void AnimationManager::Initialize(DirectXCommon* dxCommon) {
     dxCommon_ = dxCommon;
@@ -29,88 +24,97 @@ void AnimationManager::SetRootDirectory(std::string root) {
     std::replace(root.begin(), root.end(), '\\', '/');
     if (!root.empty() && root.back() == '/') root.pop_back();
     rootDir_ = std::move(root);
+
+    directoryWatcher_ = std::make_unique<DirectoryWatcher>(rootDir_, [this]() {
+        OnDirectoryChanged();
+    });
 }
 
 /*Animation*/
 
 ///Animationを解析する
 
-Animation AnimationManager::LoadAnimationFile(const std::string& filename) {
-
-    // まずはAnimationの長さを秒に変換する
-    // ・ｍTicksPerSecond：周波数
-    // ・mDuration：ｍTicksPerSecondで指定された周波数における長さ
-    // たとえばｍTicksPerSecondが1000というのは、1000Hzのことなので、1Tick(周期)は1msである
-    // このとき、mDurationが2000なら、2000ms = 2s である
-
-    Animation animation; // 今回作るアニメーション
-    Assimp::Importer importer;
-
-    // ファイルパスを解決
+std::shared_ptr<Animation> AnimationManager::LoadAnimationFile(const std::string& filename) {
     std::string filePath;
-    // パス区切り文字が含まれているかチェック
     if (filename.find('/') != std::string::npos || filename.find('\\') != std::string::npos) {
-        // 含まれている場合は、ルートディレクトリからの相対パスとして扱う
         filePath = NormalizeAndResolve(filename);
     } else {
-        // 含まれていない場合は、再帰的にファイルを検索
         filePath = FindFileRecursive(filename);
     }
-
-    if (filePath.empty() || !std::filesystem::exists(filePath)) {
-        OutputDebugStringA(("[AnimationManager] File not found: " + filename + "\n").c_str());
-        return {}; // 空のアニメーションを返す
+    
+    if (filePath.empty()) {
+        return nullptr;
     }
-
-    const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_MakeLeftHanded);
-    // アニメーションがない場合は空のアニメーションを返す
-    if (!scene || scene->mNumAnimations == 0) {
-        OutputDebugStringA(("[AnimationManager] No animations found in file: " + filename + "\n").c_str());
-        return {}; // 空のアニメーションを返す
-    }
-    aiAnimation* animationAssimp = scene->mAnimations[0]; // 最初のアニメーションだけ採用。もちろん複数対応するに越したことはない
-    animation.duration = float(animationAssimp->mDuration / animationAssimp->mTicksPerSecond); // 時間の単位を秒に変換
-
-    /// NodeAnimationを解析する
-
-    // assimpでは個々のNodeのAnimationをchannelと呼んでいるのでchannelを回してNodeAnimationの情報をとってくる
-    for (uint32_t channelIndex = 0; channelIndex < animationAssimp->mNumChannels; ++channelIndex) {
-        aiNodeAnim* nodeAnimationAssimp = animationAssimp->mChannels[channelIndex];
-        NodeAnimation& nodeAnimation = animation.nodeAnimations[nodeAnimationAssimp->mNodeName.C_Str()];
-        for (uint32_t keyIndex = 0; keyIndex < nodeAnimationAssimp->mNumPositionKeys; ++keyIndex) {
-            aiVectorKey& keyAssimp = nodeAnimationAssimp->mPositionKeys[keyIndex];
-            KeyframeVector3 keyframe;
-            keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); // ここも秒に変換
-            keyframe.value = { keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };//右手->左手
-            nodeAnimation.translate.keyframes.push_back(keyframe);
-        }
-
-        // RotateはmNumRotationKeys/mRotationKeys、ScaleはmNumScalingKeys/mScalingKeysで取得できるので同様に行う。
-        // RotateはQuaternionで、右手->左手に変換するために、yとzを反転させる必要がある。Scaleはそのままで良い。
-        // keyframe.value = {rotate.x, -rotate.y, -rotate.z, rotate.w};
-
-        // Rotation キーフレームを追加
-        for (uint32_t keyIndex = 0; keyIndex < nodeAnimationAssimp->mNumRotationKeys; ++keyIndex) {
-            aiQuatKey& keyAssimp = nodeAnimationAssimp->mRotationKeys[keyIndex];
-            KeyframeQuaternion keyframe;
-            keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); // 秒に変換
-            aiQuaternion& q = keyAssimp.mValue;
-            // 右手系->左手系変換: y,z を反転
-            keyframe.value = { q.x, q.y, q.z, q.w };
-            nodeAnimation.rotate.keyframes.push_back(keyframe);
-        }
-
-        // Scale キーフレームを追加
-        for (uint32_t keyIndex = 0; keyIndex < nodeAnimationAssimp->mNumScalingKeys; ++keyIndex) {
-            aiVectorKey& keyAssimp = nodeAnimationAssimp->mScalingKeys[keyIndex];
-            KeyframeVector3 keyframe;
-            keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); // 秒に変換
-            keyframe.value = { keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z }; // スケールはそのまま
-            nodeAnimation.scale.keyframes.push_back(keyframe);
+    
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    // キャッシュチェック
+    if (auto it = cache_.find(filePath); it != cache_.end()) {
+        if (it->second.animation) {
+            return it->second.animation;
         }
     }
-    // 解析完了
-    return animation;
+
+    uint64_t currentLwt = 0;
+    std::error_code ec;
+    if (std::filesystem::exists(filePath, ec)) {
+        auto lastWrite = std::filesystem::last_write_time(filePath, ec);
+        currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
+    }
+
+    std::string binPath = filePath + ".ibin";
+    bool shouldImport = true;
+    auto anim = std::make_shared<Animation>();
+
+    if (std::filesystem::exists(binPath, ec)) {
+        uint64_t cachedLwt = 0;
+        if (AnimationSerializer::Deserialize(binPath, *anim, cachedLwt) && cachedLwt == currentLwt) {
+            shouldImport = false;
+        }
+    }
+
+    if (shouldImport) {
+        *anim = AnimationImporter::Import(filePath);
+        if (anim->duration > 0.0f) {
+            AnimationSerializer::Serialize(binPath, *anim, currentLwt);
+        }
+    }
+
+    CachedAnimation cached;
+    cached.animation = anim;
+    cached.lastLoadTime = currentLwt;
+    cached.sourceFilePath = filePath;
+    cache_[filePath] = cached;
+
+    return anim;
+}
+
+void AnimationManager::OnDirectoryChanged() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& [path, cached] : cache_) {
+        if (cached.sourceFilePath.empty()) continue;
+
+        std::error_code ec;
+        if (std::filesystem::exists(cached.sourceFilePath, ec)) {
+            auto lastWrite = std::filesystem::last_write_time(cached.sourceFilePath, ec);
+            uint64_t currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
+
+            if (currentLwt > cached.lastLoadTime) {
+                OutputDebugStringA(("[AnimationManager] Hot-Reloading: " + cached.sourceFilePath + "\n").c_str());
+                
+                std::string binPath = cached.sourceFilePath + ".ibin";
+                auto newAnim = std::make_shared<Animation>(AnimationImporter::Import(cached.sourceFilePath));
+                if (newAnim->duration > 0.0f) {
+                    AnimationSerializer::Serialize(binPath, *newAnim, currentLwt);
+                }
+                
+                cached.animation = newAnim;
+                cached.lastLoadTime = currentLwt;
+            }
+        }
+    }
 }
 
 // 任意の時刻の値を取得する
@@ -360,80 +364,6 @@ std::string AnimationManager::FindFileRecursive(const std::string& filename) con
 
 /// SkinClusterの生成
 
-// SkinClusterを生成
-SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const ModelData& modelData) {
-    SkinCluster skinCluster;
-
-    /// MatrixPalleteの作成
-
-    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        // pallete用のResourceを確保
-        skinCluster.paletteResource[i] = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
-        WellForGPU* mappedPallete = nullptr;
-        skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
-        skinCluster.mappedPalette[i] = { mappedPallete, skeleton.joints.size() }; // spanを使ってアクセスするようにする
-
-        // SRV用のインデックスを確保
-        uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
-        IRUFEMI_ASSERT(paletteSrvIndex != DescriptorPool::kInvalid);
-        skinCluster.paletteSrvHandle[i].first = dxCommon_->GetSrvPool()->GetCPUHandle(paletteSrvIndex);
-        skinCluster.paletteSrvHandle[i].second = dxCommon_->GetSrvPool()->GetGPUHandle(paletteSrvIndex);
-
-        // palette用のsrvを作成。StructuredBufferでアクセスできるようにする。
-        D3D12_SHADER_RESOURCE_VIEW_DESC paletteSrvDesc{};
-        paletteSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
-        paletteSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        paletteSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-        paletteSrvDesc.Buffer.FirstElement = 0;
-        paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-        paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
-        paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
-
-        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource[i].Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle[i].first);
-    }
-
-    /// influence用Resourceの作成
-
-    // influence用のResourceを確保。頂点毎にinfluence情報を追加できるようにする。
-    skinCluster.influenceResource = dxCommon_->CreateBufferResource(sizeof(VertexInfluence) * modelData.vertices.size());
-    VertexInfluence* mappedInfluence = nullptr;
-    skinCluster.influenceResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInfluence));
-    std::memset(mappedInfluence, 0, sizeof(VertexInfluence) * modelData.vertices.size()); // 0埋め。weightを0にしておく。
-    skinCluster.mappedInfluence = { mappedInfluence,modelData.vertices.size() };
-
-    // Influence用のVBVの作成
-    skinCluster.influenceBufferView.BufferLocation = skinCluster.influenceResource->GetGPUVirtualAddress();
-    skinCluster.influenceBufferView.SizeInBytes = UINT(sizeof(VertexInfluence) * modelData.vertices.size());
-    skinCluster.influenceBufferView.StrideInBytes = sizeof(VertexInfluence);
-
-    // InverseBindPoseMatrixInverseBindPoseMatrixを格納する場所を作成して、単位行列で埋める
-    skinCluster.inverseBindPoseMatrices.resize(skeleton.joints.size());
-    std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(), [] {return Math::MakeIdentity4x4(); });
-
-    /// ModelDataを解析してInstanceを埋める
-
-    for (const auto& jointWeight : modelData.skinClusterData) { // ModelのskinClusterの情報を解析
-        auto it = skeleton.jointMap.find(jointWeight.first); // jointWeight.firstはJoint名なので、skeletonに対象となるjointが含まれているか判断
-        if (it == skeleton.jointMap.end()) { // そんな名前のJointは存在しない。なので次に回す。
-            continue;
-        }
-        // (*it).secondにはjointのindexが入っているので、該当のindexのinverseBindPoseMatrixを代入
-        skinCluster.inverseBindPoseMatrices[(*it).second] = jointWeight.second.inverseBindPoseMatrix;
-        for (const auto& vertexWeight : jointWeight.second.vertexWeights) {
-            auto& currentInfluence = skinCluster.mappedInfluence[vertexWeight.vertexIndex]; // 該当のvertexIndexのinfluence情報を参照しておく
-            for (uint32_t index = 0; index < kNumMaxInfluence; ++index) { // 空いているところに入れる
-                if (currentInfluence.weights[index] == 0.0f) { // weight==0が空いている状態なので、その場所にweightとjointのindexを代入
-                    currentInfluence.weights[index] = vertexWeight.weight;
-                    currentInfluence.jointIndices[index] = (*it).second;
-                }
-
-            }
-
-        }
-    }
-
-    return skinCluster;
-}
 
 // SkinClusterを生成 (ObjModel版)
 SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const ObjModel& objModel) {

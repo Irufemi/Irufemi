@@ -855,6 +855,18 @@
     <ClCompile Include="Resource\Model\ModelManager.cpp">
       <Filter>Resource\Model</Filter>
     </ClCompile>
+    <ClCompile Include="Resource\Model\ModelImporter.cpp">
+      <Filter>Resource\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\Model\ModelSerializer.cpp">
+      <Filter>Resource\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\Model\AnimationImporter.cpp">
+      <Filter>Resource\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\Model\AnimationSerializer.cpp">
+      <Filter>Resource\Model</Filter>
+    </ClCompile>
     <ClCompile Include="Resource\Texture\Texture.cpp">
       <Filter>Resource\Texture</Filter>
     </ClCompile>
@@ -1413,6 +1425,18 @@
     <ClInclude Include="Resource\Model\ModelManager.h">
       <Filter>Resource\Model</Filter>
     </ClInclude>
+    <ClInclude Include="Resource\Model\ModelImporter.h">
+      <Filter>Resource\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Model\ModelSerializer.h">
+      <Filter>Resource\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Model\AnimationImporter.h">
+      <Filter>Resource\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Model\AnimationSerializer.h">
+      <Filter>Resource\Model</Filter>
+    </ClInclude>
     <ClInclude Include="Resource\Model\Data\Animation.h">
       <Filter>Resource\Model\Data</Filter>
     </ClInclude>
@@ -1429,9 +1453,6 @@
       <Filter>Resource\Model\Data</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Model\Data\MaterialData.h">
-      <Filter>Resource\Model\Data</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource\Model\Data\ModelData.h">
       <Filter>Resource\Model\Data</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Model\Data\Node.h">
