@@ -1,67 +1,87 @@
 # Irufemi Engine
 
-DirectX 12をベースにした、高機能な自作3Dゲームエンジンです。
-グラフィックスプログラミングの学習から応用的なレンダリング技術の構築を目的として開発されています。
-
 [![DebugBuild](https://github.com/Irufemi/CG3/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/DebugBuild.yml)
 [![ReleaseBuild](https://github.com/Irufemi/CG3/actions/workflows/ReleaseBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/ReleaseBuild.yml)
 [![DevelopmentBuild](https://github.com/Irufemi/CG3/actions/workflows/DevelopmentBuild.yml/badge.svg)](https://github.com/Irufemi/CG3/actions/workflows/DevelopmentBuild.yml)
 [![CheckUnwantedFiles](https://github.com/Irufemi/Irufemi/actions/workflows/CheckUnwantedFiles.yml/badge.svg)](https://github.com/Irufemi/Irufemi/actions/workflows/CheckUnwantedFiles.yml)
 
-## 概要
+DirectX 12をベースにスクラッチから構築した、**GPU-Driven Rendering** および **Data-Oriented Design** 指向の自作3Dゲームエンジンです。
+グラフィックスプログラミングの学習に留まらず、商用AAAゲームエンジンにおけるパフォーマンス要求（CPU-GPU同期、ドローコールの極小化、大量オブジェクトの処理）をクリアするための最新アーキテクチャの実証を目的としています。
 
-このプロジェクトは、DirectX 12 APIを直接利用した低レイヤーからのレンダリングパイプラインを構築しており、並列処理や非同期読み込み、高度なシェーダー技術の実装を行っています。
+---
 
-## 主な機能
+## 🎯 技術的アピールポイント（最適化とモダンアーキテクチャ）
 
-### 1. レンダリング (Rendering)
-- **DirectX 12 描画基盤**: 効率的なディスクリプタ管理とコマンドリスト構築。
-- **セキュアなマルチバッファリングアーキテクチャ**:
-  - `ConstantBuffer<T>` テンプレートを用いた定数バッファの抽象化。
-  - GPUの描画遅延に合わせたリングバッファ構造により、リソース（TransformやMaterialなど）の CPU-GPU 間のデータ編集競合（ティアリング）を完全に排除。
-- **マルチパス・セーフなカメラ設計**:
-  - 3Dモデル等の描画において、オブジェクトごとにCPU側でViewProjection行列を計算する従来の方式を廃止。
-  - 共通カメラバッファ (`gCamera`) をシェーダー内で直接参照しGPU側で計算することで、シャドウマップ生成時など「1フレーム内での複数回描画」における定数バッファの競合バグを根本から防止。
-- **Compute / Graphics 完全分離**:
-  - `IComputeTask` インターフェースを用いたタスク予約型アーキテクチャ。
-  - コンピュートシェーダー（GPUパーティクル等の計算）を描画コマンドから切り離し、DrawManager主導で一括実行することで、マルチパス時の二重実行や処理競合を回避。
-- **パーティクルシステム**:
-  - **GPU Particle**: 計算シェーダーを活用した大量の粒子シミュレーション。
-  - **Voxel Particle**: ボクセルベースの物理挙動を持つパーティクル。
-- **環境描画**: スカイボックス、動的なライト設定（平行光源、点光源、スポットライト）。
-- **ポストプロセス管理**: マルチパスレンダリングに対応し、以下のエフェクトをサポート。
-  - **カラー**: グレースケール、セピア、HSV調整、トーンマッピング (ACES)。
-  - **ぼかし**: 平滑化、ガウスぼかし、放射状ぼかし。
-  - **演出**: ビネット、ディゾルブ、ノイズ、アウトライン。
+### 1. GPU-Driven Rendering & Compute Pipeline (描画と物理・アニメーションのGPU完全委譲)
+**【課題】** スケルタルアニメーションのCPU処理や、数万個に及ぶ破片の物理計算・描画による強烈なCPUバウンド。
+**【解決】** 
+- **GPU Skinning**: スケルタルアニメーションの頂点変形をCPUや頂点シェーダで行わず、`Compute Shader` を用いて事前演算 (Pre-compute) しています。
+- **GPGPU Physics & GPU Culling**: 数万ボクセルの重力・バウンド演算を `Compute Shader` にオフロードし、そのまま `ExecuteIndirect` を用いた GPU Culling で描画コマンドを直接発行。
+**【効果】** アニメーションと大量オブジェクトの物理・描画からCPUを完全に解放し、数万の破片が飛び交う圧倒的な破壊表現を 60FPS で実現。
 
-### 2. モデル & アニメーション (Model & Animation)
-- **アセットインポート**: Assimpライブラリによる多種多様な3Dモデル（.obj, .gltf等）の読み込み。
-- **スケルタルアニメーション**: インスタンスごとの再生制御、ボーンによる変形。
+### 2. Data-Oriented Architecture (データ指向と数万オブジェクトの最適化)
+**【課題】** 大量のアクター（敵、弾、破片）を管理する際、オブジェクト指向特有のメモリ断片化によるキャッシュミスやポインタ巡回のオーバーヘッド。
+**【解決】** 
+- **Virtual Entity Manager**: Instance Promotion パターンを採用。オブジェクト群を普段は単なる「座標の配列 (Virtual Transform)」としてキャッシュ効率良く超高速イテレートし、プレイヤーが干渉した瞬間など「本当に必要なときだけ」本物の `GameObject` へ昇格 (Promote) させます。
+**【効果】** シーン内に数万のオブジェクトが存在しても、スリープ中のオーバーヘッドを完全にゼロ化。
 
-### 3. システム & 基盤 (System & Infrastructure)
-- **非同期リソース管理**: シーン更新を止めないスレッドプールによる非同期ロード。
-- **リファクタリング済み基盤**: FPSコントローラー、シェーダーコンパイラの分離。
-- **サウンドシステム**: XAudio2による音声データの読み込みと再生。
-- **算術ライブラリ**: 独自の Vector, Matrix, Quaternion クラス。
+### 3. Modern Rendering Pipeline & VFX (最新レンダリング基盤と視覚効果)
+**【課題】** 複雑なパス依存の解決、テクスチャバインド管理の煩雑さ、半透明パーティクルのZソートにかかるCPU負荷。
+**【解決】** 
+- **RenderGraph**: 複雑なポストプロセスパスの依存を自動解決し、一時メモリ（Transient Resource）のエイリアシング最適化を実施。
+- **Bindless Resources (Descriptor Indexing)**: レガシーな `register(tX)` を廃止。全テクスチャを巨大な配列に乗せ、定数バッファ経由のインデックスで参照するフルBindlessアーキテクチャへ移行。
+- **GPU Bitonic Sort**: パーティクルのZソート（カメラからの距離順並び替え）をCPUから `Compute Shader` (ビトニックソート) に完全移行。
+**【効果】** マテリアル表現の圧倒的な柔軟性、ドローコールの劇的な削減、および完全なGPUパーティクルシミュレーションを実現。
 
-### 4. デバッグ・ツール (Tools)
-- **Debug UI**: ImGui を使用したリアルタイムなパラメータ調整。
-- **Doxygen 対応**: ほぼ全コードに対してドキュメントコメントを完備。
+### 4. セキュアなマルチバッファリングと非同期処理
+**【課題】** CPU-GPU間のデータ編集競合（ティアリング）、ダングリングポインタによるクラッシュ、シーンロード時のスパイク。
+**【解決】** 
+- **マルチバッファリング**: `ConstantBuffer<T>` によるトリプルバッファリングアーキテクチャで競合を完全に排除。
+- **Resource Handle System**: リソース管理を `std::shared_ptr` から世代 (Generation) 管理付きの Handle へ移行し、ダングリングポインタを完全防御。
+- **非同期分散処理**: スレッドプールを利用し、リソースのロードや負荷の高いレイキャスト判定をバックグラウンドに分散 (Time-Slicing)。
+**【効果】** ティアリングとフレームドロップ、メモリリークを完全に防ぐ極めて堅牢な基盤とシームレスなUX。
 
-## プロジェクト構成
+---
 
-```text
-C:.
-├── project                # VS ソリューション・プロジェクト
-│   └── IrufemiEngine      # エンジン本体
-│       ├── Engine         # 基盤システム (Graphics, Platform, Manager)
-│       ├── Renderer       # レンダリング関連 (Object3D, Particle, PostProcess)
-│       ├── Resource       # リソース管理 (Texture, Model, Audio)
-│       └── Framework      # アプリケーションフレームワーク
-└── ...
-```
+## 📁 プロジェクト構成 (Project Structure)
 
-## アセットパイプライン
+本ソリューション (`Irufemi.sln`) は、エンジンコアとアプリケーション（ゲームロジック）、およびツール群を完全に分離（関心の分離）した以下の4プロジェクトで構成されています。
+
+| プロジェクト | 種別 | 役割 |
+| :--- | :--- | :--- |
+| **IrufemiEngine** | 静的ライブラリ (.lib) | 描画・物理・リソース・コンポーネント基盤を提供するエンジンコア |
+| **IrufemiEditor** | 静的ライブラリ (.lib) | ImGuiベースのレベルエディタ・デバッグツール群 |
+| **Application_solo** | 実行ファイル (.exe) | 個人制作ゲームのロジック・固有シーン・アセンブリ |
+| **Application_team** | 実行ファイル (.exe) | チーム制作ゲームのロジック・固有シーン・アセンブリ |
+
+---
+
+## 📂 ディレクトリ構成 (Folder Structure)
+
+### ⚙️ IrufemiEngine (`project/IrufemiEngine/`)
+エンジンのコアモジュール群です。特定のゲームに依存する処理は一切含みません。
+
+| ディレクトリ | 役割 |
+| :--- | :--- |
+| **Engine/** | DirectX12ラッパー、ウィンドウ管理、スレッドプール、各種Manager群 |
+| **Renderer/** | RenderGraph、Object3D描画、GPU Particle、PostProcess等の描画パイプライン |
+| **Resource/** | ResourceHandleシステムを用いたテクスチャ・モデル・オーディオの安全な管理 |
+| **Framework/** | GameObject と Component を用いた軽量かつ高速なECS基盤 |
+| **EngineResources/** | HLSLシェーダー、エンジン標準のテクスチャやモデルなどの必須アセット |
+
+### 🎮 Application (`project/Application_solo/` 等)
+ゲーム固有のロジックとリソースを格納します。
+
+| ディレクトリ | 役割 |
+| :--- | :--- |
+| **components/** | ゲーム固有の振る舞い（Player, Enemy, Debris等）を定義するコンポーネント |
+| **scene/** | 各シーン（Title, InGame, Clear等）の初期化と状態管理（State Pattern） |
+| **UI/** | ゲーム固有のUIコントロール（LoadingScreen, PromptController等） |
+| **resources/** | このゲーム専用のテクスチャ、モデル、JSONパラメータ等のアセット群 |
+
+---
+
+## 🎨 アセットパイプライン
 
 ### 1. 3Dモデルのエクスポート
 - **ルール**: Blender等のツールでは **デフォルト設定（Y-up / 右手座標系）** でエクスポートしてください。
@@ -76,28 +96,46 @@ C:.
   - `_r` / `roughness` (ラフネス)
 - **カラーデータ (sRGB)**: 上記以外はすべて色として扱われ、自動的にリニアライズされます。
 
-## 開発ガイドライン
+---
+
+## 📜 開発ガイドライン
 
 - **エンコード**: Unicode (UTF-8 署名なし) を厳守。
 - **コメント**: ヘッダーファイルには Doxygen 形式での注釈を記述。
 - **GPUリソース管理**: 描画において「毎フレーム内容が更新されるデータ」を作成する場合、生の `ID3D12Resource` を直接 `Map`/`Unmap` することは避け、必ず `ConstantBuffer<T>` または `std::array<ComPtr<ID3D12Resource>, kMaxFramesInFlight>` を利用してマルチバッファ化すること。
 - **リソース同期 (Resource Barrier)**: 
   - `pResource = nullptr` を用いた UAV のグローバルバリアは、GPU の並列実行効率を低下させるため使用禁止とします。
-  - バリア構築処理はコードが冗長になりやすいため、各マネージャークラス（`DXCommandManager`等）のメンバ関数にはせず、特定のクラスに依存しない静的ユーティリティ関数（`DirectXUtils::TransitionBarrier` や `DirectXUtils::UAVBarriers` 等）として `DirectXUtils.h` に集約しています。これにより、どのコマンドリスト（メイン用・転送用）に対しても疎結合で安全にバリアを適用できる設計としています。バリアを張る際は必ずこのユーティリティを使用してください。
-- **設計**: 疎結合を意識し、可能な限りインターフェースと実装を分離。
+  - バリアを張る際は、特定のクラスに依存しない静的ユーティリティ関数（`DirectXUtils::TransitionBarrier` や `DirectXUtils::UAVBarriers` 等）を使用してください。
 
-## 動作環境
+---
+
+## ⚙️ 動作環境・ビルド手順
 
 - **OS**: Windows 10 / 11
 - **IDE**: Visual Studio 2026
 - **SDK**: Windows SDK 10.0.26100.7175 以上推奨
 
-## 使用ライブラリ
+**ビルド手順**:
+1. リポジトリをクローン後、VS2026でソリューションを開きます。
+2. 構成を選択しビルドを実行します。
+
+**【ビルド構成によるシェーダーコンパイルの違い】**
+本エンジンは開発時のイテレーション速度と、製品版のパフォーマンスを両立するため、構成によってシェーダーのコンパイル方式が異なります。
+- **Debug / Development / Editor ビルド**:
+  エンジン実行時に動的コンパイル（Runtime Compile）されます。これにより、シェーダーを編集するたびにプロジェクト全体をビルドし直す手間が省け、迅速なトライ＆エラーが可能です。
+- **Release ビルド**:
+  Visual Studio の PreBuild イベントとして `CompileShaders.bat` が自動で呼び出され、最高レベルの最適化 (`/O3`) を適用したオフラインコンパイル（事前ビルド）が行われます。実行時のコンパイル負荷が完全にゼロになります。
+
+---
+
+## 📚 使用ライブラリ
 
 - [Assimp](https://github.com/assimp/assimp)
 - [Dear ImGui](https://github.com/ocornut/imgui)
 - [DirectX 12 Agility SDK](https://devblogs.microsoft.com/directx/directx12agility/)
 
-## ライセンス
+---
+
+## 📄 ライセンス
 
 このエンジンのソースコードは [MIT License](LICENSE.txt) の下で提供されています。各ライブラリのライセンスについては個別の規定に従ってください。
