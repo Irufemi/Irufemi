@@ -5,6 +5,8 @@
 #include <sstream>
 #include <filesystem>
 #include <Windows.h>
+#include <chrono>
+#include <iomanip>
 
 MagicBrushClient::MagicBrushClient() : state_(State::Idle) {}
 
@@ -13,6 +15,11 @@ MagicBrushClient::~MagicBrushClient() {
         workerThread_.join();
     }
     StopPythonServer();
+}
+
+std::vector<std::string> MagicBrushClient::GetServerLogs() const {
+    std::lock_guard<std::mutex> lock(logMutex_);
+    return serverLogs_;
 }
 
 void MagicBrushClient::StartGeneration(const std::string& prompt, const std::string& referenceImagePath, const std::string& shaderName, const std::string& outputDirectory, ShaderManager* shaderManager) {
@@ -43,12 +50,32 @@ Microsoft::WRL::ComPtr<IDxcBlob> MagicBrushClient::GetResultBlob() {
 bool MagicBrushClient::StartPythonServer() {
     if (IsServerRunning()) return true;
 
+    // パイプの作成
+    SECURITY_ATTRIBUTES saAttr;
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
+    HANDLE hOutRead = NULL;
+    HANDLE hOutWrite = NULL;
+    if (!CreatePipe(&hOutRead, &hOutWrite, &saAttr, 0)) {
+        return false;
+    }
+    // 読み取り側ハンドルは子プロセスに継承させない
+    SetHandleInformation(hOutRead, HANDLE_FLAG_INHERIT, 0);
+
+    hChildStd_OUT_Rd_ = hOutRead;
+    hChildStd_OUT_Wr_ = hOutWrite;
+
     STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
     si.wShowWindow = SW_HIDE; // サーバーの黒窓を出さない
+    si.hStdOutput = hOutWrite;
+    si.hStdError = hOutWrite;
+    
     ZeroMemory(&pi, sizeof(pi));
 
     // 実行ファイル(exe)のパスを取得し、そこから相対パスでToolsディレクトリを導き出す
@@ -60,7 +87,7 @@ bool MagicBrushClient::StartPythonServer() {
     std::filesystem::path toolsDir = exePath.parent_path() / "../../../project/Tools/ShaderGenerator";
     std::string currentDir = std::filesystem::absolute(toolsDir).string();
 
-    std::string command = "cmd.exe /c python main.py";
+    std::string command = "cmd.exe /c .\\.venv\\Scripts\\python.exe main.py";
     std::vector<char> cmdBuffer(command.begin(), command.end());
     cmdBuffer.push_back('\0');
 
@@ -69,18 +96,28 @@ bool MagicBrushClient::StartPythonServer() {
         cmdBuffer.data(), 
         nullptr, 
         nullptr, 
-        FALSE, 
+        TRUE, // パイプハンドルを継承させるためにTRUE
         CREATE_NO_WINDOW, 
         nullptr, 
         currentDir.c_str(), 
         &si, 
         &pi)) {
+        CloseHandle(hOutRead);
+        CloseHandle(hOutWrite);
         return false;
     }
+
+    // 親プロセス側で書き込みハンドルは不要なので閉じる（閉じないと読み取りスレッドがEOFを検知できない）
+    CloseHandle(hOutWrite);
+    hChildStd_OUT_Wr_ = nullptr;
 
     pythonProcessHandle_ = pi.hProcess;
     pythonThreadHandle_ = pi.hThread;
     pythonProcessId_ = pi.dwProcessId;
+    
+    // ログ読み取りスレッドを開始
+    isLogThreadRunning_ = true;
+    logThread_ = std::thread(&MagicBrushClient::LogReadThread, this);
     
     // サーバーが立ち上がるのを少し待つ
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
@@ -100,6 +137,52 @@ void MagicBrushClient::StopPythonServer() {
         pythonProcessHandle_ = nullptr;
         pythonThreadHandle_ = nullptr;
         pythonProcessId_ = 0;
+    }
+
+    isLogThreadRunning_ = false;
+    if (hChildStd_OUT_Rd_) {
+        CloseHandle((HANDLE)hChildStd_OUT_Rd_);
+        hChildStd_OUT_Rd_ = nullptr;
+    }
+    if (logThread_.joinable()) {
+        logThread_.join();
+    }
+}
+
+void MagicBrushClient::LogReadThread() {
+    DWORD dwRead;
+    CHAR chBuf[4096];
+    std::string currentLine;
+    
+    HANDLE hRead = (HANDLE)hChildStd_OUT_Rd_;
+
+    while (isLogThreadRunning_ && hRead != nullptr) {
+        bool success = ReadFile(hRead, chBuf, sizeof(chBuf) - 1, &dwRead, NULL);
+        if (!success || dwRead == 0) break; // エラーまたはパイプのクローズ
+        
+        chBuf[dwRead] = '\0';
+        std::string chunk(chBuf);
+        
+        // chunk を改行で分割してログに追加
+        for (char c : chunk) {
+            if (c == '\n') {
+                // タイムスタンプの取得
+                auto now = std::chrono::system_clock::now();
+                auto in_time_t = std::chrono::system_clock::to_time_t(now);
+                std::tm bt{};
+                localtime_s(&bt, &in_time_t);
+                std::stringstream ss;
+                ss << "[" << std::put_time(&bt, "%H:%M:%S") << "] " << currentLine;
+                
+                {
+                    std::lock_guard<std::mutex> lock(logMutex_);
+                    serverLogs_.push_back(ss.str());
+                }
+                currentLine.clear();
+            } else if (c != '\r') {
+                currentLine += c;
+            }
+        }
     }
 }
 
@@ -133,6 +216,67 @@ std::string MagicBrushClient::EscapeJSON(const std::string& input) {
     return out;
 }
 
+std::string MagicBrushClient::ExecuteCommandHidden(const std::string& command) {
+    SECURITY_ATTRIBUTES saAttr;
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
+    HANDLE hOutRead = NULL;
+    HANDLE hOutWrite = NULL;
+    if (!CreatePipe(&hOutRead, &hOutWrite, &saAttr, 0)) {
+        return "ERROR: CreatePipe failed.";
+    }
+    SetHandleInformation(hOutRead, HANDLE_FLAG_INHERIT, 0);
+
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+    si.wShowWindow = SW_HIDE; // 完全に隠す
+    si.hStdOutput = hOutWrite;
+    si.hStdError = hOutWrite;
+
+    ZeroMemory(&pi, sizeof(pi));
+
+    std::vector<char> cmdBuffer(command.begin(), command.end());
+    cmdBuffer.push_back('\0');
+
+    if (!CreateProcessA(
+        nullptr,
+        cmdBuffer.data(),
+        nullptr,
+        nullptr,
+        TRUE,
+        CREATE_NO_WINDOW,
+        nullptr,
+        nullptr,
+        &si,
+        &pi)) {
+        CloseHandle(hOutRead);
+        CloseHandle(hOutWrite);
+        return "ERROR: CreateProcess failed.";
+    }
+
+    CloseHandle(hOutWrite); // 子プロセスが書き終わるのを待つために親側の書き込みハンドルは閉じる
+
+    std::string result;
+    DWORD dwRead;
+    CHAR chBuf[4096];
+    while (ReadFile(hOutRead, chBuf, sizeof(chBuf) - 1, &dwRead, NULL) && dwRead > 0) {
+        chBuf[dwRead] = '\0';
+        result += chBuf;
+    }
+
+    CloseHandle(hOutRead);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    return result;
+}
+
 std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const std::string& jsonPayload) {
     // テンポラリファイルにJSONを書き出す（エスケープ問題を避けるため）
     std::string tempFileName = "magic_brush_temp_req.json";
@@ -144,20 +288,42 @@ std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const
     ofs.close();
 
     // curl.exe をプロセスとして起動し、標準出力を取得する
-    std::string command = "curl -s -X POST -H \"Content-Type: application/json\" -d @" + tempFileName + " http://127.0.0.1:8000" + endpoint;
+    std::string command = "cmd.exe /c curl -s -X POST -H \"Content-Type: application/json\" -d @" + tempFileName + " http://127.0.0.1:8000" + endpoint;
     
-    std::string result;
-    FILE* pipe = _popen(command.c_str(), "r");
-    if (!pipe) {
-        return "ERROR: _popen failed.";
-    }
-    char buffer[1024];
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-        result += buffer;
-    }
-    _pclose(pipe);
+    return ExecuteCommandHidden(command);
+}
+
+bool MagicBrushClient::RestoreHistory(size_t index, ShaderManager* shaderManager) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (index >= history_.size()) return false;
+
+    const auto& item = history_[index];
     
-    return result;
+    // 一時ファイルにHLSLを書き出す
+    std::string tempHlslPath = "resources/shaders/generated/temp_restored_shader.hlsl";
+    std::filesystem::create_directories("resources/shaders/generated");
+    std::ofstream ofsHlsl(tempHlslPath);
+    if (!ofsHlsl) return false;
+    ofsHlsl << item.hlslCode;
+    ofsHlsl.close();
+
+    // 再コンパイル
+    ShaderCompileOptions options;
+    options.entryPoint = L"main";
+    std::string errorLog;
+    
+    // ShaderManager でコンパイル (キャッシュが残っている可能性があるので ReloadShader か GetOrCompile か)
+    std::wstring tempHlslPathW = ConvertString(tempHlslPath);
+    auto blob = shaderManager->ReloadShader(tempHlslPathW, options, L"ps_6_0", &errorLog);
+    if (blob) {
+        resultBlob_ = blob;
+        state_ = State::Success;
+        return true;
+    } else {
+        errorMessage_ = "Failed to restore history.\n" + errorLog;
+        state_ = State::Error;
+        return false;
+    }
 }
 
 void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName, std::string outputDirectory, ShaderManager* shaderManager) {
@@ -205,6 +371,13 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
             std::lock_guard<std::mutex> lock(mutex_);
             resultBlob_ = blob;
             state_ = State::Success;
+            
+            // 成功履歴に保存
+            GenerationHistory h;
+            h.prompt = prompt;
+            h.hlslCode = hlslCode;
+            h.shaderName = shaderName;
+            history_.push_back(h);
             return;
         }
         

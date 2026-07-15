@@ -254,6 +254,58 @@ void TL1Scene::DrawDebugTab() {
                     ImGui::TextWrapped("%s", magicBrushClient_->GetErrorMessage().c_str());
                     break;
             }
+
+            ImGui::Separator();
+            if (ImGui::CollapsingHeader("Server Console", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::BeginChild("LogConsole", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
+                auto logs = magicBrushClient_->GetServerLogs();
+                for (const auto& log : logs) {
+                    ImGui::TextUnformatted(log.c_str());
+                }
+                // 自動スクロール
+                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.0f);
+                }
+                ImGui::EndChild();
+            }
+
+            ImGui::Separator();
+            if (ImGui::CollapsingHeader("Generation History")) {
+                const auto& history = magicBrushClient_->GetHistory();
+                if (history.empty()) {
+                    ImGui::TextDisabled("No history yet.");
+                } else {
+                    static int selectedHistoryIndex = -1;
+                    
+                    ImGui::BeginChild("HistoryList", ImVec2(0, 100), true);
+                    for (int i = static_cast<int>(history.size()) - 1; i >= 0; --i) {
+                        const auto& item = history[i];
+                        std::string label = "[" + std::to_string(i) + "] " + item.shaderName + " (Prompt: " + item.prompt.substr(0, 20) + "...)";
+                        if (ImGui::Selectable(label.c_str(), selectedHistoryIndex == i)) {
+                            selectedHistoryIndex = i;
+                        }
+                    }
+                    ImGui::EndChild();
+
+                    if (selectedHistoryIndex >= 0 && selectedHistoryIndex < history.size()) {
+                        if (ImGui::Button("Restore Selected History")) {
+                            const auto& item = history[selectedHistoryIndex];
+                            strncpy_s(promptBuffer, item.prompt.c_str(), _TRUNCATE);
+                            strncpy_s(shaderNameBuffer, item.shaderName.c_str(), _TRUNCATE);
+                            shaderName_ = item.shaderName; // 実際の適用名も更新
+                            
+                            // HistoryのHLSLを直接復元して再適用する
+                            isShaderRegistered_ = false; // 再バインドを促す
+                            if (magicBrushClient_->RestoreHistory(selectedHistoryIndex, engine_->GetDirectXCommon()->GetShaderManager())) {
+                                notificationMsg = "Restored and compiled shader from history.";
+                            } else {
+                                notificationMsg = "Failed to restore shader from history.";
+                            }
+                            notificationTimer = 3.0f;
+                        }
+                    }
+                }
+            }
         }
 
         // 通知メッセージの描画とタイマー減算

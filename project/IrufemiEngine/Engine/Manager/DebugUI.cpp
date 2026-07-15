@@ -107,7 +107,10 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする
 #endif // EditorMode
-    io.IniFilename = iniFileName;
+    
+    // カレントディレクトリの移動で ini が意図しない場所に生成されるのを防ぐため、初期化時点の絶対パスを固定で設定する
+    static std::string absoluteIniPath = std::filesystem::absolute(iniFileName).string();
+    io.IniFilename = absoluteIniPath.c_str();
 
     ImGui_ImplWin32_Init(hwnd);
 
