@@ -6,6 +6,18 @@ namespace StringUtility {
     bool EndsWith(const std::wstring& str, const std::wstring& suffix) {
         return str.ends_with(suffix);
     }
+
+    std::string GetCacheFilePath(const std::string& fullPath, const std::string& cacheCategory, const std::string& extension) {
+        std::string pathStr = fullPath;
+        std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
+        
+        size_t pos = pathStr.find("resources/");
+        if (pos != std::string::npos) {
+            std::string relative = pathStr.substr(pos + 10);
+            return "resources/.cache/" + cacheCategory + "/" + relative + extension;
+        }
+        return fullPath + extension;
+    }
 }
 
 std::wstring ConvertString(const std::string& str) {

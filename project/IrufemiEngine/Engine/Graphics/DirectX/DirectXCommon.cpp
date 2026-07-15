@@ -115,7 +115,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     // シェーダーの検索パスとバイナリパスを登録
     shaderManager_->AddSearchPath(L"resources/shaders/");
     shaderManager_->AddSearchPath(L"../IrufemiEngine/EngineResources/shaders/");
-    shaderManager_->SetBinaryPath(L"resources/shaders/compiled/");
+    shaderManager_->SetBinaryPath(L"resources/.cache/shaders/");
 
     EnableDebugLayer();
     InitializeDXGI();

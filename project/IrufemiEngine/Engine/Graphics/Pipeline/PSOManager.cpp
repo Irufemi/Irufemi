@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 
-static const std::string kCacheDirectory = "resources/cache/pso/";
+static const std::string kCacheDirectory = "resources/.cache/pso/";
 
 // 軽量ハッシュ(キャッシュキー用)
 static uint64_t FNV1a(const void* p, size_t n, uint64_t h = 1469598103934665603ull) {
@@ -265,7 +265,7 @@ void PSOManager::ClearCache() {
     computeCache_.clear();
 
     // ホットリロード等で強制クリアされた場合、古いディスクキャッシュも破棄する
-    std::filesystem::path cacheDir = "resources/cache/pso/";
+    std::filesystem::path cacheDir = kCacheDirectory;
     if (std::filesystem::exists(cacheDir)) {
         for (const auto& entry : std::filesystem::directory_iterator(cacheDir)) {
             if (entry.path().extension() == ".pso") {
