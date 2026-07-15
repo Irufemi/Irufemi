@@ -29,7 +29,8 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     const std::wstring& filePath,
     const wchar_t* profile,
     const ShaderCompileOptions& options,
-    const std::vector<std::wstring>& includeDirs
+    const std::vector<std::wstring>& includeDirs,
+    std::string* outErrorLog
 ) {
     // 1. HLSLファイルの読み込み
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
@@ -97,6 +98,11 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         // デバッグ出力
         std::string errStr = shaderError->GetStringPointer();
         
+        // 呼び出し元でエラーを処理するために返す
+        if (outErrorLog) {
+            *outErrorLog = errStr;
+        }
+        
         // どのファイルか分かるようにする
         std::string fileStr = ConvertString(filePath);
         std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
@@ -111,7 +117,10 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
             fclose(f);
         }
         
-        IRUFEMI_ASSERT(false && "Shader Compile Error");
+        // outErrorLog が要求されている場合、アプリケーション側で復帰を試みるため assert を回避する
+        if (!outErrorLog) {
+            IRUFEMI_ASSERT(false && "Shader Compile Error");
+        }
     }
 
     // 5. コンパイル済みバイナリの取得

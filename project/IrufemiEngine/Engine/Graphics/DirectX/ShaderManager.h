@@ -40,7 +40,8 @@ public:
     Microsoft::WRL::ComPtr<IDxcBlob> GetOrCompile(
         const std::wstring& filePath,
         const ShaderCompileOptions& options = {},
-        const wchar_t* profileOverride = nullptr
+        const wchar_t* profileOverride = nullptr,
+        std::string* outErrorLog = nullptr
     );
 
     /**
@@ -49,7 +50,8 @@ public:
     Microsoft::WRL::ComPtr<IDxcBlob> ReloadShader(
         const std::wstring& filePath,
         const ShaderCompileOptions& options = {},
-        const wchar_t* profileOverride = nullptr
+        const wchar_t* profileOverride = nullptr,
+        std::string* outErrorLog = nullptr
     );
 
     /**

@@ -110,6 +110,9 @@ public:
     /** @brief キャッシュされているすべての PSO を破棄する */
     void ClearCache();
 
+    /** @brief 特定の名前（論理名）に関連付けられた PSO キャッシュのみを破棄する */
+    void ClearCacheByName(const std::string& name);
+
     /** @brief ゲームプレイ中によく使われる PSO の組み合わせを事前にコンパイル・キャッシュします */
     void PreWarmCommonPSOs();
 
@@ -139,6 +142,7 @@ private:
     struct KeyHash { size_t operator()(const Key& k)const { return static_cast<size_t>(k.hash); } };
 
     std::unordered_map<Key, ComPtr, KeyHash> cache_; ///< PSO キャッシュ
+    std::unordered_map<std::string, std::vector<Key>> cacheKeysByName_; ///< 名前ごとの生成済みキャッシュキー
     std::unordered_map<std::string, ComPtr> computeCache_; ///< Compute PSO キャッシュ
 
     /** @name 内部生成ヘルパー */

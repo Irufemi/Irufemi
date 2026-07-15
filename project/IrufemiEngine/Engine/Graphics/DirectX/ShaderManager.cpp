@@ -46,7 +46,8 @@ void ShaderManager::Initialize() {
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
     const std::wstring& filePath,
     const ShaderCompileOptions& options,
-    const wchar_t* profileOverride
+    const wchar_t* profileOverride,
+    std::string* outErrorLog
 ) {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -67,7 +68,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
 #ifdef RUNTIME_SHADER_COMPILE
     std::wstring resolvedPath = ResolveSourcePath(filePath);
     std::wstring profile = profileOverride ? profileOverride : ShaderCompiler::GetInferredProfile(resolvedPath);
-    blob = compiler_->Compile(resolvedPath, profile.c_str(), options, searchPaths_);
+    blob = compiler_->Compile(resolvedPath, profile.c_str(), options, searchPaths_, outErrorLog);
 #else
     // Releaseビルドでは binaryPath_ に格納された .cso を読み込む
     std::filesystem::path path(filePath);
@@ -100,7 +101,8 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::ReloadShader(
     const std::wstring& filePath,
     const ShaderCompileOptions& options,
-    const wchar_t* profileOverride
+    const wchar_t* profileOverride,
+    std::string* outErrorLog
 ) {
     ShaderKey key;
     key.filePath = filePath;
@@ -112,7 +114,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::ReloadShader(
         cache_.erase(key);
     }
 
-    return GetOrCompile(filePath, options, profileOverride);
+    return GetOrCompile(filePath, options, profileOverride, outErrorLog);
 }
 
 /**

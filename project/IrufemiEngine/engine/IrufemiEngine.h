@@ -228,6 +228,9 @@ public: // ゲッター
 
     /** @brief 画面遷移管理者を取得 */
     SceneTransition* GetSceneTransition() { return sceneTransition_.get(); }
+    
+    /** @brief WinApp を取得 */
+    WinApp* GetWinApp() const { return winApp_.get(); }
     ///@}
 
     /** @name 画面情報の取得 */
