@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <wrl.h>
 #include <d3d12.h>
+#include "../../Engine/Core/System/DirectoryWatcher.h"
 
 // 前方宣言
 class DirectXCommon;
@@ -30,8 +31,7 @@ public:
     // --- インスタンス機能 ---
     void Initialize(DirectXCommon* dxCommon);
     void SetRootDirectory(std::string root);
-    Animation LoadAnimationFile(const std::string& filename);
-    SkinCluster CreateSkinCluster(const Skeleton& skeleton, const ModelData& modelData);
+    std::shared_ptr<Animation> LoadAnimationFile(const std::string& filename);
     SkinCluster CreateSkinCluster(const Skeleton& skeleton, const ObjModel& objModel);
 
 public: // 静的ヘルパ
@@ -124,7 +124,16 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
     std::string rootDir_;
     mutable std::mutex mutex_;
-    std::unordered_map<std::string, std::weak_ptr<Animation>> cache_;
+    
+    struct CachedAnimation {
+        std::shared_ptr<Animation> animation;
+        uint64_t lastLoadTime = 0;
+        std::string sourceFilePath;
+    };
+    std::unordered_map<std::string, CachedAnimation> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
+    
+    std::unique_ptr<DirectoryWatcher> directoryWatcher_;
+    void OnDirectoryChanged();
 };
 

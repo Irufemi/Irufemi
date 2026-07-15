@@ -316,7 +316,9 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
     if (engine_) {
         auto* ui_ = engine_->GetDebugUI();
         ui_->DebugTransform(transform_);
-        ui_->DebugAnimationControl(animation_, animationTime_);
+        if (animation_) {
+            ui_->DebugAnimationControl(*animation_, animationTime_);
+        }
         ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
 
         if (ImGui::Button("Reset Animation Time")) {
@@ -353,10 +355,13 @@ void AnimationModel::Debug([[maybe_unused]] const char* objName) {
 void AnimationModel::UpdateAnimation() {
 
     // アニメーションの処理
+    if (!animation_) return;
 
     // 時刻を進める（タイムスケール対応）
     animationTime_ += engine_->GetGameDeltaTime();
-    animationTime_ = std::fmod(animationTime_, animation_.duration); // 最後まで行ったら最初からリピート再生。
+    if (animation_->duration > 0.0f) {
+        animationTime_ = std::fmod(animationTime_, animation_->duration); // 最後まで行ったら最初からリピート再生。
+    }
 
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
     if (!m || !m->cpuModel) return;
@@ -364,7 +369,7 @@ void AnimationModel::UpdateAnimation() {
     // スキニングアニメーションの場合
     if (!m->cpuModel->skinClusterData.empty()) {
         // 1. 全Jointにアニメーションを適用
-        AnimationManager::ApplyAnimation(skeleton_, animation_, animationTime_);
+        AnimationManager::ApplyAnimation(skeleton_, *animation_, animationTime_);
 
         // 2. 階層構造の行列更新
         AnimationManager::SkeletonUpdate(skeleton_);
@@ -374,7 +379,7 @@ void AnimationModel::UpdateAnimation() {
         AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
     } else { // ノードアニメーションの場合
         // rootNodeのAnimationを取得
-        NodeAnimation& rootNodeAnimation = animation_.nodeAnimations[m->cpuModel->rootNode.name];
+        NodeAnimation& rootNodeAnimation = animation_->nodeAnimations[m->cpuModel->rootNode.name];
         // 指定時刻の値を取得
         Vector3 translate = AnimationManager::CalculateValue(rootNodeAnimation.translate, animationTime_);
         Quaternion rotate = AnimationManager::CalculateValue(rootNodeAnimation.rotate, animationTime_);

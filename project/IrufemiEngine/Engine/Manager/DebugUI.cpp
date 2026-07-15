@@ -904,8 +904,9 @@ void DebugUI::FPSDebug() {
         static bool showFpsGraph = false;
         ImGui::Checkbox("Show FPS graph (instead of Frame Time)", &showFpsGraph);
 
-        // 共通パラメータ
-        const ImVec2 graphSize(260, 90);
+        // 共通パラメータ（ウィンドウサイズに合わせて拡縮）
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        const ImVec2 graphSize(std::max(260.0f, avail.x), std::max(90.0f, avail.y - 10.0f));
         ImVec2 canvasMin = ImGui::GetCursorScreenPos();
         ImVec2 canvasMax = ImVec2(canvasMin.x + graphSize.x, canvasMin.y + graphSize.y);
         ImDrawList* draw = ImGui::GetWindowDrawList();
@@ -1191,7 +1192,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1296,6 +1297,11 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 } else if (mode == PostProcessMode::Glitch) {
                     auto& params = ppManager->GetGlitchParams();
                     ImGui::SliderFloat("Glitch Intensity", &params.intensity, 0.0f, 5.0f);
+                } else if (mode == PostProcessMode::DualKawaseBlur) {
+                    auto& params = ppManager->GetDualKawaseBlurParams();
+                    ImGui::DragFloat("Blur Radius Offset", &params.blurRadius, 0.01f, 0.0f, 5.0f);
+                    ImGui::SliderInt("Iteration Count", &params.iterationCount, 1, PostProcessManager::kMaxKawaseIterations);
+                    ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
                 }
                 ImGui::TreePop();
             }

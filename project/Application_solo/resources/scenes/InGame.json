@@ -59,6 +59,71 @@
       "tag": "Untagged"
     },
     {
+      "children": [
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  5.0,
+                  5.0,
+                  5.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/sci-fi+armored+robot+3d+model/tripo_convert_9e0a1eca-82b5-4145-953d-1f043ce8f5b3.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "MoveLimitMax": [
+                  8.0,
+                  6.0,
+                  0.0
+                ],
+                "MoveLimitMin": [
+                  -8.0,
+                  -6.0,
+                  0.0
+                ],
+                "XYSpeed": 15.0
+              },
+              "type": "RailShooterPlayerComponent"
+            },
+            {
+              "data": {
+                "Max Orbit Count": 10,
+                "NoLock Throw Dist": 1000.0,
+                "Orbit Angle Max": 6.28000020980835,
+                "Orbit Radius Max": 4.0,
+                "Orbit Radius Min": 2.0,
+                "Pull Radius": 50.0,
+                "Throw Interval": 0.15000000596046448
+              },
+              "type": "GravityPlayerComponent"
+            },
+            {
+              "type": "PlayerTargetingComponent"
+            }
+          ],
+          "name": "Player",
+          "tag": "Untagged"
+        }
+      ],
       "components": [
         {
           "data": {
@@ -73,53 +138,23 @@
               0.0
             ],
             "scale": [
-              1.5,
-              1.5,
-              1.5
+              1.0,
+              1.0,
+              1.0
             ]
           },
           "type": "TransformComponent"
         },
         {
           "data": {
-            "currentTypeIndex": 2
-          },
-          "type": "PrimitiveRendererComponent"
-        },
-        {
-          "data": {
-            "MoveLimitMax": [
-              8.0,
-              6.0,
-              0.0
-            ],
-            "MoveLimitMin": [
-              -8.0,
-              -6.0,
-              0.0
-            ],
+            "Draw Debug Rail": true,
             "Speed": 0.05000000074505806,
-            "XYSpeed": 15.0
+            "Target Path Name": "PathManager"
           },
-          "type": "RailShooterPlayerComponent"
-        },
-        {
-          "data": {
-            "Max Orbit Count": 10,
-            "NoLock Throw Dist": 1000.0,
-            "Orbit Angle Max": 6.28000020980835,
-            "Orbit Radius Max": 4.0,
-            "Orbit Radius Min": 2.0,
-            "Pull Radius": 50.0,
-            "Throw Interval": 0.15000000596046448
-          },
-          "type": "GravityPlayerComponent"
-        },
-        {
-          "type": "PlayerTargetingComponent"
+          "type": "SplineFollowerComponent"
         }
       ],
-      "name": "Player",
+      "name": "PlayerCart",
       "tag": "Untagged"
     },
     {
@@ -439,14 +474,14 @@
               4.0,
               -18.0
             ],
-            "Target Name": "Player",
+            "Target Name": "PlayerCart",
             "followDelay": 0.009999999776482582,
             "offset": [
               0.0,
               4.0,
               -18.0
             ],
-            "targetName": "Player"
+            "targetName": "PlayerCart"
           },
           "type": "TargetFollowComponent"
         }

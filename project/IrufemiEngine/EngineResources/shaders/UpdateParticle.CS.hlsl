@@ -49,8 +49,9 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 // Trail放出判定
                 if (emitter.enableTrail != 0) {
                     gParticles[particleIndex].trailTimer += dt;
-                    if (gParticles[particleIndex].trailTimer > emitter.trailFrequency) {
-                        gParticles[particleIndex].trailTimer -= emitter.trailFrequency;
+                    float safeTrailFreq = max(emitter.trailFrequency, 0.01f);
+                    if (gParticles[particleIndex].trailTimer > safeTrailFreq) {
+                        gParticles[particleIndex].trailTimer -= safeTrailFreq;
                         
                         // 子（Trail / Flame）をEmit
                         int freeListIndex;
@@ -125,7 +126,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                         gParticles[particleIndex].color = lerp(gParticles[particleIndex].startColor, gParticles[particleIndex].midColor, progress);
                         gParticles[particleIndex].scale = lerp(gParticles[particleIndex].startScale, gParticles[particleIndex].midScale, progress);
                     } else {
-                        float progress = (t - gParticles[particleIndex].midPoint) / (1.0f - gParticles[particleIndex].midPoint);
+                        float progress = (t - gParticles[particleIndex].midPoint) / max(1.0f - gParticles[particleIndex].midPoint, 0.0001f);
                         gParticles[particleIndex].color = lerp(gParticles[particleIndex].midColor, gParticles[particleIndex].endColor, progress);
                         gParticles[particleIndex].scale = lerp(gParticles[particleIndex].midScale, gParticles[particleIndex].endScale, progress);
                     }

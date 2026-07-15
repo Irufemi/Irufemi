@@ -1,4 +1,5 @@
 #include "ShaderManager.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include <cassert>
 #include <fstream>
 #include <vector>
@@ -80,6 +81,8 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
         if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
             blob = new CustomBlob(std::move(buffer));
         }
+    } else {
+        IRUFEMI_ASSERT_MSG(false, "Failed to open compiled shader (.cso) file. Check if the shader compiled successfully.");
     }
 #endif
     

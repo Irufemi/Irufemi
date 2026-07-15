@@ -2,26 +2,20 @@
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 
-class SplineComponent;
-
 /**
  * @class RailShooterPlayerComponent
- * @brief レールシューティング用のプレイヤー制御コンポーネント
+ * @brief レールシューティング用のプレイヤー制御コンポーネント（ローカルオフセット加算用）
  */
 class RailShooterPlayerComponent : public Component {
 public:
     RailShooterPlayerComponent() = default;
     ~RailShooterPlayerComponent() override = default;
 
-    void Initialize() override;
-    void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "RailShooterPlayerComponent"; }
 
 private:
-    float progress_ = 0.0f;           ///< ルート（軌道）上の進み具合 (0.0〜1.0)
-    float speed_ = 0.1f;              ///< 自動前進するスピード (1秒間に進む割合)
     float xySpeed_ = 10.0f;           ///< 上下左右に避ける（回避運動）スピード
     Vector3 currentOffset_ = {0,0,0}; ///< レールの中心からどのくらいずれているか（上下左右のズレ幅）
 
@@ -29,9 +23,15 @@ private:
     Vector3 moveLimitMin_ = {-10.0f, -10.0f, 0.0f}; ///< 移動できる限界の左下座標
     Vector3 moveLimitMax_ = { 10.0f,  10.0f, 0.0f}; ///< 移動できる限界の右上座標
 
-    SplineComponent* cachedPath_ = nullptr; ///< シーン内に置かれているルート情報の仮置き場
+    // --- グラビティ操作・慣性・姿勢制御パラメータ ---
+    Vector3 currentVelocity_ = {0.0f, 0.0f, 0.0f};
+    float acceleration_ = 150.0f; // 急発進の加速度
+    float friction_ = 10.0f;      // 急制動の摩擦係数
+    float maxSpeed_ = 15.0f;      // 最高速度
 
-    // 軌道ポイントが引かれていないとき用の直進用データ
-    Vector3 dummyBasePos_ = {0.0f, 0.0f, 0.0f};   ///< パスが無いときにまっすぐ進むための基準位置
-    bool isDummyBasePosInitialized_ = false;       ///< まっすぐ進むための初期位置が決まったかどうかの判定フラグ
+    float rollAngle_ = 0.0f;      // 現在のロール角（左右の傾き）
+    float maxRollAngle_ = 1.0f;   // 最大傾き角度（約57度）
+    float hoverTimer_ = 0.0f;     // 浮遊アニメーション用の経過時間
+    float hoverAmplitude_ = 0.5f; // 浮遊の揺れ幅
+    float hoverFrequency_ = 2.0f; // 浮遊の揺れ速度
 };

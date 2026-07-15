@@ -65,6 +65,9 @@
     <ClCompile Include="components\RailShooterPlayerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\SplineFollowerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClCompile Include="components\RailShooterEnemyComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
@@ -126,6 +129,9 @@
       <Filter>UI</Filter>
     </ClInclude>
     <ClInclude Include="components\RailShooterPlayerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\SplineFollowerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\RailShooterEnemyComponent.h">

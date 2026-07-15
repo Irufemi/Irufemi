@@ -38,6 +38,7 @@ void PostProcessManager::ResetAllParams() {
     slideParams_ = SlideParams();
     bloomParams_ = BloomParams();
     glitchParams_ = GlitchParams();
+    dualKawaseParams_ = DualKawaseBlurParams();
 }
 
 
@@ -65,6 +66,8 @@ void PostProcessManager::Update(float totalTime) {
 
   glitchParams_.time = totalTime;
   if (mappedGlitch_) *mappedGlitch_ = glitchParams_;
+
+  if (mappedDualKawase_) *mappedDualKawase_ = dualKawaseParams_;
 
   // 統合パラメータの同期
   combinedParams_.vignetteColor = vignetteParams_.color;
@@ -220,6 +223,105 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         currentSource = nextTarget;
         modeIdx++;
       }
+      // 1-C) カワセブラー (DualKawaseBlur) の処理
+      else if (mode == Mode::DualKawaseBlur) {
+        isLastBatch = (modeIdx == activeModes_.size() - 1);
+        RenderTexture* nextTarget = isLastBatch ? nullptr : workspace.workTextures[pingPongIdx % 2];
+        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = isLastBatch ? rtvHandle : nextTarget->GetRtvHandle();
+
+        int32_t iterations = (std::min)(kMaxKawaseIterations, (std::max)(1, dualKawaseParams_.iterationCount));
+        RenderTexture* prevSource = currentSource;
+        
+        // Downsample
+        for (int i = 0; i < iterations; ++i) {
+            RenderTexture* kwTex = workspace.kawaseTextures[i];
+            if (!kwTex) break;
+            
+            D3D12_VIEWPORT viewport{};
+            viewport.Width = (FLOAT)kwTex->GetWidth();
+            viewport.Height = (FLOAT)kwTex->GetHeight();
+            viewport.MinDepth = 0.0f;
+            viewport.MaxDepth = 1.0f;
+            commandList->RSSetViewports(1, &viewport);
+
+            D3D12_RECT scissorRect{};
+            scissorRect.right = kwTex->GetWidth();
+            scissorRect.bottom = kwTex->GetHeight();
+            commandList->RSSetScissorRects(1, &scissorRect);
+
+            DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            
+            if (mappedDualKawase_) { *mappedDualKawase_ = dualKawaseParams_; }
+            DrawSinglePass(commandList, Mode::DualKawaseBlur, prevSource, kwTex->GetRtvHandle(), false, dualKawaseDownsamplePSO_.Get());
+            
+            DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            prevSource = kwTex;
+        }
+
+        // Upsample
+        for (int i = iterations - 2; i >= 0; --i) {
+            RenderTexture* kwTex = workspace.kawaseTextures[i];
+            if (!kwTex && i != 0) continue; // i==0の場合は最終出力なのでkwTexは見ない
+            
+            bool isFinalUp = (i == 0);
+            D3D12_CPU_DESCRIPTOR_HANDLE upHandle = isFinalUp ? targetHandle : kwTex->GetRtvHandle();
+            
+            uint32_t tw = isFinalUp ? dxCommon_->GetClientWidth() : kwTex->GetWidth();
+            uint32_t th = isFinalUp ? dxCommon_->GetClientHeight() : kwTex->GetHeight();
+
+            D3D12_VIEWPORT viewport{};
+            viewport.Width = (FLOAT)tw;
+            viewport.Height = (FLOAT)th;
+            viewport.MinDepth = 0.0f;
+            viewport.MaxDepth = 1.0f;
+            commandList->RSSetViewports(1, &viewport);
+
+            D3D12_RECT scissorRect{};
+            scissorRect.right = tw;
+            scissorRect.bottom = th;
+            commandList->RSSetScissorRects(1, &scissorRect);
+
+            if (!isFinalUp) {
+                DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            } else if (!isLastBatch) {
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            }
+            
+            ID3D12PipelineState* upPso = (isFinalUp && isLastBatch) ? finalDualKawaseUpsamplePSO_.Get() : dualKawaseUpsamplePSO_.Get();
+            
+            if (isFinalUp) {
+                commandList->OMSetRenderTargets(1, &upHandle, false, nullptr);
+                float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+                commandList->ClearRenderTargetView(upHandle, clearColor, 0, nullptr);
+            }
+
+            DrawSinglePass(commandList, Mode::DualKawaseBlur, prevSource, upHandle, (isFinalUp && isLastBatch), upPso);
+            
+            if (!isFinalUp) {
+                DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            } else if (!isLastBatch) {
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                pingPongIdx++;
+            }
+            prevSource = kwTex;
+        }
+
+        // Viewportを元の画面サイズに戻す
+        D3D12_VIEWPORT fullViewport{};
+        fullViewport.Width = (FLOAT)dxCommon_->GetClientWidth();
+        fullViewport.Height = (FLOAT)dxCommon_->GetClientHeight();
+        fullViewport.MinDepth = 0.0f;
+        fullViewport.MaxDepth = 1.0f;
+        commandList->RSSetViewports(1, &fullViewport);
+
+        D3D12_RECT fullScissorRect{};
+        fullScissorRect.right = dxCommon_->GetClientWidth();
+        fullScissorRect.bottom = dxCommon_->GetClientHeight();
+        commandList->RSSetScissorRects(1, &fullScissorRect);
+
+        currentSource = nextTarget;
+        modeIdx++;
+      }
       // 2) 統合バッチ
       else {
         std::vector<Mode> batch;
@@ -228,6 +330,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
                activeModes_[lookAhead] != Mode::Bloom && 
                activeModes_[lookAhead] != Mode::Smoothing && 
                activeModes_[lookAhead] != Mode::GaussianFilter && 
+               activeModes_[lookAhead] != Mode::DualKawaseBlur && 
                batch.size() < 16) {
           batch.push_back(activeModes_[lookAhead]);
           lookAhead++;
@@ -383,6 +486,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
     break;
   case Mode::Glitch:
     cbvAddress = glitchCB_->GetGPUVirtualAddress();
+    break;
+  case Mode::DualKawaseBlur:
+    cbvAddress = dualKawaseCB_->GetGPUVirtualAddress();
     break;
   default:
     break;
@@ -563,6 +669,35 @@ void PostProcessManager::CreatePSOs() {
         sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
         device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalGaussianBlurPSO_));
     }
+
+    // --- Dual Kawase Blur 用 PSO ---
+    auto kawaseDownPS = shaderManager->GetOrCompile(L"DualKawaseDownsample.PS.hlsl", options);
+    auto kawaseUpPS = shaderManager->GetOrCompile(L"DualKawaseUpsample.PS.hlsl", options);
+    if (kawaseDownPS && kawaseUpPS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC kwDesc{};
+        kwDesc.pRootSignature = rootSig_;
+        kwDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        kwDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        kwDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        kwDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        kwDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        kwDesc.DepthStencilState.DepthEnable = FALSE;
+        kwDesc.DepthStencilState.StencilEnable = FALSE;
+        kwDesc.InputLayout = {nullptr, 0};
+        kwDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        kwDesc.NumRenderTargets = 1;
+        kwDesc.SampleDesc.Count = 1;
+
+        kwDesc.RTVFormats[0] = rtvFormat_;
+        kwDesc.PS = {kawaseDownPS->GetBufferPointer(), kawaseDownPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&kwDesc, IID_PPV_ARGS(&dualKawaseDownsamplePSO_));
+
+        kwDesc.PS = {kawaseUpPS->GetBufferPointer(), kawaseUpPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&kwDesc, IID_PPV_ARGS(&dualKawaseUpsamplePSO_));
+
+        kwDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&kwDesc, IID_PPV_ARGS(&finalDualKawaseUpsamplePSO_));
+    }
 }
 
 void PostProcessManager::CreateConstantBuffers() {
@@ -608,6 +743,9 @@ void PostProcessManager::CreateConstantBuffers() {
 
   glitchCB_ = CreateBuffer(sizeof(GlitchParams));
   glitchCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedGlitch_));
+
+  dualKawaseCB_ = CreateBuffer(sizeof(DualKawaseBlurParams));
+  dualKawaseCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedDualKawase_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>

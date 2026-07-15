@@ -249,7 +249,11 @@ data.emissionRate = 50.0f; // 1秒あたりの連続放出数
 GPUParticleManager::GetInstance()->UpdateEmitterData(handle, data);
 ```
 
-### 【NEW】ゲーム中での一時的なエフェクト再生 (爆発など)
+### GPU Bitonic Sort による半透明ソート (Zソート)
+本エンジンのGPUParticleSystemは、単に更新処理をGPUで行うだけでなく、**カメラからの距離に応じた半透明描画の並び替え（Zソート）も、完全にGPU上のCompute Shader（ビトニックソート）で完結**しています。
+これにより、CPUへデータを差し戻すオーバーヘッドをゼロにしつつ、数万のパーティクルが奥から手前へ正しくアルファブレンドされるAAA品質のレンダリングパイプラインが構築されています。開発者はソートの負荷や描画順序の破綻を一切気にする必要がありません。
+
+### ゲーム中での一時的なエフェクト再生 (爆発など)
 シーン内の特定座標に単発（ワンショット）の爆発エフェクトなどを出したい場合は、新しく追加された `Effect` クラスを使用するのが最も簡単です。
 
 ```cpp
@@ -305,7 +309,7 @@ myEffect.Draw();
 **なぜこの順番なのか？**
 例えば、`Vignette`（画面の端を暗くする/色をつける演出）のあとに `Grayscale`（白黒化）をかけてしまうと、ビネットで赤色などを指定してもモノクロになってしまいます。「色調補正」を先に行い、その上から「画面演出」を乗せるのがセオリーです。
 
-### 【NEW】Vignetteのパラメータ変更について
+### Vignetteのパラメータ変更について
 Vignetteエフェクトがより自然な減衰（Smooth Falloff）になるようパラメータがアップグレードされました。
 - **`radius` (旧: scale)**: 減衰が始まる半径 (デフォルト 0.8)
 - **`softness` (旧: power)**: 減衰の柔らかさ (デフォルト 0.5)
@@ -404,7 +408,7 @@ float moveInputX = input->GetActionValue("MoveX").x;
 
 ---
 
-## 【NEW】リソース管理システム (ResourceHandle) の利用方法
+## リソース管理システム (ResourceHandle) の利用方法
 
 本エンジンでは、AAA規模の商用エンジン（メモリ予算の厳格な管理やLRUパージ機構）を見据え、テクスチャやモデルデータなどの巨大なリソースの管理を `std::shared_ptr` から独自の **`ResourceHandle` ベースのアーキテクチャ** へと完全移行しました。
 
@@ -466,7 +470,7 @@ void MyCustomRenderer::Draw() {
 }
 ```
 
-## 【NEW】GPU カリング (GPU Culling & ExecuteIndirect) の利用方法
+## GPU カリング (GPU Culling & ExecuteIndirect) の利用方法
 
 本エンジンでは、大量の同一モデル（がれき、草、パーティクルなど）を描画する際のCPU負荷（フラスタムカリングやメモリ転送）を劇的に削減するため、**Compute Shader による GPU フラスタムカリング** をサポートしました。
 
@@ -514,7 +518,19 @@ myBatch.Draw();
 
 ---
 
-## 【NEW】大量オブジェクトの最適化 (VirtualEntityManagerComponent) の利用方法
+## GPU Skinning によるアニメーション最適化
+
+本エンジンでは、スケルタルアニメーション（ボーン変形）の処理を、従来のCPU計算や頂点シェーダ(VS)で行うのではなく、事前に **Compute Shader (`Skinning.CS.hlsl`) で並列計算（プレコンピュート）** する最新のアーキテクチャ（GPU Skinning）を採用しています。
+
+### アーキテクチャのメリット
+- **CPU負荷の完全開放**: CPU側ではアニメーションの再生時間と「行列パレット（Matrix Palette）」をGPUへ転送するだけで済み、数千〜数万の頂点に対する行列乗算からCPUが完全に解放されます。
+- **描画パイプラインとの親和性**: Compute Shaderで変形した後の頂点データがバッファに書き出されるため、その後のGPUフラスタムカリングなどにそのまま使い回すことができる先進的な設計です。
+
+開発チームの皆様は、通常通りモデルを読み込んで再生するだけで、裏側で自動的にこの恩恵を受けることができます。
+
+---
+
+## 大量オブジェクトの最適化 (VirtualEntityManagerComponent) の利用方法
 
 本エンジンでは、数万個レベルの大量のオブジェクト（がれき、草、弾幕など）を最適化して描画・管理するためのシステムとして、**`VirtualEntityManagerComponent`** (Instance Replacement / Promotion パターン) をサポートしました。
 
@@ -576,7 +592,7 @@ virtualManager->Demote(id);
 
 ---
 
-## 【NEW】TransformComponent の使い方 (カプセル化と遅延評価)
+## TransformComponent の使い方 (カプセル化と遅延評価)
 
 本エンジンでは、描画・物理・ゲームロジック間のキャッシュ効率および同期安全性を高めるため、**`TransformComponent` のアーキテクチャがカプセル化（Data-Oriented Design対応）されました。**
 
@@ -618,7 +634,7 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 ---
 
-## 【NEW】汎用2Dプリミティブ描画 (Primitive2DObject / Primitive2DRendererComponent) の利用方法
+## 汎用2Dプリミティブ描画 (Primitive2DObject / Primitive2DRendererComponent) の利用方法
 
 2D空間での汎用的な図形（四角形、円、線、リングなど）を簡単に描画するための `Primitive2DObject` および、それをエディタで直感的に扱える `Primitive2DRendererComponent` が追加されました。
 デバッグ表示、UIの枠線、シンプルな2Dエフェクトなどに最適です。
@@ -660,7 +676,7 @@ myShape.Draw();
 
 ---
 
-## 【NEW】半透明・エフェクトオブジェクトの描画とZソート
+## 半透明・エフェクトオブジェクトの描画とZソート
 
 本エンジンでは、地形やキャラクターなどの不透明オブジェクトの後に、オーラやレーザーなどの半透明エフェクトを正しい順番（奥から手前）で描画するための **独立した半透明描画パス (MainTransparentPass)** をサポートしました。
 
@@ -692,7 +708,7 @@ aura->SetIsTransparent(true);
 
 ---
 
-## 【NEW】デバッグ描画と当たり判定 (CollisionManager)
+## デバッグ描画と当たり判定 (CollisionManager)
 
 コライダー（AABB, Sphere, OBB）のデバッグ描画（ワイヤーフレーム表示）は、各コンポーネント内で個別に実装・描画する必要はありません。
 すべてのコライダーのデバッグ描画は、`CollisionManager::DrawDebug()` にて一元管理・一括描画されるアーキテクチャに変更されています。
@@ -704,7 +720,7 @@ aura->SetIsTransparent(true);
 
 ---
 
-## 【NEW】Bindless Resources (Descriptor Indexing) 完全移行について
+## Bindless Resources (Descriptor Indexing) 完全移行について
 
 現在、IrufemiEngine はパフォーマンス向上を目的とした **Bindless Resources** (Descriptor Indexing) への移行を完了しました。
 

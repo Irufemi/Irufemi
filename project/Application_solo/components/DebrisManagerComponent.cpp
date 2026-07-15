@@ -147,6 +147,55 @@ void DebrisManagerComponent::Update() {
         }
     }
 
+    // デバッグ用: 9キーを押したら10,000個を一気にスポーンさせる（ストレステスト）
+    if (input->IsKeyPressed('9') || input->IsKeyPressedDIK(0x0A /*DIK_9*/)) {
+        Vector3 spawnBase = {0.0f, 0.0f, 0.0f};
+        Vector3 forward = {0.0f, 0.0f, 1.0f};
+        Vector3 right = {1.0f, 0.0f, 0.0f};
+        
+        auto scene = gameObject_->GetScene();
+        if (scene) {
+            auto playerObj = scene->FindGameObject("Player");
+            if (playerObj) {
+                if (auto t = playerObj->GetComponent<TransformComponent>()) {
+                    spawnBase = t->GetPosition();
+                    float yaw = t->GetRotation().y;
+                    forward = { std::sin(yaw), 0.0f, std::cos(yaw) };
+                    right = { std::cos(yaw), 0.0f, -std::sin(yaw) };
+                }
+            }
+        }
+
+        // 1万個のガレキを広い範囲にばらまく
+        for (int i = 0; i < 10000; ++i) {
+            float distFwd = Random::GeneratorFloat(10.0f, 300.0f);  // 前方奥深く
+            float distRight = Random::GeneratorFloat(-150.0f, 150.0f); // 左右広く
+            float height = Random::GeneratorFloat(-10.0f, 100.0f);     // 上下広く
+            
+            Vector3 pos = {
+                spawnBase.x + forward.x * distFwd + right.x * distRight,
+                spawnBase.y + height,
+                spawnBase.z + forward.z * distFwd + right.z * distRight
+            };
+            
+            int vid = virtualManager_->AddVirtualInstance(pos, {0,0,0}, {0.5f, 0.5f, 0.5f});
+            if (vid >= 0) {
+                DebrisAnimData anim;
+                anim.baseIdleY_ = pos.y;
+                anim.idleTimeY_ = Random::GeneratorFloat(0.0f, 100.0f);
+                animDataList_[vid] = anim;
+                activeIds_.push(vid);
+            }
+        }
+        
+        // 念のため上限を超えないようにクリップ
+        while (activeIds_.size() > static_cast<size_t>(maxVirtualInstances_ - 100)) {
+            int oldestId = activeIds_.front();
+            activeIds_.pop();
+            virtualManager_->RemoveVirtualInstance(oldestId);
+        }
+    }
+
     // --- Data-Oriented Update ---
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (dt <= 0.0f) dt = 1.0f / 60.0f;
