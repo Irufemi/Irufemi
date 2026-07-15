@@ -23,6 +23,7 @@ project/logs/
 *.pdb
 *.ilk
 *.aps
+*.ibin
 *.ncb
 *.cso
 *.opendb

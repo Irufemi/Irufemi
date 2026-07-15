@@ -23,6 +23,8 @@ public:
         Compiling,
         Fixing,
         Success,
+        WaitingForScreenshot,
+        VisualEvaluating,
         Error
     };
 
@@ -40,6 +42,11 @@ public:
      * @brief シェーダー生成リクエストを非同期で開始する
      */
     void StartGeneration(const std::string& prompt, const std::string& referenceImagePath, const std::string& shaderName, const std::string& outputDirectory, ShaderManager* shaderManager);
+    
+    /**
+     * @brief スクリーンショット撮影完了後、AIによる視覚的自己修復（フィードバックループ）を開始する
+     */
+    void StartVisualFix(const std::string& referenceImagePath, const std::string& screenshotPath, const std::string& currentHlslCode, const std::string& shaderName, ShaderManager* shaderManager);
     
     // サーバープロセス管理
     bool StartPythonServer();
@@ -79,6 +86,7 @@ public:
 
 private:
     void ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName, std::string outputDirectory, ShaderManager* shaderManager);
+    void VisualFixThread(std::string referenceImagePath, std::string screenshotPath, std::string currentHlslCode, std::string shaderName, ShaderManager* shaderManager);
     void LogReadThread();
     
     // HTTPリクエスト（curl.exe をプロセスとして呼び出す簡易実装）
