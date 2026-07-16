@@ -16,6 +16,9 @@
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include <cmath>
+#include <windows.h>
+#include <iostream>
+#include "Engine/Core/Utility/Log.h"
 
 
 
@@ -147,6 +150,12 @@ void DebrisComponent::SetState(DebrisState newState) {
         bossOrbitSpeedZ_ = Random::GeneratorFloat(-1.2f, 1.2f);
         bossOrbitRadiusOffset_ = Random::GeneratorFloat(-1.0f, 1.0f);
     }
+
+    if (state_ == DebrisState::Thrown && gameObject_) {
+        if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
+            throwOrigin_ = transform->GetWorldPosition();
+        }
+    }
 }
 
 void DebrisComponent::Update() {
@@ -261,7 +270,26 @@ void DebrisComponent::Update() {
             pos.z += throwDirection_.z * GetThrowSpeed() * deltaTime;
             transform->SetPosition(pos);
             
-            // TODO: 一定距離/時間で消滅させる等の処理が必要
+            // 限界距離でのデスポーン（オブジェクトプール返却）
+            if (manager_) {
+                float dx = pos.x - throwOrigin_.x;
+                float dy = pos.y - throwOrigin_.y;
+                float dz = pos.z - throwOrigin_.z;
+                float distSq = dx*dx + dy*dy + dz*dz;
+                
+                if (distSq > manager_->GetMaxThrowDistanceSq()) {
+                    manager_->MarkForRelease(gameObject_->shared_from_this());
+                }
+            } else {
+                // Managerがない場合のフォールバック（デバッグ用など）
+                float dx = pos.x - throwOrigin_.x;
+                float dy = pos.y - throwOrigin_.y;
+                float dz = pos.z - throwOrigin_.z;
+                float distSq = dx*dx + dy*dy + dz*dz;
+                if (distSq > 1500.0f * 1500.0f) {
+                    gameObject_->SetIsActive(false);
+                }
+            }
             break;
         }
     }

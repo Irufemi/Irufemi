@@ -71,6 +71,7 @@ private:
     float idleTimeY_ = 0.0f;
     float orbitAngle_ = 0.0f;
     Vector3 throwDirection_ = {0,0,0};
+    Vector3 throwOrigin_ = {0,0,0};
 
     // ボス用Orbitパラメータ
     float bossOrbitAngleX_ = 0.0f;

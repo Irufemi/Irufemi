@@ -29,9 +29,20 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "DebrisManagerComponent"; }
 
-    // ガレキの実体取得と返却（Bossのシールド等、IDなしの取得用）
-    std::shared_ptr<GameObject> AcquireDebris();
+    /**
+     * @brief プールからガレキを1つ取り出す
+     */
+    std::shared_ptr<GameObject> GetDebris();
+
+    /**
+     * @brief ガレキをプールに返却する（即時）
+     */
     void ReleaseDebris(std::shared_ptr<GameObject> debris);
+
+    /**
+     * @brief ガレキをプール返却キューに積む（Update中の安全な削除用）
+     */
+    void MarkForRelease(std::shared_ptr<GameObject> debris);
 
     // プレイヤーからの引き寄せ処理用：指定座標から一番近い未昇格のがれきを実体化して返す
     std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Vector3& pos, float radius);
@@ -58,6 +69,7 @@ public:
     Vector3 GetDebrisBaseScale() const { return debrisBaseScale_; }
     float GetColliderRadius() const { return colliderRadius_; }
     Vector3 GetAuraScale() const { return auraScale_; }
+    float GetMaxThrowDistanceSq() const { return maxThrowDistance_ * maxThrowDistance_; }
 
 private:
     int poolSize_ = 500;
@@ -91,4 +103,7 @@ private:
     Vector3 debrisBaseScale_ = { 0.5f, 0.5f, 0.5f };
     float colliderRadius_ = 0.5f;
     Vector3 auraScale_ = { 2.2f, 2.2f, 2.2f };
+    float maxThrowDistance_ = 1500.0f;
+
+    std::vector<std::shared_ptr<GameObject>> pendingReleases_;
 };

@@ -42,6 +42,7 @@ void DebrisManagerComponent::OnRegisterProperties() {
     RegisterProperty("Debris Base Scale", &debrisBaseScale_);
     RegisterProperty("Debris Collider Radius", &colliderRadius_);
     RegisterProperty("Debris Aura Scale", &auraScale_);
+    RegisterProperty("Max Throw Distance", &maxThrowDistance_);
 }
 
 void DebrisManagerComponent::Initialize() {
@@ -203,9 +204,14 @@ void DebrisManagerComponent::Update() {
     auto& virtualInstances = virtualManager_->GetDenseInstances();
 
 
+    // --- Deferred Deletion (Pending Kill) の処理 ---
+    for (auto& debris : pendingReleases_) {
+        ReleaseDebris(debris);
+    }
+    pendingReleases_.clear();
 }
 
-std::shared_ptr<GameObject> DebrisManagerComponent::AcquireDebris() {
+std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
     // Bossなどが要求した場合は一時的なVirtualInstanceを作って即時昇格して渡す
     int id = virtualManager_->AddVirtualInstance({0,0,0}, {0,0,0}, {0.5f, 0.5f, 0.5f});
     auto obj = virtualManager_->Promote(id);
@@ -230,6 +236,12 @@ void DebrisManagerComponent::ReleaseDebris(std::shared_ptr<GameObject> debris) {
             // Bossのシールドなどで生成されたものならそのまま無効化・プール返却
             virtualManager_->ReleaseGameObject(debris);
         }
+    }
+}
+
+void DebrisManagerComponent::MarkForRelease(std::shared_ptr<GameObject> debris) {
+    if (debris) {
+        pendingReleases_.push_back(debris);
     }
 }
 

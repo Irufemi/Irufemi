@@ -101,6 +101,7 @@ void GameObject::Update(bool isPlayMode) {
 
         comp->Update();
     }
+    
     for (auto& child : children_) {
         child->Update(isPlayMode);
     }

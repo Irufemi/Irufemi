@@ -65,7 +65,7 @@ void BossComponent::Start() {
                 };
 
                 for (int i = 0; i < maxShieldCount_; ++i) {
-                    auto debrisObj = debrisManager_->AcquireDebris();
+                    auto debrisObj = debrisManager_->GetDebris();
                     if (debrisObj) {
                         setupDebris(debrisObj);
                     }
