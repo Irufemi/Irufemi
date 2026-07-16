@@ -25,7 +25,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 
 	if (life < 1.0f) {
 		// ワールド座標ベースでブロック状の高周波ノイズを生成する（砂粒感）
-		noise = Hash3D(floor(input.worldPosition * 25.0f)); 
+		noise = Hash3D(floor(input.worldPosition * input.noiseScale)); 
 		float threshold = life * 1.5f;
 		if (noise > threshold) { 
 			// ピクセルを描画しない（透過・侵食）
@@ -75,12 +75,12 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	if (edgeGlow > 0.0f) {
 		// 溶け際はライティングを無視して、強烈なオレンジ（Bloomするレベル）にする
-		finalColor += float3(8.0f, 2.0f, 0.0f);
+		finalColor += input.dissolveEdgeColor.rgb;
 	}
 
 	// 最終出力
 	// RGBのマイナス値（炭化表現用）を0にクランプしつつ出力し、ディゾルブ用にアルファは1固定で描画
-	output.color = float4(max(float3(0, 0, 0), finalColor), 1.0f); 
+	output.color = float4(max(float3(0, 0, 0), finalColor), 1.0f);  
 
 	return output;
 }

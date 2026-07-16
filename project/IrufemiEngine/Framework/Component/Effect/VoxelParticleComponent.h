@@ -31,7 +31,7 @@ public:
     int GetPreAllocateCount() const { return preAllocateCount_; }
     void SetPreAllocateCount(int count) { preAllocateCount_ = count; }
 
-    VoxelParticleSystem::VoxelEmitterParams& GetEmitterParams() { return emitterParams_; }
+    VoxelEmitter& GetEmitterParams() { return emitterParams_; }
 
     /**
      * @brief その場にパーティクルを放出します（実装保留・拡張用）
@@ -48,7 +48,7 @@ public:
 
 private:
     // 詳細パラメータ
-    VoxelParticleSystem::VoxelEmitterParams emitterParams_ = VoxelParticleSystem::VoxelEmitterParams::Default();
+    VoxelEmitter emitterParams_{};
     
     // システム設定
     Vector3Int resolution_ = {32, 32, 32}; ///< ボクセルの分割数

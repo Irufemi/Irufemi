@@ -109,7 +109,7 @@ void VoxelParticleComponent::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("preAllocateCount")) preAllocateCount_ = j["preAllocateCount"];
 
-    if (j.contains("particleType")) emitterParams_.particleType = static_cast<VoxelParticleSystem::ParticleType>(j["particleType"]);
+    if (j.contains("particleType")) emitterParams_.particleType = j["particleType"];
     if (j.contains("lifeTime")) emitterParams_.lifeTime = j["lifeTime"];
     if (j.contains("gravity")) emitterParams_.gravity = j["gravity"];
     if (j.contains("dispersion")) emitterParams_.dispersion = j["dispersion"];

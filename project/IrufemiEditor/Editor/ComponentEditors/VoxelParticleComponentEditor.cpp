@@ -97,14 +97,10 @@ void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManage
             ImGui::PushItemWidth(-1);
             if (ImGui::Combo("##Particle Type", &currentType, particleTypes, IM_ARRAYSIZE(particleTypes))) {
                 auto oldType = emitterParams.particleType;
-                auto newType = static_cast<VoxelParticleSystem::ParticleType>(currentType);
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldType, newType, std::function<void(const VoxelParticleSystem::ParticleType&)>([voxelComponent](const VoxelParticleSystem::ParticleType& v){ voxelComponent->GetEmitterParams().particleType = v; }));
+                auto newType = static_cast<uint32_t>(currentType);
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldType, newType, std::function<void(const uint32_t&)>([voxelComponent](const uint32_t& v){ voxelComponent->GetEmitterParams().particleType = v; }));
             }
             ImGui::PopItemWidth();
-            ComponentUIHelpers::DrawPropertyResetButton("##TypeReset", currentType != 0, [&]() {
-                auto oldType = voxelComponent->GetEmitterParams().particleType;
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldType, VoxelParticleSystem::ParticleType::Default, std::function<void(const VoxelParticleSystem::ParticleType&)>([voxelComponent](const VoxelParticleSystem::ParticleType& v){ voxelComponent->GetEmitterParams().particleType = v; }));
-            });
 
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("LifeTime");

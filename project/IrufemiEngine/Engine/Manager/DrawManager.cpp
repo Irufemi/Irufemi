@@ -965,7 +965,8 @@ void DrawManager::SubmitVoxelParticle(
     const D3D12_VERTEX_BUFFER_VIEW& vbv,
     const D3D12_INDEX_BUFFER_VIEW& ibv,
     uint32_t indexCount,
-    D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+    D3D12_GPU_VIRTUAL_ADDRESS systemCbAddress,
+    D3D12_GPU_DESCRIPTOR_HANDLE emitterHandle,
     D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
     ID3D12Resource* particleResource,
     ID3D12PipelineState* drawPSO
@@ -977,7 +978,8 @@ void DrawManager::SubmitVoxelParticle(
     p.vbv = vbv;
     p.ibv = ibv;
     p.indexCount = indexCount;
-    p.emitterAddress = emitterAddress;
+    p.systemCbAddress = systemCbAddress;
+    p.emitterHandle = emitterHandle;
     p.particleDataHandle = particleDataHandle;
     p.particleResource = particleResource;
     p.drawPSO = drawPSO;
@@ -1005,9 +1007,11 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
     commandList_->IASetIndexBuffer(&packet.ibv);
 
     // VoxelParticle 特有のバインド
-    // Slot 1: Transform (b0) <- Emitter
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.emitterAddress);
-    // Slot 9: LineInstancing (t1) <- ParticleData
+    // Slot 1: Transform (b0) <- VoxelSystemCb
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.systemCbAddress);
+    // Slot 4: Instancing (t0) <- Emitters
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.emitterHandle);
+    // Slot 7: LineInstancing (t1) <- ParticleData
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.particleDataHandle);
 
     commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);

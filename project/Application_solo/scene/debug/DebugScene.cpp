@@ -5,6 +5,8 @@
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "IrufemiEngine/Engine/Core/Math/Math.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Engine/IrufemiEngine.h"
 
 
 // デストラクタ
@@ -114,8 +116,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     
     if (isActiveVoxelParticle_) {
-        voxelParticle_ = std::make_unique<VoxelParticleSystem>();
-        voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 });
+        voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", { 64,64,64 });
     }
     if (isActiveAnimatedCube_) {
         animatedCube_ = std::make_unique<AnimationModel>();
@@ -297,12 +298,22 @@ void DebugScene::Update() {
     }
     
     if (isActiveVoxelParticle_) {
-        if (!voxelParticle_) {
-            voxelParticle_ = std::make_unique<VoxelParticleSystem>();
-            voxelParticle_->Initialize("sample/terrain.obj", { 64,64,64 });
+        if (!voxelEmitterHandle_.IsValid()) {
+            voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", { 64,64,64 });
+            voxelEmitParams_.emit = 0;
+            voxelEmitParams_.emitPosition = { 0.0f, 0.0f, 0.0f };
+            voxelEmitParams_.lifeTime = 2.0f;
+            voxelEmitParams_.gravity = 2.0f;
+            voxelEmitParams_.dispersion = 8.0f;
+            voxelEmitParams_.convergence = 0.1f;
+            voxelEmitParams_.baseVelocity = { 0.0f, 5.0f, 0.0f };
         }
-        voxelParticle_->Debug("Voxel Particle");
-        voxelParticle_->Update(engine_->GetDeltaTime());
+        engine_->GetVoxelParticleManager()->UpdateEmitterData(voxelEmitterHandle_, voxelEmitParams_);
+    } else {
+        if (voxelEmitterHandle_.IsValid()) {
+            engine_->GetVoxelParticleManager()->UnregisterEmitter(voxelEmitterHandle_);
+            voxelEmitterHandle_ = {};
+        }
     }
     if (isActiveAnimatedCube_) {
         if (!animatedCube_) {
@@ -486,9 +497,7 @@ void DebugScene::Draw() {
 
 
 
-    if (isActiveVoxelParticle_) {
-        voxelParticle_->Draw();
-    }
+    // Managerが描画するのでここでは何もしない
 
     // 2D
 
@@ -516,7 +525,32 @@ void DebugScene::DrawDebugTab() {
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 
-    if (isActivePrimitive2DObj_ && primitive2DObj_) primitive2DObj_->Debug("Primitive2D Test");
+    if (isActiveVoxelParticle_ && voxelEmitterHandle_.IsValid()) {
+        if (ImGui::Begin("Voxel Particle Test")) {
+            ImGui::Separator();
+            ImGui::Checkbox("Active Voxel Particle", &isActiveVoxelParticle_);
+
+            const char* particleTypes[] = { "Default", "Building", "AshDisintegration", "FineScatter", "DebrisLargeGravity", "DebrisExplosive" };
+            int currentType = static_cast<int>(voxelEmitParams_.particleType);
+            if (ImGui::Combo("Particle Type", &currentType, particleTypes, IM_ARRAYSIZE(particleTypes))) {
+                voxelEmitParams_.particleType = static_cast<uint32_t>(currentType);
+            }
+            ImGui::DragFloat("LifeTime", &voxelEmitParams_.lifeTime, 0.1f, 0.1f, 10.0f);
+            ImGui::DragFloat("Gravity", &voxelEmitParams_.gravity, 0.1f, -20.0f, 100.0f);
+            ImGui::DragFloat("Dispersion", &voxelEmitParams_.dispersion, 0.1f, 0.0f, 100.0f);
+            ImGui::DragFloat("Convergence", &voxelEmitParams_.convergence, 0.01f, 0.0f, 1.0f);
+            
+            bool isEmitting = voxelEmitParams_.emit > 0;
+            if (ImGui::Checkbox("Continuous Emit", &isEmitting)) {
+                voxelEmitParams_.emit = isEmitting ? 1 : 0;
+            }
+
+            if (ImGui::Button("Play Explosion")) {
+                engine_->GetVoxelParticleManager()->PlayExplosion("sample/terrain.obj", {0,0,0}, {0,0,0}, {0,0,0}, {1,1,1}, voxelEmitParams_, {64,64,64});
+            }
+        }
+        ImGui::End();
+    }    if (isActivePrimitive2DObj_ && primitive2DObj_) primitive2DObj_->Debug("Primitive2D Test");
 
 
 

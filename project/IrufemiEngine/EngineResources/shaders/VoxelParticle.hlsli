@@ -25,7 +25,7 @@ struct VoxelParticle
 	float pad2;
 };
 
-// C++側のVoxelEmitter構造体と一致させる（合計48バイト）
+// C++側のVoxelEmitter構造体と一致させる
 struct VoxelEmitter
 {
 	float3 emitPosition;
@@ -47,6 +47,15 @@ struct VoxelEmitter
 	float4 collisionOrientations[3];
 	float3 collisionSize;
 	float pad2;
+
+	// --- Material / Expression parameters ---
+	float4 startColor;
+	float4 endColor;
+	float4 dissolveEdgeColor;
+	float spinSpeed;
+	float noiseScale;
+	float swayFrequency;
+	float swayAmplitude;
 };
 
 
@@ -59,4 +68,6 @@ struct VertexShaderOutput
 	float3 normal : NORMAL0;
 	float3 worldPosition : POSITION0;
 	float4 color : COLOR0;
+	float4 dissolveEdgeColor : COLOR1;
+	float noiseScale : TEXCOORD1;
 };

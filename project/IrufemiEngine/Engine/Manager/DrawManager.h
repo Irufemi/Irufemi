@@ -400,7 +400,8 @@ public:
         const D3D12_VERTEX_BUFFER_VIEW& vbv,
         const D3D12_INDEX_BUFFER_VIEW& ibv,
         uint32_t indexCount,
-        D3D12_GPU_VIRTUAL_ADDRESS emitterAddress,
+        D3D12_GPU_VIRTUAL_ADDRESS systemCbAddress,
+        D3D12_GPU_DESCRIPTOR_HANDLE emitterHandle,
         D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
         ID3D12Resource* particleResource,
         ID3D12PipelineState* drawPSO

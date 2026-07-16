@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include "Renderer/Object/Particle/ParticleObject.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -61,8 +62,8 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<StaticModelObject> terrain_ = nullptr;
     bool isActiveTerrain_ = false;
 
-
-    std::unique_ptr<VoxelParticleSystem> voxelParticle_ = nullptr;
+    VoxelParticleManager::EmitterHandle voxelEmitterHandle_{};
+    VoxelEmitter voxelEmitParams_{};
     bool isActiveVoxelParticle_ = false;
 
     // ハードコーディングされたGPUパーティクルのテスト用

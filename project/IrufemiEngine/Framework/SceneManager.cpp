@@ -8,6 +8,7 @@
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
 #include "SceneSerializer.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 
 namespace {
     /**
@@ -66,6 +67,11 @@ bool SceneManager::ChangeTo(const Key& next) {
         it->scene->Finalize();
     }
     sceneStack_.clear();
+
+    // 次のシーンへ行く前にパーティクルの状態をクリア
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
 
     SceneStackItem item;
     item.name = next;
@@ -401,6 +407,11 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
         it->scene->Finalize();
     }
     sceneStack_.clear();
+
+    // 次のシーンへ行く前にパーティクルの状態をクリア
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
 
     // シーン切り替え時にポストプロセスのパラメータを自動リセット
     if (engine_->GetPostProcessManager()) {

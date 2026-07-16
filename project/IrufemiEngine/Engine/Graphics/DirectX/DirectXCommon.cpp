@@ -149,8 +149,8 @@ void DirectXCommon::EnableDebugLayer() {
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
         debugController_->EnableDebugLayer();
-        //さらにGPU側でもチェックを行うようにする
-        debugController_->SetEnableGPUBasedValidation(TRUE);
+        //さらにGPU側でもチェックを行うようにする (Bindless環境でDescriptorTable全体を検査してしまい誤検知クラッシュするため無効化)
+        //debugController_->SetEnableGPUBasedValidation(TRUE);
     }
 #endif
 }

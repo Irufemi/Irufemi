@@ -8,21 +8,39 @@
 // パーティクルごとのデータ
 StructuredBuffer<VoxelParticle> gParticles : register(t1);
 
+// エミッターの配列
+StructuredBuffer<VoxelEmitter> gEmitters : register(t0);
+
 ConstantBuffer<PerFrameData> gPerFrame : register(b2);
-ConstantBuffer<VoxelEmitter> gEmitter : register(b0);
+
+cbuffer VoxelSystemCb : register(b0) {
+    uint gVoxelCount;
+    uint3 gPad;
+};
 
 VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
 {
 	VertexShaderOutput output;
+
+    uint emitterIndex = instanceID / gVoxelCount;
+    uint voxelIndex = instanceID % gVoxelCount;
+    
 	VoxelParticle particle = gParticles[instanceID];
+    VoxelEmitter emitter = gEmitters[emitterIndex];
 
-	// 削除した (死んだパーティクルは PS の color.a <= 0 で discard される)
-	// 初期状態(isActive==0)でも、元の形状を描画する必要があるためカリングしない。
+	// 非アクティブなら画面外へ飛ばす
+    if (particle.isActive == 0) {
+        output.position = float4(0, -10000, 0, 1);
+        output.worldPosition = float3(0, -10000, 0);
+        output.normal = float3(0, 1, 0);
+        output.texcoord = input.texcoord;
+        output.color = float4(0, 0, 0, 0);
+        return output;
+    }
 
-    // ワールド行列の作成 (スケール -> 回転 -> 平行移動)
     // スケール
     float scaleVal = particle.size;
-    float3 s = gEmitter.scale * scaleVal;
+    float3 s = emitter.scale * scaleVal;
     
     // 回転 (XYZ軸)
     float cX = cos(particle.rotation.x);
@@ -50,11 +68,6 @@ VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
     float4 localPos = input.position;
     float4 worldPos = mul(localPos, worldMatrix);
     
-    // 非アクティブなら画面外へ飛ばす
-    if (particle.isActive == 0) {
-        worldPos.xyz = float3(0, -10000, 0);
-    }
-    
     float4 viewPos = mul(worldPos, gPerFrame.view);
     output.position = mul(viewPos, gPerFrame.projection);
     output.worldPosition = worldPos.xyz;
@@ -65,6 +78,10 @@ VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
     // UVと色
     output.texcoord = input.texcoord;
     output.color = input.color * particle.color;
+    
+    // マテリアルパラメータをPSへ渡す
+    output.dissolveEdgeColor = emitter.dissolveEdgeColor;
+    output.noiseScale = emitter.noiseScale;
 
 	return output;
 }
