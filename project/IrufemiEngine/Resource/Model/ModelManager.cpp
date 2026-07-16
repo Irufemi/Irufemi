@@ -1,4 +1,5 @@
 #include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/StringUtility.h"
 #include "ModelManager.h"
 #include "Engine/Core/System/ThreadPool.h"
 #include <filesystem>

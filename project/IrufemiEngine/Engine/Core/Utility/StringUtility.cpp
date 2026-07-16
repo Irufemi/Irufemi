@@ -1,5 +1,6 @@
 #include "StringUtility.h"
 #include <Windows.h>
+#include <algorithm>
 
 namespace StringUtility {
 
