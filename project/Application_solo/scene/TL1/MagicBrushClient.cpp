@@ -91,7 +91,7 @@ bool MagicBrushClient::StartPythonServer() {
     std::filesystem::path toolsDir = exePath.parent_path() / "../../../project/Tools/ShaderGenerator";
     std::string currentDir = std::filesystem::absolute(toolsDir).string();
 
-    std::string command = "cmd.exe /c python main.py";
+    std::string command = "cmd.exe /c py main.py";
     std::vector<char> cmdBuffer(command.begin(), command.end());
     cmdBuffer.push_back('\0');
 
