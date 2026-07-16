@@ -23,6 +23,7 @@ project/logs/
 *.pdb
 *.ilk
 *.aps
+*.ibin
 *.ncb
 *.cso
 *.opendb
@@ -39,6 +40,10 @@ Generated\ Files/
 # ====================================================================
 # Project-specific additions
 # ====================================================================
+
+# Cache directories and files
+resources/.cache/
+*.pso
 
 # Ignore NuGet packages
 /project/packages/

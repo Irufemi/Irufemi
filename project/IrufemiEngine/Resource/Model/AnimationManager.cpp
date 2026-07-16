@@ -9,6 +9,7 @@
 #include "../../Engine/Graphics/Data/VertexData.h"
 
 #include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/StringUtility.h"
 #include <filesystem>
 #include "AnimationImporter.h"
 #include "AnimationSerializer.h"
@@ -62,7 +63,13 @@ std::shared_ptr<Animation> AnimationManager::LoadAnimationFile(const std::string
         currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
     }
 
-    std::string binPath = filePath + ".ibin";
+    std::string binPathStr = StringUtility::GetCacheFilePath(filePath, "model", ".ibin");
+    std::filesystem::path binPathFs(binPathStr);
+    if (binPathFs.has_parent_path()) {
+        std::filesystem::create_directories(binPathFs.parent_path());
+    }
+    std::string binPath = binPathStr;
+
     bool shouldImport = true;
     auto anim = std::make_shared<Animation>();
 
@@ -104,7 +111,13 @@ void AnimationManager::OnDirectoryChanged() {
             if (currentLwt > cached.lastLoadTime) {
                 OutputDebugStringA(("[AnimationManager] Hot-Reloading: " + cached.sourceFilePath + "\n").c_str());
                 
-                std::string binPath = cached.sourceFilePath + ".ibin";
+                std::string binPathStr = StringUtility::GetCacheFilePath(cached.sourceFilePath, "model", ".ibin");
+                std::filesystem::path binPathFs(binPathStr);
+                if (binPathFs.has_parent_path()) {
+                    std::filesystem::create_directories(binPathFs.parent_path());
+                }
+                std::string binPath = binPathStr;
+
                 auto newAnim = std::make_shared<Animation>(AnimationImporter::Import(cached.sourceFilePath));
                 if (newAnim->duration > 0.0f) {
                     AnimationSerializer::Serialize(binPath, *newAnim, currentLwt);

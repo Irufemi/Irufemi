@@ -14,6 +14,8 @@
 #include <iomanip>
 #include <sstream>
 #include <ctime>
+#include <filesystem>
+#include "Engine/Core/Utility/StringUtility.h"
 
 #ifdef USE_IMGUI
 #include "imgui.h"
@@ -143,7 +145,7 @@ void TL1Scene::DrawDebugTab() {
             ofn.nMaxFile = sizeof(szFile);
             ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg\0All Files\0*.*\0";
             ofn.nFilterIndex = 1;
-            ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+            ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
             if (GetOpenFileNameA(&ofn) == TRUE) {
                 strncpy_s(refImagePathBuffer, ofn.lpstrFile, _TRUNCATE);
             }
@@ -177,7 +179,7 @@ void TL1Scene::DrawDebugTab() {
             if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd)))) {
                 DWORD dwOptions;
                 if (SUCCEEDED(pfd->GetOptions(&dwOptions))) {
-                    pfd->SetOptions(dwOptions | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM);
+                    pfd->SetOptions(dwOptions | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR);
                 }
                 
                 HWND hwnd = engine_->GetWinApp() ? engine_->GetWinApp()->GetHwnd() : nullptr;
@@ -236,6 +238,35 @@ void TL1Scene::DrawDebugTab() {
                 magicBrushClient_->StartGeneration(promptText_, referenceImagePath_, shaderName_, outputDirectory_, engine_->GetDirectXCommon()->GetShaderManager());
             }
         }
+        
+        ImGui::SameLine();
+        if (ImGui::Button("Evaluate & Fix")) {
+            if (magicBrushClient_ && isShaderRegistered_ && magicBrushClient_->GetState() == MagicBrushClient::State::Success) {
+                const auto& history = magicBrushClient_->GetHistory();
+                if (!history.empty()) {
+                    std::string currentHlsl = history.back().hlslCode;
+                    std::string refImg = referenceImagePath_;
+                    std::string sName = shaderName_;
+                    std::wstring relPath = L"resources/screenshots/temp_evaluate.png";
+                    std::error_code ec;
+                    std::filesystem::create_directories("resources/screenshots", ec);
+                    std::wstring screenshotPath = std::filesystem::absolute(relPath).wstring();
+                    
+                    auto* captureManager = engine_->GetScreenCaptureManager();
+                    if (captureManager) {
+                        notificationMsg = "Taking screenshot for AI evaluation...";
+                        captureManager->RequestCapture(screenshotPath, ScreenCaptureType::SceneOnly, [this, currentHlsl, refImg, sName, screenshotPath]() {
+                            std::string u8path = ConvertString(screenshotPath);
+                            magicBrushClient_->StartVisualFix(refImg, u8path, currentHlsl, sName, engine_->GetDirectXCommon()->GetShaderManager());
+                            isShaderRegistered_ = false; // 新しいシェーダーができたら再バインドさせるため
+                        });
+                    }
+                }
+            } else {
+                notificationMsg = "Generate a shader successfully before evaluating.";
+            }
+        }
+        
         if (!isRunning) {
             ImGui::EndDisabled();
         }
@@ -248,6 +279,8 @@ void TL1Scene::DrawDebugTab() {
                 case MagicBrushClient::State::Generating: ImGui::TextColored(ImVec4(1, 1, 0, 1), "Status: Generating initial HLSL..."); break;
                 case MagicBrushClient::State::Compiling: ImGui::TextColored(ImVec4(1, 1, 0, 1), "Status: Compiling..."); break;
                 case MagicBrushClient::State::Fixing: ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "Status: Fixing Compile Errors..."); break;
+                case MagicBrushClient::State::WaitingForScreenshot: ImGui::TextColored(ImVec4(0.5f, 0.5f, 1, 1), "Status: Waiting for screenshot..."); break;
+                case MagicBrushClient::State::VisualEvaluating: ImGui::TextColored(ImVec4(0, 1, 1, 1), "Status: Visual Evaluating & Fixing..."); break;
                 case MagicBrushClient::State::Success: ImGui::TextColored(ImVec4(0, 1, 0, 1), "Status: Success!"); break;
                 case MagicBrushClient::State::Error: 
                     ImGui::TextColored(ImVec4(1, 0, 0, 1), "Status: Error");

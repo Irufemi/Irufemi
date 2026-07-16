@@ -50,6 +50,10 @@ Microsoft::WRL::ComPtr<IDxcBlob> MagicBrushClient::GetResultBlob() {
 bool MagicBrushClient::StartPythonServer() {
     if (IsServerRunning()) return true;
 
+    // サーバープロセスは死んでいるが、前回起動時のログスレッドやパイプが残っている場合に備えて
+    // 完全にクリーンアップを行ってから再起動（std::threadの再代入による abort を防ぐ）
+    StopPythonServer();
+
     // パイプの作成
     SECURITY_ATTRIBUTES saAttr;
     saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -403,4 +407,78 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
             return;
         }
     }
+}
+
+void MagicBrushClient::StartVisualFix(const std::string& referenceImagePath, const std::string& screenshotPath, const std::string& currentHlslCode, const std::string& shaderName, ShaderManager* shaderManager) {
+    if (state_ == State::VisualEvaluating || state_ == State::Compiling || state_ == State::Generating || state_ == State::Fixing) return;
+    state_ = State::VisualEvaluating;
+    
+    if (workerThread_.joinable()) {
+        workerThread_.join();
+    }
+    workerThread_ = std::thread(&MagicBrushClient::VisualFixThread, this, referenceImagePath, screenshotPath, currentHlslCode, shaderName, shaderManager);
+}
+
+void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::string screenshotPath, std::string currentHlslCode, std::string shaderName, ShaderManager* shaderManager) {
+    std::string jsonReq = "{ \"reference_image_path\": \"" + EscapeJSON(referenceImagePath) + "\", " +
+                          "\"current_output_image_path\": \"" + EscapeJSON(screenshotPath) + "\", " +
+                          "\"code\": \"" + EscapeJSON(currentHlslCode) + "\" }";
+    
+    std::string newHlslCode = SendPostRequest("/evaluate_visual", jsonReq);
+    
+    if (newHlslCode.find("ERROR:") == 0 || newHlslCode.find("Internal Server Error") != std::string::npos) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        errorMessage_ = "Failed to connect to Python Server or API Error during Visual Fix.\n" + newHlslCode;
+        state_ = State::Error;
+        return;
+    }
+
+    // 修復後コンパイルループ
+    int attempts = 0;
+    while (attempts <= kMaxFixAttempts) {
+        state_ = State::Compiling;
+        
+        std::error_code ec;
+        std::filesystem::create_directories("resources/shaders/generated", ec);
+        std::string hlslFilePath = "resources/shaders/generated/" + shaderName + ".hlsl";
+        std::ofstream ofs(hlslFilePath);
+        if (ofs) {
+            ofs << newHlslCode;
+            ofs.close();
+        }
+        
+        ShaderCompileOptions options;
+        options.entryPoint = L"main";
+        std::string compileError;
+        std::wstring hlslFilePathW = ConvertString(hlslFilePath);
+        auto blob = shaderManager->ReloadShader(hlslFilePathW, options, L"ps_6_0", &compileError);
+        
+        if (blob) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            resultBlob_ = blob;
+            GenerationHistory hist;
+            hist.prompt = "[Visual Fixed] Target: " + referenceImagePath;
+            hist.hlslCode = newHlslCode;
+            hist.shaderName = shaderName;
+            history_.push_back(hist);
+            state_ = State::Success;
+            return;
+        } else {
+            state_ = State::Fixing;
+            std::string fixReq = "{ \"error_log\": \"" + EscapeJSON(compileError) + "\", \"code\": \"" + EscapeJSON(newHlslCode) + "\" }";
+            newHlslCode = SendPostRequest("/fix_error", fixReq);
+            
+            if (newHlslCode.find("ERROR:") == 0 || newHlslCode.find("Internal Server Error") != std::string::npos) {
+                std::lock_guard<std::mutex> lock(mutex_);
+                errorMessage_ = "Failed during auto-fix.\n" + newHlslCode;
+                state_ = State::Error;
+                return;
+            }
+            attempts++;
+        }
+    }
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    errorMessage_ = "Visual fix failed. Could not resolve compile errors after " + std::to_string(kMaxFixAttempts) + " attempts.";
+    state_ = State::Error;
 }
