@@ -15,9 +15,9 @@
     - `Blend Tree` (1D/2D) の実装。速度パラメータによる Idle / Walk / Run の自動クロスフェード。
     - 再生速度（Playback Speed）の動的スケーリング制御。
     - **Root Motion** の抽出アルゴリズム実装と、`TransformComponent` 等への還元APIの実装。
-- [ ] **Phase 3: リソース分離とイベントシステム**
-    - `Skeleton` を `SkeletonData` (共有リソース) と `SkeletonPose` (インスタンス状態) に分離しメモリ最適化。
-    - `AnimationEvent` システムの実装（特定フレームでのサウンド再生・当たり判定イベントの発火）。
+- [ ] **Phase 3: リソース分離とイベントシステム (※一時保留)**
+    - [x] `Skeleton` を `SkeletonData` (共有リソース) と `SkeletonPose` (インスタンス状態) に分離しメモリ最適化。（※Phase8のリファクタリングで既に完了済み）
+    - [ ] `AnimationEvent` システムの実装（※現在テストできるゲーム側のサンプルがないため、必要になったタイミングへ実装を先送り）
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
 ### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)

@@ -727,6 +727,146 @@ aura->SetIsTransparent(true);
 
 ---
 
+## 3Dアニメーションと Root Motion の利用方法
+
+本エンジンでは、3Dキャラクターなどのスケルタルアニメーション（ボーン変形）を描画・制御するためのコンポーネントシステムとして、`SkinnedMeshRendererComponent` と `AnimatorComponent` の分離アーキテクチャを採用しています。
+これにより、アニメーションのロジック（再生やブレンド）と描画の責務が完全に分離され、高速な処理が可能になっています。
+
+### 基本的なアニメーション再生
+
+アニメーション付きのモデル（GLTF / FBX）をシーンに配置し再生する場合は、GameObjectに2つのコンポーネントをアタッチします。
+
+```cpp
+// 1. 描画コンポーネントの追加とモデルのロード
+auto renderer = gameObject_->AddComponent<SkinnedMeshRendererComponent>();
+renderer->LoadModel("sample/walk.gltf");
+
+// 2. アニメーション制御コンポーネントの追加
+auto animator = gameObject_->AddComponent<AnimatorComponent>();
+
+// 3. アニメーションの再生 (ファイル名, ループフラグ)
+animator->Play("sample/walk.gltf", true);
+```
+
+### アニメーションのクロスフェード (Blend Tree)
+
+走っている状態から歩く状態へ切り替わる際など、モーションがパキッと切り替わるのを防ぐため、本エンジンは**球面線形補間（Slerp）を用いた自動クロスフェード機能**を備えています。
+
+```cpp
+auto animator = gameObject_->GetComponent<AnimatorComponent>();
+
+// 第3引数にフェード時間（秒）を指定することで、現在のポーズから次のポーズへ滑らかに遷移します。
+// 例：1.0秒かけて "walk" から "sneakWalk" に滑らかに移行する
+animator->Play("sample/sneakWalk.gltf", true, 1.0f);
+```
+
+### 足滑りを防ぐ Root Motion (ルートモーション)
+
+従来のアニメーション再生では「その場で足踏みするアニメーション」を再生しながら、プログラム側でキャラクターの座標を移動（Translate）させる必要がありましたが、これでは足の動きと実際の移動速度が合わず「足が滑っている（ムーンウォーク）」ように見えてしまう問題がありました。
+
+本エンジンは、アニメーションデータ自体が持っている「移動量（ルートボーンの差分）」を自動抽出し、それを直接 GameObject の `TransformComponent` の座標に還元する **Root Motion** 機能をサポートしています。
+
+```cpp
+auto animator = gameObject_->GetComponent<AnimatorComponent>();
+
+// Root Motion を有効化（インスペクタのUIからもチェックボックスで切り替え可能）
+animator->SetApplyRootMotion(true);
+
+// これ以降、"walk.gltf" などを再生すると、アニメーションの移動量に連動して
+// 自動的に GameObject そのもの（Transform）が移動するようになります。
+// （※開発者が手動で Transform::SetPosition を呼んでキャラクターを前進させる必要はありません）
+```
+
+これにより、モーションデザイナーが意図した通りの「絶対に足が滑らない、物理的に正確な移動」が実現されます。
+
+---
+
+## 統合テスト環境 (DebugScene) の利用ルール
+
+本エンジンには、エンジンコアの機能テストや描画テストを行うための独立したサンドボックス環境として **`DebugScene`** が `IrufemiEngine/Framework/` 配下に統合されています。（以前は各ゲームアプリケーション側に重複して存在していましたが、リファクタリングによりエンジン側に一元化されました。）
+
+### DebugScene の目的と立ち位置
+エンジンの機能追加（新しいコンポーネント、シェーダー、アニメーション機構など）を行う際は、**いきなりゲーム本編のシーン（`InGameScene` など）に組み込むのではなく、まずはこの `DebugScene` にテスト用のオブジェクトを配置して単体テスト・動作確認を行う** ことが強く推奨されます。
+
+これにより、ゲーム特有の複雑なロジック（ステートマシンやカメラ制御など）の干渉を受けずに純粋なエンジンのバグ切り分けが可能になります。
+
+### テスト用オブジェクトの追加と管理 (Activationパネル)
+`DebugScene` に新しいテスト要素を追加する際は、常に描画し続けるのではなく、ImGuiのトグルスイッチを使って「必要なときだけ表示・更新」できるように実装してください。
+
+1. **フラグとオブジェクト変数の定義 (`DebugScene.h`)**:
+   ```cpp
+   std::unique_ptr<GameObject> myTestObj_ = nullptr;
+   bool isActiveMyTest_ = false;
+   ```
+
+2. **Activation ウィンドウへの登録 (`DebugScene.cpp` の Update 内)**:
+   ```cpp
+   if (ImGui::Begin("Activation")) {
+       ImGui::Checkbox("My Test Feature", &isActiveMyTest_);
+   }
+   ImGui::End();
+   ```
+
+3. **遅延生成と更新・描画ロジック**:
+   チェックボックスがONにされた瞬間（または初回フレーム）に初めてオブジェクトを生成（Instantiate/make_unique）し、チェックが入っている間だけ Update / Draw を呼ぶようにします。
+   ```cpp
+   if (isActiveMyTest_) {
+       if (!myTestObj_) {
+           myTestObj_ = std::make_unique<GameObject>("TestObj");
+           myTestObj_->AddComponent<MyNewComponent>();
+       }
+       myTestObj_->Update();
+   }
+   ```
+
+※なお、`DebugScene` はあくまでエンジンのテスト機能であるため、特定のゲーム（シューティングやアクション等）のプレイヤーキャラや敵キャラの仕様をそのまま持ち込むことは禁止されています。（チーム開発ルール 1. アーキテクチャと関心の分離 に従うこと）
+
+---
+
+## 半透明・エフェクトオブジェクトの描画とZソート
+
+本エンジンでは、地形やキャラクターなどの不透明オブジェクトの後に、オーラやレーザーなどの半透明エフェクトを正しい順番（奥から手前）で描画するための **独立した半透明描画パス (MainTransparentPass)** をサポートしました。
+
+これまで半透明オブジェクトを描画する際、Zバッファへの書き込み（DepthWrite）をDisableにすると、後から描画される不透明オブジェクトに上書きされて見えなくなる問題がありましたが、この機能を利用することで正しく描画されます。
+
+### 利用方法
+
+半透明や加算合成で描画したい Primitive3DObject （またはそれを保持するRendererComponent）に対して、初期化時に SetIsTransparent(true) を設定し、同時にPSO設定で DepthWrite::Disable を指定します。
+
+```cpp
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+
+// 1. オブジェクトの初期化
+auto aura = std::make_shared<Primitive3DObject>();
+aura->Initialize(PrimitiveType::Sphere);
+
+// 2. カスタムPSOの適用 (DepthWrite を Disable にする)
+auto pso = engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
+aura->SetCustomPSO(pso);
+
+// 3. 半透明フラグを有効にする (重要！)
+// これにより、不透明オブジェクトをすべて描き終わった後に、カメラからの距離でソートされて描画されます。
+aura->SetIsTransparent(true);
+```
+
+### 注意点
+- SetIsTransparent(true) を設定したオブジェクトは、自動的にカメラからの距離（distanceToCamera）を計算し、**Z値の降順（Back-to-Front）**でソートされて描画されます。
+- 不透明な通常のモデルに SetIsTransparent(true) を設定しないでください（Early-Zカリングなどの恩恵が受けられず、パフォーマンスが低下します）。
+
+---
+
+## デバッグ描画と当たり判定 (CollisionManager)
+
+コライダー（AABB, Sphere, OBB）のデバッグ描画（ワイヤーフレーム表示）は、各コンポーネント内で個別に実装・描画する必要はありません。
+すべてのコライダーのデバッグ描画は、`CollisionManager::DrawDebug()` にて一元管理・一括描画されるアーキテクチャに変更されています。
+
+- **デバッグ表示の自動化**:
+  `ColliderComponent` を継承してコンポーネントを作成し、`GetWorldAABB()` などの形状取得メソッドを正しくオーバーライドすれば、エディタ上で自動的にワイヤーフレームが表示されます。
+- **自分で `DrawDebug` を呼ばない**:
+  各コンポーネント内に独自の `DrawDebug` 等の描画命令（PrimitiveManager等の呼び出し）を記述すると、描画が重複したり描画ステートが壊れる原因となるため、当たり判定の描画は完全にマネージャに委譲してください。
+
+---
+
 ## Bindless Resources (Descriptor Indexing) 完全移行について
 
 現在、IrufemiEngine はパフォーマンス向上を目的とした **Bindless Resources** (Descriptor Indexing) への移行を完了しました。
