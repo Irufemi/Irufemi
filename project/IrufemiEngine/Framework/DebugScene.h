@@ -1,12 +1,17 @@
 #pragma once
 
+/**
+ * @file DebugScene.h
+ * @brief エンジンの各機能のテストおよび実装例を示すためのデバッグ用シーンクラス
+ */
+
 #include "Framework/BaseScene.h"
 
 #include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
-#include "Irufemi.h"
-#include "Graphics/Data/LightningParams.h"
+#include "Engine/Irufemi.h"
+#include "Engine/Graphics/Data/LightningParams.h"
 
 #include <memory>
 #include <vector>
@@ -16,12 +21,37 @@
 // 前方宣言
 class IrufemiEngine;
 
+/**
+ * @class DebugScene
+ * @brief 各種オブジェクト（2D、3D、パーティクルなど）の描画テストや、機能の実装例を確認するためのシーン
+ */
 class DebugScene : public BaseScene {
 public: // メンバ関数(ゲーム)
+
+    /**
+     * @brief デストラクタ
+     */
     ~DebugScene() override;
+
+    /**
+     * @brief 初期化処理
+     * @param engine エンジンのポインタ
+     */
     void Initialize(IrufemiEngine* engine) override;
+
+    /**
+     * @brief 更新処理
+     */
     void Update() override;
+
+    /**
+     * @brief 描画処理
+     */
     void Draw() override;
+
+    /**
+     * @brief デバッグタブの描画処理
+     */
     void DrawDebugTab() override;
 
 private: // メンバ関数(内部ヘルパ)
@@ -101,4 +131,3 @@ private: // メンバ変数(システム)
     ImGuizmo::MODE gizmoMode_ = ImGuizmo::LOCAL;
 #endif
 };
-

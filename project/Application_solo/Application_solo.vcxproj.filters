@@ -36,9 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameApplication.cpp" />
-    <ClCompile Include="scene\Debug\DebugScene.cpp">
-      <Filter>scene\Debug</Filter>
-    </ClCompile>
+
     <ClCompile Include="main.cpp" />
     <ClCompile Include="scene\GameOver\GameOverScene.cpp">
       <Filter>scene\GameOver</Filter>
@@ -109,9 +107,7 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClInclude Include="GameApplication.h" />
-    <ClInclude Include="scene\Debug\DebugScene.h">
-      <Filter>scene\Debug</Filter>
-    </ClInclude>
+
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>scene\GameOver</Filter>
     </ClInclude>

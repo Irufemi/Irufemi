@@ -1,26 +1,27 @@
+/**
+ * @file DebugScene.cpp
+ * @brief エンジンの各機能のテストおよび実装例を示すためのデバッグ用シーンクラスの実装
+ */
+
 #include "DebugScene.h" // Unified debug UI enabled
 
 #include "Framework/SceneManager.h"
-
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "IrufemiEngine/Engine/Core/Math/Math.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Engine/IrufemiEngine.h"
 
-
 // デストラクタ
 DebugScene::~DebugScene() {
-
 }
 
 // 初期化
 void DebugScene::Initialize(IrufemiEngine* engine) {
-
     BaseScene::Initialize(engine);
     
     Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
-    activeCamera->SetTranslate(Vector3{ 0.0f,0.0f,-10.0f });
+    activeCamera->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
     activeCamera->UpdateMatrix();
 
     auto areaLight = std::make_unique<AreaLight>();
@@ -35,7 +36,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
 
     isActiveObj_ = false;
     isActiveSprite_ = false;
-
     isActiveStanfordBunny_ = false;
     isActiveUtashTeapot_ = false;
     isActiveMultiMesh_ = false;
@@ -43,8 +43,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSuzanne_ = false;
     isActiveFence_ = false;
     isActiveTerrain_ = false;
-
-
     isActiveVoxelParticle_ = false;
     isActiveGPUParticle_ = false;
     isActiveAnimatedCube_ = false;
@@ -52,54 +50,46 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveSneakWalk_ = false;
     isActiveSkybox_ = false;
     isActivePrimitiveObj_ = false;
-
+    isActivePrimitive2DObj_ = false;
     isActiveLightningCrawl_ = false;
     isActiveImGuiDemo_ = false;
 
-    // 課題用スプライトの初期化
-    /*imguiSprite_ = std::make_unique<Sprite>();
-    imguiSprite_->Initialize();
-    imguiSprite_->SetPosition(100.0f, 100.0f);*/
-
     if (isActiveSprite_) {
-        sprite_ = std::make_unique <Sprite>();
+        sprite_ = std::make_unique<Sprite>();
         sprite_->Initialize();
     }
-
     if (isActiveObj_) {
         obj_ = std::make_unique<StaticModelObject>();
         obj_->Initialize("sample/plane.gltf");
     }
     if (isActiveStanfordBunny_) {
-        stanfordBunny_ = std::make_unique <StaticModelObject>();
+        stanfordBunny_ = std::make_unique<StaticModelObject>();
         stanfordBunny_->Initialize("sample/bunny.obj");
     }
     if (isActiveUtashTeapot_) {
-        utashTeapot_ = std::make_unique <StaticModelObject>();
+        utashTeapot_ = std::make_unique<StaticModelObject>();
         utashTeapot_->Initialize("sample/teapot.obj");
     }
     if (isActiveMultiMesh_) {
-        multiMesh_ = std::make_unique <StaticModelObject>();
+        multiMesh_ = std::make_unique<StaticModelObject>();
         multiMesh_->Initialize("sample/multiMesh.obj");
     }
     if (isActiveMultiMaterial_) {
-        multiMaterial_ = std::make_unique <StaticModelObject>();
+        multiMaterial_ = std::make_unique<StaticModelObject>();
         multiMaterial_->Initialize("sample/multiMaterial.obj");
     }
     if (isActiveSuzanne_) {
-        suzanne_ = std::make_unique <StaticModelObject>();
+        suzanne_ = std::make_unique<StaticModelObject>();
         suzanne_->Initialize("sample/suzanne.obj");
     }
     if (isActiveFence_) {
-        fence_ = std::make_unique <StaticModelObject>();
+        fence_ = std::make_unique<StaticModelObject>();
         fence_->Initialize("sample/fence.obj");
     }
     if (isActiveTerrain_) {
-        terrain_ = std::make_unique <StaticModelObject>();
+        terrain_ = std::make_unique<StaticModelObject>();
         terrain_->Initialize("sample/terrain.obj");
     }
-
-
     if (isActiveGPUParticle_) {
         particleObj_ = std::make_unique<ParticleObject>();
         particleObj_->SetTexturePath("resources/circle.png");
@@ -113,7 +103,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         particleObj_->SetColor({1.0f, 0.5f, 0.0f, 1.0f});
         particleObj_->Initialize();
     }
-    
     if (isActiveVoxelParticle_) {
         voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", { 64,64,64 });
     }
@@ -133,7 +122,6 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         skybox_ = std::make_unique<Skybox>();
         skybox_->Initialize("resources/qwantani_night_puresky_1k_cubemap.dds");
     }
-
     if (isActivePrimitiveObj_) {
         primitiveObj_ = std::make_unique<Primitive3DObject>();
         primitiveObj_->Initialize(PrimitiveType::Cube);
@@ -153,21 +141,18 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         lightningParamsData_->noiseThreshold = 0.2f; // 出現しやすくする
         lightningParamsData_->intensity = 5.0f;      // 輝きを強める
     }
-
     lightningCylinder_->SetCullingEnabled(false); // 確実に描画されるように一旦OFF
 }
 
 // 更新
 void DebugScene::Update() {
-
-
-
     // =====
     // ↓ゲームの更新
     // =====
 #ifdef USE_IMGUI
     ImGui::Begin("Activation");
     ImGui::Checkbox("Sprite", &isActiveSprite_);
+    ImGui::Checkbox("Primitive2D Test", &isActivePrimitive2DObj_);
     ImGui::Checkbox("Primitive Test", &isActivePrimitiveObj_);
 
     ImGui::Checkbox("Obj", &isActiveObj_);
@@ -179,14 +164,12 @@ void DebugScene::Update() {
     ImGui::Checkbox("Fence", &isActiveFence_);
     ImGui::Checkbox("Terrain", &isActiveTerrain_);
 
-
     ImGui::Checkbox("GPU Particle (Code)", &isActiveGPUParticle_);
     ImGui::Checkbox("VoxelParticle", &isActiveVoxelParticle_);
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
-    ImGui::Checkbox("PrimitiveObj", &isActivePrimitiveObj_);
 
     ImGui::Checkbox("Lightning Crawl", &isActiveLightningCrawl_);
     ImGui::Checkbox("ImGui Demo", &isActiveImGuiDemo_);
@@ -198,8 +181,6 @@ void DebugScene::Update() {
 #endif
 
     // 3D
-
-
     if (isActiveObj_) {
         if (!obj_) {
             obj_ = std::make_unique<StaticModelObject>();
@@ -263,7 +244,6 @@ void DebugScene::Update() {
         terrain_->Update();
     }
 
-
     if (isActiveGPUParticle_) {
         if (!particleObj_) {
             particleObj_ = std::make_unique<ParticleObject>();
@@ -279,16 +259,12 @@ void DebugScene::Update() {
             particleObj_->SetMidColor({1.0f, 0.0f, 0.0f, 1.0f});
             particleObj_->Initialize();
         }
-        
 #ifdef USE_IMGUI
         ImGui::Begin("Hardcoded Particle Test");
         particleObj_->DebugUI("Hardcoded Particle Test");
         ImGui::End();
 #endif
-
         particleObj_->Update();
-        
-        // システム全体の線描画は GPUParticleSystem::Update() 内で自動で行われるように変更しました
     } else {
         if (particleObj_) {
             particleObj_.reset();
@@ -298,11 +274,13 @@ void DebugScene::Update() {
     if (isActiveVoxelParticle_) {
         if (!voxelEmitterHandle_.IsValid()) {
             voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", { 64,64,64 });
-            voxelEmitParams_.emit = 1;
+            voxelEmitParams_.emit = 0;
+            voxelEmitParams_.emitPosition = { 0.0f, 0.0f, 0.0f };
             voxelEmitParams_.lifeTime = 2.0f;
-            voxelEmitParams_.particleType = 0;
-            voxelEmitParams_.dispersion = 8.0f;
             voxelEmitParams_.gravity = 2.0f;
+            voxelEmitParams_.dispersion = 8.0f;
+            voxelEmitParams_.convergence = 0.1f;
+            voxelEmitParams_.baseVelocity = { 0.0f, 5.0f, 0.0f };
         }
         engine_->GetVoxelParticleManager()->UpdateEmitterData(voxelEmitterHandle_, voxelEmitParams_);
     } else {
@@ -311,6 +289,7 @@ void DebugScene::Update() {
             voxelEmitterHandle_ = {};
         }
     }
+    
     if (isActiveAnimatedCube_) {
         if (!animatedCube_) {
             animatedCube_ = std::make_unique<AnimationModel>();
@@ -355,7 +334,6 @@ void DebugScene::Update() {
     }
 
     // 2D
-
     if (isActiveSprite_) {
         if (!sprite_) {
             sprite_ = std::make_unique<Sprite>();
@@ -365,8 +343,22 @@ void DebugScene::Update() {
         sprite_->Update();
     }
 
-    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+    if (isActivePrimitive2DObj_) {
+        if (!primitive2DObj_) {
+            primitive2DObj_ = std::make_unique<Primitive2DObject>();
+            primitive2DObj_->Initialize(Primitive2DType::Circle, "resources/uvChecker.png");
+            primitive2DObj_->SetSize({ 100.0f, 100.0f });
+            primitive2DObj_->SetPosition({ 640.0f, 360.0f, 0.0f });
+            primitive2DObj_->SetPivot({ 0.5f, 0.5f });
+        }
+        primitive2DObj_->Update();
+    } else {
+        if (primitive2DObj_) {
+            primitive2DObj_.reset();
+        }
+    }
 
+    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         engine_->GetSceneManager()->Request("InGame");
     }
 
@@ -390,55 +382,23 @@ void DebugScene::Draw() {
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
-
     engine_->ApplyPSO("Object3D");
 
-
-    if (isActiveObj_) {
-        obj_->Draw();
-    }
-    if (isActiveUtashTeapot_) {
-        utashTeapot_->Draw();
-    }
-    if (isActiveStanfordBunny_) {
-        stanfordBunny_->Draw();
-    }
-    if (isActiveMultiMesh_) {
-        multiMesh_->Draw();
-    }
-    if (isActiveMultiMaterial_) {
-        multiMaterial_->Draw();
-    }
-    if (isActiveSuzanne_) {
-        suzanne_->Draw();
-    }
-    if (isActiveFence_) {
-        fence_->Draw();
-    }
-    if (isActiveTerrain_) {
-        terrain_->Draw();
-    }
-    if (isActiveAnimatedCube_) {
-        animatedCube_->Draw();
-    }
-    if (isActiveWalk_) {
-        walk_->Draw();
-    }
-    if (isActiveSneakWalk_) {
-        sneakWalk_->Draw();
-    }
-
-    if (isActivePrimitiveObj_) {
-        primitiveObj_->Draw();
-    }
-
-    if (isActiveSkybox_) {
-        skybox_->Draw();
-    }
+    if (isActiveObj_) obj_->Draw();
+    if (isActiveUtashTeapot_) utashTeapot_->Draw();
+    if (isActiveStanfordBunny_) stanfordBunny_->Draw();
+    if (isActiveMultiMesh_) multiMesh_->Draw();
+    if (isActiveMultiMaterial_) multiMaterial_->Draw();
+    if (isActiveSuzanne_) suzanne_->Draw();
+    if (isActiveFence_) fence_->Draw();
+    if (isActiveTerrain_) terrain_->Draw();
+    if (isActiveAnimatedCube_) animatedCube_->Draw();
+    if (isActiveWalk_) walk_->Draw();
+    if (isActiveSneakWalk_) sneakWalk_->Draw();
+    if (isActivePrimitiveObj_) primitiveObj_->Draw();
+    if (isActiveSkybox_) skybox_->Draw();
 
     if (isActiveLightningCrawl_) {
-        // lightningCylinder_->Draw() だと RenderQueue に回されてしまい専用PSOが上書きされるため、
-        // 不透明描画の後に専用PSOを適用して描画するよう SubmitPostRender に積む
         lightningCylinder_->SyncBeforeDraw();
 
         engine_->GetDrawManager()->SubmitPostRender([this]() {
@@ -472,22 +432,15 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Particle");
 
-
-
-
-
     // Managerが描画するのでここでは何もしない
 
     // 2D
-
     engine_->SetBlend(BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Sprite");
 
-    if (isActiveSprite_) {
-        sprite_->Draw();
-    }
-
+    if (isActiveSprite_) sprite_->Draw();
+    if (isActivePrimitive2DObj_) primitive2DObj_->Draw();
 }
 
 void DebugScene::DrawDebugTab() {
@@ -496,8 +449,6 @@ void DebugScene::DrawDebugTab() {
     if (isActiveSkybox_ && skybox_) {
         skybox_->Debug();
     }
-
-
 
     if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 
@@ -526,11 +477,13 @@ void DebugScene::DrawDebugTab() {
             }
         }
         ImGui::End();
-    }    if (isActiveLightningCrawl_ && lightningCylinder_) {
-        // オブジェクト標準のデバッグUI（形状やマテリアル）を表示
+    }
+    
+    if (isActivePrimitive2DObj_ && primitive2DObj_) primitive2DObj_->Debug("Primitive2D Test");
+
+    if (isActiveLightningCrawl_ && lightningCylinder_) {
         lightningCylinder_->Debug("Lightning Cylinder");
 
-        // 同じウィンドウ名で再開して、電撃特有のパラメータを「追記」する
         if (ImGui::Begin("Cylinder: Lightning Cylinder")) {
             ImGui::Separator();
             ImGui::Checkbox("Active Lightning Crawl", &isActiveLightningCrawl_);
@@ -538,6 +491,5 @@ void DebugScene::DrawDebugTab() {
         }
         ImGui::End();
     }
-
 #endif
 }

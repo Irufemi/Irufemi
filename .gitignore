@@ -17,8 +17,6 @@ generated/
 
 # Exceptions for scene debug folders
 !project/Application/scene/debug/
-!project/Application_solo/scene/debug/
-!project/Application_team/scene/debug/
 project/logs/
 *.pdb
 *.ilk

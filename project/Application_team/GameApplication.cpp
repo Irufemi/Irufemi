@@ -23,7 +23,7 @@
 #include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-#include "scene/debug/DebugScene.h"
+#include "Framework/DebugScene.h"
 #endif
 
 #ifdef EditorMode

@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -688,6 +688,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\Mouse.cpp" />
     <ClCompile Include="Engine\Platform\WindowsAPI\WinApp.cpp" />
     <ClCompile Include="Framework\BaseScene.cpp" />
+    <ClCompile Include="Framework\DebugScene.cpp" />
     <ClCompile Include="Framework\Component\Audio\AudioSourceComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\TargetFollowComponent.cpp" />
@@ -868,6 +869,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Platform\WindowsAPI\WinApp.h" />
     <ClInclude Include="EngineResources\FontAwesome\IconsFontAwesome6.h" />
     <ClInclude Include="Framework\BaseScene.h" />
+    <ClInclude Include="Framework\DebugScene.h" />
     <ClInclude Include="Framework\GameObject.h" />
     <ClInclude Include="Framework\IScene.h" />
     <ClInclude Include="Engine\Core\System\ILoadingScreen.h" />

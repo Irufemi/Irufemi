@@ -39,7 +39,7 @@
 #include "scene/Pause/PauseScene.h"
 #include "scene/TL1/TL1Scene.h"
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-#include "scene/debug/DebugScene.h"
+#include "Framework/DebugScene.h"
 #endif
 
 #ifdef EditorMode
