@@ -15,7 +15,8 @@
 #include "../../../../Engine/Graphics/Data/Material.h"
 #include "../../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "../../../System/Core/BaseModel.h"
-#include "../../../../Resource/Model/Data/Skeleton.h"
+#include "../../../../Resource/Model/Data/SkeletonData.h"
+#include "../../../../Resource/Model/Data/SkeletonPose.h"
 #include "../../../../Resource/Model/Data/SkinCluster.h"
 #include "../../../../Engine/Graphics/Compute/IComputeTask.h"
 
@@ -90,7 +91,8 @@ public: //メンバ関数
     void DispatchCompute() override;
 
 private:
-    Skeleton skeleton_;
+    SkeletonData skeletonData_;
+    SkeletonPose skeletonPose_;
     SkinCluster skinCluster_;
     uint32_t lastSkinnedFrameIndex_ = 0;
 

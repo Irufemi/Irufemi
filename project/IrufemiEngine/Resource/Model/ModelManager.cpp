@@ -171,7 +171,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
         managedModel->lastLoadTime = currentLwt;
         managedModel->sourceFilePath = fullPath;
 
-        std::string binPathStr = StringUtility::GetCacheFilePath(fullPath, "model", ".ibin");
+        std::string binPathStr = StringUtility::GetCacheFilePath(fullPath, "model", ".model.ibin");
         std::filesystem::path binPathFs(binPathStr);
         if (binPathFs.has_parent_path()) {
             std::filesystem::create_directories(binPathFs.parent_path());

@@ -7,7 +7,9 @@
 
 #include "Framework/BaseScene.h"
 
-#include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
+#include "Framework/GameObject.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
+#include "Framework/Component/Logic/AnimatorComponent.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
 #include "Engine/Irufemi.h"
@@ -100,13 +102,13 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<ParticleObject> particleObj_ = nullptr;
     bool isActiveGPUParticle_ = false;
 
-    std::unique_ptr<AnimationModel> animatedCube_ = nullptr;
+    std::unique_ptr<GameObject> animatedCube_ = nullptr;
     bool isActiveAnimatedCube_ = false;
 
-    std::unique_ptr<AnimationModel> walk_ = nullptr;
+    std::unique_ptr<GameObject> walk_ = nullptr;
     bool isActiveWalk_ = false;
 
-    std::unique_ptr<AnimationModel> sneakWalk_ = nullptr;
+    std::unique_ptr<GameObject> sneakWalk_ = nullptr;
     bool isActiveSneakWalk_ = false;
 
     std::unique_ptr<Skybox> skybox_ = nullptr;

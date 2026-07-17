@@ -4,6 +4,7 @@
 #include <assimp/postprocess.h>
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include <filesystem>
+#include "AssimpMutex.h"
 
 Animation AnimationImporter::Import(const std::string& fullPath) {
     Animation animation;
@@ -13,6 +14,7 @@ Animation AnimationImporter::Import(const std::string& fullPath) {
         return {}; 
     }
 
+    std::lock_guard<std::mutex> lock(Irufemi::AssimpMutex::Get());
     const aiScene* scene = importer.ReadFile(fullPath.c_str(), aiProcess_MakeLeftHanded);
     if (!scene || scene->mNumAnimations == 0) {
         return {}; 

@@ -67,11 +67,12 @@ void StaticModelObject::InitializeResources() {
 
     // Skeleton と SkinCluster の初期化 (スキンがある場合)
     if (m && m->cpuModel && !m->cpuModel->skinClusterData.empty()) {
-        skeleton_ = AnimationManager::CreateSkeleton(m->cpuModel->rootNode);
-        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *m->cpuModel);
+        skeletonData_ = AnimationManager::CreateSkeletonData(m->cpuModel->rootNode);
+        skeletonPose_ = AnimationManager::CreateSkeletonPose(&skeletonData_);
+        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeletonData_, *m->cpuModel);
         
         // 静的モデルなのでバインドポーズのままスケルトンを1度更新しておく
-        AnimationManager::SkeletonUpdate(skeleton_);
+        AnimationManager::SkeletonUpdate(skeletonPose_);
     }
 
     // 初回Updateを呼んでおく
@@ -165,7 +166,7 @@ void StaticModelObject::SyncBeforeDraw() {
     // --- SkinCluster のマルチバッファ同期 ---
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
     if (m && m->cpuModel && !m->cpuModel->skinClusterData.empty()) {
-        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeletonPose_, frameIndex);
     }
 }
 

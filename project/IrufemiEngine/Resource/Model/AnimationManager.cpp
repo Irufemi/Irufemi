@@ -63,7 +63,7 @@ std::shared_ptr<Animation> AnimationManager::LoadAnimationFile(const std::string
         currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
     }
 
-    std::string binPathStr = StringUtility::GetCacheFilePath(filePath, "model", ".ibin");
+    std::string binPathStr = StringUtility::GetCacheFilePath(filePath, "animation", ".anim.ibin");
     std::filesystem::path binPathFs(binPathStr);
     if (binPathFs.has_parent_path()) {
         std::filesystem::create_directories(binPathFs.parent_path());
@@ -111,7 +111,7 @@ void AnimationManager::OnDirectoryChanged() {
             if (currentLwt > cached.lastLoadTime) {
                 OutputDebugStringA(("[AnimationManager] Hot-Reloading: " + cached.sourceFilePath + "\n").c_str());
                 
-                std::string binPathStr = StringUtility::GetCacheFilePath(cached.sourceFilePath, "model", ".ibin");
+                std::string binPathStr = StringUtility::GetCacheFilePath(cached.sourceFilePath, "animation", ".anim.ibin");
                 std::filesystem::path binPathFs(binPathStr);
                 if (binPathFs.has_parent_path()) {
                     std::filesystem::create_directories(binPathFs.parent_path());
@@ -236,53 +236,74 @@ Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Quaternion>
     return Math::ToEuler(rotation);
 }
 
-// Nodeの階層構造からSkeletonを作る
-Skeleton AnimationManager::CreateSkeleton(const Node& rootNode) {
-    Skeleton skeleton;
-    skeleton.root = CreateJoint(rootNode, {}, skeleton.joints);
+// Nodeの階層構造からSkeletonDataを作る
+SkeletonData AnimationManager::CreateSkeletonData(const Node& rootNode) {
+    SkeletonData skeleton;
+    skeleton.root = CreateJointData(rootNode, {}, skeleton.joints);
 
     // 名前とindexのマッピングを行いアクセスしやすくする
-    for (const Joint& joint : skeleton.joints) {
+    for (const JointData& joint : skeleton.joints) {
         skeleton.jointMap.emplace(joint.name, joint.index);
     }
 
     return skeleton;
 }
 
-//NodeからJointを作る
-int32_t AnimationManager::CreateJoint(const Node& node, const std::optional<int32_t>& parent, std::vector<Joint>& joints) {
-    Joint joint;
+// SkeletonDataからインスタンス用のSkeletonPoseを生成する
+SkeletonPose AnimationManager::CreateSkeletonPose(const SkeletonData* data) {
+    SkeletonPose pose;
+    pose.data = data;
+    if (!data) return pose;
+
+    pose.jointPoses.resize(data->joints.size());
+    for (size_t i = 0; i < data->joints.size(); ++i) {
+        pose.jointPoses[i].transform = data->joints[i].bindTransform;
+        pose.jointPoses[i].localMatrix = data->joints[i].bindLocalMatrix;
+        pose.jointPoses[i].skeletonSpaceMatrix = Math::MakeIdentity4x4();
+    }
+    return pose;
+}
+
+//NodeからJointDataを作る
+int32_t AnimationManager::CreateJointData(const Node& node, const std::optional<int32_t>& parent, std::vector<JointData>& joints) {
+    JointData joint;
     joint.name = node.name;
-    joint.localMatrix = node.localMatrix;
-    joint.skeletonSpaceMatrix = Math::MakeIdentity4x4();
-    joint.transform = node.transform;
+    joint.bindLocalMatrix = node.localMatrix;
+    joint.bindTransform = node.transform;
     joint.index = int32_t(joints.size()); // 現在登録されている数をIndexに
     joint.parent = parent;
-    joints.push_back(joint); // SkeletonのJoint列に追加
+    joints.push_back(joint); // SkeletonDataのJoint列に追加
     for (const Node& child : node.children) {
         // 子Jointを作成し、そのIndexを登録
-        int32_t childIndex = CreateJoint(child, joint.index, joints);
+        int32_t childIndex = CreateJointData(child, joint.index, joints);
         joints[joint.index].children.push_back(childIndex);
     }
     // 自身のIndexを返す
     return joint.index;
 }
 
-// Skeletonの更新
-void AnimationManager::SkeletonUpdate(Skeleton& skeleton) {
-    // すべてのJointを更新。親が若いので通常ループで処理可能になっている。
-    for (Joint& joint : skeleton.joints) {
-        joint.localMatrix = Math::MakeAffineMatrix(joint.transform.scale, joint.transform.rotate, joint.transform.translate);
-        if (joint.parent) { // 親がいれば親の行列を掛ける
-            joint.skeletonSpaceMatrix = joint.localMatrix * skeleton.joints[*joint.parent].skeletonSpaceMatrix;
+// SkeletonPoseの更新
+void AnimationManager::SkeletonUpdate(SkeletonPose& skeleton) {
+    if (!skeleton.data) return;
+    
+    // すべてのJointPoseを更新。親が若いので通常ループで処理可能になっている。
+    for (size_t i = 0; i < skeleton.jointPoses.size(); ++i) {
+        JointPose& jointPose = skeleton.jointPoses[i];
+        const JointData& jointData = skeleton.data->joints[i];
+
+        jointPose.localMatrix = Math::MakeAffineMatrix(jointPose.transform.scale, jointPose.transform.rotate, jointPose.transform.translate);
+        if (jointData.parent) { // 親がいれば親の行列を掛ける
+            jointPose.skeletonSpaceMatrix = jointPose.localMatrix * skeleton.jointPoses[*jointData.parent].skeletonSpaceMatrix;
         } else { // 親がいないんでlocalMatrixとskeletonSpaceMatrixは一致する
-            joint.skeletonSpaceMatrix = joint.localMatrix;
+            jointPose.skeletonSpaceMatrix = jointPose.localMatrix;
         }
     }
 }
 
-// Skeletonに対してAnimationを適用する
-void AnimationManager::ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime) {
+// SkeletonPoseに対してAnimationを適用する
+void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime) {
+    if (!skeleton.data) return;
+
     // アニメーションが変更された場合（または初回）のみ、バインディングを再構築する
     if (skeleton.lastAppliedAnimation != &animation) {
         skeleton.lastAppliedAnimation = &animation;
@@ -290,8 +311,8 @@ void AnimationManager::ApplyAnimation(Skeleton& skeleton, const Animation& anima
 
         // アニメーション側のノード名から、対象のジョイントを探してキャッシュ
         for (const auto& [nodeName, nodeAnimation] : animation.nodeAnimations) {
-            auto it = skeleton.jointMap.find(nodeName);
-            if (it != skeleton.jointMap.end()) {
+            auto it = skeleton.data->jointMap.find(nodeName);
+            if (it != skeleton.data->jointMap.end()) {
                 skeleton.activeAnimationBindings.push_back({ it->second, &nodeAnimation });
             }
         }
@@ -299,12 +320,12 @@ void AnimationManager::ApplyAnimation(Skeleton& skeleton, const Animation& anima
 
     // キャッシュを使って毎フレームの文字列検索 (std::map::find) を排除！
     for (const auto& binding : skeleton.activeAnimationBindings) {
-        Joint& joint = skeleton.joints[binding.first];
+        JointPose& jointPose = skeleton.jointPoses[binding.first];
         const NodeAnimation& rootNodeAnimation = *binding.second;
 
-        joint.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
-        joint.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
-        joint.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
+        jointPose.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
+        jointPose.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
+        jointPose.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
     }
 }
 
@@ -379,7 +400,7 @@ std::string AnimationManager::FindFileRecursive(const std::string& filename) con
 
 
 // SkinClusterを生成 (ObjModel版)
-SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const ObjModel& objModel) {
+SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, const ObjModel& objModel) {
     SkinCluster skinCluster;
 
     // 全メッシュの頂点数を合計
@@ -509,10 +530,11 @@ SkinCluster AnimationManager::CreateSkinCluster(const Skeleton& skeleton, const 
 }
 
 // SkinClusterの更新
-void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton, uint32_t frameIndex) {
-    for (size_t jointIndex = 0; jointIndex < skeleton.joints.size(); ++jointIndex) {
+void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const SkeletonPose& skeleton, uint32_t frameIndex) {
+    if (!skeleton.data) return;
+    for (size_t jointIndex = 0; jointIndex < skeleton.jointPoses.size(); ++jointIndex) {
         IRUFEMI_ASSERT(jointIndex < skinCluster.inverseBindPoseMatrices.size());
-        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.joints[jointIndex].skeletonSpaceMatrix;
+        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.jointPoses[jointIndex].skeletonSpaceMatrix;
         skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix = Math::Transpose(Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
     }
 }

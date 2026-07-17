@@ -723,7 +723,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp" />
     <ClCompile Include="Renderer\Object\2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object\2D\Text\Text.cpp" />
-    <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimationModel.cpp" />
+    <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.cpp" />
+    <ClCompile Include="Resource\Model\Animator.cpp" />
+    <ClCompile Include="Framework\Component\Logic\AnimatorComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.cpp" />
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp" />
     <ClCompile Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.cpp" />
     <ClCompile Include="Renderer\Object\Batch\DebugPrimitiveRenderer.cpp" />
@@ -908,7 +911,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h" />
     <ClInclude Include="Renderer\Object\2D\Sprite\Sprite.h" />
     <ClInclude Include="Renderer\Object\2D\Text\Text.h" />
-    <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimationModel.h" />
+    <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.h" />
+    <ClInclude Include="Resource\Model\Animator.h" />
+    <ClInclude Include="Framework\Component\Logic\AnimatorComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.h" />
     <ClInclude Include="Renderer\Object\3D\Primitive\Primitive3DObject.h" />
     <ClInclude Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.h" />
     <ClInclude Include="Renderer\Object\Effect\Effect.h" />
@@ -958,7 +964,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Model\Data\Node.h" />
     <ClInclude Include="Resource\Model\Data\NodeAnimation.h" />
     <ClInclude Include="Resource\Model\Data\ObjModel.h" />
-    <ClInclude Include="Resource\Model\Data\Skeleton.h" />
+    <ClInclude Include="Resource\Model\Data\SkeletonData.h" />
+    <ClInclude Include="Resource\Model\Data\SkeletonPose.h" />
     <ClInclude Include="Resource\Model\Data\SkinCluster.h" />
     <ClInclude Include="Resource\Model\Data\VertexInfluence.h" />
     <ClInclude Include="Resource\Model\Data\VertexWeightData.h" />

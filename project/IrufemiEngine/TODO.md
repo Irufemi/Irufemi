@@ -6,6 +6,19 @@
 ## 🚀 次期アップデート計画 (Ongoing & Future Tasks)
 より「ツール」として使いやすく、商用水準のパフォーマンスを発揮するための拡張機能群です。
 
+### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
+- [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**
+    - [x] `AnimationModel` の解体と `AnimatedMeshObject` (描画特化)・`Animator` (ロジック特化) への分離。
+    - [x] `SkinnedMeshRendererComponent` および `AnimatorComponent` の新規作成とインスペクタ公開。
+    - [x] `DebugScene` 等の既存コードを新アーキテクチャへ移行。
+- [ ] **Phase 2: アニメーションロジックの高度化 (スクリプト主導 & アニメーション主導)**
+    - `Blend Tree` (1D/2D) の実装。速度パラメータによる Idle / Walk / Run の自動クロスフェード。
+    - 再生速度（Playback Speed）の動的スケーリング制御。
+    - **Root Motion** の抽出アルゴリズム実装と、`TransformComponent` 等への還元APIの実装。
+- [ ] **Phase 3: リソース分離とイベントシステム**
+    - `Skeleton` を `SkeletonData` (共有リソース) と `SkeletonPose` (インスタンス状態) に分離しメモリ最適化。
+    - `AnimationEvent` システムの実装（特定フレームでのサウンド再生・当たり判定イベントの発火）。
+
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
 ### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)
 - [x] **CollisionManager のスレッドセーフ化と Async Raycast の実装**

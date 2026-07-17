@@ -5,7 +5,8 @@
 #include "Data/NodeAnimation.h"
 #include "Data/Joint.h"
 #include "Data/Node.h"
-#include "Data/Skeleton.h"
+#include "Data/SkeletonData.h"
+#include "Data/SkeletonPose.h"
 #include "Data/SkinCluster.h"
 #include <optional>
 #include <unordered_map>
@@ -32,7 +33,7 @@ public:
     void Initialize(DirectXCommon* dxCommon);
     void SetRootDirectory(std::string root);
     std::shared_ptr<Animation> LoadAnimationFile(const std::string& filename);
-    SkinCluster CreateSkinCluster(const Skeleton& skeleton, const ObjModel& objModel);
+    SkinCluster CreateSkinCluster(const SkeletonData& skeleton, const ObjModel& objModel);
 
 public: // 静的ヘルパ
 
@@ -77,34 +78,41 @@ public: // 静的ヘルパ
     static Vector3 CalculateValueAsEuler(const AnimationCurve<Quaternion>& keyframes, float time);
 
     /// <summary>
-    /// Nodeの階層構造からSkeletonを作る
+    /// Nodeの階層構造からSkeletonDataを作る
     /// </summary>
     /// <param name="rootNode"></param>
     /// <returns></returns>
-    static Skeleton CreateSkeleton(const Node& rootNode);
+    static SkeletonData CreateSkeletonData(const Node& rootNode);
 
     /// <summary>
-    /// NodeからJointを作る
+    /// SkeletonDataからインスタンス用のSkeletonPoseを生成する
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    static SkeletonPose CreateSkeletonPose(const SkeletonData* data);
+
+    /// <summary>
+    /// NodeからJointDataを作る
     /// </summary>
     /// <param name="node"></param>
     /// <param name="parent"></param>
     /// <param name="joints"></param>
     /// <returns></returns>
-    static int32_t CreateJoint(const Node& node, const std::optional<int32_t>& parent, std::vector<Joint>& joints);
+    static int32_t CreateJointData(const Node& node, const std::optional<int32_t>& parent, std::vector<JointData>& joints);
 
     /// <summary>
-    /// Skeletonの更新
+    /// SkeletonPoseの更新
     /// </summary>
     /// <param name="skeleton"></param>
-    static void SkeletonUpdate(Skeleton& skeleton);
+    static void SkeletonUpdate(SkeletonPose& skeleton);
 
     /// <summary>
-    /// Skeletonに対してAnimationを適用する
+    /// SkeletonPoseに対してAnimationを適用する
     /// </summary>
     /// <param name="skeleton"></param>
     /// <param name="animation"></param>
     /// <param name="animationTime"></param>
-    static void ApplyAnimation(Skeleton& skeleton, const Animation& animation, float animationTime);
+    static void ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime);
 
     /// <summary>
     /// SkinClusterの更新
@@ -112,7 +120,7 @@ public: // 静的ヘルパ
     /// <param name="skinCluster"></param>
     /// <param name="skeleton"></param>
     /// <param name="frameIndex"></param>
-    static void SkinClusterUpdate(SkinCluster& skinCluster, const Skeleton& skeleton, uint32_t frameIndex);
+    static void SkinClusterUpdate(SkinCluster& skinCluster, const SkeletonPose& skeleton, uint32_t frameIndex);
 
 private: // 内部ヘルパ
     std::string NormalizeAndResolve(const std::string& filename) const;

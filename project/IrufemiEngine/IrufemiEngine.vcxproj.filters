@@ -783,8 +783,17 @@
     <ClCompile Include="Renderer\Object\2D\Text\Text.cpp">
       <Filter>Renderer\Object\2D\Text</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimationModel.cpp">
+    <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.cpp">
       <Filter>Renderer\Object\3D\AnimationModel</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\Model\Animator.cpp">
+      <Filter>Resource\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Logic\AnimatorComponent.cpp">
+      <Filter>Framework\Component\Logic</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp">
       <Filter>Renderer\Object\3D\Primitive</Filter>
@@ -1329,8 +1338,17 @@
     <ClInclude Include="Renderer\Object\2D\Text\Text.h">
       <Filter>Renderer\Object\2D\Text</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimationModel.h">
+    <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.h">
       <Filter>Renderer\Object\3D\AnimationModel</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Model\Animator.h">
+      <Filter>Resource\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Logic\AnimatorComponent.h">
+      <Filter>Framework\Component\Logic</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Object\3D\Primitive\Primitive3DObject.h">
       <Filter>Renderer\Object\3D\Primitive</Filter>
@@ -1476,7 +1494,10 @@
     <ClInclude Include="Resource\Model\Data\ObjModel.h">
       <Filter>Resource\Model\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Resource\Model\Data\Skeleton.h">
+    <ClInclude Include="Resource\Model\Data\SkeletonData.h">
+      <Filter>Resource\Model\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Model\Data\SkeletonPose.h">
       <Filter>Resource\Model\Data</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Model\Data\SkinCluster.h">

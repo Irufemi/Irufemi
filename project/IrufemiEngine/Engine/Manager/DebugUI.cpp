@@ -125,7 +125,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
 
     ImGui_ImplDX12_Init(
         dxCommon->GetDevice(),
-        dxCommon->GetSwapChainDesc().BufferCount,
+        kMaxFramesInFlight, // エンジンの最大フレーム実行数に合わせる
         dxCommon->GetSwapChainDesc().Format, // スワップチェーン作成用にUNORMフォーマットを使用
         srvHeap,
         srvPool->GetCPUHandle(srvIndex_),

@@ -47,7 +47,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
 #include "Renderer/Object/2D/Text/Text.h"
-#include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
+
 #include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/System/Core/Object3DResource.h"
