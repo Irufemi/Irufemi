@@ -29,6 +29,7 @@ const PrimitiveData& PrimitiveManager::GetPrimitiveData(PrimitiveType type) {
     case PrimitiveType::Torus:    data = CreateTorus(0.4f, 0.1f, 32, 16); break;
     case PrimitiveType::IcoSphere: data = CreateIcoSphere(0.5f, 2); break;
     case PrimitiveType::Grid:     data = CreateGrid(1.0f, 1.0f, 10, 10); break;
+    case PrimitiveType::Octahedron: data = CreateOctahedron(); break;
     default: break;
     }
 
@@ -592,5 +593,60 @@ PrimitiveData PrimitiveManager::CreateGrid(float width, float height, uint32_t x
             data.indices.push_back(base); data.indices.push_back(base+xSegments+1); data.indices.push_back(base+xSegments+2);
         }
     }
+    return data;
+}
+
+PrimitiveData PrimitiveManager::CreateOctahedron() {
+    PrimitiveData data;
+    float w = 0.1f;
+    float h = 0.1f;
+
+    Vector3 root = {0.0f, 0.0f, 0.0f};
+    Vector3 tip = {0.0f, 1.0f, 0.0f};
+    Vector3 fl = {-w, h, -w};
+    Vector3 fr = { w, h, -w};
+    Vector3 br = { w, h,  w};
+    Vector3 bl = {-w, h,  w};
+
+    // ヘルパー：面を構成し、法線を計算して追加する
+    auto addFace = [&](const Vector3& p1, const Vector3& p2, const Vector3& p3) {
+        Vector3 v1 = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+        Vector3 v2 = {p3.x - p1.x, p3.y - p1.y, p3.z - p1.z};
+        Vector3 normal = {
+            v1.y * v2.z - v1.z * v2.y,
+            v1.z * v2.x - v1.x * v2.z,
+            v1.x * v2.y - v1.y * v2.x
+        };
+        float len = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+        if (len > 0.0f) {
+            normal = {normal.x / len, normal.y / len, normal.z / len};
+        }
+
+        uint32_t baseIndex = static_cast<uint32_t>(data.vertices.size());
+        VertexData vd1; vd1.position = {p1.x, p1.y, p1.z, 1.0f}; vd1.normal = normal; vd1.texcoord = {0.5f, 0.0f};
+        VertexData vd2; vd2.position = {p2.x, p2.y, p2.z, 1.0f}; vd2.normal = normal; vd2.texcoord = {1.0f, 1.0f};
+        VertexData vd3; vd3.position = {p3.x, p3.y, p3.z, 1.0f}; vd3.normal = normal; vd3.texcoord = {0.0f, 1.0f};
+
+        data.vertices.push_back(vd1);
+        data.vertices.push_back(vd2);
+        data.vertices.push_back(vd3);
+
+        data.indices.push_back(baseIndex);
+        data.indices.push_back(baseIndex + 1);
+        data.indices.push_back(baseIndex + 2);
+    };
+
+    // Bottom faces (Root to middle)
+    addFace(root, fl, fr);
+    addFace(root, fr, br);
+    addFace(root, br, bl);
+    addFace(root, bl, fl);
+
+    // Top faces (Middle to Tip)
+    addFace(tip, fr, fl);
+    addFace(tip, br, fr);
+    addFace(tip, bl, br);
+    addFace(tip, fl, bl);
+
     return data;
 }

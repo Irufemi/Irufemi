@@ -23,10 +23,15 @@ public:
 
     void LoadModel(const std::string& filename);
     
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+    
     // アニメーターや他のロジックからポーズを流し込むための窓口
     AnimatedMeshObject* GetRawObject() { return animatedMesh_.get(); }
+    void SetShowDebugBones(bool show) { showDebugBones_ = show; }
 
 private:
     std::unique_ptr<AnimatedMeshObject> animatedMesh_;
     std::string modelFilename_ = "sample/walk.gltf";
+    bool showDebugBones_ = false;
 };

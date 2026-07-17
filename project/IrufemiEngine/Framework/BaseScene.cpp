@@ -384,7 +384,15 @@ void BaseScene::SubmitFrameData() {
 void BaseScene::DrawDebugTab() {
 #ifdef USE_IMGUI
     if (ImGui::BeginTabItem("Camera & Lights")) {
-        ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_);
+        bool prevMode = isDebugCameraMode_;
+        if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
+            if (isDebugCameraMode_ && !prevMode && debugCamera_) {
+                Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+                if (activeCam) {
+                    debugCamera_->SetPreset(DebugCamera::Preset::Current, *activeCam);
+                }
+            }
+        }
         if (isDebugCameraMode_ && debugCamera_) {
             Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
             if (activeCam) {

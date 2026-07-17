@@ -343,7 +343,7 @@ public:
     /**
      * @brief インスタンス化された線の描画
      */
-    void SubmitLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount);
+    void SubmitLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount, PSOManager::DepthWrite depthWrite = PSOManager::DepthWrite::Enable);
     void DrawLineInstanced(const RenderPackets::LinePacket& packet);
 
     void SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet);

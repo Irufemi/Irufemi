@@ -13,5 +13,6 @@ enum class PrimitiveType {
     Cone,
     Torus,
     IcoSphere,
-    Grid
+    Grid,
+    Octahedron
 };

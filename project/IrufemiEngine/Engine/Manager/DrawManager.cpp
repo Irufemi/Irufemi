@@ -672,7 +672,7 @@ void DrawManager::DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPack
     commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
 }
 
-void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount) {
+void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount, PSOManager::DepthWrite depthWrite) {
     std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource || instanceCount == 0) return;
     using namespace RenderPackets;
@@ -681,7 +681,7 @@ void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_
     p.instancingSrvHandleGPU = instancingSrvHandleGPU;
     p.instanceCount = instanceCount;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
-    p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
+    p.depthWrite = depthWrite;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
     lineQueue_.push_back(p);
 }

@@ -98,7 +98,7 @@ void Line3DBatch::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
     baseLineResource_->SyncBeforeDraw();
-    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
+    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32(), depthWrite_);
 }
 
 void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {

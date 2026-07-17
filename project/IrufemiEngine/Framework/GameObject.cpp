@@ -12,6 +12,8 @@
 #include "Component/Collider/OBBColliderComponent.h"
 #include "Component/Collider/RaycastComponent.h"
 #include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include <atomic>
 
 static std::atomic<uint64_t> s_nextInstanceId{ 1 };
@@ -228,12 +230,30 @@ nlohmann::json GameObject::Serialize() const {
         nlohmann::json comps = nlohmann::json::array();
         for (const auto& comp : components_) {
             nlohmann::json cj;
-            cj["type"] = comp->GetComponentName();
-            nlohmann::json cdata = comp->Serialize();
+            std::string cName = comp->GetComponentName();
+            cj["type"] = cName;
+            
+            Log::OutPutLog(std::cout, "[GameObject] Serializing component: " + cName + "\n");
+            std::cout.flush();
+            nlohmann::json cdata;
+            try {
+                cdata = comp->Serialize();
+            } catch (const std::exception& e) {
+                Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName + "': " + std::string(e.what()) + "\n");
+                std::cerr.flush();
+            } catch (...) {
+                Log::OutPutLog(std::cerr, "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
+                std::cerr.flush();
+            }
+            
+            Log::OutPutLog(std::cout, "[GameObject] Finished Serialize call for: " + cName + "\n");
+            std::cout.flush();
             // コンポーネントのデータが空でなければ出力
-            if (!cdata.empty() && !cdata.is_null()) {
+            if (cdata.is_object() && !cdata.empty()) {
                 cj["data"] = cdata;
             }
+            Log::OutPutLog(std::cout, "[GameObject] Finished empty() check for: " + cName + "\n");
+            std::cout.flush();
             comps.push_back(cj);
         }
         if (!comps.empty()) {

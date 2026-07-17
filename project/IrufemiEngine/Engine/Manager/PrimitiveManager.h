@@ -98,6 +98,7 @@ public:
     static PrimitiveData CreateTriangle();
     static PrimitiveData CreateTetra();
     static PrimitiveData CreateCircle(float radius, uint32_t segments);
+    static PrimitiveData CreateOctahedron();
     ///@}
 
 public:

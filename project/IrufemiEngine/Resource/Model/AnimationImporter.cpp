@@ -8,13 +8,12 @@
 
 Animation AnimationImporter::Import(const std::string& fullPath) {
     Animation animation;
-    Assimp::Importer importer;
-
     if (!std::filesystem::exists(fullPath)) {
         return {}; 
     }
 
     std::lock_guard<std::mutex> lock(Irufemi::AssimpMutex::Get());
+    Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(fullPath.c_str(), aiProcess_MakeLeftHanded);
     if (!scene || scene->mNumAnimations == 0) {
         return {}; 

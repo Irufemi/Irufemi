@@ -467,6 +467,18 @@ void DebugScene::Draw() {
 void DebugScene::DrawDebugTab() {
 #ifdef USE_IMGUI
     BaseScene::DrawDebugTab();
+    
+    if (ImGui::Begin("DebugScene Global Settings")) {
+        static bool s_showAllBones = false;
+        if (ImGui::Checkbox("Show All Debug Bones", &s_showAllBones)) {
+            if (animatedCube_) if (auto comp = animatedCube_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
+            if (walk_) if (auto comp = walk_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
+            if (sneakWalk_) if (auto comp = sneakWalk_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
+            if (blendTest_) if (auto comp = blendTest_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
+        }
+    }
+    ImGui::End();
+
     if (isActiveSkybox_ && skybox_) {
         skybox_->Debug();
     }

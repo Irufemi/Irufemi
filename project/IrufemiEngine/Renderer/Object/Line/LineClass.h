@@ -41,6 +41,9 @@ public:
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     UINT GetInstanceCountU32() const { return static_cast<UINT>(activeCount_); }
 
+    void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
+    PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
+
     // 依存注入
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     static void SetSrvAllocator(DescriptorPool* alloc) { s_srvAllocator_ = alloc; }
@@ -91,4 +94,6 @@ private:
     std::array<uint32_t, kMaxFramesInFlight> instancingSrvIndex_{};
     std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> instancingSrvCPU_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> instancingSrvGPU_{};
+
+    PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Enable;
 };

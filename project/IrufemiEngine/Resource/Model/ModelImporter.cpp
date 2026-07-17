@@ -9,6 +9,8 @@
 #include <limits>
 #include <cmath>
 #include "AssimpMutex.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 namespace {
     // ノードとメッシュの関連を解析するヘルパー関数
@@ -93,7 +95,6 @@ namespace {
 ObjModel ModelImporter::Import(const std::string& fullPath) {
     ObjModel objModel;
 
-    Assimp::Importer importer;
     const std::string filePath = fullPath;
 
     const unsigned int flags =
@@ -103,7 +104,10 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
         aiProcess_MakeLeftHanded;
 
     std::lock_guard<std::mutex> lock(Irufemi::AssimpMutex::Get());
+    Assimp::Importer importer;
+    Log::OutPutLog(std::cout, "[ModelImporter] Assimp ReadFile START: " + filePath + "\n");
     const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
+    Log::OutPutLog(std::cout, "[ModelImporter] Assimp ReadFile FINISH: " + filePath + "\n");
     if (!scene || !scene->HasMeshes()) {
         IRUFEMI_WARNING(false, "Assimp failed to load model or no meshes found: " + std::string(importer.GetErrorString()));
         return ObjModel();

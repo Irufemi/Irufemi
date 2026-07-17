@@ -24,12 +24,18 @@ namespace {
     void ReadString(std::ifstream& ifs, std::string& str) {
         uint32_t size = 0;
         ReadPOD(ifs, size);
-        if (size > 0) {
-            str.resize(size);
-            ifs.read(str.data(), size);
-        } else {
+        if (ifs.fail() || size == 0) {
             str.clear();
+            return;
         }
+        
+        std::vector<char> buffer(size);
+        ifs.read(buffer.data(), size);
+        if (ifs.fail()) {
+            str.clear();
+            return;
+        }
+        str.assign(buffer.data(), size);
     }
 
     template<typename T>
@@ -45,10 +51,13 @@ namespace {
     void ReadVectorPOD(std::ifstream& ifs, std::vector<T>& vec) {
         uint32_t size = 0;
         ReadPOD(ifs, size);
-        if (size > 0) {
-            vec.resize(size);
-            ifs.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
-        } else {
+        if (ifs.fail() || size == 0) {
+            vec.clear();
+            return;
+        }
+        vec.resize(size);
+        ifs.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
+        if (ifs.fail()) {
             vec.clear();
         }
     }
@@ -194,6 +203,8 @@ bool ModelSerializer::Deserialize(const std::string& filepath, ObjModel& outMode
     // 境界ボリューム
     ReadPOD(ifs, outModel.boundingSphere);
     ReadPOD(ifs, outModel.boundingBox);
+
+    if (ifs.fail()) return false;
 
     return true;
 }

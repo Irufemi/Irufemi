@@ -26,6 +26,7 @@ void SkinnedMeshRendererComponent::Update() {
         animatedMesh_->SetRotate(transform->GetWorldRotation());
         animatedMesh_->SetScale(transform->GetWorldScale());
     }
+    animatedMesh_->SetDebugBoneVisible(showDebugBones_);
     // Update自体はAnimatorComponent側からポーズ付きで呼ばれることを想定し、
     // ここでは自身単体での更新（バインドポーズ）を行う
     animatedMesh_->Update(nullptr);
@@ -35,7 +36,21 @@ void SkinnedMeshRendererComponent::Draw() {
     animatedMesh_->Draw();
 }
 
+nlohmann::json SkinnedMeshRendererComponent::Serialize() {
+    nlohmann::json j = nlohmann::json::object();
+    j["Model File"] = modelFilename_;
+    j["Show Debug Bones"] = showDebugBones_;
+    return j;
+}
+
 void SkinnedMeshRendererComponent::OnRegisterProperties() {
     RegisterProperty("Model File", &modelFilename_)
         .SetTooltip("The path to the GLTF or OBJ file to load");
+    RegisterProperty("Show Debug Bones", &showDebugBones_)
+        .SetTooltip("Toggle bone visualization for this model");
+}
+
+void SkinnedMeshRendererComponent::Deserialize(const nlohmann::json& j) {
+    if (j.contains("Model File")) modelFilename_ = j["Model File"].get<std::string>();
+    if (j.contains("Show Debug Bones")) showDebugBones_ = j["Show Debug Bones"].get<bool>();
 }
