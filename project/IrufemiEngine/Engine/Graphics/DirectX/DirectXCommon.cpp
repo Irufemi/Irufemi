@@ -6,6 +6,7 @@
 #include <cassert>
 #include <vector>
 #include <comdef.h>
+#include <iostream>
 #include "../../Core/Utility/Log.h"
 #include "../../Core/Utility/ErrorUtility.h"
 #include "../../Core/Utility/StringUtility.h"
@@ -631,8 +632,11 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 
     // Win32 API を使用してファイルの存在確認を行う（std::filesystem の代用）
     if (GetFileAttributesW(filePathW.c_str()) == INVALID_FILE_ATTRIBUTES) {
-        std::wstring msg = L"[LoadTexture] File not found: " + filePathW + L"\n";
-        OutputDebugStringW(msg.c_str());
+        std::wstring msg = L"[LoadTexture] File not found: " + filePathW;
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, ConvertString(msg));
         
         // フォールバック: 1x1のマゼンタ色テクスチャを返す
         ScratchImage fallbackImage;
@@ -686,8 +690,10 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 #else
         msg += ConvertString(err.ErrorMessage());
 #endif
-        msg += L"\n";
-        OutputDebugStringW(msg.c_str());
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, ConvertString(msg));
         
         // フォールバック: 1x1のマゼンタ色テクスチャを返す
         ScratchImage fallbackImage;
@@ -709,8 +715,11 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
             filter, 0, mipImages);
         if (FAILED(hr)) {
             _com_error err(hr);
-            std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")\n";
-            OutputDebugStringW(msg.c_str());
+            std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")";
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cerr, ConvertString(msg));
             // ミップマップ生成に失敗した場合は、元の画像をそのまま返す
             return image;
         }

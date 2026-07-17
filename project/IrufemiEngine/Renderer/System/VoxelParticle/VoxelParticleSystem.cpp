@@ -65,7 +65,10 @@ void VoxelParticleSystem::Initialize(const std::string &modelName, const Vector3
     auto vModel = modelManager->GetVoxelizedModel(modelName, resolution);
     if (!vModel || vModel->voxels.empty()) {
       asyncData->status.store(LoadingStatus::Failed);
-      OutputDebugStringA("[Voxel] ERROR: Voxel count is ZERO or failed to load.\n");
+      /**
+       * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+       */
+      Log::OutPutLog(std::cerr, "[Voxel] ERROR: Voxel count is ZERO or failed to load.");
       return;
     }
     asyncData->voxelCount = static_cast<uint32_t>(vModel->voxels.size());

@@ -14,5 +14,7 @@ public:
 
 private:
     EditorManager* editorManager_ = nullptr;
+    bool autoScroll_ = true;
+    size_t previousLogSize_ = 0;
 };
 #endif // EditorMode

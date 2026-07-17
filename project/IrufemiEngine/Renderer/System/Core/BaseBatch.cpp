@@ -5,8 +5,10 @@
 #include <cassert>
 #include <cstring>
 #include "Engine/Core/Math/Math.h"
-#include "Engine/IrufemiEngine.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "Resource/Texture/TextureManager.h"
 DirectXCommon* BaseBatch::dx_ = nullptr;
 TextureManager* BaseBatch::textureManager_ = nullptr;
@@ -146,7 +148,13 @@ void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
             IRUFEMI_ASSERT(srvPool_);
             uint32_t idx = srvPool_->Allocate();
-            if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("BaseBatch SRV allocate failed\n"); return; }
+            if (idx == DescriptorPool::kInvalid) { 
+                /**
+                 * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+                 */
+                Log::OutPutLog(std::cerr, "BaseBatch SRV allocate failed"); 
+                return; 
+            }
             instancingSrvIndex_[frameIndex] = idx;
             instancingSrvCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
             instancingSrvGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);

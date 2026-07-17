@@ -1,4 +1,6 @@
 #include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "DrawManager.h"
 using namespace RenderPackets;
 
@@ -333,8 +335,10 @@ void DrawManager::PostDraw() {
             HRESULT removedReason = dxCommon_->GetDevice()->GetDeviceRemovedReason();
             char str[256];
             sprintf_s(str, "Device Removed or Reset, reason code: 0x%08X", removedReason);
-            OutputDebugStringA(str);
-            OutputDebugStringA("\n");
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cerr, std::string(str));
             throw std::runtime_error(str);
         } else {
             throw std::runtime_error("Present failed with an unknown error.");

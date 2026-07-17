@@ -3,6 +3,7 @@
 #include "Framework/Component/Component.h"
 #include <fstream>
 #include <iostream>
+#include "Engine/Core/Utility/Log.h"
 
 TextureManager* ParticleObject::textureManager_ = nullptr;
 
@@ -279,7 +280,10 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
 bool ParticleObject::LoadFromJson(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        std::cerr << "Failed to open particle json: " << filepath << std::endl;
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, "Failed to open particle json: " + filepath);
         return false;
     }
     
@@ -289,7 +293,10 @@ bool ParticleObject::LoadFromJson(const std::string& filepath) {
         Deserialize(j);
         return true;
     } catch (const nlohmann::json::exception& e) {
-        std::cerr << "JSON parse error in " << filepath << ": " << e.what() << std::endl;
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, "JSON parse error in " + filepath + ": " + std::string(e.what()));
         return false;
     }
 }

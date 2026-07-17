@@ -1,5 +1,6 @@
 #include "AnimationManager.h"
-
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "Data/Animation.h"
 #include "Engine/Core/Utility/Ease.h"
 #include "Engine/Core/Math/Math.h"
@@ -109,7 +110,7 @@ void AnimationManager::OnDirectoryChanged() {
             uint64_t currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
 
             if (currentLwt > cached.lastLoadTime) {
-                OutputDebugStringA(("[AnimationManager] Hot-Reloading: " + cached.sourceFilePath + "\n").c_str());
+                Log::OutPutLog(std::cout, "[AnimationManager] Hot-Reloading: " + cached.sourceFilePath);
                 
                 std::string binPathStr = StringUtility::GetCacheFilePath(cached.sourceFilePath, "animation", ".anim.ibin");
                 std::filesystem::path binPathFs(binPathStr);

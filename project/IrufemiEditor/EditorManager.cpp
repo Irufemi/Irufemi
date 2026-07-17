@@ -4,6 +4,8 @@
 #include <filesystem>
 #include "imgui/imgui.h"
 #include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "Engine/Graphics/DirectX/RenderTexture.h"
 #include "imgui/imgui_internal.h"
 #include "Framework/SceneManager.h"
@@ -275,11 +277,13 @@ void EditorManager::OnDrawUI() {
                         std::error_code ec;
                         std::filesystem::copy_file(presetPath, currentIni, std::filesystem::copy_options::overwrite_existing, ec);
                         if (ec) {
+                            Log::OutPutLog(std::cerr, "Failed to load preset: " + ec.message());
                             MessageBoxA(nullptr, ("Failed to load preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
                         } else {
                             // アプリ終了時にImGuiが現在の状態をファイルへ自動保存（上書き）してしまうのを防ぐ
                             ImGui::GetIO().IniFilename = nullptr;
                             
+                            Log::OutPutLog(std::cout, "Default layout has been loaded.");
                             MessageBoxA(nullptr, "Default layout has been loaded.\nThe application will now close to apply the clean layout. Please restart the app.", "Restart Required", MB_OK | MB_ICONINFORMATION);
                             PostQuitMessage(0);
                         }
@@ -294,8 +298,10 @@ void EditorManager::OnDrawUI() {
                             std::error_code ec;
                             std::filesystem::copy_file(currentIni, presetPath, std::filesystem::copy_options::overwrite_existing, ec);
                             if (ec) {
+                                Log::OutPutLog(std::cerr, "Failed to save preset: " + ec.message());
                                 MessageBoxA(nullptr, ("Failed to save preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
                             } else {
+                                Log::OutPutLog(std::cout, "Default layout preset saved successfully!");
                                 MessageBoxA(nullptr, "Default layout preset saved successfully!", "Success", MB_OK | MB_ICONINFORMATION);
                             }
                         }

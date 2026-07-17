@@ -6,6 +6,7 @@
 #include "../Graphics/Camera/CameraManager.h"
 #include "../Graphics/Camera/Camera.h"
 #include "../Core/Utility/Log.h"
+#include <iostream>
 
 // DirectXTex
 #include "../../../externals/DirectXTex/DirectXTex.h"
@@ -291,7 +292,10 @@ void ScreenCaptureManager::ExecuteCopyTask(ID3D12Resource* sourceResource, D3D12
                 req.onComplete();
             }
         } else {
-            OutputDebugStringA("[ScreenCaptureManager] Failed to capture texture.\\n");
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cerr, "[ScreenCaptureManager] Failed to capture texture.");
         }
         
         isEncoding_ = false;

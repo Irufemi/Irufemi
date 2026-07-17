@@ -5,6 +5,8 @@
 #include "Engine/Core/Math/Math.h"
 #include <algorithm>
 #include <string>
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 void DebugCamera::Initialize(InputManager* input, int windowWidth, int windowHeight) {
     input_ = input;
@@ -53,19 +55,9 @@ void DebugCamera::Update() {
     // ズーム操作 (マウスホイール)
     float wheelDelta = input_->GetMouseWheelDelta();
     if (wheelDelta != 0.0f) {
-        // --- デバッグコード追加 ---
-        std::string dbgMsg = "[DebugCamera] GetWheelDelta: " + std::to_string(wheelDelta) + ", old distance: " + std::to_string(distance_) + "\n";
-        OutputDebugStringA(dbgMsg.c_str());
-        // -------------------------
-
         const float zoomSpeed = 2.0f;
         distance_ -= wheelDelta * zoomSpeed;
         distance_ = std::max(distance_, 1.0f); // 最小距離制限
-
-        // --- デバッグコード追加 ---
-        dbgMsg = "[DebugCamera] new distance: " + std::to_string(distance_) + "\n";
-        OutputDebugStringA(dbgMsg.c_str());
-        // -------------------------
     }
 
     // カメラの位置を更新

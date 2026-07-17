@@ -1,4 +1,6 @@
 #include "CollisionManager.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Framework/Component/Collider/AABBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
@@ -360,7 +362,10 @@ void CollisionManager::LoadLayers(const std::string& filepath) {
                 }
             }
         } catch (const std::exception& e) {
-            std::cerr << "Failed to load layers config: " << e.what() << "\n";
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cerr, "Failed to load layers config: " + std::string(e.what()));
         }
     }
 }

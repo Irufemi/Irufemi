@@ -1,5 +1,7 @@
 #pragma once
 #include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include <d3d12.h>
 #include <string>
 #include <cassert>
@@ -17,7 +19,7 @@ namespace Irufemi {
             sprintf_s(hrStr, "HRESULT: 0x%08X\n", (unsigned int)hr);
             errorMsg += hrStr;
 
-            OutputDebugStringA(errorMsg.c_str());
+            Log::OutPutLog(std::cerr, errorMsg);
             IRUFEMI_ASSERT(false && "DirectX API call failed. Check the log for details.");
             throw std::runtime_error(errorMsg);
         }

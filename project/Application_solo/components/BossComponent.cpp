@@ -13,6 +13,8 @@
 #include <Windows.h>
 #include <string>
 #include <algorithm>
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 BossComponent::BossComponent() {
 }
@@ -162,15 +164,24 @@ void BossComponent::TakeDamage(float damage) {
         hp_ -= damage;
         
         std::string dmgLog = "Boss took damage! HP: " + std::to_string(hp_) + "\n";
-        OutputDebugStringA(dmgLog.c_str());
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cout, dmgLog);
 
         if (hp_ <= 0) {
             hp_ = 0;
             state_ = BossState::Destroyed;
-            OutputDebugStringA("Boss Destroyed!\n");
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cout, "Boss Destroyed!");
         }
     } else {
         // シールドがある場合はダメージ無効、またはシールドが身代わりになる
-        OutputDebugStringA("Boss blocked damage with shield!\n");
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cout, "Boss blocked damage with shield!");
     }
 }

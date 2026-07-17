@@ -1,5 +1,7 @@
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/StringUtility.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "ModelManager.h"
 #include "Engine/Core/System/ThreadPool.h"
 #include <filesystem>
@@ -121,12 +123,12 @@ ResourceHandle ModelManager::LoadModel(const std::string& filename) {
     }
 
     if (fullPath.empty() || !std::filesystem::exists(fullPath)) {
-        OutputDebugStringA(("[ModelManager] File not found: " + filename + "\n").c_str());
+        Log::OutPutLog(std::cerr, "[ModelManager] File not found: " + filename);
         managedModel->status.store(ManagedModel::LoadingStatus::Failed);
         return handle;
     }
 
-    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Request async load: {}\n", GetCurrentThreadId(), filename).c_str());
+    Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Request async load: {}", GetCurrentThreadId(), filename));
 
     ManagedModel* rawPtr = managedModel.get();
     const_cast<ModelManager*>(this)->EnqueueTask([rawPtr, fullPath, handle, this]() {
@@ -157,7 +159,7 @@ ManagedModel* ModelManager::Resolve(ResourceHandle handle) const {
 void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& fullPath) {
 
     std::string key = SplitDirectoryAndFile(fullPath).second;
-    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker START: {}\n", GetCurrentThreadId(), key).c_str());
+    Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Worker START: {}", GetCurrentThreadId(), key));
 
     managedModel->status.store(ManagedModel::LoadingStatus::Loading);
 
@@ -186,7 +188,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
             if (ModelSerializer::Deserialize(binPath, *loaded, cachedLwt) && cachedLwt == currentLwt) {
                 managedModel->cpuModel = loaded;
                 shouldImport = false;
-                OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Loaded from Cache: {}\n", GetCurrentThreadId(), key).c_str());
+                Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Loaded from Cache: {}", GetCurrentThreadId(), key));
             }
         }
 
@@ -209,7 +211,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
                 const size_t vbSize = sizeof(VertexData) * cpuMesh.vertices.size();
                 gpuMesh->vertexResource = dxCommon_->CreateBufferResource(vbSize);
                 if (!gpuMesh->vertexResource) {
-                    OutputDebugStringA("[ModelManager] Failed to create vertex buffer resource!\n");
+                    Log::OutPutLog(std::cerr, "[ModelManager] Failed to create vertex buffer resource!");
                     continue; // Skip this mesh if resource creation failed
                 }
                 gpuMesh->vertexCount = static_cast<UINT>(cpuMesh.vertices.size());
@@ -248,7 +250,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
                     std::memcpy(ibData, cpuMesh.indices.data(), ibSize);
                     gpuMesh->indexResource->Unmap(0, nullptr);
                 } else {
-                    OutputDebugStringA("[ModelManager] Failed to create index buffer resource!\n");
+                    Log::OutPutLog(std::cerr, "[ModelManager] Failed to create index buffer resource!");
                 }
             }
             managedModel->gpuMeshes.push_back(std::move(gpuMesh));
@@ -302,10 +304,10 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
         }
 
         managedModel->status.store(ManagedModel::LoadingStatus::Loaded);
-        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FINISH: {}\n", GetCurrentThreadId(), key).c_str());
+        Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Worker FINISH: {}", GetCurrentThreadId(), key));
     } catch (...) {
         managedModel->status.store(ManagedModel::LoadingStatus::Failed);
-        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FAILED: {}\n", GetCurrentThreadId(), key).c_str());
+        Log::OutPutLog(std::cerr, std::format("[ModelManager] [Thread:{}] Worker FAILED: {}", GetCurrentThreadId(), key));
     }
 }
 
@@ -419,7 +421,7 @@ void ModelManager::OnDirectoryChanged() {
     }
 
     for (auto* model : modelsToReload) {
-        OutputDebugStringA(("[ModelManager] Hot-Reloading: " + model->sourceFilePath + "\n").c_str());
+        Log::OutPutLog(std::cout, "[ModelManager] Hot-Reloading: " + model->sourceFilePath);
         // Criticalタスクとして積むことで、Sceneの更新を止めて安全にリソースをスワップする
         EnqueueTask(true, [this, model]() {
             model->gpuMeshes.clear();
@@ -459,7 +461,7 @@ void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     std::string msg = "[ModelManager] Loaded GPU resources for: " + key +
         " meshes=" + std::to_string(meshCount) + "\n";
-    OutputDebugStringA(msg.c_str());
+    Log::OutPutLog(std::cout, msg);
 #endif
 }
 

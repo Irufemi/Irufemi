@@ -8,9 +8,15 @@
 
 class Log
 {
+public:
+    struct LogEntry {
+        std::string message;
+        bool isError;
+    };
+
 private: // メンバ変数  
     std::ofstream logStream;
-    static std::vector<std::string> logHistory_; // ログの履歴バッファ
+    inline static std::vector<LogEntry> logHistory_; // ログの履歴バッファ
     static const size_t MAX_LOG_LINES = 1000;    // メモリ保護のための最大行数
 
 public: // メンバ関数  
@@ -28,7 +34,7 @@ public: // メンバ関数
     /**
      * @brief 現在のログ履歴を取得します（エディタのコンソールパネル用）
      */
-    static const std::vector<std::string>& GetLogHistory() { return logHistory_; }
+    static const std::vector<LogEntry>& GetLogHistory() { return logHistory_; }
 
     /**
      * @brief ログ履歴をクリアします

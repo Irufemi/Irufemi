@@ -16,6 +16,8 @@ void ConsolePanel::Draw() {
     if (ImGui::Button("Clear")) {
         Log::ClearLogHistory();
     }
+    ImGui::SameLine();
+    ImGui::Checkbox("Auto-scroll", &autoScroll_);
     
     ImGui::Separator();
 
@@ -23,13 +25,22 @@ void ConsolePanel::Draw() {
     
     const auto& logHistory = Log::GetLogHistory();
     for (const auto& logEntry : logHistory) {
-        ImGui::TextUnformatted(logEntry.c_str());
+        if (logEntry.isError) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+        }
+        ImGui::TextUnformatted(logEntry.message.c_str());
+        if (logEntry.isError) {
+            ImGui::PopStyleColor();
+        }
     }
 
-    // 自動スクロール
-    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+    // 自動スクロールロジック:
+    // Auto-scroll が有効で、かつログの件数が増えた場合、または既に一番下にいる場合に一番下を維持する
+    if (autoScroll_ && (logHistory.size() > previousLogSize_ || ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
         ImGui::SetScrollHereY(1.0f);
     }
+    
+    previousLogSize_ = logHistory.size();
     
     ImGui::EndChild();
     

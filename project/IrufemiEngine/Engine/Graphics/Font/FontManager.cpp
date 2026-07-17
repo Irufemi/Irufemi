@@ -3,6 +3,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/System/ThreadPool.h"
 #include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 // --- 外部ライブラリ群 ---
 #include <ft2build.h>
@@ -307,7 +308,10 @@ void FontManager::PrecacheText(const std::string& fontId, const std::wstring& te
                         }
                     } else {
                         // アトラスがいっぱいの場合は、毎フレーム再生成を試みるのを防ぐため、仮の文字として登録
-                        OutputDebugStringA("Font atlas is full! Could not pack glyph for character.\n");
+                        /**
+                         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+                         */
+                        Log::OutPutLog(std::cerr, "Font atlas is full! Could not pack glyph for character.");
                         GlyphInfo info{};
                         info.character = char32;
                         info.width = 0.0f; // 描画されない

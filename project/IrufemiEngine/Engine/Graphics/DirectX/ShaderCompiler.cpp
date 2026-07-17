@@ -5,6 +5,7 @@
 #include <format>
 #include <cassert>
 #include <Windows.h>
+#include <iostream>
 
 /**
  * @brief 初期化
@@ -107,7 +108,10 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         std::string fileStr = ConvertString(filePath);
         std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
         
-        OutputDebugStringA(fullErr.c_str());
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, fullErr);
         
         // ログファイルにも出力
         FILE* f;

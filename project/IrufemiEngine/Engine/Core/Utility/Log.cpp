@@ -1,5 +1,6 @@
 #include "Log.h"
 #include <Windows.h>
+#include <iostream>
 
 /*ログを出そう*/
 
@@ -35,20 +36,19 @@ void Log::Initialize() {
     logStream.open(logFilePath, std::ios::out | std::ios::trunc);
 
     //出力ウィンドウへの文字出力
-    OutputDebugStringA("Hello,DirectX!\n");
+    OutPutLog(std::cout, "Hello,DirectX!\n");
 }
 
 
 /*ログを出そう*/
-
-std::vector<std::string> Log::logHistory_;
 
 //出力ウィンドウに文字を出す
 void Log::OutPutLog(std::ostream& os, const std::string& message) {
     os << message << std::endl;
     OutputDebugStringA(message.c_str());
 
-    logHistory_.push_back(message);
+    bool isError = (&os == &std::cerr);
+    logHistory_.push_back({ message, isError });
     if (logHistory_.size() > MAX_LOG_LINES) {
         logHistory_.erase(logHistory_.begin());
     }
