@@ -48,6 +48,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     isActiveAnimatedCube_ = false;
     isActiveWalk_ = false;
     isActiveSneakWalk_ = false;
+    isActiveBlendTest_ = false;
     isActiveSkybox_ = false;
     isActivePrimitiveObj_ = false;
     isActivePrimitive2DObj_ = false;
@@ -175,6 +176,7 @@ void DebugScene::Update() {
     ImGui::Checkbox("AnimatedCube", &isActiveAnimatedCube_);
     ImGui::Checkbox("Walk", &isActiveWalk_);
     ImGui::Checkbox("SneakWalk", &isActiveSneakWalk_);
+    ImGui::Checkbox("Blend Test", &isActiveBlendTest_);
     ImGui::Checkbox("Skybox", &isActiveSkybox_);
 
     ImGui::Checkbox("Lightning Crawl", &isActiveLightningCrawl_);
@@ -323,6 +325,15 @@ void DebugScene::Update() {
         }
         sneakWalk_->Update();
     }
+    if (isActiveBlendTest_) {
+        if (!blendTest_) {
+            blendTest_ = std::make_unique<GameObject>("BlendTest");
+            blendTest_->SetScene(this);
+            blendTest_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/walk.gltf");
+            blendTest_->AddComponent<AnimatorComponent>()->Play("sample/walk.gltf", true);
+        }
+        blendTest_->Update();
+    }
     if (isActiveSkybox_) {
         if (!skybox_) {
             skybox_ = std::make_unique<Skybox>();
@@ -404,6 +415,7 @@ void DebugScene::Draw() {
     if (isActiveAnimatedCube_) animatedCube_->Draw();
     if (isActiveWalk_) walk_->Draw();
     if (isActiveSneakWalk_) sneakWalk_->Draw();
+    if (isActiveBlendTest_) blendTest_->Draw();
     if (isActivePrimitiveObj_) primitiveObj_->Draw();
     if (isActiveSkybox_) skybox_->Draw();
 
@@ -489,6 +501,18 @@ void DebugScene::DrawDebugTab() {
     }
     
     if (isActivePrimitive2DObj_ && primitive2DObj_) primitive2DObj_->Debug("Primitive2D Test");
+    
+    if (isActiveBlendTest_ && blendTest_) {
+        if (ImGui::Begin("Blend Test Control")) {
+            if (ImGui::Button("Crossfade to Walk (1.0s)")) {
+                blendTest_->GetComponent<AnimatorComponent>()->Play("sample/walk.gltf", true, 1.0f);
+            }
+            if (ImGui::Button("Crossfade to SneakWalk (1.0s)")) {
+                blendTest_->GetComponent<AnimatorComponent>()->Play("sample/sneakWalk.gltf", true, 1.0f);
+            }
+        }
+        ImGui::End();
+    }
 
     if (isActiveLightningCrawl_ && lightningCylinder_) {
         lightningCylinder_->Debug("Lightning Cylinder");

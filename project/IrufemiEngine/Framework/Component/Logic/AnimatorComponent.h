@@ -20,7 +20,7 @@ public:
     
     void OnRegisterProperties() override;
 
-    void Play(const std::string& animationName, bool loop = true);
+    void Play(const std::string& animationName, bool loop = true, float fadeDuration = 0.0f);
     
     Animator* GetRawAnimator() { return animator_.get(); }
 
@@ -28,4 +28,5 @@ private:
     std::unique_ptr<Animator> animator_;
     std::string defaultAnimation_ = "Walk";
     float playbackSpeed_ = 1.0f;
+    bool applyRootMotion_ = false;
 };

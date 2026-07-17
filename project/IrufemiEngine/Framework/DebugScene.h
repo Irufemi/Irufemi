@@ -111,6 +111,9 @@ private: // メンバ変数(ゲーム)
     std::unique_ptr<GameObject> sneakWalk_ = nullptr;
     bool isActiveSneakWalk_ = false;
 
+    std::unique_ptr<GameObject> blendTest_ = nullptr;
+    bool isActiveBlendTest_ = false;
+
     std::unique_ptr<Skybox> skybox_ = nullptr;
 
     // --- ライト ---

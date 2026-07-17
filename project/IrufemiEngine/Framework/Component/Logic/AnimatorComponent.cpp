@@ -1,6 +1,7 @@
 #include "AnimatorComponent.h"
 #include "../../GameObject.h"
 #include "../Renderer/SkinnedMeshRendererComponent.h"
+#include "../TransformComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Framework/BaseScene.h"
 
@@ -19,9 +20,9 @@ void AnimatorComponent::Initialize() {
     }
 }
 
-void AnimatorComponent::Play(const std::string& animationName, bool loop) {
+void AnimatorComponent::Play(const std::string& animationName, bool loop, float fadeDuration) {
     defaultAnimation_ = animationName;
-    animator_->Play(animationName, loop);
+    animator_->Play(animationName, loop, fadeDuration);
 }
 
 void AnimatorComponent::Update() {
@@ -33,6 +34,24 @@ void AnimatorComponent::Update() {
         SkeletonPose* pose = renderer->GetRawObject()->GetInternalSkeletonPose();
         if (pose && pose->data) {
             animator_->Update(*pose);
+            
+            // ルートモーションをGameObjectのTransformに適用する
+            if (applyRootMotion_ && GetGameObject()) {
+                auto transform = GetGameObject()->GetComponent<TransformComponent>();
+                if (transform) {
+                    Vector3 deltaTrans = animator_->GetDeltaRootTranslation();
+                    Quaternion deltaRot = animator_->GetDeltaRootRotation();
+
+                    // 現在のGameObjectのTransformに対して適用
+                    // TODO: 厳密にはキャラクターの現在の回転を考慮してdeltaTransをワールド空間に変換して足す必要がある
+                    // 今回は簡易的にローカル移動量をそのまま加算する
+                    transform->SetPosition(Math::Add(transform->GetPosition(), deltaTrans));
+                    
+                    // 回転も合成する場合（TransformComponentがオイラー角ならQuaternionに変換してから合成して戻す）
+                    // ひとまず移動のみ適用でも効果は確認できる
+                }
+            }
+
             // SkinnedMeshRenderer に対して計算済みのポーズを描画に使うよう指示
             renderer->GetRawObject()->Update(pose);
         }
@@ -45,4 +64,7 @@ void AnimatorComponent::OnRegisterProperties() {
         
     RegisterProperty("Playback Speed", &playbackSpeed_)
         .SetTooltip("Animation playback speed multiplier");
+        
+    RegisterProperty("Apply Root Motion", &applyRootMotion_)
+        .SetTooltip("Apply animation root motion to GameObject transform");
 }

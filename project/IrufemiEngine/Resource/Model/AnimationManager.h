@@ -112,7 +112,20 @@ public: // 静的ヘルパ
     /// <param name="skeleton"></param>
     /// <param name="animation"></param>
     /// <param name="animationTime"></param>
-    static void ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime);
+    /// <param name="applyRootTranslation">Rootボーンの移動を適用するかどうか（Root Motion抽出時はfalseにする）</param>
+    static void ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime, bool applyRootTranslation = true);
+
+    /// <summary>
+    /// 2つのAnimationをブレンドしてSkeletonPoseに適用する
+    /// </summary>
+    /// <param name="skeleton"></param>
+    /// <param name="animA"></param>
+    /// <param name="timeA"></param>
+    /// <param name="animB"></param>
+    /// <param name="timeB"></param>
+    /// <param name="weight">animBの重み (0.0 ~ 1.0)</param>
+    /// <param name="applyRootTranslation"></param>
+    static void BlendAnimation(SkeletonPose& skeleton, const Animation& animA, float timeA, const Animation& animB, float timeB, float weight, bool applyRootTranslation = true);
 
     /// <summary>
     /// SkinClusterの更新

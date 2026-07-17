@@ -301,7 +301,7 @@ void AnimationManager::SkeletonUpdate(SkeletonPose& skeleton) {
 }
 
 // SkeletonPoseに対してAnimationを適用する
-void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime) {
+void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime, bool applyRootTranslation) {
     if (!skeleton.data) return;
 
     // アニメーションが変更された場合（または初回）のみ、バインディングを再構築する
@@ -323,9 +323,84 @@ void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& a
         JointPose& jointPose = skeleton.jointPoses[binding.first];
         const NodeAnimation& rootNodeAnimation = *binding.second;
 
-        jointPose.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
+        if (!applyRootTranslation && binding.second->translate.keyframes.size() > 0) {
+            // Root translation を適用しない場合はBindPoseのままにするか、(0,0,0)に固定するか。
+            // ひとまずRootボーン(インデックスが0、または親がないノード)かどうか判定する
+            if (!skeleton.data->joints[binding.first].parent) {
+                // Root translation は適用しない
+            } else {
+                jointPose.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
+            }
+        } else {
+            jointPose.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
+        }
+        
         jointPose.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
         jointPose.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
+    }
+}
+
+// 2つのAnimationをブレンドしてSkeletonPoseに適用する
+void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& animA, float timeA, const Animation& animB, float timeB, float weight, bool applyRootTranslation) {
+    if (!skeleton.data) return;
+
+    // Weightが0ならAのみ、1ならBのみを適用するショートカット
+    if (weight <= 0.0f) {
+        ApplyAnimation(skeleton, animA, timeA, applyRootTranslation);
+        return;
+    }
+    if (weight >= 1.0f) {
+        ApplyAnimation(skeleton, animB, timeB, applyRootTranslation);
+        return;
+    }
+
+    // 両方のアニメーションのノードバインディングを取得（簡易的に全ジョイントを走査）
+    // ※最適化の余地あり: animA, animB 双方で有効なキーフレームをキャッシュするなど
+    for (size_t jointIndex = 0; jointIndex < skeleton.jointPoses.size(); ++jointIndex) {
+        JointPose& jointPose = skeleton.jointPoses[jointIndex];
+        const JointData& jointData = skeleton.data->joints[jointIndex];
+        
+        // NodeAnimation A
+        const NodeAnimation* nodeAnimA = nullptr;
+        if (auto itA = animA.nodeAnimations.find(jointData.name); itA != animA.nodeAnimations.end()) {
+            nodeAnimA = &itA->second;
+        }
+        
+        // NodeAnimation B
+        const NodeAnimation* nodeAnimB = nullptr;
+        if (auto itB = animB.nodeAnimations.find(jointData.name); itB != animB.nodeAnimations.end()) {
+            nodeAnimB = &itB->second;
+        }
+
+        Vector3 transA = jointPose.transform.translate;
+        Quaternion rotA = jointPose.transform.rotate;
+        Vector3 scaleA = jointPose.transform.scale;
+        
+        Vector3 transB = transA;
+        Quaternion rotB = rotA;
+        Vector3 scaleB = scaleA;
+
+        if (nodeAnimA) {
+            transA = CalculateValue(nodeAnimA->translate, timeA);
+            rotA = CalculateValue(nodeAnimA->rotate, timeA);
+            scaleA = CalculateValue(nodeAnimA->scale, timeA);
+        }
+        
+        if (nodeAnimB) {
+            transB = CalculateValue(nodeAnimB->translate, timeB);
+            rotB = CalculateValue(nodeAnimB->rotate, timeB);
+            scaleB = CalculateValue(nodeAnimB->scale, timeB);
+        }
+
+        // ブレンド計算
+        bool isRoot = !jointData.parent;
+        if (!applyRootTranslation && isRoot) {
+            // ルートの移動はブレンド対象外（外部で抽出する）
+        } else {
+            jointPose.transform.translate = Lerp(transA, transB, weight);
+        }
+        jointPose.transform.rotate = Math::Slerp(rotA, rotB, weight);
+        jointPose.transform.scale = Lerp(scaleA, scaleB, weight);
     }
 }
 
