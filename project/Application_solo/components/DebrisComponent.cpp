@@ -19,7 +19,7 @@
 #include <windows.h>
 #include <iostream>
 #include "Engine/Core/Utility/Log.h"
-
+#include "Engine/Manager/CollisionManager.h"
 
 
 float DebrisComponent::GetPullSpeed() const { return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f; }
@@ -137,6 +137,39 @@ void DebrisComponent::SetState(DebrisState newState) {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    if (auto collider = gameObject_->GetComponent<ColliderComponent>()) {
+        auto* cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+        if (cm) {
+            uint32_t neutralLayer = cm->GetLayerMask("Debris_Neutral");
+            uint32_t playerLayer = cm->GetLayerMask("Debris_Player");
+            uint32_t enemyLayer = cm->GetLayerMask("Debris_Enemy");
+            
+            uint32_t maskEnemy = cm->GetLayerMask("Enemy");
+            uint32_t maskPlayer = cm->GetLayerMask("Player");
+            uint32_t maskEnvironment = cm->GetLayerMask("Environment");
+
+            switch (state_) {
+            case DebrisState::Idle:
+            case DebrisState::Pulled:
+            case DebrisState::Orbiting:
+                // Safe state: Doesn't hit anyone
+                collider->layer_ = neutralLayer;
+                collider->mask_ = 0; // Collides with nothing in this prototype
+                break;
+            case DebrisState::Thrown:
+                // Thrown by player: Hits enemies and environment
+                collider->layer_ = playerLayer;
+                collider->mask_ = maskEnemy | maskEnvironment;
+                break;
+            case DebrisState::BossOrbiting:
+                // Used by Boss: Hits player
+                collider->layer_ = enemyLayer;
+                collider->mask_ = maskPlayer;
+                break;
             }
         }
     }

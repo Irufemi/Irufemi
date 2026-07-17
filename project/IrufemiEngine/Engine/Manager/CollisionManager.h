@@ -66,6 +66,9 @@ public:
     void RemoveLayer(int index);
     void RenameLayer(int index, const std::string& name);
 
+    /// @brief レイヤー名からビットマスクを取得する
+    uint32_t GetLayerMask(const std::string& name) const;
+
     // --- レイキャスト ---
     /// @brief シーン内の全コライダーに対してレイを飛ばし、最も近いオブジェクトを返す
     /// @param ray 飛ばすレイ

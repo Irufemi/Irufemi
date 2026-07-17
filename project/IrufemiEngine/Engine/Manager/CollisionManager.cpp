@@ -396,7 +396,14 @@ void CollisionManager::RenameLayer(int index, const std::string& name) {
     }
 }
 
-
+uint32_t CollisionManager::GetLayerMask(const std::string& name) const {
+    for (size_t i = 0; i < layerNames_.size(); ++i) {
+        if (layerNames_[i] == name) {
+            return 1 << i;
+        }
+    }
+    return 0; // Not found
+}
 
 bool CollisionManager::Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDistance, uint32_t layerMask, GameObject* ignoreObject) {
     hitInfo.isHit = false;

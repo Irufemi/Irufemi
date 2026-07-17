@@ -12,16 +12,6 @@ class ColliderComponent : public Component {
 public:
     enum class ColliderType { AABB, Sphere, OBB };
 
-    // レイヤーの定義（ビットマスク）
-    enum CollisionLayer : uint32_t {
-        Default = 1 << 0,
-        Layer1  = 1 << 1,
-        Layer2  = 1 << 2,
-        Layer3  = 1 << 3,
-        Layer4  = 1 << 4,
-        All     = 0xFFFFFFFF
-    };
-
     virtual ~ColliderComponent();
 
     virtual void Initialize() override {}
@@ -50,8 +40,8 @@ public:
     std::function<void(ColliderComponent*)> onCollisionExit_;  // 離れた瞬間に呼ばれる
 
     // --- レイヤー設定 ---
-    uint32_t layer_ = CollisionLayer::Default;
-    uint32_t mask_  = CollisionLayer::All;
+    uint32_t layer_ = 1; // 1 << 0 (Default)
+    uint32_t mask_  = 0xFFFFFFFF; // All
 
     // --- 物理設定 ---
     bool isTrigger_ = false; ///< trueならすり抜ける(判定のみ), falseなら物理的に押し戻す
