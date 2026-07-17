@@ -12,12 +12,18 @@
     - [x] `SkinnedMeshRendererComponent` および `AnimatorComponent` の新規作成とインスペクタ公開。
     - [x] `DebugScene` 等の既存コードを新アーキテクチャへ移行。
 - [x] **Phase 2: アニメーションロジックの高度化 (スクリプト主導 & アニメーション主導)**
-    - `Blend Tree` (1D/2D) の実装。速度パラメータによる Idle / Walk / Run の自動クロスフェード。
-    - 再生速度（Playback Speed）の動的スケーリング制御。
+    - [x] アニメーションの切り替えを滑らかにする自動クロスフェード機能の実装。
+    - [x] 再生速度（Playback Speed）の動的スケーリング制御。
     - **Root Motion** の抽出アルゴリズム実装と、`TransformComponent` 等への還元APIの実装。
 - [ ] **Phase 3: リソース分離とイベントシステム (※一時保留)**
     - [x] `Skeleton` を `SkeletonData` (共有リソース) と `SkeletonPose` (インスタンス状態) に分離しメモリ最適化。（※Phase8のリファクタリングで既に完了済み）
     - [ ] `AnimationEvent` システムの実装（※現在テストできるゲーム側のサンプルがないため、必要になったタイミングへ実装を先送り）
+
+- [ ] **Phase 4: 高度なアニメーション制御 (Humanoid / 動きの掛け算)**
+    - **パラメトリック Blend Tree (1D/2D)**: 入力値(X,Y)に基づく3つ以上のアニメーションの同時継続ブレンド（前後左右の傾き等のプロシージャルな動き）。
+    - **ボーンマスク (Bone Masking) / 部分ブレンド**: 上半身と下半身で別々のアニメーションを再生・合成する機構。
+    - **加算ブレンド (Additive Blending)**: 基本姿勢に対して、ダメージののけぞりや回避アクションの差分のみを加算する機能。
+    - **IK (Inverse Kinematics)**: Look-At IK (顔をターゲットに向ける) および Two-Bone IK (手足を特定のワールド座標に追従させる)。
 
 ### ⚡ パフォーマンスと最適化 (Performance & Optimization)
 ### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)
