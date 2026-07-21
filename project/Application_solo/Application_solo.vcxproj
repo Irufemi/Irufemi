@@ -248,6 +248,7 @@ exit 0</Command>
     <ClCompile Include="components\TargetableComponent.cpp" />
     <ClCompile Include="components\BossComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
+    <ClCompile Include="components\EnvironmentManagerComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
     <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
@@ -277,6 +278,7 @@ exit 0</Command>
     <ClInclude Include="components\TargetableComponent.h" />
     <ClInclude Include="components\BossComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />
+    <ClInclude Include="components\EnvironmentManagerComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
     <ClInclude Include="components\SceneTransitionButtonComponent.h" />

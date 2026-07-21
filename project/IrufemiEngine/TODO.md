@@ -60,6 +60,9 @@
     - 現在の「ツリー構造（親子関係）＋ポインタベースのComponent」というオブジェクト指向の限界を突破するため、AAA基準の純粋な ECS (Entity Component System) へとエンジン根幹のアーキテクチャを書き換える。
     - EntityはただのID（数値）とし、全てのComponentを種類ごとの巨大な連続配列（SoA: Structure of Arrays）で管理。これによりCPUのキャッシュミスを極限まで減らし、数万〜数十万のオブジェクト更新をフレームレート低下なしで処理可能にする。
     - ※段階的移行として、エディタ上では従来の GameObject の見た目を保ちつつ、ランタイム実行時やビルド時に内部で純粋なデータ配列へと自動変換（Baking）する「ハイブリッド方式」から導入する。
+- [ ] **GameObject構造変更の遅延評価（Deferred Modification）機構の導入**
+    - `BaseScene` で採用している `pendingAdds_` / `pendingRemoves_` と同等の遅延キュー機構を `GameObject` の親子付け（`AddChild` / `RemoveChild`）およびコンポーネント追加・削除にも実装する。
+    - これにより、`Start()` や `Update()` などループ処理の最中に動的なオブジェクト生成・親子付けを行ってもイテレータが無効化されず、より安全でAAA基準なエンジン基盤となる。
 - [ ] **空間分割 (AAA水準: TLAS & BLAS 動的BVH) の完全導入とGJK/EPAポリゴン判定**
     - 現在 `CollisionManager` が総当りループ（$O(N^2)$）で判定している問題の解消、および MeshCollider（メッシュ単位の高精度判定）への対応を見据えた次世代アーキテクチャ。
     - **【アーキテクチャ設計 (TLAS & BLAS)】**

@@ -54,11 +54,12 @@ void GameObject::Start() {
     if (isStarted_) return;
     isStarted_ = true;
 
-    for (auto& comp : components_) {
-        comp->Start();
+    // Use index-based loop to allow components to add components/children during Start
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->Start();
     }
-    for (auto& child : children_) {
-        child->Start();
+    for (size_t i = 0; i < children_.size(); ++i) {
+        children_[i]->Start();
     }
 }
 
@@ -90,7 +91,8 @@ void GameObject::Update(bool isPlayMode) {
         }
     }
 
-    for (auto& comp : components_) {
+    for (size_t i = 0; i < components_.size(); ++i) {
+        auto& comp = components_[i];
         // PlayModeでない場合は、エディタで更新可能なコンポーネントのみ更新する
         if (!isPlayMode && !comp->CanUpdateInEditMode()) {
             continue;
@@ -104,28 +106,28 @@ void GameObject::Update(bool isPlayMode) {
         comp->Update();
     }
     
-    for (auto& child : children_) {
-        child->Update(isPlayMode);
+    for (size_t i = 0; i < children_.size(); ++i) {
+        children_[i]->Update(isPlayMode);
     }
 }
 
 void GameObject::Draw() {
     if (!isActive_) return;
-    for (auto& comp : components_) {
-        comp->Draw();
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->Draw();
     }
-    for (auto& child : children_) {
-        child->Draw();
+    for (size_t i = 0; i < children_.size(); ++i) {
+        children_[i]->Draw();
     }
 }
 
 void GameObject::DrawOutlineMask() {
     if (!isActive_) return;
-    for (auto& comp : components_) {
-        comp->DrawOutlineMask();
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->DrawOutlineMask();
     }
-    for (auto& child : children_) {
-        child->DrawOutlineMask();
+    for (size_t i = 0; i < children_.size(); ++i) {
+        children_[i]->DrawOutlineMask();
     }
 }
 

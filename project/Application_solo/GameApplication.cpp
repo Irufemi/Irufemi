@@ -20,6 +20,7 @@
 #include "components/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
 #include "components/EffectManagerComponent.h"
+#include "components/EnvironmentManagerComponent.h"
 #include "components/ReticleUIComponent.h"
 #include "components/LockonMarkerUIComponent.h"
 
@@ -122,6 +123,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
+    ComponentFactory::Register("EnvironmentManagerComponent", "Game", []() { return std::make_shared<EnvironmentManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("PlayerTargetingComponent", "Game", []() { return std::make_shared<PlayerTargetingComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });

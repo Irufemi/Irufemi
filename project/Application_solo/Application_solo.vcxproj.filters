@@ -86,6 +86,9 @@
     <ClCompile Include="components\DebrisManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\EnvironmentManagerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClCompile Include="components\GravityPlayerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
@@ -107,7 +110,6 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClInclude Include="GameApplication.h" />
-
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>scene\GameOver</Filter>
     </ClInclude>
@@ -154,6 +156,9 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisManagerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\EnvironmentManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\GravityPlayerComponent.h">

@@ -62,8 +62,11 @@
   - [ ] `EnvironmentManagerComponent` の作成と本番シーン(`GameScene`)への組み込み（テスト用建造物の動的配置）
   - [x] 投擲して外れたガレキの自機からの距離監視と限界距離超過時のプール返却処理の実装
     - 限界距離に到達したガレキは即座に親から `RemoveChild` せず、`DebrisManager` の `pendingReleases_`（削除キュー）に積み、Update終端で安全に遅延削除（Pending Kill）する機構を導入済み。
-  - [ ] 建造物（背景）のOBBコライダーへの衝突検知によるプール返却処理の実装
+  - [x] 建造物（背景）のOBBコライダーへの衝突検知によるプール返却処理の実装
   - [ ] ガレキ回収時に VoxelParticle を放出させ、風や物理挙動に合わせて散る演出の実装
+- [ ] **Data-Orientedな背景環境の構築（インスタンシングへの移行）**
+  - [ ] 現在 `EnvironmentManagerComponent` で GameObject の親子付けとして動的生成している柱や壁などの静的背景を、`VirtualEntityManager` と `ModelBatchRendererComponent` を用いたインスタンシング描画基盤へ移行する。
+  - [ ] 数百〜数千の背景オブジェクトに対して個別の GameObject を生成せず、座標データ配列のみで一括描画させるAAA基準の最適化を行う。
 - [x] **DX12 Instancing / Batching 描画の対応**
   - [x] 無数のガレキや破片を低負荷で描画するためのインスタンシング描画基盤の構築（※既存の描画エンジンの拡張）
   - [x] 保守的GPUカリング(Conservative GPU Culling)の導入による、10,000個超のガレキ描画時のフレームレート安定化とバリデーションエラーの完全修正
@@ -80,6 +83,7 @@
   - [ ] ゲーム起動時のファイル読み込みと、スプライン制御点への適用処理
   - [ ] ウェーブ進行を管理する WaveManager の実装
   - [ ] JSONデータに基づく特定座標への敵の遅延スポーン処理
+  - [ ] `EnvironmentManagerComponent` 内にハードコードされている柱や壁などの環境物配置ルールを、外部JSONファイルからの読み込み（データ駆動設計）へ移行する
 - [ ] **エディタ連携**
   - [ ] ImGuiを用いたエディタ側でのウェイポイント配置・調整機能の作成
 

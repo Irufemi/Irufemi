@@ -21,6 +21,16 @@
 #include "Engine/Core/Utility/Log.h"
 #include "Engine/Manager/CollisionManager.h"
 
+static ColliderComponent* GetColliderFromObj(GameObject* obj) {
+    if (!obj) return nullptr;
+    for (auto& comp : obj->GetComponents()) {
+        if (auto col = dynamic_cast<ColliderComponent*>(comp.get())) {
+            return col;
+        }
+    }
+    return nullptr;
+}
+
 
 float DebrisComponent::GetPullSpeed() const { return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f; }
 float DebrisComponent::GetThrowSpeed() const { return manager_ ? manager_->GetDebrisThrowSpeed() : 50.0f; }
@@ -53,6 +63,8 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     if (state_ != DebrisState::Thrown) return;
     if (!otherObj) return;
 
+    Log::OutPutLog(std::cout, "Debris (Thrown) OnCollisionEnter with: " + otherObj->GetName() + "\n");
+
     bool hit = false;
     if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
         enemyComp->TakeDamage(static_cast<int>(GetEnemyDamage()));
@@ -79,6 +91,20 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
                 otherObj->SetIsActive(false);
             }
             hit = true;
+        }
+    } else if (auto collider = GetColliderFromObj(otherObj)) {
+        auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+        // 建造物（Environmentレイヤー）との衝突検知
+        // 衝突した場合は破砕エフェクトを再生し、プールへ返却（回収）する
+        if (cm) {
+            uint32_t envMask = cm->GetLayerMask("Environment");
+            Log::OutPutLog(std::cout, "Checking Environment collision. Collider Layer: " + std::to_string(collider->layer_) + ", EnvMask: " + std::to_string(envMask) + "\n");
+            if ((collider->layer_ & envMask) != 0) {
+                Log::OutPutLog(std::cout, "Environment Hit Detected!\n");
+                hit = true;
+            } else {
+                Log::OutPutLog(std::cout, "Not Environment Layer. Collision ignored.\n");
+            }
         }
     }
 
@@ -141,7 +167,7 @@ void DebrisComponent::SetState(DebrisState newState) {
         }
     }
 
-    if (auto collider = gameObject_->GetComponent<ColliderComponent>()) {
+    if (auto collider = GetColliderFromObj(gameObject_)) {
         auto* cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
         if (cm) {
             uint32_t neutralLayer = cm->GetLayerMask("Debris_Neutral");
@@ -161,14 +187,14 @@ void DebrisComponent::SetState(DebrisState newState) {
                 collider->mask_ = 0; // Collides with nothing in this prototype
                 break;
             case DebrisState::Thrown:
-                // Thrown by player: Hits enemies and environment
+                // Thrown by player: Hits enemies, environment, and Boss's debris
                 collider->layer_ = playerLayer;
-                collider->mask_ = maskEnemy | maskEnvironment;
+                collider->mask_ = maskEnemy | maskEnvironment | enemyLayer;
                 break;
             case DebrisState::BossOrbiting:
-                // Used by Boss: Hits player
+                // Used by Boss: Hits player and Player's thrown debris
                 collider->layer_ = enemyLayer;
-                collider->mask_ = maskPlayer;
+                collider->mask_ = maskPlayer | playerLayer;
                 break;
             }
         }
@@ -311,6 +337,9 @@ void DebrisComponent::Update() {
                 float distSq = dx*dx + dy*dy + dz*dz;
                 
                 if (distSq > manager_->GetMaxThrowDistanceSq()) {
+                    if (auto effectManager = EffectManagerComponent::GetInstance()) {
+                        effectManager->PlayEffect("Hit", pos);
+                    }
                     manager_->MarkForRelease(gameObject_->shared_from_this());
                 }
             } else {
