@@ -59,7 +59,7 @@
   - [ ] `DebrisManager` のバリエーション対応（複数種類のガレキプレハブのリスト管理と、Prefab単位での独立した Object Pool の構築）
   - [ ] ボスの弾幕用データ構造体の定義
   - [ ] ボス戦初期化時の弾幕ObjectPoolの事前メモリ割り当て（スパイク防止）
-  - [ ] `EnvironmentManagerComponent` の作成と本番シーン(`GameScene`)への組み込み（テスト用建造物の動的配置）
+  - [x] `EnvironmentManagerComponent` の作成と本番シーン(`GameScene`)への組み込み（テスト用建造物の動的配置）
   - [x] 投擲して外れたガレキの自機からの距離監視と限界距離超過時のプール返却処理の実装
     - 限界距離に到達したガレキは即座に親から `RemoveChild` せず、`DebrisManager` の `pendingReleases_`（削除キュー）に積み、Update終端で安全に遅延削除（Pending Kill）する機構を導入済み。
   - [x] 建造物（背景）のOBBコライダーへの衝突検知によるプール返却処理の実装
