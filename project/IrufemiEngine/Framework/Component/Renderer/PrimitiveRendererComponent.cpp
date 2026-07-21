@@ -38,6 +38,7 @@ void PrimitiveRendererComponent::Update() {
 }
 
 void PrimitiveRendererComponent::Draw() {
+    if (!gameObject_ || !gameObject_->GetIsActive()) return;
     if (primitive_) {
         primitive_->Draw();
     }

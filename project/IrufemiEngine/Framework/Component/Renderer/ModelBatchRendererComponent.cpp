@@ -37,6 +37,7 @@ void ModelBatchRendererComponent::Update() {
 }
 
 void ModelBatchRendererComponent::Draw() {
+    if (!gameObject_ || !gameObject_->GetIsActive()) return;
     if (batch_) {
         batch_->Draw();
     }

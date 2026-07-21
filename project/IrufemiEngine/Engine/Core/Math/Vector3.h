@@ -54,6 +54,7 @@ struct Vector3 final {
 	/** @name 数学関数 */
 	/** @{ */
 	inline float LengthSquared() const { return x * x + y * y + z * z; }
+	inline float LengthSq() const { return LengthSquared(); }
 	inline float Length() const { return std::sqrt(LengthSquared()); }
 	inline void Normalize() {
 		float lenSq = LengthSquared();

@@ -30,6 +30,7 @@
     </Filter>
     <Filter Include="scene\Title">
       <UniqueIdentifier>{12CA07D8-99E6-5EDC-AF99-647A260A3B9C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\TL1">
       <UniqueIdentifier>{A1B2C3D4-E5F6-1234-5678-90ABCDEF1234}</UniqueIdentifier>
     </Filter>
@@ -77,10 +78,22 @@
     <ClCompile Include="components\RailShooterEnemyComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\DebrisComponent.cpp">
+    <ClCompile Include="components\BossComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\BossComponent.cpp">
+    <ClCompile Include="components\BossBulletComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\BossBulletManagerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\DroneComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\DroneManagerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\DebrisComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\DebrisManagerComponent.cpp">
@@ -99,6 +112,7 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\EffectManagerComponent.cpp">
+      <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\LockonMarkerUIComponent.cpp">
       <Filter>components</Filter>
@@ -149,10 +163,22 @@
     <ClInclude Include="components\RailShooterEnemyComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\DebrisComponent.h">
+    <ClInclude Include="components\BossComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\BossComponent.h">
+    <ClInclude Include="components\BossBulletComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\BossBulletManagerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\DroneComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\DroneManagerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\DebrisComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisManagerComponent.h">
@@ -171,6 +197,7 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\EffectManagerComponent.h">
+      <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\LockonMarkerUIComponent.h">
       <Filter>components</Filter>

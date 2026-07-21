@@ -415,6 +415,12 @@
           "type": "SphereColliderComponent"
         },
         {
+          "data": {
+            "modelName": "resources/model/BossBulletSphere.obj"
+          },
+          "type": "ModelBatchRendererComponent"
+        },
+        {
           "type": "TargetableComponent"
         },
         {
@@ -460,6 +466,19 @@
             "Fire Duration": 0.800000011920929
           },
           "type": "EnemyBeamComponent"
+        },
+        {
+          "type": "DroneManagerComponent"
+        },
+        {
+          "data": {
+            "Default Life Time": 5.0,
+            "Max Bullets": 2000
+          },
+          "type": "BossBulletManagerComponent"
+        },
+        {
+          "type": "VirtualEntityManagerComponent"
         }
       ],
       "name": "Boss",

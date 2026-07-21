@@ -1,0 +1,33 @@
+{
+  "name": "BossDrone",
+  "isFolder": false,
+  "isActive": true,
+  "components": [
+    {
+      "type": "TransformComponent"
+    },
+    {
+      "type": "MeshRendererComponent",
+      "data": {
+        "modelName": "resources/model/BossDrone/boss_drone.obj"
+      }
+    },
+    {
+      "type": "SphereColliderComponent",
+      "data": {
+        "layer": 2, 
+        "mask": 4294967295,
+        "isTrigger": false,
+        "radius": 1.5,
+        "center": [ 0.0, 0.0, 0.0 ]
+      }
+    },
+    {
+      "type": "TargetableComponent",
+      "data": {}
+    },
+    {
+      "type": "DroneComponent"
+    }
+  ]
+}

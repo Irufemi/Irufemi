@@ -59,8 +59,11 @@ private:
 
     std::vector<std::shared_ptr<GameObject>> shields_;
     DebrisManagerComponent* debrisManager_ = nullptr;
+    class DroneManagerComponent* droneManager_ = nullptr;
+    class BossBulletManagerComponent* bulletManager_ = nullptr;
     
     bool isShieldsInitialized_ = false;
+    int initialShieldsSpawned_ = 0;
 
     // --- ビーム攻撃用 ---
     class EnemyBeamComponent* beamComponent_ = nullptr;

@@ -443,6 +443,31 @@ namespace Math {
         return euler;
     }
 
+    Vector3 LookRotation(Vector3 forward, Vector3 up) {
+        if (forward.LengthSquared() < 0.0001f) {
+            return {0.0f, 0.0f, 0.0f};
+        }
+        forward.Normalize();
+        
+        Vector3 right = Cross(up, forward);
+        if (right.LengthSquared() < 0.0001f) {
+            // 前方と上が平行な場合へのフォールバック
+            right = Cross(Vector3{1.0f, 0.0f, 0.0f}, forward);
+            if (right.LengthSquared() < 0.0001f) {
+                right = Cross(Vector3{0.0f, 1.0f, 0.0f}, forward);
+            }
+        }
+        right.Normalize();
+        up = Cross(forward, right).GetNormalized();
+
+        Matrix4x4 rotMat = MakeIdentity4x4();
+        rotMat.m[0][0] = right.x; rotMat.m[0][1] = right.y; rotMat.m[0][2] = right.z;
+        rotMat.m[1][0] = up.x;    rotMat.m[1][1] = up.y;    rotMat.m[1][2] = up.z;
+        rotMat.m[2][0] = forward.x; rotMat.m[2][1] = forward.y; rotMat.m[2][2] = forward.z;
+
+        return ExtractEulerFromMatrix(rotMat);
+    }
+
 
 #pragma endregion
 

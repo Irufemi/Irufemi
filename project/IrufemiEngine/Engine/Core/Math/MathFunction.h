@@ -325,6 +325,13 @@ namespace Math {
      */
     Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix);
 
+    /**
+     * @brief 指定した前方方向と上方向からオイラー角（回転）を生成する（Unity互換）
+     * @param forward 向きたい方向のベクトル
+     * @param up 上方向のベクトル（デフォルトはY軸）
+     */
+    Vector3 LookRotation(Vector3 forward, Vector3 up = {0.0f, 1.0f, 0.0f});
+
     /** @} */
 #pragma endregion
 

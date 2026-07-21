@@ -10,6 +10,8 @@
 #include "TargetableComponent.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "DroneManagerComponent.h"
+#include "BossBulletManagerComponent.h"
 #include <Windows.h>
 #include <string>
 #include <algorithm>
@@ -45,6 +47,16 @@ void BossComponent::Initialize() {
             beamComponent_ = comp.get();
             beamComponent_->Initialize();
         }
+
+        droneManager_ = gameObject_->GetComponent<DroneManagerComponent>();
+        if (!droneManager_) {
+            droneManager_ = gameObject_->AddComponent<DroneManagerComponent>().get();
+        }
+
+        bulletManager_ = gameObject_->GetComponent<BossBulletManagerComponent>();
+        if (!bulletManager_) {
+            bulletManager_ = gameObject_->AddComponent<BossBulletManagerComponent>().get();
+        }
     }
     beamTimer_ = 0.0f;
 }
@@ -70,11 +82,18 @@ void BossComponent::Start() {
                     auto debrisObj = debrisManager_->GetDebris();
                     if (debrisObj) {
                         setupDebris(debrisObj);
+                        initialShieldsSpawned_++;
                     }
                 }
                 isShieldsInitialized_ = true;
+                
+                // ドローンを初期形態（ガレキ展開中）から一般攻撃手段として展開する
+                if (droneManager_ && bulletManager_) {
+                    droneManager_->DeployDrones(gameObject_->shared_from_this(), 10, bulletManager_);
+                }
             }
         }
+
     }
 }
 
@@ -117,7 +136,7 @@ void BossComponent::Update() {
     }
     
     // CoreExposed への遷移チェック
-    if (state_ == BossState::Idle && shields_.empty() && isShieldsInitialized_) {
+    if (state_ == BossState::Idle && isShieldsInitialized_ && initialShieldsSpawned_ > 0 && shields_.empty()) {
         state_ = BossState::CoreExposed;
     }
 }

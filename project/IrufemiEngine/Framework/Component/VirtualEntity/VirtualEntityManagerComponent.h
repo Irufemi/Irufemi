@@ -75,6 +75,16 @@ public:
     std::vector<VirtualInstance>& GetDenseInstances() { return dense_; }
 
     /**
+     * @brief 仮想IDから密配列のインデックスを取得
+     */
+    int GetSparseIndex(int virtualId) const {
+        if (virtualId >= 0 && virtualId < sparse_.size()) {
+            return sparse_[virtualId];
+        }
+        return -1;
+    }
+
+    /**
      * @brief プールから取得した実体（仮想インスタンスに紐付いていない場合など）を直接プールに返却する
      */
     void ReleaseGameObject(std::shared_ptr<GameObject> obj);

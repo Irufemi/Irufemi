@@ -121,6 +121,7 @@ public:
     const std::string& GetName() const { return name_; }
     void SetName(const std::string& name);
     void SetIsActive(bool isActive);
+    void SetActive(bool isActive) { SetIsActive(isActive); }
     bool GetIsActive() const { return isActive_; }
 
     void SetScene(BaseScene* scene);

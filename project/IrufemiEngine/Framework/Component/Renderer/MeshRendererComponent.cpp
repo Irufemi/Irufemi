@@ -44,6 +44,7 @@ void MeshRendererComponent::Update() {
 }
 
 void MeshRendererComponent::Draw() {
+    if (!gameObject_ || !gameObject_->GetIsActive()) return;
     // RenderGraph に向けて描画パケットを積む
     if (obj_) {
         obj_->Draw();

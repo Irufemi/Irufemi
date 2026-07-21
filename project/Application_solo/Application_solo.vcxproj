@@ -247,6 +247,10 @@ exit 0</Command>
     <ClCompile Include="components\DebrisComponent.cpp" />
     <ClCompile Include="components\TargetableComponent.cpp" />
     <ClCompile Include="components\BossComponent.cpp" />
+    <ClCompile Include="components\BossBulletComponent.cpp" />
+    <ClCompile Include="components\BossBulletManagerComponent.cpp" />
+    <ClCompile Include="components\DroneComponent.cpp" />
+    <ClCompile Include="components\DroneManagerComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
     <ClCompile Include="components\EnvironmentManagerComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
@@ -277,6 +281,10 @@ exit 0</Command>
     <ClInclude Include="components\DebrisComponent.h" />
     <ClInclude Include="components\TargetableComponent.h" />
     <ClInclude Include="components\BossComponent.h" />
+    <ClInclude Include="components\BossBulletComponent.h" />
+    <ClInclude Include="components\BossBulletManagerComponent.h" />
+    <ClInclude Include="components\DroneComponent.h" />
+    <ClInclude Include="components\DroneManagerComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />
     <ClInclude Include="components\EnvironmentManagerComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
