@@ -169,7 +169,7 @@ protected:
     IrufemiEngine* engine_ = nullptr;
 
     // --- オブジェクト管理 ---
-    std::mutex sceneMutex_;
+    std::recursive_mutex sceneMutex_;
     std::vector<std::shared_ptr<GameObject>> gameObjects_;
     std::vector<std::shared_ptr<GameObject>> pendingAdds_;
     std::vector<std::shared_ptr<GameObject>> pendingRemoves_;

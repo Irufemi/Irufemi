@@ -19,6 +19,7 @@
 #include "Camera/TargetFollowComponent.h"
 #include "Utility/LifetimeComponent.h"
 #include "Utility/SplineComponent.h"
+#include "VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Engine/Core/System/ComponentPool.h"
 
 std::map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetMap() {
@@ -69,4 +70,5 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("TargetFollowComponent", "Camera", []() { return std::make_shared<TargetFollowComponent>(); });
     Register("LifetimeComponent", "Utility", []() { return std::make_shared<LifetimeComponent>(); });
     Register("SplineComponent", "Utility", []() { return std::make_shared<SplineComponent>(); });
+    Register("VirtualEntityManagerComponent", "Utility", []() { return std::make_shared<VirtualEntityManagerComponent>(); });
 }

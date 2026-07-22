@@ -104,3 +104,14 @@
   - [x] `BossComponent.cpp`, `DebrisComponent.cpp` などのマジックナンバーをメンバ変数化（プロパティ化）し、JSON/Editorから調整可能にする
 - [ ] **コード規則・構成の整理**
   - [ ] `Application_solo/components` 内のファイル数が増加している場合、機能単位でサブフォルダに分割して管理する
+
+## 7. 追加タスク（ボス・ドローン・弾幕の構造リファクタリング）
+- [x] **ボスのコンポーネント構造の最適化とカプセル化**
+  - [x] `BossContainer` 直下にあった複数のバッチ描画用コンポーネント（ModelBatchRendererComponent）の競合を防ぐため、専用の子オブジェクトとして `BossDroneManager` と `BossBulletManager` を分離。
+  - [x] 欠落していた `DroneManagerComponent`, `BossBulletManagerComponent` などのファクトリへの登録処理を追加。
+  - [x] `DroneManagerComponent::DeployDrones` に残っていた古い「`DroneManager` フォルダを動的生成する」ハードコードを削除し、プレハブを直接 `BossDroneManager` の子オブジェクトとして追加するように修正。
+- [ ] **ドローン・弾幕システムの実装仕上げ（やり残しタスク）**
+  - [ ] **ボスの弾幕の当たり判定（DOD）実装**
+    - `BossBulletManagerComponent::Update()` において、仮想エンティティ（実体のない弾）とプレイヤーの距離（Distance）を毎フレーム計算し、一定距離以下なら被弾とする高速な当たり判定処理を追加する。
+  - [ ] **エディタ上でのアクティブ数表示の修正**
+    - `DroneManagerComponent::Update()` に `activeDroneCount_ = activeDrones_.size();` を追加し、Inspector上の `Active Drones (Batch)` プロパティが常に最新の値を表示するように動的更新する。

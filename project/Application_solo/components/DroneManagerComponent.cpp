@@ -1,57 +1,154 @@
 #include "DroneManagerComponent.h"
-#include "DroneComponent.h"
 #include "Framework/GameObject.h"
+#include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Engine/Core/Math/MathFunction.h"
+#include "Engine/Core/Math/Random/Random.h"
+#include "Engine/IrufemiEngine.h"
+#include "BossComponent.h"
+#include "BossBulletManagerComponent.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include "Framework/BaseScene.h"
 
 DroneManagerComponent::DroneManagerComponent() {}
 
 void DroneManagerComponent::Initialize() {
+    batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
 }
 
 void DroneManagerComponent::Start() {
+    if (auto scene = gameObject_->GetScene()) {
+        player_ = scene->FindGameObject("Player");
+    }
 }
 
 void DroneManagerComponent::Update() {
-    // 非アクティブになったドローンを回収する処理など
+    if (!batchRenderer_) {
+        batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
+        if (!batchRenderer_) return;
+    }
+    
+    batchRenderer_->ClearInstances();
+    
+    activeDroneCount_ = static_cast<int>(activeDrones_.size());
+    if (activeDrones_.empty()) return;
+
+    auto bossObj = boss_.lock();
+    if (!bossObj) return;
+    
+    auto bossTransform = bossObj->GetComponent<TransformComponent>();
+    if (!bossTransform) return;
+    
+    Vector3 bossPos = bossTransform->GetWorldPosition();
+    
+    // プレイヤーの座標取得
+    Vector3 playerPos = bossPos; // デフォルト
+    bool hasPlayer = false;
+    if (auto player = player_.lock()) {
+        if (auto playerTransform = player->GetComponent<TransformComponent>()) {
+            playerPos = playerTransform->GetWorldPosition();
+            hasPlayer = true;
+        }
+    }
+
+    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+
+    // Data-Oriented Update Loop (CPUキャッシュ効率化)
+    for (size_t i = 0; i < activeDrones_.size(); ++i) {
+        auto& droneObj = activeDrones_[i];
+        auto& anim = animDataList_[i];
+        
+        if (!droneObj || !droneObj->GetIsActive()) continue;
+        
+        // 1. 旋回角度の更新
+        anim.orbitAngle += orbitSpeed_ * deltaTime;
+        
+        // 2. 座標の計算
+        float x = std::cos(anim.orbitAngle) * orbitRadius_;
+        float y = std::sin(anim.orbitAngle) * orbitRadius_;
+        Vector3 targetPos = bossPos + Vector3{x, y, 0.0f};
+        
+        // 3. 向きの計算
+        Vector3 rot = {0.0f, 0.0f, 0.0f};
+        if (hasPlayer) {
+            Vector3 dirToPlayer = Math::Subtract(playerPos, targetPos).GetNormalized();
+            rot = Math::LookRotation(dirToPlayer);
+        } else {
+            Vector3 dirToBoss = Math::Subtract(bossPos, targetPos).GetNormalized();
+            rot = Math::LookRotation(dirToBoss);
+        }
+        
+        // 4. 当たり判定（GameObject）のTransform更新
+        auto t = droneObj->GetComponent<TransformComponent>();
+        if (t) {
+            t->SetPosition(targetPos);
+            t->SetRotation(rot);
+        }
+        
+        // 5. 弾幕の発射処理
+        anim.fireTimer += deltaTime;
+        if (anim.fireTimer >= fireInterval_) {
+            anim.fireTimer = 0.0f;
+            if (bulletManager_ && hasPlayer) {
+                Vector3 dirToPlayer = Math::Subtract(playerPos, targetPos).GetNormalized();
+                bulletManager_->SpawnBullet(targetPos, Math::Multiply(30.0f, dirToPlayer));
+            }
+        }
+        
+        // 6. GPUバッチ描画用インスタンスデータの登録
+        Transform batchT;
+        batchT.translate = targetPos;
+        batchT.rotate = rot;
+        batchT.scale = {1.0f, 1.0f, 1.0f}; // Prefabのスケーリングを適用する場合は変更
+        if (t) batchT.scale = t->GetScale();
+        batchRenderer_->AddInstance(batchT);
+    }
 }
 
+
 void DroneManagerComponent::OnRegisterProperties() {
+    Component::OnRegisterProperties();
+    RegisterPropertyRange("Orbit Radius", &orbitRadius_, 0.0f, 100.0f);
+    RegisterPropertyRange("Orbit Speed", &orbitSpeed_, 0.0f, 10.0f);
+    RegisterPropertyRange("Fire Interval", &fireInterval_, 0.1f, 10.0f);
+    RegisterProperty("Active Drones (Batch)", &activeDroneCount_);
 }
 
 void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int count, BossBulletManagerComponent* bulletMgr) {
+    boss_ = boss;
+    bulletManager_ = bulletMgr;
+    
     if (!dronePool_) {
-        auto factory = [this]() {
+        auto factory = [this, boss]() {
             auto obj = GetGameObject()->Instantiate("resources/prefabs/BossDrone.json");
             if (obj) {
                 obj->SetIsActive(false);
+                // プレハブを BossDroneManager (gameObject_) の直接の子として追加する
+                gameObject_->AddChild(obj);
             }
             return obj;
         };
         dronePool_ = std::make_unique<ObjectPool<GameObject>>(maxDrones_, factory);
     }
+    
     if (!dronePool_) return;
 
     float angleStep = (Math::PI * 2.0f) / count;
-    float baseRadius = 15.0f;
-    float orbitSpeed = 1.0f;
 
     for (int i = 0; i < count; ++i) {
         auto handle = dronePool_->Acquire();
         if (handle.IsValid()) {
-            GameObject* droneObj = dronePool_->Resolve(handle).get();
+            std::shared_ptr<GameObject> droneObj = dronePool_->Resolve(handle);
             if (droneObj) {
                 droneObj->SetIsActive(true);
                 activeDrones_.push_back(droneObj);
-
-                auto droneComp = droneObj->GetComponent<DroneComponent>();
-                if (!droneComp) {
-                    droneComp = droneObj->AddComponent<DroneComponent>().get();
-                }
-
-                if (droneComp) {
-                    droneComp->SetOrbit(boss, baseRadius, angleStep * i, orbitSpeed);
-                    droneComp->SetBulletManager(bulletMgr);
-                }
+                
+                DroneAnimData anim;
+                anim.orbitAngle = angleStep * i;
+                anim.fireTimer = Random::GeneratorFloat(0.0f, fireInterval_);
+                animDataList_.push_back(anim);
             }
         }
     }
@@ -59,11 +156,11 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
 
 void DroneManagerComponent::RecallAllDrones() {
     if (!dronePool_) return;
-    for (auto* droneObj : activeDrones_) {
+    for (auto& droneObj : activeDrones_) {
         if (droneObj) {
             droneObj->SetIsActive(false);
-            // プールへの返却処理
         }
     }
     activeDrones_.clear();
+    animDataList_.clear();
 }

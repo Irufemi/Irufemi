@@ -6,12 +6,7 @@
     {
       "type": "TransformComponent"
     },
-    {
-      "type": "MeshRendererComponent",
-      "data": {
-        "modelName": "resources/model/BossDrone/boss_drone.obj"
-      }
-    },
+
     {
       "type": "SphereColliderComponent",
       "data": {
@@ -25,9 +20,6 @@
     {
       "type": "TargetableComponent",
       "data": {}
-    },
-    {
-      "type": "DroneComponent"
     }
   ]
 }

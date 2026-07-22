@@ -28,7 +28,7 @@ BaseScene::BaseScene() = default;
 BaseScene::~BaseScene() = default;
 
 std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     auto it = nameIndex_.find(name);
     if (it != nameIndex_.end()) {
         auto& list = it->second;
@@ -50,7 +50,7 @@ std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::string& name) {
     std::vector<std::shared_ptr<GameObject>> result;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     auto it = nameIndex_.find(name);
     if (it != nameIndex_.end()) {
         auto& list = it->second;
@@ -71,7 +71,7 @@ std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::s
 }
 
 std::shared_ptr<GameObject> BaseScene::FindGameObjectByID(uint64_t instanceId) {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     for (const auto& obj : gameObjects_) {
         if (obj->GetInstanceID() == instanceId) {
             return obj;
@@ -82,7 +82,7 @@ std::shared_ptr<GameObject> BaseScene::FindGameObjectByID(uint64_t instanceId) {
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const std::string& tag) {
     std::vector<std::shared_ptr<GameObject>> result;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     for (auto& obj : gameObjects_) {
         if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
             result.push_back(obj);
@@ -97,7 +97,7 @@ std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const
 }
 
 std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     
     auto NameExists = [&](const std::string& name) {
         auto it = nameIndex_.find(name);
@@ -139,7 +139,7 @@ std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
 
 void BaseScene::OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName) {
     if (!obj) return;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     
     // 古い名前のリストから削除
     if (!oldName.empty()) {
@@ -206,7 +206,7 @@ void BaseScene::Update() {
 
     // --- 遅延キューの処理 ---
     {
-        std::lock_guard<std::mutex> lock(sceneMutex_);
+        std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         for (auto& obj : pendingAdds_) {
             gameObjects_.push_back(obj);
             if (!obj->GetName().empty()) {
@@ -310,7 +310,7 @@ void BaseScene::Draw() {
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
-        std::lock_guard<std::mutex> lock(sceneMutex_);
+        std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         obj->SetScene(this);
         pendingAdds_.push_back(obj);
     }
@@ -320,7 +320,7 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
     // Insert は直接 gameObjects_ を操作するため、今回はそのまま mutex で保護し直接追加（または仕様に合わせて変更）。
     // 基本的に実行時の並行 Insert は想定しないが、安全のためロック。
     if (!obj) return;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     obj->SetScene(this);
     if (index >= gameObjects_.size()) {
         gameObjects_.push_back(obj);
@@ -334,12 +334,12 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
 
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
     if (!obj) return;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     pendingRemoves_.push_back(obj);
 }
 
 void BaseScene::ClearGameObjects() {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     gameObjects_.clear();
     pendingAdds_.clear();
     pendingRemoves_.clear();

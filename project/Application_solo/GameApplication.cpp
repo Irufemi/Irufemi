@@ -23,6 +23,8 @@
 #include "components/EnvironmentManagerComponent.h"
 #include "components/ReticleUIComponent.h"
 #include "components/LockonMarkerUIComponent.h"
+#include "components/DroneManagerComponent.h"
+#include "components/BossBulletManagerComponent.h"
 
 // エンジン機能
 #include "Engine/Graphics/DirectX/ShaderManager.h"
@@ -132,6 +134,8 @@ void GameApplication::Run() {
     ComponentFactory::Register("EffectManagerComponent", "Game", []() { return std::make_shared<EffectManagerComponent>(); });
     ComponentFactory::Register("ReticleUIComponent", "UI", []() { return std::make_shared<ReticleUIComponent>(); });
     ComponentFactory::Register("LockonMarkerUIComponent", "UI", []() { return std::make_shared<LockonMarkerUIComponent>(); });
+    ComponentFactory::Register("DroneManagerComponent", "Game", []() { return std::make_shared<DroneManagerComponent>(); });
+    ComponentFactory::Register("BossBulletManagerComponent", "Game", []() { return std::make_shared<BossBulletManagerComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

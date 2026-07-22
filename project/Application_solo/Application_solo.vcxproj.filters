@@ -87,9 +87,6 @@
     <ClCompile Include="components\BossBulletManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\DroneComponent.cpp">
-      <Filter>components</Filter>
-    </ClCompile>
     <ClCompile Include="components\DroneManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
@@ -170,9 +167,6 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\BossBulletManagerComponent.h">
-      <Filter>components</Filter>
-    </ClInclude>
-    <ClInclude Include="components\DroneComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DroneManagerComponent.h">

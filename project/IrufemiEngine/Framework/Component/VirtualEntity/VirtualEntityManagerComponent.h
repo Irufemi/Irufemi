@@ -38,6 +38,7 @@ public:
     void Initialize() override;
     void Update() override;
     std::string GetComponentName() const override { return "VirtualEntityManagerComponent"; }
+    void OnRegisterProperties() override;
 
     /**
      * @brief プールとファクトリの設定を行う
@@ -93,6 +94,7 @@ private:
     std::vector<VirtualInstance> dense_;
     std::vector<int> sparse_;
     std::queue<int> freeIds_;
+    int activeInstanceCount_ = 0;
     int maxVirtualInstances_ = 0;
     int nextId_ = 0; // Backup if freeIds is empty or we don't want strict pre-alloc
 

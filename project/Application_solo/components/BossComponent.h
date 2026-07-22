@@ -47,6 +47,11 @@ public:
     float GetHp() const { return hp_; }
     float GetMaxHp() const { return maxHp_; }
 
+    /**
+     * @brief ボス関連の動的オブジェクト（ドローン、弾など）をまとめる汎用コンテナを取得する
+     */
+    std::shared_ptr<GameObject> GetBossContainer() const { return bossContainer_.lock(); }
+
 private:
     float maxHp_ = 1000.0f;
     float hp_ = 0.0f;
@@ -56,6 +61,8 @@ private:
     float shieldRadius_ = 8.0f;
 
     BossState state_ = BossState::Idle;
+
+    std::weak_ptr<GameObject> bossContainer_;
 
     std::vector<std::shared_ptr<GameObject>> shields_;
     DebrisManagerComponent* debrisManager_ = nullptr;

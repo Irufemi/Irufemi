@@ -74,6 +74,9 @@ void GameObject::SetName(const std::string& name) {
 
 void GameObject::SetScene(BaseScene* scene) {
     scene_ = scene;
+    if (scene_ && !name_.empty()) {
+        scene_->OnGameObjectNameChanged(shared_from_this(), "", name_);
+    }
     for (auto& child : children_) {
         if (child) {
             child->SetScene(scene);

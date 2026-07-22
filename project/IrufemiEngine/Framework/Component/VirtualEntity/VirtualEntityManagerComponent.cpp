@@ -118,6 +118,10 @@ std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
     return nullptr;
 }
 
+void VirtualEntityManagerComponent::OnRegisterProperties() {
+    RegisterProperty("Active Instances (Batch)", &activeInstanceCount_);
+}
+
 void VirtualEntityManagerComponent::Demote(int id) {
     if (id < 0 || id >= maxVirtualInstances_) return;
     
@@ -165,6 +169,8 @@ void VirtualEntityManagerComponent::ReleaseGameObject(std::shared_ptr<GameObject
 void VirtualEntityManagerComponent::Update() {
     if (!batchRenderer_) return;
     
+    activeInstanceCount_ = static_cast<int>(dense_.size());
+
     batchRenderer_->ClearInstances();
     
     // 仮想インスタンス（未昇格）の描画

@@ -7,6 +7,7 @@
 
 class GameObject;
 class BossBulletManagerComponent;
+#include "Renderer/Object/Batch/ModelBatch.h"
 
 class DroneManagerComponent : public Component {
 public:
@@ -33,5 +34,24 @@ public:
 private:
     int maxDrones_ = 50;
     std::unique_ptr<ObjectPool<GameObject>> dronePool_;
-    std::vector<GameObject*> activeDrones_;
+    
+    struct DroneAnimData {
+        float orbitAngle = 0.0f;
+        float fireTimer = 0.0f;
+    };
+    
+    std::vector<std::shared_ptr<GameObject>> activeDrones_;
+    std::vector<DroneAnimData> animDataList_;
+    
+    class ModelBatchRendererComponent* batchRenderer_ = nullptr;
+    int activeDroneCount_ = 0;
+    
+    // 定数パラメーター（インスペクターで調整可能にすることも可）
+    float orbitRadius_ = 15.0f;
+    float orbitSpeed_ = 1.0f;
+    float fireInterval_ = 3.0f;
+    
+    std::weak_ptr<GameObject> boss_;
+    std::weak_ptr<GameObject> player_;
+    BossBulletManagerComponent* bulletManager_ = nullptr;
 };

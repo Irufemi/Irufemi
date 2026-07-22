@@ -269,6 +269,9 @@
           "type": "ModelBatchRendererComponent"
         },
         {
+          "data": {
+            "Active Instances (Batch)": 0
+          },
           "type": "VirtualEntityManagerComponent"
         }
       ],
@@ -415,12 +418,6 @@
           "type": "SphereColliderComponent"
         },
         {
-          "data": {
-            "modelName": "resources/model/BossBulletSphere.obj"
-          },
-          "type": "ModelBatchRendererComponent"
-        },
-        {
           "type": "TargetableComponent"
         },
         {
@@ -466,19 +463,6 @@
             "Fire Duration": 0.800000011920929
           },
           "type": "EnemyBeamComponent"
-        },
-        {
-          "type": "DroneManagerComponent"
-        },
-        {
-          "data": {
-            "Default Life Time": 5.0,
-            "Max Bullets": 2000
-          },
-          "type": "BossBulletManagerComponent"
-        },
-        {
-          "type": "VirtualEntityManagerComponent"
         }
       ],
       "name": "Boss",
@@ -650,6 +634,120 @@
         }
       ],
       "name": "LockonMarkerUI",
+      "tag": "Untagged"
+    },
+    {
+      "children": [
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/BossDrone/boss_drone.obj"
+              },
+              "type": "ModelBatchRendererComponent"
+            },
+            {
+              "data": {
+                "Active Drones (Batch)": 0,
+                "Fire Interval": 3.0,
+                "Orbit Radius": 15.0,
+                "Orbit Speed": 1.0
+              },
+              "type": "DroneManagerComponent"
+            }
+          ],
+          "name": "BossDroneManager",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/BossBulletSphere.obj"
+              },
+              "type": "ModelBatchRendererComponent"
+            },
+            {
+              "data": {
+                "Active Instances (Batch)": 0
+              },
+              "type": "VirtualEntityManagerComponent"
+            },
+            {
+              "data": {
+                "Default Life Time": 5.0,
+                "Max Bullets": 2000
+              },
+              "type": "BossBulletManagerComponent"
+            }
+          ],
+          "name": "BossBulletManager",
+          "tag": "Untagged"
+        }
+      ],
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        }
+      ],
+      "name": "BossContainer",
       "tag": "Untagged"
     }
   ],

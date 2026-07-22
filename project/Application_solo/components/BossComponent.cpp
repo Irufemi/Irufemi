@@ -47,16 +47,6 @@ void BossComponent::Initialize() {
             beamComponent_ = comp.get();
             beamComponent_->Initialize();
         }
-
-        droneManager_ = gameObject_->GetComponent<DroneManagerComponent>();
-        if (!droneManager_) {
-            droneManager_ = gameObject_->AddComponent<DroneManagerComponent>().get();
-        }
-
-        bulletManager_ = gameObject_->GetComponent<BossBulletManagerComponent>();
-        if (!bulletManager_) {
-            bulletManager_ = gameObject_->AddComponent<BossBulletManagerComponent>().get();
-        }
     }
     beamTimer_ = 0.0f;
 }
@@ -65,6 +55,16 @@ void BossComponent::Start() {
     if (!gameObject_) return;
     auto scene = gameObject_->GetScene();
     if (scene) {
+        // ボス汎用コンテナ（BossContainer）の取得
+        auto container = scene->FindGameObject("BossContainer");
+        if (container) {
+            bossContainer_ = container;
+            auto droneObj = scene->FindGameObject("BossDroneManager");
+            if (droneObj) droneManager_ = droneObj->GetComponent<DroneManagerComponent>();
+            auto bulletObj = scene->FindGameObject("BossBulletManager");
+            if (bulletObj) bulletManager_ = bulletObj->GetComponent<BossBulletManagerComponent>();
+        }
+
         auto managerObj = scene->FindGameObject("DebrisManager");
         if (managerObj) {
             debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
