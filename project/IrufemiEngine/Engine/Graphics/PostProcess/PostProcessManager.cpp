@@ -13,6 +13,15 @@
 #include <string>
 #include <wrl/client.h>
 
+namespace {
+    bool RequiresSeparatePass(PostProcessManager::Mode mode) {
+        // 空間サンプリングやUV座標を操作するエフェクトは、
+        // 以前のエフェクト結果がテクスチャに完全に書き込まれている必要があるため独立パスとする
+        return (mode == PostProcessManager::Mode::RadialBlur || 
+                mode == PostProcessManager::Mode::Glitch);
+    }
+}
+
 void PostProcessManager::Initialize(DirectXCommon* dxCommon,
                                     DXGI_FORMAT rtvFormat) {
   dxCommon_ = dxCommon;
@@ -332,8 +341,22 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
                activeModes_[lookAhead] != Mode::GaussianFilter && 
                activeModes_[lookAhead] != Mode::DualKawaseBlur && 
                batch.size() < 16) {
-          batch.push_back(activeModes_[lookAhead]);
-          lookAhead++;
+            
+            bool needsSeparate = RequiresSeparatePass(activeModes_[lookAhead]);
+
+            // すでにバッチに他のエフェクト（色調補正等）が入っている状態で
+            // 独立パス要求のエフェクトが来た場合、一度バッチを区切ってテクスチャに書き込む
+            if (!batch.empty() && needsSeparate) {
+                break;
+            }
+
+            batch.push_back(activeModes_[lookAhead]);
+            lookAhead++;
+
+            // 独立パス要求のエフェクトを追加した直後もバッチを区切る（単独パス化）
+            if (needsSeparate) {
+                break;
+            }
         }
 
         isLastBatch = (lookAhead == activeModes_.size());

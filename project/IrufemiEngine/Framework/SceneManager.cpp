@@ -73,6 +73,11 @@ bool SceneManager::ChangeTo(const Key& next) {
         engine_->GetVoxelParticleManager()->Clear();
     }
 
+    // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
+    if (engine_->GetPostProcessManager()) {
+        engine_->GetPostProcessManager()->Reset();
+    }
+
     SceneStackItem item;
     item.name = next;
     item.scene = it->second();
@@ -413,9 +418,9 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
         engine_->GetVoxelParticleManager()->Clear();
     }
 
-    // シーン切り替え時にポストプロセスのパラメータを自動リセット
+    // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
     if (engine_->GetPostProcessManager()) {
-        engine_->GetPostProcessManager()->ResetAllParams();
+        engine_->GetPostProcessManager()->Reset();
     }
     
     initFuture_ = std::async(std::launch::async, [this, factory, next]() {

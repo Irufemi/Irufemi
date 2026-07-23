@@ -349,6 +349,20 @@ public:
         pendingActiveModes_.clear();
     }
 
+    /** 
+     * @brief ポストプロセスの完全リセット（シーン遷移時用）
+     * 
+     * 保留中および現在アクティブなエフェクトリストをすべてクリアし、
+     * 全パラメータをデフォルト状態に戻します。
+     * 各シーンの `Initialize()` または `Finalize()` で呼び出すことを推奨します。
+     */
+    void Reset() {
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        pendingActiveModes_.clear();
+        activeModes_.clear();
+        ResetAllParams();
+    }
+
     /** @brief エフェクトスタックを一括設定 */
     void SetActiveModes(const std::vector<Mode>& modes) {
         std::lock_guard<std::mutex> lock(modesMutex_);
