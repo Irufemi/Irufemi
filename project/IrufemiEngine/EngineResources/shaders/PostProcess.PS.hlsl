@@ -100,6 +100,12 @@ struct PostProcessParams {
     float32_t halftoneAngle;
     float32_t halftoneBlend;
     float32_t pad_halftone;
+
+    // DepthOfField
+    float32_t dofFocusDistance;
+    float32_t dofFocusRange;
+    float32_t dofBlurSize;
+    int32_t dofSamples;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -213,6 +219,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_Halftone:
                 color.rgb = ApplyHalftone(color.rgb, uv, float32_t2(width, height), gParams.halftoneScale, gParams.halftoneAngle, gParams.halftoneBlend);
+                break;
+                
+            case kPostProcessMode_DepthOfField:
+                color.rgb = ApplyDepthOfField(color.rgb, uv, gExtraTexture, gSamplerPoint, gSampler, gParams.projectionInverse, gParams.dofFocusDistance, gParams.dofFocusRange, gParams.dofBlurSize, gParams.dofSamples, float32_t2(width, height), gTexture);
                 break;
         }
     }

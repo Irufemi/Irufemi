@@ -34,18 +34,18 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
 #endif
 
     if (!activeModes.empty()) {
-        bool hasOutline = false;
+        bool usesDepthBuffer = false;
         bool hasBloom = false;
         bool hasSeparableBlur = false;
         bool hasKawaseBlur = false;
         for (auto mode : activeModes) {
             if (mode == PostProcessMode::Bloom) hasBloom = true;
-            if (mode == PostProcessMode::DepthBasedOutline) hasOutline = true;
+            if (PostProcessManager::UsesDepthBuffer(mode)) usesDepthBuffer = true;
             if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) hasSeparableBlur = true;
             if (mode == PostProcessMode::DualKawaseBlur) hasKawaseBlur = true;
         }
 
-        if (hasOutline) {
+        if (usesDepthBuffer) {
             builder.RequireState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         
@@ -119,13 +119,15 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         }
     }
 
-    // Outline のための逆投影行列更新
+    // 深度バッファを使用するエフェクトのための逆投影行列更新
     const auto& activeModes = ppMgr->GetActiveModes();
-    bool hasOutline = false;
+    bool needsProjectionInverse = false;
     for (auto mode : activeModes) {
-        if (mode == PostProcessMode::DepthBasedOutline) hasOutline = true;
+        if (PostProcessManager::UsesDepthBuffer(mode)) {
+            needsProjectionInverse = true;
+        }
     }
-    if (hasOutline) {
+    if (needsProjectionInverse) {
         if (auto* perFrameData = drawManager->GetPerFrameData()) {
             ppMgr->GetOutlineParams().projectionInverse = Math::Inverse(perFrameData->camera.projection);
         }
@@ -161,7 +163,7 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 #endif
 
     // 深度バッファを元の DEPTH_WRITE に戻す
-    if (hasOutline) {
+    if (needsProjectionInverse) {
         DirectXUtils::TransitionBarrier(
             cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES

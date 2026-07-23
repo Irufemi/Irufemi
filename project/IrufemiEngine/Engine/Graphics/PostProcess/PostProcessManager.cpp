@@ -26,7 +26,8 @@ namespace {
                 mode == PostProcessManager::Mode::Kaleidoscope ||
                 mode == PostProcessManager::Mode::ChromaticAberration ||
                 mode == PostProcessManager::Mode::DisplacementMap ||
-                mode == PostProcessManager::Mode::DirectionalBlur);
+                mode == PostProcessManager::Mode::DirectionalBlur ||
+                mode == PostProcessManager::Mode::DepthOfField);
     }
 }
 
@@ -66,6 +67,7 @@ void PostProcessManager::ResetAllParams() {
     displacementMapParams_ = DisplacementMapParams();
     directionalBlurParams_ = DirectionalBlurParams();
     halftoneParams_ = HalftoneParams();
+    dofParams_ = DepthOfFieldParams();
 }
 
 
@@ -152,6 +154,11 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.halftoneScale = halftoneParams_.scale;
   combinedParams_.halftoneAngle = halftoneParams_.angle;
   combinedParams_.halftoneBlend = halftoneParams_.blend;
+
+  combinedParams_.dofFocusDistance = dofParams_.focusDistance;
+  combinedParams_.dofFocusRange = dofParams_.focusRange;
+  combinedParams_.dofBlurSize = dofParams_.blurSize;
+  combinedParams_.dofSamples = dofParams_.samples;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;
@@ -435,7 +442,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         // wait, we need to handle dissolveNoise and depthSrv for combined pass
         uint32_t extraIdx = 0;
         for (int i = 0; i < (int)batch.size(); ++i) {
-            if (batch[i] == Mode::DepthBasedOutline) {
+            if (UsesDepthBuffer(batch[i])) {
                 extraIdx = depthSrvIndex_;
             } else if (batch[i] == Mode::Dissolve) {
                 int noiseIdx = (dissolveParams_.noiseType <= 0) ? 0 : 1;

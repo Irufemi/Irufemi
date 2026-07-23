@@ -49,6 +49,7 @@ enum class PostProcessMode {
     DisplacementMap,    ///< 画面の歪み・陽炎
     DirectionalBlur,    ///< 方向ブラー
     Halftone,           ///< ハーフトーン（網点・コミック調）
+    DepthOfField,       ///< 被写界深度（DoF）
 };
 
 class DirectXCommon;
@@ -332,6 +333,17 @@ public:
     };
 
     /**
+     * @struct DepthOfFieldParams
+     * @brief 被写界深度エフェクト用パラメータ
+     */
+    struct DepthOfFieldParams {
+        float focusDistance = 10.0f; ///< ピントが合う距離 (View Z)
+        float focusRange = 5.0f;     ///< ピントが合う範囲 (前後)
+        float blurSize = 10.0f;      ///< 最大ブラーサイズ (ピクセル半径)
+        int samples = 16;            ///< ブラーのサンプリング数
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -439,6 +451,12 @@ public:
         float halftoneBlend;
         float pad_halftone;
 
+        // DepthOfField
+        float dofFocusDistance;
+        float dofFocusRange;
+        float dofBlurSize;
+        int32_t dofSamples;
+
         // [Bindless]
         uint32_t mainTextureIndex;
         uint32_t extraTextureIndex;
@@ -492,6 +510,21 @@ public:
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingActiveModes_.push_back(mode);
     }
+    
+    // -------------------------------------------------------------
+    // 静的ヘルパー関数
+    // -------------------------------------------------------------
+    
+    /**
+     * @brief そのエフェクトが深度バッファを必要とするかどうか
+     */
+    static bool UsesDepthBuffer(Mode mode) {
+        return mode == Mode::DepthBasedOutline || mode == Mode::DepthOfField;
+    }
+    
+    // -------------------------------------------------------------
+    // 初期化・更新・描画
+    // -------------------------------------------------------------
 
     /** @brief 指定したエフェクトをスタックから削除 */
     void RemoveActiveMode(Mode mode) {
@@ -568,6 +601,7 @@ public:
     DisplacementMapParams& GetDisplacementMapParams() { return displacementMapParams_; }
     DirectionalBlurParams& GetDirectionalBlurParams() { return directionalBlurParams_; }
     HalftoneParams& GetHalftoneParams() { return halftoneParams_; }
+    DepthOfFieldParams& GetDepthOfFieldParams() { return dofParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -691,6 +725,7 @@ private:
     DisplacementMapParams displacementMapParams_;
     DirectionalBlurParams directionalBlurParams_;
     HalftoneParams halftoneParams_;
+    DepthOfFieldParams dofParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

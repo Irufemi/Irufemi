@@ -1197,7 +1197,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope", "ChromaticAberration", "DisplacementMap", "DirectionalBlur", "Halftone" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope", "ChromaticAberration", "DisplacementMap", "DirectionalBlur", "Halftone", "DepthOfField" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1263,6 +1263,12 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                         params.angle = angleDeg * (3.14159265f / 180.0f);
                     }
                     ImGui::DragFloat("Blend", &params.blend, 0.01f, 0.0f, 1.0f);
+                } else if (mode == PostProcessMode::DepthOfField) {
+                    auto& params = ppManager->GetDepthOfFieldParams();
+                    ImGui::DragFloat("Focus Distance", &params.focusDistance, 0.1f, 0.0f, 1000.0f);
+                    ImGui::DragFloat("Focus Range", &params.focusRange, 0.1f, 0.1f, 500.0f);
+                    ImGui::DragFloat("Blur Size", &params.blurSize, 0.1f, 0.0f, 50.0f);
+                    ImGui::SliderInt("Samples", &params.samples, 4, 64);
                 } else if (mode == PostProcessMode::Kaleidoscope) {
                     auto& params = ppManager->GetKaleidoscopeParams();
                     ImGui::DragFloat("Segments", &params.segments, 0.1f, 1.0f, 32.0f);
