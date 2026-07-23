@@ -53,36 +53,10 @@ void TL1Scene::Update() {
             }
         }
     }
-}
 
-/**
- * @brief 描画
- */
-void TL1Scene::Draw() {
-    // プレビュー描画
-    if (isShaderRegistered_) {
-        engine_->ApplyPSO(shaderName_);
-        auto cmd = engine_->GetCommandList();
-        
-        // 入力されたテクスチャパス(名)があればそれをテクスチャとしてロードしてセット、無ければダミー(白)をセットする
-        D3D12_GPU_DESCRIPTOR_HANDLE texHandle = engine_->GetTextureManager()->GetWhiteTextureHandle();
-        if (!textureImagePath_.empty()) {
-            ResourceHandle rHandle = engine_->GetTextureManager()->LoadTexture(textureImagePath_);
-            texHandle = engine_->GetTextureManager()->Resolve(rHandle);
-        }
-        cmd->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::LegacyPSTexture), texHandle);
-
-        cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        cmd->DrawInstanced(3, 1, 0, 0);
-    }
-}
-
-/**
- * @brief UIの描画（デバッグタブ）
- */
-void TL1Scene::DrawDebugTab() {
 #ifdef USE_IMGUI
-    if (ImGui::Begin("AI Magic Brush")) {
+    bool isVisible = ImGui::Begin("AI Magic Brush");
+    if (isVisible) {
         ImGui::Text("AI Shader Generator Interface");
         ImGui::Separator();
 
@@ -348,8 +322,35 @@ void TL1Scene::DrawDebugTab() {
             float alpha = notificationTimer > 1.0f ? 1.0f : notificationTimer;
             ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, alpha), "[System] %s", notificationMsg.c_str());
         }
-
-        ImGui::End();
     }
+    ImGui::End();
 #endif
+}
+
+/**
+ * @brief 描画
+ */
+void TL1Scene::Draw() {
+    // プレビュー描画
+    if (isShaderRegistered_) {
+        engine_->ApplyPSO(shaderName_);
+        auto cmd = engine_->GetCommandList();
+        
+        // 入力されたテクスチャパス(名)があればそれをテクスチャとしてロードしてセット、無ければダミー(白)をセットする
+        D3D12_GPU_DESCRIPTOR_HANDLE texHandle = engine_->GetTextureManager()->GetWhiteTextureHandle();
+        if (!textureImagePath_.empty()) {
+            ResourceHandle rHandle = engine_->GetTextureManager()->LoadTexture(textureImagePath_);
+            texHandle = engine_->GetTextureManager()->Resolve(rHandle);
+        }
+        cmd->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::LegacyPSTexture), texHandle);
+
+        cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        cmd->DrawInstanced(3, 1, 0, 0);
+    }
+}
+
+/**
+ * @brief UIの描画（デバッグタブ）
+ */
+void TL1Scene::DrawDebugTab() {
 }
