@@ -1197,7 +1197,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1317,6 +1317,9 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 } else if (mode == PostProcessMode::Pointillism) {
                     auto& params = ppManager->GetPointillismParams();
                     ImGui::DragFloat("Stroke Size", &params.strokeSize, 0.1f, 1.0f, 50.0f);
+                    ImGui::DragFloat("Color Steps", &params.colorSteps, 0.1f, 2.0f, 32.0f);
+                } else if (mode == PostProcessMode::Posterization) {
+                    auto& params = ppManager->GetPosterizationParams();
                     ImGui::DragFloat("Color Steps", &params.colorSteps, 0.1f, 2.0f, 32.0f);
                 }
                 ImGui::TreePop();

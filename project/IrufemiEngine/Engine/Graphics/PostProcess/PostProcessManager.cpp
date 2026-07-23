@@ -55,6 +55,7 @@ void PostProcessManager::ResetAllParams() {
     luminanceOutlineParams_ = LuminanceOutlineParams();
     pixelationParams_ = PixelationParams();
     pointillismParams_ = PointillismParams();
+    posterizationParams_ = PosterizationParams();
 }
 
 
@@ -118,6 +119,8 @@ void PostProcessManager::Update(float totalTime) {
 
   combinedParams_.pointillismStrokeSize = pointillismParams_.strokeSize;
   combinedParams_.pointillismColorSteps = pointillismParams_.colorSteps;
+
+  combinedParams_.posterizationSteps = posterizationParams_.colorSteps;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;

@@ -22,6 +22,7 @@ static const int32_t kPostProcessMode_DualKawaseBlur = 16;
 static const int32_t kPostProcessMode_LuminanceBasedOutline = 17;
 static const int32_t kPostProcessMode_Pixelation = 18;
 static const int32_t kPostProcessMode_Pointillism = 19;
+static const int32_t kPostProcessMode_Posterization = 20;
 
 // --- ヘルパー関数 ---
 #include "Noise.hlsli"
@@ -351,3 +352,32 @@ float32_t3 ApplyPointillism(float32_t2 uv, float32_t strokeSize, float32_t color
     float3 finalSrgb = HSVToRGB(hsv);
     return pow(abs(finalSrgb), 2.2f);
 }
+
+// 18. Posterization (Toon/Cel-Shader)
+float32_t3 ApplyPosterization(float32_t3 color, float32_t colorSteps) {
+    // 【重要】なぜ単純なRGBの丸め（floor(color * steps) / steps）を使わないのか？
+    // 1. リニア(Linear)空間のまま計算すると、人間の目の暗部の感覚と合わず全体的に暗く沈んでしまうため。
+    // 2. RGBそれぞれの値を個別に丸めると、カラーバランスが崩れて「色が濁る」「意図しない色に化ける」バグが発生するため。
+    // 
+    // 【解決策】一度sRGB（ガンマ補正）空間に変換して人間の目に合わせ、
+    // 色相(H)と彩度(S)はそのままに、明度(V)のみを四捨五入(round)で階調化することで高品質なアニメ塗りを実現する。
+
+    // 1. Linear -> sRGB変換（暗部の解像度を人間の目に合わせる）
+    float3 srgbColor = pow(abs(color), 1.0f / 2.2f);
+    
+    // 2. RGB -> HSV変換（色味を保持するため）
+    float3 hsv = RGBToHSV(srgbColor);
+    
+    // 3. V（明度）だけを正しいロジック（round）でポスタライズ
+    // ※ floorではなくroundを使うことで、意図しない暗転を防ぐ
+    float steps = max(1.0f, colorSteps - 1.0f);
+    hsv.z = round(hsv.z * steps) / steps;
+    
+    // アニメ塗りの鮮やかさを出すため、彩度（S）を少しだけ強調する
+    hsv.y = saturate(hsv.y * 1.1f);
+    
+    // 4. HSV -> RGBに戻し、再び Linear空間に戻す
+    float3 finalSrgb = HSVToRGB(hsv);
+    return pow(abs(finalSrgb), 2.2f);
+}
+

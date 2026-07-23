@@ -66,6 +66,10 @@ struct PostProcessParams {
     float32_t pointillismStrokeSize;
     float32_t pointillismColorSteps;
     float32_t2 pad_pointillism;
+    
+    // Posterization
+    float32_t posterizationSteps;
+    float32_t3 pad_posterization;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -151,6 +155,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_Pointillism:
                 color.rgb = ApplyPointillism(uv, gParams.pointillismStrokeSize, gParams.pointillismColorSteps, gTexture, gSampler);
+                break;
+                
+            case kPostProcessMode_Posterization:
+                color.rgb = ApplyPosterization(color.rgb, gParams.posterizationSteps);
                 break;
         }
     }

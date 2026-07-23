@@ -42,6 +42,7 @@ enum class PostProcessMode {
     LuminanceBasedOutline, ///< 輝度ベースのアウトライン抽出（2Dトゥーン調）
     Pixelation,         ///< ピクセレーション（ドット絵化・モザイク）
     Pointillism,        ///< 点描画・印象派風フィルタ
+    Posterization,      ///< ポスタリゼーション（トゥーン調階調化）
 };
 
 class DirectXCommon;
@@ -256,6 +257,14 @@ public:
     };
 
     /**
+     * @struct PosterizationParams
+     * @brief ポスタリゼーション（階調化）用パラメータ
+     */
+    struct PosterizationParams {
+        float colorSteps = 8.0f;    ///< 階調の段数（少ないほどベタ塗りになる）
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -328,6 +337,10 @@ public:
         float pointillismStrokeSize;
         float pointillismColorSteps;
         float pad_pointillism[2];
+
+        // Posterization
+        float posterizationSteps;
+        float pad_posterization[3];
 
         // [Bindless]
         uint32_t mainTextureIndex;
@@ -451,6 +464,7 @@ public:
     LuminanceOutlineParams& GetLuminanceOutlineParams() { return luminanceOutlineParams_; }
     PixelationParams& GetPixelationParams() { return pixelationParams_; }
     PointillismParams& GetPointillismParams() { return pointillismParams_; }
+    PosterizationParams& GetPosterizationParams() { return posterizationParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -567,6 +581,7 @@ private:
     LuminanceOutlineParams luminanceOutlineParams_;
     PixelationParams pixelationParams_;
     PointillismParams pointillismParams_;
+    PosterizationParams posterizationParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;
