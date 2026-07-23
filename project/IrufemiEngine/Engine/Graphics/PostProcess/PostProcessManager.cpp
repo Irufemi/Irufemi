@@ -25,7 +25,8 @@ namespace {
                 mode == PostProcessManager::Mode::Pointillism ||
                 mode == PostProcessManager::Mode::Kaleidoscope ||
                 mode == PostProcessManager::Mode::ChromaticAberration ||
-                mode == PostProcessManager::Mode::DisplacementMap);
+                mode == PostProcessManager::Mode::DisplacementMap ||
+                mode == PostProcessManager::Mode::DirectionalBlur);
     }
 }
 
@@ -63,6 +64,7 @@ void PostProcessManager::ResetAllParams() {
     kaleidoscopeParams_ = KaleidoscopeParams();
     chromaticAberrationParams_ = ChromaticAberrationParams();
     displacementMapParams_ = DisplacementMapParams();
+    directionalBlurParams_ = DirectionalBlurParams();
 }
 
 
@@ -141,6 +143,10 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.displacementMapIntensity = displacementMapParams_.intensity;
   combinedParams_.displacementMapTime = displacementMapParams_.time;
   combinedParams_.displacementMapTimeScale = displacementMapParams_.timeScale;
+
+  combinedParams_.directionalBlurDirection = directionalBlurParams_.direction;
+  combinedParams_.directionalBlurStrength = directionalBlurParams_.strength;
+  combinedParams_.directionalBlurSamples = directionalBlurParams_.samples;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;

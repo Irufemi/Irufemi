@@ -47,6 +47,7 @@ enum class PostProcessMode {
     Kaleidoscope,       ///< 万華鏡・複眼エフェクト
     ChromaticAberration,///< 色収差
     DisplacementMap,    ///< 画面の歪み・陽炎
+    DirectionalBlur,    ///< 方向ブラー
 };
 
 class DirectXCommon;
@@ -308,6 +309,17 @@ public:
     };
 
     /**
+     * @struct DirectionalBlurParams
+     * @brief 方向ブラーエフェクト用パラメータ
+     */
+    struct DirectionalBlurParams {
+        Vector2 direction = { 1.0f, 0.0f }; ///< ブラーの方向
+        float strength = 0.05f;             ///< ブラーの強さ
+        int samples = 10;                   ///< サンプル数
+        // 16バイト境界は { Vector2(8), float(4), int(4) } = 16バイト なのでpad不要
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -403,6 +415,11 @@ public:
         float displacementMapTime;
         float displacementMapTimeScale;
         float pad_displacementMap;
+
+        // DirectionalBlur
+        Vector2 directionalBlurDirection;
+        float directionalBlurStrength;
+        int directionalBlurSamples;
 
         // [Bindless]
         uint32_t mainTextureIndex;
@@ -531,6 +548,7 @@ public:
     KaleidoscopeParams& GetKaleidoscopeParams() { return kaleidoscopeParams_; }
     ChromaticAberrationParams& GetChromaticAberrationParams() { return chromaticAberrationParams_; }
     DisplacementMapParams& GetDisplacementMapParams() { return displacementMapParams_; }
+    DirectionalBlurParams& GetDirectionalBlurParams() { return directionalBlurParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -652,6 +670,7 @@ private:
     KaleidoscopeParams kaleidoscopeParams_;
     ChromaticAberrationParams chromaticAberrationParams_;
     DisplacementMapParams displacementMapParams_;
+    DirectionalBlurParams directionalBlurParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

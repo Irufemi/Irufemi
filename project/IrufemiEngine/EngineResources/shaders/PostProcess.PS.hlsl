@@ -89,6 +89,11 @@ struct PostProcessParams {
     float32_t displacementMapTime;
     float32_t displacementMapTimeScale;
     float32_t pad_displacementMap;
+
+    // DirectionalBlur
+    float32_t2 directionalBlurDirection;
+    float32_t directionalBlurStrength;
+    int directionalBlurSamples;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -194,6 +199,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_DisplacementMap:
                 color.rgb = ApplyDisplacementMap(uv, gParams.displacementMapTime, gParams.displacementMapIntensity, gTexture, gSampler);
+                break;
+
+            case kPostProcessMode_DirectionalBlur:
+                color.rgb = ApplyDirectionalBlur(uv, gParams.directionalBlurDirection, gParams.directionalBlurStrength, gParams.directionalBlurSamples, gTexture, gSampler);
                 break;
         }
     }

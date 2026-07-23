@@ -27,6 +27,7 @@ static const int32_t kPostProcessMode_NightVision = 21;
 static const int32_t kPostProcessMode_Kaleidoscope = 22;
 static const int32_t kPostProcessMode_ChromaticAberration = 23;
 static const int32_t kPostProcessMode_DisplacementMap = 24;
+static const int32_t kPostProcessMode_DirectionalBlur = 25;
 
 // --- ヘルパー関数 ---
 #include "Noise.hlsli"
@@ -467,5 +468,26 @@ float32_t3 ApplyDisplacementMap(float32_t2 uv, float32_t time, float32_t intensi
     float32_t2 offset = GetNoiseOffsetUV(uv, time) * intensity;
     // 歪ませつつ、少し色収差も混ぜる
     return SampleWithRGBShift(tex, smp, uv + offset, offset * 0.5f);
+}
+
+// 25. Directional Blur (方向ブラー)
+float32_t3 ApplyDirectionalBlur(float32_t2 uv, float32_t2 direction, float32_t strength, int samples, Texture2D<float32_t4> tex, SamplerState smp) {
+    if (samples <= 1) return tex.Sample(smp, uv).rgb;
+    
+    float len = length(direction);
+    if (len < 0.0001f) return tex.Sample(smp, uv).rgb;
+    
+    float32_t3 result = float32_t3(0.0f, 0.0f, 0.0f);
+    float32_t2 dir = (direction / len) * strength;
+    float totalWeight = 0.0f;
+    
+    for (int i = 0; i < samples; i++) {
+        float weight = 1.0f; // ここをガウス分布などにするとより自然になるが単純平均でも十分
+        float32_t2 offset = dir * (float(i) / max(1.0f, float(samples - 1)) - 0.5f);
+        result += tex.Sample(smp, uv + offset).rgb * weight;
+        totalWeight += weight;
+    }
+    
+    return result / totalWeight;
 }
 

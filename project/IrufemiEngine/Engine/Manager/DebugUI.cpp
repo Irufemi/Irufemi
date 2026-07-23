@@ -1197,7 +1197,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope", "ChromaticAberration", "DisplacementMap" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope", "ChromaticAberration", "DisplacementMap", "DirectionalBlur" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1249,6 +1249,11 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     auto& params = ppManager->GetDisplacementMapParams();
                     ImGui::DragFloat("Intensity", &params.intensity, 0.001f, 0.0f, 1.0f);
                     ImGui::DragFloat("Time Scale", &params.timeScale, 0.01f, 0.0f, 10.0f);
+                } else if (mode == PostProcessMode::DirectionalBlur) {
+                    auto& params = ppManager->GetDirectionalBlurParams();
+                    ImGui::DragFloat2("Direction", &params.direction.x, 0.01f, -1.0f, 1.0f);
+                    ImGui::DragFloat("Strength", &params.strength, 0.001f, 0.0f, 1.0f);
+                    ImGui::SliderInt("Samples", &params.samples, 2, 32);
                 } else if (mode == PostProcessMode::Kaleidoscope) {
                     auto& params = ppManager->GetKaleidoscopeParams();
                     ImGui::DragFloat("Segments", &params.segments, 0.1f, 1.0f, 32.0f);
