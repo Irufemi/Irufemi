@@ -28,6 +28,7 @@ static const int32_t kPostProcessMode_Kaleidoscope = 22;
 static const int32_t kPostProcessMode_ChromaticAberration = 23;
 static const int32_t kPostProcessMode_DisplacementMap = 24;
 static const int32_t kPostProcessMode_DirectionalBlur = 25;
+static const int32_t kPostProcessMode_Halftone = 26;
 
 // --- ヘルパー関数 ---
 #include "Noise.hlsli"
@@ -489,5 +490,44 @@ float32_t3 ApplyDirectionalBlur(float32_t2 uv, float32_t2 direction, float32_t s
     }
     
     return result / totalWeight;
+}
+
+// 26. Halftone (網点 / コミック調)
+float32_t3 ApplyHalftone(float32_t3 color, float32_t2 uv, float32_t2 screenRes, float32_t scale, float32_t angle, float32_t blend) {
+    float luminance = GetLuminance(color);
+    
+    // アスペクト比を補正
+    float32_t2 aspectUV = uv;
+    aspectUV.x *= screenRes.x / screenRes.y;
+    
+    // 指定した角度で回転
+    float s = sin(angle);
+    float c = cos(angle);
+    float32_t2 p = float32_t2(c * aspectUV.x - s * aspectUV.y, s * aspectUV.x + c * aspectUV.y);
+    p *= scale;
+    
+    // 各マスのローカル座標 (-0.5 ~ 0.5)
+    float2 localPos = frac(p) - 0.5f;
+    
+    // 中心からの距離 (0.0 ~ 約0.707)
+    float dist = length(localPos);
+    
+    // 輝度に応じてドットの半径を決定 (暗いほど大きな黒ドット)
+    float maxRadius = 0.707f; // マスを完全に埋めるサイズ
+    float radius = (1.0f - luminance) * maxRadius;
+    
+    // ドットの内側(黒)と外側(白)を分ける (アンチエイリアス用に少しぼかす)
+    // dist が radius より大きければ 1.0(紙/色)、小さければ 0.0(黒インク)
+    float dot = smoothstep(radius - 0.05f, radius + 0.05f, dist);
+    
+    // カラーコミック調にするため、元の色から「明るさ(影)」を取り除いた鮮やかなベースカラー(紙の色)を作る
+    // ※これをしないと、元々暗い影の部分に黒ドットが乗って完全に真っ黒(何も見えない状態)になります。
+    float32_t3 paperColor = color / max(luminance, 0.01f); 
+    paperColor = min(paperColor, 1.0f); // 白飛び防止
+    
+    // 網点適用: 暗い部分は黒インク、明るい部分は鮮やかなインク色(紙の色)
+    float32_t3 result = lerp(float32_t3(0.0f, 0.0f, 0.0f), paperColor, dot);
+    
+    return lerp(color, result, blend);
 }
 

@@ -65,6 +65,7 @@ void PostProcessManager::ResetAllParams() {
     chromaticAberrationParams_ = ChromaticAberrationParams();
     displacementMapParams_ = DisplacementMapParams();
     directionalBlurParams_ = DirectionalBlurParams();
+    halftoneParams_ = HalftoneParams();
 }
 
 
@@ -147,6 +148,10 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.directionalBlurDirection = directionalBlurParams_.direction;
   combinedParams_.directionalBlurStrength = directionalBlurParams_.strength;
   combinedParams_.directionalBlurSamples = directionalBlurParams_.samples;
+
+  combinedParams_.halftoneScale = halftoneParams_.scale;
+  combinedParams_.halftoneAngle = halftoneParams_.angle;
+  combinedParams_.halftoneBlend = halftoneParams_.blend;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;

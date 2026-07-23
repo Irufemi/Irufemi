@@ -48,6 +48,7 @@ enum class PostProcessMode {
     ChromaticAberration,///< 色収差
     DisplacementMap,    ///< 画面の歪み・陽炎
     DirectionalBlur,    ///< 方向ブラー
+    Halftone,           ///< ハーフトーン（網点・コミック調）
 };
 
 class DirectXCommon;
@@ -320,6 +321,17 @@ public:
     };
 
     /**
+     * @struct HalftoneParams
+     * @brief ハーフトーンエフェクト用パラメータ
+     */
+    struct HalftoneParams {
+        float scale = 150.0f;     ///< ドットの細かさ
+        float angle = 0.785398f;  ///< ドットの回転角 (45度 = 約0.785ラジアン)
+        float blend = 1.0f;       ///< 適用強度
+        float pad;
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -420,6 +432,12 @@ public:
         Vector2 directionalBlurDirection;
         float directionalBlurStrength;
         int directionalBlurSamples;
+
+        // Halftone
+        float halftoneScale;
+        float halftoneAngle;
+        float halftoneBlend;
+        float pad_halftone;
 
         // [Bindless]
         uint32_t mainTextureIndex;
@@ -549,6 +567,7 @@ public:
     ChromaticAberrationParams& GetChromaticAberrationParams() { return chromaticAberrationParams_; }
     DisplacementMapParams& GetDisplacementMapParams() { return displacementMapParams_; }
     DirectionalBlurParams& GetDirectionalBlurParams() { return directionalBlurParams_; }
+    HalftoneParams& GetHalftoneParams() { return halftoneParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -671,6 +690,7 @@ private:
     ChromaticAberrationParams chromaticAberrationParams_;
     DisplacementMapParams displacementMapParams_;
     DirectionalBlurParams directionalBlurParams_;
+    HalftoneParams halftoneParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

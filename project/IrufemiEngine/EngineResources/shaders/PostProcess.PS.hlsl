@@ -94,6 +94,12 @@ struct PostProcessParams {
     float32_t2 directionalBlurDirection;
     float32_t directionalBlurStrength;
     int directionalBlurSamples;
+
+    // Halftone
+    float32_t halftoneScale;
+    float32_t halftoneAngle;
+    float32_t halftoneBlend;
+    float32_t pad_halftone;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -203,6 +209,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
 
             case kPostProcessMode_DirectionalBlur:
                 color.rgb = ApplyDirectionalBlur(uv, gParams.directionalBlurDirection, gParams.directionalBlurStrength, gParams.directionalBlurSamples, gTexture, gSampler);
+                break;
+                
+            case kPostProcessMode_Halftone:
+                color.rgb = ApplyHalftone(color.rgb, uv, float32_t2(width, height), gParams.halftoneScale, gParams.halftoneAngle, gParams.halftoneBlend);
                 break;
         }
     }
