@@ -48,6 +48,7 @@ void PostProcessManager::ResetAllParams() {
     bloomParams_ = BloomParams();
     glitchParams_ = GlitchParams();
     dualKawaseParams_ = DualKawaseBlurParams();
+    luminanceOutlineParams_ = LuminanceOutlineParams();
 }
 
 
@@ -103,6 +104,9 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.radialBlurSamples = radialBlurParams_.numSamples;
   combinedParams_.glitchIntensity = glitchParams_.intensity;
   combinedParams_.glitchTime = glitchParams_.time;
+  
+  combinedParams_.luminanceOutlineThreshold = luminanceOutlineParams_.threshold;
+  combinedParams_.luminanceOutlineColor = luminanceOutlineParams_.outlineColor;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;

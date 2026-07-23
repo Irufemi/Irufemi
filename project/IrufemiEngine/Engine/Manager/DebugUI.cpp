@@ -1197,7 +1197,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1307,6 +1307,10 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     ImGui::DragFloat("Blur Radius Offset", &params.blurRadius, 0.01f, 0.0f, 5.0f);
                     ImGui::SliderInt("Iteration Count", &params.iterationCount, 1, PostProcessManager::kMaxKawaseIterations);
                     ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
+                } else if (mode == PostProcessMode::LuminanceBasedOutline) {
+                    auto& params = ppManager->GetLuminanceOutlineParams();
+                    ImGui::DragFloat("Threshold", &params.threshold, 0.01f, 0.0f, 1.0f);
+                    ImGui::ColorEdit4("Outline Color", &params.outlineColor.x);
                 }
                 ImGui::TreePop();
             }

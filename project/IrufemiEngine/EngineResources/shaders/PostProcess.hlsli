@@ -18,6 +18,8 @@ static const int32_t kPostProcessMode_ToneMapping = 11;
 static const int32_t kPostProcessMode_Fade = 12;
 static const int32_t kPostProcessMode_Slide = 13;
 static const int32_t kPostProcessMode_Glitch = 15;
+static const int32_t kPostProcessMode_DualKawaseBlur = 16;
+static const int32_t kPostProcessMode_LuminanceBasedOutline = 17;
 
 // --- ヘルパー関数 ---
 
@@ -276,4 +278,28 @@ float32_t3 ApplyBoxBlur1D(Texture2D<float32_t4> tex, SamplerState smp, float32_t
     
     int32_t sampleCount = (halfSize * 2) + 1;
     return sum / float32_t(sampleCount);
+}
+
+// 15. LuminanceBasedOutline
+float32_t3 ApplyLuminanceBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uvStepSize, float32_t threshold, float32_t4 outlineColor, Texture2D<float32_t4> tex, SamplerState smp) {
+    const float Gx[3][3] = { {-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1} };
+    const float Gy[3][3] = { {-1, -2, -1}, {0, 0, 0}, {1, 2, 1} };
+    
+    float valueX = 0.0f;
+    float valueY = 0.0f;
+    
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            float2 offset = float2(x, y) * uvStepSize;
+            float3 sampleColor = tex.SampleLevel(smp, uv + offset, 0).rgb;
+            float luminance = dot(sampleColor, float3(0.299f, 0.587f, 0.114f));
+            
+            valueX += luminance * Gx[y + 1][x + 1];
+            valueY += luminance * Gy[y + 1][x + 1];
+        }
+    }
+    
+    float edgeWeight = sqrt(valueX * valueX + valueY * valueY);
+    float factor = smoothstep(threshold - 0.05f, threshold + 0.05f, edgeWeight);
+    return lerp(color, outlineColor.rgb, factor * outlineColor.a);
 }

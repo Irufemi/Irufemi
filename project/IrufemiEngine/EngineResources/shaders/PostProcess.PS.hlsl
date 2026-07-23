@@ -51,6 +51,12 @@ struct PostProcessParams {
     // Glitch
     float32_t glitchIntensity;
     float32_t glitchTime;
+    float32_t2 pad_glitch;
+    
+    // LuminanceBasedOutline
+    float32_t4 luminanceOutlineColor;
+    float32_t luminanceOutlineThreshold;
+    float32_t3 pad_lumOutline;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -124,6 +130,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
 
             case kPostProcessMode_Glitch:
                 color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, gParams.glitchIntensity, gTexture, gSampler);
+                break;
+                
+            case kPostProcessMode_LuminanceBasedOutline:
+                color.rgb = ApplyLuminanceBasedOutline(color.rgb, uv, uvStepSize, gParams.luminanceOutlineThreshold, gParams.luminanceOutlineColor, gTexture, gSampler);
                 break;
         }
     }

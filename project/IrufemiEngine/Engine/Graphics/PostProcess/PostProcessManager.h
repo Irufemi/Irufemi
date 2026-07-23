@@ -39,6 +39,7 @@ enum class PostProcessMode {
     Bloom,              ///< ブルーム（高輝度抽出による発光）
     Glitch,             ///< グリッチ（ノイズや色収差による映像の乱れ）
     DualKawaseBlur,     ///< カワセブラー（軽量で広範囲なぼかし）
+    LuminanceBasedOutline, ///< 輝度ベースのアウトライン抽出（2Dトゥーン調）
 };
 
 class DirectXCommon;
@@ -141,6 +142,16 @@ public:
         float intensity = 6.0f;         ///< アウトラインの強度
         float pad[3];
         Matrix4x4 projectionInverse;    ///< 逆投影行列 (自動でセットされる)
+    };
+
+    /**
+     * @struct LuminanceOutlineParams
+     * @brief 輝度ベースのアウトラインエフェクト用パラメータ
+     */
+    struct LuminanceOutlineParams {
+        float threshold = 0.5f;                         ///< 輪郭抽出のしきい値
+        float pad[3];                                   // 16バイトアライメント
+        Vector4 outlineColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< アウトラインの色
     };
 
     /**
@@ -283,6 +294,11 @@ public:
         float glitchTime;
         float pad_glitch[2]; // パディング
 
+        // LuminanceBasedOutline
+        Vector4 luminanceOutlineColor;
+        float luminanceOutlineThreshold;
+        float pad_lumOutline[3];
+
         // [Bindless]
         uint32_t mainTextureIndex;
         uint32_t extraTextureIndex;
@@ -402,6 +418,7 @@ public:
     BloomParams& GetBloomParams() { return bloomParams_; }
     GlitchParams& GetGlitchParams() { return glitchParams_; }
     DualKawaseBlurParams& GetDualKawaseBlurParams() { return dualKawaseParams_; }
+    LuminanceOutlineParams& GetLuminanceOutlineParams() { return luminanceOutlineParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -514,6 +531,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> dualKawaseCB_;
     DualKawaseBlurParams* mappedDualKawase_ = nullptr;
     DualKawaseBlurParams dualKawaseParams_;
+
+    LuminanceOutlineParams luminanceOutlineParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;
