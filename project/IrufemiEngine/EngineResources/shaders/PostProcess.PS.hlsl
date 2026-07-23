@@ -79,6 +79,16 @@ struct PostProcessParams {
     // Kaleidoscope
     float32_t kaleidoscopeSegments;
     float32_t3 pad_kaleidoscope;
+
+    // ChromaticAberration
+    float32_t chromaticAberrationIntensity;
+    float32_t3 pad_chromaticAberration;
+
+    // DisplacementMap
+    float32_t displacementMapIntensity;
+    float32_t displacementMapTime;
+    float32_t displacementMapTimeScale;
+    float32_t pad_displacementMap;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -176,6 +186,14 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_Kaleidoscope:
                 color.rgb = ApplyKaleidoscope(uv, gParams.kaleidoscopeSegments, gTexture, gSampler);
+                break;
+                
+            case kPostProcessMode_ChromaticAberration:
+                color.rgb = ApplyChromaticAberration(uv, gParams.chromaticAberrationIntensity, gTexture, gSampler);
+                break;
+                
+            case kPostProcessMode_DisplacementMap:
+                color.rgb = ApplyDisplacementMap(uv, gParams.displacementMapTime, gParams.displacementMapIntensity, gTexture, gSampler);
                 break;
         }
     }

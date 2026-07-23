@@ -23,7 +23,9 @@ namespace {
                 mode == PostProcessManager::Mode::Glitch ||
                 mode == PostProcessManager::Mode::DualKawaseBlur ||
                 mode == PostProcessManager::Mode::Pointillism ||
-                mode == PostProcessManager::Mode::Kaleidoscope);
+                mode == PostProcessManager::Mode::Kaleidoscope ||
+                mode == PostProcessManager::Mode::ChromaticAberration ||
+                mode == PostProcessManager::Mode::DisplacementMap);
     }
 }
 
@@ -59,6 +61,8 @@ void PostProcessManager::ResetAllParams() {
     posterizationParams_ = PosterizationParams();
     nightVisionParams_ = NightVisionParams();
     kaleidoscopeParams_ = KaleidoscopeParams();
+    chromaticAberrationParams_ = ChromaticAberrationParams();
+    displacementMapParams_ = DisplacementMapParams();
 }
 
 
@@ -130,6 +134,13 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.nightVisionTime = nightVisionParams_.time;
   
   combinedParams_.kaleidoscopeSegments = kaleidoscopeParams_.segments;
+  
+  combinedParams_.chromaticAberrationIntensity = chromaticAberrationParams_.intensity;
+  
+  displacementMapParams_.time = totalTime * displacementMapParams_.timeScale;
+  combinedParams_.displacementMapIntensity = displacementMapParams_.intensity;
+  combinedParams_.displacementMapTime = displacementMapParams_.time;
+  combinedParams_.displacementMapTimeScale = displacementMapParams_.timeScale;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;

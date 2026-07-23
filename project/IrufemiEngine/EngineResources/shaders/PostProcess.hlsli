@@ -25,6 +25,8 @@ static const int32_t kPostProcessMode_Pointillism = 19;
 static const int32_t kPostProcessMode_Posterization = 20;
 static const int32_t kPostProcessMode_NightVision = 21;
 static const int32_t kPostProcessMode_Kaleidoscope = 22;
+static const int32_t kPostProcessMode_ChromaticAberration = 23;
+static const int32_t kPostProcessMode_DisplacementMap = 24;
 
 // --- ヘルパー関数 ---
 #include "Noise.hlsli"
@@ -432,5 +434,38 @@ float32_t3 ApplyKaleidoscope(float32_t2 uv, float32_t segments, Texture2D<float3
     float32_t2 center = float32_t2(0.5f, 0.5f);
     float32_t2 symUV = GetRadialSymmetryUV(uv, center, max(1.0f, segments));
     return tex.Sample(smp, symUV).rgb;
+}
+
+// 汎用サンプリング: RGBズレ（色収差）
+float32_t3 SampleWithRGBShift(Texture2D<float32_t4> tex, SamplerState smp, float32_t2 uv, float32_t2 offset) {
+    float32_t r = tex.Sample(smp, uv + offset).r;
+    float32_t g = tex.Sample(smp, uv).g;
+    float32_t b = tex.Sample(smp, uv - offset).b;
+    return float32_t3(r, g, b);
+}
+
+// 汎用UV歪み: 高品質なSimplexノイズ(sFBm)を利用したオフセット取得
+float32_t2 GetNoiseOffsetUV(float32_t2 uv, float32_t time) {
+    // Noise.hlsli の Simplex Noise (sFBm) を使用。最初から -1.0 ~ 1.0 の範囲。
+    // グリッド状のアーティファクト（縦線・横線）が全く出ないため回転ハックが不要。
+    float n1 = sFBm(uv * 10.0f + float32_t2(time, time * 0.5f));
+    float n2 = sFBm(uv * 10.0f - float32_t2(time * 0.8f, time));
+    return float32_t2(n1, n2);
+}
+
+// 23. Chromatic Aberration (色収差)
+float32_t3 ApplyChromaticAberration(float32_t2 uv, float32_t intensity, Texture2D<float32_t4> tex, SamplerState smp) {
+    // 画面端に行くほどズレが大きくなるように調整
+    float32_t2 center = float32_t2(0.5f, 0.5f);
+    float32_t2 dir = uv - center;
+    float32_t2 offset = dir * intensity;
+    return SampleWithRGBShift(tex, smp, uv, offset);
+}
+
+// 24. Displacement Map (歪み・陽炎)
+float32_t3 ApplyDisplacementMap(float32_t2 uv, float32_t time, float32_t intensity, Texture2D<float32_t4> tex, SamplerState smp) {
+    float32_t2 offset = GetNoiseOffsetUV(uv, time) * intensity;
+    // 歪ませつつ、少し色収差も混ぜる
+    return SampleWithRGBShift(tex, smp, uv + offset, offset * 0.5f);
 }
 

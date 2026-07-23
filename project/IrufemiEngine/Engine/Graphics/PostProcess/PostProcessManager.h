@@ -45,6 +45,8 @@ enum class PostProcessMode {
     Posterization,      ///< ポスタリゼーション（トゥーン調階調化）
     NightVision,        ///< 暗視ゴーグル風エフェクト
     Kaleidoscope,       ///< 万華鏡・複眼エフェクト
+    ChromaticAberration,///< 色収差
+    DisplacementMap,    ///< 画面の歪み・陽炎
 };
 
 class DirectXCommon;
@@ -286,6 +288,26 @@ public:
     };
 
     /**
+     * @struct ChromaticAberrationParams
+     * @brief 色収差エフェクト用パラメータ
+     */
+    struct ChromaticAberrationParams {
+        float intensity = 0.05f; ///< 色ズレの幅
+        float pad[3];
+    };
+
+    /**
+     * @struct DisplacementMapParams
+     * @brief 画面の歪み・陽炎エフェクト用パラメータ
+     */
+    struct DisplacementMapParams {
+        float intensity = 0.05f; ///< 歪みの強さ
+        float timeScale = 1.0f;  ///< うねりの速度
+        float time = 0.0f;       ///< 時間
+        float pad;
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -371,6 +393,16 @@ public:
         // Kaleidoscope
         float kaleidoscopeSegments;
         float pad_kaleidoscope[3];
+
+        // ChromaticAberration
+        float chromaticAberrationIntensity;
+        float pad_chromaticAberration[3];
+
+        // DisplacementMap
+        float displacementMapIntensity;
+        float displacementMapTime;
+        float displacementMapTimeScale;
+        float pad_displacementMap;
 
         // [Bindless]
         uint32_t mainTextureIndex;
@@ -497,6 +529,8 @@ public:
     PosterizationParams& GetPosterizationParams() { return posterizationParams_; }
     NightVisionParams& GetNightVisionParams() { return nightVisionParams_; }
     KaleidoscopeParams& GetKaleidoscopeParams() { return kaleidoscopeParams_; }
+    ChromaticAberrationParams& GetChromaticAberrationParams() { return chromaticAberrationParams_; }
+    DisplacementMapParams& GetDisplacementMapParams() { return displacementMapParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -616,6 +650,8 @@ private:
     PosterizationParams posterizationParams_;
     NightVisionParams nightVisionParams_;
     KaleidoscopeParams kaleidoscopeParams_;
+    ChromaticAberrationParams chromaticAberrationParams_;
+    DisplacementMapParams displacementMapParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;
