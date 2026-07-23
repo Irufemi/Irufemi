@@ -17,8 +17,12 @@ namespace {
     bool RequiresSeparatePass(PostProcessManager::Mode mode) {
         // 空間サンプリングやUV座標を操作するエフェクトは、
         // 以前のエフェクト結果がテクスチャに完全に書き込まれている必要があるため独立パスとする
-        return (mode == PostProcessManager::Mode::RadialBlur || 
-                mode == PostProcessManager::Mode::Glitch);
+        return (mode == PostProcessManager::Mode::GaussianFilter ||
+                mode == PostProcessManager::Mode::DepthBasedOutline ||
+                mode == PostProcessManager::Mode::RadialBlur ||
+                mode == PostProcessManager::Mode::Glitch ||
+                mode == PostProcessManager::Mode::DualKawaseBlur ||
+                mode == PostProcessManager::Mode::Pointillism);
     }
 }
 
@@ -50,6 +54,7 @@ void PostProcessManager::ResetAllParams() {
     dualKawaseParams_ = DualKawaseBlurParams();
     luminanceOutlineParams_ = LuminanceOutlineParams();
     pixelationParams_ = PixelationParams();
+    pointillismParams_ = PointillismParams();
 }
 
 
@@ -110,6 +115,9 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.luminanceOutlineColor = luminanceOutlineParams_.outlineColor;
 
   combinedParams_.pixelationSize = pixelationParams_.pixelSize;
+
+  combinedParams_.pointillismStrokeSize = pointillismParams_.strokeSize;
+  combinedParams_.pointillismColorSteps = pointillismParams_.colorSteps;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;

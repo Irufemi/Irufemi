@@ -41,6 +41,7 @@ enum class PostProcessMode {
     DualKawaseBlur,     ///< カワセブラー（軽量で広範囲なぼかし）
     LuminanceBasedOutline, ///< 輝度ベースのアウトライン抽出（2Dトゥーン調）
     Pixelation,         ///< ピクセレーション（ドット絵化・モザイク）
+    Pointillism,        ///< 点描画・印象派風フィルタ
 };
 
 class DirectXCommon;
@@ -162,6 +163,16 @@ public:
     struct PixelationParams {
         float pixelSize = 4.0f; ///< 1ドットを構成するピクセル数（解像度ダウン係数）
         float pad[3];
+    };
+
+    /**
+     * @struct PointillismParams
+     * @brief 点描画エフェクト用パラメータ
+     */
+    struct PointillismParams {
+        float strokeSize = 10.0f; ///< 筆の荒さ
+        float colorSteps = 8.0f;  ///< 色の階調数
+        float pad[2];
     };
 
     /**
@@ -313,6 +324,11 @@ public:
         float pixelationSize;
         float pad_pixelation[3];
 
+        // Pointillism
+        float pointillismStrokeSize;
+        float pointillismColorSteps;
+        float pad_pointillism[2];
+
         // [Bindless]
         uint32_t mainTextureIndex;
         uint32_t extraTextureIndex;
@@ -434,6 +450,7 @@ public:
     DualKawaseBlurParams& GetDualKawaseBlurParams() { return dualKawaseParams_; }
     LuminanceOutlineParams& GetLuminanceOutlineParams() { return luminanceOutlineParams_; }
     PixelationParams& GetPixelationParams() { return pixelationParams_; }
+    PointillismParams& GetPointillismParams() { return pointillismParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -549,6 +566,7 @@ private:
 
     LuminanceOutlineParams luminanceOutlineParams_;
     PixelationParams pixelationParams_;
+    PointillismParams pointillismParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

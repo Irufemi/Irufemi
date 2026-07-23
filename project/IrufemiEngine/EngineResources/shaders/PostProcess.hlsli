@@ -21,8 +21,10 @@ static const int32_t kPostProcessMode_Glitch = 15;
 static const int32_t kPostProcessMode_DualKawaseBlur = 16;
 static const int32_t kPostProcessMode_LuminanceBasedOutline = 17;
 static const int32_t kPostProcessMode_Pixelation = 18;
+static const int32_t kPostProcessMode_Pointillism = 19;
 
 // --- ヘルパー関数 ---
+#include "Noise.hlsli"
 
 // RGB -> HSV
 float32_t3 RGBToHSV(float32_t3 rgb) {
@@ -310,4 +312,42 @@ float32_t3 ApplyPixelation(float32_t2 uv, float32_t pixelSize, float32_t2 resolu
     float2 blocks = resolution / max(1.0f, pixelSize);
     float2 pixelatedUV = floor(uv * blocks) / blocks;
     return tex.SampleLevel(smp, pixelatedUV, 0).rgb;
+}
+
+// 17. Pointillism
+float32_t3 ApplyPointillism(float32_t2 uv, float32_t strokeSize, float32_t colorSteps, Texture2D<float32_t4> tex, SamplerState smp) {
+    // 筆のサイズに合わせてグリッドを作る（strokeSize が大きいほど分割が粗くなる）
+    // 参考: 1000.0f を基準にして、strokeSize (1.0 ~ 50.0) で割る
+    float gridSize = max(20.0f, 2000.0f / max(1.0f, strokeSize));
+    
+    // ボロノイ分割を計算（戻り値の seedPos はグリッド空間の座標）
+    VoronoiResult vRes = Voronoi(uv * gridSize);
+    
+    // テクスチャサンプリング用の UV に変換（0.0 ~ 1.0 空間に戻す）
+    float2 sampleUV = vRes.seedPos / gridSize;
+    
+    // 各ドット（セル）の代表色をサンプリング
+    float3 sampleColor = tex.SampleLevel(smp, saturate(sampleUV), 0).rgb;
+    
+    // 境界にほんの少しだけ陰影（立体感）をつける
+    // セル中心からエッジに向かって少し暗くする
+    float edgeDarken = smoothstep(0.85f, 0.0f, vRes.minDist);
+    sampleColor *= (0.85f + 0.15f * edgeDarken);
+    
+    // 1. Linear -> sRGB変換（ガンマ補正）
+    float3 srgbColor = pow(abs(sampleColor), 1.0f / 2.2f);
+    
+    // 2. RGB -> HSV変換
+    float3 hsv = RGBToHSV(srgbColor);
+    
+    // 3. V（明度）だけを正しいロジック（round）でポスタライズ
+    float steps = max(1.0f, colorSteps - 1.0f);
+    hsv.z = round(hsv.z * steps) / steps;
+    
+    // 印象派らしく、彩度（S）を少しだけ強調する
+    hsv.y = saturate(hsv.y * 1.2f);
+    
+    // 4. HSV -> RGBに戻し、再び Linear空間に戻す
+    float3 finalSrgb = HSVToRGB(hsv);
+    return pow(abs(finalSrgb), 2.2f);
 }

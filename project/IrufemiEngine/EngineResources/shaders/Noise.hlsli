@@ -3,6 +3,8 @@
  * @brief ノイズ・ユーティリティ関数
  */
 
+#pragma once
+
 static const float TAU = 6.28318530718;
 
 // 擬似乱数 (2D -> 1D)
@@ -70,4 +72,42 @@ float fBm(float3 p) {
         a *= 0.5;
     }
     return f;
+}
+
+struct VoronoiResult {
+    float2 seedPos;  // セル内のシード点（中心点）の絶対座標
+    float minDist;   // そのシード点までの距離
+};
+
+// ボロノイ分割（Cellular Noise） (2D)
+VoronoiResult Voronoi(float2 uv) {
+    float2 baseCell = floor(uv);
+    
+    VoronoiResult res;
+    res.minDist = 10.0f;
+    res.seedPos = float2(0.0f, 0.0f);
+    
+    // 3x3の隣接セルを探索
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            float2 cellOffset = float2(x, y);
+            float2 cellId = baseCell + cellOffset;
+            
+            // セルごとの固有ランダムオフセット (0.0 ~ 1.0)
+            float2 seedOffset = float2(
+                rand(cellId),
+                rand(cellId + float2(13.5f, 41.2f))
+            );
+            
+            float2 seedPos = cellId + seedOffset;
+            float dist = distance(uv, seedPos);
+            
+            if (dist < res.minDist) {
+                res.minDist = dist;
+                res.seedPos = seedPos;
+            }
+        }
+    }
+    
+    return res;
 }

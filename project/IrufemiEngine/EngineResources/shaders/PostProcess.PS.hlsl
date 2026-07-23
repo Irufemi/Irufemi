@@ -61,6 +61,11 @@ struct PostProcessParams {
     // Pixelation
     float32_t pixelationSize;
     float32_t3 pad_pixelation;
+    
+    // Pointillism
+    float32_t pointillismStrokeSize;
+    float32_t pointillismColorSteps;
+    float32_t2 pad_pointillism;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -142,6 +147,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_Pixelation:
                 color.rgb = ApplyPixelation(uv, gParams.pixelationSize, float32_t2(width, height), gTexture, gSampler);
+                break;
+                
+            case kPostProcessMode_Pointillism:
+                color.rgb = ApplyPointillism(uv, gParams.pointillismStrokeSize, gParams.pointillismColorSteps, gTexture, gSampler);
                 break;
         }
     }
