@@ -40,6 +40,7 @@ enum class PostProcessMode {
     Glitch,             ///< グリッチ（ノイズや色収差による映像の乱れ）
     DualKawaseBlur,     ///< カワセブラー（軽量で広範囲なぼかし）
     LuminanceBasedOutline, ///< 輝度ベースのアウトライン抽出（2Dトゥーン調）
+    Pixelation,         ///< ピクセレーション（ドット絵化・モザイク）
 };
 
 class DirectXCommon;
@@ -152,6 +153,15 @@ public:
         float threshold = 0.5f;                         ///< 輪郭抽出のしきい値
         float pad[3];                                   // 16バイトアライメント
         Vector4 outlineColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< アウトラインの色
+    };
+
+    /**
+     * @struct PixelationParams
+     * @brief ピクセレーション（モザイク）エフェクト用パラメータ
+     */
+    struct PixelationParams {
+        float pixelSize = 4.0f; ///< 1ドットを構成するピクセル数（解像度ダウン係数）
+        float pad[3];
     };
 
     /**
@@ -299,6 +309,10 @@ public:
         float luminanceOutlineThreshold;
         float pad_lumOutline[3];
 
+        // Pixelation
+        float pixelationSize;
+        float pad_pixelation[3];
+
         // [Bindless]
         uint32_t mainTextureIndex;
         uint32_t extraTextureIndex;
@@ -419,6 +433,7 @@ public:
     GlitchParams& GetGlitchParams() { return glitchParams_; }
     DualKawaseBlurParams& GetDualKawaseBlurParams() { return dualKawaseParams_; }
     LuminanceOutlineParams& GetLuminanceOutlineParams() { return luminanceOutlineParams_; }
+    PixelationParams& GetPixelationParams() { return pixelationParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -533,6 +548,7 @@ private:
     DualKawaseBlurParams dualKawaseParams_;
 
     LuminanceOutlineParams luminanceOutlineParams_;
+    PixelationParams pixelationParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

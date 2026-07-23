@@ -20,6 +20,7 @@ static const int32_t kPostProcessMode_Slide = 13;
 static const int32_t kPostProcessMode_Glitch = 15;
 static const int32_t kPostProcessMode_DualKawaseBlur = 16;
 static const int32_t kPostProcessMode_LuminanceBasedOutline = 17;
+static const int32_t kPostProcessMode_Pixelation = 18;
 
 // --- ヘルパー関数 ---
 
@@ -302,4 +303,11 @@ float32_t3 ApplyLuminanceBasedOutline(float32_t3 color, float32_t2 uv, float32_t
     float edgeWeight = sqrt(valueX * valueX + valueY * valueY);
     float factor = smoothstep(threshold - 0.05f, threshold + 0.05f, edgeWeight);
     return lerp(color, outlineColor.rgb, factor * outlineColor.a);
+}
+
+// 16. Pixelation
+float32_t3 ApplyPixelation(float32_t2 uv, float32_t pixelSize, float32_t2 resolution, Texture2D<float32_t4> tex, SamplerState smp) {
+    float2 blocks = resolution / max(1.0f, pixelSize);
+    float2 pixelatedUV = floor(uv * blocks) / blocks;
+    return tex.SampleLevel(smp, pixelatedUV, 0).rgb;
 }

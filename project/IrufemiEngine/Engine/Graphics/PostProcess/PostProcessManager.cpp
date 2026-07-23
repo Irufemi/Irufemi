@@ -49,6 +49,7 @@ void PostProcessManager::ResetAllParams() {
     glitchParams_ = GlitchParams();
     dualKawaseParams_ = DualKawaseBlurParams();
     luminanceOutlineParams_ = LuminanceOutlineParams();
+    pixelationParams_ = PixelationParams();
 }
 
 
@@ -107,6 +108,8 @@ void PostProcessManager::Update(float totalTime) {
   
   combinedParams_.luminanceOutlineThreshold = luminanceOutlineParams_.threshold;
   combinedParams_.luminanceOutlineColor = luminanceOutlineParams_.outlineColor;
+
+  combinedParams_.pixelationSize = pixelationParams_.pixelSize;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;

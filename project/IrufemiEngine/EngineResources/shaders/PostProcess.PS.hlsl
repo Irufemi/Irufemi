@@ -57,6 +57,10 @@ struct PostProcessParams {
     float32_t4 luminanceOutlineColor;
     float32_t luminanceOutlineThreshold;
     float32_t3 pad_lumOutline;
+    
+    // Pixelation
+    float32_t pixelationSize;
+    float32_t3 pad_pixelation;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -134,6 +138,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_LuminanceBasedOutline:
                 color.rgb = ApplyLuminanceBasedOutline(color.rgb, uv, uvStepSize, gParams.luminanceOutlineThreshold, gParams.luminanceOutlineColor, gTexture, gSampler);
+                break;
+                
+            case kPostProcessMode_Pixelation:
+                color.rgb = ApplyPixelation(uv, gParams.pixelationSize, float32_t2(width, height), gTexture, gSampler);
                 break;
         }
     }
