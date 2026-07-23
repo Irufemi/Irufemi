@@ -75,6 +75,10 @@ struct PostProcessParams {
     float32_t nightVisionIntensity;
     float32_t nightVisionTime;
     float32_t2 pad_nightVision;
+    
+    // Kaleidoscope
+    float32_t kaleidoscopeSegments;
+    float32_t3 pad_kaleidoscope;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -168,6 +172,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_NightVision:
                 color.rgb = ApplyNightVision(color.rgb, uv, gParams.nightVisionTime, gParams.nightVisionIntensity);
+                break;
+                
+            case kPostProcessMode_Kaleidoscope:
+                color.rgb = ApplyKaleidoscope(uv, gParams.kaleidoscopeSegments, gTexture, gSampler);
                 break;
         }
     }

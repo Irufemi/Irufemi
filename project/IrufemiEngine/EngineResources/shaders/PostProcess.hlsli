@@ -24,6 +24,7 @@ static const int32_t kPostProcessMode_Pixelation = 18;
 static const int32_t kPostProcessMode_Pointillism = 19;
 static const int32_t kPostProcessMode_Posterization = 20;
 static const int32_t kPostProcessMode_NightVision = 21;
+static const int32_t kPostProcessMode_Kaleidoscope = 22;
 
 // --- ヘルパー関数 ---
 #include "Noise.hlsli"
@@ -402,5 +403,34 @@ float32_t3 ApplyNightVision(float32_t3 color, float32_t2 uv, float32_t time, flo
     // スキャンライン
     float scanline = sin(uv.y * 800.0f - time * 10.0f) * 0.05f * intensity;
     return saturate(nvColor - scanline);
+}
+
+// 汎用UV変換: 万華鏡・放射状対称UVの取得
+float32_t2 GetRadialSymmetryUV(float32_t2 uv, float32_t2 center, float32_t segments) {
+    float32_t2 delta = uv - center;
+    float radius = length(delta);
+    float angle = atan2(delta.y, delta.x);
+    
+    // 角度をセグメントで分割し、モジュロで折り返す
+    float pi = 3.1415926535f;
+    float segmentAngle = pi * 2.0f / segments;
+    
+    // angle を 0 ~ 2PI に正規化
+    angle = (angle < 0.0f) ? (angle + pi * 2.0f) : angle;
+    
+    // セグメント内で折り返し (ping-pong)
+    float localAngle = fmod(angle, segmentAngle);
+    if (fmod(floor(angle / segmentAngle), 2.0f) == 1.0f) {
+        localAngle = segmentAngle - localAngle;
+    }
+    
+    return center + float32_t2(cos(localAngle), sin(localAngle)) * radius;
+}
+
+// 22. Kaleidoscope (万華鏡 / 複眼)
+float32_t3 ApplyKaleidoscope(float32_t2 uv, float32_t segments, Texture2D<float32_t4> tex, SamplerState smp) {
+    float32_t2 center = float32_t2(0.5f, 0.5f);
+    float32_t2 symUV = GetRadialSymmetryUV(uv, center, max(1.0f, segments));
+    return tex.Sample(smp, symUV).rgb;
 }
 

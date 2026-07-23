@@ -1197,7 +1197,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1242,7 +1242,10 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         ImGui::PushID("Parameters");
         for (auto mode : activeModes) {
             if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
-                if (mode == PostProcessMode::NightVision) {
+                if (mode == PostProcessMode::Kaleidoscope) {
+                    auto& params = ppManager->GetKaleidoscopeParams();
+                    ImGui::DragFloat("Segments", &params.segments, 0.1f, 1.0f, 32.0f);
+                } else if (mode == PostProcessMode::NightVision) {
                     auto& params = ppManager->GetNightVisionParams();
                     ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 2.0f);
                 } else if (mode == PostProcessMode::Vignette) {

@@ -44,6 +44,7 @@ enum class PostProcessMode {
     Pointillism,        ///< 点描画・印象派風フィルタ
     Posterization,      ///< ポスタリゼーション（トゥーン調階調化）
     NightVision,        ///< 暗視ゴーグル風エフェクト
+    Kaleidoscope,       ///< 万華鏡・複眼エフェクト
 };
 
 class DirectXCommon;
@@ -276,6 +277,15 @@ public:
     };
 
     /**
+     * @struct KaleidoscopeParams
+     * @brief 万華鏡エフェクト用パラメータ
+     */
+    struct KaleidoscopeParams {
+        float segments = 6.0f;  ///< 分割数
+        float pad[3];
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -357,6 +367,10 @@ public:
         float nightVisionIntensity;
         float nightVisionTime;
         float pad_nightVision[2];
+
+        // Kaleidoscope
+        float kaleidoscopeSegments;
+        float pad_kaleidoscope[3];
 
         // [Bindless]
         uint32_t mainTextureIndex;
@@ -482,6 +496,7 @@ public:
     PointillismParams& GetPointillismParams() { return pointillismParams_; }
     PosterizationParams& GetPosterizationParams() { return posterizationParams_; }
     NightVisionParams& GetNightVisionParams() { return nightVisionParams_; }
+    KaleidoscopeParams& GetKaleidoscopeParams() { return kaleidoscopeParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -600,6 +615,7 @@ private:
     PointillismParams pointillismParams_;
     PosterizationParams posterizationParams_;
     NightVisionParams nightVisionParams_;
+    KaleidoscopeParams kaleidoscopeParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

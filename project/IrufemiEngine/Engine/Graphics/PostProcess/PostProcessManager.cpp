@@ -22,7 +22,8 @@ namespace {
                 mode == PostProcessManager::Mode::RadialBlur ||
                 mode == PostProcessManager::Mode::Glitch ||
                 mode == PostProcessManager::Mode::DualKawaseBlur ||
-                mode == PostProcessManager::Mode::Pointillism);
+                mode == PostProcessManager::Mode::Pointillism ||
+                mode == PostProcessManager::Mode::Kaleidoscope);
     }
 }
 
@@ -57,6 +58,7 @@ void PostProcessManager::ResetAllParams() {
     pointillismParams_ = PointillismParams();
     posterizationParams_ = PosterizationParams();
     nightVisionParams_ = NightVisionParams();
+    kaleidoscopeParams_ = KaleidoscopeParams();
 }
 
 
@@ -126,6 +128,8 @@ void PostProcessManager::Update(float totalTime) {
   
   combinedParams_.nightVisionIntensity = nightVisionParams_.intensity;
   combinedParams_.nightVisionTime = nightVisionParams_.time;
+  
+  combinedParams_.kaleidoscopeSegments = kaleidoscopeParams_.segments;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;
