@@ -23,9 +23,15 @@ static const int32_t kPostProcessMode_LuminanceBasedOutline = 17;
 static const int32_t kPostProcessMode_Pixelation = 18;
 static const int32_t kPostProcessMode_Pointillism = 19;
 static const int32_t kPostProcessMode_Posterization = 20;
+static const int32_t kPostProcessMode_NightVision = 21;
 
 // --- ヘルパー関数 ---
 #include "Noise.hlsli"
+
+// 輝度(Luminance)の取得
+float32_t GetLuminance(float32_t3 color) {
+    return dot(color, float32_t3(0.299f, 0.587f, 0.114f));
+}
 
 // RGB -> HSV
 float32_t3 RGBToHSV(float32_t3 rgb) {
@@ -379,5 +385,22 @@ float32_t3 ApplyPosterization(float32_t3 color, float32_t colorSteps) {
     // 4. HSV -> RGBに戻し、再び Linear空間に戻す
     float3 finalSrgb = HSVToRGB(hsv);
     return pow(abs(finalSrgb), 2.2f);
+}
+
+// 19. Night Vision (暗視ゴーグル風)
+float32_t3 ApplyNightVision(float32_t3 color, float32_t2 uv, float32_t time, float32_t intensity) {
+    float luminance = GetLuminance(color);
+    float32_t3 nvColor = luminance * float32_t3(0.1f, 0.95f, 0.2f); // 暗視特有の緑色
+    
+    // 露出の強調
+    nvColor = saturate(nvColor * 2.0f);
+    
+    // ノイズの付加
+    float noise = rand2dTo1d(uv * (time + 1.0f));
+    nvColor += (noise - 0.5f) * intensity;
+    
+    // スキャンライン
+    float scanline = sin(uv.y * 800.0f - time * 10.0f) * 0.05f * intensity;
+    return saturate(nvColor - scanline);
 }
 

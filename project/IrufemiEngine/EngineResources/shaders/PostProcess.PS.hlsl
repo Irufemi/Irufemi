@@ -70,6 +70,11 @@ struct PostProcessParams {
     // Posterization
     float32_t posterizationSteps;
     float32_t3 pad_posterization;
+    
+    // NightVision
+    float32_t nightVisionIntensity;
+    float32_t nightVisionTime;
+    float32_t2 pad_nightVision;
 };
 
 ConstantBuffer<PostProcessParams> gParams : register(b0);
@@ -159,6 +164,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 
             case kPostProcessMode_Posterization:
                 color.rgb = ApplyPosterization(color.rgb, gParams.posterizationSteps);
+                break;
+                
+            case kPostProcessMode_NightVision:
+                color.rgb = ApplyNightVision(color.rgb, uv, gParams.nightVisionTime, gParams.nightVisionIntensity);
                 break;
         }
     }

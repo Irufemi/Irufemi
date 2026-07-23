@@ -43,6 +43,7 @@ enum class PostProcessMode {
     Pixelation,         ///< ピクセレーション（ドット絵化・モザイク）
     Pointillism,        ///< 点描画・印象派風フィルタ
     Posterization,      ///< ポスタリゼーション（トゥーン調階調化）
+    NightVision,        ///< 暗視ゴーグル風エフェクト
 };
 
 class DirectXCommon;
@@ -265,6 +266,16 @@ public:
     };
 
     /**
+     * @struct NightVisionParams
+     * @brief 暗視ゴーグル風エフェクト用パラメータ
+     */
+    struct NightVisionParams {
+        float intensity = 0.5f; ///< ノイズとスキャンラインの強度
+        float time = 0.0f;      ///< 時間経過（内部で更新される）
+        float pad[2];
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -341,6 +352,11 @@ public:
         // Posterization
         float posterizationSteps;
         float pad_posterization[3];
+
+        // NightVision
+        float nightVisionIntensity;
+        float nightVisionTime;
+        float pad_nightVision[2];
 
         // [Bindless]
         uint32_t mainTextureIndex;
@@ -465,6 +481,7 @@ public:
     PixelationParams& GetPixelationParams() { return pixelationParams_; }
     PointillismParams& GetPointillismParams() { return pointillismParams_; }
     PosterizationParams& GetPosterizationParams() { return posterizationParams_; }
+    NightVisionParams& GetNightVisionParams() { return nightVisionParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -582,6 +599,7 @@ private:
     PixelationParams pixelationParams_;
     PointillismParams pointillismParams_;
     PosterizationParams posterizationParams_;
+    NightVisionParams nightVisionParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;

@@ -56,6 +56,7 @@ void PostProcessManager::ResetAllParams() {
     pixelationParams_ = PixelationParams();
     pointillismParams_ = PointillismParams();
     posterizationParams_ = PosterizationParams();
+    nightVisionParams_ = NightVisionParams();
 }
 
 
@@ -64,6 +65,7 @@ void PostProcessManager::Update(float totalTime) {
   CommitPendingModes();
 
   noiseParams_.time = totalTime;
+  nightVisionParams_.time = totalTime;
   if (mappedNoise_) {
     *mappedNoise_ = noiseParams_;
   }
@@ -121,6 +123,9 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.pointillismColorSteps = pointillismParams_.colorSteps;
 
   combinedParams_.posterizationSteps = posterizationParams_.colorSteps;
+  
+  combinedParams_.nightVisionIntensity = nightVisionParams_.intensity;
+  combinedParams_.nightVisionTime = nightVisionParams_.time;
 
   if (mappedCombined_) {
     *mappedCombined_ = combinedParams_;
