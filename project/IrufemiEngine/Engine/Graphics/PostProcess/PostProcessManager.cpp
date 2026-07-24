@@ -93,6 +93,7 @@ void PostProcessManager::Update(float totalTime) {
   if (mappedFade_) *mappedFade_ = fadeParams_;
   if (mappedSlide_) *mappedSlide_ = slideParams_;
   if (mappedBloom_) *mappedBloom_ = bloomParams_;
+  if (mappedLightShafts_) *mappedLightShafts_ = lightShaftsParams_;
 
   glitchParams_.time = totalTime;
   if (mappedGlitch_) *mappedGlitch_ = glitchParams_;
@@ -223,6 +224,67 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         bindlessBufferOffset_++;
         
         commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, bloomCB_->GetGPUVirtualAddress());
+        commandList->DrawInstanced(3, 1, 0, 0);
+
+        if (!isLastBatch) {
+          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          pingPongIdx++;
+        }
+        currentSource = nextTarget;
+        modeIdx++;
+      }
+      // 1-LS) Light Shafts (ゴッドレイ)
+      else if (mode == Mode::LightShafts) {
+        isLastBatch = (modeIdx == activeModes_.size() - 1);
+        RenderTexture* nextTarget = isLastBatch ? nullptr : workspace.workTextures[pingPongIdx % 2];
+        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = isLastBatch ? rtvHandle : nextTarget->GetRtvHandle();
+
+        if (!isLastBatch) {
+            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+
+        RenderTexture* lsExtract = workspace.lsExtract;
+        RenderTexture* lsBlur = workspace.lsBlur;
+
+        // Pass 1: Extract (from currentSource & depth to lsExtract)
+        DirectXUtils::TransitionBarrier(commandList, lsExtract->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        D3D12_CPU_DESCRIPTOR_HANDLE lsExtractRtv = lsExtract->GetRtvHandle();
+        commandList->OMSetRenderTargets(1, &lsExtractRtv, false, nullptr);
+        float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        commandList->ClearRenderTargetView(lsExtractRtv, clearColor, 0, nullptr);
+        commandList->SetPipelineState(lsExtractPSO_.Get());
+        commandList->SetGraphicsRootSignature(rootSig_);
+        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        mappedBindless_[bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
+        mappedBindless_[bindlessBufferOffset_].extraTextureIndex = depthSrvIndex_;
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+        bindlessBufferOffset_++;
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, lightShaftsCB_->GetGPUVirtualAddress());
+        commandList->DrawInstanced(3, 1, 0, 0);
+        DirectXUtils::TransitionBarrier(commandList, lsExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        // Pass 2: Radial Blur (from lsExtract to lsBlur)
+        DirectXUtils::TransitionBarrier(commandList, lsBlur->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        D3D12_CPU_DESCRIPTOR_HANDLE lsBlurRtv = lsBlur->GetRtvHandle();
+        commandList->OMSetRenderTargets(1, &lsBlurRtv, false, nullptr);
+        commandList->ClearRenderTargetView(lsBlurRtv, clearColor, 0, nullptr);
+        commandList->SetPipelineState(lsRadialBlurPSO_.Get());
+        mappedBindless_[bindlessBufferOffset_].mainTextureIndex = lsExtract->GetSrvIndex();
+        mappedBindless_[bindlessBufferOffset_].extraTextureIndex = 0;
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+        bindlessBufferOffset_++;
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, lightShaftsCB_->GetGPUVirtualAddress());
+        commandList->DrawInstanced(3, 1, 0, 0);
+        DirectXUtils::TransitionBarrier(commandList, lsBlur->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        // Pass 3: Combine (from currentSource & lsBlur to targetHandle)
+        commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
+        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
+        commandList->SetPipelineState(isLastBatch ? finalLsCombinePSO_.Get() : lsCombinePSO_.Get());
+        mappedBindless_[bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
+        mappedBindless_[bindlessBufferOffset_].extraTextureIndex = lsBlur->GetSrvIndex();
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+        bindlessBufferOffset_++;
         commandList->DrawInstanced(3, 1, 0, 0);
 
         if (!isLastBatch) {
@@ -777,6 +839,40 @@ void PostProcessManager::CreatePSOs() {
         kwDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
         device_->CreateGraphicsPipelineState(&kwDesc, IID_PPV_ARGS(&finalDualKawaseUpsamplePSO_));
     }
+
+    // --- Light Shafts 用 PSO ---
+    auto lsExtractPS = shaderManager->GetOrCompile(L"LightShaftsExtract.PS.hlsl", options);
+    auto lsRadialBlurPS = shaderManager->GetOrCompile(L"LightShaftsRadialBlur.PS.hlsl", options);
+    auto lsCombinePS = shaderManager->GetOrCompile(L"LightShaftsCombine.PS.hlsl", options);
+
+    if (lsExtractPS && lsRadialBlurPS && lsCombinePS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC lsDesc{};
+        lsDesc.pRootSignature = rootSig_;
+        lsDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        lsDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        lsDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        lsDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        lsDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        lsDesc.DepthStencilState.DepthEnable = FALSE;
+        lsDesc.DepthStencilState.StencilEnable = FALSE;
+        lsDesc.InputLayout = {nullptr, 0};
+        lsDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        lsDesc.NumRenderTargets = 1;
+        lsDesc.RTVFormats[0] = rtvFormat_;
+        lsDesc.SampleDesc.Count = 1;
+
+        lsDesc.PS = {lsExtractPS->GetBufferPointer(), lsExtractPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&lsExtractPSO_));
+
+        lsDesc.PS = {lsRadialBlurPS->GetBufferPointer(), lsRadialBlurPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&lsRadialBlurPSO_));
+
+        lsDesc.PS = {lsCombinePS->GetBufferPointer(), lsCombinePS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&lsCombinePSO_));
+
+        lsDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&finalLsCombinePSO_));
+    }
 }
 
 void PostProcessManager::CreateConstantBuffers() {
@@ -825,6 +921,9 @@ void PostProcessManager::CreateConstantBuffers() {
 
   dualKawaseCB_ = CreateBuffer(sizeof(DualKawaseBlurParams));
   dualKawaseCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedDualKawase_));
+
+  lightShaftsCB_ = CreateBuffer(sizeof(LightShaftsParams));
+  lightShaftsCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedLightShafts_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>

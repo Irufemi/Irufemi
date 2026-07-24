@@ -38,11 +38,13 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         bool hasBloom = false;
         bool hasSeparableBlur = false;
         bool hasKawaseBlur = false;
+        bool hasLightShafts = false;
         for (auto mode : activeModes) {
             if (mode == PostProcessMode::Bloom) hasBloom = true;
             if (PostProcessManager::UsesDepthBuffer(mode)) usesDepthBuffer = true;
             if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) hasSeparableBlur = true;
             if (mode == PostProcessMode::DualKawaseBlur) hasKawaseBlur = true;
+            if (mode == PostProcessMode::LightShafts) hasLightShafts = true;
         }
 
         if (usesDepthBuffer) {
@@ -61,6 +63,13 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         if (hasBloom || hasSeparableBlur) {
             bloomBlurHandle_ = builder.CreateTransientResource("BloomBlur", workDesc);
+        }
+        if (hasLightShafts) {
+            D3D12_RESOURCE_DESC lsDesc = workDesc;
+            lsDesc.Width = (std::max<UINT64>)(1, lsDesc.Width / 2);
+            lsDesc.Height = (std::max<UINT>)(1, lsDesc.Height / 2);
+            lsExtractHandle_ = builder.CreateTransientResource("LS_Extract", lsDesc);
+            lsBlurHandle_ = builder.CreateTransientResource("LS_Blur", lsDesc);
         }
 
         if (hasKawaseBlur) {
@@ -83,6 +92,10 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         if (hasBloom || hasSeparableBlur) {
             builder.RequireTransientState(bloomBlurHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (hasLightShafts) {
+            builder.RequireTransientState(lsExtractHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            builder.RequireTransientState(lsBlurHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (hasKawaseBlur) {
             for (int i = 0; i < PostProcessManager::kMaxKawaseIterations; ++i) {
@@ -110,6 +123,12 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     }
     if (bloomBlurHandle_ != kInvalidHandle) {
         workspace.bloomBlur = renderGraph->GetTransientRenderTexture(bloomBlurHandle_);
+    }
+    if (lsExtractHandle_ != kInvalidHandle) {
+        workspace.lsExtract = renderGraph->GetTransientRenderTexture(lsExtractHandle_);
+    }
+    if (lsBlurHandle_ != kInvalidHandle) {
+        workspace.lsBlur = renderGraph->GetTransientRenderTexture(lsBlurHandle_);
     }
     for (int i = 0; i < PostProcessManager::kMaxKawaseIterations; ++i) {
         if (kawaseTextureHandles_[i] != kInvalidHandle) {

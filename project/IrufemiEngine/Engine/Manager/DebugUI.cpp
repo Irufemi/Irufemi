@@ -1197,7 +1197,7 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
         auto* ppManager = engine->GetPostProcessManager();
         if (!ppManager) { ImGui::EndTabItem(); return; }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope", "ChromaticAberration", "DisplacementMap", "DirectionalBlur", "Halftone", "DepthOfField" };
+        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope", "ChromaticAberration", "DisplacementMap", "DirectionalBlur", "Halftone", "DepthOfField", "LightShafts" };
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -1269,6 +1269,14 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     ImGui::DragFloat("Focus Range", &params.focusRange, 0.1f, 0.1f, 500.0f);
                     ImGui::DragFloat("Blur Size", &params.blurSize, 0.1f, 0.0f, 50.0f);
                     ImGui::SliderInt("Samples", &params.samples, 4, 64);
+                } else if (mode == PostProcessMode::LightShafts) {
+                    auto& params = ppManager->GetLightShaftsParams();
+                    ImGui::DragFloat2("Light Screen Pos", &params.lightScreenPos.x, 0.01f, -1.0f, 2.0f);
+                    ImGui::DragFloat("Density", &params.density, 0.01f, 0.0f, 5.0f);
+                    ImGui::DragFloat("Decay", &params.decay, 0.001f, 0.8f, 1.0f);
+                    ImGui::DragFloat("Weight", &params.weight, 0.01f, 0.0f, 2.0f);
+                    ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 5.0f);
+                    ImGui::SliderInt("Samples", &params.samples, 8, 128);
                 } else if (mode == PostProcessMode::Kaleidoscope) {
                     auto& params = ppManager->GetKaleidoscopeParams();
                     ImGui::DragFloat("Segments", &params.segments, 0.1f, 1.0f, 32.0f);

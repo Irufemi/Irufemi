@@ -50,6 +50,7 @@ enum class PostProcessMode {
     DirectionalBlur,    ///< 方向ブラー
     Halftone,           ///< ハーフトーン（網点・コミック調）
     DepthOfField,       ///< 被写界深度（DoF）
+    LightShafts,        ///< ゴッドレイ（光の筋）
 };
 
 class DirectXCommon;
@@ -91,6 +92,8 @@ public:
         class RenderTexture* workTextures[2] = { nullptr, nullptr };
         class RenderTexture* bloomExtract = nullptr;
         class RenderTexture* bloomBlur = nullptr;
+        class RenderTexture* lsExtract = nullptr;
+        class RenderTexture* lsBlur = nullptr;
         class RenderTexture* kawaseTextures[kMaxKawaseIterations] = { nullptr };
     };
 
@@ -344,6 +347,20 @@ public:
     };
 
     /**
+     * @struct LightShaftsParams
+     * @brief ゴッドレイ（光の筋）エフェクト用パラメータ
+     */
+    struct LightShaftsParams {
+        Vector2 lightScreenPos = { 0.5f, 0.5f }; ///< 光源のスクリーン座標 (0.0~1.0)
+        float density = 1.0f;                    ///< サンプリング密度
+        float decay = 0.95f;                     ///< 減衰率
+        float weight = 0.5f;                     ///< 重み
+        float exposure = 1.0f;                   ///< 露出
+        int32_t samples = 64;                    ///< サンプリング数
+        float pad;                               ///< パディング
+    };
+
+    /**
      * @struct CombinedParams
      * @brief 統合ポストプロセス用定数バッファ構造体
      */
@@ -519,7 +536,7 @@ public:
      * @brief そのエフェクトが深度バッファを必要とするかどうか
      */
     static bool UsesDepthBuffer(Mode mode) {
-        return mode == Mode::DepthBasedOutline || mode == Mode::DepthOfField;
+        return mode == Mode::DepthBasedOutline || mode == Mode::DepthOfField || mode == Mode::LightShafts;
     }
     
     // -------------------------------------------------------------
@@ -602,6 +619,7 @@ public:
     DirectionalBlurParams& GetDirectionalBlurParams() { return directionalBlurParams_; }
     HalftoneParams& GetHalftoneParams() { return halftoneParams_; }
     DepthOfFieldParams& GetDepthOfFieldParams() { return dofParams_; }
+    LightShaftsParams& GetLightShaftsParams() { return lightShaftsParams_; }
 
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
@@ -642,6 +660,12 @@ private:
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomBlurVPSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> bloomCombinePSO_;
     Microsoft::WRL::ComPtr<ID3D12PipelineState> finalBloomCombinePSO_;
+
+    // LightShafts (ゴッドレイ) 専用 PSO
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> lsExtractPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> lsRadialBlurPSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> lsCombinePSO_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> finalLsCombinePSO_;
 
     // 統合ポストプロセス用 PSO
     Microsoft::WRL::ComPtr<ID3D12PipelineState> combinedPSO_;
@@ -695,6 +719,14 @@ private:
     ToneMappingParams* mappedToneMapping_ = nullptr;
     ToneMappingParams toneMappingParams_;
 
+    Microsoft::WRL::ComPtr<ID3D12Resource> dofCB_;
+    DepthOfFieldParams* mappedDof_ = nullptr;
+    DepthOfFieldParams dofParams_;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> lightShaftsCB_;
+    LightShaftsParams* mappedLightShafts_ = nullptr;
+    LightShaftsParams lightShaftsParams_;
+
     Microsoft::WRL::ComPtr<ID3D12Resource> fadeCB_;
     FadeParams* mappedFade_ = nullptr;
     FadeParams fadeParams_;
@@ -725,7 +757,6 @@ private:
     DisplacementMapParams displacementMapParams_;
     DirectionalBlurParams directionalBlurParams_;
     HalftoneParams halftoneParams_;
-    DepthOfFieldParams dofParams_;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;
