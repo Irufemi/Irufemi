@@ -1,6 +1,7 @@
 #pragma once
 #include "../Component.h"
 #include <string>
+#include "../../../Engine/Graphics/PostProcess/PostProcessManager.h"
 
 class MeshRendererComponent;
 
@@ -23,21 +24,21 @@ public:
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
 
-    void SetEnableEffectMask(bool enable) { enableEffectMask_ = enable; ApplyToRenderer(); }
+    void SetEnableEffectMask(bool enable) { enableEffectMask_ = enable; }
     bool GetEnableEffectMask() const { return enableEffectMask_; }
 
-    void SetCustomEffectType(int32_t type) { customEffectType_ = type; ApplyToRenderer(); }
+    void SetCustomEffectType(int32_t type) { customEffectType_ = type; }
     int32_t GetCustomEffectType() const { return customEffectType_; }
 
-    void SetCustomEffectParam(float param) { customEffectParam_ = param; ApplyToRenderer(); }
-    float GetCustomEffectParam() const { return customEffectParam_; }
+    PostProcessManager::CustomEffectParams& GetCustomParams() { return customParams_; }
+    const PostProcessManager::CustomEffectParams& GetCustomParams() const { return customParams_; }
 
 private:
     void ApplyToRenderer();
 
     bool enableEffectMask_ = true;
     int32_t customEffectType_ = 0;
-    float customEffectParam_ = 0.0f;
+    PostProcessManager::CustomEffectParams customParams_;
     
     MeshRendererComponent* cachedRenderer_ = nullptr;
 };

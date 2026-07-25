@@ -112,7 +112,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rangeDepthMap[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
         // --- ルートパラメータの定義 (Version 1.1) ---
-        D3D12_ROOT_PARAMETER1 rootParameters[12] = {};
+        D3D12_ROOT_PARAMETER1 rootParameters[13] = {};
 
         // Slot 0: Material (b0, PS)
         rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -198,6 +198,13 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::LegacyPSTexture].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[(UINT)RootSlot::LegacyPSTexture].DescriptorTable.pDescriptorRanges = rangeLegacyTex;
         rootParameters[(UINT)RootSlot::LegacyPSTexture].DescriptorTable.NumDescriptorRanges = _countof(rangeLegacyTex);
+
+        // Slot 12: CustomEffectParams (b3, PS)
+        rootParameters[(UINT)RootSlot::CustomEffectParams].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.ShaderRegister = 3;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.RegisterSpace = 0;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;

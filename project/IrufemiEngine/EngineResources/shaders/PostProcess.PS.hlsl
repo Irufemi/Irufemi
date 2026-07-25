@@ -108,6 +108,19 @@ struct PostProcessParams {
     int32_t dofSamples;
 };
 
+struct CustomEffectParams {
+    float32_t4 color1;
+    float32_t4 color2;
+    float32_t param1;
+    float32_t param2;
+    float32_t param3;
+    float32_t param4;
+};
+
+cbuffer CustomEffectParamsBuffer : register(b3) {
+    CustomEffectParams gCustomParams[256];
+};
+
 ConstantBuffer<PostProcessParams> gParams : register(b0);
 SamplerState gSampler : register(s0);
 SamplerState gSamplerPoint : register(s1);
@@ -132,6 +145,15 @@ PixelShaderOutput main(VertexShaderOutput input) {
     
     // 1. 個別カスタムエフェクトの適用
     if (customEffect != 0) {
+        int instanceID = round(customParam * 255.0f);
+        CustomEffectParams cParams;
+        if (instanceID > 0 && instanceID < 256) {
+            cParams = gCustomParams[instanceID];
+        } else {
+            cParams.color1 = float32_t4(1,1,1,1); cParams.color2 = float32_t4(0,0,0,1);
+            cParams.param1 = 0; cParams.param2 = 0; cParams.param3 = 0; cParams.param4 = 0;
+        }
+
         switch (customEffect) {
             case kPostProcessMode_Grayscale:
                 color.rgb = ApplyGrayscale(color.rgb);
@@ -140,73 +162,77 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 color.rgb = ApplySepia(color.rgb);
                 break;
             case kPostProcessMode_Vignette:
-                color.rgb = ApplyVignette(color.rgb, uv, gParams.vignetteRadius, gParams.vignetteSoftness, gParams.vignetteColor.rgb);
+                color.rgb = ApplyVignette(color.rgb, uv, instanceID > 0 ? cParams.param1 : gParams.vignetteRadius, instanceID > 0 ? cParams.param2 : gParams.vignetteSoftness, instanceID > 0 ? cParams.color1.rgb : gParams.vignetteColor.rgb);
                 break;
 
             case kPostProcessMode_DepthBasedOutline:
-                color.rgb = ApplyDepthBasedOutline(color.rgb, uv, uvStepSize, gParams.projectionInverse, customParam > 0.0f ? customParam : gParams.outlineIntensity, gExtraTexture, gSamplerPoint);
+                color.rgb = ApplyDepthBasedOutline(color.rgb, uv, uvStepSize, gParams.projectionInverse, instanceID > 0 ? cParams.param1 : gParams.outlineIntensity, gExtraTexture, gSamplerPoint);
                 break;
             case kPostProcessMode_RadialBlur:
-                color.rgb = ApplyRadialBlur(color.rgb, uv, gParams.radialBlurCenter, customParam > 0.0f ? customParam : gParams.radialBlurWidth, gParams.radialBlurSamples, gTexture, gSampler);
+                color.rgb = ApplyRadialBlur(color.rgb, uv, gParams.radialBlurCenter, instanceID > 0 ? cParams.param1 : gParams.radialBlurWidth, gParams.radialBlurSamples, gTexture, gSampler);
                 break;
             case kPostProcessMode_Dissolve:
                 {
                     float32_t dmask = gExtraTexture.Sample(gSampler, uv).r;
-                    float32_t3 res = ApplyDissolve(color.rgb, dmask, customParam > 0.0f ? customParam : gParams.dissolveThreshold, gParams.dissolveEdgeRange, gParams.dissolveEdgeColor.rgb);
-                    if (res.r < 0) return (PixelShaderOutput)gParams.dissolveBackgroundColor;
+                    float32_t3 res = ApplyDissolve(color.rgb, dmask, instanceID > 0 ? cParams.param1 : gParams.dissolveThreshold, instanceID > 0 ? cParams.param2 : gParams.dissolveEdgeRange, instanceID > 0 ? cParams.color1.rgb : gParams.dissolveEdgeColor.rgb);
+                    if (res.r < 0) {
+                        PixelShaderOutput outColor;
+                        outColor.color = float32_t4(instanceID > 0 ? cParams.color2.rgb : gParams.dissolveBackgroundColor.rgb, 1.0f);
+                        return outColor;
+                    }
                     color.rgb = res;
                 }
                 break;
             case kPostProcessMode_Noise:
-                color.rgb = ApplyNoise(color.rgb, uv, customParam > 0.0f ? customParam : gParams.noiseIntensity, gParams.noiseTime);
+                color.rgb = ApplyNoise(color.rgb, uv, instanceID > 0 ? cParams.param1 : gParams.noiseIntensity, gParams.noiseTime);
                 break;
             case kPostProcessMode_HSV:
                 color.rgb = ApplyHSV(color.rgb, gParams.hsvHue, gParams.hsvSaturation, gParams.hsvValue);
                 break;
             case kPostProcessMode_ToneMapping:
-                color.rgb = ApplyToneMapping(color.rgb, customParam > 0.0f ? customParam : gParams.toneMappingExposure);
+                color.rgb = ApplyToneMapping(color.rgb, instanceID > 0 ? cParams.param1 : gParams.toneMappingExposure);
                 break;
             case kPostProcessMode_Fade:
-                color.rgb = ApplyFade(color.rgb, gParams.fadeColor.rgb, customParam > 0.0f ? customParam : gParams.fadeIntensity);
+                color.rgb = ApplyFade(color.rgb, instanceID > 0 ? cParams.color1.rgb : gParams.fadeColor.rgb, instanceID > 0 ? cParams.param1 : gParams.fadeIntensity);
                 break;
             case kPostProcessMode_Slide:
-                color.rgb = ApplySlide(color.rgb, uv, gParams.slideColor.rgb, customParam > 0.0f ? customParam : gParams.slideThreshold);
+                color.rgb = ApplySlide(color.rgb, uv, instanceID > 0 ? cParams.color1.rgb : gParams.slideColor.rgb, instanceID > 0 ? cParams.param1 : gParams.slideThreshold);
                 break;
             case kPostProcessMode_Glitch:
-                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, customParam > 0.0f ? customParam : gParams.glitchIntensity, gTexture, gSampler, gMaskTexture, customEffect);
+                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, instanceID > 0 ? cParams.param1 : gParams.glitchIntensity, gTexture, gSampler, gMaskTexture, customEffect);
                 break;
             case kPostProcessMode_LuminanceBasedOutline:
-                color.rgb = ApplyLuminanceBasedOutline(color.rgb, uv, uvStepSize, customParam > 0.0f ? customParam : gParams.luminanceOutlineThreshold, gParams.luminanceOutlineColor, gTexture, gSampler);
+                color.rgb = ApplyLuminanceBasedOutline(color.rgb, uv, uvStepSize, instanceID > 0 ? cParams.param1 : gParams.luminanceOutlineThreshold, instanceID > 0 ? cParams.color1 : gParams.luminanceOutlineColor, gTexture, gSampler);
                 break;
             case kPostProcessMode_Pixelation:
-                color.rgb = ApplyPixelation(uv, customParam > 0.0f ? customParam : gParams.pixelationSize, float32_t2(width, height), gTexture, gSampler);
+                color.rgb = ApplyPixelation(uv, instanceID > 0 ? cParams.param1 : gParams.pixelationSize, float32_t2(width, height), gTexture, gSampler);
                 break;
             case kPostProcessMode_Pointillism:
-                color.rgb = ApplyPointillism(uv, customParam > 0.0f ? customParam : gParams.pointillismStrokeSize, gParams.pointillismColorSteps, gTexture, gSampler);
+                color.rgb = ApplyPointillism(uv, instanceID > 0 ? cParams.param1 : gParams.pointillismStrokeSize, gParams.pointillismColorSteps, gTexture, gSampler);
                 break;
             case kPostProcessMode_Posterization:
-                color.rgb = ApplyPosterization(color.rgb, customParam > 0.0f ? customParam : gParams.posterizationSteps);
+                color.rgb = ApplyPosterization(color.rgb, instanceID > 0 ? cParams.param1 : gParams.posterizationSteps);
                 break;
             case kPostProcessMode_NightVision:
-                color.rgb = ApplyNightVision(color.rgb, uv, gParams.nightVisionTime, customParam > 0.0f ? customParam : gParams.nightVisionIntensity);
+                color.rgb = ApplyNightVision(color.rgb, uv, gParams.nightVisionTime, instanceID > 0 ? cParams.param1 : gParams.nightVisionIntensity);
                 break;
             case kPostProcessMode_Kaleidoscope:
-                color.rgb = ApplyKaleidoscope(uv, customParam > 0.0f ? customParam : gParams.kaleidoscopeSegments, gTexture, gSampler);
+                color.rgb = ApplyKaleidoscope(uv, instanceID > 0 ? cParams.param1 : gParams.kaleidoscopeSegments, gTexture, gSampler);
                 break;
             case kPostProcessMode_ChromaticAberration:
-                color.rgb = ApplyChromaticAberration(uv, customParam > 0.0f ? customParam : gParams.chromaticAberrationIntensity, gTexture, gSampler);
+                color.rgb = ApplyChromaticAberration(uv, instanceID > 0 ? cParams.param1 : gParams.chromaticAberrationIntensity, gTexture, gSampler);
                 break;
             case kPostProcessMode_DisplacementMap:
-                color.rgb = ApplyDisplacementMap(uv, gParams.displacementMapTime, customParam > 0.0f ? customParam : gParams.displacementMapIntensity, gTexture, gSampler);
+                color.rgb = ApplyDisplacementMap(uv, gParams.displacementMapTime, instanceID > 0 ? cParams.param1 : gParams.displacementMapIntensity, gTexture, gSampler);
                 break;
             case kPostProcessMode_DirectionalBlur:
-                color.rgb = ApplyDirectionalBlur(uv, gParams.directionalBlurDirection, customParam > 0.0f ? customParam : gParams.directionalBlurStrength, gParams.directionalBlurSamples, gTexture, gSampler);
+                color.rgb = ApplyDirectionalBlur(uv, gParams.directionalBlurDirection, instanceID > 0 ? cParams.param1 : gParams.directionalBlurStrength, gParams.directionalBlurSamples, gTexture, gSampler);
                 break;
             case kPostProcessMode_Halftone:
-                color.rgb = ApplyHalftone(color.rgb, uv, float32_t2(width, height), customParam > 0.0f ? customParam : gParams.halftoneScale, gParams.halftoneAngle, gParams.halftoneBlend);
+                color.rgb = ApplyHalftone(color.rgb, uv, float32_t2(width, height), instanceID > 0 ? cParams.param1 : gParams.halftoneScale, gParams.halftoneAngle, gParams.halftoneBlend);
                 break;
             case kPostProcessMode_DepthOfField:
-                color.rgb = ApplyDepthOfField(color.rgb, uv, gExtraTexture, gSamplerPoint, gSampler, gParams.projectionInverse, customParam > 0.0f ? customParam : gParams.dofFocusDistance, gParams.dofFocusRange, gParams.dofBlurSize, gParams.dofSamples, float32_t2(width, height), gTexture);
+                color.rgb = ApplyDepthOfField(color.rgb, uv, gExtraTexture, gSamplerPoint, gSampler, gParams.projectionInverse, instanceID > 0 ? cParams.param1 : gParams.dofFocusDistance, gParams.dofFocusRange, gParams.dofBlurSize, gParams.dofSamples, float32_t2(width, height), gTexture);
                 break;
         }
     }

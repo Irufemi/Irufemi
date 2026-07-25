@@ -98,6 +98,31 @@ public:
     };
 
     /**
+     * @struct CustomEffectParams
+     * @brief 個別オブジェクトに適用する詳細エフェクト用パラメータ（汎用構造体）
+     */
+    struct CustomEffectParams {
+        Vector4 color1 = { 1.0f, 1.0f, 1.0f, 1.0f }; // Edge Color, Slide Color, etc.
+        Vector4 color2 = { 0.0f, 0.0f, 0.0f, 1.0f }; // Background Color
+        float param1 = 0.0f; // Threshold, Intensity, etc.
+        float param2 = 0.0f; // Edge Range, Radius, etc.
+        float param3 = 0.0f; // Noise Type, Softness, etc.
+        float param4 = 0.0f; // Time, Angle, etc.
+        
+        bool operator==(const CustomEffectParams& other) const {
+            return color1 == other.color1 && color2 == other.color2 &&
+                   param1 == other.param1 && param2 == other.param2 &&
+                   param3 == other.param3 && param4 == other.param4;
+        }
+        bool operator!=(const CustomEffectParams& other) const {
+            return !(*this == other);
+        }
+    };
+    
+    // 定数バッファの最大サイズ（256個まで）
+    static constexpr uint32_t kMaxCustomEffectParams = 256;
+
+    /**
      * @struct NoiseParams
      * @brief ノイズエフェクト用パラメータ
      */
@@ -513,6 +538,28 @@ public:
      */
     void Draw(ID3D12GraphicsCommandList* commandList, class RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace);
 
+    /**
+     * @brief 個別エフェクトの詳細パラメータを登録し、インスタンスID（1〜255）を発行する
+     * @param params 個別エフェクトのパラメータ
+     * @return インスタンスID (0はデフォルト/未登録)
+     */
+    uint32_t RegisterCustomEffectParams(const CustomEffectParams& params) {
+        std::lock_guard<std::mutex> lock(customParamsMutex_);
+        if (customEffectParamsList_.size() >= kMaxCustomEffectParams - 1) { // 0 is reserved
+            return kMaxCustomEffectParams - 1; // Fallback to last available
+        }
+        customEffectParamsList_.push_back(params);
+        return static_cast<uint32_t>(customEffectParamsList_.size()); // 1-indexed
+    }
+
+    /**
+     * @brief 個別エフェクトの詳細パラメータのリストをクリアする（毎フレーム呼び出す）
+     */
+    void ClearCustomEffectParams() {
+        std::lock_guard<std::mutex> lock(customParamsMutex_);
+        customEffectParamsList_.clear();
+    }
+
     // --- Getters & Setters ---
 
     /** @brief 描画フェーズに備えて保留中の状態を同期する */
@@ -646,6 +693,11 @@ private:
     std::mutex modesMutex_;
     std::vector<Mode> activeModes_;
     std::vector<Mode> pendingActiveModes_;
+
+    std::mutex customParamsMutex_;
+    std::vector<CustomEffectParams> customEffectParamsList_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> customEffectParamsCB_;
+    CustomEffectParams* mappedCustomEffectParams_ = nullptr;
 
     // PSOs
     struct PipelineSet {

@@ -59,14 +59,48 @@ void EffectMaskComponentEditor::Draw(Component* component, EditorActionManager* 
             }
 
             ImGui::TableNextRow();
-            ComponentUIHelpers::DrawPropertyLabel("Effect Param", "Parameter for the individual effect");
+            ComponentUIHelpers::DrawPropertyLabel("Effect Params", "Detailed parameters");
             ImGui::TableSetColumnIndex(1);
-            float param = maskComp->GetCustomEffectParam();
-            if (ImGui::DragFloat("##CustomEffectParam", &param, 0.01f, 0.0f, 10.0f)) {
-                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<float>>(
-                    maskComp->GetCustomEffectParam(),
-                    param,
-                    [maskComp](const float& val) { maskComp->SetCustomEffectParam(val); }
+            
+            auto params = maskComp->GetCustomParams();
+            bool changed = false;
+
+            if (type == 8) { // Dissolve
+                if (ImGui::ColorEdit4("Edge Color", &params.color1.x)) changed = true;
+                if (ImGui::ColorEdit4("Bg Color", &params.color2.x)) changed = true;
+                if (ImGui::DragFloat("Threshold", &params.param1, 0.01f, 0.0f, 1.0f)) changed = true;
+                if (ImGui::DragFloat("Edge Range", &params.param2, 0.001f, 0.0f, 1.0f)) changed = true;
+                int noiseType = (int)params.param3;
+                if (ImGui::Combo("Noise Type", &noiseType, "Type 0\0Type 1\0")) {
+                    params.param3 = (float)noiseType;
+                    changed = true;
+                }
+            } else if (type == 15) { // Glitch
+                if (ImGui::DragFloat("Intensity", &params.param1, 0.01f, 0.0f, 10.0f)) changed = true;
+            } else if (type == 13) { // Slide
+                if (ImGui::ColorEdit4("Color", &params.color1.x)) changed = true;
+                if (ImGui::DragFloat("Threshold", &params.param1, 0.01f, 0.0f, 1.0f)) changed = true;
+            } else if (type == 12) { // Fade
+                if (ImGui::ColorEdit4("Color", &params.color1.x)) changed = true;
+                if (ImGui::DragFloat("Intensity", &params.param1, 0.01f, 0.0f, 1.0f)) changed = true;
+            } else if (type == 3) { // Vignette
+                if (ImGui::ColorEdit4("Color", &params.color1.x)) changed = true;
+                if (ImGui::DragFloat("Radius", &params.param1, 0.01f, 0.0f, 2.0f)) changed = true;
+                if (ImGui::DragFloat("Softness", &params.param2, 0.01f, 0.0f, 2.0f)) changed = true;
+            } else if (type == 6 || type == 17) { // Outlines
+                if (ImGui::ColorEdit4("Color", &params.color1.x)) changed = true;
+                if (ImGui::DragFloat("Weight", &params.param1, 0.01f, 0.0f, 10.0f)) changed = true;
+            } else if (type > 0) { // Fallback for other effects
+                if (ImGui::DragFloat("Param 1", &params.param1, 0.01f, 0.0f, 10.0f)) changed = true;
+                if (ImGui::DragFloat("Param 2", &params.param2, 0.01f, 0.0f, 10.0f)) changed = true;
+                if (ImGui::ColorEdit4("Color 1", &params.color1.x)) changed = true;
+            }
+
+            if (changed) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<PostProcessManager::CustomEffectParams>>(
+                    maskComp->GetCustomParams(),
+                    params,
+                    [maskComp](const PostProcessManager::CustomEffectParams& val) { maskComp->GetCustomParams() = val; }
                 ));
             }
 

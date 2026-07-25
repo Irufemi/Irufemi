@@ -174,6 +174,16 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
   RenderTexture *currentSource = srcTexture;
   bindlessBufferOffset_ = 0; // フレーム開始時にリセット
 
+  {
+      std::lock_guard<std::mutex> lock(customParamsMutex_);
+      size_t count = std::min<size_t>(customEffectParamsList_.size(), kMaxCustomEffectParams - 1);
+      if (count > 0 && mappedCustomEffectParams_) {
+          // ID 0 is reserved (no custom param), so start copying from index 1.
+          // In customEffectParamsList_, index 0 corresponds to ID 1.
+          std::memcpy(mappedCustomEffectParams_ + 1, customEffectParamsList_.data(), count * sizeof(CustomEffectParams));
+      }
+  }
+
   if (!activeModes_.empty()) {
     size_t modeIdx = 0;
     int pingPongIdx = 0;
@@ -518,6 +528,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         bindlessBufferOffset_++;
         
         commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, combinedCB_->GetGPUVirtualAddress());
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams, customEffectParamsCB_->GetGPUVirtualAddress());
         commandList->DrawInstanced(3, 1, 0, 0);
 
         if (!isLastBatch) {
@@ -547,6 +558,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
     bindlessBufferOffset_++;
 
     commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, combinedCB_->GetGPUVirtualAddress());
+    commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams, customEffectParamsCB_->GetGPUVirtualAddress());
     commandList->DrawInstanced(3, 1, 0, 0);
   }
 }
@@ -898,9 +910,13 @@ void PostProcessManager::CreatePSOs() {
 
 void PostProcessManager::CreateConstantBuffers() {
     combinedCB_ = CreateBuffer(sizeof(CombinedParams));
-    bindlessCB_ = CreateBuffer(256 * 64);
-    bindlessCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBindless_));
-    combinedCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCombined_));
+  bindlessCB_ = CreateBuffer(256 * 64);
+  customEffectParamsCB_ = CreateBuffer(sizeof(CustomEffectParams) * kMaxCustomEffectParams);
+
+  bindlessCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBindless_));
+  combinedCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCombined_));
+  customEffectParamsCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCustomEffectParams_));
+
   noiseCB_ = CreateBuffer(sizeof(NoiseParams));
   noiseCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedNoise_));
 

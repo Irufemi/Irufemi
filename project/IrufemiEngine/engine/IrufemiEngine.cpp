@@ -665,6 +665,7 @@ void IrufemiEngine::Execute() {
 
     // 更新
     audioManager_->Update();
+    postProcessManager_->ClearCustomEffectParams();
     sceneManager_->Update();
     // ローディング画面のアニメーション進行（Update相当）は描画時にまとめて行います
     totalTime_ += deltaTime_;
