@@ -44,6 +44,9 @@ struct ObjMaterial {
 
     std::string textureFilePath = "";
     std::string normalMapFilePath = "";
+
+    // エフェクトから保護するかどうか
+    bool enableEffectMask = false;
 };
 
 struct ObjMesh {

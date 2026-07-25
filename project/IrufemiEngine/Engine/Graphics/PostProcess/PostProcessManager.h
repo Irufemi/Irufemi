@@ -477,13 +477,15 @@ public:
         // [Bindless]
         uint32_t mainTextureIndex;
         uint32_t extraTextureIndex;
-        uint32_t padding_bindless[2];
+        uint32_t maskTextureIndex;
+        uint32_t padding_bindless;
     };
 
     struct BindlessParams {
         uint32_t mainTextureIndex;
         uint32_t extraTextureIndex;
-        uint32_t padding[62]; // 256バイトアライメント (64 * 4 = 256)
+        uint32_t maskTextureIndex;
+        uint32_t padding[61]; // 256バイトアライメント (64 * 4 = 256)
     };
 
 public:

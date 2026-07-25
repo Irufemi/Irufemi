@@ -5,6 +5,7 @@
 #include "PostProcessManager.h"
 #include "../DirectX/DirectXCommon.h"
 #include "../DirectX/DirectXUtils.h"
+#include "../../IrufemiEngine.h"
 #include <algorithm>
 #include <cassert>
 #include <d3d12.h>
@@ -581,6 +582,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
       extraIdx = dissolveNoiseIndex_[noiseIdx];
   }
   mappedBindless_[bindlessBufferOffset_].extraTextureIndex = extraIdx;
+  
+  // マスクテクスチャのインデックスを渡す
+  mappedBindless_[bindlessBufferOffset_].maskTextureIndex = dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
   
   commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
   bindlessBufferOffset_++;

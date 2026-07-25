@@ -210,6 +210,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Editor\Core\ComponentUIHelpers.cpp" />
     <ClCompile Include="Editor\ComponentEditors\TransformComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\MeshRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\EffectMaskComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\SpriteRendererComponentEditor.cpp" />
@@ -240,6 +241,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Editor\Core\ComponentUIHelpers.h" />
     <ClInclude Include="Editor\ComponentEditors\TransformComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\MeshRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\EffectMaskComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\SpriteRendererComponentEditor.h" />

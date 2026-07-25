@@ -20,6 +20,9 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 #endif
 
+    // マスクバッファをシェーダーリソースとして要求する
+    builder.RequireState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
     workTextureHandles_.clear();
     bloomExtractHandle_ = kInvalidHandle;
     bloomBlurHandle_ = kInvalidHandle;

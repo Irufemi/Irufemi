@@ -23,17 +23,13 @@ public:
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
 
-    void SetCustomEffectType(int32_t type) { customEffectType_ = type; ApplyToRenderer(); }
-    void SetCustomEffectParam(float param) { customEffectParam_ = param; ApplyToRenderer(); }
-
-    int32_t GetCustomEffectType() const { return customEffectType_; }
-    float GetCustomEffectParam() const { return customEffectParam_; }
+    void SetEnableEffectMask(bool enable) { enableEffectMask_ = enable; ApplyToRenderer(); }
+    bool GetEnableEffectMask() const { return enableEffectMask_; }
 
 private:
     void ApplyToRenderer();
 
-    int32_t customEffectType_ = 0;   // 0: None
-    float customEffectParam_ = 0.0f; // パラメータ
+    bool enableEffectMask_ = true;
     
     MeshRendererComponent* cachedRenderer_ = nullptr;
 };

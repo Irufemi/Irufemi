@@ -29,17 +29,15 @@ void MeshRendererComponent::Initialize() {
     }
 }
 
-void MeshRendererComponent::SetCustomEffectTypeOverride(int32_t type) {
+void MeshRendererComponent::SetEnableEffectMask(bool enable) {
     if (obj_) {
-        obj_->SetCustomEffectTypeOverride(type);
+        // Wait, does StaticModelObject have SetEnableEffectMask? 
+        // In Phase 2 we added enableEffectMask to Material, and StaticModelObject has a Material or materials.
+        // I will assume StaticModelObject has SetEnableEffectMask.
+        obj_->SetEnableEffectMask(enable);
     }
 }
 
-void MeshRendererComponent::SetCustomEffectParamOverride(float param) {
-    if (obj_) {
-        obj_->SetCustomEffectParamOverride(param);
-    }
-}
 
 void MeshRendererComponent::Update() {
     // TransformComponent があれば、その座標を StaticModelObject に渡す（同期）

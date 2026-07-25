@@ -110,9 +110,8 @@ void BaseModel::UpdateMaterials() {
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
         
-        // カスタムエフェクトのパラメータ (個別上書き優先)
-        mappedData->customEffectType = (customEffectTypeOverride_ != -1) ? customEffectTypeOverride_ : 0;
-        mappedData->customEffectParam = (customEffectParamOverride_ >= 0.0f) ? customEffectParamOverride_ : 0.0f;
+        // エフェクトマスクの設定 (コンポーネント側で保護対象となっていれば 1、そうでなければマテリアル依存)
+        mappedData->enableEffectMask = enableEffectMask_ ? 1 : cpuMat.enableEffectMask;
         
         // (マテリアルバッファへの転送は SyncBeforeDraw() で行われるため、ここでは SyncMaterialData は呼ばない)
     }

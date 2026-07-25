@@ -118,6 +118,15 @@ struct PixelShaderOutput {
 
 PixelShaderOutput main(VertexShaderOutput input) {
     float32_t4 color = gTexture.Sample(gSampler, input.texcoord);
+    float32_t4 mask = gMaskTexture.Sample(gSampler, input.texcoord);
+    
+    // マスクが有効(1.0)な部分はエフェクトを適用せず、元の色を返す
+    if (mask.r > 0.5f) {
+        PixelShaderOutput output;
+        output.color = color;
+        return output;
+    }
+
     float32_t2 uv = input.texcoord;
 
     uint32_t width, height;
