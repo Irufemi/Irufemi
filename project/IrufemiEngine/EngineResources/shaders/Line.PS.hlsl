@@ -8,6 +8,7 @@ ConstantBuffer<Material> gMaterial : register(b0);
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
+	float32_t4 mask  : SV_TARGET1;
 };
 
 PixelShaderOutput main(VertexShaderOutput input)
@@ -16,6 +17,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	// PS 側で material を使って最終色を決定
 	output.color = gMaterial.color * input.color;
+	output.mask = float32_t4(1.0f, 1.0f, 1.0f, 1.0f);
 	
 	return output;
 }

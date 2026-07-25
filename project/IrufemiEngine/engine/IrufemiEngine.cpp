@@ -328,6 +328,12 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 
+  effectMaskTexture_ = std::make_unique<RenderTexture>();
+  effectMaskTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R8G8B8A8_UNORM, // マスク用はSRGB不要
+      {0.0f, 0.0f, 0.0f, 0.0f}); // 黒（マスクなし）でクリア
+
   // --- PostProcessManager の初期化 ---
   postProcessManager_ = std::make_unique<PostProcessManager>();
   postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -473,6 +479,9 @@ void IrufemiEngine::Finalize() {
   }
   if (mainRenderTexture_) {
     mainRenderTexture_.reset();
+  }
+  if (effectMaskTexture_) {
+    effectMaskTexture_.reset();
   }
 
   // 3. アニメーション・モデル・テクスチャ (リソースの実体を保持)
@@ -767,7 +776,9 @@ void IrufemiEngine::ProcessFrame() {
   // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
   drawManager_->BeginRenderTexture(
       mainRenderTexture_.get(),
-      Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
+      Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]},
+      effectMaskTexture_.get(),
+      Vector4{0.0f, 0.0f, 0.0f, 0.0f}); // マスクバッファは初期値（真っ黒）でクリア
 }
 
   // フレーム終了処理
@@ -813,6 +824,12 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   mainRenderTexture_->Initialize(
       dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
+
+  if (effectMaskTexture_) {
+      effectMaskTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
+          {0.0f, 0.0f, 0.0f, 0.0f});
+  }
 
   // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
   if (depthSrvIndex_ != 0xFFFFFFFF) {

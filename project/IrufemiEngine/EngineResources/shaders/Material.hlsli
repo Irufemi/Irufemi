@@ -23,4 +23,7 @@ struct Material {
     uint32_t envMapIndex;        //!< [Bindless] 環境マップのSRVインデックス (space2)
     int32_t customEffectType;    //!< カスタムエフェクトのタイプ (0: なし)
     float32_t customEffectParam; //!< カスタムエフェクトのパラメータ
+    
+    int32_t enableEffectMask;    //!< 1: エフェクト等のマスクバッファにシルエットを出力する
+    int32_t padding[3];          //!< 16バイトアライメント用
 };

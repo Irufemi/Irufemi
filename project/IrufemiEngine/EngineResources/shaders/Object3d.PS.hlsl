@@ -11,6 +11,7 @@ ConstantBuffer<Material> gMaterial : register(b0);
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
+	float32_t4 mask  : SV_TARGET1; // エフェクト適用用のマスクバッファ
 };
 
 /*テクスチャを貼ろう*/
@@ -50,6 +51,12 @@ Texture2D<float32_t> gShadowMap : register(t5);
 PixelShaderOutput main(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
+	
+	// マスクの初期値 (アルファ0で出力することで、適用されないピクセルを判別)
+	output.mask = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	if (gMaterial.enableEffectMask) {
+		output.mask = float4(1.0f, 1.0f, 1.0f, 1.0f); // マスクオン
+	}
 	
 	/*UVTransform*/
 	

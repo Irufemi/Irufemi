@@ -87,6 +87,17 @@ public:
      */
     void RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
 
+    /**
+     * @brief リソースの現在の追跡ステートを取得する
+     */
+    D3D12_RESOURCE_STATES GetResourceState(ID3D12Resource* resource) const {
+        auto it = resourceStates_.find(resource);
+        if (it != resourceStates_.end()) {
+            return it->second;
+        }
+        return D3D12_RESOURCE_STATE_COMMON; // 未追跡の場合はデフォルトを返す
+    }
+
 private:
     std::vector<std::unique_ptr<IRenderPass>> passes_;
     std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES> resourceStates_;

@@ -4,14 +4,31 @@
 #include "RenderGraphBuilder.h"
 
 void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    // エディタ・製品版問わず、ゲーム内UI(Sprite等)は mainRenderTexture に描き込むため RENDER_TARGET を要求する
+#ifdef EditorMode
+    // エディタモードでは、最終出力が mainRenderTexture になるため、それを RENDER_TARGET として要求
     builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+#else
+    // 製品モードでは、最終出力がバックバッファになり、バックバッファの状態遷移は
+    // RenderGraph 外 (DrawManager 側) で管理されるため、特別な要求は不要
+#endif
 }
 
 void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     if (auto scm = engine->GetScreenCaptureManager()) {
         scm->OnPreUIDraw(engine->GetCommandList(), engine->GetMainRenderTexture());
     }
+
+    auto cmdList = engine->GetCommandList();
+    
+    // UI の描画先を設定
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+#ifdef EditorMode
+    rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
+#else
+    rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
+#endif
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = drawManager->GetDxCommon()->GetDSVCPUDescriptorHandle(0);
+    cmdList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
         if (queue.empty()) return;

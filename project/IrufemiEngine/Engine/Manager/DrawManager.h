@@ -150,6 +150,7 @@ public:
     std::array<std::unique_ptr<ShadowMap>, kMaxFramesInFlight> shadowMaps_;
     bool isShadowPass_ = false;
     class RenderTexture* currentRenderTexture_ = nullptr;
+    RenderTexture* currentRenderTexture2_ = nullptr;
 
 public: //メンバ関数
 
@@ -235,13 +236,13 @@ public: //メンバ関数
      * @param[in] rt 出力先の RenderTexture
      * @param[in] clearColor 背景クリア色
      */
-    void BeginRenderTexture(class RenderTexture* rt, const struct Vector4& clearColor);
+    void BeginRenderTexture(class RenderTexture* rt, const struct Vector4& clearColor, class RenderTexture* rt2 = nullptr, const struct Vector4& clearColor2 = {0.0f, 0.0f, 0.0f, 0.0f});
 
     /**
      * @brief RenderTexture への描画を終了する
      * @param[in] rt 描画していた RenderTexture
      */
-    void EndRenderTexture(class RenderTexture* rt);
+    void EndRenderTexture(class RenderTexture* rt, class RenderTexture* rt2 = nullptr);
 
     /**
      * @brief レンダーターゲットをバックバッファ（画面）に戻す

@@ -25,11 +25,16 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
             D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 
-    // 2. ReadOnly DSV をセット
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
+    // 2. ReadOnly DSV をセット (初期状態は2つのRTV)
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] = {
+        engine->GetMainRenderTexture()->GetRtvHandle(),
+        engine->GetEffectMaskTexture()->GetRtvHandle()
+    };
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandleSingle = rtvHandles[0];
     D3D12_CPU_DESCRIPTOR_HANDLE readOnlyDsvHandle = dxCommon->GetReadOnlyDSVCPUDescriptorHandle();
-    cmdList->OMSetRenderTargets(1, &rtvHandle, false, &readOnlyDsvHandle);
-
+    
+    // Transparent 3D (Object3D PSO) は MRT (2 RTV) を使用する
+    cmdList->OMSetRenderTargets(2, rtvHandles, false, &readOnlyDsvHandle);
     cmdList->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::DepthMap), dxCommon->GetDepthSRVGPUHandle());
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false, bool isDebugPrimitive = false) {
@@ -78,7 +83,7 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
         }
     };
 
-    // 3. Transparent 3D (エフェクト・半透明)
+    // 3. Transparent 3D (エフェクト・半透明) - MRT(2)が必要
     auto transparentQueue = drawManager->GetTransparent3DQueue(); // コピーしてソート
     std::sort(transparentQueue.begin(), transparentQueue.end(),
         [](const RenderPackets::Standard3DPacket& a, const RenderPackets::Standard3DPacket& b) {
@@ -87,12 +92,11 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     );
     DrawWithPSO(transparentQueue, [&](const auto& p) { drawManager->DrawStandard3D(p); }, false, false);
 
+    // 全て MRT(2) に対応済みのため、ここでは切り替えずにそのまま描画
     DrawWithPSO(drawManager->GetLineQueue(), [&](const auto& p) { drawManager->DrawLineInstanced(p); }, false, true, false);
 
     // 4.5 DebugPrimitive
     DrawWithPSO(drawManager->GetDebugPrimitiveQueue(), [&](const auto& p) { drawManager->DrawDebugPrimitive(p); }, false, false, true);
-
-
 
     // 6. GPU Particles
     const auto& gpuParticleQueue = drawManager->GetGPUParticleQueue();
@@ -144,6 +148,7 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     }
 
     // 5. Writable DSV に戻す (以降のパスで必要になる場合のため)
+    // 次のパスが使うために、ここでは2枚に戻しておく(DrawManager側で必要に応じて上書きされる)
     D3D12_CPU_DESCRIPTOR_HANDLE writableDsvHandle = dxCommon->GetDSVCPUDescriptorHandle(0);
-    cmdList->OMSetRenderTargets(1, &rtvHandle, false, &writableDsvHandle);
+    cmdList->OMSetRenderTargets(2, rtvHandles, false, &writableDsvHandle);
 }

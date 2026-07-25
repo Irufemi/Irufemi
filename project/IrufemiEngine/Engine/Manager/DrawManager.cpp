@@ -127,8 +127,8 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     renderGraph_->AddPass(std::make_unique<ShadowPass>());
     renderGraph_->AddPass(std::make_unique<MainOpaquePass>());
     renderGraph_->AddPass(std::make_unique<MainTransparentPass>());
-    renderGraph_->AddPass(std::make_unique<UIPass>());
     renderGraph_->AddPass(std::make_unique<PostProcessPass>());
+    renderGraph_->AddPass(std::make_unique<UIPass>());
     renderGraph_->AddPass(std::make_unique<SelectionOutlinePass>());
 
     // シャドウマップの初期化 (2048x2048) - 全フレーム分
@@ -1026,20 +1026,33 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
     }
 }
 
-void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor) {
+void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor, RenderTexture* rt2, const Vector4& clearColor2) {
     // 1. Transition Barrier (SRV -> RenderTarget)
     DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (rt2) {
+        DirectXUtils::TransitionBarrier(commandList_, rt2->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
 
     // レンダーターゲットを追跡
     currentRenderTexture_ = rt;
+    currentRenderTexture2_ = rt2;
 
     // 2. Set Render Target
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rt->GetRtvHandle();
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] = { rt->GetRtvHandle() };
+    uint32_t numRTVs = 1;
+    if (rt2) {
+        rtvHandles[1] = rt2->GetRtvHandle();
+        numRTVs = 2;
+    }
+
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
-    commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+    commandList_->OMSetRenderTargets(numRTVs, rtvHandles, false, &dsvHandle);
 
     // 3. Clear
-    commandList_->ClearRenderTargetView(rtvHandle, &clearColor.x, 0, nullptr);
+    commandList_->ClearRenderTargetView(rtvHandles[0], &clearColor.x, 0, nullptr);
+    if (rt2) {
+        commandList_->ClearRenderTargetView(rtvHandles[1], &clearColor2.x, 0, nullptr);
+    }
     commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     // 4. Set Viewport/Scissor
@@ -1053,9 +1066,12 @@ void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColo
     commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 }
 
-void DrawManager::EndRenderTexture(RenderTexture* rt) {
+void DrawManager::EndRenderTexture(RenderTexture* rt, RenderTexture* rt2) {
     // 1. Transition Barrier (RenderTarget -> SRV)
     DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (rt2) {
+        DirectXUtils::TransitionBarrier(commandList_, rt2->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
 }
 
 void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
@@ -1074,6 +1090,7 @@ void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
 
     // レンダーターゲット追跡のリセット
     currentRenderTexture_ = nullptr;
+    currentRenderTexture2_ = nullptr;
 }
 
 void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
@@ -1170,9 +1187,14 @@ void DrawManager::EndShadowPass() {
     // 2. レンダーターゲットを復帰させる
     if (currentRenderTexture_) {
         // 元の RenderTexture があればそれを再設定 (クリアはしない)
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = currentRenderTexture_->GetRtvHandle();
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] = { currentRenderTexture_->GetRtvHandle() };
+        uint32_t numRTVs = 1;
+        if (currentRenderTexture2_) {
+            rtvHandles[1] = currentRenderTexture2_->GetRtvHandle();
+            numRTVs = 2;
+        }
         D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
-        commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+        commandList_->OMSetRenderTargets(numRTVs, rtvHandles, false, &dsvHandle);
 
         // ビューポート等も復帰
         D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(currentRenderTexture_->GetWidth()), static_cast<float>(currentRenderTexture_->GetHeight()), 0.0f, 1.0f };
@@ -1190,6 +1212,9 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     if (renderGraph_) {
         // メインレンダリングテクスチャの初期状態を登録 (RenderGraph内で遷移するため)
         renderGraph_->RegisterResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        if (engine->GetEffectMaskTexture()) {
+            renderGraph_->RegisterResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
         
         // 深度バッファの初期状態も登録 (DepthBasedOutline 等で参照するため)
         renderGraph_->RegisterResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -1198,8 +1223,17 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
         
 #ifdef EditorMode
         // RenderGraph 終了後、メインテクスチャを ImGui 等で読み取れるように SRV ステートに戻す
-        DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        D3D12_RESOURCE_STATES mainState = renderGraph_->GetResourceState(engine->GetMainRenderTexture()->GetResource());
+        if (mainState != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
+            DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetMainRenderTexture()->GetResource(), mainState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
 #endif
+        if (engine->GetEffectMaskTexture()) {
+            D3D12_RESOURCE_STATES maskState = renderGraph_->GetResourceState(engine->GetEffectMaskTexture()->GetResource());
+            if (maskState != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
+                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetEffectMaskTexture()->GetResource(), maskState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            }
+        }
     }
 
     // RenderGraph 終了後はバックバッファを描画対象とする (TopMost UI など用)

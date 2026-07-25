@@ -8,6 +8,7 @@ ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 struct PixelShaderOutput
 {
 	float4 color : SV_TARGET0;
+	float4 mask  : SV_TARGET1;
 };
 
 // 3Dハッシュ関数（ノイズ生成用）
@@ -81,6 +82,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	// 最終出力
 	// RGBのマイナス値（炭化表現用）を0にクランプしつつ出力し、ディゾルブ用にアルファは1固定で描画
 	output.color = float4(max(float3(0, 0, 0), finalColor), 1.0f);  
+	output.mask = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	return output;
 }

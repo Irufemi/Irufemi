@@ -14,6 +14,7 @@ ConstantBuffer<Material> gMaterial : register(b0);
 struct PixelShaderOutput
 {
 	float32_t4 color : SV_TARGET0;
+	float32_t4 mask  : SV_TARGET1;
 };
 
 /*テクスチャを貼ろう*/
@@ -74,6 +75,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	// αにフェードを適用
 	output.color.a *= fade;
 	
+	output.mask = float32_t4(1.0f, 1.0f, 1.0f, 1.0f); // パーティクルはマスクする
 	
 	return output;
 }

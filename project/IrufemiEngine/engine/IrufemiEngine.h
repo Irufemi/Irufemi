@@ -212,6 +212,7 @@ public: // ゲッター
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return dxCommon_->GetRtvHandles(index); }
     uint64_t& GetFenceValue() { return dxCommon_->GetFenceValue(); }
     RenderTexture* GetMainRenderTexture() const { return mainRenderTexture_.get(); }
+    RenderTexture* GetEffectMaskTexture() const { return effectMaskTexture_.get(); }
     ///@}
 
     /** @name マネージャ類の取得 */
@@ -437,6 +438,7 @@ private: // メンバ変数
 
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
+    std::unique_ptr<RenderTexture> effectMaskTexture_ = nullptr; // ★ MRT対応: マスク用
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持

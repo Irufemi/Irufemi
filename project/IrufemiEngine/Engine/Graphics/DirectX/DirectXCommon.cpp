@@ -310,23 +310,59 @@ void DirectXCommon::RegisterAllShaders() {
     auto csGpuCulling = shaderManager_->GetOrCompile(L"GPUCulling.CS.hlsl", options);
 
     // --- 各種シェーダの登録 ---
-    psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
-    psoManager_->RegisterShader("Particle", { { vsParticle, psParticle } });
+    // --- MRT共通設定 (マスクバッファ対応) ---
+    PSOManager::PipelineStateDesc mrtDesc{};
+    mrtDesc.numRenderTargets = 2;
+    mrtDesc.rtvFormat1 = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+    PSOManager::PipelineStateDesc obj3dDesc = mrtDesc;
+    obj3dDesc.shaders = { vs3d, ps3d };
+    psoManager_->RegisterShader("Object3D", obj3dDesc);
+
+    PSOManager::PipelineStateDesc batchDesc = mrtDesc;
+    batchDesc.shaders = { vsBatch, ps3d };
+    psoManager_->RegisterShader("Batch", batchDesc); // ps3dを共有
+
+    // 2D/UI系 (MRT非対応・1枚)
     psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
     psoManager_->RegisterShader("SpriteBatch", { { vsSpriteBatch, psSprite } });
     psoManager_->RegisterShader("Text", { { vsText, psText } });
-    psoManager_->RegisterShader("Batch", { { vsBatch, ps3d } });
-    
-    // LineとLineBatchとDebugPrimitiveはLINEトポロジ
-    psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    psoManager_->RegisterShader("LineBatch", { { vsLineBatch, psLineBatch }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    psoManager_->RegisterShader("DebugPrimitive", { { vsDebugPrimitive, psDebugPrimitive }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    
-    psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
-    psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
-    psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
 
-    psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
+    // 3Dエフェクト系 (MRT対応)
+    PSOManager::PipelineStateDesc particleDesc = mrtDesc;
+    particleDesc.shaders = { vsParticle, psParticle };
+    psoManager_->RegisterShader("Particle", particleDesc);
+
+    PSOManager::PipelineStateDesc lineDesc = mrtDesc;
+    lineDesc.shaders = { vsLine, psLine };
+    lineDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("Line", lineDesc);
+
+    PSOManager::PipelineStateDesc lineBatchDesc = mrtDesc;
+    lineBatchDesc.shaders = { vsLineBatch, psLineBatch };
+    lineBatchDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("LineBatch", lineBatchDesc);
+
+    PSOManager::PipelineStateDesc debugPrimDesc = mrtDesc;
+    debugPrimDesc.shaders = { vsDebugPrimitive, psDebugPrimitive };
+    debugPrimDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("DebugPrimitive", debugPrimDesc);
+
+    PSOManager::PipelineStateDesc skinDesc = mrtDesc;
+    skinDesc.shaders = { vsSkin, ps3d };
+    psoManager_->RegisterShader("Skinning", skinDesc);
+
+    PSOManager::PipelineStateDesc skyboxDesc = mrtDesc;
+    skyboxDesc.shaders = { vsSkybox, psSkybox };
+    psoManager_->RegisterShader("Skybox", skyboxDesc);
+
+    PSOManager::PipelineStateDesc gpuParticleDesc = mrtDesc;
+    gpuParticleDesc.shaders = { vsGpuParticle, psGpuParticle };
+    psoManager_->RegisterShader("GpuParticle", gpuParticleDesc);
+
+    PSOManager::PipelineStateDesc voxelParticleDesc = mrtDesc;
+    voxelParticleDesc.shaders = { vsVoxel, psVoxel };
+    psoManager_->RegisterShader("VoxelParticle", voxelParticleDesc);
 
     
     // シャドウマップ(通常) - 深度のみ

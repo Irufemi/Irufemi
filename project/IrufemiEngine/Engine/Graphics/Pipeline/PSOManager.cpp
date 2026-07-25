@@ -116,8 +116,11 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend
     if (psoDesc.isDepthOnly) {
         desc.NumRenderTargets = 0;
     } else {
-        desc.NumRenderTargets = 1;
+        desc.NumRenderTargets = psoDesc.numRenderTargets;
         desc.RTVFormats[0] = psoDesc.rtvFormat != DXGI_FORMAT_UNKNOWN ? psoDesc.rtvFormat : rtvFormat_;
+        if (psoDesc.numRenderTargets > 1) {
+            desc.RTVFormats[1] = psoDesc.rtvFormat1;
+        }
     }
 
     desc.PrimitiveTopologyType = psoDesc.topology;
@@ -329,8 +332,11 @@ void PSOManager::PreWarmCommonPSOs() {
 // Screen : out = src * (1 - dst) + dst * 1
 D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
 {
-    D3D12_BLEND_DESC d{}; auto& rt = d.RenderTarget[0];
-    rt.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // すべての色要素を書き込む(既存コメント踏襲)
+    D3D12_BLEND_DESC d{}; 
+    for (int i = 0; i < 8; ++i) {
+        d.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // すべての色要素を書き込む
+    }
+    auto& rt = d.RenderTarget[0];
 
 
     switch (m) {
