@@ -23,6 +23,8 @@ public:
     bool CanUpdateInEditMode() const override { return true; }
 
     void SetEnableEffectMask(bool enable);
+    void SetCustomEffectType(int32_t type);
+    void SetCustomEffectParam(float param);
 
     IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(obj_.get()); }
     

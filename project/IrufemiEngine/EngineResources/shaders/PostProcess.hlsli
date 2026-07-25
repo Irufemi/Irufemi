@@ -175,18 +175,40 @@ float32_t3 ApplyDissolve(float32_t3 color, float32_t mask, float32_t threshold, 
  * @param smp サンプラステート
  * @return グリッチ適用後のカラー
  */
-float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_t intensity, Texture2D<float32_t4> tex, SamplerState smp) {
+float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_t intensity, Texture2D<float32_t4> tex, SamplerState smp, Texture2D<float32_t4> maskTex, int targetMaskId = 0) {
     // ブロックノイズ判定とUVの水平ズレ
     float2 block = floor(uv * float2(24.0, 9.0));
     float noise = rand2dTo1d(block + time);
     float offsetX = (noise - 0.5) * 0.1 * intensity;
     float2 displacedUv = saturate(uv + float2(offsetX, 0.0));
 
+    // 個別エフェクトの場合、ズレ先が自分自身のオブジェクトでなければズレをキャンセルする
+    if (targetMaskId != 0) {
+        int maskId = round(maskTex.SampleLevel(smp, displacedUv, 0).r * 255.0f);
+        if (maskId != targetMaskId) {
+            displacedUv = uv;
+        }
+    }
+
     // RGBシフト（色ズレサンプリング）
     float shift = 0.02 * intensity;
-    float r = tex.SampleLevel(smp, displacedUv + float2(shift, 0.0), 0).r;
-    float g = tex.SampleLevel(smp, displacedUv, 0).g;
-    float b = tex.SampleLevel(smp, displacedUv - float2(shift, 0.0), 0).b;
+    
+    float2 uvR = displacedUv + float2(shift, 0.0);
+    float2 uvG = displacedUv;
+    float2 uvB = displacedUv - float2(shift, 0.0);
+
+    // RGBシフト先もオブジェクト外に出ないようチェックする
+    if (targetMaskId != 0) {
+        int maskIdR = round(maskTex.SampleLevel(smp, uvR, 0).r * 255.0f);
+        if (maskIdR != targetMaskId) uvR = displacedUv;
+        
+        int maskIdB = round(maskTex.SampleLevel(smp, uvB, 0).r * 255.0f);
+        if (maskIdB != targetMaskId) uvB = displacedUv;
+    }
+
+    float r = tex.SampleLevel(smp, uvR, 0).r;
+    float g = tex.SampleLevel(smp, uvG, 0).g;
+    float b = tex.SampleLevel(smp, uvB, 0).b;
     
     // スキャンラインを加味して返す
     float scanline = sin(uv.y * 800.0 + time * 10.0) * 0.04 * intensity;

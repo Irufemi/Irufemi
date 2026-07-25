@@ -26,10 +26,18 @@ public:
     void SetEnableEffectMask(bool enable) { enableEffectMask_ = enable; ApplyToRenderer(); }
     bool GetEnableEffectMask() const { return enableEffectMask_; }
 
+    void SetCustomEffectType(int32_t type) { customEffectType_ = type; ApplyToRenderer(); }
+    int32_t GetCustomEffectType() const { return customEffectType_; }
+
+    void SetCustomEffectParam(float param) { customEffectParam_ = param; ApplyToRenderer(); }
+    float GetCustomEffectParam() const { return customEffectParam_; }
+
 private:
     void ApplyToRenderer();
 
     bool enableEffectMask_ = true;
+    int32_t customEffectType_ = 0;
+    float customEffectParam_ = 0.0f;
     
     MeshRendererComponent* cachedRenderer_ = nullptr;
 };

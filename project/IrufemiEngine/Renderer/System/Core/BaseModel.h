@@ -87,6 +87,8 @@ public: // ゲッター・セッター
     void SetUseClampSamplerOverride(int32_t useClamp) { useClampSamplerOverride_ = useClamp; isDirty_ = true; MarkAsDirty(); }
     void SetEnableLightingOverride(int32_t enable) { enableLightingOverride_ = enable; isDirty_ = true; MarkAsDirty(); }
     void SetEnableEffectMask(bool enable) { enableEffectMask_ = enable; isDirty_ = true; MarkAsDirty(); }
+    void SetCustomEffectType(int32_t type) { customEffectType_ = type; isDirty_ = true; MarkAsDirty(); }
+    void SetCustomEffectParam(float param) { customEffectParam_ = param; isDirty_ = true; MarkAsDirty(); }
     
     void SetEnableLightingToAllMeshes(bool enable) { enableLightingOverride_ = enable ? 1 : 0; MarkAsDirty(); }
 
@@ -130,6 +132,8 @@ protected: // メンバ変数
     int32_t useClampSamplerOverride_ = -1; // -1:使用しない, 0以上:上書き
     int32_t enableLightingOverride_ = -1; // -1:使用しない, 0以上:上書き
     bool enableEffectMask_ = false; // エフェクトから保護するかどうか
+    int32_t customEffectType_ = 0; // カスタムエフェクトのタイプ
+    float customEffectParam_ = 0.0f; // カスタムエフェクトのパラメータ
 
     // --- 描画リソース ---
     std::vector<std::unique_ptr<Object3DResource>> meshResources_;

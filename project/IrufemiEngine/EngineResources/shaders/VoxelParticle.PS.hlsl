@@ -82,7 +82,7 @@ PixelShaderOutput main(VertexShaderOutput input)
 	// 最終出力
 	// RGBのマイナス値（炭化表現用）を0にクランプしつつ出力し、ディゾルブ用にアルファは1固定で描画
 	output.color = float4(max(float3(0, 0, 0), finalColor), 1.0f);  
-	output.mask = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	output.mask = float4(0.0f, 0.0f, 1.0f, 1.0f); // カスタムエフェクトなし、保護あり
 
 	return output;
 }

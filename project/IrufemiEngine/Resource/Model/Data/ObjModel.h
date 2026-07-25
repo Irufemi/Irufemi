@@ -47,6 +47,10 @@ struct ObjMaterial {
 
     // エフェクトから保護するかどうか
     bool enableEffectMask = false;
+    
+    // カスタムエフェクトのタイプとパラメータ
+    int32_t customEffectType = 0;
+    float customEffectParam = 0.0f;
 };
 
 struct ObjMesh {

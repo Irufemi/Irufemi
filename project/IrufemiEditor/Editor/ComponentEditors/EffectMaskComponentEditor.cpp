@@ -35,6 +35,41 @@ void EffectMaskComponentEditor::Draw(Component* component, EditorActionManager* 
                     [maskComp](const bool& val) { maskComp->SetEnableEffectMask(val); }
                 ));
             }
+
+            ImGui::TableNextRow();
+            ComponentUIHelpers::DrawPropertyLabel("Custom Effect", "Type of individual effect to apply");
+            ImGui::TableSetColumnIndex(1);
+            
+            const char* effectTypes[] = {
+                "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter",
+                "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping",
+                "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline",
+                "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope",
+                "ChromaticAberration", "DisplacementMap", "DirectionalBlur", "Halftone",
+                "DepthOfField", "LightShafts"
+            };
+            
+            int type = maskComp->GetCustomEffectType();
+            if (ImGui::Combo("##CustomEffectType", &type, effectTypes, IM_ARRAYSIZE(effectTypes))) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<int32_t>>(
+                    maskComp->GetCustomEffectType(),
+                    type,
+                    [maskComp](const int32_t& val) { maskComp->SetCustomEffectType(val); }
+                ));
+            }
+
+            ImGui::TableNextRow();
+            ComponentUIHelpers::DrawPropertyLabel("Effect Param", "Parameter for the individual effect");
+            ImGui::TableSetColumnIndex(1);
+            float param = maskComp->GetCustomEffectParam();
+            if (ImGui::DragFloat("##CustomEffectParam", &param, 0.01f, 0.0f, 10.0f)) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<float>>(
+                    maskComp->GetCustomEffectParam(),
+                    param,
+                    [maskComp](const float& val) { maskComp->SetCustomEffectParam(val); }
+                ));
+            }
+
             ComponentUIHelpers::EndPropertyTable();
         }
         ImGui::TreePop();

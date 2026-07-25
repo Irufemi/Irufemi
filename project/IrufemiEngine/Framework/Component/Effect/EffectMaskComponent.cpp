@@ -26,20 +26,29 @@ void EffectMaskComponent::Update() {
 
 void EffectMaskComponent::ApplyToRenderer() {
     if (cachedRenderer_) {
-        // Assume MeshRendererComponent or its material has SetEnableEffectMask
         cachedRenderer_->SetEnableEffectMask(enableEffectMask_);
+        cachedRenderer_->SetCustomEffectType(customEffectType_);
+        cachedRenderer_->SetCustomEffectParam(customEffectParam_);
     }
 }
 
 nlohmann::json EffectMaskComponent::Serialize() {
     nlohmann::json j;
     j["enableEffectMask"] = enableEffectMask_;
+    j["customEffectType"] = customEffectType_;
+    j["customEffectParam"] = customEffectParam_;
     return j;
 }
 
 void EffectMaskComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("enableEffectMask")) {
         enableEffectMask_ = j["enableEffectMask"];
+    }
+    if (j.contains("customEffectType")) {
+        customEffectType_ = j["customEffectType"];
+    }
+    if (j.contains("customEffectParam")) {
+        customEffectParam_ = j["customEffectParam"];
     }
     ApplyToRenderer();
 }

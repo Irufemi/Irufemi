@@ -120,18 +120,103 @@ PixelShaderOutput main(VertexShaderOutput input) {
     float32_t4 color = gTexture.Sample(gSampler, input.texcoord);
     float32_t4 mask = gMaskTexture.Sample(gSampler, input.texcoord);
     
-    // マスクが有効(1.0)な部分はエフェクトを適用せず、元の色を返す
-    if (mask.r > 0.5f) {
+    float32_t2 uv = input.texcoord;
+    uint32_t width, height;
+    gTexture.GetDimensions(width, height);
+    float32_t2 uvStepSize = rcp(float32_t2(width, height));
+
+    // マスク情報の復元
+    int customEffect = round(mask.r * 255.0f);
+    float customParam = mask.g;
+    bool isProtected = mask.b > 0.5f;
+    
+    // 1. 個別カスタムエフェクトの適用
+    if (customEffect != 0) {
+        switch (customEffect) {
+            case kPostProcessMode_Grayscale:
+                color.rgb = ApplyGrayscale(color.rgb);
+                break;
+            case kPostProcessMode_Sepia:
+                color.rgb = ApplySepia(color.rgb);
+                break;
+            case kPostProcessMode_Vignette:
+                color.rgb = ApplyVignette(color.rgb, uv, gParams.vignetteRadius, gParams.vignetteSoftness, gParams.vignetteColor.rgb);
+                break;
+
+            case kPostProcessMode_DepthBasedOutline:
+                color.rgb = ApplyDepthBasedOutline(color.rgb, uv, uvStepSize, gParams.projectionInverse, customParam > 0.0f ? customParam : gParams.outlineIntensity, gExtraTexture, gSamplerPoint);
+                break;
+            case kPostProcessMode_RadialBlur:
+                color.rgb = ApplyRadialBlur(color.rgb, uv, gParams.radialBlurCenter, customParam > 0.0f ? customParam : gParams.radialBlurWidth, gParams.radialBlurSamples, gTexture, gSampler);
+                break;
+            case kPostProcessMode_Dissolve:
+                {
+                    float32_t dmask = gExtraTexture.Sample(gSampler, uv).r;
+                    float32_t3 res = ApplyDissolve(color.rgb, dmask, customParam > 0.0f ? customParam : gParams.dissolveThreshold, gParams.dissolveEdgeRange, gParams.dissolveEdgeColor.rgb);
+                    if (res.r < 0) return (PixelShaderOutput)gParams.dissolveBackgroundColor;
+                    color.rgb = res;
+                }
+                break;
+            case kPostProcessMode_Noise:
+                color.rgb = ApplyNoise(color.rgb, uv, customParam > 0.0f ? customParam : gParams.noiseIntensity, gParams.noiseTime);
+                break;
+            case kPostProcessMode_HSV:
+                color.rgb = ApplyHSV(color.rgb, gParams.hsvHue, gParams.hsvSaturation, gParams.hsvValue);
+                break;
+            case kPostProcessMode_ToneMapping:
+                color.rgb = ApplyToneMapping(color.rgb, customParam > 0.0f ? customParam : gParams.toneMappingExposure);
+                break;
+            case kPostProcessMode_Fade:
+                color.rgb = ApplyFade(color.rgb, gParams.fadeColor.rgb, customParam > 0.0f ? customParam : gParams.fadeIntensity);
+                break;
+            case kPostProcessMode_Slide:
+                color.rgb = ApplySlide(color.rgb, uv, gParams.slideColor.rgb, customParam > 0.0f ? customParam : gParams.slideThreshold);
+                break;
+            case kPostProcessMode_Glitch:
+                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, customParam > 0.0f ? customParam : gParams.glitchIntensity, gTexture, gSampler, gMaskTexture, customEffect);
+                break;
+            case kPostProcessMode_LuminanceBasedOutline:
+                color.rgb = ApplyLuminanceBasedOutline(color.rgb, uv, uvStepSize, customParam > 0.0f ? customParam : gParams.luminanceOutlineThreshold, gParams.luminanceOutlineColor, gTexture, gSampler);
+                break;
+            case kPostProcessMode_Pixelation:
+                color.rgb = ApplyPixelation(uv, customParam > 0.0f ? customParam : gParams.pixelationSize, float32_t2(width, height), gTexture, gSampler);
+                break;
+            case kPostProcessMode_Pointillism:
+                color.rgb = ApplyPointillism(uv, customParam > 0.0f ? customParam : gParams.pointillismStrokeSize, gParams.pointillismColorSteps, gTexture, gSampler);
+                break;
+            case kPostProcessMode_Posterization:
+                color.rgb = ApplyPosterization(color.rgb, customParam > 0.0f ? customParam : gParams.posterizationSteps);
+                break;
+            case kPostProcessMode_NightVision:
+                color.rgb = ApplyNightVision(color.rgb, uv, gParams.nightVisionTime, customParam > 0.0f ? customParam : gParams.nightVisionIntensity);
+                break;
+            case kPostProcessMode_Kaleidoscope:
+                color.rgb = ApplyKaleidoscope(uv, customParam > 0.0f ? customParam : gParams.kaleidoscopeSegments, gTexture, gSampler);
+                break;
+            case kPostProcessMode_ChromaticAberration:
+                color.rgb = ApplyChromaticAberration(uv, customParam > 0.0f ? customParam : gParams.chromaticAberrationIntensity, gTexture, gSampler);
+                break;
+            case kPostProcessMode_DisplacementMap:
+                color.rgb = ApplyDisplacementMap(uv, gParams.displacementMapTime, customParam > 0.0f ? customParam : gParams.displacementMapIntensity, gTexture, gSampler);
+                break;
+            case kPostProcessMode_DirectionalBlur:
+                color.rgb = ApplyDirectionalBlur(uv, gParams.directionalBlurDirection, customParam > 0.0f ? customParam : gParams.directionalBlurStrength, gParams.directionalBlurSamples, gTexture, gSampler);
+                break;
+            case kPostProcessMode_Halftone:
+                color.rgb = ApplyHalftone(color.rgb, uv, float32_t2(width, height), customParam > 0.0f ? customParam : gParams.halftoneScale, gParams.halftoneAngle, gParams.halftoneBlend);
+                break;
+            case kPostProcessMode_DepthOfField:
+                color.rgb = ApplyDepthOfField(color.rgb, uv, gExtraTexture, gSamplerPoint, gSampler, gParams.projectionInverse, customParam > 0.0f ? customParam : gParams.dofFocusDistance, gParams.dofFocusRange, gParams.dofBlurSize, gParams.dofSamples, float32_t2(width, height), gTexture);
+                break;
+        }
+    }
+    
+    // 2. 保護フラグの判定 (保護されていればここで終了)
+    if (isProtected) {
         PixelShaderOutput output;
         output.color = color;
         return output;
     }
-
-    float32_t2 uv = input.texcoord;
-
-    uint32_t width, height;
-    gTexture.GetDimensions(width, height);
-    float32_t2 uvStepSize = rcp(float32_t2(width, height));
 
     for (int32_t i = 0; i < gParams.effectCount; ++i) {
         int32_t mode = gParams.effects[i / 4][i % 4];
@@ -187,7 +272,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 break;
 
             case kPostProcessMode_Glitch:
-                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, gParams.glitchIntensity, gTexture, gSampler);
+                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, gParams.glitchIntensity, gTexture, gSampler, gMaskTexture, 0);
                 break;
                 
             case kPostProcessMode_LuminanceBasedOutline:

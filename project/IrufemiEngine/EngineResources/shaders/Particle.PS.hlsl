@@ -63,7 +63,10 @@ PixelShaderOutput main(VertexShaderOutput input)
 		discard;
 	}
 	
-	output.mask = float32_t4(1.0f, 1.0f, 1.0f, 1.0f); // パーティクルはマスクする
+	output.mask.r = gMaterial.customEffectType / 255.0f;
+	output.mask.g = gMaterial.customEffectParam;
+	output.mask.b = gMaterial.enableEffectMask ? 1.0f : 0.0f;
+	output.mask.a = 1.0f;
 
 	return output;
 }

@@ -529,8 +529,25 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
       }
     }
   } else {
-    Mode singleMode = activeModes_.empty() ? Mode::None : activeModes_[0];
-    DrawSinglePass(commandList, singleMode, srcTexture, rtvHandle, true);
+    // グローバルエフェクト(activeModes_)が無い場合でも、個別オブジェクトエフェクト(マスク)のために
+    // 統合シェーダー(PostProcess.PS.hlsl)を最低1回は最終パスとして回す必要がある
+    commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+    float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+    commandList->SetPipelineState(finalCombinedPSO_.Get());
+    commandList->SetGraphicsRootSignature(rootSig_);
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    mappedBindless_[bindlessBufferOffset_].mainTextureIndex = srcTexture ? srcTexture->GetSrvIndex() : 0;
+    mappedBindless_[bindlessBufferOffset_].extraTextureIndex = 0;
+    mappedBindless_[bindlessBufferOffset_].maskTextureIndex = dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
+
+    commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+    bindlessBufferOffset_++;
+
+    commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, combinedCB_->GetGPUVirtualAddress());
+    commandList->DrawInstanced(3, 1, 0, 0);
   }
 }
 

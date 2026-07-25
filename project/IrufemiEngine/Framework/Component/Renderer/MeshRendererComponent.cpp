@@ -31,10 +31,19 @@ void MeshRendererComponent::Initialize() {
 
 void MeshRendererComponent::SetEnableEffectMask(bool enable) {
     if (obj_) {
-        // Wait, does StaticModelObject have SetEnableEffectMask? 
-        // In Phase 2 we added enableEffectMask to Material, and StaticModelObject has a Material or materials.
-        // I will assume StaticModelObject has SetEnableEffectMask.
         obj_->SetEnableEffectMask(enable);
+    }
+}
+
+void MeshRendererComponent::SetCustomEffectType(int32_t type) {
+    if (obj_) {
+        obj_->SetCustomEffectType(type);
+    }
+}
+
+void MeshRendererComponent::SetCustomEffectParam(float param) {
+    if (obj_) {
+        obj_->SetCustomEffectParam(param);
     }
 }
 

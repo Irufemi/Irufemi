@@ -52,12 +52,6 @@ PixelShaderOutput main(VertexShaderOutput input)
 {
 	PixelShaderOutput output;
 	
-	// マスクの初期値 (アルファ0で出力することで、適用されないピクセルを判別)
-	output.mask = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	if (gMaterial.enableEffectMask) {
-		output.mask = float4(1.0f, 1.0f, 1.0f, 1.0f); // マスクオン
-	}
-	
 	/*UVTransform*/
 	
 	///Materialを拡張する
@@ -191,5 +185,10 @@ PixelShaderOutput main(VertexShaderOutput input)
     // Linear -> sRGB はハードウェア RTV (_SRGB形式) に任せるため削除
     output.color.rgb = output.color.rgb;
 
-	return output;
+    output.mask.r = gMaterial.customEffectType / 255.0f;
+    output.mask.g = gMaterial.customEffectParam;
+    output.mask.b = gMaterial.enableEffectMask ? 1.0f : 0.0f;
+    output.mask.a = 1.0f;
+
+    return output;
 }
