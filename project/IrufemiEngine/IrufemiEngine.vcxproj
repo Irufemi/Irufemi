@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -210,6 +210,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="..\Application\resources\shaders\Material.hlsli" />
     <None Include="..\Application\resources\shaders\PostProcess.hlsli" />
     <None Include="..\Application\resources\shaders\VertexData.hlsli" />
+    <ClCompile Include="Framework\Component\Effect\EffectMaskComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
@@ -594,6 +595,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <ClInclude Include="Framework\Component\Effect\EffectMaskComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
@@ -693,13 +695,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\TargetFollowComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp" />
-    <ClCompile Include="Framework\Component\Collider\ColliderComponent.cpp" /><ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp" />
+    <ClCompile Include="Framework\Component\Collider\ColliderComponent.cpp" />
+    <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
     <ClCompile Include="Framework\Component\Effect\ParticleEmitterComponent.cpp" />
     <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp" />
-
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ModelBatchRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
@@ -733,7 +735,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp" />
     <ClCompile Include="Renderer\Object\Batch\PrimitiveBatch.cpp" />
     <ClCompile Include="Renderer\Object\Effect\Effect.cpp" />
-
     <ClCompile Include="Renderer\Object\Line\LineClass.cpp" />
     <ClCompile Include="Renderer\Object\Particle\ParticleObject.cpp" />
     <ClCompile Include="Renderer\Object\Skybox\Skybox.cpp" />
@@ -760,7 +761,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Resource\Texture\Texture.cpp" />
     <ClCompile Include="Resource\Texture\TextureManager.cpp" />
     <ClCompile Include="Resource\Texture\TextureUtility.cpp" />
-    <ClCompile Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.cpp" /></ItemGroup>
+    <ClCompile Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Engine\IrufemiEngine.h" />
@@ -902,7 +904,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h" />
     <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h" />
-
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
     <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h" />
@@ -918,7 +919,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\3D\Primitive\Primitive3DObject.h" />
     <ClInclude Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.h" />
     <ClInclude Include="Renderer\Object\Effect\Effect.h" />
-
     <ClInclude Include="Renderer\Object\Line\LineClass.h" />
     <ClInclude Include="Renderer\Object\Line\Data\LineVertexData.h" />
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h" />
@@ -1011,6 +1011,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="..\externals\msdfgen\ext\import-svg.h" />
     <ClInclude Include="..\externals\msdfgen\ext\resolve-shape-geometry.h" />
     <ClInclude Include="..\externals\msdfgen\ext\save-png.h" />
-  <ClInclude Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.h" /></ItemGroup>
+    <ClInclude Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.h" />
+  </ItemGroup>
 </Project>
-

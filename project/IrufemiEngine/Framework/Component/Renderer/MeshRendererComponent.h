@@ -22,6 +22,9 @@ public:
     
     bool CanUpdateInEditMode() const override { return true; }
 
+    void SetCustomEffectTypeOverride(int32_t type);
+    void SetCustomEffectParamOverride(float param);
+
     IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(obj_.get()); }
     
     // エディタのRaycast用

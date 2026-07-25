@@ -7,6 +7,7 @@
 #include "Renderer/TextRendererComponent.h"
 #include "Renderer/ModelBatchRendererComponent.h"
 #include "Effect/VoxelParticleComponent.h"
+#include "Effect/EffectMaskComponent.h"
 #include "Collider/AABBColliderComponent.h"
 #include "Collider/SphereColliderComponent.h"
 #include "Collider/OBBColliderComponent.h"
@@ -58,6 +59,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("SpriteRendererComponent", "Renderer", []() { return std::make_shared<SpriteRendererComponent>(); });
     Register("TextRendererComponent", "Renderer", []() { return std::make_shared<TextRendererComponent>(); });
     Register("VoxelParticleComponent", "Effect", []() { return std::make_shared<VoxelParticleComponent>(); });
+    Register("EffectMaskComponent", "Effect", []() { return std::make_shared<EffectMaskComponent>(); });
     Register("AABBColliderComponent", "Collider", []() { return std::make_shared<AABBColliderComponent>(); });
     Register("SphereColliderComponent", "Collider", []() { return std::make_shared<SphereColliderComponent>(); });
     Register("OBBColliderComponent", "Collider", []() { return std::make_shared<OBBColliderComponent>(); });

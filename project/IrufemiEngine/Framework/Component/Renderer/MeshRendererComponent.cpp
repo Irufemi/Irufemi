@@ -29,6 +29,18 @@ void MeshRendererComponent::Initialize() {
     }
 }
 
+void MeshRendererComponent::SetCustomEffectTypeOverride(int32_t type) {
+    if (obj_) {
+        obj_->SetCustomEffectTypeOverride(type);
+    }
+}
+
+void MeshRendererComponent::SetCustomEffectParamOverride(float param) {
+    if (obj_) {
+        obj_->SetCustomEffectParamOverride(param);
+    }
+}
+
 void MeshRendererComponent::Update() {
     // TransformComponent があれば、その座標を StaticModelObject に渡す（同期）
     if (transform_ && obj_) {

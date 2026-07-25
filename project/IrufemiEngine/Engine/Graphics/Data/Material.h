@@ -25,5 +25,6 @@ struct Material {
     
     uint32_t textureIndex;       //!< [Bindless] メインテクスチャのSRVインデックス (space1)
     uint32_t envMapIndex;        //!< [Bindless] 環境マップのSRVインデックス (space2)
-    uint32_t padding[2];         //!< 16バイトアライメント用パディング
+    int32_t customEffectType;    //!< カスタムエフェクトのタイプ (0: なし)
+    float customEffectParam;     //!< カスタムエフェクトのパラメータ
 };
