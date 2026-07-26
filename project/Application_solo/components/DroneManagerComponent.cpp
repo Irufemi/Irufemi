@@ -125,6 +125,7 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
             auto obj = GetGameObject()->Instantiate("resources/prefabs/BossDrone.json");
             if (obj) {
                 obj->SetIsActive(false);
+                obj->SetIsSerializable(false); // セーブデータ（InGame.json）への混入を防止
                 // プレハブを BossDroneManager (gameObject_) の直接の子として追加する
                 gameObject_->AddChild(obj);
             }

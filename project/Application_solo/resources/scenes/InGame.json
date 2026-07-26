@@ -281,7 +281,6 @@
     {
       "children": [
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -303,10 +302,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -328,10 +329,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -353,10 +356,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -378,10 +383,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -403,10 +410,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -428,10 +437,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -453,10 +464,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -478,10 +491,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -503,10 +518,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -528,10 +545,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -553,10 +572,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -578,10 +599,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -603,10 +626,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -628,10 +653,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -653,10 +680,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -678,10 +707,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -703,10 +734,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -728,10 +761,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -753,10 +788,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Pillar.json",
           "components": [
             {
               "data": {
@@ -778,10 +815,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Pillar",
+          "prefabPath": "resources/prefabs/Env_Pillar.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Arch.json",
           "components": [
             {
               "data": {
@@ -803,10 +842,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Arch",
+          "prefabPath": "resources/prefabs/Env_Arch.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Arch.json",
           "components": [
             {
               "data": {
@@ -828,10 +869,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Arch",
+          "prefabPath": "resources/prefabs/Env_Arch.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Arch.json",
           "components": [
             {
               "data": {
@@ -853,10 +896,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Arch",
+          "prefabPath": "resources/prefabs/Env_Arch.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Arch.json",
           "components": [
             {
               "data": {
@@ -878,10 +923,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Arch",
+          "prefabPath": "resources/prefabs/Env_Arch.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Arch.json",
           "components": [
             {
               "data": {
@@ -903,10 +950,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Arch",
+          "prefabPath": "resources/prefabs/Env_Arch.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Wall.json",
           "components": [
             {
               "data": {
@@ -928,10 +977,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Wall",
+          "prefabPath": "resources/prefabs/Env_Wall.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Wall.json",
           "components": [
             {
               "data": {
@@ -953,10 +1004,12 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Wall",
+          "prefabPath": "resources/prefabs/Env_Wall.json",
+          "tag": "Untagged"
         },
         {
-          "prefabPath": "resources/prefabs/Env_Wall.json",
           "components": [
             {
               "data": {
@@ -978,7 +1031,10 @@
               },
               "type": "TransformComponent"
             }
-          ]
+          ],
+          "name": "Env_Wall",
+          "prefabPath": "resources/prefabs/Env_Wall.json",
+          "tag": "Untagged"
         }
       ],
       "components": [
@@ -1034,6 +1090,7 @@
               0.8999999761581421,
               0.4000000059604645
             ],
+            "Target Prefabs": "Env_Pillar,Env_Arch,Env_Wall",
             "Type_Env_Arch": 0,
             "Type_Env_Pillar": 0,
             "Type_Env_Wall": 1

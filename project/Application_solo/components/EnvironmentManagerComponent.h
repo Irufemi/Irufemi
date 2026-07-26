@@ -5,6 +5,9 @@
 #include <list>
 #include <string>
 #include <memory>
+#include <unordered_map>
+
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 
 class GameObject;
 
@@ -22,6 +25,7 @@ public:
     void Initialize() override;
     void Start() override;
     void Update() override;
+    void Draw() override;
     
     std::string GetComponentName() const override { return "EnvironmentManagerComponent"; }
     void OnRegisterProperties() override;
@@ -49,4 +53,7 @@ private:
     std::string targetPrefabNames_ = "Env_Pillar,Env_Arch,Env_Wall";
     std::vector<SpawnedEnvInfo> spawnedObjects_;
     std::list<BatchCollisionSetting> batchCollisionSettings_;
+
+    // モデルごとのバッチレンダラー
+    std::unordered_map<std::string, std::unique_ptr<ModelBatchRendererComponent>> batchRenderers_;
 };

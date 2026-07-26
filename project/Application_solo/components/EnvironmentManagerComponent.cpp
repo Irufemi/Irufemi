@@ -5,6 +5,9 @@
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/Utility/Log.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
 
 #include <sstream>
 
@@ -138,6 +141,50 @@ void EnvironmentManagerComponent::Update() {
                     }
                 }
             }
+        }
+    }
+}
+
+void EnvironmentManagerComponent::Draw() {
+    // 1. 各バッチレンダラーのインスタンスリストをクリア
+    for (auto& pair : batchRenderers_) {
+        if (pair.second) {
+            pair.second->ClearInstances();
+        }
+    }
+
+    // 2. 管理下のオブジェクトから Transform を取得し、バッチに登録
+    for (const auto& info : spawnedObjects_) {
+        if (auto obj = info.obj.lock()) {
+            if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
+                // 個別の描画をストップ（Raycast判定などは生きたまま）
+                meshRenderer->SetVisible(false);
+
+                std::string modelName = meshRenderer->GetModelName();
+                if (modelName.empty()) continue;
+
+                // 未登録のモデルならバッチレンダラーを新規作成
+                if (batchRenderers_.find(modelName) == batchRenderers_.end() || !batchRenderers_[modelName]) {
+                    auto batchRenderer = std::make_unique<ModelBatchRendererComponent>();
+                    // ModelBatchRendererComponent 自体の初期化
+                    batchRenderer->SetGameObject(gameObject_);
+                    batchRenderer->LoadModel(modelName);
+                    batchRenderer->Initialize();
+                    batchRenderers_[modelName] = std::move(batchRenderer);
+                }
+
+                // ワールド行列を取得してバッチにインスタンスを追加
+                if (auto transform = obj->GetComponent<TransformComponent>()) {
+                    batchRenderers_[modelName]->AddInstanceWorld(transform->GetWorldMatrix());
+                }
+            }
+        }
+    }
+
+    // 3. すべてのバッチレンダラーを描画
+    for (auto& pair : batchRenderers_) {
+        if (pair.second) {
+            pair.second->Draw();
         }
     }
 }

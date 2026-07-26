@@ -26,6 +26,9 @@ public:
     void SetCustomEffectType(int32_t type);
     void SetCustomEffectParam(float param);
 
+    void SetVisible(bool visible) { isVisible_ = visible; }
+    bool IsVisible() const { return isVisible_; }
+
     IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(obj_.get()); }
     
     // エディタのRaycast用
@@ -51,4 +54,5 @@ private:
     TransformComponent* transform_ = nullptr;       ///< 親のTransform情報（キャッシュ）
     std::string modelName_ = "";           ///< 読み込むモデル名
     bool castShadows_ = true;
+    bool isVisible_ = true;
 };
