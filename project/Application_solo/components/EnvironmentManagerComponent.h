@@ -2,6 +2,7 @@
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include <vector>
+#include <list>
 #include <string>
 #include <memory>
 
@@ -23,18 +24,28 @@ public:
     void Update() override;
     
     std::string GetComponentName() const override { return "EnvironmentManagerComponent"; }
+    void OnRegisterProperties() override;
+    bool CanUpdateInEditMode() const override { return true; }
 
 private:
-    struct EnvSpawnData {
+    struct SpawnedEnvInfo {
+        std::weak_ptr<GameObject> obj;
         std::string prefabPath;
-        Vector3 position;
-        Vector3 rotation;
-        Vector3 scale;
+        Vector3 originalPos;
+        Vector3 originalRot;
+        Vector3 originalScale;
     };
 
-    std::vector<EnvSpawnData> spawnList_;
-    std::vector<std::weak_ptr<GameObject>> spawnedObjects_;
+    struct BatchCollisionSetting {
+        std::string prefabPath; // Now effectively 'prefabName' (e.g. Env_Pillar)
+        Vector3 collisionSize;
+        Vector3 previousSize;
+        Vector3 collisionOffset;
+        Vector3 previousOffset;
+        int placementType; // 0: Building (スナップ), 1: Floating (そのまま)
+        int previousPlacementType;
+    };
 
-    void LoadSpawnList();
-    void SpawnAll();
+    std::vector<SpawnedEnvInfo> spawnedObjects_;
+    std::list<BatchCollisionSetting> batchCollisionSettings_;
 };

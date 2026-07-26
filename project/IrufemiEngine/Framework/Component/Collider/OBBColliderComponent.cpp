@@ -85,11 +85,20 @@ void OBBColliderComponent::Deserialize(const nlohmann::json& j) {
         localOffset_.x = j["localOffset"][0];
         localOffset_.y = j["localOffset"][1];
         localOffset_.z = j["localOffset"][2];
+    } else if (j.contains("center")) {
+        localOffset_.x = j["center"][0];
+        localOffset_.y = j["center"][1];
+        localOffset_.z = j["center"][2];
     }
+
     if (j.contains("localSize")) {
         localSize_.x = j["localSize"][0];
         localSize_.y = j["localSize"][1];
         localSize_.z = j["localSize"][2];
+    } else if (j.contains("size")) {
+        localSize_.x = j["size"][0];
+        localSize_.y = j["size"][1];
+        localSize_.z = j["size"][2];
     }
     if (j.contains("layer")) layer_ = j["layer"];
     if (j.contains("mask")) mask_ = j["mask"];

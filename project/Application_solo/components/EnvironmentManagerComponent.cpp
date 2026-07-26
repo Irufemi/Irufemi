@@ -2,64 +2,123 @@
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/Utility/Log.h"
 
+void EnvironmentManagerComponent::OnRegisterProperties() {
+    Component::OnRegisterProperties();
+
+    if (batchCollisionSettings_.empty()) {
+        batchCollisionSettings_.push_back({
+            "Env_Pillar", 
+            Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
+            Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
+            0, 0
+        });
+        batchCollisionSettings_.push_back({
+            "Env_Arch", 
+            Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
+            Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
+            0, 0
+        });
+        batchCollisionSettings_.push_back({
+            "Env_Wall", 
+            Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
+            Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
+            0, 0
+        });
+    }
+
+    RegisterHeader("Batch Collisions");
+    for (auto& setting : batchCollisionSettings_) {
+        std::string name = setting.prefabPath;
+        RegisterProperty("ColSize_" + name, &setting.collisionSize);
+        RegisterProperty("ColOffset_" + name, &setting.collisionOffset);
+        // Type_ is kept for serialization compatibility, but no longer modifies Y position.
+        RegisterEnum("Type_" + name, &setting.placementType, {"Building", "Floating"});
+    }
+}
+
 void EnvironmentManagerComponent::Initialize() {
-    LoadSpawnList();
 }
 
 void EnvironmentManagerComponent::Start() {
-    SpawnAll();
+    if (!gameObject_) return;
+
+    // 子オブジェクトとして配置されている環境オブジェクトを検索して追跡リストに登録
+    const auto& children = gameObject_->GetChildren();
+    for (const auto& child : children) {
+        if (!child) continue;
+
+        for (auto& setting : batchCollisionSettings_) {
+            if (child->GetName().find(setting.prefabPath) != std::string::npos) {
+                // 初回のみプレハブからデフォルトのサイズを取得する
+                if (setting.collisionSize.x < 0.0f) {
+                    if (auto obb = child->GetComponent<OBBColliderComponent>()) {
+                        setting.collisionSize = obb->GetLocalSize();
+                        setting.previousSize = setting.collisionSize;
+                        setting.collisionOffset = obb->GetLocalOffset();
+                        setting.previousOffset = setting.collisionOffset;
+                    }
+                }
+
+                Vector3 origPos, origRot, origScale;
+                if (auto transform = child->GetComponent<TransformComponent>()) {
+                    origPos = transform->GetPosition();
+                    origRot = transform->GetRotation();
+                    origScale = transform->GetScale();
+                }
+                spawnedObjects_.push_back({child, setting.prefabPath, origPos, origRot, origScale});
+                break;
+            }
+        }
+    }
+    
+    // 最初のバッチ設定を適用
+    for (const auto& info : spawnedObjects_) {
+        if (auto obj = info.obj.lock()) {
+            if (auto obb = obj->GetComponent<OBBColliderComponent>()) {
+                for (const auto& setting : batchCollisionSettings_) {
+                    if (setting.prefabPath == info.prefabPath) {
+                        obb->SetLocalSize(setting.collisionSize);
+                        obb->SetLocalOffset(setting.collisionOffset);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void EnvironmentManagerComponent::Update() {
-    // Dynamic spawn based on distance could be implemented here
-}
-
-void EnvironmentManagerComponent::LoadSpawnList() {
-    spawnList_.clear();
-    
-    // Hardcoded test layout based on TripoStudio generated models
-    
-    // 1. Pillars along the sides to give a sense of speed
-    for (int i = 0; i < 10; ++i) {
-        float zPos = i * 50.0f;
-        // Left pillar
-        spawnList_.push_back({"resources/prefabs/Env_Pillar.json", {-20.0f, 0.0f, zPos}, {0,0,0}, {4,4,4}});
-        // Right pillar
-        spawnList_.push_back({"resources/prefabs/Env_Pillar.json", {20.0f, 0.0f, zPos}, {0,0,0}, {4,4,4}});
+    bool anyChanged = false;
+    for (auto& setting : batchCollisionSettings_) {
+        if (setting.collisionSize != setting.previousSize ||
+            setting.collisionOffset != setting.previousOffset) {
+            setting.previousSize = setting.collisionSize;
+            setting.previousOffset = setting.collisionOffset;
+            anyChanged = true;
+        }
+        // placementType is tracked but unused since manual placement defines Transform
+        if (setting.placementType != setting.previousPlacementType) {
+            setting.previousPlacementType = setting.placementType;
+        }
     }
 
-    // 2. Arches that the player flies through
-    for (int i = 0; i < 5; ++i) {
-        float zPos = 100.0f + i * 100.0f;
-        spawnList_.push_back({"resources/prefabs/Env_Arch.json", {0.0f, -5.0f, zPos}, {0,0,0}, {4,4,4}});
-    }
-
-    // 3. Walls that block half the path to force dodging
-    spawnList_.push_back({"resources/prefabs/Env_Wall.json", {-10.0f, 0.0f, 150.0f}, {0,0,0}, {4,4,4}});
-    spawnList_.push_back({"resources/prefabs/Env_Wall.json", {10.0f, 0.0f, 250.0f}, {0,0,0}, {4,4,4}});
-    spawnList_.push_back({"resources/prefabs/Env_Wall.json", {0.0f, 5.0f, 350.0f}, {0,0,0}, {4,4,4}});
-}
-
-void EnvironmentManagerComponent::SpawnAll() {
-    if (!gameObject_) {
-        return;
-    }
-    if (!gameObject_->GetScene()) {
-        return;
-    }
-
-    for (const auto& data : spawnList_) {
-        auto obj = gameObject_->GetScene()->InstantiatePrefab(data.prefabPath, data.position);
-        if (obj) {
-            gameObject_->AddChild(obj);
-            if (auto transform = obj->GetComponent<TransformComponent>()) {
-                transform->SetRotation(data.rotation);
-                transform->SetScale(data.scale);
+    if (anyChanged) {
+        for (const auto& info : spawnedObjects_) {
+            if (auto obj = info.obj.lock()) {
+                if (auto obb = obj->GetComponent<OBBColliderComponent>()) {
+                    for (const auto& setting : batchCollisionSettings_) {
+                        if (setting.prefabPath == info.prefabPath) {
+                            obb->SetLocalSize(setting.collisionSize);
+                            obb->SetLocalOffset(setting.collisionOffset);
+                            break;
+                        }
+                    }
+                }
             }
-            spawnedObjects_.push_back(obj);
         }
     }
 }

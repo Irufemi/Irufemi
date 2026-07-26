@@ -279,6 +279,1380 @@
       "tag": "Untagged"
     },
     {
+      "children": [
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  50.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  50.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  100.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  100.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  150.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  150.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  200.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  200.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  250.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  250.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  300.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  300.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  350.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  350.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  400.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  400.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -20.0,
+                  -5.0,
+                  450.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  -5.0,
+                  450.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  4.0,
+                  4.0,
+                  4.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Pillar/Pillar.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Pillar",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  -5.0,
+                  100.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.5,
+                  1.5,
+                  1.5
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Arch/Arch.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Arch",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  -5.0,
+                  200.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.5,
+                  1.5,
+                  1.5
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Arch/Arch.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Arch",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  -5.0,
+                  300.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.5,
+                  1.5,
+                  1.5
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Arch/Arch.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Arch",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  -5.0,
+                  400.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.5,
+                  1.5,
+                  1.5
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Arch/Arch.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Arch",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  -5.0,
+                  500.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.5,
+                  1.5,
+                  1.5
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Arch/Arch.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Arch",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -10.0,
+                  0.0,
+                  150.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  5.0,
+                  5.0,
+                  5.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Wall/Wall.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.02500000037252903,
+                  0.550000011920929,
+                  0.0
+                ],
+                "localSize": [
+                  0.75,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Wall",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  10.0,
+                  0.0,
+                  250.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  5.0,
+                  5.0,
+                  5.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Wall/Wall.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.02500000037252903,
+                  0.550000011920929,
+                  0.0
+                ],
+                "localSize": [
+                  0.75,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Wall",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  5.0,
+                  350.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  5.0,
+                  5.0,
+                  5.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "modelName": "resources/model/environment/Wall/Wall.obj"
+              },
+              "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.02500000037252903,
+                  0.550000011920929,
+                  0.0
+                ],
+                "localSize": [
+                  0.75,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            }
+          ],
+          "name": "Env_Wall",
+          "tag": "Untagged"
+        }
+      ],
       "components": [
         {
           "data": {
@@ -301,6 +1675,41 @@
           "type": "TransformComponent"
         },
         {
+          "data": {
+            "ColOffset_Env_Arch": [
+              0.0,
+              0.30000001192092896,
+              0.0
+            ],
+            "ColOffset_Env_Pillar": [
+              0.0,
+              0.44999998807907104,
+              0.0
+            ],
+            "ColOffset_Env_Wall": [
+              0.02500000037252903,
+              0.550000011920929,
+              0.0
+            ],
+            "ColSize_Env_Arch": [
+              0.8999999761581421,
+              0.699999988079071,
+              0.30000001192092896
+            ],
+            "ColSize_Env_Pillar": [
+              0.4000000059604645,
+              0.8999999761581421,
+              0.4000000059604645
+            ],
+            "ColSize_Env_Wall": [
+              0.75,
+              0.8999999761581421,
+              0.4000000059604645
+            ],
+            "Type_Env_Arch": 0,
+            "Type_Env_Pillar": 0,
+            "Type_Env_Wall": 1
+          },
           "type": "EnvironmentManagerComponent"
         }
       ],
