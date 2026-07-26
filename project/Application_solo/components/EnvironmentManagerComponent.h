@@ -46,6 +46,7 @@ private:
         int previousPlacementType;
     };
 
+    std::string targetPrefabNames_ = "Env_Pillar,Env_Arch,Env_Wall";
     std::vector<SpawnedEnvInfo> spawnedObjects_;
     std::list<BatchCollisionSetting> batchCollisionSettings_;
 };

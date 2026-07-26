@@ -431,8 +431,9 @@ bool BaseScene::ReleasedVK(uint8_t vk) const { return engine_->GetInputManager()
 std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& prefabPath, const Vector3& position) {
     auto obj = SceneSerializer::LoadPrefab(prefabPath);
     if (obj) {
-        // プレハブから動的生成されたオブジェクトはシーンファイルに保存しない
-        obj->SetIsSerializable(false);
+        // プレハブリンク機能により、プレハブ由来でもシリアライズ可能とする
+        obj->SetIsSerializable(true);
+        obj->SetSourcePrefabPath(prefabPath);
 
         if (auto transform = obj->GetComponent<TransformComponent>()) {
             transform->SetPosition(position);

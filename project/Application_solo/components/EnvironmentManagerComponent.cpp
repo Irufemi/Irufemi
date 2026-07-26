@@ -6,29 +6,48 @@
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/Utility/Log.h"
 
+#include <sstream>
+
 void EnvironmentManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
 
-    if (batchCollisionSettings_.empty()) {
-        batchCollisionSettings_.push_back({
-            "Env_Pillar", 
-            Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
-            Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
-            0, 0
-        });
-        batchCollisionSettings_.push_back({
-            "Env_Arch", 
-            Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
-            Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
-            0, 0
-        });
-        batchCollisionSettings_.push_back({
-            "Env_Wall", 
-            Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
-            Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
-            0, 0
-        });
+    RegisterProperty("Target Prefabs", &targetPrefabNames_)
+        .SetTooltip("Comma separated list of prefab names to manage (e.g. Env_Pillar,Env_Arch,Env_Wall)");
+
+    // Split targetPrefabNames_ by comma
+    std::vector<std::string> names;
+    std::stringstream ss(targetPrefabNames_);
+    std::string item;
+    while (std::getline(ss, item, ',')) {
+        // Trim whitespace
+        item.erase(0, item.find_first_not_of(" \t\r\n"));
+        item.erase(item.find_last_not_of(" \t\r\n") + 1);
+        if (!item.empty()) {
+            names.push_back(item);
+        }
     }
+
+    // Keep existing settings, add new ones, remove old ones
+    std::list<BatchCollisionSetting> newSettings;
+    for (const auto& name : names) {
+        bool found = false;
+        for (const auto& setting : batchCollisionSettings_) {
+            if (setting.prefabPath == name) {
+                newSettings.push_back(setting);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            newSettings.push_back({
+                name, 
+                Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
+                Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
+                0, 0
+            });
+        }
+    }
+    batchCollisionSettings_ = newSettings;
 
     RegisterHeader("Batch Collisions");
     for (auto& setting : batchCollisionSettings_) {

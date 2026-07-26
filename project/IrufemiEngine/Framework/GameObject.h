@@ -163,6 +163,9 @@ public:
     void SetIsSerializable(bool isSerializable) { isSerializable_ = isSerializable; }
     bool IsSerializable() const { return isSerializable_; }
 
+    void SetSourcePrefabPath(const std::string& path) { sourcePrefabPath_ = path; }
+    const std::string& GetSourcePrefabPath() const { return sourcePrefabPath_; }
+
 private:
     uint64_t instanceId_ = 0;
     std::string tag_ = "Untagged";
@@ -173,6 +176,7 @@ private:
     bool isFolder_ = false;
     bool isLocked_ = false;
     bool isSerializable_ = false; // デフォルトはfalse（動的生成とみなす）
+    std::string sourcePrefabPath_ = "";
     BaseScene* scene_ = nullptr;
 
     

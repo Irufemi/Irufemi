@@ -231,38 +231,50 @@ nlohmann::json GameObject::Serialize() const {
     if (isFolder_) j["isFolder"] = isFolder_;   // default is false
     if (isLocked_) j["isLocked"] = isLocked_;   // default is false
     
-    if (!components_.empty()) {
+    if (!sourcePrefabPath_.empty()) {
+        j["prefabPath"] = sourcePrefabPath_;
+        // プレハブ由来の場合はTransformComponentの上書き情報のみ保存する
         nlohmann::json comps = nlohmann::json::array();
         for (const auto& comp : components_) {
-            nlohmann::json cj;
-            std::string cName = comp->GetComponentName();
-            cj["type"] = cName;
-            
-            Log::OutPutLog(std::cout, "[GameObject] Serializing component: " + cName + "\n");
-            std::cout.flush();
-            nlohmann::json cdata;
-            try {
-                cdata = comp->Serialize();
-            } catch (const std::exception& e) {
-                Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName + "': " + std::string(e.what()) + "\n");
-                std::cerr.flush();
-            } catch (...) {
-                Log::OutPutLog(std::cerr, "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
-                std::cerr.flush();
+            if (comp->GetComponentName() == "TransformComponent") {
+                nlohmann::json cj;
+                cj["type"] = comp->GetComponentName();
+                cj["data"] = comp->Serialize();
+                comps.push_back(cj);
+                break; // TransformComponentは1つのみ
             }
-            
-            Log::OutPutLog(std::cout, "[GameObject] Finished Serialize call for: " + cName + "\n");
-            std::cout.flush();
-            // コンポーネントのデータが空でなければ出力
-            if (cdata.is_object() && !cdata.empty()) {
-                cj["data"] = cdata;
-            }
-            Log::OutPutLog(std::cout, "[GameObject] Finished empty() check for: " + cName + "\n");
-            std::cout.flush();
-            comps.push_back(cj);
         }
         if (!comps.empty()) {
             j["components"] = comps;
+        }
+    } else {
+        if (!components_.empty()) {
+            nlohmann::json comps = nlohmann::json::array();
+            for (const auto& comp : components_) {
+                nlohmann::json cj;
+                std::string cName = comp->GetComponentName();
+                cj["type"] = cName;
+                
+                nlohmann::json cdata;
+                try {
+                    cdata = comp->Serialize();
+                } catch (const std::exception& e) {
+                    Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName + "': " + std::string(e.what()) + "\n");
+                    std::cerr.flush();
+                } catch (...) {
+                    Log::OutPutLog(std::cerr, "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
+                    std::cerr.flush();
+                }
+                
+                // コンポーネントのデータが空でなければ出力
+                if (cdata.is_object() && !cdata.empty()) {
+                    cj["data"] = cdata;
+                }
+                comps.push_back(cj);
+            }
+            if (!comps.empty()) {
+                j["components"] = comps;
+            }
         }
     }
     
@@ -281,20 +293,38 @@ nlohmann::json GameObject::Serialize() const {
     return j;
 }
 
+#include "SceneSerializer.h"
+
 void GameObject::Deserialize(const nlohmann::json& j) {
     // シリアライズから復元された＝シーンに保存されている静的オブジェクトである
     SetIsSerializable(true);
 
+    nlohmann::json baseJ = j;
+    if (j.contains("prefabPath")) {
+        sourcePrefabPath_ = j["prefabPath"];
+        // プレハブのベースデータを取得
+        baseJ = SceneSerializer::GetPrefabJson(sourcePrefabPath_);
+    }
+
+    // まずベース(またはローカル)データから基本情報を復元
+    if (baseJ.contains("name")) name_ = baseJ["name"];
+    if (baseJ.contains("instanceId")) instanceId_ = baseJ["instanceId"];
+    if (baseJ.contains("tag")) tag_ = baseJ["tag"];
+    if (baseJ.contains("isActive")) isActive_ = baseJ["isActive"];
+    if (baseJ.contains("isFolder")) isFolder_ = baseJ["isFolder"];
+    if (baseJ.contains("isLocked")) isLocked_ = baseJ["isLocked"];
+
+    // ローカル上書き情報がある場合はそれで上書き
     if (j.contains("name")) name_ = j["name"];
     if (j.contains("instanceId")) instanceId_ = j["instanceId"];
     if (j.contains("tag")) tag_ = j["tag"];
     if (j.contains("isActive")) isActive_ = j["isActive"];
     if (j.contains("isFolder")) isFolder_ = j["isFolder"];
     if (j.contains("isLocked")) isLocked_ = j["isLocked"];
-    
-    if (j.contains("components")) {
+
+    if (baseJ.contains("components")) {
         std::vector<std::shared_ptr<Component>> loadedComps;
-        for (const auto& cj : j["components"]) {
+        for (const auto& cj : baseJ["components"]) {
             std::string type = cj["type"];
             std::shared_ptr<Component> newComp = ComponentFactory::Create(type);
             
@@ -305,9 +335,21 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                 componentMap_[typeid(*newComp)].push_back(newComp.get());
                 newComp->OnRegisterProperties();
                 
-                // Initialize前にパラメータを復元する
+                // ベースデータのプロパティを復元
                 if (cj.contains("data")) {
                     newComp->Deserialize(cj["data"]);
+                }
+
+                // ローカルの上書き情報があれば反映
+                if (j.contains("components")) {
+                    for (const auto& localCj : j["components"]) {
+                        if (localCj.contains("type") && localCj["type"] == type) {
+                            if (localCj.contains("data")) {
+                                newComp->Deserialize(localCj["data"]);
+                            }
+                            break;
+                        }
+                    }
                 }
                 
                 loadedComps.push_back(newComp);

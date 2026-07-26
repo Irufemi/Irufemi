@@ -89,31 +89,34 @@ bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::str
     return false;
 }
 
-std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
-    nlohmann::json root;
-
-    // キャッシュをチェック
+nlohmann::json SceneSerializer::GetPrefabJson(const std::string& filepath) {
     auto it = prefabCache_.find(filepath);
     if (it != prefabCache_.end()) {
-        root = it->second;
-    } else {
-        fs::path path(filepath);
-        if (!fs::exists(path)) return nullptr;
-
-        std::ifstream file(path);
-        if (!file.is_open()) return nullptr;
-
-        try {
-            file >> root;
-        } catch (const nlohmann::json::parse_error& e) {
-            Log::OutPutLog(std::cerr, "JSON Parse Error in Prefab " + filepath + ": " + std::string(e.what()) + "\n");
-            return nullptr;
-        }
-        file.close();
-
-        // キャッシュに保存
-        prefabCache_[filepath] = root;
+        return it->second;
     }
+
+    fs::path path(filepath);
+    if (!fs::exists(path)) return nlohmann::json::object();
+
+    std::ifstream file(path);
+    if (!file.is_open()) return nlohmann::json::object();
+
+    nlohmann::json root;
+    try {
+        file >> root;
+    } catch (const nlohmann::json::parse_error& e) {
+        Log::OutPutLog(std::cerr, "JSON Parse Error in Prefab " + filepath + ": " + std::string(e.what()) + "\n");
+        return nlohmann::json::object();
+    }
+    file.close();
+
+    prefabCache_[filepath] = root;
+    return root;
+}
+
+std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
+    nlohmann::json root = GetPrefabJson(filepath);
+    if (root.empty()) return nullptr;
 
     auto obj = std::make_shared<GameObject>();
     obj->Deserialize(root);
