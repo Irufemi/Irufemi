@@ -14,7 +14,7 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Manager/CollisionManager.h"
-#include "BossComponent.h"
+#include "Boss/BossComponent.h"
 #include <algorithm>
 
 void GravityPlayerComponent::OnRegisterProperties() {

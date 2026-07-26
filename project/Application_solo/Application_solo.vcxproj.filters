@@ -78,7 +78,16 @@
     <ClCompile Include="components\RailShooterEnemyComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\BossComponent.cpp">
+    <ClCompile Include="components\Boss\BossComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\Boss\BossStateIdle.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\Boss\BossStateCoreExposed.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\Boss\BossStateDestroyed.cpp">
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\BossBulletComponent.cpp">
@@ -160,7 +169,19 @@
     <ClInclude Include="components\RailShooterEnemyComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\BossComponent.h">
+    <ClInclude Include="components\Boss\BossComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\IBossState.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\BossStateIdle.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\BossStateCoreExposed.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\BossStateDestroyed.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\BossBulletComponent.h">

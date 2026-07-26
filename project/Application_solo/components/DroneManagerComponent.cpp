@@ -7,7 +7,7 @@
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/IrufemiEngine.h"
-#include "BossComponent.h"
+#include "Boss/BossComponent.h"
 #include "BossBulletManagerComponent.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/BaseScene.h"

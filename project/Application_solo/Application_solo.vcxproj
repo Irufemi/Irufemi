@@ -246,7 +246,10 @@ exit 0</Command>
     <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
     <ClCompile Include="components\DebrisComponent.cpp" />
     <ClCompile Include="components\TargetableComponent.cpp" />
-    <ClCompile Include="components\BossComponent.cpp" />
+    <ClCompile Include="components\Boss\BossComponent.cpp" />
+    <ClCompile Include="components\Boss\BossStateIdle.cpp" />
+    <ClCompile Include="components\Boss\BossStateCoreExposed.cpp" />
+    <ClCompile Include="components\Boss\BossStateDestroyed.cpp" />
     <ClCompile Include="components\BossBulletComponent.cpp" />
     <ClCompile Include="components\BossBulletManagerComponent.cpp" />
 
@@ -280,7 +283,11 @@ exit 0</Command>
     <ClInclude Include="components\RailShooterEnemyComponent.h" />
     <ClInclude Include="components\DebrisComponent.h" />
     <ClInclude Include="components\TargetableComponent.h" />
-    <ClInclude Include="components\BossComponent.h" />
+    <ClInclude Include="components\Boss\BossComponent.h" />
+    <ClInclude Include="components\Boss\IBossState.h" />
+    <ClInclude Include="components\Boss\BossStateIdle.h" />
+    <ClInclude Include="components\Boss\BossStateCoreExposed.h" />
+    <ClInclude Include="components\Boss\BossStateDestroyed.h" />
     <ClInclude Include="components\BossBulletComponent.h" />
     <ClInclude Include="components\BossBulletManagerComponent.h" />
 

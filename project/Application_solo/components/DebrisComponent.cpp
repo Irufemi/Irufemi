@@ -5,7 +5,7 @@
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "RailShooterEnemyComponent.h"
-#include "BossComponent.h"
+#include "Boss/BossComponent.h"
 #include "DebrisManagerComponent.h"
 #include "EffectManagerComponent.h"
 #include "Engine/Core/Math/Random/Random.h"

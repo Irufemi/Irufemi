@@ -17,7 +17,7 @@
 #include "components/GravityPlayerComponent.h"
 #include "components/PlayerTargetingComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
-#include "components/BossComponent.h"
+#include "components/Boss/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
 #include "components/EffectManagerComponent.h"
 #include "components/EnvironmentManagerComponent.h"

@@ -1,7 +1,7 @@
 #include "PlayerTargetingComponent.h"
 #include "TargetableComponent.h"
 #include "RailShooterEnemyComponent.h"
-#include "BossComponent.h"
+#include "Boss/BossComponent.h"
 #include "DebrisComponent.h"
 #include "LockonMarkerUIComponent.h"
 #include "Framework/GameObject.h"
@@ -46,7 +46,7 @@ void PlayerTargetingComponent::Update() {
                 if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
                     if (!enemyComp->IsAlive()) return true;
                 } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-                    if (bossComp->GetState() != BossState::CoreExposed) return true;
+                    if (!bossComp->IsCoreExposed()) return true;
                 } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
                     if (debrisComp->GetState() != DebrisState::BossOrbiting) return true;
                 }
@@ -152,7 +152,7 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
         if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
             if (enemyComp->IsAlive()) isTargetable = true;
         } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-            if (bossComp->GetState() == BossState::CoreExposed) isTargetable = true;
+            if (bossComp->IsCoreExposed()) isTargetable = true;
         } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
             if (debrisComp->GetState() == DebrisState::BossOrbiting) isTargetable = true;
         }
