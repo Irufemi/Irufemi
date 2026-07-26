@@ -106,15 +106,15 @@ void ModelBatchRendererComponent::Deserialize(const nlohmann::json& j) {
     }
 }
 
-void ModelBatchRendererComponent::AddInstance(const Transform& t) {
+void ModelBatchRendererComponent::AddInstance(const Transform& t, int32_t effectType, float effectParam, bool enableMask) {
     if (batch_) {
-        batch_->AddInstance(t);
+        batch_->AddInstance(t, effectType, effectParam, enableMask);
     }
 }
 
-void ModelBatchRendererComponent::AddInstanceWorld(const Matrix4x4& world) {
+void ModelBatchRendererComponent::AddInstanceWorld(const Matrix4x4& world, int32_t effectType, float effectParam, bool enableMask) {
     if (batch_) {
-        batch_->AddInstanceWorld(world);
+        batch_->AddInstanceWorld(world, {1,1,1,1}, effectType, effectParam, enableMask);
     }
 }
 

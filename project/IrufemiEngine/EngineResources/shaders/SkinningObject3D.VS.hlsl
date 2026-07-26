@@ -96,6 +96,7 @@ VertexShaderOutput main(VertexShaderInput input)
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
 	
 	output.color = input.color;
+	output.customEffect = float32_t4(0, 0, 0, 0);
 	
 	return output;
 }

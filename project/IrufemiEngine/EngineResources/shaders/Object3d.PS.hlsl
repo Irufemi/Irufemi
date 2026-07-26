@@ -185,9 +185,19 @@ PixelShaderOutput main(VertexShaderOutput input)
     // Linear -> sRGB はハードウェア RTV (_SRGB形式) に任せるため削除
     output.color.rgb = output.color.rgb;
 
-    output.mask.r = gMaterial.customEffectType / 255.0f;
-    output.mask.g = gMaterial.customEffectParam;
-    output.mask.b = gMaterial.enableEffectMask ? 1.0f : 0.0f;
+    float effectType = gMaterial.customEffectType / 255.0f;
+    float effectParam = gMaterial.customEffectParam;
+    float enableMask = gMaterial.enableEffectMask ? 1.0f : 0.0f;
+
+    if (input.customEffect.x > 0.0f || input.customEffect.z > 0.0f) {
+        effectType = input.customEffect.x / 255.0f;
+        effectParam = input.customEffect.y;
+        enableMask = input.customEffect.z;
+    }
+
+    output.mask.r = effectType;
+    output.mask.g = effectParam;
+    output.mask.b = enableMask;
     output.mask.a = 1.0f;
 
     return output;

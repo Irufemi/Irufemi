@@ -82,41 +82,46 @@ void BaseBatch::SetAllInstanceColor(const Vector4& color) {
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Transform& t) {
+void BaseBatch::AddInstance(const Transform& t, int32_t effectType, float effectParam, bool enableMask) {
     instances_.push_back(t);
     instanceColors_.push_back({1.0f, 1.0f, 1.0f, 1.0f});
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Transform& t, const Vector4& color) {
+void BaseBatch::AddInstance(const Transform& t, const Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
     instances_.push_back(t);
     instanceColors_.push_back(color);
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate) {
+void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate, int32_t effectType, float effectParam, bool enableMask) {
     Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
     t.rotate = rotate;
     instances_.push_back(t);
     instanceColors_.push_back({1.0f, 1.0f, 1.0f, 1.0f});
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color) {
+void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
     Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
     t.rotate = rotate;
     instances_.push_back(t);
     instanceColors_.push_back(color);
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstanceWorld(const Matrix4x4& world, const Vector4& color) {
+void BaseBatch::AddInstanceWorld(const Matrix4x4& world, const Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
     instanceWorlds_.push_back(world);
     instanceWorldColors_.push_back(color);
+    instanceWorldEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
@@ -132,8 +137,10 @@ void BaseBatch::UpdateInstance(uint32_t index, const Transform& t) {
 void BaseBatch::ClearInstances() {
     instances_.clear();
     instanceColors_.clear();
+    instanceEffects_.clear();
     instanceWorlds_.clear();
     instanceWorldColors_.clear();
+    instanceWorldEffects_.clear();
     instanceDirty_ = true;
 }
 
@@ -292,6 +299,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
             td.rotation = Vector4(instances_[i].rotate.x, instances_[i].rotate.y, instances_[i].rotate.z, 0.0f);
             td.scale = Vector4(instances_[i].scale.x, instances_[i].scale.y, instances_[i].scale.z, 0.0f);
             td.color = instanceColors_[i];
+            td.customEffect = (i < instanceEffects_.size()) ? instanceEffects_[i] : Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(td);
         }
         for (size_t i = 0; i < instanceWorlds_.size(); ++i) {
@@ -304,6 +312,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
             float sz = Math::Length(Vector3{instanceWorlds_[i].m[2][0], instanceWorlds_[i].m[2][1], instanceWorlds_[i].m[2][2]});
             td.scale = Vector4(sx, sy, sz, 0.0f);
             td.color = instanceWorldColors_[i];
+            td.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i] : Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(td);
         }
 
@@ -361,6 +370,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
             data.World = world;
             data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
             data.color = instanceColors_[i];
+            data.customEffect = (i < instanceEffects_.size()) ? instanceEffects_[i] : Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(data);
         }
         for (size_t i = 0; i < instanceWorlds_.size(); ++i) {
@@ -371,6 +381,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
             worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
             data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
             data.color = instanceWorldColors_[i];
+            data.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i] : Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(data);
         }
 

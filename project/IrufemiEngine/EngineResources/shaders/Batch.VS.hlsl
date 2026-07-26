@@ -14,6 +14,7 @@ struct InstanceData
 	float32_t4x4 World;
 	float32_t4x4 WorldInverseTranspose;
 	float32_t4 color; // 未使用なら無視
+	float32_t4 customEffect;
 };
 StructuredBuffer<InstanceData> gBlocks : register(t0);
 
@@ -49,7 +50,8 @@ VertexShaderOutput main(VertexInput input, uint32_t instanceId : SV_InstanceID)
 	// シャドウマッピング用の座標変換
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
 
-	output.color = input.color * inst.color; // 頂点カラーとインスタンスカラーの乗算
+	output.color = input.color * inst.color;
+	output.customEffect = inst.customEffect;
 
 	return output;
 }

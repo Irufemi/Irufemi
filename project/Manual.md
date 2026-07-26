@@ -352,6 +352,57 @@ Vignetteエフェクトがより自然な減衰（Smooth Falloff）になるよ�
 
 ---
 
+## オブジェクト個別のカスタムエフェクト適用
+
+画面全体にかける通常のポストプロセスとは異なり、特定のキャラクターがダメージを受けたときの点滅や、敵が倒れたときのディゾルブ（消失）など、**特定のオブジェクトに対してのみエフェクトを適用**するための機能です。
+
+### 1. カスタムパラメータの登録方法
+エフェクトのパラメータ（しきい値や色など）は、GPUに送る前に `PostProcessManager` に登録してID（`effectParam`）を取得する設計になっています。
+
+```cpp
+auto* ppm = engine->GetPostProcessManager();
+PostProcessManager::CustomEffectParams params;
+params.param1 = 0.5f; // 例: ディゾルブのしきい値など
+uint32_t id = ppm->RegisterCustomEffectParams(params);
+float effectParam = static_cast<float>(id) / 255.0f;
+```
+
+### 2. 個別適用可能なエフェクトの種類 (PostProcessMode)
+用意されている各種エフェクト（PostProcessMode列挙体）のうち、個別適用に使いやすい代表的なものを紹介します。
+- **Dissolve (8)**: ノイズテクスチャによる消失演出。敵を倒した際などに。
+- **Glitch (15)**: ノイズ・色収差による映像の乱れ。ダメージ時の点滅や異常状態に。
+- **LuminanceBasedOutline (17)**: 輝度ベースのアウトライン。キャラクターがダメージを受けたときの縁取り発光などに。
+- **Pixelation (18)**: ドット絵化（モザイク）。
+- **Halftone (26)**: 網点・コミック調。
+- **Fade (12) / Slide (13)**: ワイプや指定色へのフェード。
+（※その他の全エフェクトの一覧も `PostProcessManager.h` に記載されています）
+
+### 3. 動的オブジェクトへの適用 (EffectMaskComponent)
+キャラクターやボスなど、個別の `GameObject` にアタッチしてエフェクトを管理する方法です。
+時間経過で自動的にエフェクトが切れる `duration` 管理機能が内蔵されています。
+
+```cpp
+// 使い方
+gameObject->AddComponent<EffectMaskComponent>();
+
+// 発動時 (effectType, effectParam, duration(秒))
+gameObject->GetComponent<EffectMaskComponent>()->ApplyEffect(8, effectParam, 1.0f);
+```
+
+### 4. バッチ描画（環境物）への適用 (ModelBatchRendererComponent)
+大量に配置された静的・環境オブジェクトの、**特定のインスタンスにのみ** エフェクトを指定する方法です。
+ドローコールを1回に抑えたまま（Instancing）、インスタンス個別にエフェクトを描画できるため、**パフォーマンスに非常に優れたアプローチ**です。
+
+```cpp
+// 1個目は通常描画（エフェクトなし）
+batchComponent->AddInstance(transform1);
+
+// 2個目には個別のエフェクト（例: Type 8 = Dissolve）を適用
+batchComponent->AddInstance(transform2, 8, effectParam, true);
+```
+
+---
+
 ## Audio システム (AudioPlayer / AudioSourceComponent) の利用方法
 
 本エンジンのAudioシステムは、コンポーネントからの利用とプログラムからの直接利用の2通りの方法をサポートしています。

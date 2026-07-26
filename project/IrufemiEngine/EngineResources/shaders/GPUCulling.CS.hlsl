@@ -9,6 +9,7 @@ struct TransformData {
     float4 rotation;
     float4 scale;
     float4 color;
+    float4 customEffect;
 };
 
 struct InstanceData {
@@ -16,6 +17,7 @@ struct InstanceData {
     matrix World;
     matrix WorldInverseTranspose;
     float4 color;
+    float4 customEffect;
 };
 
 // Cullingの定数データ
@@ -87,6 +89,7 @@ void main(uint3 DTid : SV_DispatchThreadID) {
         outInst.World = world;
         outInst.WorldInverseTranspose = worldInvTrans;
         outInst.color = td.color;
+        outInst.customEffect = td.customEffect;
         
         OutputInstances[visibleIndex] = outInst;
     }

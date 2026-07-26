@@ -11,6 +11,7 @@ struct VertexShaderOutput
 	float32_t3 worldPosition : POSITION0;
 	float4 shadowPos : SHADOW_POS;
 	float4 color : COLOR0; // 追加
+	float4 customEffect : CUSTOM_EFFECT;
 };
 
 struct TransformationMatrix

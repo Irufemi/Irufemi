@@ -52,13 +52,13 @@ public:
      * @brief バッチ描画するインスタンスを追加します。
      * @param t インスタンスのローカルトランスフォーム（またはワールド）
      */
-    void AddInstance(const Transform& t);
+    void AddInstance(const Transform& t, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
 
     /**
      * @brief ワールド行列を直接指定してインスタンスを追加します。
      * @param world ワールド行列
      */
-    void AddInstanceWorld(const Matrix4x4& world);
+    void AddInstanceWorld(const Matrix4x4& world, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
 
     /**
      * @brief 登録されたインスタンスをすべてクリアします。毎フレーム呼ぶ必要があります。

@@ -62,13 +62,13 @@ public:
     void SetAllInstanceColor(const Vector4& color);
 
     // Instances
-    void AddInstance(const Transform& t);
-    void AddInstance(const Transform& t, const Vector4& color);
-    void AddInstance(const Vector3& center, float scale = 1.0f, const Vector3& rotate = {0,0,0});
-    void AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color);
+    void AddInstance(const Transform& t, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Transform& t, const Vector4& color, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Vector3& center, float scale = 1.0f, const Vector3& rotate = {0,0,0}, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
     
     // World matrix based instances
-    void AddInstanceWorld(const Matrix4x4& world, const Vector4& color = {1,1,1,1});
+    void AddInstanceWorld(const Matrix4x4& world, const Vector4& color = {1,1,1,1}, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
 
     void UpdateInstance(uint32_t index, const Transform& t);
     void ClearInstances();
@@ -96,6 +96,7 @@ protected:
         Matrix4x4 World;
         Matrix4x4 WorldInverseTranspose;
         Vector4   color;
+        Vector4   customEffect; // x: type, y: param, z: enableMask, w: padding
     };
 
     struct TransformData {
@@ -103,6 +104,7 @@ protected:
         Vector4 rotation; // w is padding
         Vector4 scale;    // w is padding
         Vector4 color;
+        Vector4 customEffect; // x: type, y: param, z: enableMask, w: padding
     };
 
     struct CullingData {
@@ -135,8 +137,10 @@ protected:
 
     std::vector<Transform> instances_;
     std::vector<Vector4>   instanceColors_;
+    std::vector<Vector4>   instanceEffects_;
     std::vector<Matrix4x4> instanceWorlds_;
     std::vector<Vector4>   instanceWorldColors_;
+    std::vector<Vector4>   instanceWorldEffects_;
 
     bool                   instanceDirty_ = false;
     bool                   isCullingEnabled_ = true;
