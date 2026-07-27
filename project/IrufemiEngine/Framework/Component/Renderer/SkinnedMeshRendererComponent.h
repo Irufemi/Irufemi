@@ -19,6 +19,8 @@ public:
     void Update() override;
     void Draw() override;
     
+    bool CanUpdateInEditMode() const override { return true; }
+
     void OnRegisterProperties() override;
 
     void LoadModel(const std::string& filename);

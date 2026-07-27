@@ -15,6 +15,9 @@ void AnimatorComponent::Initialize() {
     if (GetGameObject() && GetGameObject()->GetScene()) {
         animator_->Initialize(GetGameObject()->GetScene()->GetEngine());
     }
+}
+
+void AnimatorComponent::Start() {
     if (!defaultAnimation_.empty()) {
         Play(defaultAnimation_, true);
     }

@@ -262,6 +262,10 @@ SkeletonPose AnimationManager::CreateSkeletonPose(const SkeletonData* data) {
         pose.jointPoses[i].localMatrix = data->joints[i].bindLocalMatrix;
         pose.jointPoses[i].skeletonSpaceMatrix = Math::MakeIdentity4x4();
     }
+    
+    // バインドポーズの初期状態として、正しい skeletonSpaceMatrix を計算しておく
+    SkeletonUpdate(pose);
+    
     return pose;
 }
 
