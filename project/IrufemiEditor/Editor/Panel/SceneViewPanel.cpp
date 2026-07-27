@@ -7,7 +7,7 @@
 #include "EditorManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/RenderTexture.h"
-#include "Editor/Utils/EditorCameraController.h"
+// #include "Editor/Utils/EditorCameraController.h" (Removed during refactoring)
 #include "Engine/Manager/CollisionManager.h"
 #include "../Core/EditorActionManager.h"
 #include "../Core/EditorDragDrop.h"

@@ -39,6 +39,10 @@ Camera* CameraManager::GetActiveCamera() const {
     return nullptr;
 }
 
+const std::string& CameraManager::GetActiveCameraName() const {
+    return activeCameraName_;
+}
+
 Camera* CameraManager::GetCamera(const std::string& name) const {
     auto it = cameras_.find(name);
     if (it != cameras_.end()) {

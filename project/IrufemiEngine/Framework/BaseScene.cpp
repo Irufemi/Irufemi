@@ -4,7 +4,8 @@
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Graphics/Camera/DebugCamera.h"
+
+#include "Engine/Graphics/Camera/OrbitCameraController.h"
 #include "Engine/Graphics/Data/CameraForGPU.h"
 #include "Engine/Graphics/Data/PointLight.h"
 #include "Engine/Graphics/Data/SpotLight.h"
@@ -169,8 +170,14 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
     mainCamera->UpdateMatrix();
     engine_->GetCameraManager()->AddCamera("Main", mainCamera);
 
-    debugCamera_ = std::make_unique<DebugCamera>();
-    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    // --- デバッグカメラの初期化とマネージャーへの登録 ---
+    debugCamera_ = std::make_shared<Camera>();
+    debugCamera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    engine_->GetCameraManager()->AddCamera("Debug", debugCamera_);
+
+    debugCameraController_ = std::make_unique<OrbitCameraController>();
+    // 初期状態の同期
+    debugCameraController_->SyncTargetFromCamera(debugCamera_.get(), 50.0f);
 
     // --- デフォルトライティングの初期化 ---
     directionalLight_ = std::make_unique<DirectionalLight>();
@@ -184,18 +191,11 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
 void BaseScene::Update() {
     // デバッグカメラのトグル機能などをここに入れることも可能
     // 今回は各シーンが個別に実装しているケースを考慮し、Updateでのカメラ行列上書き処理を共通化
+    // デバッグカメラの更新と切り替え処理
     if (isDebugCameraMode_) {
-        debugCamera_->Update();
-        Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-        if (activeCam) {
-            const Camera& dbgCam = debugCamera_->GetCamera();
-            activeCam->SetViewMatrix(dbgCam.GetViewMatrix());
-            activeCam->SetTranslate(dbgCam.GetTranslate());
-            activeCam->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-        }
-    } else {
-        engine_->GetCameraManager()->Update();
+        debugCameraController_->UpdateCameraInput(debugCamera_.get(), engine_->GetInputManager());
     }
+    engine_->GetCameraManager()->Update();
 
     bool isPlayMode = true;
 #ifdef EditorMode
@@ -386,31 +386,46 @@ void BaseScene::DrawDebugTab() {
     if (ImGui::BeginTabItem("Camera & Lights")) {
         bool prevMode = isDebugCameraMode_;
         if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
-            if (isDebugCameraMode_ && !prevMode && debugCamera_) {
+            if (isDebugCameraMode_ && !prevMode) {
+                // デバッグモードON時: 現在のアクティブカメラの名前を記憶し、状態をコピーする
+                previousActiveCameraName_ = engine_->GetCameraManager()->GetActiveCameraName();
                 Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-                if (activeCam) {
-                    debugCamera_->SetPreset(DebugCamera::Preset::Current, *activeCam);
+                if (activeCam && activeCam != debugCamera_.get()) {
+                    debugCamera_->SetTranslate(activeCam->GetTranslate());
+                    debugCamera_->SetRotate(activeCam->GetRotate());
+                    debugCamera_->SetViewMatrix(activeCam->GetViewMatrix());
+                    debugCamera_->SetPerspectiveFovMatrix(activeCam->GetPerspectiveFovMatrix());
+                    debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
                 }
+                engine_->GetCameraManager()->SetActiveCamera("Debug");
+            } else if (!isDebugCameraMode_ && prevMode) {
+                // デバッグモードOFF時: 記憶しておいたカメラに戻す
+                if (previousActiveCameraName_.empty() || previousActiveCameraName_ == "Debug") {
+                    previousActiveCameraName_ = "Main";
+                }
+                engine_->GetCameraManager()->SetActiveCamera(previousActiveCameraName_);
             }
         }
-        if (isDebugCameraMode_ && debugCamera_) {
-            Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-            if (activeCam) {
-                if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *activeCam);
-                ImGui::SameLine();
-                if (ImGui::Button("Diagonal")) debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *activeCam);
-                ImGui::SameLine();
-                if (ImGui::Button("Front")) debugCamera_->SetPreset(DebugCamera::Preset::Front, *activeCam);
-                ImGui::SameLine();
-                if (ImGui::Button("Snap to Current")) debugCamera_->SetPreset(DebugCamera::Preset::Current, *activeCam);
+        if (isDebugCameraMode_ && debugCameraController_ && debugCamera_) {
+            if (ImGui::Button("Top-Down")) debugCameraController_->SetPreset(OrbitCameraController::Preset::TopDown, debugCamera_.get());
+            ImGui::SameLine();
+            if (ImGui::Button("Diagonal")) debugCameraController_->SetPreset(OrbitCameraController::Preset::Diagonal, debugCamera_.get());
+            ImGui::SameLine();
+            if (ImGui::Button("Front")) debugCameraController_->SetPreset(OrbitCameraController::Preset::Front, debugCamera_.get());
+            ImGui::SameLine();
+            if (ImGui::Button("Sync to Main")) {
+                Camera* mainCam = engine_->GetCameraManager()->GetCamera("Main");
+                if (mainCam) {
+                    debugCamera_->SetTranslate(mainCam->GetTranslate());
+                    debugCamera_->SetRotate(mainCam->GetRotate());
+                    debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
+                }
             }
             ImGui::Separator();
-            ImGui::Text("Debug Camera Controls");
-            debugCamera_->GetCamera().DrawDebugContents();
-            float dist = debugCamera_->GetDistance();
-            if (ImGui::DragFloat("Orbit Distance", &dist, 0.1f, 1.0f, 1000.0f)) {
-                debugCamera_->SetDistance(dist);
-            }
+            ImGui::Text("Debug Camera Controls (Orbit/Pan/Zoom)");
+            debugCamera_->DrawDebugContents();
+            // OrbitCameraController は内部状態としての Distance を外部に公開していないため、
+            // ImGui上から無理やりDistanceをいじるのではなく、マウスのホイール操作で調整させる形にする。
         } else {
             Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
             if (activeCam) {

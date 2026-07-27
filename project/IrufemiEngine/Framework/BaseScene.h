@@ -7,6 +7,7 @@
 #include <mutex>
 #include <unordered_map>
 #include "Engine/Core/Math/Vector3.h"
+#include "Engine/Graphics/Camera/OrbitCameraController.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -17,6 +18,7 @@ struct PointLight;
 struct SpotLight;
 struct AreaLight;
 class GameObject;
+class Camera;
 
 /**
  * @class BaseScene
@@ -177,9 +179,13 @@ protected:
     // 高速検索(O(1))用インデックス (同名複数登録対応)
     std::unordered_map<std::string, std::vector<std::weak_ptr<GameObject>>> nameIndex_;
 
-    // --- コア機能 ---
-    std::unique_ptr<DebugCamera> debugCamera_;
+    // デバッグ用カメラフラグ
     bool isDebugCameraMode_ = false;
+    std::string previousActiveCameraName_ = "Main";
+
+    // デバッグ用の独立したカメラインスタンスとそのコントローラー
+    std::shared_ptr<Camera> debugCamera_;
+    std::unique_ptr<OrbitCameraController> debugCameraController_;
 
     // --- ライティング ---
     std::unique_ptr<DirectionalLight> directionalLight_;

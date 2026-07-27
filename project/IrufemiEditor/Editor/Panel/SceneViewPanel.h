@@ -5,7 +5,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include <imgui.h>
 #include "imgui/ImGuizmo.h"
-#include "Editor/Utils/EditorCameraController.h"
+#include "Engine/Graphics/Camera/OrbitCameraController.h"
 
 /**
  * @class SceneViewPanel
@@ -18,7 +18,7 @@ public:
 
 private:
     EditorManager* editorManager_ = nullptr;
-    EditorCameraController cameraController_;
+    OrbitCameraController cameraController_;
 
     // --- ギズモ用状態 ---
     ImGuizmo::OPERATION currentGizmoOperation_ = ImGuizmo::TRANSLATE;
