@@ -324,20 +324,14 @@ void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& a
         JointPose& jointPose = skeleton.jointPoses[binding.first];
         const NodeAnimation& rootNodeAnimation = *binding.second;
 
-        if (!applyRootTranslation && binding.second->translate.keyframes.size() > 0) {
-            // Root translation を適用しない場合はBindPoseのままにするか、(0,0,0)に固定するか。
-            // ひとまずRootボーン(インデックスが0、または親がないノード)かどうか判定する
-            if (!skeleton.data->joints[binding.first].parent) {
-                // Root translation は適用しない
-            } else {
-                jointPose.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
-            }
+        bool isRoot = !skeleton.data->joints[binding.first].parent;
+        if (!applyRootTranslation && isRoot) {
+            // Rootモーションは適用対象外（外部で処理するため、ボーンには適用せず維持）
         } else {
             jointPose.transform.translate = CalculateValue(rootNodeAnimation.translate, animationTime);
+            jointPose.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
+            jointPose.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
         }
-        
-        jointPose.transform.rotate = CalculateValue(rootNodeAnimation.rotate, animationTime);
-        jointPose.transform.scale = CalculateValue(rootNodeAnimation.scale, animationTime);
     }
 }
 
@@ -396,12 +390,12 @@ void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& a
         // ブレンド計算
         bool isRoot = !jointData.parent;
         if (!applyRootTranslation && isRoot) {
-            // ルートの移動はブレンド対象外（外部で抽出する）
+            // ルートの移動・回転・スケールは適用対象外（外部で抽出するか、そのまま維持）
         } else {
             jointPose.transform.translate = Lerp(transA, transB, weight);
+            jointPose.transform.rotate = Math::Slerp(rotA, rotB, weight);
+            jointPose.transform.scale = Lerp(scaleA, scaleB, weight);
         }
-        jointPose.transform.rotate = Math::Slerp(rotA, rotB, weight);
-        jointPose.transform.scale = Lerp(scaleA, scaleB, weight);
     }
 }
 

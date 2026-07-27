@@ -62,7 +62,7 @@ void Animator::Update(SkeletonPose& targetPose) {
     }
 
     // Root Motion の抽出
-    ExtractRootMotion(currentAnimation_.get(), prevTime, animationTime_, deltaRootTranslation_, deltaRootRotation_);
+    ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_, deltaRootTranslation_, deltaRootRotation_);
 
     if (isBlending_ && previousAnimation_) {
         fadeTimer_ += engine_->GetGameDeltaTime(); // フェードは等速(playbackSpeedに依存しない)
@@ -89,19 +89,27 @@ void Animator::Update(SkeletonPose& targetPose) {
     AnimationManager::SkeletonUpdate(targetPose);
 }
 
-void Animator::ExtractRootMotion(const Animation* anim, float prevTime, float currTime, Vector3& outDeltaTrans, Quaternion& outDeltaRot) {
+void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime, Vector3& outDeltaTrans, Quaternion& outDeltaRot) {
     outDeltaTrans = {0.0f, 0.0f, 0.0f};
     outDeltaRot = {0.0f, 0.0f, 0.0f, 1.0f};
-    if (!anim) return;
+    if (!anim || !skeleton) return;
 
-    // Rootボーンの判定。とりあえず最初に見つかったアニメーションをRootとみなすか、"Root"等の名前で探す
-    // ここでは、データ構造上どれがRootボーンかSkeletonPose無しでは分からないため、
-    // "RootNode" のような一般的な名前を探すか、最初のノードを使う。
-    // ※今回は簡易的に一番最初のノードアニメーションの差分をRootMotionとする
     if (anim->nodeAnimations.empty()) return;
-    
-    // 仮: iterの最初をRootとする (あるいは特定のボーン名)
-    auto rootIt = anim->nodeAnimations.begin();
+
+    // ルートノードの探索（parentが存在しないジョイント）
+    std::string rootNodeName = "";
+    for (const auto& joint : skeleton->joints) {
+        if (!joint.parent) {
+            rootNodeName = joint.name;
+            break;
+        }
+    }
+
+    if (rootNodeName.empty()) return;
+
+    auto rootIt = anim->nodeAnimations.find(rootNodeName);
+    if (rootIt == anim->nodeAnimations.end()) return;
+
     const NodeAnimation& rootAnim = rootIt->second;
 
     if (!rootAnim.translate.keyframes.empty()) {

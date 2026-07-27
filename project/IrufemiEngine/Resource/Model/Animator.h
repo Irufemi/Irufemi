@@ -60,5 +60,5 @@ private:
     Quaternion deltaRootRotation_ = {0.0f, 0.0f, 0.0f, 1.0f};
 
     // ヘルパ
-    void ExtractRootMotion(const Animation* anim, float prevTime, float currTime, Vector3& outDeltaTrans, Quaternion& outDeltaRot);
+    void ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime, Vector3& outDeltaTrans, Quaternion& outDeltaRot);
 };
