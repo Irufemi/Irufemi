@@ -108,19 +108,19 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", { 64,64,64 });
     }
     if (isActiveAnimatedCube_) {
-        animatedCube_ = std::make_unique<GameObject>("AnimatedCube");
+        animatedCube_ = std::make_shared<GameObject>("AnimatedCube");
         animatedCube_->SetScene(this);
         animatedCube_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/AnimatedCube.gltf");
         animatedCube_->AddComponent<AnimatorComponent>()->Play("sample/AnimatedCube.gltf", true);
     }
     if (isActiveWalk_) {
-        walk_ = std::make_unique<GameObject>("Walk");
+        walk_ = std::make_shared<GameObject>("Walk");
         walk_->SetScene(this);
         walk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/walk.gltf");
         walk_->AddComponent<AnimatorComponent>()->Play("sample/walk.gltf", true);
     }
     if (isActiveSneakWalk_) {
-        sneakWalk_ = std::make_unique<GameObject>("SneakWalk");
+        sneakWalk_ = std::make_shared<GameObject>("SneakWalk");
         sneakWalk_->SetScene(this);
         sneakWalk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/sneakWalk.gltf");
         sneakWalk_->AddComponent<AnimatorComponent>()->Play("sample/sneakWalk.gltf", true);
@@ -300,7 +300,7 @@ void DebugScene::Update() {
     
     if (isActiveAnimatedCube_) {
         if (!animatedCube_) {
-            animatedCube_ = std::make_unique<GameObject>("AnimatedCube");
+            animatedCube_ = std::make_shared<GameObject>("AnimatedCube");
             animatedCube_->SetScene(this);
             animatedCube_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/AnimatedCube.gltf");
             animatedCube_->AddComponent<AnimatorComponent>()->Play("sample/AnimatedCube.gltf", true);
@@ -309,7 +309,7 @@ void DebugScene::Update() {
     }
     if (isActiveWalk_) {
         if (!walk_) {
-            walk_ = std::make_unique<GameObject>("Walk");
+            walk_ = std::make_shared<GameObject>("Walk");
             walk_->SetScene(this);
             walk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/walk.gltf");
             walk_->AddComponent<AnimatorComponent>()->Play("sample/walk.gltf", true);
@@ -318,7 +318,7 @@ void DebugScene::Update() {
     }
     if (isActiveSneakWalk_) {
         if (!sneakWalk_) {
-            sneakWalk_ = std::make_unique<GameObject>("SneakWalk");
+            sneakWalk_ = std::make_shared<GameObject>("SneakWalk");
             sneakWalk_->SetScene(this);
             sneakWalk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/sneakWalk.gltf");
             sneakWalk_->AddComponent<AnimatorComponent>()->Play("sample/sneakWalk.gltf", true);
@@ -327,7 +327,7 @@ void DebugScene::Update() {
     }
     if (isActiveBlendTest_) {
         if (!blendTest_) {
-            blendTest_ = std::make_unique<GameObject>("BlendTest");
+            blendTest_ = std::make_shared<GameObject>("BlendTest");
             blendTest_->SetScene(this);
             blendTest_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/walk.gltf");
             blendTest_->AddComponent<AnimatorComponent>()->Play("sample/walk.gltf", true);
