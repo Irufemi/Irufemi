@@ -5,6 +5,7 @@
 #include "Engine/Manager/CollisionManager.h"
 #include "Framework/BaseScene.h"
 #include "Resource/Model/ModelManager.h"
+#include "Resource/Model/AnimationManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include <algorithm>
@@ -392,6 +393,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             
                             bool isModel = (lowerName.find("model") != std::string::npos || lowerName.find("mesh") != std::string::npos);
                             bool isTexture = (lowerName.find("texture") != std::string::npos || lowerName.find("image") != std::string::npos);
+                            bool isAnimation = (lowerName.find("animation") != std::string::npos || lowerName.find("anim") != std::string::npos);
                             
                             std::vector<std::string> comboItems;
                             IrufemiEngine* engine = nullptr;
@@ -407,6 +409,12 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                 comboItems = mgr->GetAvailableModels();
                             } else if (engine && isTexture && engine->GetTextureManager()) {
                                 comboItems = engine->GetTextureManager()->GetTextureNamesForDebug();
+                            } else if (engine && isAnimation && engine->GetAnimationManager()) {
+                                auto* mgr = engine->GetAnimationManager();
+#ifndef NDEBUG
+                                mgr->RefreshAvailableAnimations();
+#endif
+                                comboItems = mgr->GetAvailableAnimations();
                             }
 
                             if (!comboItems.empty()) {

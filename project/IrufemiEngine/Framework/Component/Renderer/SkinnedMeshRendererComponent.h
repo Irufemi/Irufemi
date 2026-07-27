@@ -32,8 +32,13 @@ public:
     AnimatedMeshObject* GetRawObject() { return animatedMesh_.get(); }
     void SetShowDebugBones(bool show) { showDebugBones_ = show; }
 
+    // Animatorからのポーズ上書き用
+    void SetPoseOverride(const struct SkeletonPose* pose) { poseOverride_ = pose; }
+
 private:
     std::unique_ptr<AnimatedMeshObject> animatedMesh_;
-    std::string modelFilename_ = "sample/walk.gltf";
+    std::string modelFilename_ = "";
+    std::string currentLoadedFilename_ = "";
     bool showDebugBones_ = false;
+    const struct SkeletonPose* poseOverride_ = nullptr;
 };

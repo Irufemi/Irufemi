@@ -25,10 +25,16 @@ void AnimatorComponent::Start() {
 
 void AnimatorComponent::Play(const std::string& animationName, bool loop, float fadeDuration) {
     defaultAnimation_ = animationName;
+    currentLoadedAnimation_ = animationName;
     animator_->Play(animationName, loop, fadeDuration);
 }
 
 void AnimatorComponent::Update() {
+    // エディタ等で文字列が変更された場合の動的ロード検知
+    if (defaultAnimation_ != currentLoadedAnimation_) {
+        Play(defaultAnimation_, true); // デフォルトループで再ロード
+    }
+
     animator_->SetPlaybackSpeed(playbackSpeed_);
 
     // 同じGameObjectについている SkinnedMeshRenderer を探す
@@ -56,7 +62,7 @@ void AnimatorComponent::Update() {
             }
 
             // SkinnedMeshRenderer に対して計算済みのポーズを描画に使うよう指示
-            renderer->GetRawObject()->Update(pose);
+            renderer->SetPoseOverride(pose);
         }
     }
 }

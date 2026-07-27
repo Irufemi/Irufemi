@@ -612,3 +612,32 @@ void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const Skeleto
         skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix = Math::Transpose(Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
     }
 }
+
+void AnimationManager::RefreshAvailableAnimations() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    availableAnimations_.clear();
+
+    if (rootDir_.empty()) return;
+
+    try {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(rootDir_)) {
+            if (entry.is_regular_file()) {
+                auto ext = entry.path().extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                if (ext == ".gltf" || ext == ".glb") {
+                    // Create relative path from rootDir_
+                    std::string relativePath = std::filesystem::relative(entry.path(), rootDir_).string();
+                    std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
+                    availableAnimations_.push_back(relativePath);
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        // エラーハンドリング
+    }
+}
+
+std::vector<std::string> AnimationManager::GetAvailableAnimations() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return availableAnimations_;
+}

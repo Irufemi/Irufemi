@@ -11,25 +11,34 @@ SkinnedMeshRendererComponent::~SkinnedMeshRendererComponent() {}
 
 void SkinnedMeshRendererComponent::Initialize() {
     if (!modelFilename_.empty()) {
-        animatedMesh_->Initialize(modelFilename_);
+        LoadModel(modelFilename_);
     }
 }
 
 void SkinnedMeshRendererComponent::LoadModel(const std::string& filename) {
     modelFilename_ = filename;
+    currentLoadedFilename_ = filename;
     animatedMesh_->Initialize(modelFilename_);
 }
 
 void SkinnedMeshRendererComponent::Update() {
+    // エディタ等で文字列が変更された場合の動的ロード検知
+    if (modelFilename_ != currentLoadedFilename_) {
+        LoadModel(modelFilename_);
+    }
+
     if (auto transform = GetGameObject()->GetComponent<TransformComponent>()) {
         animatedMesh_->SetTranslate(transform->GetWorldPosition());
         animatedMesh_->SetRotate(transform->GetWorldRotation());
         animatedMesh_->SetScale(transform->GetWorldScale());
     }
     animatedMesh_->SetDebugBoneVisible(showDebugBones_);
-    // Update自体はAnimatorComponent側からポーズ付きで呼ばれることを想定し、
-    // ここでは自身単体での更新（バインドポーズ）を行う
-    animatedMesh_->Update(nullptr);
+    
+    // Animatorからのポーズがあれば適用、なければバインドポーズ(nullptr)
+    animatedMesh_->Update(poseOverride_);
+    
+    // 次フレームのためにリセット（毎フレーム指定される想定）
+    poseOverride_ = nullptr;
 }
 
 void SkinnedMeshRendererComponent::Draw() {

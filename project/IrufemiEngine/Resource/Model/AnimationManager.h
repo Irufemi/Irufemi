@@ -35,6 +35,10 @@ public:
     std::shared_ptr<Animation> LoadAnimationFile(const std::string& filename);
     SkinCluster CreateSkinCluster(const SkeletonData& skeleton, const ObjModel& objModel);
 
+    // アニメーションファイルの列挙用
+    void RefreshAvailableAnimations();
+    std::vector<std::string> GetAvailableAnimations() const;
+
 public: // 静的ヘルパ
 
     /// <summary>
@@ -153,6 +157,7 @@ private:
     };
     std::unordered_map<std::string, CachedAnimation> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
+    std::vector<std::string> availableAnimations_;
     
     std::unique_ptr<DirectoryWatcher> directoryWatcher_;
     void OnDirectoryChanged();

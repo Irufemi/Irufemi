@@ -27,7 +27,8 @@ public:
 
 private:
     std::unique_ptr<Animator> animator_;
-    std::string defaultAnimation_ = "Walk";
+    std::string defaultAnimation_ = "";
+    std::string currentLoadedAnimation_ = "";
     float playbackSpeed_ = 1.0f;
     bool applyRootMotion_ = false;
 };
