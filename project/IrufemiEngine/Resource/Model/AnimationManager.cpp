@@ -11,6 +11,7 @@
 
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/StringUtility.h"
+#include "Engine/Core/Utility/FileSystem.h"
 #include <filesystem>
 #include "AnimationImporter.h"
 #include "AnimationSerializer.h"
@@ -18,7 +19,7 @@
 void AnimationManager::Initialize(DirectXCommon* dxCommon) {
     dxCommon_ = dxCommon;
     if (rootDir_.empty()) {
-        rootDir_ = "resources/model";
+        rootDir_ = FileSystem::GetResourcePath("model");
     }
 }
 

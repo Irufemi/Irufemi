@@ -4,6 +4,7 @@
 #include "Engine/IrufemiEngine.h"
 #include "GameObject.h"
 #include "Engine/Core/Utility/Log.h"
+#include "Engine/Core/Utility/FileSystem.h"
 #include <fstream>
 #include <iostream>
 #include <filesystem>
@@ -130,7 +131,7 @@ void SceneSerializer::ClearCache() {
 }
 
 std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& sceneName) {
-    fs::path dir = "resources/scenes";
+    fs::path dir = FileSystem::GetResourcePath("scenes");
     if (scene && scene->GetEngine()) {
         dir = scene->GetEngine()->GetSceneDirectory();
     }

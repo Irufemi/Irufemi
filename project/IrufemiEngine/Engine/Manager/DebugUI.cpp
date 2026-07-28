@@ -12,6 +12,7 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 #include "../../EngineResources/FontAwesome/IconsFontAwesome6.h"
+#include "../Core/Utility/FileSystem.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
 #include <vector>
@@ -57,6 +58,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
 #ifdef USE_IMGUI
     /*開発UIをだそう*/
     const char* iniFileName = "imgui.ini";
+
 #ifdef EditorMode
     iniFileName = "imgui_editor.ini";
 #endif
@@ -64,7 +66,8 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     // 初回起動時（iniが無い場合）に、リポジトリにコミットされているプリセットをコピーする
     if (!std::filesystem::exists(iniFileName)) {
         // カレントディレクトリ（プロジェクト直下 または exe直下）から見てエンジンリソースを探す
-        const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
+        std::string presetPathStr = FileSystem::GetEngineRoot() + "/EngineResources/default_imgui.ini";
+        const char* presetPath = presetPathStr.c_str();
         if (std::filesystem::exists(presetPath)) {
             std::error_code ec;
             std::filesystem::copy_file(presetPath, iniFileName, ec);
@@ -83,7 +86,8 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     ImGuiIO& io = ImGui::GetIO();
     
     // 1. ベースフォント（英数字用）として FiraMono を読み込む
-    ImFont* baseFont = io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/Fira_Mono/FiraMono-Regular.ttf", 16.0f);
+    std::string firaMonoPath = FileSystem::GetEngineRoot() + "/EngineResources/Fira_Mono/FiraMono-Regular.ttf";
+    ImFont* baseFont = io.Fonts->AddFontFromFileTTF(firaMonoPath.c_str(), 16.0f);
     
     // フォントファイルが見つからなかった場合（exe単体起動時など）、デフォルトフォントを追加してクラッシュを防ぐ
     if (baseFont == nullptr) {
@@ -102,7 +106,8 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     icons_config.GlyphMinAdvanceX = 16.0f; // アイコンの等幅調整
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
     if (baseFont != nullptr) { // FontAwesome はパスが相対なので、もしFiraMonoが見つからない環境なら読み込みをスキップしてもよい
-        io.Fonts->AddFontFromFileTTF("../IrufemiEngine/EngineResources/FontAwesome/fa-solid-900.ttf", 16.0f, &icons_config, icons_ranges);
+        std::string faPath = FileSystem::GetEngineRoot() + "/EngineResources/FontAwesome/fa-solid-900.ttf";
+        io.Fonts->AddFontFromFileTTF(faPath.c_str(), 16.0f, &icons_config, icons_ranges);
     }
 
 #ifdef EditorMode

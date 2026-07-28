@@ -649,6 +649,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\Utility\Ease.cpp" />
     <ClCompile Include="Engine\Core\Utility\ErrorUtility.cpp" />
     <ClCompile Include="Engine\Core\Utility\Log.cpp" />
+    <ClCompile Include="Engine\Core\Utility\FileSystem.cpp" />
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp" />
     <ClCompile Include="Engine\Graphics\Camera\Camera.cpp" />
     <ClCompile Include="Engine\Graphics\Camera\CameraManager.cpp" />
@@ -806,6 +807,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Utility\DXUtility.h" />
     <ClInclude Include="Engine\Core\Utility\Ease.h" />
     <ClInclude Include="Engine\Core\Utility\Log.h" />
+    <ClInclude Include="Engine\Core\Utility\FileSystem.h" />
     <ClInclude Include="Engine\Core\Utility\ErrorUtility.h" />
     <ClInclude Include="Engine\Core\Utility\ObjectPool.h" />
     <ClInclude Include="Engine\Core\Utility\StringUtility.h" />

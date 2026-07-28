@@ -113,6 +113,7 @@
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
+xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y
 xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
 if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
@@ -146,7 +147,8 @@ exit 0</Command>
       <AdditionalOptions>/ignore:4099</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
+      <Command>xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y
+xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
 if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
@@ -180,6 +182,7 @@ exit 0</Command>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
+xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y
 xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
 if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
@@ -215,6 +218,7 @@ exit 0</Command>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
 copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"
+xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y
 xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
 if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>

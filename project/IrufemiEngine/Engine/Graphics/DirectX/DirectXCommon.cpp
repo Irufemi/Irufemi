@@ -10,6 +10,7 @@
 #include "../../Core/Utility/Log.h"
 #include "../../Core/Utility/ErrorUtility.h"
 #include "../../Core/Utility/StringUtility.h"
+#include "../../Core/Utility/FileSystem.h"
 #include "../../../../externals/DirectXTex/d3dx12.h"
 #include <algorithm>
 #include <dxgidebug.h>
@@ -114,9 +115,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     shaderManager_->Initialize();
 
     // シェーダーの検索パスとバイナリパスを登録
-    shaderManager_->AddSearchPath(L"resources/shaders/");
-    shaderManager_->AddSearchPath(L"../IrufemiEngine/EngineResources/shaders/");
-    shaderManager_->SetBinaryPath(L"resources/.cache/shaders/");
+    shaderManager_->AddSearchPath(ConvertString(FileSystem::GetResourcePath("shaders") + "/"));
+    shaderManager_->AddSearchPath(ConvertString(FileSystem::GetEngineRoot() + "/EngineResources/shaders/"));
+    shaderManager_->SetBinaryPath(ConvertString(FileSystem::GetResourcePath(".cache/shaders") + "/"));
 
     EnableDebugLayer();
     InitializeDXGI();

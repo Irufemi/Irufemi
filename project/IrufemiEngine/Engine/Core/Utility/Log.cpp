@@ -15,12 +15,14 @@
 //時間を扱うライブラリ
 #include <chrono>
 
+#include "FileSystem.h"
+
 void Log::Initialize() {
 
     /*ログを出そう*/
 
     //ログのディレクトリを用意
-    std::filesystem::create_directories("./Logs");
+    std::filesystem::create_directories(FileSystem::GetLogPath());
 
     //現在時刻を取得
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -31,7 +33,7 @@ void Log::Initialize() {
     //formatを使って毎月日_時分秒の文字列に変換
     std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
     //時刻を使ってファイル名を決定
-    std::string logFilePath = std::string("./Logs/") + dateString + ".log";
+    std::string logFilePath = FileSystem::GetLogPath() + "/" + dateString + ".log";
     //ファイルを使って書き込み準備
     logStream.open(logFilePath, std::ios::out | std::ios::trunc);
 

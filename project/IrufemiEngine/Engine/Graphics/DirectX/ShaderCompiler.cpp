@@ -1,6 +1,7 @@
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include "ShaderCompiler.h"
 #include "../../Core/Utility/Log.h"
+#include "../../Core/Utility/FileSystem.h"
 #include "../../Core/Utility/StringUtility.h"
 #include <format>
 #include <cassert>
@@ -37,7 +38,11 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
     HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
     if (FAILED(hr)) {
-        IRUFEMI_ASSERT(false && "Failed to load shader file.");
+        std::string errStr = "Failed to load shader file: " + ConvertString(filePath);
+        std::ofstream crashLog(FileSystem::GetLogPath() + "/CRASH.log");
+        crashLog << errStr << std::endl;
+        crashLog.close();
+        IRUFEMI_ASSERT_MSG(false, errStr.c_str());
         return nullptr;
     }
 

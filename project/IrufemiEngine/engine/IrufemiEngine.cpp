@@ -15,6 +15,7 @@
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Core/Utility/Log.h"
+#include "Core/Utility/FileSystem.h"
 #include "../Framework/SceneManager.h"
 #include "../Framework/SceneTransition.h"
 #include "Core/System/DirectoryWatcher.h"
@@ -78,6 +79,9 @@ IrufemiEngine::~IrufemiEngine() { Finalize(); }
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight) {
+  // パス解決機能の初期化 (一番最初に呼ぶ)
+  FileSystem::Initialize();
+
   /*CrashHandler*/
   SetUnhandledExceptionFilter(WinApp::ExportDump);
 
@@ -394,8 +398,8 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   auto reloadCallback = [this]() {
       shouldReloadShaders_ = true;
   };
-  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>("resources/shaders", reloadCallback));
-  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>("../IrufemiEngine/EngineResources/shaders", reloadCallback));
+  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>(FileSystem::GetResourcePath("shaders"), reloadCallback));
+  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>(FileSystem::GetEngineRoot() + "/EngineResources/shaders", reloadCallback));
 #endif
 }
 

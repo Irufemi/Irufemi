@@ -1,6 +1,7 @@
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/StringUtility.h"
 #include "Engine/Core/Utility/Log.h"
+#include "Engine/Core/Utility/FileSystem.h"
 #include <iostream>
 #include "ModelManager.h"
 #include "Engine/Core/System/ThreadPool.h"
@@ -54,7 +55,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     textureManager_ = textureManager; // 追加
     GpuMaterial::sTextureManager = textureManager; // 追加
     if (rootDir_.empty()) {
-        rootDir_ = "resources/model";
+        rootDir_ = FileSystem::GetResourcePath("model");
     }
     if (!threadPool_) {
         threadPool_ = std::make_unique<ThreadPool>(4); // 推奨された4スレッド
