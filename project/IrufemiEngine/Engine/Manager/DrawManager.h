@@ -354,11 +354,11 @@ public:
      * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
      * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
-    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true, ID3D12Resource* vertexBufferResourceOverride = nullptr);
+    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true, ID3D12Resource* vertexBufferResourceOverride = nullptr, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV = 0);
     /**
      * @brief 半透明・エフェクト用の3D標準描画のキューに追加（距離ソート用）
      */
-    void SubmitTransparent3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = false, ID3D12Resource* vertexBufferResourceOverride = nullptr);
+    void SubmitTransparent3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = false, ID3D12Resource* vertexBufferResourceOverride = nullptr, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV = 0);
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, ID3D12Resource* vertexBufferResourceOverride = nullptr);
     void SubmitTextOutlineMask(const class Object2DResource* resource);

@@ -4,6 +4,8 @@
 #include "../../../Renderer/Object/3D/AnimationModel/AnimatedMeshObject.h"
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include "../../../Resource/Model/Data/ObjModel.h"
 
 /**
  * @class SkinnedMeshRendererComponent
@@ -45,4 +47,24 @@ private:
     std::string currentLoadedFilename_ = "";
 
     const struct SkeletonPose* poseOverride_ = nullptr;
+    
+    std::unordered_map<size_t, ObjMaterial> materialOverrides_;
+
+public:
+    bool HasMaterialOverride(size_t meshIndex) const { return materialOverrides_.find(meshIndex) != materialOverrides_.end(); }
+    const ObjMaterial* GetMaterialOverride(size_t meshIndex) const {
+        auto it = materialOverrides_.find(meshIndex);
+        return it != materialOverrides_.end() ? &it->second : nullptr;
+    }
+    ObjMaterial* GetMaterialOverrideMutable(size_t meshIndex) {
+        auto it = materialOverrides_.find(meshIndex);
+        return it != materialOverrides_.end() ? &it->second : nullptr;
+    }
+    void SetMaterialOverride(size_t meshIndex, const ObjMaterial& material) {
+        materialOverrides_[meshIndex] = material;
+    }
+    void RemoveMaterialOverride(size_t meshIndex) {
+        materialOverrides_.erase(meshIndex);
+    }
+    const std::unordered_map<size_t, ObjMaterial>& GetAllMaterialOverrides() const { return materialOverrides_; }
 };

@@ -787,7 +787,7 @@ void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
     commandList_->DrawIndexedInstanced(packet.indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride) {
+void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
     std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     Standard3DPacket p{};
@@ -800,12 +800,13 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
     p.vertexBufferResourceOverride = vertexBufferResourceOverride;
+    p.overrideMaterialCBV = overrideMaterialCBV;
     p.castShadows = castShadows;
     p.distanceToCamera = 0.0f; // Standardの場合は不要
     standard3DQueue_.push_back(p);
 }
 
-void DrawManager::SubmitTransparent3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride) {
+void DrawManager::SubmitTransparent3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
     std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     Standard3DPacket p{};
@@ -817,6 +818,7 @@ void DrawManager::SubmitTransparent3D(const Object3DResource* resource, const D3
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
     p.vertexBufferResourceOverride = vertexBufferResourceOverride;
+    p.overrideMaterialCBV = overrideMaterialCBV;
     p.castShadows = castShadows;
 
     // カメラからの距離を計算
@@ -897,7 +899,11 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
 
     // 各種リソースのバインド
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
+    if (packet.overrideMaterialCBV != 0) {
+        commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.overrideMaterialCBV);
+    } else {
+        commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
+    }
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
 
     // customCBVAddress が設定されていれば Special (b6) にバインドする

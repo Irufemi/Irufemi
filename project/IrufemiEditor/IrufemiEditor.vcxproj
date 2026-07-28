@@ -208,6 +208,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Editor\Panel\ConsolePanel.cpp" />
 
     <ClCompile Include="Editor\Core\ComponentUIHelpers.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\SkinnedMeshRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\TransformComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\MeshRendererComponentEditor.cpp" />
     <ClCompile Include="Editor\ComponentEditors\EffectMaskComponentEditor.cpp" />
@@ -239,6 +240,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Editor\Panel\ConsolePanel.h" />
 
     <ClInclude Include="Editor\Core\ComponentUIHelpers.h" />
+    <ClInclude Include="Editor\ComponentEditors\SkinnedMeshRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\TransformComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\MeshRendererComponentEditor.h" />
     <ClInclude Include="Editor\ComponentEditors\EffectMaskComponentEditor.h" />

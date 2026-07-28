@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 // 前方宣言
 class Camera;
@@ -57,6 +58,9 @@ public: // ゲッター・セッター
 
     void SetColor(const Vector4& color) { color_ = color; MarkAsDirty(); }
     const Vector4& GetColor() const { return color_; }
+    
+    void SetMaterialOverrides(const std::unordered_map<size_t, ObjMaterial>* overrides) { materialOverrides_ = overrides; MarkAsDirty(); }
+    const std::unordered_map<size_t, ObjMaterial>* GetMaterialOverrides() const { return materialOverrides_; }
 
     void SetAlpha(float alpha) { color_.w = alpha; MarkAsDirty(); }
 
@@ -131,6 +135,11 @@ protected: // メンバ変数
     int32_t lightingModeOverride_ = -1; // -1:使用しない, 0以上:上書き
     int32_t useClampSamplerOverride_ = -1; // -1:使用しない, 0以上:上書き
     int32_t enableLightingOverride_ = -1; // -1:使用しない, 0以上:上書き
+
+    // マテリアル個別上書き
+    const std::unordered_map<size_t, ObjMaterial>* materialOverrides_ = nullptr;
+
+    // リソース (メッシュごとの頂点/インデックスなど)
     bool enableEffectMask_ = false; // エフェクトから保護するかどうか
     int32_t customEffectType_ = 0; // カスタムエフェクトのタイプ
     float customEffectParam_ = 0.0f; // カスタムエフェクトのパラメータ

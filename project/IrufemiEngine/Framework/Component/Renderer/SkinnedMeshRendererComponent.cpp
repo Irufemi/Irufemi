@@ -62,8 +62,16 @@ bool SkinnedMeshRendererComponent::Raycast(const Ray& ray, float& outDistance) c
     Vector3 localHalfSize = (cpuModel->boundingBox.max - cpuModel->boundingBox.min) * 0.5f;
 
     OBB obb;
+    
+    // スケルトンのルートノードのTransform（スケール等）を適用する
+    Matrix4x4 rootTransform = Math::MakeIdentity4x4();
+    auto skeletonData = animatedMesh_->GetSkeletonData();
+    if (skeletonData && !skeletonData->joints.empty()) {
+        rootTransform = skeletonData->joints[0].bindLocalMatrix;
+    }
+
     // ワールド行列を用いて中心点を変換
-    const Matrix4x4& wmat = transform->GetWorldMatrix();
+    Matrix4x4 wmat = rootTransform * transform->GetWorldMatrix();
     obb.center = Math::Transform(localCenter, wmat);
 
     // ワールド行列の各軸ベクトルを抽出して正規化（回転）＆スケール適用

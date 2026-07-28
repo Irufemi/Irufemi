@@ -75,7 +75,14 @@ void BaseModel::UpdateMaterials() {
         auto& res = meshResources_[i];
         if (!res->GetMaterialData()) continue;
 
-        const ObjMaterial& cpuMat = m->cpuModel->meshes[i].material;
+        const ObjMaterial* cpuMatPtr = &m->cpuModel->meshes[i].material;
+        if (materialOverrides_) {
+            auto it = materialOverrides_->find(i);
+            if (it != materialOverrides_->end()) {
+                cpuMatPtr = &it->second;
+            }
+        }
+        const ObjMaterial& cpuMat = *cpuMatPtr;
         Material* mappedData = res->GetMaterialData();
 
         // インスタンスカラーとマテリアルカラーを乗算
