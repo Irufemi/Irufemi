@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <filesystem>
 #include <algorithm>
+#include "StringUtility.h"
 
 namespace fs = std::filesystem;
 
@@ -13,26 +14,26 @@ void FileSystem::Initialize() {
     wchar_t path[MAX_PATH];
     GetModuleFileNameW(NULL, path, MAX_PATH);
     fs::path exeFsPath = path;
-    exePath_ = exeFsPath.string();
+    exePath_ = ConvertString(exeFsPath.wstring());
     fs::path exeDir = exeFsPath.parent_path();
 
     // 1. Traverse up to find 'project' dir (Development Environment)
     fs::path current = exeDir;
     while (current.has_parent_path() && current != current.parent_path()) {
         if (fs::exists(current / "project" / "Application_solo")) {
-            projectRoot_ = (current / "project" / "Application_solo").string();
-            engineRoot_ = (current / "project" / "IrufemiEngine").string();
+            projectRoot_ = ConvertString((current / "project" / "Application_solo").wstring());
+            engineRoot_ = ConvertString((current / "project" / "IrufemiEngine").wstring());
             break;
         }
         if (fs::exists(current / "project" / "Application_team")) {
-            projectRoot_ = (current / "project" / "Application_team").string();
-            engineRoot_ = (current / "project" / "IrufemiEngine").string();
+            projectRoot_ = ConvertString((current / "project" / "Application_team").wstring());
+            engineRoot_ = ConvertString((current / "project" / "IrufemiEngine").wstring());
             break;
         }
         // fallback if it's already inside project
         if (current.filename() == "Application_solo" || current.filename() == "Application_team") {
-            projectRoot_ = current.string();
-            engineRoot_ = (current.parent_path() / "IrufemiEngine").string();
+            projectRoot_ = ConvertString(current.wstring());
+            engineRoot_ = ConvertString((current.parent_path() / "IrufemiEngine").wstring());
             break;
         }
         current = current.parent_path();
@@ -40,8 +41,8 @@ void FileSystem::Initialize() {
 
     // 2. If not found, assume distributed build
     if (projectRoot_.empty()) {
-        projectRoot_ = exeDir.string();
-        engineRoot_ = exeDir.string();
+        projectRoot_ = ConvertString(exeDir.wstring());
+        engineRoot_ = ConvertString(exeDir.wstring());
     }
 
     // Convert backslashes to forward slashes for consistency
