@@ -25,6 +25,12 @@ void GPUParticleManager::Finalize() {
     systems_.clear();
 }
 
+void GPUParticleManager::ClearAllParticles() {
+    for (auto& pair : systems_) {
+        pair.second.system->Clear();
+    }
+}
+
 GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, BlendMode blendMode, bool isUnscaledTime, bool enableLighting) {
     SystemKey key{ texturePath, blendMode, isUnscaledTime, enableLighting };
     auto& ctx = systems_[key];

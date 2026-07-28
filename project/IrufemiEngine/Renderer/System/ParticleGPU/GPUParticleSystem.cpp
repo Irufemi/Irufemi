@@ -280,7 +280,7 @@ void GPUParticleSystem::Update() {
 
   // パーティクルが生存している可能性がある、または単発放出（バースト）が要求された場合のみCSの更新フラグを立てる
   if (anyEmitting || timeSinceStop_ <= maxLifeOverall + 0.1f ||
-      totalBurstCount > 0) {
+      totalBurstCount > 0 || !isInitializedCS_) {
     needsUpdateCS_ = true;
     // バーストが要求された場合は、休眠から復帰するため停止タイマーをリセット
     if (totalBurstCount > 0) {
@@ -897,6 +897,21 @@ void GPUParticleSystem::DispatchComputeShaders(
   commandList->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
 
   uint32_t frameIndex = dxCommon_->GetFrameIndex();
+
+  if (!isInitializedCS_) {
+      commandList->SetPipelineState(
+          dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleInitialize"));
+      commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+      commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+      commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+
+      commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+
+      DirectXUtils::UAVBarriers(commandList, {particleResource_.Get(),
+                                              freeListIndexResource_.Get(),
+                                              freeListResource_.Get()});
+      isInitializedCS_ = true;
+  }
 
   // Emit
   commandList->SetPipelineState(

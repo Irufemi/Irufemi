@@ -435,12 +435,20 @@ void ModelManager::OnDirectoryChanged() {
 std::string ModelManager::NormalizeAndResolve(const std::string& filename) const {
     std::string f = filename;
     std::replace(f.begin(), f.end(), '\\', '/');
-    if (StartsWith(f, rootDir_ + "/")) {
-        // OK
-    } else if (StartsWith(f, rootDir_)) {
-        f = rootDir_ + "/" + f.substr(rootDir_.size());
+    std::string f_clean = f;
+    if (f_clean.find("./") == 0) f_clean = f_clean.substr(2);
+    else if (f_clean.find("/") == 0) f_clean = f_clean.substr(1);
+
+    std::string root_clean = rootDir_;
+    if (root_clean.find("./") == 0) root_clean = root_clean.substr(2);
+    else if (root_clean.find("/") == 0) root_clean = root_clean.substr(1);
+
+    if (StartsWith(f_clean, root_clean + "/")) {
+        f = "./" + f_clean;
+    } else if (StartsWith(f_clean, root_clean)) {
+        f = "./" + root_clean + "/" + f_clean.substr(root_clean.size());
     } else {
-        f = rootDir_ + "/" + f;
+        f = "./" + root_clean + "/" + f_clean;
     }
     std::transform(f.begin(), f.end(), f.begin(),
         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });

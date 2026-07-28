@@ -16,6 +16,11 @@ public:
     void Draw();
     void Finalize();
     void Debug();
+    
+    /**
+     * @brief 現在GPU上に残っているすべてのパーティクルをクリアする（シーン遷移時などに使用）
+     */
+    void ClearAllParticles();
 
     struct EmitterHandle {
         GPUParticleSystem* system = nullptr;

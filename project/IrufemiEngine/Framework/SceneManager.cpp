@@ -9,6 +9,7 @@
 #include "../Engine/Platform/Input/Mouse.h"
 #include "SceneSerializer.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 
 namespace {
     /**
@@ -151,6 +152,14 @@ void SceneManager::PopScene() {
     sceneStack_.back().scene->OnExit();
     sceneStack_.back().scene->Finalize();
     sceneStack_.pop_back();
+
+    // パーティクルの状態をクリア（Pop前のシーンから残ったパーティクルを消去）
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
+    if (engine_->GetGPUParticleManager()) {
+        engine_->GetGPUParticleManager()->ClearAllParticles();
+    }
 
     if (!sceneStack_.empty()) {
         // 次のシーンが最前面に復帰するためレジューム処理を行う
@@ -416,6 +425,9 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     // 次のシーンへ行く前にパーティクルの状態をクリア
     if (engine_->GetVoxelParticleManager()) {
         engine_->GetVoxelParticleManager()->Clear();
+    }
+    if (engine_->GetGPUParticleManager()) {
+        engine_->GetGPUParticleManager()->ClearAllParticles();
     }
 
     // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
