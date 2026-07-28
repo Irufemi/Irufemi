@@ -29,4 +29,14 @@ public:
 private:
     float moveSpeed_ = 5.0f;
     float turnSpeed_ = 10.0f; // 旋回の滑らかさ（Lerp等を使う場合）
+
+    // アニメーション制御用
+    std::string currentAnimState_ = "";
+    bool isCrouching_ = false;
+    float fadeDuration_ = 0.2f;
+
+    std::string idleAnimName_ = "sample/walk.gltf";
+    std::string walkAnimName_ = "sample/walk.gltf";
+    std::string crouchIdleAnimName_ = "sample/sneakWalk.gltf";
+    std::string crouchWalkAnimName_ = "sample/sneakWalk.gltf";
 };

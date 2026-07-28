@@ -19,12 +19,13 @@
     2. `StaticModelObject::SyncBeforeDraw` 等で、ルートから再帰的に Node を巡回し、`globalMatrix = parentGlobal * localMatrix` を計算してキャッシュ配列に格納する。
     3. `StaticModelObject::Draw` 内のメッシュループにおいて、対象の `ObjMesh` が属するノードの `globalMatrix` を取得し、個別の Transform 定数バッファ（あるいは構造化バッファのインデックス）を更新して `SubmitStandard3D` へ渡す。
 
-- [ ] **Animation補間 (5点)**
+- [x] **Animation補間 (5点)**
   - 現状: `AnimationManager::BlendAnimation` にブレンド処理のベースがあり、`Animator` クラスにも `previousAnimation_`, `fadeTimer_` などのメンバが用意されている。
   - 詳細・実装方針:
     1. `Animator::Play` を拡張（または `CrossFade` 関数を追加）し、再生中のアニメーションを `previous` に退避し、`fadeTimer_ = 0` にリセットする。
     2. `Animator::Update` 内で、`isBlending_` が true ならば `fadeTimer_` を進め、`weight = fadeTimer_ / fadeDuration_` を算出して `BlendAnimation` を呼び出す。
     3. `weight >= 1.0f` になったら `isBlending_ = false` とし、単一アニメーションの再生（`ApplyAnimation`）に移行する。
+    - **※確認結果: Animator.cpp にて既に実装完了済みであることを確認しました！**
 
 - [ ] **手からパーティクルを出す (10点)**
   - 現状: `SkeletonPose` には各ボーンの `skeletonSpaceMatrix` があるが、外部から特定のボーンのワールド行列を取得する口がない。

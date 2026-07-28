@@ -6,7 +6,7 @@
           "data": {
             "position": [
               0.0,
-              -1.0,
+              -0.5,
               0.0
             ],
             "rotation": [
@@ -79,8 +79,13 @@
         },
         {
           "data": {
+            "Crouch Idle Anim": "sample/sneakWalk.gltf",
+            "Crouch Walk Anim": "sample/sneakWalk.gltf",
+            "Fade Duration": 0.20000000298023224,
+            "Idle Anim": "sample/walk.gltf",
             "Move Speed": 5.0,
-            "Turn Speed": 10.0
+            "Turn Speed": 10.0,
+            "Walk Anim": "sample/walk.gltf"
           },
           "type": "CG4PlayerComponent"
         }
