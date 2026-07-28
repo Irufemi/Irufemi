@@ -9,6 +9,7 @@
 #include "Renderer/SkinnedMeshRendererComponent.h"
 #include "Renderer/SkeletonDebugRendererComponent.h"
 #include "Logic/AnimatorComponent.h"
+#include "Logic/BoneAttachmentComponent.h"
 #include "Effect/VoxelParticleComponent.h"
 #include "Effect/EffectMaskComponent.h"
 #include "Collider/AABBColliderComponent.h"
@@ -65,6 +66,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("SkinnedMeshRendererComponent", "Renderer", []() { return std::make_shared<SkinnedMeshRendererComponent>(); });
     Register("SkeletonDebugRendererComponent", "Debug", []() { return std::make_shared<SkeletonDebugRendererComponent>(); });
     Register("AnimatorComponent", "Logic", []() { return std::make_shared<AnimatorComponent>(); });
+    Register("BoneAttachmentComponent", "Logic", []() { return std::make_shared<BoneAttachmentComponent>(); });
     Register("VoxelParticleComponent", "Effect", []() { return std::make_shared<VoxelParticleComponent>(); });
     Register("EffectMaskComponent", "Effect", []() { return std::make_shared<EffectMaskComponent>(); });
     Register("AABBColliderComponent", "Collider", []() { return std::make_shared<AABBColliderComponent>(); });

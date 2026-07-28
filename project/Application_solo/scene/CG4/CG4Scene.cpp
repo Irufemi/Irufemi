@@ -8,7 +8,7 @@
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/ParticleFieldComponent.h"
-
+#include "Framework/Component/Logic/BoneAttachmentComponent.h"
 // デストラクタ
 CG4Scene::~CG4Scene() = default;
 
@@ -51,6 +51,30 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
     if (auto t = fieldObj->GetComponent<TransformComponent>()) {
         t->SetPosition({0.0f, 5.0f, 0.0f});
     }
+
+    // プレイヤーの右手から発生するパーティクル
+    auto handParticleObj = std::make_shared<GameObject>("HandParticleEmitter");
+    AddGameObject(handParticleObj);
+    handParticleObj->AddComponent<TransformComponent>();
+    auto handEmitter = handParticleObj->AddComponent<ParticleEmitterComponent>();
+    if (auto po = handEmitter->GetParticleObject()) {
+        po->SetEmitType(1); // 1: Beam (円錐状の拡散)
+        po->SetDirection({0.0f, -1.0f, 0.0f}); // 下方向(または手首の方向)
+        po->SetVelocity(3.0f); // 飛び出す勢い
+        po->SetSpread(0.3f); // 狭めの拡散(Spread)
+        po->SetRadius(0.0f); // 発生源の大きさ
+        po->SetEmissionRate(200.0f); // 少し発生量を増やす
+        po->SetLifeTimeMin(0.5f);
+        po->SetLifeTimeMax(1.0f);
+        po->SetEnableTrail(false);
+        po->SetColor({1.0f, 0.5f, 0.2f, 1.0f}); // オレンジ系の火花風
+        po->SetStartScale({0.1f, 0.1f, 0.1f});
+        po->SetEndScale({0.0f, 0.0f, 0.0f});
+    }
+    auto boneAttachment = handParticleObj->AddComponent<BoneAttachmentComponent>();
+    boneAttachment->SetTargetName("Player");
+    boneAttachment->SetTargetBoneName("mixamorig:RightHand");
+    handEmitter->Play();
 }
 
 // 更新
