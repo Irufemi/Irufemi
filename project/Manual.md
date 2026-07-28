@@ -642,6 +642,49 @@ myBatch.Draw();
 
 ---
 
+## スキニングメッシュのマルチマテリアル個別上書き機能 (Material Override)
+
+`SkinnedMeshRendererComponent` は、モデルが持つ複数のマテリアルスロット（部位）に対して、個別にパラメータを上書き（Override）する機能を持っています。
+Unreal Engine や Unity の「マテリアルインスタンス」に近い概念であり、特定のスロットだけ色を変えたり、質感を調整したりすることが可能です。
+
+### エディタ (Inspector) での編集方法
+
+1. 対象の `GameObject` を選択し、Inspector の `SkinnedMeshRendererComponent` パネルを開きます。
+2. **`Materials (Slots)`** というヘッダーをクリックして展開します。
+3. モデルが持つスロットの数だけ `Element 0`, `Element 1` ... と表示されます。
+4. 色や質感を変更したい Element を開き、**`Override Material`** にチェックを入れます。
+5. 出現する `Color`, `Roughness`, `Metallic`, `Enable Lighting` 等のプロパティを編集します。
+6. 設定内容はシーン（`Ctrl+S`）に保存・復元されます。
+
+### C++ ゲームロジックからの動的変更
+
+ゲーム中に特定のアクターのパーツ色（例：ダメージを受けたときに赤くする等）を変更したい場合、スクリプトから以下のようにアクセスできます。
+
+```cpp
+auto skinnedMesh = gameObject_->GetComponent<SkinnedMeshRendererComponent>();
+if (skinnedMesh) {
+    ObjMaterial overrideMat;
+    overrideMat.color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 赤色
+    overrideMat.roughness = 0.2f;
+    overrideMat.metallic = 1.0f;
+    
+    // スロット0（Element 0）に対してマテリアルを上書き
+    skinnedMesh->SetMaterialOverride(0, overrideMat);
+}
+```
+
+上書きを解除し、モデル標準の共有マテリアルに戻したい場合は、`RemoveMaterialOverride(slotIndex)` を呼び出します。
+
+```cpp
+skinnedMesh->RemoveMaterialOverride(0);
+```
+
+### パフォーマンスに関する注意点
+この機能は GPU 定数バッファ（Constant Buffer）を用いてスロットごとのマテリアルパラメータを個別に転送・描画する設計になっています（Drawコールはスロットごとに発生します）。
+AAA規模の大規模なインスタンシングが必要な場合は、現状の Drawコール単位の処理から Material ID マップ等を利用した最適化へ拡張できる設計基盤となっています。
+
+---
+
 ## 大量オブジェクトの最適化 (VirtualEntityManagerComponent) の利用方法
 
 本エンジンでは、数万個レベルの大量のオブジェクト（がれき、草、弾幕など）を最適化して描画・管理するためのシステムとして、**`VirtualEntityManagerComponent`** (Instance Replacement / Promotion パターン) をサポートしました。
