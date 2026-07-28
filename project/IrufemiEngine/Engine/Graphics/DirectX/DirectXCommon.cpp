@@ -266,8 +266,8 @@ void DirectXCommon::RegisterAllShaders() {
 #endif
 
     // --- シェーダコンパイル ---
-    auto vs3d = shaderManager_->GetOrCompile(L"Object3D.VS.hlsl", options);
-    auto ps3d = shaderManager_->GetOrCompile(L"Object3D.PS.hlsl", options);
+    auto vs3d = shaderManager_->GetOrCompile(L"Object3d.VS.hlsl", options);
+    auto ps3d = shaderManager_->GetOrCompile(L"Object3d.PS.hlsl", options);
     auto vsParticle = shaderManager_->GetOrCompile(L"Particle.VS.hlsl", options);
     auto psParticle = shaderManager_->GetOrCompile(L"Particle.PS.hlsl", options);
     auto vsSprite = shaderManager_->GetOrCompile(L"Object2D.VS.hlsl", options);

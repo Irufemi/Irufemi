@@ -339,10 +339,10 @@
     <FxCompile Include="..\Application\resources\shaders\Object2D.VS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3D.PS.hlsl">
+    <FxCompile Include="..\Application\resources\shaders\Object3d.PS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3D.VS.hlsl">
+    <FxCompile Include="..\Application\resources\shaders\Object3d.VS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="..\Application\resources\shaders\Particle.PS.hlsl">

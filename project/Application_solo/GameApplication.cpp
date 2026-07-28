@@ -105,7 +105,7 @@ void GameApplication::Run() {
         auto shaderManager = engine->GetDirectXCommon()->GetShaderManager();
         auto psoManager = engine->GetPSOManager();
         
-        auto vs3d = shaderManager->GetOrCompile(L"Object3D.VS.hlsl", options);
+        auto vs3d = shaderManager->GetOrCompile(L"Object3d.VS.hlsl", options);
         auto psEnergyCore = shaderManager->GetOrCompile(L"EnergyCore.PS.hlsl", options);
         psoManager->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
 

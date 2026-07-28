@@ -17,32 +17,13 @@ void FileSystem::Initialize() {
     exePath_ = ConvertString(exeFsPath.wstring());
     fs::path exeDir = exeFsPath.parent_path();
 
-    // 1. Traverse up to find 'project' dir (Development Environment)
-    fs::path current = exeDir;
-    while (current.has_parent_path() && current != current.parent_path()) {
-        if (fs::exists(current / "project" / "Application_solo")) {
-            projectRoot_ = ConvertString((current / "project" / "Application_solo").wstring());
-            engineRoot_ = ConvertString((current / "project" / "IrufemiEngine").wstring());
-            break;
-        }
-        if (fs::exists(current / "project" / "Application_team")) {
-            projectRoot_ = ConvertString((current / "project" / "Application_team").wstring());
-            engineRoot_ = ConvertString((current / "project" / "IrufemiEngine").wstring());
-            break;
-        }
-        // fallback if it's already inside project
-        if (current.filename() == "Application_solo" || current.filename() == "Application_team") {
-            projectRoot_ = ConvertString(current.wstring());
-            engineRoot_ = ConvertString((current.parent_path() / "IrufemiEngine").wstring());
-            break;
-        }
-        current = current.parent_path();
-    }
-
-    // 2. If not found, assume distributed build
-    if (projectRoot_.empty()) {
-        projectRoot_ = ConvertString(exeDir.wstring());
-        engineRoot_ = ConvertString(exeDir.wstring());
+    // We will just use relative paths so that std::ifstream works properly without needing
+    // UTF-8 to UTF-16 conversions, bypassing the Japanese path issue.
+    projectRoot_ = ".";
+    if (fs::exists("../IrufemiEngine/EngineResources")) {
+        engineRoot_ = "../IrufemiEngine";
+    } else {
+        engineRoot_ = ".";
     }
 
     // Convert backslashes to forward slashes for consistency
