@@ -233,6 +233,8 @@ exit 0</Command>
     </ClCompile>
     <ClCompile Include="scene\GameOver\GameOverScene.cpp" />
     <ClCompile Include="scene\InGame\GameScene.cpp" />
+    <ClCompile Include="scene\CG4\CG4PlayerComponent.cpp" />
+    <ClCompile Include="scene\CG4\CG4Scene.cpp" />
     <ClCompile Include="scene\Pause\PauseScene.cpp" />
     <ClCompile Include="scene\TL1\TL1Scene.cpp" />
     <ClCompile Include="scene\TL1\MagicBrushClient.cpp" />
@@ -270,6 +272,8 @@ exit 0</Command>
 
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="scene\InGame\GameScene.h" />
+    <ClInclude Include="scene\CG4\CG4PlayerComponent.h" />
+    <ClInclude Include="scene\CG4\CG4Scene.h" />
     <ClInclude Include="scene\Pause\PauseScene.h" />
     <ClInclude Include="scene\TL1\TL1Scene.h" />
     <ClInclude Include="scene\TL1\MagicBrushClient.h" />

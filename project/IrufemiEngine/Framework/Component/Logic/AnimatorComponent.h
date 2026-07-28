@@ -23,6 +23,8 @@ public:
 
     void Play(const std::string& animationName, bool loop = true, float fadeDuration = 0.0f);
     
+    std::string GetComponentName() const override { return "AnimatorComponent"; }
+    
     Animator* GetRawAnimator() { return animator_.get(); }
 
 private:

@@ -22,6 +22,10 @@ public:
     bool CanUpdateInEditMode() const override { return true; }
 
     void OnRegisterProperties() override;
+    
+    std::string GetComponentName() const override { return "SkinnedMeshRendererComponent"; }
+    bool Raycast(const Ray& ray, float& outDistance) const override;
+    IRenderable* GetRenderable() override { return animatedMesh_.get(); }
 
     void LoadModel(const std::string& filename);
     

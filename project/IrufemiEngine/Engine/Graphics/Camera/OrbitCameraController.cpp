@@ -57,10 +57,8 @@ void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* inpu
     // ズーム操作 (マウスホイール)
     float wheelDelta = input->GetMouseWheelDelta();
     if (wheelDelta != 0.0f) {
-        // wheelDelta は通常 120 または -120 単位で入力される
-        // 対象との距離に比例したズーム速度にする (遠いほど速く、近いほど遅くズーム)
-        const float zoomFactor = 0.001f; 
-        distance_ -= wheelDelta * zoomFactor * distance_;
+        const float zoomSpeed = 2.0f;
+        distance_ -= wheelDelta * zoomSpeed;
         if (distance_ < 1.0f) distance_ = 1.0f; // 最小距離制限
         cameraChanged = true;
     }

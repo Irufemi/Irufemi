@@ -1,0 +1,109 @@
+{
+  "gameObjects": [
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              50.0,
+              1.0,
+              50.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "currentTypeIndex": 2,
+            "material": {
+              "color": [
+                0.5,
+                0.5,
+                0.5,
+                1.0
+              ]
+            }
+          },
+          "type": "PrimitiveRendererComponent"
+        }
+      ],
+      "name": "Ground",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "Model File": "sample/walk.gltf",
+            "Show Debug Bones": false
+          },
+          "type": "SkinnedMeshRendererComponent"
+        },
+        {
+          "data": {
+            "Apply Root Motion": false,
+            "Default Animation": "sample/walk.gltf",
+            "Playback Speed": 1.0
+          },
+          "type": "AnimatorComponent"
+        },
+        {
+          "data": {
+            "Move Speed": 5.0,
+            "Turn Speed": 10.0
+          },
+          "type": "CG4PlayerComponent"
+        }
+      ],
+      "name": "Player",
+      "tag": "Player"
+    }
+  ],
+  "settings": {
+    "directionalLight": {
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "direction": [
+        0.5,
+        -0.699999988079071,
+        1.0
+      ],
+      "intensity": 0.0
+    }
+  },
+  "version": 1
+}
