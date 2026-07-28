@@ -729,6 +729,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Resource\Model\Animator.cpp" />
     <ClCompile Include="Framework\Component\Logic\AnimatorComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.cpp" />
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp" />
     <ClCompile Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.cpp" />
     <ClCompile Include="Renderer\Object\Batch\DebugPrimitiveRenderer.cpp" />
@@ -916,6 +917,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Model\Animator.h" />
     <ClInclude Include="Framework\Component\Logic\AnimatorComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.h" />
     <ClInclude Include="Renderer\Object\3D\Primitive\Primitive3DObject.h" />
     <ClInclude Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.h" />
     <ClInclude Include="Renderer\Object\Effect\Effect.h" />

@@ -25,6 +25,12 @@ struct ComponentProperty {
         tooltip = text;
         return *this;
     }
+
+    ComponentProperty& SetMinMax(float min, float max) {
+        minVal = min;
+        maxVal = max;
+        return *this;
+    }
 };
 
 /**

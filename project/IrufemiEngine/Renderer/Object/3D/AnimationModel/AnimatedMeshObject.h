@@ -11,7 +11,6 @@
 #include <vector>
 
 class PrimitiveBatch;
-class Line3DBatch;
 
 /**
  * @class AnimatedMeshObject
@@ -50,18 +49,6 @@ private:
     Matrix4x4 localMatrix_;
     Matrix4x4 worldMatrix_;
 
-    std::unique_ptr<PrimitiveBatch> jointSpheres_;
-    std::unique_ptr<PrimitiveBatch> boneMeshes_;
-
     uint32_t lastSkinnedFrameIndex_ = 0;
     std::string filename_;
-    bool isDebugBoneVisible_ = false;
-
-    // --- Debug ---
-    int32_t selectedJointIndex_ = -1;
-    std::unique_ptr<Line3DBatch> debugAxesLines_;
-    void DrawSkeletonTreeRecursive(int32_t jointIndex);
-
-public:
-    void SetDebugBoneVisible(bool visible) { isDebugBoneVisible_ = visible; }
 };

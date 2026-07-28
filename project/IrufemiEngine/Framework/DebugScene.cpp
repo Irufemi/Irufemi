@@ -10,6 +10,7 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "IrufemiEngine/Engine/Core/Math/Math.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Framework/Component/Renderer/SkeletonDebugRendererComponent.h"
 #include "Engine/IrufemiEngine.h"
 
 // デストラクタ
@@ -112,18 +113,21 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         animatedCube_->SetScene(this);
         animatedCube_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/AnimatedCube.gltf");
         animatedCube_->AddComponent<AnimatorComponent>()->Play("sample/AnimatedCube.gltf", true);
+        animatedCube_->AddComponent<SkeletonDebugRendererComponent>();
     }
     if (isActiveWalk_) {
         walk_ = std::make_shared<GameObject>("Walk");
         walk_->SetScene(this);
         walk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/walk.gltf");
         walk_->AddComponent<AnimatorComponent>()->Play("sample/walk.gltf", true);
+        walk_->AddComponent<SkeletonDebugRendererComponent>();
     }
     if (isActiveSneakWalk_) {
         sneakWalk_ = std::make_shared<GameObject>("SneakWalk");
         sneakWalk_->SetScene(this);
         sneakWalk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/sneakWalk.gltf");
         sneakWalk_->AddComponent<AnimatorComponent>()->Play("sample/sneakWalk.gltf", true);
+        sneakWalk_->AddComponent<SkeletonDebugRendererComponent>();
     }
     if (isActiveSkybox_) {
         skybox_ = std::make_unique<Skybox>();
@@ -304,6 +308,7 @@ void DebugScene::Update() {
             animatedCube_->SetScene(this);
             animatedCube_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/AnimatedCube.gltf");
             animatedCube_->AddComponent<AnimatorComponent>()->Play("sample/AnimatedCube.gltf", true);
+            animatedCube_->AddComponent<SkeletonDebugRendererComponent>();
         }
         animatedCube_->Update();
     }
@@ -313,6 +318,7 @@ void DebugScene::Update() {
             walk_->SetScene(this);
             walk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/walk.gltf");
             walk_->AddComponent<AnimatorComponent>()->Play("sample/walk.gltf", true);
+            walk_->AddComponent<SkeletonDebugRendererComponent>();
         }
         walk_->Update();
     }
@@ -322,6 +328,7 @@ void DebugScene::Update() {
             sneakWalk_->SetScene(this);
             sneakWalk_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/sneakWalk.gltf");
             sneakWalk_->AddComponent<AnimatorComponent>()->Play("sample/sneakWalk.gltf", true);
+            sneakWalk_->AddComponent<SkeletonDebugRendererComponent>();
         }
         sneakWalk_->Update();
     }
@@ -331,6 +338,7 @@ void DebugScene::Update() {
             blendTest_->SetScene(this);
             blendTest_->AddComponent<SkinnedMeshRendererComponent>()->LoadModel("sample/walk.gltf");
             blendTest_->AddComponent<AnimatorComponent>()->Play("sample/walk.gltf", true);
+            blendTest_->AddComponent<SkeletonDebugRendererComponent>();
         }
         blendTest_->Update();
     }
@@ -470,11 +478,23 @@ void DebugScene::DrawDebugTab() {
     
     if (ImGui::Begin("DebugScene Global Settings")) {
         static bool s_showAllBones = false;
-        if (ImGui::Checkbox("Show All Debug Bones", &s_showAllBones)) {
-            if (animatedCube_) if (auto comp = animatedCube_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
-            if (walk_) if (auto comp = walk_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
-            if (sneakWalk_) if (auto comp = sneakWalk_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
-            if (blendTest_) if (auto comp = blendTest_->GetComponent<SkinnedMeshRendererComponent>()) comp->SetShowDebugBones(s_showAllBones);
+        static bool s_showAllAxes = false;
+        bool changed = false;
+        if (ImGui::Checkbox("Show All Debug Bones", &s_showAllBones)) changed = true;
+        if (ImGui::Checkbox("Show All Debug Axes", &s_showAllAxes)) changed = true;
+        
+        if (changed) {
+            auto setDebugProps = [](GameObject* go) {
+                if (!go) return;
+                if (auto comp = go->GetComponent<SkeletonDebugRendererComponent>()) {
+                    comp->SetShowBones(s_showAllBones);
+                    comp->SetShowAxes(s_showAllAxes);
+                }
+            };
+            setDebugProps(animatedCube_.get());
+            setDebugProps(walk_.get());
+            setDebugProps(sneakWalk_.get());
+            setDebugProps(blendTest_.get());
         }
     }
     ImGui::End();

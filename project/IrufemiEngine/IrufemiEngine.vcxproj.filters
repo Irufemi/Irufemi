@@ -798,6 +798,9 @@
     <ClCompile Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.cpp">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp">
       <Filter>Renderer\Object\3D\Primitive</Filter>
     </ClCompile>
@@ -1351,6 +1354,9 @@
       <Filter>Framework\Component\Logic</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.h">
+      <Filter>Framework\Component\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Object\3D\Primitive\Primitive3DObject.h">

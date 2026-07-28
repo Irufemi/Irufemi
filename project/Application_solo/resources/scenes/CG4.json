@@ -64,8 +64,7 @@
         },
         {
           "data": {
-            "Model File": "sample/walk.gltf",
-            "Show Debug Bones": false
+            "Model File": "sample/walk.gltf"
           },
           "type": "SkinnedMeshRendererComponent"
         },
@@ -88,6 +87,13 @@
             "Walk Anim": "sample/walk.gltf"
           },
           "type": "CG4PlayerComponent"
+        },
+        {
+          "data": {
+            "Show Axes": true,
+            "Show Bones": true
+          },
+          "type": "SkeletonDebugRendererComponent"
         }
       ],
       "name": "Player",

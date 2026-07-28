@@ -1,0 +1,170 @@
+#include "SkeletonDebugRendererComponent.h"
+#include "SkinnedMeshRendererComponent.h"
+#include "../../GameObject.h"
+#include "../TransformComponent.h"
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Manager/DrawManager.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
+#include "Renderer/Object/Line/LineClass.h"
+#include "Resource/Model/Data/SkeletonData.h"
+#include "Resource/Model/Data/SkeletonPose.h"
+#include <cmath>
+
+SkeletonDebugRendererComponent::SkeletonDebugRendererComponent() {
+    boneMeshes_ = std::make_unique<PrimitiveBatch>();
+    debugAxesLines_ = std::make_unique<Line3DBatch>();
+}
+
+SkeletonDebugRendererComponent::~SkeletonDebugRendererComponent() {}
+
+void SkeletonDebugRendererComponent::Initialize() {
+    boneMeshes_->Initialize(PrimitiveType::Octahedron, "resources/whiteTexture.png");
+    boneMeshes_->SetDepthWrite(PSOManager::DepthWrite::Off);
+
+    debugAxesLines_->Initialize();
+    debugAxesLines_->SetDepthWrite(PSOManager::DepthWrite::Off);
+}
+
+void SkeletonDebugRendererComponent::Update() {
+    boneMeshes_->ClearInstances();
+    debugAxesLines_->ClearInstances();
+
+    if (!showBones_ && !showAxes_) return;
+
+    auto skinnedMesh = GetGameObject()->GetComponent<SkinnedMeshRendererComponent>();
+    if (!skinnedMesh || !skinnedMesh->GetRawObject()) return;
+
+    auto transform = GetGameObject()->GetComponent<TransformComponent>();
+    if (!transform) return;
+
+    auto rawObj = skinnedMesh->GetRawObject();
+    const SkeletonData* skeletonData = rawObj->GetSkeletonData();
+    const SkeletonPose* currentPose = rawObj->GetInternalSkeletonPose(); // スキンメッシュの最新ポーズ
+
+    if (!skeletonData || !currentPose || currentPose->jointPoses.empty()) return;
+
+    Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform->GetWorldScale(), transform->GetWorldRotation(), transform->GetWorldPosition());
+
+    for (size_t i = 0; i < currentPose->jointPoses.size(); ++i) {
+        const Matrix4x4& jointMat = currentPose->jointPoses[i].skeletonSpaceMatrix;
+        Matrix4x4 jointWorldMat = jointMat * worldMatrix;
+        Vector3 jointPosition = { jointWorldMat.m[3][0], jointWorldMat.m[3][1], jointWorldMat.m[3][2] };
+
+        float currentBoneLength = 0.05f; // Fallback for root or bones without parents
+        Vector3 parentPosition = jointPosition;
+        int depth = 0;
+
+        if (currentPose->data->joints[i].parent) {
+            const int32_t parentIndex = *currentPose->data->joints[i].parent;
+            const Matrix4x4& parentMat = currentPose->jointPoses[parentIndex].skeletonSpaceMatrix;
+            Matrix4x4 parentWorldMat = parentMat * worldMatrix;
+            parentPosition = { parentWorldMat.m[3][0], parentWorldMat.m[3][1], parentWorldMat.m[3][2] };
+            
+            Vector3 dir = { jointPosition.x - parentPosition.x, jointPosition.y - parentPosition.y, jointPosition.z - parentPosition.z };
+            currentBoneLength = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+
+            int32_t curr = parentIndex;
+            while (currentPose->data->joints[curr].parent) {
+                depth++;
+                curr = *currentPose->data->joints[curr].parent;
+            }
+        }
+
+        // ボーン接続の描画（八面体）
+        if (showBones_ && currentPose->data->joints[i].parent && currentBoneLength > 0.0f) {
+            Vector3 dir = { jointPosition.x - parentPosition.x, jointPosition.y - parentPosition.y, jointPosition.z - parentPosition.z };
+            Vector3 yAxis = { dir.x / currentBoneLength, dir.y / currentBoneLength, dir.z / currentBoneLength };
+            Vector3 xAxis;
+            if (std::abs(yAxis.y) > 0.999f) {
+                xAxis = {1.0f, 0.0f, 0.0f};
+            } else {
+                Vector3 up = {0.0f, 1.0f, 0.0f};
+                xAxis = {up.y * yAxis.z - up.z * yAxis.y, up.z * yAxis.x - up.x * yAxis.z, up.x * yAxis.y - up.y * yAxis.x};
+                float xl = std::sqrt(xAxis.x * xAxis.x + xAxis.y * xAxis.y + xAxis.z * xAxis.z);
+                xAxis.x /= xl; xAxis.y /= xl; xAxis.z /= xl;
+            }
+            Vector3 zAxis = {xAxis.y * yAxis.z - xAxis.z * yAxis.y, xAxis.z * yAxis.x - xAxis.x * yAxis.z, xAxis.x * yAxis.y - xAxis.y * yAxis.x};
+
+            float thickness = currentBoneLength * 0.1f;
+            xAxis.x *= thickness; xAxis.y *= thickness; xAxis.z *= thickness;
+            yAxis.x *= currentBoneLength;    yAxis.y *= currentBoneLength;    yAxis.z *= currentBoneLength;
+            zAxis.x *= thickness; zAxis.y *= thickness; zAxis.z *= thickness;
+
+            Matrix4x4 boneWorld = {
+                xAxis.x, xAxis.y, xAxis.z, 0.0f,
+                yAxis.x, yAxis.y, yAxis.z, 0.0f,
+                zAxis.x, zAxis.y, zAxis.z, 0.0f,
+                parentPosition.x, parentPosition.y, parentPosition.z, 1.0f
+            };
+
+            float hue = std::fmod(depth * 30.0f, 360.0f);
+            float c = 1.0f;
+            float x = c * (1.0f - std::abs(std::fmod(hue / 60.0f, 2.0f) - 1.0f));
+            Vector4 color = {0, 0, 0, 0.6f};
+            if (hue < 60)      { color.x = c; color.y = x; color.z = 0; }
+            else if (hue < 120){ color.x = x; color.y = c; color.z = 0; }
+            else if (hue < 180){ color.x = 0; color.y = c; color.z = x; }
+            else if (hue < 240){ color.x = 0; color.y = x; color.z = c; }
+            else if (hue < 300){ color.x = x; color.y = 0; color.z = c; }
+            else               { color.x = c; color.y = 0; color.z = x; }
+            boneMeshes_->AddInstanceWorld(boneWorld, color);
+        }
+
+        // 全てのボーンのローカル座標系（XYZ軸）を描画
+        if (showAxes_) {
+            Vector3 axisX = { jointWorldMat.m[0][0], jointWorldMat.m[0][1], jointWorldMat.m[0][2] };
+            Vector3 axisY = { jointWorldMat.m[1][0], jointWorldMat.m[1][1], jointWorldMat.m[1][2] };
+            Vector3 axisZ = { jointWorldMat.m[2][0], jointWorldMat.m[2][1], jointWorldMat.m[2][2] };
+            
+            auto Normalize = [](Vector3& v) {
+                float l = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+                if (l > 0.0f) { v.x /= l; v.y /= l; v.z /= l; }
+            };
+            Normalize(axisX);
+            Normalize(axisY);
+            Normalize(axisZ);
+
+            // ボーンの長さに比例して軸の長さを決定（AAAアプローチ）
+            float lineLen = currentBoneLength * axisScale_;
+            
+            debugAxesLines_->AddInstance(jointPosition, { jointPosition.x + axisX.x * lineLen, jointPosition.y + axisX.y * lineLen, jointPosition.z + axisX.z * lineLen }, { 1.0f, 0.0f, 0.0f, 1.0f });
+            debugAxesLines_->AddInstance(jointPosition, { jointPosition.x + axisY.x * lineLen, jointPosition.y + axisY.y * lineLen, jointPosition.z + axisY.z * lineLen }, { 0.0f, 1.0f, 0.0f, 1.0f });
+            debugAxesLines_->AddInstance(jointPosition, { jointPosition.x + axisZ.x * lineLen, jointPosition.y + axisZ.y * lineLen, jointPosition.z + axisZ.z * lineLen }, { 0.0f, 0.5f, 1.0f, 1.0f });
+        }
+    }
+}
+
+void SkeletonDebugRendererComponent::Draw() {
+    if (showBones_) {
+        boneMeshes_->SyncBeforeDraw();
+        boneMeshes_->Draw();
+    }
+    if (showAxes_) {
+        debugAxesLines_->SyncBeforeDraw();
+        debugAxesLines_->Draw();
+    }
+}
+
+nlohmann::json SkeletonDebugRendererComponent::Serialize() {
+    nlohmann::json j = nlohmann::json::object();
+    j["Show Bones"] = showBones_;
+    j["Show Axes"] = showAxes_;
+    j["Axis Scale"] = axisScale_;
+    return j;
+}
+
+void SkeletonDebugRendererComponent::Deserialize(const nlohmann::json& j) {
+    if (j.contains("Show Bones")) showBones_ = j["Show Bones"].get<bool>();
+    if (j.contains("Show Axes")) showAxes_ = j["Show Axes"].get<bool>();
+    if (j.contains("Axis Scale")) axisScale_ = j["Axis Scale"].get<float>();
+}
+
+void SkeletonDebugRendererComponent::OnRegisterProperties() {
+    RegisterProperty("Show Bones", &showBones_)
+        .SetTooltip("Toggle drawing of bone connections (octahedrons)");
+    RegisterProperty("Show Axes", &showAxes_)
+        .SetTooltip("Toggle drawing of local XYZ axes for all joints");
+    RegisterProperty("Axis Scale", &axisScale_)
+        .SetTooltip("Scale multiplier for the local XYZ axes (dynamically scaled by bone length)")
+        .SetMinMax(0.01f, 5.0f);
+}
