@@ -12,7 +12,7 @@
   - 詳細・実装方針: アプリ層にて評価課題用の `CG4Scene` を新規実装する。外部ライブラリのEditorシーン管理を利用し、`CG4Scene` 内でパッド入力を受け取って `AnimatedMeshObject` の移動・制御処理を構築する。
 - [x] **ComputeShaderによるスキニング (10点)**
   - 現状: `DrawManager::DispatchSkinning` および `Skinning.CS.hlsl` にて既に実装完了済み。
-- [ ] **MultiMesh & MultiMaterial対応 (5点)** 【事実上の必須要件】
+- [x] **MultiMesh & MultiMaterial対応 (5点)** 【事実上の必須要件】
   - 現状: `ObjMesh` に `nodeName` は追加されているが、非スキニング時に各ノードの階層ごとのローカル行列が考慮されていない（Rootの行列だけ掛かっている）。
   - 詳細・実装方針:
     1. `ObjModel` のパース時（`ModelLoader`）に、各 Node の階層情報をフラットな配列またはインデックスアクセスできる形（`std::vector<Matrix4x4> globalTransforms`）で持てるようにする。
@@ -87,12 +87,12 @@
 ## 🚨 必須リファクタリング (潜在バグの修正)
 今回の加点要素（アクション遷移等）を安全に実装するため、既存のエンジンコードに潜む以下の致命的な不具合を事前に修正する。
 
-- [ ] **Root Motionの二重適用（超高速回転バグ）の修正**
+- [x] **Root Motionの二重適用（超高速回転バグ）の修正**
   - *対象ファイル*: `AnimationManager.cpp` (`BlendAnimation` / `ApplyAnimation`)
   - *問題*: `!applyRootTranslation` の分岐で「移動」はスキップされているが、「回転(rotate)」と「スケール(scale)」がスキップされておらず、GameObjectとボーンの両方に回転が二重適用されてしまう。
   - *修正方針*: `isRoot` かつルート適用を除外する場合、`rotate` と `scale` もLerp/Slerp処理をスキップ（または初期値を維持）するように `if-else` のスコープを修正する。
 
-- [ ] **Root抽出アルゴリズムの脆弱性修正**
+- [x] **Root抽出アルゴリズムの脆弱性修正**
   - *対象ファイル*: `Animator.cpp` (`ExtractRootMotion`)
   - *問題*: 現在「一番最初のノード」をルートとして抽出しているため、CameraやWeaponノードが先頭に来るFBXを読むと座標が吹き飛ぶ。
   - *修正方針*: `SkeletonData::joints` を参照し、`parent` が存在しない本物のルートノード（"Root" やインデックス0など確実なもの）の `nodeName` と一致するアニメーションノードから差分を抽出するようにロジックを改修する。

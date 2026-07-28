@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <map>
 #include "../../../../Engine/Core/Math/Transform.h"
 #include "../../../../Engine/Core/Math/Vector4.h"
 #include "../../../../Engine/Core/Math/Matrix4x4.h"
@@ -43,6 +44,17 @@ class StaticModelObject : public BaseModel, public IComputeTask {
 
 
 private:
+    /**
+     * @brief モデル内の各ノードの名前と、そのノードのグローバル行列（ローカル行列の累積）をマッピングするキャッシュ
+     */
+    std::map<std::string, Matrix4x4> nodeGlobalTransforms_;
+
+    /**
+     * @brief ルートノードから再帰的に階層を辿り、各ノードのグローバル行列を計算・キャッシュする
+     * @param node 現在処理中のノード
+     * @param parentMatrix 親ノードのグローバル行列（初期呼び出し時は単位行列）
+     */
+    void CalculateNodeTransforms(const Node& node, const Matrix4x4& parentMatrix);
 
     /**
      * @brief ロード完了後にメッシュ等のリソースを構築する（遅延初期化）
@@ -95,6 +107,7 @@ private:
     SkeletonPose skeletonPose_;
     SkinCluster skinCluster_;
     uint32_t lastSkinnedFrameIndex_ = 0;
+    bool isResourceInitialized_ = false;
 
 };
 
