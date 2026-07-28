@@ -5,6 +5,7 @@
 #include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 #include "Resource/Model/Data/SkeletonPose.h"
 #include "Resource/Model/Data/SkeletonData.h"
+#include "Engine/Core/Math/MathFunction.h"
 
 BoneAttachmentComponent::BoneAttachmentComponent() = default;
 BoneAttachmentComponent::~BoneAttachmentComponent() = default;
@@ -46,10 +47,13 @@ void BoneAttachmentComponent::Update() {
                 }
 
                 // 自身のTransformComponentに適用
-                // まずは位置だけを同期
+                // 位置と回転を同期
                 Vector3 boneWorldPos = { boneWorldMat.m[3][0], boneWorldMat.m[3][1], boneWorldMat.m[3][2] };
                 transform->SetPosition(boneWorldPos);
-                // 必要に応じて回転も同期する（パーティクルの場合は位置だけで十分なことが多い）
+                
+                // 行列から回転成分を抽出してEuler角に変換
+                Vector3 rot = Math::ExtractEulerFromMatrix(boneWorldMat);
+                transform->SetRotation(rot);
             }
         }
     }

@@ -75,6 +75,20 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
     boneAttachment->SetTargetName("Player");
     boneAttachment->SetTargetBoneName("mixamorig:RightHand");
     handEmitter->Play();
+
+    // 左手の武器（適当な棒）
+    auto weaponObj = std::make_shared<GameObject>("Weapon_Stick");
+    AddGameObject(weaponObj);
+    auto weaponTransform = weaponObj->AddComponent<TransformComponent>();
+    // スケールを棒状に(細長く)
+    weaponTransform->SetScale({0.05f, 0.4f, 0.05f});
+    auto weaponRenderer = weaponObj->AddComponent<PrimitiveRendererComponent>();
+    weaponRenderer->SetShape(PrimitiveType::Cylinder);
+    weaponRenderer->SetColor({0.6f, 0.3f, 0.1f, 1.0f}); // 木の棒っぽい色
+
+    auto weaponAttachment = weaponObj->AddComponent<BoneAttachmentComponent>();
+    weaponAttachment->SetTargetName("Player");
+    weaponAttachment->SetTargetBoneName("mixamorig:LeftHand");
 }
 
 // 更新
