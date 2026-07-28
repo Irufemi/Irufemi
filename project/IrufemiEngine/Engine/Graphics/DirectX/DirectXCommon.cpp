@@ -117,7 +117,11 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     // シェーダーの検索パスとバイナリパスを登録
     shaderManager_->AddSearchPath(ConvertString(FileSystem::GetResourcePath("shaders") + "/"));
     shaderManager_->AddSearchPath(ConvertString(FileSystem::GetEngineRoot() + "/EngineResources/shaders/"));
+#ifdef NDEBUG
+    shaderManager_->SetBinaryPath(ConvertString(FileSystem::GetResourcePath("shaders/compiled") + "/"));
+#else
     shaderManager_->SetBinaryPath(ConvertString(FileSystem::GetResourcePath(".cache/shaders") + "/"));
+#endif
 
     EnableDebugLayer();
     InitializeDXGI();

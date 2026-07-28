@@ -37,23 +37,12 @@ for /r %%f in (*.hlsl) do (
     set "FILEBASENAME=%%~nf"
     set "PROFILE="
 
-    echo.!FILENAME!| findstr /I "\.VS\.hlsl$" >nul
-    if not errorlevel 1 set "PROFILE=vs_6_0"
-
-    echo.!FILENAME!| findstr /I "\.PS\.hlsl$" >nul
-    if not errorlevel 1 set "PROFILE=ps_6_0"
-
-    echo.!FILENAME!| findstr /I "\.CS\.hlsl$" >nul
-    if not errorlevel 1 set "PROFILE=cs_6_0"
-
-    echo.!FILENAME!| findstr /I "\.GS\.hlsl$" >nul
-    if not errorlevel 1 set "PROFILE=gs_6_0"
-
-    echo.!FILENAME!| findstr /I "\.HS\.hlsl$" >nul
-    if not errorlevel 1 set "PROFILE=hs_6_0"
-
-    echo.!FILENAME!| findstr /I "\.DS\.hlsl$" >nul
-    if not errorlevel 1 set "PROFILE=ds_6_0"
+    if /i "!FILENAME:~-8!"==".VS.hlsl" set "PROFILE=vs_6_0"
+    if /i "!FILENAME:~-8!"==".PS.hlsl" set "PROFILE=ps_6_0"
+    if /i "!FILENAME:~-8!"==".CS.hlsl" set "PROFILE=cs_6_0"
+    if /i "!FILENAME:~-8!"==".GS.hlsl" set "PROFILE=gs_6_0"
+    if /i "!FILENAME:~-8!"==".HS.hlsl" set "PROFILE=hs_6_0"
+    if /i "!FILENAME:~-8!"==".DS.hlsl" set "PROFILE=ds_6_0"
 
     if not "!PROFILE!"=="" (
         echo [DXC] Compiling !FILENAME! as !PROFILE!...
