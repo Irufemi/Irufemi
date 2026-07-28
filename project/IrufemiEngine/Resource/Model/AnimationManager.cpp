@@ -483,6 +483,34 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
         totalVertices += mesh.vertices.size();
     }
 
+    // --- Input Vertex Buffer の作成 ---
+    skinCluster.inputVertexResource = dxCommon_->CreateBufferResource(sizeof(VertexData) * totalVertices);
+    VertexData* mappedInputVertices = nullptr;
+    skinCluster.inputVertexResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInputVertices));
+    size_t vertexOffset = 0;
+    for (const auto& mesh : objModel.meshes) {
+        if (!mesh.vertices.empty()) {
+            std::memcpy(mappedInputVertices + vertexOffset, mesh.vertices.data(), sizeof(VertexData) * mesh.vertices.size());
+            vertexOffset += mesh.vertices.size();
+        }
+    }
+    skinCluster.inputVertexResource->Unmap(0, nullptr);
+
+    uint32_t inputVertexSrvIndex = dxCommon_->GetSrvPool()->Allocate();
+    IRUFEMI_ASSERT(inputVertexSrvIndex != DescriptorPool::kInvalid);
+    skinCluster.inputVertexSrvHandle.first = dxCommon_->GetSrvPool()->GetCPUHandle(inputVertexSrvIndex);
+    skinCluster.inputVertexSrvHandle.second = dxCommon_->GetSrvPool()->GetGPUHandle(inputVertexSrvIndex);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC inputSrvDesc{};
+    inputSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    inputSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    inputSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    inputSrvDesc.Buffer.FirstElement = 0;
+    inputSrvDesc.Buffer.NumElements = UINT(totalVertices);
+    inputSrvDesc.Buffer.StructureByteStride = sizeof(VertexData);
+    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.inputVertexResource.Get(), &inputSrvDesc, skinCluster.inputVertexSrvHandle.first);
+
+
     /// MatrixPalleteの作成
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         skinCluster.paletteResource[i] = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());

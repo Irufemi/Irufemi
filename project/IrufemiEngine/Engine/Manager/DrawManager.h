@@ -360,7 +360,7 @@ public:
      */
     void SubmitTransparent3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = false, ID3D12Resource* vertexBufferResourceOverride = nullptr);
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
-    void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, ID3D12Resource* vertexBufferResourceOverride = nullptr);
     void SubmitTextOutlineMask(const class Object2DResource* resource);
     void DrawStandard3D(const RenderPackets::Standard3DPacket& packet);
 

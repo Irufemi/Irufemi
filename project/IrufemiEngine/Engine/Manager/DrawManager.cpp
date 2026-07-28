@@ -742,8 +742,8 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
     
     // 0: Palette (t0)
     commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle[frameIndex].second);
-    // 1: Input Vertices (t1) (最初のメッシュの頂点を使用)
-    commandList_->SetComputeRootDescriptorTable(1, model->gpuMeshes[0]->vertexSrvHandle);
+    // 1: Input Vertices (t1) (結合済みの全頂点バッファを使用)
+    commandList_->SetComputeRootDescriptorTable(1, skinCluster.inputVertexSrvHandle.second);
     // 2: Influences (t2)
     commandList_->SetComputeRootDescriptorTable(2, skinCluster.influenceSrvHandle.second);
     // 3: Output Vertices (u0)
@@ -848,12 +848,13 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTE
     ui3DQueue_.push_back(p);
 }
 
-void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, ID3D12Resource* vertexBufferResourceOverride) {
     std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) return;
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
+    p.vertexBufferResourceOverride = vertexBufferResourceOverride;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;

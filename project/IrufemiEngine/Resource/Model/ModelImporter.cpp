@@ -183,6 +183,7 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
         convertedMaterials[i] = out;
     }
 
+    uint32_t vertexOffset = 0;
     for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
         aiMesh* mesh = scene->mMeshes[meshIndex];
         ObjMesh outMesh;
@@ -224,11 +225,12 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
             jointWeightData.inverseBindPoseMatrix = Math::Inverse(bindPoseMatrix);
 
             for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {
-                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight, bone->mWeights[weightIndex].mVertexId });
+                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight, bone->mWeights[weightIndex].mVertexId + vertexOffset });
             }
         }
 
         objModel.meshes.push_back(std::move(outMesh));
+        vertexOffset += mesh->mNumVertices;
     }
 
     ProcessNode(scene->mRootNode, scene, objModel.meshes);

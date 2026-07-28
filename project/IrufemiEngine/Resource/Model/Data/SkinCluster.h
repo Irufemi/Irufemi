@@ -23,6 +23,9 @@ struct SkinCluster {
     std::array<std::span<WellForGPU>, kMaxFramesInFlight> mappedPalette;
     std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> paletteSrvHandle;
 
+    Microsoft::WRL::ComPtr<ID3D12Resource> inputVertexResource;
+    std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> inputVertexSrvHandle;
+
     // コンピュートシェーダー用リソース
     Microsoft::WRL::ComPtr<ID3D12Resource> skinningInformationResource;
     SkinningInformation* mappedSkinningInformation = nullptr;

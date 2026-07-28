@@ -19,7 +19,8 @@ Animation AnimationImporter::Import(const std::string& fullPath) {
         return {}; 
     }
     aiAnimation* animationAssimp = scene->mAnimations[0]; 
-    animation.duration = float(animationAssimp->mDuration / animationAssimp->mTicksPerSecond); 
+    double ticksPerSecond = animationAssimp->mTicksPerSecond != 0.0 ? animationAssimp->mTicksPerSecond : 1.0;
+    animation.duration = float(animationAssimp->mDuration / ticksPerSecond); 
 
     for (uint32_t channelIndex = 0; channelIndex < animationAssimp->mNumChannels; ++channelIndex) {
         aiNodeAnim* nodeAnimationAssimp = animationAssimp->mChannels[channelIndex];
@@ -28,7 +29,7 @@ Animation AnimationImporter::Import(const std::string& fullPath) {
         for (uint32_t keyIndex = 0; keyIndex < nodeAnimationAssimp->mNumPositionKeys; ++keyIndex) {
             aiVectorKey& keyAssimp = nodeAnimationAssimp->mPositionKeys[keyIndex];
             Keyframe<Vector3> keyframe;
-            keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); 
+            keyframe.time = float(keyAssimp.mTime / ticksPerSecond); 
             keyframe.value = { keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z };
             nodeAnimation.translate.keyframes.push_back(keyframe);
         }
@@ -36,7 +37,7 @@ Animation AnimationImporter::Import(const std::string& fullPath) {
         for (uint32_t keyIndex = 0; keyIndex < nodeAnimationAssimp->mNumRotationKeys; ++keyIndex) {
             aiQuatKey& keyAssimp = nodeAnimationAssimp->mRotationKeys[keyIndex];
             Keyframe<Quaternion> keyframe;
-            keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); 
+            keyframe.time = float(keyAssimp.mTime / ticksPerSecond); 
             aiQuaternion& q = keyAssimp.mValue;
             keyframe.value = { q.x, q.y, q.z, q.w };
             nodeAnimation.rotate.keyframes.push_back(keyframe);
@@ -45,7 +46,7 @@ Animation AnimationImporter::Import(const std::string& fullPath) {
         for (uint32_t keyIndex = 0; keyIndex < nodeAnimationAssimp->mNumScalingKeys; ++keyIndex) {
             aiVectorKey& keyAssimp = nodeAnimationAssimp->mScalingKeys[keyIndex];
             Keyframe<Vector3> keyframe;
-            keyframe.time = float(keyAssimp.mTime / animationAssimp->mTicksPerSecond); 
+            keyframe.time = float(keyAssimp.mTime / ticksPerSecond); 
             keyframe.value = { keyAssimp.mValue.x, keyAssimp.mValue.y, keyAssimp.mValue.z }; 
             nodeAnimation.scale.keyframes.push_back(keyframe);
         }

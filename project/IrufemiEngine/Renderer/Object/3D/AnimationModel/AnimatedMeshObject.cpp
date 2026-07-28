@@ -191,10 +191,18 @@ void AnimatedMeshObject::Draw() {
 
 
 
+    uint32_t vertexOffset = 0;
+    drawVbvs_.resize(meshResources_.size());
     for (size_t i = 0; i < meshResources_.size(); ++i) {
         auto& res = meshResources_[i];
         if (!m->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_, skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
+            drawVbvs_[i] = skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_];
+            drawVbvs_[i].BufferLocation += vertexOffset * sizeof(VertexData);
+            drawVbvs_[i].SizeInBytes = static_cast<UINT>(m->cpuModel->meshes[i].vertices.size() * sizeof(VertexData));
+            
+            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &drawVbvs_[i], castShadows_, skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
+            
+            vertexOffset += static_cast<uint32_t>(m->cpuModel->meshes[i].vertices.size());
         } else {
             engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
         }
@@ -204,8 +212,21 @@ void AnimatedMeshObject::Draw() {
 void AnimatedMeshObject::DrawOutlineMask() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
     if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) return;
-    for (auto& res : meshResources_) {
-        engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr);
+    uint32_t vertexOffset = 0;
+    outlineVbvs_.resize(meshResources_.size());
+    for (size_t i = 0; i < meshResources_.size(); ++i) {
+        auto& res = meshResources_[i];
+        if (!m->cpuModel->skinClusterData.empty()) {
+            outlineVbvs_[i] = skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_];
+            outlineVbvs_[i].BufferLocation += vertexOffset * sizeof(VertexData);
+            outlineVbvs_[i].SizeInBytes = static_cast<UINT>(m->cpuModel->meshes[i].vertices.size() * sizeof(VertexData));
+            
+            engine_->GetDrawManager()->SubmitOutlineMask(res.get(), &outlineVbvs_[i], skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
+            
+            vertexOffset += static_cast<uint32_t>(m->cpuModel->meshes[i].vertices.size());
+        } else {
+            engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr, nullptr);
+        }
     }
 }
 

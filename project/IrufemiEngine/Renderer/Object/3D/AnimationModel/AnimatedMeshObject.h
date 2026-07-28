@@ -45,6 +45,8 @@ private:
     const SkeletonPose* currentPose_ = nullptr; // 描画に使用するポーズ
 
     SkinCluster skinCluster_;
+    std::vector<D3D12_VERTEX_BUFFER_VIEW> drawVbvs_;
+    std::vector<D3D12_VERTEX_BUFFER_VIEW> outlineVbvs_;
     
     Matrix4x4 localMatrix_;
     Matrix4x4 worldMatrix_;

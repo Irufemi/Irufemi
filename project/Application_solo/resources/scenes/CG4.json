@@ -35,6 +35,22 @@
             }
           },
           "type": "PrimitiveRendererComponent"
+        },
+        {
+          "data": {
+            "Axis Scale": 1.059000015258789,
+            "Show Axes": true,
+            "Show Bones": true
+          },
+          "type": "SkeletonDebugRendererComponent"
+        },
+        {
+          "data": {
+            "Apply Root Motion": false,
+            "Default Animation": "CG4/BrainStem.glb",
+            "Playback Speed": 1.0
+          },
+          "type": "AnimatorComponent"
         }
       ],
       "name": "Ground",
@@ -90,6 +106,7 @@
         },
         {
           "data": {
+            "Axis Scale": 0.3479999899864197,
             "Show Axes": true,
             "Show Bones": true
           },
@@ -98,6 +115,54 @@
       ],
       "name": "Player",
       "tag": "Player"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "position": [
+              2.1256587505340576,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "Model File": "CG4/BrainStem.glb"
+          },
+          "type": "SkinnedMeshRendererComponent"
+        },
+        {
+          "data": {
+            "Apply Root Motion": false,
+            "Default Animation": "CG4/BrainStem.glb",
+            "Playback Speed": 1.0
+          },
+          "type": "AnimatorComponent"
+        },
+        {
+          "data": {
+            "Axis Scale": 0.18000000715255737,
+            "Show Axes": true,
+            "Show Bones": true
+          },
+          "type": "SkeletonDebugRendererComponent"
+        }
+      ],
+      "name": "Empty Object",
+      "tag": "Untagged"
     }
   ],
   "settings": {
