@@ -289,7 +289,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         uavRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u2
         uavRanges[3] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u3
 
-        D3D12_ROOT_PARAMETER computeRootParameters[10] = {};
+        D3D12_ROOT_PARAMETER computeRootParameters[11] = {};
         computeRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[0].DescriptorTable.pDescriptorRanges = &srvRanges[0];
@@ -300,6 +300,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         computeRootParameters[1].DescriptorTable.pDescriptorRanges = &srvRanges[1];
         computeRootParameters[1].DescriptorTable.NumDescriptorRanges = 1;
 
+        // t2 (Influences / etc)
         computeRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[2].DescriptorTable.pDescriptorRanges = &srvRanges[2];
@@ -338,6 +339,11 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         computeRootParameters[9].Constants.ShaderRegister = 2; // b2
         computeRootParameters[9].Constants.Num32BitValues = 2; // k, j
         computeRootParameters[9].Constants.RegisterSpace = 0;
+
+        computeRootParameters[10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        computeRootParameters[10].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[10].Descriptor.ShaderRegister = 3; // t3
+        computeRootParameters[10].Descriptor.RegisterSpace = 0;
 
         D3D12_ROOT_SIGNATURE_DESC computeRSDesc{};
         computeRSDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;

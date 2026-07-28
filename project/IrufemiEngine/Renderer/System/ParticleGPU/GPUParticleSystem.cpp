@@ -330,7 +330,12 @@ void GPUParticleSystem::SyncBeforeDraw() {
   memcpy(emittersMappedData_[frameIndex], emittersData_.data(),
          sizeof(GPUParticleEmitter) * emittersData_.size());
 
-  // 転送処理完了。burstCountのクリアはDispatchComputeShaders実行後に行う。
+  // 今回のburstCountをクリアする前に、DispatchComputeShadersを実行する。
+
+  if (fieldsData_.empty()) {
+    fieldsData_.emplace_back();
+  }
+  memcpy(fieldsMappedData_[frameIndex], fieldsData_.data(), sizeof(ParticleField) * fieldsData_.size());
 
   // [Bindless] テクスチャインデックスの反映
   if (engine_ && engine_->GetTextureManager()) {
@@ -758,6 +763,26 @@ void GPUParticleSystem::SetBoxEmitter(const Vector3 &pos, const Vector3 &size,
   emitter_->emissionRate = emissionRate;
 }
 
+void GPUParticleSystem::SetMeshEmitter(const Vector3 &pos, D3D12_GPU_VIRTUAL_ADDRESS vbAddress, uint32_t vertexCount,
+                                      float emissionRate, uint32_t emitterIndex) {
+  if (emitterIndex >= emittersData_.size())
+    return;
+  auto *emitter_ = &emittersData_[emitterIndex];
+  emitter_->type = 6;
+  emitter_->translateX = pos.x;
+  emitter_->translateY = pos.y;
+  emitter_->translateZ = pos.z;
+  emitter_->emissionRate = emissionRate;
+  
+  // Use padFreqTime for vertex count to pass to shader
+  emitter_->padFreqTime = static_cast<float>(vertexCount);
+
+  if (meshVertexBuffers_.size() <= emitterIndex) {
+    meshVertexBuffers_.resize(emitterIndex + 1, 0);
+  }
+  meshVertexBuffers_[emitterIndex] = vbAddress;
+}
+
 void GPUParticleSystem::SetTextureAtlas(uint32_t rows, uint32_t cols,
                                         uint32_t emitterIndex) {
   if (emitterIndex < emittersData_.size()) {
@@ -881,6 +906,8 @@ void GPUParticleSystem::DispatchComputeShaders(
   commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
   commandList->SetComputeRootDescriptorTable(
       0, emittersSrvHandleGPU_[frameIndex]); // t0
+  commandList->SetComputeRootDescriptorTable(
+      1, fieldsSrvHandleGPU_[frameIndex]); // t1: Fields
   commandList->SetComputeRootConstantBufferView(
       5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex)); // b1
 
@@ -889,6 +916,12 @@ void GPUParticleSystem::DispatchComputeShaders(
     if (emitCount > 0) {
       commandList->SetComputeRoot32BitConstant(9, (uint32_t)i,
                                                0); // b2: gEmitterIndex
+      
+      // Bind mesh vertex buffer if mesh emitter
+      if (emittersData_[i].type == 6 && i < meshVertexBuffers_.size() && meshVertexBuffers_[i] != 0) {
+        commandList->SetComputeRootShaderResourceView(10, meshVertexBuffers_[i]);
+      }
+
       commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
     }
   }
@@ -906,6 +939,8 @@ void GPUParticleSystem::DispatchComputeShaders(
   commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
   commandList->SetComputeRootDescriptorTable(
       0, emittersSrvHandleGPU_[frameIndex]); // t0
+  commandList->SetComputeRootDescriptorTable(
+      1, fieldsSrvHandleGPU_[frameIndex]); // t1: Fields
   commandList->SetComputeRootConstantBufferView(
       5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex)); // b1
   commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
@@ -998,6 +1033,27 @@ void GPUParticleSystem::CreateBuffersAndViews() {
         emittersResource_[i].Get(), &srvDesc,
         srvPool->GetCPUHandle(emittersSrvIndex_[i]));
     emittersSrvHandleGPU_[i] = srvPool->GetGPUHandle(emittersSrvIndex_[i]);
+
+    // Field Resource Initialization
+    fieldsResource_[i] = dxCommon_->CreateBufferResource(
+        sizeof(ParticleField) * 64); // max 64 fields
+    fieldsResource_[i]->Map(
+        0, nullptr, reinterpret_cast<void **>(&fieldsMappedData_[i]));
+
+    fieldsSrvIndex_[i] = srvPool->Allocate();
+    D3D12_SHADER_RESOURCE_VIEW_DESC fieldSrvDesc{};
+    fieldSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    fieldSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    fieldSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    fieldSrvDesc.Buffer.FirstElement = 0;
+    fieldSrvDesc.Buffer.NumElements = 64;
+    fieldSrvDesc.Buffer.StructureByteStride = sizeof(ParticleField);
+    fieldSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+    engine_->GetDevice()->CreateShaderResourceView(
+        fieldsResource_[i].Get(), &fieldSrvDesc,
+        srvPool->GetCPUHandle(fieldsSrvIndex_[i]));
+    fieldsSrvHandleGPU_[i] = srvPool->GetGPUHandle(fieldsSrvIndex_[i]);
   }
 
   perFrameBuffer_.Initialize(dxCommon_);

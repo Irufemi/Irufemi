@@ -268,6 +268,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   gpuParticleManager_ = std::make_unique<GPUParticleManager>();
   gpuParticleManager_->Initialize();
   ParticleObject::SetGPUParticleManager(gpuParticleManager_.get());
+  ParticleObject::SetModelManager(modelManager_.get());
 
   // 描画
   drawManager_ = std::make_unique<DrawManager>();

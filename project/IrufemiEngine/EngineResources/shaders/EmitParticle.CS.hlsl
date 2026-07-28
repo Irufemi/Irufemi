@@ -9,6 +9,14 @@ RWStructuredBuffer<int> gFreeListIndex : register(u1);
 RWStructuredBuffer<int> gFreeList : register(u2);
 StructuredBuffer<GPUParticleEmitter> gEmitters : register(t0);
 
+struct ObjectVertex {
+    float4 position;
+    float2 texcoord;
+    float3 normal;
+    float4 color;
+};
+StructuredBuffer<ObjectVertex> gMeshVertices : register(t3);
+
 cbuffer EmitConstants : register(b2)
 {
     uint gEmitterIndex;
@@ -143,6 +151,25 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
                 // 上方向固定バイアスを無くし、純粋な放射状（横に広がる）速度にする
                 gParticles[particleIndex].velocity = radialDir * emitter.velocity * (0.5f + r_vel * 0.5f);
+            }
+            else if (emitter.type == 6)
+            {
+                // Mesh Emitter
+                uint vertexCount = (uint)emitter.padFreqTime;
+                if (vertexCount > 0) {
+                    uint vertexIndex = (uint)(rng.Generate1d() * vertexCount);
+                    vertexIndex = min(vertexIndex, vertexCount - 1);
+                    ObjectVertex v = gMeshVertices[vertexIndex];
+                    
+                    float3 emitPos = v.position.xyz + emitter.translate;
+                    float3 emitDir = normalize(v.normal);
+                    
+                    gParticles[particleIndex].translate = emitPos;
+                    gParticles[particleIndex].velocity = emitDir * max(emitter.velocity + (rng.Generate1d() - 0.5f) * emitter.spread, 0.0f);
+                } else {
+                    gParticles[particleIndex].translate = emitter.translate;
+                    gParticles[particleIndex].velocity = float3(0, 0, 0);
+                }
             }
 
             // スケール初期化

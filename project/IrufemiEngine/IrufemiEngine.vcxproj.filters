@@ -214,6 +214,9 @@
     <ClCompile Include="Framework\Component\Effect\EffectMaskComponent.cpp">
       <Filter>Framework\Component\Effect</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Effect\ParticleFieldComponent.cpp">
+      <Filter>Framework\Component\Effect</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Application\resources\shaders\Fullscreen.hlsli">
@@ -1654,6 +1657,9 @@
       <Filter>Framework\Component\VirtualEntity</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Effect\EffectMaskComponent.h">
+      <Filter>Framework\Component\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Effect\ParticleFieldComponent.h">
       <Filter>Framework\Component\Effect</Filter>
     </ClInclude>
   </ItemGroup>

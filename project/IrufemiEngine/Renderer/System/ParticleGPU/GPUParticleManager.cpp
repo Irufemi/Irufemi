@@ -10,6 +10,7 @@ void GPUParticleManager::Initialize() {
 
 void GPUParticleManager::Update() {
     for (auto& pair : systems_) {
+        pair.second.system->fieldsData_ = globalFields_; // Push global fields to all systems
         pair.second.system->Update();
     }
 }
@@ -24,8 +25,8 @@ void GPUParticleManager::Finalize() {
     systems_.clear();
 }
 
-GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, BlendMode blendMode, bool isUnscaledTime) {
-    SystemKey key{ texturePath, blendMode, isUnscaledTime };
+GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, BlendMode blendMode, bool isUnscaledTime, bool enableLighting) {
+    SystemKey key{ texturePath, blendMode, isUnscaledTime, enableLighting };
     auto& ctx = systems_[key];
 
     // 新規テクスチャの場合はシステムを初期化
@@ -34,6 +35,7 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
         ctx.system->Initialize(texturePath);
         ctx.system->SetBlendMode(blendMode);
         ctx.system->SetUnscaledTime(isUnscaledTime);
+        ctx.system->SetEnableLighting(enableLighting);
     }
     
     uint32_t assignedIndex = 0;
@@ -75,13 +77,53 @@ void GPUParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
 
 void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GPUParticleEmitter& data) {
     if (handle.IsValid() && handle.emitterIndex < handle.system->emittersData_.size()) {
-        // burstCount is additive in our system, so we accumulate it from the incoming data and clear the incoming data's burstCount?
-        // Actually, ParticleEmitterComponent might send burstCount. We add it and reset component's.
         uint32_t burst = handle.system->emittersData_[handle.emitterIndex].burstCount + data.burstCount;
-        
         handle.system->emittersData_[handle.emitterIndex] = data;
-        
         handle.system->emittersData_[handle.emitterIndex].burstCount = burst;
+    }
+}
+
+void GPUParticleManager::SetMeshEmitterBuffer(EmitterHandle handle, D3D12_GPU_VIRTUAL_ADDRESS vbAddress) {
+    if (handle.IsValid() && handle.emitterIndex < handle.system->emittersData_.size()) {
+        if (handle.system->meshVertexBuffers_.size() <= handle.emitterIndex) {
+            handle.system->meshVertexBuffers_.resize(handle.emitterIndex + 1, 0);
+        }
+        handle.system->meshVertexBuffers_[handle.emitterIndex] = vbAddress;
+    }
+}
+
+GPUParticleManager::FieldHandle GPUParticleManager::RegisterField() {
+    uint32_t assignedIndex = 0;
+    if (!freeFieldIndices_.empty()) {
+        assignedIndex = freeFieldIndices_.back();
+        freeFieldIndices_.pop_back();
+    } else {
+        assignedIndex = nextFieldIndex_++;
+        if (assignedIndex >= globalFields_.size()) {
+            globalFields_.resize(assignedIndex + 1);
+        }
+    }
+    
+    // Initialize slot with disabled field (strength = 0)
+    globalFields_[assignedIndex] = ParticleField();
+    
+    FieldHandle handle;
+    handle.index = assignedIndex;
+    return handle;
+}
+
+void GPUParticleManager::UnregisterField(const FieldHandle& handle) {
+    if (!handle.IsValid()) return;
+    
+    if (handle.index < globalFields_.size()) {
+        globalFields_[handle.index].strength = 0.0f; // Disable
+        freeFieldIndices_.push_back(handle.index);
+    }
+}
+
+void GPUParticleManager::UpdateFieldData(const FieldHandle& handle, const ParticleField& data) {
+    if (handle.IsValid() && handle.index < globalFields_.size()) {
+        globalFields_[handle.index] = data;
     }
 }
 

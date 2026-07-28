@@ -128,7 +128,7 @@ struct GPUParticleEmitter
 	// float4 x 18
 	uint enableDeathEmit;
 	float trailFrequency;
-	float pad7;
+	uint enableLighting;
 	float pad8;
 
 	// float4 x 19
@@ -141,4 +141,21 @@ struct GPUParticleEmitter
 	// float4 x 22
 	float3 midScaleMax;
 	float midPoint;
+};
+
+struct ParticleField
+{
+	uint type; // 0: Directional (Gravity/Wind), 1: Point Attractor, 2: Vortex
+	float strength;
+	float pad0;
+	float pad1;
+	
+	float3 position;
+	float range;
+	
+	float3 direction;
+	float falloff;
+	
+	float3 axis;
+	float pad2;
 };

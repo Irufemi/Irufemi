@@ -20,7 +20,7 @@
     3. `StaticModelObject::Draw` 内のメッシュループにおいて、対象の `ObjMesh` が属するノードの `globalMatrix` を取得し、個別の Transform 定数バッファ（あるいは構造化バッファのインデックス）を更新して `SubmitStandard3D` へ渡す。
 
 - [x] **Animation補間 (5点)**
-  - 現状: `AnimationManager::BlendAnimation` にブレンド処理のベースがあり、`Animator` クラスにも `previousAnimation_`, `fadeTimer_` などのメンバが用意されている。
+  - 現状: `AnimationManager::BlendAnimation` にて線形補間・球面線形補間を用いたブレンド処理が実装済み。`Animator` クラスでのフェードタイマー制御（`isBlending_` 等）による遷移も実装済み。
   - 詳細・実装方針:
     1. `Animator::Play` を拡張（または `CrossFade` 関数を追加）し、再生中のアニメーションを `previous` に退避し、`fadeTimer_ = 0` にリセットする。
     2. `Animator::Update` 内で、`isBlending_` が true ならば `fadeTimer_` を進め、`weight = fadeTimer_ / fadeDuration_` を算出して `BlendAnimation` を呼び出す。
@@ -49,11 +49,12 @@
     2. `SkeletonData::joints` をループし、`parent` が存在するなら、親のジョイントのワールド座標と自身のワールド座標を `PrimitiveRendererComponent`（または `DrawManager` のライン描画API）に渡して線分を描画する。
     3. ジョイントの位置に XYZ 軸を示す短い3色のライン（赤・緑・青）を描画してローカル軸を可視化する。
 
-- [ ] **GPU Particle (20〜30点)**
-  - 現状: `GPUParticleSystem` などがあるが、課題にあるメッシュエミッタや Trail 対応は未実装。
-  - 詳細・実装方針:
-    1. `Emitter` 構造体にタイプ（Point, Sphere, Box, Mesh）を追加。Meshエミッタの場合は、ランダムな頂点を選択し、その法線方向にパーティクルを射出するCSを組む。
-    2. 制御パラメータとして `TimeScale` や `GravityMultiplier` などを追加し、Editorから操作可能にする。
+- [x] **GPU Particle (20〜30点)**
+  - 実装完了:
+    1. Meshエミッタを実装し、ランダムな頂点から法線方向にパーティクルを射出するCSを追加。
+    2. Trail（軌跡）やDeath Emit（消滅時破裂）の拡張パラメータ対応。
+    3. 重力・風・Vortexなどのフィールド（Field）影響機能を実装（`ParticleFieldComponent`）。
+    4. Editorから `emitType=6` (Mesh) 等を選択・操作できるように `GPUParticleManager`、`GPUParticleSystem` 等を対応。
 
 - [ ] **その他 (10点)**
   - エンジン開発計画にある高度な機能を実装して加点を狙う。本課題のイチオシは以下の「視覚的ボーンマスクエディタ」の実装。

@@ -136,7 +136,7 @@ struct GPUParticleEmitter {
     uint32_t enableDeathEmit = 0;
     float trailFrequency = 0.05f;
     uint32_t showDebugArea = 1;
-    float pad8 = 0.0f;
+    uint32_t enableLighting = 0;
 
     // float4 x 19
     float midColorMinR = 1, midColorMinG = 1, midColorMinB = 1, midColorMinA = 1;
@@ -148,6 +148,26 @@ struct GPUParticleEmitter {
     // float4 x 22
     float midScaleMaxX = 1, midScaleMaxY = 1, midScaleMaxZ = 1;
     float midPoint = 0.0f;
+};
+
+/**
+ * @struct ParticleField
+ * @brief 空間に配置される力場 (重力、引力、竜巻など) の設定
+ */
+struct ParticleField {
+    uint32_t type = 0; // 0: Directional (Gravity/Wind), 1: Point Attractor, 2: Vortex
+    float strength = 0.0f;
+    float pad0 = 0.0f;
+    float pad1 = 0.0f;
+    
+    Vector3 position = {0.0f, 0.0f, 0.0f};
+    float range = 0.0f; // 0 means infinite
+    
+    Vector3 direction = {0.0f, -1.0f, 0.0f};
+    float falloff = 1.0f; // 減衰率
+    
+    Vector3 axis = {0.0f, 1.0f, 0.0f}; // Vortex用の回転軸
+    float pad2 = 0.0f;
 };
 
 /**
@@ -274,8 +294,7 @@ public:
     void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
     void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
     void SetCustomPSO(const std::string& psoName) { customPSOName_ = psoName; }
-    ///@}
-    ///@}
+    void SetEnableLighting(bool val) { cpuMaterialData_.enableLighting = val ? 1 : 0; }
 
     /** @name タイプ別エミッター設定 */
     ///@{
@@ -285,7 +304,7 @@ public:
 
     /** @name アトラス・物理挙動設定 */
     /** @brief テクスチャアトラス（Flipbook）設定 */
-    void SetTextureAtlas(uint32_t rows, uint32_t cols, uint32_t emitterIndex = 0);
+    void SetTextureAtlas(uint32_t rows, uint32_t cols, uint32_t emitterIndex);
     /** @brief 床衝突設定 */
     void SetGroundCollision(float height, float bounce, uint32_t emitterIndex = 0);
     /** @brief アトラクター（引力源）設定 */
@@ -316,7 +335,14 @@ public:
      * @param size ボックスの各軸のサイズ（幅、高さ、奥行き）
      * @param emissionRate 1秒あたりの連続放出数
      */
-    void SetBoxEmitter(const Vector3& pos, const Vector3& size, float emissionRate, uint32_t emitterIndex = 0);
+    void SetBoxEmitter(const Vector3 &pos, const Vector3 &size,
+                     float emissionRate, uint32_t emitterIndex);
+
+    /**
+     * @brief メッシュエミッターの設定
+     */
+    void SetMeshEmitter(const Vector3 &pos, D3D12_GPU_VIRTUAL_ADDRESS vbAddress, uint32_t vertexCount,
+                      float emissionRate, uint32_t emitterIndex);
     ///@}
 
     /** @brief 開始色を設定する */
@@ -399,12 +425,20 @@ private:
     /** @name エミッターリソース */
     ///@{
     std::vector<GPUParticleEmitter> emittersData_;
+    std::vector<D3D12_GPU_VIRTUAL_ADDRESS> meshVertexBuffers_;
     
     // CPU-GPU共有用バッファ（kMaxFramesInFlight個）
     Microsoft::WRL::ComPtr<ID3D12Resource> emittersResource_[3]; // 3 = kMaxFramesInFlight
     GPUParticleEmitter* emittersMappedData_[3] = {nullptr, nullptr, nullptr};
     uint32_t emittersSrvIndex_[3] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
     D3D12_GPU_DESCRIPTOR_HANDLE emittersSrvHandleGPU_[3]{};
+
+    /** @name Fieldリソース */
+    std::vector<ParticleField> fieldsData_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> fieldsResource_[3];
+    ParticleField* fieldsMappedData_[3] = {nullptr, nullptr, nullptr};
+    uint32_t fieldsSrvIndex_[3] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+    D3D12_GPU_DESCRIPTOR_HANDLE fieldsSrvHandleGPU_[3]{};
     ///@}
 
     /** @name 各種リソース */

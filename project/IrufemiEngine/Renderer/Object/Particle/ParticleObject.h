@@ -3,6 +3,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Resource/Model/ModelManager.h"
 
 #include "Engine/Core/Type/BlendMode.h"
 #include <nlohmann/json.hpp>
@@ -32,9 +33,11 @@ public:
     void Update();
 
     static void SetGPUParticleManager(GPUParticleManager* manager) { gpuParticleManager_ = manager; }
+    static void SetModelManager(ModelManager* manager) { modelManager_ = manager; }
     
 private:
     inline static GPUParticleManager* gpuParticleManager_ = nullptr;
+    inline static ModelManager* modelManager_ = nullptr;
 public:
     void DebugUI(const char* name = "Particle Object");
 
@@ -60,8 +63,14 @@ public:
     void SetBlendMode(BlendMode mode);
     BlendMode GetBlendMode() const { return blendMode_; }
 
+    void SetEnableLighting(bool val);
+    bool GetEnableLighting() const { return enableLighting_; }
+
     void SetUnscaledTime(bool val);
     bool IsUnscaledTime() const { return isUnscaledTime_; }
+
+    void SetEmitterModelPath(const std::string& path);
+    const std::string& GetEmitterModelPath() const { return emitterModelPath_; }
 
     void SetEmitOnAwake(bool val) { emitOnAwake_ = val; }
     bool GetEmitOnAwake() const { return emitOnAwake_; }
@@ -170,9 +179,13 @@ private:
 
     std::string texturePath_ = "resources/circle.png";
     BlendMode blendMode_ = BlendMode::kBlendModeAdd;
+    bool enableLighting_ = false;
     bool isUnscaledTime_ = false;
     bool emitOnAwake_ = true;
     int burstCountOnAwake_ = 0;
+    
+    std::string emitterModelPath_;
+    ResourceHandle emitterModelHandle_;
     
     // エミッターの基本パラメータ
     int emitType_ = 0; // 0: Sphere, 1: Beam, 2: Box, 3: Cylinder

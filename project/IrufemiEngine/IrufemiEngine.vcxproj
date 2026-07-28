@@ -211,6 +211,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="..\Application\resources\shaders\PostProcess.hlsli" />
     <None Include="..\Application\resources\shaders\VertexData.hlsli" />
     <ClCompile Include="Framework\Component\Effect\EffectMaskComponent.cpp" />
+    <ClCompile Include="Framework\Component\Effect\ParticleFieldComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
@@ -596,6 +597,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <ClInclude Include="Framework\Component\Effect\EffectMaskComponent.h" />
+    <ClInclude Include="Framework\Component\Effect\ParticleFieldComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">

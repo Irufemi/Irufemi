@@ -17,6 +17,7 @@
 #include "Collider/RaycastComponent.h"
 #include "Audio/AudioSourceComponent.h"
 #include "Effect/ParticleEmitterComponent.h"
+#include "Effect/ParticleFieldComponent.h"
 #include "UI/ButtonComponent.h"
 #include "UI/CanvasComponent.h"
 #include "Camera/CameraComponent.h"
@@ -72,6 +73,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("RaycastComponent", "Collider", []() { return std::make_shared<RaycastComponent>(); });
     Register("AudioSourceComponent", "Audio", []() { return std::make_shared<AudioSourceComponent>(); });
     Register("ParticleEmitterComponent", "Effect", []() { return std::make_shared<ParticleEmitterComponent>(); });
+    Register("ParticleFieldComponent", "Effect", []() { return std::make_shared<ParticleFieldComponent>(); });
     Register("ButtonComponent", "UI", []() { return std::make_shared<ButtonComponent>(); });
     Register("CanvasComponent", "UI", []() { return std::make_shared<CanvasComponent>(); });
     Register("CameraComponent", "Camera", []() { return std::make_shared<CameraComponent>(); });
