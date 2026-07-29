@@ -8,6 +8,10 @@
 #include "Resource/Model/AnimationManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
+#include "Framework/Component/Utility/SplineComponent.h"
+#include "Framework/Component/Utility/SplineNodeComponent.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include <algorithm>
 
 std::shared_ptr<Component> ComponentUIHelpers::GetSharedComponent(GameObject* go, Component* comp) {
@@ -479,6 +483,66 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
             }
             ImGui::EndTable();
         } 
+
+        if (component->GetComponentName() == "SplineComponent") {
+            ImGui::Spacing();
+            if (ImGui::Button("Add Rail Node", ImVec2(-1, 0))) {
+                auto* go = component->GetGameObject();
+                if (go) {
+                    auto newChild = std::make_shared<GameObject>();
+                    newChild->SetName("RailPoint_" + std::to_string(go->GetChildren().size() + 1));
+                    newChild->SetIsSerializable(true);
+                    newChild->AddComponent<TransformComponent>();
+                    newChild->AddComponent<SplineNodeComponent>();
+                    go->AddChild(newChild);
+                    
+                    Vector3 newPos = {0,0,0};
+                    auto children = go->GetChildren();
+                    if (children.size() >= 2) {
+                        auto t1 = children[children.size()-2]->GetComponent<TransformComponent>();
+                        auto t2 = children[children.size()-1]->GetComponent<TransformComponent>();
+                        if (t1 && t2) {
+                            Vector3 p1 = t1->GetPosition();
+                            Vector3 p2 = t2->GetPosition();
+                            Vector3 dir = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+                            newPos = {p2.x + dir.x, p2.y + dir.y, p2.z + dir.z};
+                        }
+                    } else if (children.size() == 1) {
+                        if (auto t1 = children[0]->GetComponent<TransformComponent>()) {
+                            Vector3 p1 = t1->GetPosition();
+                            newPos = {p1.x, p1.y, p1.z + 5.0f};
+                        }
+                    } else {
+                        if (auto parentT = go->GetComponent<TransformComponent>()) {
+                            newPos = parentT->GetPosition();
+                        }
+                    }
+                    if (auto t = newChild->GetComponent<TransformComponent>()) t->SetPosition(newPos);
+                    newChild->SetScene(go->GetScene());
+                }
+            }
+            if (ImGui::Button("Convert waypoints_ to Nodes", ImVec2(-1, 0))) {
+                auto* go = component->GetGameObject();
+                if (go) {
+                    auto* spline = static_cast<SplineComponent*>(component);
+                    auto waypoints = spline->GetWaypoints();
+                    if (!waypoints.empty() && go->GetChildren().empty()) {
+                        int idx = 1;
+                        for (const auto& wp : waypoints) {
+                            auto newChild = std::make_shared<GameObject>();
+                            newChild->SetName("RailPoint_" + std::to_string(idx++));
+                            newChild->SetIsSerializable(true);
+                            auto transform = newChild->AddComponent<TransformComponent>();
+                            newChild->AddComponent<SplineNodeComponent>();
+                            transform->SetPosition(wp);
+                            newChild->SetScene(go->GetScene());
+                            go->AddChild(newChild);
+                        }
+                    }
+                }
+            }
+        }
+
     }
     ImGui::PopID();
 }

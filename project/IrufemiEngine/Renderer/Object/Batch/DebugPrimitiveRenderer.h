@@ -9,6 +9,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include <mutex>
 
 // 前方宣言
 class DirectXCommon;
@@ -89,4 +90,6 @@ private:
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> cubeSrvGPU_{};
 
     uint32_t lastUpdateFrameIndex_ = 0;
+    
+    std::mutex mutex_;
 };

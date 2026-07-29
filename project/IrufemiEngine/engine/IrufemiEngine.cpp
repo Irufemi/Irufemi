@@ -436,6 +436,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 void IrufemiEngine::Finalize() {
   if (isFinalized_) return;
 
+  // アプリケーション終了時、シーン破棄前にGPU処理の完了を待つ
+  if (dxCommon_) {
+    dxCommon_->WaitForGPU();
+  }
+
   // 0. シーンと画面遷移・ローディング（これらがリソースの shared_ptr を保持しているため最優先）
   if (sceneManager_) {
     sceneManager_.reset();
@@ -449,11 +454,6 @@ void IrufemiEngine::Finalize() {
   }
   if (cameraManager_) {
     cameraManager_.reset();
-  }
-
-  // アプリケーション終了時、シーン破棄前にGPU処理の完了を待つ
-  if (dxCommon_) {
-    dxCommon_->WaitForGPU();
   }
 
   // 1. エディタとUI (描画マネージャ等に依存)

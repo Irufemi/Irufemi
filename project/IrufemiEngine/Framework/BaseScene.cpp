@@ -13,6 +13,7 @@
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "GameObject.h"
 #include "Engine/Manager/CollisionManager.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 
 #include "SceneSerializer.h"
 #include "Component/TransformComponent.h"
@@ -273,6 +274,10 @@ void BaseScene::Update() {
 }
 
 void BaseScene::Draw() {
+    if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+        engine_->GetDebugPrimitiveRenderer()->ClearInstances();
+    }
+
     // --- GameObject の描画 (マルチスレッド化) ---
     std::vector<std::future<void>> drawFutures;
     for (size_t i = 0; i < gameObjects_.size(); ++i) {
@@ -306,6 +311,11 @@ void BaseScene::Draw() {
 #elif defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     engine_->GetCollisionManager()->DrawDebug();
 #endif
+
+    if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+        engine_->GetDebugPrimitiveRenderer()->Update();
+        engine_->GetDebugPrimitiveRenderer()->Draw();
+    }
 }
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {

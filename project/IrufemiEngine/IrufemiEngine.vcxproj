@@ -716,6 +716,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp" />
     <ClCompile Include="Framework\Component\Utility\LifetimeComponent.cpp" />
     <ClCompile Include="Framework\Component\Utility\SplineComponent.cpp" />
+    <ClCompile Include="Framework\Component\Utility\SplineNodeComponent.cpp" />
     <ClCompile Include="Framework\GameObject.cpp" />
     <ClCompile Include="Framework\IScene.cpp" />
     <ClCompile Include="Framework\SceneManager.cpp" />
@@ -897,6 +898,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Camera\TargetFollowComponent.h" />
     <ClInclude Include="Framework\Component\Utility\LifetimeComponent.h" />
     <ClInclude Include="Framework\Component\Utility\SplineComponent.h" />
+    <ClInclude Include="Framework\Component\Utility\SplineNodeComponent.h" />
     <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\ColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h" />

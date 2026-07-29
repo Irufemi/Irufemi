@@ -1,6 +1,173 @@
 {
   "gameObjects": [
     {
+      "children": [
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_1",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  5.0,
+                  2.0,
+                  30.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_2",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -5.0,
+                  -2.0,
+                  60.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_3",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  4.0,
+                  90.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_4",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.0,
+                  0.0,
+                  120.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_5",
+          "tag": "Untagged"
+        }
+      ],
       "components": [
         {
           "data": {
@@ -24,6 +191,7 @@
         },
         {
           "data": {
+            "Draw Debug Rail": true,
             "Waypoints": [
               [
                 0.0,
@@ -53,6 +221,13 @@
             ]
           },
           "type": "SplineComponent"
+        },
+        {
+          "data": {
+            "Draw Debug": true,
+            "Radius": 0.5
+          },
+          "type": "SplineNodeComponent"
         }
       ],
       "name": "PathManager",
@@ -147,7 +322,6 @@
         },
         {
           "data": {
-            "Draw Debug Rail": true,
             "Speed": 0.05000000074505806,
             "Target Path Name": "PathManager"
           },
@@ -323,22 +497,22 @@
               "data": {
                 "customEffectType": 15,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 2.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -392,22 +566,22 @@
               "data": {
                 "customEffectType": 9,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 0.5,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -461,22 +635,22 @@
               "data": {
                 "customEffectType": 24,
                 "customParams": {
-                  "param1": 0.05,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0,
                   "color1": [
-                    0,
-                    0,
-                    0,
-                    0
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
                   ],
                   "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "param1": 0.05000000074505806,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -530,22 +704,22 @@
               "data": {
                 "customEffectType": 21,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 1.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -599,22 +773,22 @@
               "data": {
                 "customEffectType": 23,
                 "customParams": {
-                  "param1": 0.03,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0,
                   "color1": [
-                    0,
-                    0,
-                    0,
-                    0
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
                   ],
                   "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "param1": 0.029999999329447746,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -668,22 +842,22 @@
               "data": {
                 "customEffectType": 18,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 8.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -737,22 +911,22 @@
               "data": {
                 "customEffectType": 19,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 4.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -806,22 +980,22 @@
               "data": {
                 "customEffectType": 20,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 4.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -875,22 +1049,22 @@
               "data": {
                 "customEffectType": 22,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 6.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -944,22 +1118,22 @@
               "data": {
                 "customEffectType": 26,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 5.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1013,22 +1187,22 @@
               "data": {
                 "customEffectType": 7,
                 "customParams": {
-                  "param1": 0.05,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0,
                   "color1": [
-                    0,
-                    0,
-                    0,
-                    0
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
                   ],
                   "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "param1": 0.05000000074505806,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1082,22 +1256,22 @@
               "data": {
                 "customEffectType": 6,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 2.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1151,22 +1325,22 @@
               "data": {
                 "customEffectType": 15,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 2.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1220,22 +1394,22 @@
               "data": {
                 "customEffectType": 9,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 0.5,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1289,22 +1463,22 @@
               "data": {
                 "customEffectType": 24,
                 "customParams": {
-                  "param1": 0.05,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0,
                   "color1": [
-                    0,
-                    0,
-                    0,
-                    0
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
                   ],
                   "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "param1": 0.05000000074505806,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1358,22 +1532,22 @@
               "data": {
                 "customEffectType": 21,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 1.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1427,22 +1601,22 @@
               "data": {
                 "customEffectType": 23,
                 "customParams": {
-                  "param1": 0.03,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0,
                   "color1": [
-                    0,
-                    0,
-                    0,
-                    0
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
                   ],
                   "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "param1": 0.029999999329447746,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1496,22 +1670,22 @@
               "data": {
                 "customEffectType": 18,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 8.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1565,22 +1739,22 @@
               "data": {
                 "customEffectType": 19,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 4.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1634,22 +1808,22 @@
               "data": {
                 "customEffectType": 20,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 4.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1703,22 +1877,22 @@
               "data": {
                 "customEffectType": 22,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 6.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1772,22 +1946,22 @@
               "data": {
                 "customEffectType": 26,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 5.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1841,22 +2015,22 @@
               "data": {
                 "customEffectType": 7,
                 "customParams": {
-                  "param1": 0.05,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0,
                   "color1": [
-                    0,
-                    0,
-                    0,
-                    0
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
                   ],
                   "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "param1": 0.05000000074505806,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1910,22 +2084,22 @@
               "data": {
                 "customEffectType": 6,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 2.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -1979,22 +2153,22 @@
               "data": {
                 "customEffectType": 15,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 2.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -2048,22 +2222,22 @@
               "data": {
                 "customEffectType": 9,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 0.5,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -2117,22 +2291,22 @@
               "data": {
                 "customEffectType": 24,
                 "customParams": {
-                  "param1": 0.05,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0,
                   "color1": [
-                    0,
-                    0,
-                    0,
-                    0
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
                   ],
                   "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "param1": 0.05000000074505806,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },
@@ -2186,22 +2360,22 @@
               "data": {
                 "customEffectType": 21,
                 "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
                   "param1": 1.0,
                   "param2": 0.0,
                   "param3": 0.0,
-                  "param4": 0.0,
-                  "color1": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ],
-                  "color2": [
-                    0,
-                    0,
-                    0,
-                    0
-                  ]
+                  "param4": 0.0
                 },
                 "enableEffectMask": true
               },

@@ -24,11 +24,8 @@ public:
     std::string GetComponentName() const override { return "SplineFollowerComponent"; }
 
 private:
-    float progress_ = 0.0f;           ///< ルート（軌道）上の進み具合 (0.0〜1.0)
-    float speed_ = 0.05f;             ///< 自動前進するスピード (1秒間に進む割合)
+    float currentDistance_ = 0.0f;    ///< ルート（軌道）上の進み具合 (m)
+    float speed_ = 10.0f;             ///< 自動前進するスピード (m/s)
     std::string targetPathName_ = "PathManager"; ///< 追従対象のオブジェクト名
-    bool drawDebugRail_ = false;      ///< デバッグ用にレールの軌道を描画するかどうか
-
     SplineComponent* cachedPath_ = nullptr; ///< キャッシュされた対象のパス
-    std::unique_ptr<Line3DBatch> debugLineBatch_; ///< デバッグ描画用のラインバッチ
 };

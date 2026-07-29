@@ -147,11 +147,13 @@ void DebugPrimitiveRenderer::CreateCubeResource() {
 }
 
 void DebugPrimitiveRenderer::ClearInstances() {
+    std::lock_guard<std::mutex> lock(mutex_);
     activeSphereCount_ = 0;
     activeCubeCount_ = 0;
 }
 
 void DebugPrimitiveRenderer::AddSphere(const Vector3& center, float radius, const Vector4& color) {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (activeSphereCount_ < maxSphereInstances_) {
         auto& instance = sphereInstances_[activeSphereCount_];
         instance.world = Math::MakeScaleMatrix({radius, radius, radius}) * Math::MakeTranslateMatrix(center);
@@ -161,6 +163,7 @@ void DebugPrimitiveRenderer::AddSphere(const Vector3& center, float radius, cons
 }
 
 void DebugPrimitiveRenderer::AddCube(const Matrix4x4& transform, const Vector4& color) {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (activeCubeCount_ < maxCubeInstances_) {
         auto& instance = cubeInstances_[activeCubeCount_];
         instance.world = transform;

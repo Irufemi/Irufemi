@@ -25,6 +25,7 @@
 #include "Camera/TargetFollowComponent.h"
 #include "Utility/LifetimeComponent.h"
 #include "Utility/SplineComponent.h"
+#include "Utility/SplineNodeComponent.h"
 #include "VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Engine/Core/System/ComponentPool.h"
 
@@ -82,5 +83,6 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("TargetFollowComponent", "Camera", []() { return std::make_shared<TargetFollowComponent>(); });
     Register("LifetimeComponent", "Utility", []() { return std::make_shared<LifetimeComponent>(); });
     Register("SplineComponent", "Utility", []() { return std::make_shared<SplineComponent>(); });
+    Register("SplineNodeComponent", "Utility", []() { return std::make_shared<SplineNodeComponent>(); });
     Register("VirtualEntityManagerComponent", "Utility", []() { return std::make_shared<VirtualEntityManagerComponent>(); });
 }

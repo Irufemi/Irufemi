@@ -756,6 +756,9 @@
     <ClCompile Include="Framework\Component\Utility\SplineComponent.cpp">
       <Filter>Framework\Component\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Utility\SplineNodeComponent.cpp">
+      <Filter>Framework\Component\Utility</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\GameObject.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -1291,6 +1294,9 @@
       <Filter>Framework\Component\Utility</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Utility\SplineComponent.h">
+      <Filter>Framework\Component\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Utility\SplineNodeComponent.h">
       <Filter>Framework\Component\Utility</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h">

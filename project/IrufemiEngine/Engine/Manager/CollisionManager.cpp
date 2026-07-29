@@ -244,9 +244,6 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
     if (!debugLine_) return;
     
     debugLine_->ClearInstances();
-    if (debugPrimitiveRenderer_) {
-        debugPrimitiveRenderer_->ClearInstances();
-    }
     
     for (ColliderComponent* collider : colliders_) {
         if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
@@ -341,11 +338,6 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
 
     debugLine_->Update();
     debugLine_->Draw();
-
-    if (debugPrimitiveRenderer_) {
-        debugPrimitiveRenderer_->Update();
-        debugPrimitiveRenderer_->Draw();
-    }
 }
 
 
