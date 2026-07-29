@@ -197,6 +197,22 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
 
 ---
 
+## 静的モデルの描画 (MeshRendererComponent)
+
+アニメーションを持たない背景モデルやプロップを描画する場合は `MeshRendererComponent` を使用します。
+
+### 基本的な使い方
+`GameObject` に `MeshRendererComponent` をアタッチし、描画したいモデル（OBJ / GLTF / FBXなど）をセットします。
+
+```cpp
+auto renderer = gameObject_->AddComponent<MeshRendererComponent>();
+renderer->LoadModel("sample/cube.gltf");
+```
+
+※ アニメーションを行わないため、後述の `SkinnedMeshRendererComponent` よりも軽量に動作します。動かない物体にはこちらを優先して使用してください。
+
+---
+
 ## アニメーションモデルとデバッグ機能の利用方法
 
 本エンジンでは、アニメーションする3Dモデルを描画するための `SkinnedMeshRendererComponent` と、アニメーションの再生ロジックを管理する `AnimatorComponent` の**二段構え（分業）アーキテクチャ**を採用しています。
@@ -239,7 +255,7 @@ GameObject に `ParticleEmitterComponent` をアタッチするだけで、自�
 JSONファイルから設定をロードすることで、エディタで作成した複雑なエフェクトをそのまま呼び出すことができます。
 
 ```cpp
-#include "Renderer/ParticleGPU/ParticleObject.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
 
 // 1. ParticleObject の生成とJSONの読み込み
 ParticleObject myParticle;
@@ -264,8 +280,8 @@ myParticle.EmitBurst(50);
 ※現在のマネージャーは「テクスチャ + ブレンドモード + タイムスケール」の複合キーで管理されています。
 
 ```cpp
-#include "Renderer/ParticleGPU/GPUParticleManager.h"
-#include "Renderer/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 
 // 1. マネージャーにエミッターを登録（テクスチャ、ブレンドモード、ポーズ中動作フラグ）
 auto handle = GPUParticleManager::GetInstance()->RegisterEmitter(
@@ -293,7 +309,7 @@ GPUParticleManager::GetInstance()->UpdateEmitterData(handle, data);
 シーン内の特定座標に単発（ワンショット）の爆発エフェクトなどを出したい場合は、新しく追加された `Effect` クラスを使用するのが最も簡単です。
 
 ```cpp
-#include "Renderer/Effect/Effect.h"
+#include "Renderer/Object/Effect/Effect.h"
 
 // 1. エフェクトインスタンスの作成と初期化（例：爆発）
 Effect myEffect;
@@ -860,6 +876,15 @@ aura->SetIsTransparent(true);
 - **自分で `DrawDebug` を呼ばない**:
   各コンポーネント内に独自の `DrawDebug` 等の描画命令（PrimitiveManager等の呼び出し）を記述すると、描画が重複したり描画ステートが壊れる原因となるため、当たり判定の描画は完全にマネージャに委譲してください。
 
+### センサーとしての利用 (RaycastComponent)
+`CollisionManager::RaycastAsync` などの非同期レイキャストの他に、`GameObject` の向いている方向（ローカルのZ軸前方など）に毎フレーム自動的にレイキャストを行い、障害物やターゲットを検知し続けるセンサーとして `RaycastComponent` が用意されています。
+
+```cpp
+auto raycast = gameObject_->AddComponent<RaycastComponent>();
+// エディタ上で maxDistance (最大距離) や mask (対象レイヤー) を設定可能
+```
+このコンポーネントを使用すると、敵の視界判定や、銃口からの即着弾判定などをインスペクター上で視覚的に調整しながら実装できます。
+
 ---
 
 ## 3Dアニメーションと Root Motion の利用方法
@@ -996,17 +1021,46 @@ C++側の基盤構築およびHLSL側の対応がすべて完了しており、�
 
 本エンジンには、開発を効率化する以下の強力なコンポーネントが標準で用意されています。
 
-### 1. TargetFollowComponent (カメラ追従)
-指定した `GameObject` を一定距離と角度で追従するカメラ用コンポーネントです。
+### 1. CameraComponent (基本カメラ)
+3Dシーンを描画するための基本となるカメラコンポーネントです。ビュー行列やプロジェクション行列（FOV・Near/Farクリップ）を管理します。シーンには最低1つのカメラが必要です。
+
+### 2. TargetFollowComponent (カメラ追従)
+指定した `GameObject` を一定距離と角度で追従するカメラ用コンポーネントです。（通常は `CameraComponent` と併用します）
 - **追従遅延 (Delay)**: 即座に追従するだけでなく、滑らかに遅れて追従するシネマティックなカメラワークをサポートしています。
 
-### 2. SplineComponent (スプライン軌道)
+### 3. SplineComponent (スプライン軌道)
 複数のウェイポイントを Catmull-Rom スプラインで滑らかに結び、任意の進行度(t)での座標や接線（進行方向）を取得できる汎用コンポーネントです。
 - 敵のレール移動、カットシーンのカメラワーク、曲がりくねったレーザーの描画等に有用です。
+（※ `SplineNodeComponent` を子オブジェクトとして配置することでエディタ上で軌道を編集できます）
 
-### 3. BoneAttachmentComponent (骨格追従)
+### 4. BoneAttachmentComponent (骨格追従)
 スキニングアニメーションモデルが持つ特定のボーン（`targetBoneName`）に、別のオブジェクトを追従させる機能です。
 - キャラクターに武器を持たせたり、エフェクトを特定の部位（手や剣先）に追従させる際に必須となります。
+
+---
+
+## UIシステム (Canvas & 2D描画)
+
+ゲームのHUDやメニュー画面を構築するために、階層的なUIシステムが用意されています。
+
+### 1. CanvasComponent (UIルート)
+すべてのUI要素の親となるコンポーネントです。画面解像度の変更に伴う自動スケーリングや、アスペクト比の維持を担当します。UIを作成する際は、必ずルートの `GameObject` にこのコンポーネントをアタッチしてください。
+
+### 2. SpriteRendererComponent (2D画像描画)
+UIとして2Dテクスチャ（スプライト）を描画します。色や透明度、アンカーポイント（Pivot）の変更が可能です。
+
+### 3. TextRendererComponent (テキスト描画)
+TrueTypeフォント（`.ttf`）を用いて、画面上に文字列を描画します。サイズや色、配置揃え（左寄せ・中央揃えなど）を調整できます。
+
+### 4. ButtonComponent (インタラクション)
+ボタンとしてのクリック判定と、ホバー時・クリック時のコールバック処理を管理します。
+```cpp
+auto button = uiObject->AddComponent<ButtonComponent>();
+button->SetOnClickCallback([]() {
+    // ボタンがクリックされたときの処理
+    Log::OutPutLog(std::cout, "Button Clicked!\n");
+});
+```
 
 ---
 
