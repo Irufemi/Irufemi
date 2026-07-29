@@ -55,6 +55,8 @@ enum class PostProcessMode {
 
 class DirectXCommon;
 
+class PostProcessRunner;
+
 /**
  * @class PostProcessManager
  * @brief ポストプロセス（画面全体にかけるエフェクト）を管理するクラス。
@@ -83,6 +85,7 @@ class DirectXCommon;
  * @endcode
  */
 class PostProcessManager {
+    friend class PostProcessRunner;
 public:
     using Mode = PostProcessMode;
 
@@ -504,6 +507,9 @@ public:
         uint32_t extraTextureIndex;
         uint32_t maskTextureIndex;
         uint32_t padding_bindless;
+
+        // 256-byte alignment padding (Current size: 576 bytes, padded to 768 bytes)
+        uint32_t alignPadding[48];
     };
 
     struct BindlessParams {
@@ -815,6 +821,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> combinedCB_;
     CombinedParams* mappedCombined_ = nullptr;
     CombinedParams combinedParams_;
+    uint32_t combinedBufferOffset_ = 0;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> bindlessCB_;
     BindlessParams* mappedBindless_ = nullptr;
