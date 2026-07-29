@@ -143,6 +143,7 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
 - **`TargetableComponent` の利用**:
   対象オブジェクトの生成時に `TargetableComponent` をアタッチしておくと、`OnEnable` 時に対象がグローバルな静的リストへ自動登録されます。
   検索側は `TargetableComponent::GetTargets()` をループで回すだけになり、定数時間かつキャッシュ効率の良いアクセスが可能になります。
+  ※ `TargetableComponent` はエンジンコアの機能ではなく、`Application` 側に実装されるアーキテクチャパターンの例です。
 
 ### 6. 非同期レイキャスト (Async Raycast) と物理クエリの最適化
 毎フレーム大量のオブジェクトに対して同期的にレイキャスト（視線判定など）を行うと、メインスレッドの処理落ち（フレームドロップ）の大きな原因となります。
@@ -230,6 +231,7 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
 
 ### コンポーネントからの利用
 GameObject に `ParticleEmitterComponent` をアタッチするだけで、自動的にエディタ上で操作・プレビューが可能です。
+また、より高度な表現として、ベクトル場を用いた `ParticleFieldComponent` や、ボクセルベースの `VoxelParticleComponent` などの拡張コンポーネントも提供されています。
 エディタ（ImGui）上で設定したパラメータは、JSONファイルとして自動的にシリアライズされ、再実行時にも完全に復元されます。
 
 ### プログラムからの直接利用 (ParticleObject)
@@ -342,6 +344,18 @@ myEffect.Draw();
 
 **なぜこの順番なのか？**
 例えば、`Vignette`（画面の端を暗くする/色をつける演出）のあとに `Grayscale`（白黒化）をかけてしまうと、ビネットで赤色などを指定してもモノクロになってしまいます。「色調補正」を先に行い、その上から「画面演出」を乗せるのがセオリーです。
+
+### レイヤー機能 (PreUI / PostUI)
+各エフェクトはスタックに追加する際、適用レイヤーを指定することができます。
+- **`EffectLayer::PreUI`**: 3Dシーンや背景にのみ適用され、UI（ImGuiやCanvas等）には影響を与えません（デフォルト）。
+- **`EffectLayer::PostUI`**: 最終的なUI描画もすべて完了した後に、画面全体に対して適用されます。
+
+### 多彩なエフェクト・新機能
+VignetteやNoise等の基本機能に加え、AAAタイトル級の様々なエフェクトが実装されています。
+- **DualKawaseBlur**: 従来のGaussianよりも広範囲かつ低負荷にぼかしをかけることが可能です。
+- **DepthOfField**: ピントの距離(FocusDistance)を指定し、前後の風景をぼかす被写界深度エフェクトです。
+- **LightShafts**: 光源のスクリーン座標を指定し、オブジェクトの隙間から漏れる光の筋（ゴッドレイ）を描画します。
+- **その他**: `ChromaticAberration` (色収差)、`DisplacementMap` (陽炎・歪み)、`Pointillism` (点描画)、`NightVision` (暗視ゴーグル) など多数のモードが利用可能です。
 
 ### Vignetteのパラメータ変更について
 Vignetteエフェクトがより自然な減衰（Smooth Falloff）になるようパラメータがアップグレードされました。
@@ -612,33 +626,6 @@ myBatch.Draw();
 - **描画パイプラインとの親和性**: Compute Shaderで変形した後の頂点データがバッファに書き出されるため、その後のGPUフラスタムカリングなどにそのまま使い回すことができる先進的な設計です。
 
 開発チームの皆様は、通常通りモデルを読み込んで再生するだけで、裏側で自動的にこの恩恵を受けることができます。
-
----
-
-## アニメーションモデルとデバッグ機能の利用方法
-
-本エンジンでは、アニメーションする3Dモデルを描画するための `SkinnedMeshRendererComponent` と、アニメーションの再生ロジックを管理する `AnimatorComponent` の**二段構え（分業）アーキテクチャ**を採用しています。
-
-### 基本的な使い方
-1. GameObjectに `SkinnedMeshRendererComponent` をアタッチし、描画したいモデル（GLTF等）をセットします。
-2. 同一のGameObjectに `AnimatorComponent` をアタッチし、再生したいアニメーションファイルをセットします。
-3. `AnimatorComponent` 側で再生（Play）指示を出すと、自動的に `SkinnedMeshRendererComponent` へ姿勢データが転送され、GPU Skinningによって高速に描画されます。
-
-### ボーンのデバッグ可視化 (X-Ray描画)
-アニメーションのモーション確認や、武器の取り付け位置の確認などに、キャラクターの骨格（ボーン）を画面上に直接描画してデバッグすることができます。
-
-1. **全体表示の切り替え**
-   エディタの `Camera & Lights` タブ（DebugScene等）内にある **`Show All Debug Bones`** チェックボックスをONにします。
-   これにより、シーン内のすべてのアニメーションモデルのボーンが一斉に可視化されます。
-   
-2. **描画の仕様 (X-Ray表示)**
-   - **関節 (Joints)**: スカイブルーの「球（Sphere）」で描画されます。
-   - **骨 (Bones)**: ピンク色の「八面体（Octahedron）」で描画されます。
-   - 深度テストが無効（X-Ray表示）になっているため、キャラクターのメッシュに隠れることなく、常に最前面に現在のボーンの姿勢が描画されます。
-
-### デバッグカメラのシームレスな移行
-エディタの `Camera & Lights` タブにある `Debug Camera Mode` にチェックを入れると、ゲームカメラからデバッグカメラ（自由操作）に切り替わります。
-この際、カメラの位置が初期化されて画面が飛ぶことはなく、**「現在見ているメインカメラの座標と回転」を自動的に引き継いで（スナップして）スタートする** 仕様になっているため、気になった箇所から即座にデバッグ作業へ移行できます。
 
 ---
 
@@ -971,50 +958,6 @@ animator->SetApplyRootMotion(true);
 
 ---
 
-## 半透明・エフェクトオブジェクトの描画とZソート
-
-本エンジンでは、地形やキャラクターなどの不透明オブジェクトの後に、オーラやレーザーなどの半透明エフェクトを正しい順番（奥から手前）で描画するための **独立した半透明描画パス (MainTransparentPass)** をサポートしました。
-
-これまで半透明オブジェクトを描画する際、Zバッファへの書き込み（DepthWrite）をDisableにすると、後から描画される不透明オブジェクトに上書きされて見えなくなる問題がありましたが、この機能を利用することで正しく描画されます。
-
-### 利用方法
-
-半透明や加算合成で描画したい Primitive3DObject （またはそれを保持するRendererComponent）に対して、初期化時に SetIsTransparent(true) を設定し、同時にPSO設定で DepthWrite::Disable を指定します。
-
-```cpp
-#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
-
-// 1. オブジェクトの初期化
-auto aura = std::make_shared<Primitive3DObject>();
-aura->Initialize(PrimitiveType::Sphere);
-
-// 2. カスタムPSOの適用 (DepthWrite を Disable にする)
-auto pso = engine->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModePremultiplied, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
-aura->SetCustomPSO(pso);
-
-// 3. 半透明フラグを有効にする (重要！)
-// これにより、不透明オブジェクトをすべて描き終わった後に、カメラからの距離でソートされて描画されます。
-aura->SetIsTransparent(true);
-```
-
-### 注意点
-- SetIsTransparent(true) を設定したオブジェクトは、自動的にカメラからの距離（distanceToCamera）を計算し、**Z値の降順（Back-to-Front）**でソートされて描画されます。
-- 不透明な通常のモデルに SetIsTransparent(true) を設定しないでください（Early-Zカリングなどの恩恵が受けられず、パフォーマンスが低下します）。
-
----
-
-## デバッグ描画と当たり判定 (CollisionManager)
-
-コライダー（AABB, Sphere, OBB）のデバッグ描画（ワイヤーフレーム表示）は、各コンポーネント内で個別に実装・描画する必要はありません。
-すべてのコライダーのデバッグ描画は、`CollisionManager::DrawDebug()` にて一元管理・一括描画されるアーキテクチャに変更されています。
-
-- **デバッグ表示の自動化**:
-  `ColliderComponent` を継承してコンポーネントを作成し、`GetWorldAABB()` などの形状取得メソッドを正しくオーバーライドすれば、エディタ上で自動的にワイヤーフレームが表示されます。
-- **自分で `DrawDebug` を呼ばない**:
-  各コンポーネント内に独自の `DrawDebug` 等の描画命令（PrimitiveManager等の呼び出し）を記述すると、描画が重複したり描画ステートが壊れる原因となるため、当たり判定の描画は完全にマネージャに委譲してください。
-
----
-
 ## Bindless Resources (Descriptor Indexing) 完全移行について
 
 現在、IrufemiEngine はパフォーマンス向上を目的とした **Bindless Resources** (Descriptor Indexing) への移行を完了しました。
@@ -1048,6 +991,31 @@ C++側の基盤構築およびHLSL側の対応がすべて完了しており、�
 ---
 
 ## 【トラブルシューティング】過去の深刻なバグと対応履歴
+
+## カメラ・ユーティリティ・ロジックコンポーネント
+
+本エンジンには、開発を効率化する以下の強力なコンポーネントが標準で用意されています。
+
+### 1. TargetFollowComponent (カメラ追従)
+指定した `GameObject` を一定距離と角度で追従するカメラ用コンポーネントです。
+- **追従遅延 (Delay)**: 即座に追従するだけでなく、滑らかに遅れて追従するシネマティックなカメラワークをサポートしています。
+
+### 2. SplineComponent (スプライン軌道)
+複数のウェイポイントを Catmull-Rom スプラインで滑らかに結び、任意の進行度(t)での座標や接線（進行方向）を取得できる汎用コンポーネントです。
+- 敵のレール移動、カットシーンのカメラワーク、曲がりくねったレーザーの描画等に有用です。
+
+### 3. BoneAttachmentComponent (骨格追従)
+スキニングアニメーションモデルが持つ特定のボーン（`targetBoneName`）に、別のオブジェクトを追従させる機能です。
+- キャラクターに武器を持たせたり、エフェクトを特定の部位（手や剣先）に追従させる際に必須となります。
+
+---
+
+## ScreenCaptureManager (スクリーンショット・メタデータ)
+
+画面のキャプチャを安全に行うためのシステムです。UIを含めない純粋なシーンのみ (`PreUI`) や、UIを含めた最終画面 (`PostUI`) の出力、さらにはアルファチャンネルや深度バッファのみの出力に対応しています。
+- **メタデータ連携**: キャプチャ時にエンジン内の状態をJSONメタデータとして同時に出力する機能（`RecordMetadata`）も備わっており、機械学習用データセットの作成などに応用可能です。
+
+---
 
 ### 1. 独自キャッシュからの復元（SSOバッファ破壊）と非同期ロードのすり抜けによるアクセス違反
 
