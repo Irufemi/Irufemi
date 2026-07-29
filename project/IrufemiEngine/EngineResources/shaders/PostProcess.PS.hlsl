@@ -129,6 +129,85 @@ struct PixelShaderOutput {
     float32_t4 color : SV_TARGET0;
 };
 
+/**
+ * @brief マスク（ID）ベースのカスタムアウトラインを適用する（AAAアプローチ）
+ * 
+ * 自身のピクセルだけでなく周囲のマスクIDをサンプリングし、エッジを検出します。
+ * 境界と判定された場合、最も支配的なマスクIDに対応する CustomEffectParams を取得し、色と太さを適用します。
+ */
+float32_t3 ApplyMaskBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uvStepSize, Texture2D<float32_t4> maskTex, SamplerState smp) {
+    float32_t4 centerMask = maskTex.SampleLevel(smp, uv, 0);
+    int centerEffect = round(centerMask.r * 255.0f);
+    int centerInstance = round(centerMask.g * 255.0f);
+
+    float maxWeight = 0.0f;
+    float32_t3 outlineColor = color;
+    
+    const int kRadius = 3;
+
+    for (int y = -kRadius; y <= kRadius; y++) {
+        for (int x = -kRadius; x <= kRadius; x++) {
+            if (x == 0 && y == 0) continue;
+            
+            float dist = sqrt(float(x * x + y * y));
+            if (dist > float(kRadius)) continue;
+
+            float32_t2 offset = float32_t2(x, y) * uvStepSize;
+            float32_t4 neighborMask = maskTex.SampleLevel(smp, uv + offset, 0);
+            int neighborEffect = round(neighborMask.r * 255.0f);
+            int neighborInstance = round(neighborMask.g * 255.0f);
+
+            // 自分と異なるオブジェクトで、アウトライン対象のエフェクトを持っているか
+            if (neighborInstance != centerInstance && neighborInstance > 0 && neighborInstance < 256) {
+                if (neighborEffect == kPostProcessMode_DepthBasedOutline || neighborEffect == kPostProcessMode_LuminanceBasedOutline) {
+                    CustomEffectParams cParams = gCustomParams[neighborInstance];
+                    float thickness = max(1.5f, cParams.param1); // 斜めピクセル(1.414)をカバーするため最低1.5
+                    if (dist <= thickness) {
+                        float effectAlpha = cParams.color1.a > 0.0f ? cParams.color1.a : 1.0f; // Alpha0の時は強制的に1.0にする
+                        float alpha = (1.0f - smoothstep(thickness - 0.5f, thickness + 0.5f, dist)) * effectAlpha;
+                        if (alpha > maxWeight) {
+                            maxWeight = alpha;
+                            outlineColor = cParams.color1.rgb;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 内側のアウトライン（自身がアウトライン対象で、周囲が背景または別オブジェクトの場合）
+    if ((centerEffect == kPostProcessMode_DepthBasedOutline || centerEffect == kPostProcessMode_LuminanceBasedOutline) && centerInstance > 0 && centerInstance < 256) {
+        CustomEffectParams cParams = gCustomParams[centerInstance];
+        float thickness = max(1.5f, cParams.param1);
+        
+        for (int y = -kRadius; y <= kRadius; y++) {
+            for (int x = -kRadius; x <= kRadius; x++) {
+                if (x == 0 && y == 0) continue;
+                float dist = sqrt(float(x * x + y * y));
+                if (dist > thickness) continue;
+
+                float32_t2 offset = float32_t2(x, y) * uvStepSize;
+                float32_t4 neighborMask = maskTex.SampleLevel(smp, uv + offset, 0);
+                int neighborInstance = round(neighborMask.g * 255.0f);
+
+                if (neighborInstance != centerInstance) {
+                    float effectAlpha = cParams.color1.a > 0.0f ? cParams.color1.a : 1.0f;
+                    float alpha = (1.0f - smoothstep(thickness - 0.5f, thickness + 0.5f, dist)) * effectAlpha;
+                    if (alpha > maxWeight) {
+                        maxWeight = alpha;
+                        outlineColor = cParams.color1.rgb;
+                    }
+                }
+            }
+        }
+    }
+
+    if (maxWeight > 0.0f) {
+        return lerp(color, outlineColor, maxWeight);
+    }
+    return color;
+}
+
 PixelShaderOutput main(VertexShaderOutput input) {
     float32_t4 color = gTexture.Sample(gSampler, input.texcoord);
     float32_t4 mask = gMaskTexture.Sample(gSampler, input.texcoord);
@@ -144,6 +223,10 @@ PixelShaderOutput main(VertexShaderOutput input) {
     bool isProtected = mask.b > 0.5f;
     
     PixelShaderOutput output;
+    
+    // 0. 全画面でのマスクベースのアウトラインエッジ検出 (AAA Approach)
+    // 背景ピクセルであっても、隣接するピクセルがアウトライン対象であれば描画する
+    color.rgb = ApplyMaskBasedOutline(color.rgb, uv, uvStepSize, gMaskTexture, gSamplerPoint);
     
     // 1. 個別カスタムエフェクトの適用
     if (customEffect != 0) {
@@ -167,9 +250,6 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 color.rgb = ApplyVignette(color.rgb, uv, instanceID > 0 ? cParams.param1 : gParams.vignetteRadius, instanceID > 0 ? cParams.param2 : gParams.vignetteSoftness, instanceID > 0 ? cParams.color1.rgb : gParams.vignetteColor.rgb);
                 break;
 
-            case kPostProcessMode_DepthBasedOutline:
-                color.rgb = ApplyDepthBasedOutline(color.rgb, uv, uvStepSize, gParams.projectionInverse, instanceID > 0 ? cParams.param1 : gParams.outlineIntensity, gExtraTexture, gSamplerPoint);
-                break;
             case kPostProcessMode_RadialBlur:
                 color.rgb = ApplyRadialBlur(color.rgb, uv, gParams.radialBlurCenter, instanceID > 0 ? cParams.param1 : gParams.radialBlurWidth, gParams.radialBlurSamples, gTexture, gSampler);
                 break;
@@ -202,9 +282,6 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 break;
             case kPostProcessMode_Glitch:
                 color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, instanceID > 0 ? cParams.param1 : gParams.glitchIntensity, gTexture, gSampler, gMaskTexture, customEffect);
-                break;
-            case kPostProcessMode_LuminanceBasedOutline:
-                color.rgb = ApplyLuminanceBasedOutline(color.rgb, uv, uvStepSize, instanceID > 0 ? cParams.param1 : gParams.luminanceOutlineThreshold, instanceID > 0 ? cParams.color1 : gParams.luminanceOutlineColor, gTexture, gSampler);
                 break;
             case kPostProcessMode_Pixelation:
                 color.rgb = ApplyPixelation(uv, instanceID > 0 ? cParams.param1 : gParams.pixelationSize, float32_t2(width, height), gTexture, gSampler);
