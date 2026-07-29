@@ -522,7 +522,10 @@ public:
         uint32_t mainTextureIndex;
         uint32_t extraTextureIndex;
         uint32_t maskTextureIndex;
-        uint32_t padding[61]; // 256バイトアライメント (64 * 4 = 256)
+        uint32_t normalTextureIndex;
+        uint32_t materialTextureIndex;
+        uint32_t velocityTextureIndex;
+        uint32_t padding[58]; // 256バイトアライメント (64 * 4 = 256)
     };
 
 public:
@@ -719,6 +722,9 @@ public:
     }
     
     void SetDepthSrvIndex(uint32_t srvIndex) { depthSrvIndex_ = srvIndex; }
+    void SetNormalSrvIndex(uint32_t srvIndex) { normalSrvIndex_ = srvIndex; }
+    void SetMaterialSrvIndex(uint32_t srvIndex) { materialSrvIndex_ = srvIndex; }
+    void SetVelocitySrvIndex(uint32_t srvIndex) { velocitySrvIndex_ = srvIndex; }
 
 private:
     void CreatePSOs();
@@ -869,6 +875,9 @@ private:
     uint32_t bindlessBufferOffset_ = 0;
 
     uint32_t depthSrvIndex_ = 0;
+    uint32_t normalSrvIndex_ = 0;
+    uint32_t materialSrvIndex_ = 0;
+    uint32_t velocitySrvIndex_ = 0;
     uint32_t dissolveNoiseIndex_[2]{ 0 };
 
     // 状態追跡用は上に移動済み

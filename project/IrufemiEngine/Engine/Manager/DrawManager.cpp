@@ -1035,6 +1035,64 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
     }
 }
 
+void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<struct Vector4>& clearColors) {
+    if (renderTargets.empty()) return;
+
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvHandles;
+    rtvHandles.reserve(renderTargets.size());
+
+    // 1. Transition Barrier (SRV -> RenderTarget)
+    for (auto* rt : renderTargets) {
+        if (rt) {
+            DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            rtvHandles.push_back(rt->GetRtvHandle());
+        }
+    }
+
+    // 先頭のテクスチャを基準に追跡
+    currentRenderTexture_ = renderTargets[0];
+    if (renderTargets.size() > 1) {
+        currentRenderTexture2_ = renderTargets[1];
+    } else {
+        currentRenderTexture2_ = nullptr;
+    }
+
+    // 2. Set Render Target
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVCPUDescriptorHandle(0);
+    commandList_->OMSetRenderTargets(static_cast<UINT>(rtvHandles.size()), rtvHandles.data(), false, &dsvHandle);
+
+    // 3. Clear
+    for (size_t i = 0; i < rtvHandles.size(); ++i) {
+        if (i < clearColors.size()) {
+            commandList_->ClearRenderTargetView(rtvHandles[i], &clearColors[i].x, 0, nullptr);
+        } else {
+            const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+            commandList_->ClearRenderTargetView(rtvHandles[i], clearColor, 0, nullptr);
+        }
+    }
+    commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    // 4. Set Viewport/Scissor (先頭のテクスチャサイズを基準とする)
+    auto* baseRt = renderTargets[0];
+    D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(baseRt->GetWidth()), static_cast<float>(baseRt->GetHeight()), 0.0f, 1.0f };
+    D3D12_RECT scissor{ 0, 0, static_cast<long>(baseRt->GetWidth()), static_cast<long>(baseRt->GetHeight()) };
+    commandList_->RSSetViewports(1, &viewport);
+    commandList_->RSSetScissorRects(1, &scissor);
+
+    // 5. Descriptor Heaps (念のため再設定)
+    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+}
+
+void DrawManager::EndRenderTextures(const std::vector<class RenderTexture*>& renderTargets) {
+    // 1. Transition Barrier (RenderTarget -> SRV)
+    for (auto* rt : renderTargets) {
+        if (rt) {
+            DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+    }
+}
+
 void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor, RenderTexture* rt2, const Vector4& clearColor2) {
     // 1. Transition Barrier (SRV -> RenderTarget)
     DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -1224,6 +1282,15 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
         if (engine->GetEffectMaskTexture()) {
             renderGraph_->RegisterResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
+        if (engine->GetNormalTexture()) {
+            renderGraph_->RegisterResourceState(engine->GetNormalTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (engine->GetMaterialTexture()) {
+            renderGraph_->RegisterResourceState(engine->GetMaterialTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (engine->GetVelocityTexture()) {
+            renderGraph_->RegisterResourceState(engine->GetVelocityTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
         
         // 深度バッファの初期状態も登録 (DepthBasedOutline 等で参照するため)
         renderGraph_->RegisterResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -1241,6 +1308,24 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
             D3D12_RESOURCE_STATES maskState = renderGraph_->GetResourceState(engine->GetEffectMaskTexture()->GetResource());
             if (maskState != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
                 DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetEffectMaskTexture()->GetResource(), maskState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            }
+        }
+        if (engine->GetNormalTexture()) {
+            D3D12_RESOURCE_STATES state = renderGraph_->GetResourceState(engine->GetNormalTexture()->GetResource());
+            if (state != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
+                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetNormalTexture()->GetResource(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            }
+        }
+        if (engine->GetMaterialTexture()) {
+            D3D12_RESOURCE_STATES state = renderGraph_->GetResourceState(engine->GetMaterialTexture()->GetResource());
+            if (state != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
+                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetMaterialTexture()->GetResource(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            }
+        }
+        if (engine->GetVelocityTexture()) {
+            D3D12_RESOURCE_STATES state = renderGraph_->GetResourceState(engine->GetVelocityTexture()->GetResource());
+            if (state != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
+                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetVelocityTexture()->GetResource(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             }
         }
     }

@@ -213,6 +213,9 @@ public: // ゲッター
     uint64_t& GetFenceValue() { return dxCommon_->GetFenceValue(); }
     RenderTexture* GetMainRenderTexture() const { return mainRenderTexture_.get(); }
     RenderTexture* GetEffectMaskTexture() const { return effectMaskTexture_.get(); }
+    RenderTexture* GetNormalTexture() const { return normalTexture_.get(); }
+    RenderTexture* GetMaterialTexture() const { return materialTexture_.get(); }
+    RenderTexture* GetVelocityTexture() const { return velocityTexture_.get(); }
     ///@}
 
     /** @name マネージャ類の取得 */
@@ -439,6 +442,9 @@ private: // メンバ変数
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
     std::unique_ptr<RenderTexture> effectMaskTexture_ = nullptr; // ★ MRT対応: マスク用
+    std::unique_ptr<RenderTexture> normalTexture_ = nullptr;     // MRT対応: 法線/深度用
+    std::unique_ptr<RenderTexture> materialTexture_ = nullptr;   // MRT対応: マテリアル用
+    std::unique_ptr<RenderTexture> velocityTexture_ = nullptr;   // MRT対応: モーションベクトル用
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持

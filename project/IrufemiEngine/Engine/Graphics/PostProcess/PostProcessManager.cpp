@@ -214,8 +214,12 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   }
   mappedBindless_[bindlessBufferOffset_].extraTextureIndex = extraIdx;
   
-  // マスクテクスチャのインデックスを渡す
-  mappedBindless_[bindlessBufferOffset_].maskTextureIndex = dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
+  // マスク等のG-Bufferテクスチャのインデックスを渡す
+  auto* engine = dxCommon_->GetEngine();
+  mappedBindless_[bindlessBufferOffset_].maskTextureIndex = engine->GetEffectMaskTexture() ? engine->GetEffectMaskTexture()->GetSrvIndex() : 0;
+  mappedBindless_[bindlessBufferOffset_].normalTextureIndex = engine->GetNormalTexture() ? engine->GetNormalTexture()->GetSrvIndex() : 0;
+  mappedBindless_[bindlessBufferOffset_].materialTextureIndex = engine->GetMaterialTexture() ? engine->GetMaterialTexture()->GetSrvIndex() : 0;
+  mappedBindless_[bindlessBufferOffset_].velocityTextureIndex = engine->GetVelocityTexture() ? engine->GetVelocityTexture()->GetSrvIndex() : 0;
   
   commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
   bindlessBufferOffset_++;

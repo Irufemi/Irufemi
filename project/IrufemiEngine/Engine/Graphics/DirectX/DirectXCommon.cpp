@@ -315,10 +315,13 @@ void DirectXCommon::RegisterAllShaders() {
     auto csGpuCulling = shaderManager_->GetOrCompile(L"GPUCulling.CS.hlsl", options);
 
     // --- 各種シェーダの登録 ---
-    // --- MRT共通設定 (マスクバッファ対応) ---
+    // --- MRT共通設定 (フルG-Buffer対応) ---
     PSOManager::PipelineStateDesc mrtDesc{};
-    mrtDesc.numRenderTargets = 2;
-    mrtDesc.rtvFormat1 = DXGI_FORMAT_R8G8B8A8_UNORM;
+    mrtDesc.numRenderTargets = 5;
+    mrtDesc.rtvFormat1 = DXGI_FORMAT_R8G8B8A8_UNORM; // Mask
+    mrtDesc.rtvFormat2 = DXGI_FORMAT_R16G16B16A16_FLOAT; // Normal & Depth
+    mrtDesc.rtvFormat3 = DXGI_FORMAT_R8G8B8A8_UNORM; // Material
+    mrtDesc.rtvFormat4 = DXGI_FORMAT_R16G16_FLOAT; // Velocity
 
     PSOManager::PipelineStateDesc obj3dDesc = mrtDesc;
     obj3dDesc.shaders = { vs3d, ps3d };

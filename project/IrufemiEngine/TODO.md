@@ -218,3 +218,17 @@
 - [ ] **ドキュメントの拡充**
   - [ ] エンジンのすべてのコアクラスに対して「目的」「責務」を明記したクラスコメントを追加する
   - [ ] APIとして公開する関数に対して、引数・戻り値に関するDoxygenコメントを網羅する
+
+## [中長期] RenderGraphの根本的リファクタリング計画
+現状の `RenderGraph` はリソース状態（TransitionBarrier）の依存解決が完全に自動化されておらず、
+エンジンの `DrawManager` 等で手動の `RegisterResourceState` やバリア発行が必要となっている（アンチパターン状態）。
+今後の拡張性と安全性を高めるため、一線級のエンジンに見られる宣言的アプローチへと以下のリファクタリングを計画する。
+
+- [ ] **リソースインポートの一元化**
+  - バックバッファやG-Buffer（Color, Mask, Normal, Material, Velocity等）のような外部管理リソースは、各フレームの開始時に `RenderGraph` に外部リソースとして登録（インポート）するのみとする。
+  - `DrawManager::ExecuteRenderQueues` などの呼び出し元で行っている手動バリア発行を撤廃する。
+- [ ] **パスごとのリソース状態宣言の徹底**
+  - `MainOpaquePass` や各 `PostProcessPass` 側で、対象テクスチャを `RENDER_TARGET` や `PIXEL_SHADER_RESOURCE` として利用することを、`RenderGraphBuilder` を介して明確に宣言（Require/Write/Read）する仕組みを徹底する。
+- [ ] **自動バリア解決のコンパイル機構の実装/修正**
+  - `RenderGraph::Execute` 時（またはコンパイルフェーズ）に、各パスが宣言したリソースの利用ステートを解析し、パス間でステートが変わるタイミングでのみ `TransitionBarrier` を自動的に発行するロジックを実装・強化する。
+  - 実行後に元のステートに戻す処理も、手動ではなく「最終ステートから期待される初期ステートに戻す」機能として `RenderGraph` 内部にカプセル化する。

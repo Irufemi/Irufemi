@@ -121,6 +121,15 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend
         if (psoDesc.numRenderTargets > 1) {
             desc.RTVFormats[1] = psoDesc.rtvFormat1;
         }
+        if (psoDesc.numRenderTargets > 2) {
+            desc.RTVFormats[2] = psoDesc.rtvFormat2;
+        }
+        if (psoDesc.numRenderTargets > 3) {
+            desc.RTVFormats[3] = psoDesc.rtvFormat3;
+        }
+        if (psoDesc.numRenderTargets > 4) {
+            desc.RTVFormats[4] = psoDesc.rtvFormat4;
+        }
     }
 
     desc.PrimitiveTopologyType = psoDesc.topology;

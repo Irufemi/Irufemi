@@ -232,6 +232,18 @@ public: //メンバ関数
     /** @name レンダーターゲット・ポストプロセス操作 */
     ///@{
     /**
+     * @brief 指定した複数の RenderTexture への描画を開始する (MRT用)
+     * @param[in] renderTargets 出力先の RenderTexture のリスト
+     * @param[in] clearColors 各 RenderTexture の背景クリア色
+     */
+    void BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<struct Vector4>& clearColors);
+
+    /**
+     * @brief 複数の RenderTexture への描画を終了する
+     */
+    void EndRenderTextures(const std::vector<class RenderTexture*>& renderTargets);
+
+    /**
      * @brief 指定した RenderTexture への描画を開始する
      * @param[in] rt 出力先の RenderTexture
      * @param[in] clearColor 背景クリア色

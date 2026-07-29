@@ -339,6 +339,24 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       DXGI_FORMAT_R8G8B8A8_UNORM, // マスク用はSRGB不要
       {0.0f, 0.0f, 0.0f, 0.0f}); // 黒（マスクなし）でクリア
 
+  normalTexture_ = std::make_unique<RenderTexture>();
+  normalTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R16G16B16A16_FLOAT, // 法線用
+      {0.0f, 0.0f, 1.0f, 1.0f}); // 初期値 (0,0,1)
+
+  materialTexture_ = std::make_unique<RenderTexture>();
+  materialTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R8G8B8A8_UNORM, // マテリアル用
+      {0.0f, 0.0f, 0.0f, 0.0f}); // 初期値
+
+  velocityTexture_ = std::make_unique<RenderTexture>();
+  velocityTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R16G16_FLOAT, // モーションベクトル用
+      {0.0f, 0.0f, 0.0f, 0.0f}); // 初期値
+
   // --- PostProcessManager の初期化 ---
   postProcessManager_ = std::make_unique<PostProcessManager>();
   postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -367,7 +385,16 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
 
   postProcessManager_->SetDepthSrvIndex(depthSrvIndex_);
-
+  
+  if (normalTexture_) {
+      postProcessManager_->SetNormalSrvIndex(normalTexture_->GetSrvIndex());
+  }
+  if (materialTexture_) {
+      postProcessManager_->SetMaterialSrvIndex(materialTexture_->GetSrvIndex());
+  }
+  if (velocityTexture_) {
+      postProcessManager_->SetVelocitySrvIndex(velocityTexture_->GetSrvIndex());
+  }
   // --- SceneTransition の初期化 ---
   sceneTransition_ = std::make_unique<SceneTransition>();
   sceneTransition_->Initialize(postProcessManager_.get());
@@ -487,6 +514,15 @@ void IrufemiEngine::Finalize() {
   }
   if (effectMaskTexture_) {
     effectMaskTexture_.reset();
+  }
+  if (normalTexture_) {
+    normalTexture_.reset();
+  }
+  if (materialTexture_) {
+    materialTexture_.reset();
+  }
+  if (velocityTexture_) {
+    velocityTexture_.reset();
   }
 
   // 3. アニメーション・モデル・テクスチャ (リソースの実体を保持)
@@ -780,11 +816,24 @@ void IrufemiEngine::ProcessFrame() {
   // (Compute Shaderの一括実行は、RenderGraph内のComputePassに移行しました)
 
   // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
-  drawManager_->BeginRenderTexture(
+  // G-Buffer拡張に伴い、5つのレンダーターゲットをバインド
+  std::vector<RenderTexture*> renderTargets = {
       mainRenderTexture_.get(),
-      Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]},
       effectMaskTexture_.get(),
-      Vector4{0.0f, 0.0f, 0.0f, 0.0f}); // マスクバッファは初期値（真っ黒）でクリア
+      normalTexture_.get(),
+      materialTexture_.get(),
+      velocityTexture_.get()
+  };
+  
+  std::vector<Vector4> clearColors = {
+      Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]}, // Color
+      Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Mask
+      Vector4{0.0f, 0.0f, 1.0f, 1.0f}, // Normal
+      Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Material
+      Vector4{0.0f, 0.0f, 0.0f, 0.0f}  // Velocity
+  };
+  
+  drawManager_->BeginRenderTextures(renderTargets, clearColors);
 }
 
   // フレーム終了処理
@@ -836,6 +885,21 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
           dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
           {0.0f, 0.0f, 0.0f, 0.0f});
   }
+  if (normalTexture_) {
+      normalTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R16G16B16A16_FLOAT,
+          {0.0f, 0.0f, 1.0f, 1.0f});
+  }
+  if (materialTexture_) {
+      materialTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
+          {0.0f, 0.0f, 0.0f, 0.0f});
+  }
+  if (velocityTexture_) {
+      velocityTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R16G16_FLOAT,
+          {0.0f, 0.0f, 0.0f, 0.0f});
+  }
 
   // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
   if (depthSrvIndex_ != 0xFFFFFFFF) {
@@ -851,6 +915,16 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
 
     // ポストプロセスマネージャーに新しいSRVハンドルを設定
     postProcessManager_->SetDepthSrvIndex(depthSrvIndex_);
+  }
+  
+  if (normalTexture_) {
+      postProcessManager_->SetNormalSrvIndex(normalTexture_->GetSrvIndex());
+  }
+  if (materialTexture_) {
+      postProcessManager_->SetMaterialSrvIndex(materialTexture_->GetSrvIndex());
+  }
+  if (velocityTexture_) {
+      postProcessManager_->SetVelocitySrvIndex(velocityTexture_->GetSrvIndex());
   }
   
   // 4. カメラの解像度更新 (3D空間の歪み防止)

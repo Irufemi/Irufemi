@@ -9,6 +9,9 @@ struct PixelShaderOutput
 {
 	float4 color : SV_TARGET0;
 	float4 mask  : SV_TARGET1;
+	float4 normal : SV_TARGET2;
+	float4 material : SV_TARGET3;
+	float2 velocity : SV_TARGET4;
 };
 
 // 3Dハッシュ関数（ノイズ生成用）
@@ -82,7 +85,16 @@ PixelShaderOutput main(VertexShaderOutput input)
 	// 最終出力
 	// RGBのマイナス値（炭化表現用）を0にクランプしつつ出力し、ディゾルブ用にアルファは1固定で描画
 	output.color = float4(max(float3(0, 0, 0), finalColor), 1.0f);  
-	output.mask = float4(0.0f, 0.0f, 1.0f, 1.0f); // カスタムエフェクトなし、保護あり
+	output.mask = float4(0.0f, 0.0f, 1.0f, 1.0f);
+
+	// ボクセルパーティクルの法線は適当にZ手前
+	output.normal = float4(0.0f, 0.0f, -1.0f, 1.0f); 
+	
+	// マテリアルは仮の値
+	output.material = float4(0.0f, 1.0f, 0.0f, 1.0f);
+	
+	// ベロシティは仮
+	output.velocity = float2(0.0f, 0.0f);
 
 	return output;
 }
