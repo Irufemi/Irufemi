@@ -26,9 +26,11 @@ public:
     float GetCurrentDistance() const { return currentDistance_; }
     SplineComponent* GetCachedPath() const { return cachedPath_; }
 
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
+
 private:
     float currentDistance_ = 0.0f;    ///< ルート（軌道）上の進み具合 (m)
     float speed_ = 10.0f;             ///< 自動前進するスピード (m/s)
-    std::string targetPathName_ = "PathManager"; ///< 追従対象のオブジェクト名
+    uint64_t targetPathID_ = 0;       ///< 追従対象のオブジェクトID
     SplineComponent* cachedPath_ = nullptr; ///< キャッシュされた対象のパス
 };

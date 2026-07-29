@@ -11,7 +11,7 @@
 
 void SplineFollowerComponent::OnRegisterProperties() {
     RegisterProperty("Speed", &speed_);
-    RegisterProperty("Target Path Name", &targetPathName_);
+    RegisterGameObjectRef("Target Path", &targetPathID_);
 }
 
 void SplineFollowerComponent::Initialize() {
@@ -19,18 +19,21 @@ void SplineFollowerComponent::Initialize() {
     currentDistance_ = 0.0f;
 }
 
+void SplineFollowerComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
+    if (targetPathID_ != 0) {
+        auto it = idMap.find(targetPathID_);
+        if (it != idMap.end()) {
+            targetPathID_ = it->second;
+        }
+    }
+}
+
 void SplineFollowerComponent::Start() {
     if (!gameObject_) return;
     auto* scene = gameObject_->GetScene();
-    if (scene) {
-        // 名前で指定された対象パスを検索
-        for (auto obj : scene->GetGameObjects()) {
-            if (obj->GetName() == targetPathName_) {
-                if (auto path = obj->GetComponent<SplineComponent>()) {
-                    cachedPath_ = path;
-                    break;
-                }
-            }
+    if (scene && targetPathID_ != 0) {
+        if (auto obj = scene->FindGameObjectByID(targetPathID_)) {
+            cachedPath_ = obj->GetComponent<SplineComponent>();
         }
     }
 }

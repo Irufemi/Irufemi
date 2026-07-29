@@ -20,11 +20,11 @@ public:
 
     std::string GetComponentName() const override { return "TargetFollowComponent"; }
 
-    nlohmann::json Serialize() override;
-    void Deserialize(const nlohmann::json& j) override;
+
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
 private:
-    std::string targetName_ = "Player"; ///< 追従対象の GameObject 名
+    uint64_t targetObjectID_ = 0; ///< 追従対象の GameObject ID
     Vector3 offset_ = {0.0f, 2.0f, -5.0f}; ///< ターゲットからの相対距離 (右, 上, 前)
     float followDelay_ = 0.9f; ///< 追従の遅延係数（1.0 に近いほど遅れる、0.0で即座に追従）
 

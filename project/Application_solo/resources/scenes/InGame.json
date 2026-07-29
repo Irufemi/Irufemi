@@ -1539,7 +1539,7 @@
         {
           "data": {
             "Speed": 10.0,
-            "Target Path Name": "PathManager"
+            "Target Path": 8865338349013935913
           },
           "type": "SplineFollowerComponent"
         }
@@ -3912,14 +3912,7 @@
               4.0,
               -18.0
             ],
-            "Target Name": "PlayerCart",
-            "followDelay": 0.009999999776482582,
-            "offset": [
-              0.0,
-              4.0,
-              -18.0
-            ],
-            "targetName": "PlayerCart"
+            "Target Object": 666616630839427138
           },
           "type": "TargetFollowComponent"
         }

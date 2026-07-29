@@ -7,13 +7,22 @@
 #include <cmath>
 
 void TargetFollowComponent::OnRegisterProperties() {
-    RegisterProperty("Target Name", &targetName_);
+    RegisterGameObjectRef("Target Object", &targetObjectID_);
     RegisterProperty("Offset", &offset_);
     RegisterProperty("FollowDelay", &followDelay_);
 }
 
 void TargetFollowComponent::Initialize() {
     targetTransform_ = nullptr;
+}
+
+void TargetFollowComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
+    if (targetObjectID_ != 0) {
+        auto it = idMap.find(targetObjectID_);
+        if (it != idMap.end()) {
+            targetObjectID_ = it->second;
+        }
+    }
 }
 
 void TargetFollowComponent::Update() {
@@ -25,11 +34,11 @@ void TargetFollowComponent::Update() {
         deltaTime = 1.0f / 60.0f;
     }
 
-    // ターゲットが未キャッシュの場合はシーン内から指定された名前で探索
+    // ターゲットが未キャッシュの場合はシーン内から指定されたIDで探索
     if (!targetTransform_) {
         auto scene = gameObject_->GetScene();
-        if (scene && !targetName_.empty()) {
-            auto playerObj = scene->FindGameObject(targetName_);
+        if (scene && targetObjectID_ != 0) {
+            auto playerObj = scene->FindGameObjectByID(targetObjectID_);
             if (playerObj) {
                 targetTransform_ = playerObj->GetComponent<TransformComponent>();
             }
@@ -101,27 +110,4 @@ void TargetFollowComponent::Update() {
     newRot.y += (targetTransform_->GetRotation().y - newRot.y) * t;
     newRot.z += (targetTransform_->GetRotation().z - newRot.z) * t;
     myTransform->SetRotation(newRot);
-}
-
-nlohmann::json TargetFollowComponent::Serialize() {
-    nlohmann::json j = Component::Serialize();
-    j["targetName"] = targetName_;
-    j["offset"] = {offset_.x, offset_.y, offset_.z};
-    j["followDelay"] = followDelay_;
-    return j;
-}
-
-void TargetFollowComponent::Deserialize(const nlohmann::json& j) {
-    Component::Deserialize(j);
-    if (j.contains("targetName")) {
-        targetName_ = j["targetName"].get<std::string>();
-    }
-    if (j.contains("offset")) {
-        offset_.x = j["offset"][0].get<float>();
-        offset_.y = j["offset"][1].get<float>();
-        offset_.z = j["offset"][2].get<float>();
-    }
-    if (j.contains("followDelay")) {
-        followDelay_ = j["followDelay"].get<float>();
-    }
 }
