@@ -211,6 +211,17 @@ renderer->LoadModel("sample/cube.gltf");
 
 ※ アニメーションを行わないため、後述の `SkinnedMeshRendererComponent` よりも軽量に動作します。動かない物体にはこちらを優先して使用してください。
 
+### 3Dプリミティブの描画 (PrimitiveRendererComponent)
+テスト用の床や障害物など、モデルファイルを用意せずに簡易的な立体を描画したい場合は `PrimitiveRendererComponent` を使用します。
+
+```cpp
+auto primitive = gameObject_->AddComponent<PrimitiveRendererComponent>();
+primitive->SetShape(PrimitiveType::Cube); // Cube, Sphere, Cylinder, Cone, Torus など
+primitive->SetColor(Vector4(1.0f, 0.0f, 0.0f, 1.0f)); // 赤色
+```
+
+インスペクタ上からも形状の変更や、材質パラメータ（Roughness / Metallic）の調整が可能です。
+
 ---
 
 ## アニメーションモデルとデバッグ機能の利用方法
@@ -233,6 +244,10 @@ renderer->LoadModel("sample/cube.gltf");
    - **関節 (Joints)**: スカイブルーの「球（Sphere）」で描画されます。
    - **骨 (Bones)**: ピンク色の「八面体（Octahedron）」で描画されます。
    - 深度テストが無効（X-Ray表示）になっているため、キャラクターのメッシュに隠れることなく、常に最前面に現在のボーンの姿勢が描画されます。
+
+### 個別オブジェクトの骨格デバッグ (SkeletonDebugRendererComponent)
+シーン全体ではなく、特定のキャラクターのみの骨格を確認したい場合や、ボーンの「ローカル軸の向き（X, Y, Z軸）」を個別に可視化したい場合は、対象の GameObject に `SkeletonDebugRendererComponent` をアタッチしてください。
+（※ 同一の GameObject に `SkinnedMeshRendererComponent` がアタッチされている必要があります）
 
 ### デバッグカメラのシームレスな移行
 エディタの `Camera & Lights` タブにある `Debug Camera Mode` にチェックを入れると、ゲームカメラからデバッグカメラ（自由操作）に切り替わります。
