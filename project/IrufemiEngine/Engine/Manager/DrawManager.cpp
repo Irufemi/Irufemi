@@ -27,6 +27,7 @@ using namespace RenderPackets;
 #include "../Graphics/Pipeline/RenderGraph/MainOpaquePass.h"
 #include "../Graphics/Pipeline/RenderGraph/MainTransparentPass.h"
 #include "../Graphics/Pipeline/RenderGraph/UIPass.h"
+#include "../Graphics/Pipeline/RenderGraph/PostUIPass.h"
 #include "../Graphics/Pipeline/RenderGraph/PostProcessPass.h"
 #include "../Graphics/Pipeline/RenderGraph/SelectionOutlinePass.h"
 #include "../../Resource/Model/ModelManager.h"
@@ -129,6 +130,7 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     renderGraph_->AddPass(std::make_unique<MainTransparentPass>());
     renderGraph_->AddPass(std::make_unique<PostProcessPass>());
     renderGraph_->AddPass(std::make_unique<UIPass>());
+    renderGraph_->AddPass(std::make_unique<PostUIPass>());
     renderGraph_->AddPass(std::make_unique<SelectionOutlinePass>());
 
     // シャドウマップの初期化 (2048x2048) - 全フレーム分

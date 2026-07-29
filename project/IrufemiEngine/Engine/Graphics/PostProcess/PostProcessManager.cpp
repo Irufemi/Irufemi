@@ -145,23 +145,24 @@ void PostProcessManager::Update(float totalTime) {
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
                                RenderTexture *srcTexture,
                                D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
-                               const PostProcessWorkspace& workspace) {
-  bindlessBufferOffset_ = 0; // フレーム開始時にリセット
-  combinedBufferOffset_ = 0; // フレーム開始時にリセット
-
-  {
+                               const PostProcessWorkspace& workspace,
+                               Layer layer) {
+  // bindlessBufferOffset_ と combinedBufferOffset_ は PreUI (最初のパス) のみリセットする
+  if (layer == Layer::PreUI) {
+      bindlessBufferOffset_ = 0;
+      combinedBufferOffset_ = 0;
+      
       std::lock_guard<std::mutex> lock(customParamsMutex_);
       size_t count = std::min<size_t>(customEffectParamsList_.size(), kMaxCustomEffectParams - 1);
       if (count > 0 && mappedCustomEffectParams_) {
-          // ID 0 is reserved (no custom param), so start copying from index 1.
-          // In customEffectParamsList_, index 0 corresponds to ID 1.
           std::memcpy(mappedCustomEffectParams_ + 1, customEffectParamsList_.data(), count * sizeof(CustomEffectParams));
       }
   }
 
-  // Phase 1: 既存の全エフェクトを一括で PostProcessRunner に投げる
+  const std::vector<Mode>& modesToDraw = (layer == Layer::PreUI) ? activePreUI_ : activePostUI_;
+
   PostProcessRunner runner;
-  runner.Run(this, commandList, activeModes_, srcTexture, rtvHandle, workspace, true);
+  runner.Run(this, commandList, modesToDraw, srcTexture, rtvHandle, workspace, true);
 }
 
 void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,

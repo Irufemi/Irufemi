@@ -645,6 +645,9 @@
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.cpp">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostUIPass.cpp">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp">
       <Filter>Engine\Graphics\PostProcess</Filter>
     </ClCompile>
@@ -1198,6 +1201,9 @@
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.h">
+      <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\PostUIPass.h">
       <Filter>Engine\Graphics\Pipeline\RenderGraph</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h">

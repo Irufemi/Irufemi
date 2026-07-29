@@ -679,6 +679,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.cpp" />
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostUIPass.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessRunner.cpp" />
     <ClCompile Include="Engine\IrufemiEngine.cpp" />
@@ -866,6 +867,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.h" />
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\PostUIPass.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessRunner.h" />
     <ClInclude Include="Engine\Manager\CollisionManager.h" />

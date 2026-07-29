@@ -20,7 +20,5 @@ private:
     TransientResourceHandle lsBlurHandle_ = kInvalidHandle;
     std::array<TransientResourceHandle, 8> kawaseTextureHandles_;
 
-#ifdef EditorMode
-    TransientResourceHandle editorSrcHandle_ = kInvalidHandle;
-#endif
+    TransientResourceHandle preUiSrcHandle_ = kInvalidHandle;
 };

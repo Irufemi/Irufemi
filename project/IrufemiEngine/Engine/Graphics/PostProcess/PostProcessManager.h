@@ -84,10 +84,16 @@ class PostProcessRunner;
  * pp->GetNoiseParams().intensity = 0.2f;
  * @endcode
  */
+enum class EffectLayer {
+    PreUI,  // 3Dシーンや背景にかかる（UIにはかからない）
+    PostUI  // UIを含む画面全体にかかる
+};
+
 class PostProcessManager {
     friend class PostProcessRunner;
 public:
     using Mode = PostProcessMode;
+    using Layer = EffectLayer;
 
     static constexpr int32_t kMaxKawaseIterations = 8; // 最大ダウンサンプル回数
 
@@ -542,7 +548,7 @@ public:
      * @param rtvHandle 最終的な出力先（バックバッファ）のRTV
      * @param workspace Transient Resource が割り当てられた作業用領域
      */
-    void Draw(ID3D12GraphicsCommandList* commandList, class RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace);
+    void Draw(ID3D12GraphicsCommandList* commandList, class RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace, Layer layer = Layer::PreUI);
 
     /**
      * @brief 個別エフェクトの詳細パラメータを登録し、インスタンスID（1〜255）を発行する
@@ -571,16 +577,27 @@ public:
     /** @brief 描画フェーズに備えて保留中の状態を同期する */
     void CommitPendingModes() {
         std::lock_guard<std::mutex> lock(modesMutex_);
-        activeModes_ = pendingActiveModes_;
+        activePreUI_ = pendingPreUI_;
+        activePostUI_ = pendingPostUI_;
     }
 
-    /** @brief 現在アクティブなエフェクトスタックを取得 */
-    const std::vector<Mode>& GetActiveModes() const { return activeModes_; }
+    /** @brief 現在アクティブなエフェクトスタックを取得 (レイヤー指定) */
+    const std::vector<Mode>& GetActiveModes(Layer layer = Layer::PreUI) const { 
+        return (layer == Layer::PreUI) ? activePreUI_ : activePostUI_; 
+    }
+
+    /** @brief 全てのアクティブなエフェクト（PreUI + PostUI）を取得（互換性用・デバッグ用） */
+    std::vector<Mode> GetAllActiveModes() const {
+        std::vector<Mode> all = activePreUI_;
+        all.insert(all.end(), activePostUI_.begin(), activePostUI_.end());
+        return all;
+    }
 
     /** @brief エフェクトをスタックに追加 */
-    void AddActiveMode(Mode mode) {
+    void AddActiveMode(Mode mode, Layer layer = Layer::PreUI) {
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingActiveModes_.push_back(mode);
+        if (layer == Layer::PreUI) pendingPreUI_.push_back(mode);
+        else pendingPostUI_.push_back(mode);
     }
     
     // -------------------------------------------------------------
@@ -601,13 +618,15 @@ public:
     /** @brief 指定したエフェクトをスタックから削除 */
     void RemoveActiveMode(Mode mode) {
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingActiveModes_.erase(std::remove(pendingActiveModes_.begin(), pendingActiveModes_.end(), mode), pendingActiveModes_.end());
+        pendingPreUI_.erase(std::remove(pendingPreUI_.begin(), pendingPreUI_.end(), mode), pendingPreUI_.end());
+        pendingPostUI_.erase(std::remove(pendingPostUI_.begin(), pendingPostUI_.end(), mode), pendingPostUI_.end());
     }
 
     /** @brief 全てのエフェクトを解除（クリア） */
     void ClearActiveModes() {
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingActiveModes_.clear();
+        pendingPreUI_.clear();
+        pendingPostUI_.clear();
     }
 
     /** 
@@ -619,15 +638,25 @@ public:
      */
     void Reset() {
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingActiveModes_.clear();
-        activeModes_.clear();
+        pendingPreUI_.clear();
+        activePreUI_.clear();
+        pendingPostUI_.clear();
+        activePostUI_.clear();
         ResetAllParams();
     }
 
-    /** @brief エフェクトスタックを一括設定 */
+    /** @brief エフェクトスタックを一括設定 (互換性のため PreUI に設定) */
     void SetActiveModes(const std::vector<Mode>& modes) {
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingActiveModes_ = modes;
+        pendingPreUI_ = modes;
+        pendingPostUI_.clear(); // 必要に応じて分離するか検討
+    }
+
+    /** @brief エフェクトスタックをレイヤー別に設定 */
+    void SetActiveModes(const std::vector<Mode>& preUI, const std::vector<Mode>& postUI) {
+        std::lock_guard<std::mutex> lock(modesMutex_);
+        pendingPreUI_ = preUI;
+        pendingPostUI_ = postUI;
     }
 
     /** @brief 全てのパラメータをデフォルト状態にリセットする */
@@ -635,18 +664,27 @@ public:
 
     /** @brief 指定したエフェクトが現在有効かチェック */
     bool HasActiveMode(Mode mode) const {
-        return std::find(activeModes_.begin(), activeModes_.end(), mode) != activeModes_.end();
+        return std::find(activePreUI_.begin(), activePreUI_.end(), mode) != activePreUI_.end() ||
+               std::find(activePostUI_.begin(), activePostUI_.end(), mode) != activePostUI_.end();
     }
     
     /** @brief 互換性のための単一セット (既存リストをクリアして1つ追加) */
-    void SetMode(Mode mode) { 
+    void SetMode(Mode mode, Layer layer = Layer::PreUI) { 
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingActiveModes_.clear(); 
-        if (mode != Mode::None) pendingActiveModes_.push_back(mode); 
+        pendingPreUI_.clear(); 
+        pendingPostUI_.clear();
+        if (mode != Mode::None) {
+            if (layer == Layer::PreUI) pendingPreUI_.push_back(mode);
+            else pendingPostUI_.push_back(mode);
+        }
     }
 
-    /** @brief 互換性のための取得 (リストが空でなければ先頭を返す) */
-    Mode GetMode() const { return activeModes_.empty() ? Mode::None : activeModes_.front(); }
+    /** @brief 互換性のための取得 (PreUIの先頭を優先して返す) */
+    Mode GetMode() const { 
+        if (!activePreUI_.empty()) return activePreUI_.front();
+        if (!activePostUI_.empty()) return activePostUI_.front();
+        return Mode::None; 
+    }
     
     // 各エフェクトのパラメータ取得 (シーンからの演出用)
     NoiseParams& GetNoiseParams() { return noiseParams_; }
@@ -697,8 +735,11 @@ private:
     Mode mode_ = Mode::None; // 互換性用（内部では不使用にする）
     
     std::mutex modesMutex_;
-    std::vector<Mode> activeModes_;
-    std::vector<Mode> pendingActiveModes_;
+    std::vector<Mode> activePreUI_;
+    std::vector<Mode> pendingPreUI_;
+    
+    std::vector<Mode> activePostUI_;
+    std::vector<Mode> pendingPostUI_;
 
     std::mutex customParamsMutex_;
     std::vector<CustomEffectParams> customEffectParamsList_;
