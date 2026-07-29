@@ -13,6 +13,7 @@
 #include "Component/Collider/RaycastComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Core/Utility/Log.h"
+#include "SceneSerializer.h"
 #include <iostream>
 #include <atomic>
 
@@ -233,15 +234,44 @@ nlohmann::json GameObject::Serialize() const {
     
     if (!sourcePrefabPath_.empty()) {
         j["prefabPath"] = sourcePrefabPath_;
-        // プレハブ由来の場合はTransformComponentの上書き情報のみ保存する
+        // プレハブのベースデータを取得して比較し、差分（または追加分）のみ保存する
+        nlohmann::json baseJ = SceneSerializer::GetPrefabJson(sourcePrefabPath_);
+        nlohmann::json baseComps = baseJ.value("components", nlohmann::json::array());
+
         nlohmann::json comps = nlohmann::json::array();
         for (const auto& comp : components_) {
-            if (comp->GetComponentName() == "TransformComponent") {
+            std::string cName = comp->GetComponentName();
+            
+            nlohmann::json cdata;
+            try {
+                cdata = comp->Serialize();
+            } catch (const std::exception& e) {
+                Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName + "': " + std::string(e.what()) + "\n");
+                continue;
+            } catch (...) {
+                Log::OutPutLog(std::cerr, "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
+                continue;
+            }
+
+            if (!cdata.is_object() || cdata.empty()) continue;
+
+            bool isOverridden = true; // プレハブに存在しない、または差分がある場合はtrue
+            
+            // プレハブ内の同一コンポーネントを検索
+            for (const auto& baseCompJ : baseComps) {
+                if (baseCompJ.value("type", "") == cName) {
+                    if (baseCompJ.contains("data") && baseCompJ["data"] == cdata) {
+                        isOverridden = false; // プレハブと全く同じデータ
+                    }
+                    break;
+                }
+            }
+
+            if (isOverridden) {
                 nlohmann::json cj;
-                cj["type"] = comp->GetComponentName();
-                cj["data"] = comp->Serialize();
+                cj["type"] = cName;
+                cj["data"] = cdata;
                 comps.push_back(cj);
-                break; // TransformComponentは1つのみ
             }
         }
         if (!comps.empty()) {
@@ -292,8 +322,6 @@ nlohmann::json GameObject::Serialize() const {
     
     return j;
 }
-
-#include "SceneSerializer.h"
 
 void GameObject::Deserialize(const nlohmann::json& j) {
     // シリアライズから復元された＝シーンに保存されている静的オブジェクトである
@@ -356,6 +384,42 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             }
         }
         
+        // プレハブには存在しないが、ローカルデータで追加された新規コンポーネントを復元
+        if (j.contains("components")) {
+            for (const auto& localCj : j["components"]) {
+                if (!localCj.contains("type")) continue;
+                std::string localType = localCj["type"];
+                
+                // ベースデータに既に存在するかチェック
+                bool existsInBase = false;
+                if (baseJ.contains("components")) {
+                    for (const auto& cj : baseJ["components"]) {
+                        if (cj.contains("type") && cj["type"] == localType) {
+                            existsInBase = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // ベースデータに存在しない場合は新規追加
+                if (!existsInBase) {
+                    std::shared_ptr<Component> newComp = ComponentFactory::Create(localType);
+                    if (newComp) {
+                        newComp->SetGameObject(this);
+                        components_.push_back(newComp);
+                        componentMap_[typeid(*newComp)].push_back(newComp.get());
+                        newComp->OnRegisterProperties();
+                        
+                        if (localCj.contains("data")) {
+                            newComp->Deserialize(localCj["data"]);
+                        }
+                        
+                        loadedComps.push_back(newComp);
+                    }
+                }
+            }
+        }
+
         // 全てのコンポーネントがリストに登録されてから一斉にInitializeを呼ぶ
         // これにより、Initialize内でGetComponentした際に他のコンポーネントが見つかるようになる
         for (auto& comp : loadedComps) {
@@ -371,6 +435,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("children") && j["children"].is_array()) {
         for (const auto& cj : j["children"]) {
             auto child = std::make_shared<GameObject>();
+            if (scene_) child->SetScene(scene_);
             child->Deserialize(cj);
             AddChild(child);
         }

@@ -513,7 +513,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
         // Bindless パラメータの更新
         mappedBindless_[bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
         // wait, we need to handle dissolveNoise and depthSrv for combined pass
-        uint32_t extraIdx = 0;
+        uint32_t extraIdx = depthSrvIndex_;
         for (int i = 0; i < (int)batch.size(); ++i) {
             if (UsesDepthBuffer(batch[i])) {
                 extraIdx = depthSrvIndex_;
@@ -523,6 +523,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
             }
         }
         mappedBindless_[bindlessBufferOffset_].extraTextureIndex = extraIdx;
+        mappedBindless_[bindlessBufferOffset_].maskTextureIndex = dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
         
         commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
         bindlessBufferOffset_++;
@@ -551,7 +552,7 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     mappedBindless_[bindlessBufferOffset_].mainTextureIndex = srcTexture ? srcTexture->GetSrvIndex() : 0;
-    mappedBindless_[bindlessBufferOffset_].extraTextureIndex = 0;
+    mappedBindless_[bindlessBufferOffset_].extraTextureIndex = depthSrvIndex_;
     mappedBindless_[bindlessBufferOffset_].maskTextureIndex = dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
 
     commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));

@@ -30,6 +30,8 @@ public:
     void SetCustomEffectType(int32_t type) { customEffectType_ = type; }
     int32_t GetCustomEffectType() const { return customEffectType_; }
 
+    float GetCachedEffectParam() const { return cachedEffectParam_; }
+
     PostProcessManager::CustomEffectParams& GetCustomParams() { return customParams_; }
     const PostProcessManager::CustomEffectParams& GetCustomParams() const { return customParams_; }
 
@@ -38,6 +40,7 @@ private:
 
     bool enableEffectMask_ = true;
     int32_t customEffectType_ = 0;
+    float cachedEffectParam_ = 0.0f;
     PostProcessManager::CustomEffectParams customParams_;
     
     MeshRendererComponent* cachedRenderer_ = nullptr;

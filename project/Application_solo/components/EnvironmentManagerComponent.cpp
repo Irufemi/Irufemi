@@ -8,6 +8,7 @@
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Effect/EffectMaskComponent.h"
 
 #include <sstream>
 
@@ -173,9 +174,18 @@ void EnvironmentManagerComponent::Draw() {
                     batchRenderers_[modelName] = std::move(batchRenderer);
                 }
 
+                int32_t effectType = 0;
+                float effectParam = 0.0f;
+                bool enableMask = false;
+                if (auto effectMask = obj->GetComponent<EffectMaskComponent>()) {
+                    enableMask = effectMask->GetEnableEffectMask();
+                    effectType = effectMask->GetCustomEffectType();
+                    effectParam = effectMask->GetCachedEffectParam();
+                }
+
                 // ワールド行列を取得してバッチにインスタンスを追加
                 if (auto transform = obj->GetComponent<TransformComponent>()) {
-                    batchRenderers_[modelName]->AddInstanceWorld(transform->GetWorldMatrix());
+                    batchRenderers_[modelName]->AddInstanceWorld(transform->GetWorldMatrix(), effectType, effectParam, enableMask);
                 }
             }
         }

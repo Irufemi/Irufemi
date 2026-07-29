@@ -143,6 +143,8 @@ PixelShaderOutput main(VertexShaderOutput input) {
     float customParam = mask.g;
     bool isProtected = mask.b > 0.5f;
     
+    PixelShaderOutput output;
+    
     // 1. 個別カスタムエフェクトの適用
     if (customEffect != 0) {
         int instanceID = round(customParam * 255.0f);
@@ -347,7 +349,6 @@ PixelShaderOutput main(VertexShaderOutput input) {
         }
     }
 
-    PixelShaderOutput output;
     output.color = color;
     return output;
 }

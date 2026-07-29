@@ -301,6 +301,48 @@
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 15,
+                "customParams": {
+                  "param1": 2.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -328,6 +370,48 @@
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 9,
+                "customParams": {
+                  "param1": 0.5,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -355,6 +439,48 @@
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 24,
+                "customParams": {
+                  "param1": 0.05,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -382,6 +508,48 @@
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 21,
+                "customParams": {
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -409,6 +577,48 @@
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 23,
+                "customParams": {
+                  "param1": 0.03,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -436,6 +646,48 @@
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 18,
+                "customParams": {
+                  "param1": 8.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -457,12 +709,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 19,
+                "customParams": {
+                  "param1": 4.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -484,12 +778,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 20,
+                "customParams": {
+                  "param1": 4.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -511,12 +847,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 22,
+                "customParams": {
+                  "param1": 6.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -538,12 +916,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 26,
+                "customParams": {
+                  "param1": 5.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -565,12 +985,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 7,
+                "customParams": {
+                  "param1": 0.05,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -592,12 +1054,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "param1": 2.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -619,12 +1123,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 15,
+                "customParams": {
+                  "param1": 2.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -646,12 +1192,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 9,
+                "customParams": {
+                  "param1": 0.5,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -673,12 +1261,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 24,
+                "customParams": {
+                  "param1": 0.05,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -700,12 +1330,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 21,
+                "customParams": {
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -727,12 +1399,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 23,
+                "customParams": {
+                  "param1": 0.03,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -754,12 +1468,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 18,
+                "customParams": {
+                  "param1": 8.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -781,12 +1537,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 19,
+                "customParams": {
+                  "param1": 4.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -808,12 +1606,54 @@
                   0.0
                 ],
                 "scale": [
-                  4.0,
-                  4.0,
-                  4.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.44999998807907104,
+                  0.0
+                ],
+                "localSize": [
+                  0.4000000059604645,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 20,
+                "customParams": {
+                  "param1": 4.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Pillar",
@@ -835,12 +1675,54 @@
                   0.0
                 ],
                 "scale": [
-                  1.5,
-                  1.5,
-                  1.5
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 22,
+                "customParams": {
+                  "param1": 6.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Arch",
@@ -862,12 +1744,54 @@
                   0.0
                 ],
                 "scale": [
-                  1.5,
-                  1.5,
-                  1.5
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 26,
+                "customParams": {
+                  "param1": 5.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Arch",
@@ -889,12 +1813,54 @@
                   0.0
                 ],
                 "scale": [
-                  1.5,
-                  1.5,
-                  1.5
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 7,
+                "customParams": {
+                  "param1": 0.05,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Arch",
@@ -916,12 +1882,54 @@
                   0.0
                 ],
                 "scale": [
-                  1.5,
-                  1.5,
-                  1.5
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "param1": 2.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Arch",
@@ -943,12 +1951,54 @@
                   0.0
                 ],
                 "scale": [
-                  1.5,
-                  1.5,
-                  1.5
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.0,
+                  0.30000001192092896,
+                  0.0
+                ],
+                "localSize": [
+                  0.8999999761581421,
+                  0.699999988079071,
+                  0.30000001192092896
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 15,
+                "customParams": {
+                  "param1": 2.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Arch",
@@ -976,6 +2026,48 @@
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.02500000037252903,
+                  0.550000011920929,
+                  0.0
+                ],
+                "localSize": [
+                  0.75,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 9,
+                "customParams": {
+                  "param1": 0.5,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Wall",
@@ -997,12 +2089,54 @@
                   0.0
                 ],
                 "scale": [
-                  5.0,
-                  5.0,
-                  5.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.02500000037252903,
+                  0.550000011920929,
+                  0.0
+                ],
+                "localSize": [
+                  0.75,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 24,
+                "customParams": {
+                  "param1": 0.05,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Wall",
@@ -1024,12 +2158,54 @@
                   0.0
                 ],
                 "scale": [
-                  5.0,
-                  5.0,
-                  5.0
+                  8.0,
+                  8.0,
+                  8.0
                 ]
               },
               "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "layer": 64,
+                "localOffset": [
+                  0.02500000037252903,
+                  0.550000011920929,
+                  0.0
+                ],
+                "localSize": [
+                  0.75,
+                  0.8999999761581421,
+                  0.4000000059604645
+                ],
+                "mask": 4294967295
+              },
+              "type": "OBBColliderComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 21,
+                "customParams": {
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0,
+                  "color1": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "color2": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "name": "Env_Wall",

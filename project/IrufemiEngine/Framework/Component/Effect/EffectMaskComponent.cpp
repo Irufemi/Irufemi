@@ -19,22 +19,22 @@ void EffectMaskComponent::Update() {
         cachedRenderer_ = gameObject_->GetComponent<MeshRendererComponent>();
     }
 
+    if (enableEffectMask_ && customEffectType_ > 0) {
+        if (gameObject_ && gameObject_->GetScene()) {
+            auto* engine = gameObject_->GetScene()->GetEngine();
+            if (engine && engine->GetPostProcessManager()) {
+                uint32_t id = engine->GetPostProcessManager()->RegisterCustomEffectParams(customParams_);
+                cachedEffectParam_ = static_cast<float>(id) / 255.0f;
+            }
+        }
+    } else {
+        cachedEffectParam_ = 0.0f;
+    }
+
     if (cachedRenderer_) {
         cachedRenderer_->SetEnableEffectMask(enableEffectMask_);
         cachedRenderer_->SetCustomEffectType(customEffectType_);
-
-        if (enableEffectMask_ && customEffectType_ > 0) {
-            if (gameObject_ && gameObject_->GetScene()) {
-                auto* engine = gameObject_->GetScene()->GetEngine();
-                if (engine && engine->GetPostProcessManager()) {
-                    uint32_t id = engine->GetPostProcessManager()->RegisterCustomEffectParams(customParams_);
-                    // Send the ID to the renderer (we divide by 255 to store it in a UNORM texture)
-                    cachedRenderer_->SetCustomEffectParam(static_cast<float>(id) / 255.0f);
-                }
-            }
-        } else {
-            cachedRenderer_->SetCustomEffectParam(0.0f);
-        }
+        cachedRenderer_->SetCustomEffectParam(cachedEffectParam_);
     }
 }
 
