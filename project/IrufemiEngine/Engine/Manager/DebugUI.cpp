@@ -63,14 +63,28 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     iniFileName = "imgui_editor.ini";
 #endif
 
+    // exeのパス(UTF-8)を取得して、必ずexeと同じディレクトリにiniを保存・読み込みする
+    std::string exePath = FileSystem::GetExePath();
+    std::string exeDir = exePath.substr(0, exePath.find_last_of("/\\"));
+    static std::string absoluteIniPath = exeDir + "/" + iniFileName;
+
+    std::filesystem::path iniFsPath = std::filesystem::path(reinterpret_cast<const char8_t*>(absoluteIniPath.c_str()));
+
     // 初回起動時（iniが無い場合）に、リポジトリにコミットされているプリセットをコピーする
-    if (!std::filesystem::exists(iniFileName)) {
-        // カレントディレクトリ（プロジェクト直下 または exe直下）から見てエンジンリソースを探す
-        std::string presetPathStr = FileSystem::GetEngineRoot() + "/EngineResources/default_imgui.ini";
-        const char* presetPath = presetPathStr.c_str();
-        if (std::filesystem::exists(presetPath)) {
+    if (!std::filesystem::exists(iniFsPath)) {
+        // 1. カレントディレクトリ基準での検索（VSからの実行時用）
+        std::string presetPath1 = FileSystem::GetEngineRoot() + "/EngineResources/default_imgui.ini";
+        std::filesystem::path presetFsPath = std::filesystem::path(reinterpret_cast<const char8_t*>(presetPath1.c_str()));
+        
+        // 2. exeディレクトリ基準での検索（Editorビルドを直接実行した場合用）
+        if (!std::filesystem::exists(presetFsPath)) {
+            std::string presetPath2 = exeDir + "/../../IrufemiEngine/EngineResources/default_imgui.ini";
+            presetFsPath = std::filesystem::path(reinterpret_cast<const char8_t*>(presetPath2.c_str()));
+        }
+        
+        if (std::filesystem::exists(presetFsPath)) {
             std::error_code ec;
-            std::filesystem::copy_file(presetPath, iniFileName, ec);
+            std::filesystem::copy_file(presetFsPath, iniFsPath, ec);
         }
     }
 
@@ -115,8 +129,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする
 #endif // EditorMode
     
-    // カレントディレクトリの移動で ini が意図しない場所に生成されるのを防ぐため、初期化時点の絶対パスを固定で設定する
-    static std::string absoluteIniPath = std::filesystem::absolute(iniFileName).string();
+    // 構築した絶対パス(UTF-8)をIniFilenameに設定
     io.IniFilename = absoluteIniPath.c_str();
 
     ImGui_ImplWin32_Init(hwnd);
