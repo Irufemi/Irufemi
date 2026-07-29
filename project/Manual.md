@@ -56,11 +56,11 @@ if (auto collider = obj->GetComponentInChildren<ColliderComponent>()) {
 
 ## チーム開発ルール・コーディング規約
 
-チームでの共同開発（`Application_team` など）を進めるにあたり、以下のアーキテクチャ・コーディング規約を遵守してください。
+チームでの共同開発（`Application_team` や `Application_solo` など）を進めるにあたり、以下のアーキテクチャ・コーディング規約を遵守してください。
 
 ### 1. アーキテクチャと関心の分離
 - **エンジンの独立性**: `IrufemiEngine/` フォルダ配下のコア機能には、特定のゲームやシーンに依存する処理・固有のデータ・アクターを**絶対に含めない**でください。
-- **ゲームロジックの配置**: ゲーム固有のロジックやキャラクター制御は、必ず `Application_team/` (または各ゲームの Application フォルダ) 内に記述し、エンジンとアプリケーションの境界を厳格に保ちます。
+- **ゲームロジックの配置**: ゲーム固有のロジックやキャラクター制御は、必ず `Application_team/` や `Application_solo/` (または各ゲームの Application フォルダ) 内に記述し、エンジンとアプリケーションの境界を厳格に保ちます。
 
 ### 2. メモリ管理と安全性 (C++ / DirectX)
 - **スマートポインタの利用**: メモリリークを防ぐため、生ポインタ(`Raw Pointer`)の新規使用は極力避け、用途に合わせて `std::unique_ptr` や `std::shared_ptr` を優先してください。
@@ -811,6 +811,36 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 ---
 
+## スカイボックス (Skybox) の描画
+
+3Dシーン全体の背景（空や遠景）を描画するための専用クラス `Skybox` が `Renderer/Object/Skybox` に用意されています。
+このクラスは `IRenderable` を継承しており、初期化時に全天球画像（Equirectangular 形式のDDS/HDR等）を指定することで、自動的にキューブマップに変換・描画されます。
+
+### 基本的な使い方
+
+シーン（例：`DebugScene`）内で `Skybox` のインスタンスを保持し、初期化と描画を行います。
+
+```cpp
+#include "Renderer/Object/Skybox/Skybox.h"
+
+// 1. ヘッダなどでインスタンスを保持
+std::unique_ptr<Skybox> skybox_;
+
+// 2. 初期化時にテクスチャパスを指定
+skybox_ = std::make_unique<Skybox>();
+skybox_->Initialize("resources/skybox_texture.dds"); 
+// ※テクスチャを指定しない場合は、デフォルトの空画像が使用されます。
+
+// 3. 毎フレームの更新と描画
+skybox_->Update();
+skybox_->SyncBeforeDraw();
+skybox_->Draw();
+```
+
+※ スカイボックスは常にカメラに追従し、無限遠にあるように描画されるため、特別な座標（Transform）の指定は不要です。
+
+---
+
 ## 汎用2Dプリミティブ描画 (Primitive2DObject / Primitive2DRendererComponent) の利用方法
 
 2D空間での汎用的な図形（四角形、円、線、リングなど）を簡単に描画するための `Primitive2DObject` および、それをエディタで直感的に扱える `Primitive2DRendererComponent` が追加されました。
@@ -945,16 +975,12 @@ animator->Play("sample/sneakWalk.gltf", true, 1.0f);
 
 本エンジンは、アニメーションデータ自体が持っている「移動量（ルートボーンの差分）」を自動抽出し、それを直接 GameObject の `TransformComponent` の座標に還元する **Root Motion** 機能をサポートしています。
 
-```cpp
-auto animator = gameObject_->GetComponent<AnimatorComponent>();
+**Root Motion の有効化方法**:
+現状、プログラム側（C++）からの直接設定APIは提供されておらず、**エディタの Inspector（インスペクタ）上にある `Apply Root Motion` のチェックボックスをONにする** ことで有効になります。
 
-// Root Motion を有効化（インスペクタのUIからもチェックボックスで切り替え可能）
-animator->SetApplyRootMotion(true);
-
-// これ以降、"walk.gltf" などを再生すると、アニメーションの移動量に連動して
-// 自動的に GameObject そのもの（Transform）が移動するようになります。
-// （※開発者が手動で Transform::SetPosition を呼んでキャラクターを前進させる必要はありません）
-```
+有効化後は、"walk.gltf" などを再生すると、アニメーションの移動量に連動して
+自動的に GameObject そのもの（Transform）が移動するようになります。
+（※開発者が手動で Transform::SetPosition を呼んでキャラクターを前進させる必要はありません）
 
 これにより、モーションデザイナーが意図した通りの「絶対に足が滑らない、物理的に正確な移動」が実現されます。
 
