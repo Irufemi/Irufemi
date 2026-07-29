@@ -166,6 +166,1029 @@
           ],
           "name": "RailPoint_5",
           "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  19.5,
+                  -8.600000381469727,
+                  180.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_6",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  13.5,
+                  -8.5,
+                  240.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_7",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  2.799999952316284,
+                  1.7999999523162842,
+                  300.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_8",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -8.899999618530273,
+                  14.5,
+                  360.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_9",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -17.399999618530273,
+                  20.0,
+                  420.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_10",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -19.899999618530273,
+                  14.100000381469727,
+                  480.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_11",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -15.5,
+                  1.2999999523162842,
+                  540.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_12",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -5.599999904632568,
+                  -8.699999809265137,
+                  600.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_13",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  6.199999809265137,
+                  -8.300000190734863,
+                  660.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_14",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  15.899999618530273,
+                  2.0999999046325684,
+                  720.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_15",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  20.0,
+                  14.699999809265137,
+                  780.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_16",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  17.100000381469727,
+                  20.0,
+                  840.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_17",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  8.199999809265137,
+                  13.899999618530273,
+                  900.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_18",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -3.5,
+                  1.100000023841858,
+                  960.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_19",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -14.0,
+                  -8.800000190734863,
+                  1020.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_20",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -19.600000381469727,
+                  -8.199999809265137,
+                  1080.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_21",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -18.399999618530273,
+                  2.299999952316284,
+                  1140.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_22",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -10.699999809265137,
+                  14.899999618530273,
+                  1200.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_23",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  0.699999988079071,
+                  20.0,
+                  1260.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_24",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  11.800000190734863,
+                  13.699999809265137,
+                  1320.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_25",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  18.899999618530273,
+                  0.8999999761581421,
+                  1380.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_26",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  19.299999237060547,
+                  -8.899999618530273,
+                  1440.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_27",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  13.0,
+                  -8.100000381469727,
+                  1500.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_28",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  2.200000047683716,
+                  2.5999999046325684,
+                  1560.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_29",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -9.399999618530273,
+                  15.100000381469727,
+                  1620.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_30",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -17.799999237060547,
+                  20.0,
+                  1680.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_31",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -19.899999618530273,
+                  13.5,
+                  1740.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_32",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -15.0,
+                  0.6000000238418579,
+                  1800.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_33",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  -4.900000095367432,
+                  -9.0,
+                  1860.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_34",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  6.900000095367432,
+                  -8.0,
+                  1920.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_35",
+          "tag": "Untagged"
+        },
+        {
+          "components": [
+            {
+              "data": {
+                "position": [
+                  16.299999237060547,
+                  2.799999952316284,
+                  1980.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "scale": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              "type": "TransformComponent"
+            },
+            {
+              "data": {
+                "Draw Debug": true,
+                "Radius": 0.5
+              },
+              "type": "SplineNodeComponent"
+            }
+          ],
+          "name": "RailPoint_36",
+          "tag": "Untagged"
         }
       ],
       "components": [
@@ -217,6 +1240,161 @@
                 0.0,
                 0.0,
                 120.0
+              ],
+              [
+                19.5,
+                -8.600000381469727,
+                180.0
+              ],
+              [
+                13.5,
+                -8.5,
+                240.0
+              ],
+              [
+                2.799999952316284,
+                1.7999999523162842,
+                300.0
+              ],
+              [
+                -8.899999618530273,
+                14.5,
+                360.0
+              ],
+              [
+                -17.399999618530273,
+                20.0,
+                420.0
+              ],
+              [
+                -19.899999618530273,
+                14.100000381469727,
+                480.0
+              ],
+              [
+                -15.5,
+                1.2999999523162842,
+                540.0
+              ],
+              [
+                -5.599999904632568,
+                -8.699999809265137,
+                600.0
+              ],
+              [
+                6.199999809265137,
+                -8.300000190734863,
+                660.0
+              ],
+              [
+                15.899999618530273,
+                2.0999999046325684,
+                720.0
+              ],
+              [
+                20.0,
+                14.699999809265137,
+                780.0
+              ],
+              [
+                17.100000381469727,
+                20.0,
+                840.0
+              ],
+              [
+                8.199999809265137,
+                13.899999618530273,
+                900.0
+              ],
+              [
+                -3.5,
+                1.100000023841858,
+                960.0
+              ],
+              [
+                -14.0,
+                -8.800000190734863,
+                1020.0
+              ],
+              [
+                -19.600000381469727,
+                -8.199999809265137,
+                1080.0
+              ],
+              [
+                -18.399999618530273,
+                2.299999952316284,
+                1140.0
+              ],
+              [
+                -10.699999809265137,
+                14.899999618530273,
+                1200.0
+              ],
+              [
+                0.699999988079071,
+                20.0,
+                1260.0
+              ],
+              [
+                11.800000190734863,
+                13.699999809265137,
+                1320.0
+              ],
+              [
+                18.899999618530273,
+                0.8999999761581421,
+                1380.0
+              ],
+              [
+                19.299999237060547,
+                -8.899999618530273,
+                1440.0
+              ],
+              [
+                13.0,
+                -8.100000381469727,
+                1500.0
+              ],
+              [
+                2.200000047683716,
+                2.5999999046325684,
+                1560.0
+              ],
+              [
+                -9.399999618530273,
+                15.100000381469727,
+                1620.0
+              ],
+              [
+                -17.799999237060547,
+                20.0,
+                1680.0
+              ],
+              [
+                -19.899999618530273,
+                13.5,
+                1740.0
+              ],
+              [
+                -15.0,
+                0.6000000238418579,
+                1800.0
+              ],
+              [
+                -4.900000095367432,
+                -9.0,
+                1860.0
+              ],
+              [
+                6.900000095367432,
+                -8.0,
+                1920.0
+              ],
+              [
+                16.299999237060547,
+                2.799999952316284,
+                1980.0
               ]
             ]
           },
@@ -2547,6 +3725,16 @@
             "Shield Radius": 8.0
           },
           "type": "BossComponent"
+        },
+        {
+          "data": {
+            "Distance Offset": 80.0,
+            "Local Offset X": 0.0,
+            "Local Offset Y": 10.0,
+            "Local Offset Z": 0.0,
+            "Target Object Name": "PlayerCart"
+          },
+          "type": "RailRelativeFollowerComponent"
         },
         {
           "data": {

@@ -11,6 +11,7 @@
 #include "Framework/Component/ComponentFactory.h"
 #include "components/RailShooterPlayerComponent.h"
 #include "components/SplineFollowerComponent.h"
+#include "components/RailRelativeFollowerComponent.h"
 #include "components/RailShooterEnemyComponent.h"
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
@@ -125,6 +126,7 @@ void GameApplication::Run() {
     // 独自コンポーネントの登録
     ComponentFactory::Register("RailShooterPlayerComponent", "Game", []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("SplineFollowerComponent", "Game", []() { return std::make_shared<SplineFollowerComponent>(); });
+    ComponentFactory::Register("RailRelativeFollowerComponent", "Game", []() { return std::make_shared<RailRelativeFollowerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });

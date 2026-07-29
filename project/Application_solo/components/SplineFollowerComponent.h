@@ -23,6 +23,9 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "SplineFollowerComponent"; }
 
+    float GetCurrentDistance() const { return currentDistance_; }
+    SplineComponent* GetCachedPath() const { return cachedPath_; }
+
 private:
     float currentDistance_ = 0.0f;    ///< ルート（軌道）上の進み具合 (m)
     float speed_ = 10.0f;             ///< 自動前進するスピード (m/s)
