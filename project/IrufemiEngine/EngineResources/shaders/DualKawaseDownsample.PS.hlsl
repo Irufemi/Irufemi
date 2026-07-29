@@ -12,9 +12,7 @@ struct DualKawaseBlurParams {
 };
 ConstantBuffer<DualKawaseBlurParams> gKawaseParams : register(b0);
 
-struct PixelShaderOutput {
-    float4 color : SV_TARGET0;
-};
+
 
 PixelShaderOutput main(VertexShaderOutput input) {
     PixelShaderOutput output;

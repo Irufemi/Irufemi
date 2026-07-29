@@ -8,3 +8,6 @@ struct VertexShaderOutput
 	float32_t3 normal : NORMAL0;
 	float4 color : COLOR0;
 };
+struct PixelShaderOutput {
+    float32_t4 color : SV_TARGET0;
+};

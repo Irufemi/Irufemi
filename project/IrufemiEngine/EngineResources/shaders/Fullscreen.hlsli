@@ -3,3 +3,7 @@ struct VertexShaderOutput {
     float2 texcoord : TEXCOORD;
 };
 
+
+struct PixelShaderOutput {
+    float32_t4 color : SV_TARGET0;
+};

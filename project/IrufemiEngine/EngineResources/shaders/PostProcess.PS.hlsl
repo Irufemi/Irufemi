@@ -125,9 +125,7 @@ ConstantBuffer<PostProcessParams> gParams : register(b0);
 SamplerState gSampler : register(s0);
 SamplerState gSamplerPoint : register(s1);
 
-struct PixelShaderOutput {
-    float32_t4 color : SV_TARGET0;
-};
+
 
 /**
  * @brief マスク（ID）ベースのカスタムアウトラインを適用する（AAAアプローチ）

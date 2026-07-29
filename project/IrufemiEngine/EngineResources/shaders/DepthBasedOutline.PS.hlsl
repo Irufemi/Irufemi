@@ -12,9 +12,7 @@ ConstantBuffer<OutlineParams> gOutline : register(b0);
 SamplerState gSampler : register(s0);
 SamplerState gSamplerPoint : register(s1);
 
-struct PixelShaderOutput {
-    float32_t4 color : SV_TARGET0;
-};
+
 
 static const float32_t kPrewittHorizontalKernel[3][3] = {
     { -1.0f / 6.0f, 0.0f, 1.0f / 6.0f },

@@ -7,10 +7,7 @@ SamplerState gSampler : register(s0);
 
 #include "Bindless.hlsli"
 
-struct PixelShaderOutput
-{
-    float32_t4 color : SV_TARGET0;
-};
+
 
 float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));

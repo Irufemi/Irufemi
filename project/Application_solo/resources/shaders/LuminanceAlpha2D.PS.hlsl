@@ -5,10 +5,7 @@ ConstantBuffer<Material> gMaterial : register(b0);
 
 #include "Bindless.hlsli"
 
-struct PixelShaderOutput
-{
-	float32_t4 color : SV_TARGET0;
-};
+
 
 SamplerState gSampler : register(s0);
 
