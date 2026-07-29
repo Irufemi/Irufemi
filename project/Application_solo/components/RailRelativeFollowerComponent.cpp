@@ -40,8 +40,28 @@ void RailRelativeFollowerComponent::Update() {
 
     // ターゲットまたはパスが未解決の場合は再取得を試みる
     if (!targetFollower_ || !cachedPath_) {
-        Start(); 
-        if (!targetFollower_ || !cachedPath_) return; // それでも見つからなければ終了
+        // targetObject_ が既に取得できている場合は FindGameObject (Start) の呼び出しを避ける
+        if (auto target = targetObject_.lock()) {
+            if (!targetFollower_) {
+                targetFollower_ = target->GetComponent<SplineFollowerComponent>();
+            }
+            if (targetFollower_ && !cachedPath_) {
+                cachedPath_ = targetFollower_->GetCachedPath();
+            }
+            if (!targetFollower_ || !cachedPath_) return;
+        } else {
+            // FindGameObject はシーンのミューテックスをロックするため、
+            // 毎フレーム複数スレッドから呼ばれると深刻なスレッド競合（ガタつき）の原因になる。
+            // そのためリトライ頻度を落とす。
+            static thread_local int s_retryCounter = 0;
+            if (++s_retryCounter < 30) {
+                return;
+            }
+            s_retryCounter = 0;
+
+            Start(); 
+            if (!targetFollower_ || !cachedPath_) return; // それでも見つからなければ終了
+        }
     }
 
     // ターゲットの現在のレール上での距離を取得

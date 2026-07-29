@@ -119,9 +119,16 @@ std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filep
     nlohmann::json root = GetPrefabJson(filepath);
     if (root.empty()) return nullptr;
 
+    // プレハブ展開時に全UUIDを新しく生成し、新旧対応表を作成する
+    std::unordered_map<uint64_t, uint64_t> idMap;
+    GameObject::RemapJSONInstanceIDs(root, idMap);
+
     auto obj = std::make_shared<GameObject>();
     obj->Deserialize(root);
     obj->Initialize();
+
+    // デシリアライズ・初期化完了後にコンポーネントへIDの読み替えを通知する
+    obj->OnIDRemapped(idMap);
 
     return obj;
 }

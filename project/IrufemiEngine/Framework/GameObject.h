@@ -39,6 +39,23 @@ public:
     std::shared_ptr<GameObject> Clone();
 
     /**
+     * @brief 一意のインスタンスIDを再生成する（CloneやPrefabロード時のID重複回避用）
+     * @param recursive 子オブジェクトも再帰的にIDを再生成するかどうか
+     */
+    void RegenerateInstanceID(bool recursive = true);
+
+    /**
+     * @brief IDが再生成された際（Clone等）に、内部で保持しているID参照を新しいIDに読み替えるためのコールバック
+     * @param idMap 古いID(Key) と 新しいID(Value) の対応表
+     */
+    virtual void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap);
+
+    /**
+     * @brief JSONツリー内の全 instanceId を新しいUUIDに書き換え、新旧の対応表を作成する（Clone/Prefab展開用）
+     */
+    static void RemapJSONInstanceIDs(nlohmann::json& j, std::unordered_map<uint64_t, uint64_t>& outIdMap);
+
+    /**
      * @brief 新しいコンポーネントを追加する
      * @return 追加されたコンポーネントの共有ポインタ
      */

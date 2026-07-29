@@ -1,6 +1,7 @@
 #pragma once
 #include <nlohmann/json.hpp>
 #include <string>
+#include <unordered_map>
 
 class GameObject;
 #include "Renderer/System/Core/IRenderable.h"
@@ -134,6 +135,12 @@ public:
      * @brief コンポーネントの種類を表す文字列を返す
      */
     virtual std::string GetComponentName() const { return "Component"; }
+
+    /**
+     * @brief IDが再生成された際（Clone等）に、内部で保持しているID参照を新しいIDに読み替えるためのコールバック
+     * @param idMap 古いID(Key) と 新しいID(Value) の対応表
+     */
+    virtual void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {}
 
     /**
      * @brief 登録されたプロパティリストを取得する

@@ -16,13 +16,12 @@
 #include "SceneSerializer.h"
 #include <iostream>
 #include <atomic>
+#include "Engine/Core/Math/Random/Random.h"
 
-static std::atomic<uint64_t> s_nextInstanceId{ 1 };
-
-GameObject::GameObject() : instanceId_(s_nextInstanceId++) {
+GameObject::GameObject() : instanceId_(Random::GeneratorUint64(1, ULLONG_MAX)) {
 }
 
-GameObject::GameObject(const std::string& name) : instanceId_(s_nextInstanceId++), name_(name) {
+GameObject::GameObject(const std::string& name) : instanceId_(Random::GeneratorUint64(1, ULLONG_MAX)), name_(name) {
 }
 
 
@@ -225,6 +224,8 @@ void GameObject::RemoveComponent(Component* component) {
 nlohmann::json GameObject::Serialize() const {
     nlohmann::json j;
     
+    j["instanceId"] = instanceId_;
+
     // デフォルト値と異なる場合のみ出力
     if (!name_.empty()) j["name"] = name_;
     if (!tag_.empty()) j["tag"] = tag_;
@@ -444,7 +445,12 @@ void GameObject::Deserialize(const nlohmann::json& j) {
 
 std::shared_ptr<GameObject> GameObject::Clone() {
     auto clone = std::make_shared<GameObject>();
-    clone->Deserialize(this->Serialize());
+    
+    nlohmann::json root = this->Serialize();
+    std::unordered_map<uint64_t, uint64_t> idMap;
+    GameObject::RemapJSONInstanceIDs(root, idMap);
+    
+    clone->Deserialize(root);
     
     // クローン元のシリアライズフラグを引き継ぐ
     clone->SetIsSerializable(this->IsSerializable());
@@ -455,6 +461,8 @@ std::shared_ptr<GameObject> GameObject::Clone() {
     } else {
         clone->SetName(this->GetName() + " (Clone)");
     }
+    
+    clone->OnIDRemapped(idMap);
     
     return clone;
 }
@@ -484,3 +492,35 @@ std::shared_ptr<GameObject> GameObject::Instantiate(const std::string& prefabPat
     return nullptr;
 }
 
+void GameObject::RegenerateInstanceID(bool recursive) {
+    instanceId_ = Random::GeneratorUint64(1, ULLONG_MAX);
+    if (recursive) {
+        for (auto& child : children_) {
+            child->RegenerateInstanceID(true);
+        }
+    }
+}
+
+void GameObject::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
+    for (auto& comp : components_) {
+        comp->OnIDRemapped(idMap);
+    }
+    for (auto& child : children_) {
+        child->OnIDRemapped(idMap);
+    }
+}
+
+void GameObject::RemapJSONInstanceIDs(nlohmann::json& j, std::unordered_map<uint64_t, uint64_t>& outIdMap) {
+    if (j.contains("instanceId")) {
+        uint64_t oldId = j["instanceId"];
+        uint64_t newId = Random::GeneratorUint64(1, ULLONG_MAX);
+        j["instanceId"] = newId;
+        outIdMap[oldId] = newId;
+    }
+    
+    if (j.contains("children") && j["children"].is_array()) {
+        for (auto& cj : j["children"]) {
+            RemapJSONInstanceIDs(cj, outIdMap);
+        }
+    }
+}

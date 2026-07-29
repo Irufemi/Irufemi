@@ -12,3 +12,8 @@ float Random::GeneratorFloat(float min, float max) {
 	//乱数を返す
 	return distribution(randomEngine_);
 }
+
+uint64_t Random::GeneratorUint64(uint64_t min, uint64_t max) {
+	std::uniform_int_distribution<uint64_t> distribution(min, max);
+	return distribution(randomEngine_);
+}

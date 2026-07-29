@@ -130,6 +130,12 @@ void EditorManager::ExitPlayMode() {
     // プレイモード中の選択状態をクリア
     ClearSelectedObject();
 
+    // === 追加: GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄する ===
+    // （実行中のフレームで使われているリソースが削除されることによるクラッシュを防ぐため）
+    if (auto dxCommon = engine_->GetDirectXCommon()) {
+        dxCommon->WaitForGPU();
+    }
+
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         baseScene->ClearGameObjects();
     }

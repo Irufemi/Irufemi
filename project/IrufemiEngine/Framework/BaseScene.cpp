@@ -74,11 +74,28 @@ std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::s
 
 std::shared_ptr<GameObject> BaseScene::FindGameObjectByID(uint64_t instanceId) {
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    for (const auto& obj : gameObjects_) {
-        if (obj->GetInstanceID() == instanceId) {
+    
+    // O(1)検索
+    auto it = idIndex_.find(instanceId);
+    if (it != idIndex_.end()) {
+        if (auto obj = it->second.lock()) {
+            if (!obj->IsDestroyed()) {
+                return obj;
+            } else {
+                idIndex_.erase(it);
+            }
+        } else {
+            idIndex_.erase(it);
+        }
+    }
+
+    // 遅延キュー内の検索（フレーム中に生成された直後の対応）
+    for (const auto& obj : pendingAdds_) {
+        if (obj && obj->GetInstanceID() == instanceId && !obj->IsDestroyed()) {
             return obj;
         }
     }
+    
     return nullptr;
 }
 
@@ -213,6 +230,7 @@ void BaseScene::Update() {
             if (!obj->GetName().empty()) {
                 nameIndex_[obj->GetName()].push_back(obj);
             }
+            idIndex_[obj->GetInstanceID()] = obj;
         }
         pendingAdds_.clear();
 
@@ -220,8 +238,6 @@ void BaseScene::Update() {
             auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
             if (it != gameObjects_.end()) {
                 gameObjects_.erase(it);
-                // nameIndex_ のクリーンアップは Find 時に遅延評価されるため必須ではないが、
-                // 明示的に Remove が呼ばれた場合は削除しておく
                 auto nameIt = nameIndex_.find(obj->GetName());
                 if (nameIt != nameIndex_.end()) {
                     auto& list = nameIt->second;
@@ -229,6 +245,7 @@ void BaseScene::Update() {
                         return wp.lock() == obj;
                     }), list.end());
                 }
+                idIndex_.erase(obj->GetInstanceID());
             }
         }
         pendingRemoves_.clear();
@@ -340,6 +357,7 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
     if (!obj->GetName().empty()) {
         nameIndex_[obj->GetName()].push_back(obj);
     }
+    idIndex_[obj->GetInstanceID()] = obj;
 }
 
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
@@ -354,6 +372,7 @@ void BaseScene::ClearGameObjects() {
     pendingAdds_.clear();
     pendingRemoves_.clear();
     nameIndex_.clear();
+    idIndex_.clear();
 }
 
 size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
