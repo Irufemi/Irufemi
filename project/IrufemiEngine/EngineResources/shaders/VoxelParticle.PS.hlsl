@@ -5,14 +5,7 @@
 ConstantBuffer<LightCommonData> gLightCommon : register(b1);
 ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
-struct PixelShaderOutput
-{
-	float4 color : SV_TARGET0;
-	float4 mask  : SV_TARGET1;
-	float4 normal : SV_TARGET2;
-	float4 material : SV_TARGET3;
-	float2 velocity : SV_TARGET4;
-};
+#include "GBufferOutput.hlsli"
 
 // 3Dハッシュ関数（ノイズ生成用）
 float Hash3D(float3 p) {

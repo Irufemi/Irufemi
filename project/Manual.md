@@ -404,10 +404,10 @@ Vignetteエフェクトがより自然な減衰（Smooth Falloff）になるよ�
 ## G-Buffer拡張とシェーダーの実装ルール (MRT対応)
 
 本エンジンでは高品質なポストプロセス（法線ベースのアウトライン等）を実現するため、**G-Buffer（複数レンダーターゲット: MRT）** による描画パイプラインを採用しています。
-3Dオブジェクト（メッシュやパーティクル、ラインなど）を描画するピクセルシェーダーを作成する際は、必ず以下の出力フォーマット（`PixelShaderOutput`）に従ってください。
+3Dオブジェクト（メッシュやパーティクル、ラインなど）を描画するピクセルシェーダーを作成する際は、必ず `#include "GBufferOutput.hlsli"` を記述し、そこに含まれる以下の出力フォーマット（`PixelShaderOutput`）に従ってください。
 
 ```hlsl
-// Object3d.PS.hlsl などの出力構造体の例
+// GBufferOutput.hlsli に定義されている出力構造体
 struct PixelShaderOutput {
     float32_t4 color : SV_TARGET0;    // メインカラー
     float32_t4 mask : SV_TARGET1;     // 個別エフェクト用のマスク
