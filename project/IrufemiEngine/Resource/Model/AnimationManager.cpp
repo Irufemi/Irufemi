@@ -661,7 +661,7 @@ void AnimationManager::RefreshAvailableAnimations() {
                 }
             }
         }
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
         // エラーハンドリング
     }
 }

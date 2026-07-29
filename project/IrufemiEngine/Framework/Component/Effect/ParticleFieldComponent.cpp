@@ -3,8 +3,6 @@
 #include "../../GameObject.h"
 #include "../../BaseScene.h"
 #include "../../../Engine/IrufemiEngine.h"
-#include <imgui.h>
-
 ParticleFieldComponent::ParticleFieldComponent() {
     fieldData_.type = 1; // Default to Point Attractor
     fieldData_.strength = 10.0f;
