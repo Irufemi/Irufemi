@@ -13,6 +13,7 @@
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include <algorithm>
+#include <functional>
 
 std::shared_ptr<Component> ComponentUIHelpers::GetSharedComponent(GameObject* go, Component* comp) {
     if (!go || !comp) return nullptr;
@@ -188,6 +189,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             case ComponentPropertyType::Int: isModified = (*static_cast<int*>(prop.data) != prop.defaultValue.get<int>()); break;
                             case ComponentPropertyType::Bool: isModified = (*static_cast<bool*>(prop.data) != prop.defaultValue.get<bool>()); break;
                             case ComponentPropertyType::String: isModified = (*static_cast<std::string*>(prop.data) != prop.defaultValue.get<std::string>()); break;
+                            case ComponentPropertyType::GameObjectRef: isModified = (*static_cast<uint64_t*>(prop.data) != prop.defaultValue.get<uint64_t>()); break;
                             case ComponentPropertyType::Float2: {
                                 auto* v = static_cast<Vector2*>(prop.data);
                                 auto arr = prop.defaultValue;
@@ -218,6 +220,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                     case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = prop.defaultValue.get<int>(); break;
                                     case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = prop.defaultValue.get<bool>(); break;
                                     case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = prop.defaultValue.get<std::string>(); break;
+                                    case ComponentPropertyType::GameObjectRef: *static_cast<uint64_t*>(prop.data) = prop.defaultValue.get<uint64_t>(); break;
                                     case ComponentPropertyType::Float2: {
                                         auto* v = static_cast<Vector2*>(prop.data);
                                         auto arr = prop.defaultValue;
@@ -469,6 +472,54 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                         oldVal, droppedPathStr, [str](const std::string& v) { *str = v; }));
                                 }
                                 ImGui::EndDragDropTarget();
+                            }
+                            break;
+                        }
+                        case ComponentPropertyType::GameObjectRef: {
+                            uint64_t* ptr = static_cast<uint64_t*>(prop.data);
+                            std::vector<std::shared_ptr<GameObject>> allObjs;
+                            if (component->GetGameObject() && component->GetGameObject()->GetScene()) {
+                                auto rootObjs = component->GetGameObject()->GetScene()->GetGameObjects();
+                                std::function<void(const std::vector<std::shared_ptr<GameObject>>&)> addObjs = [&](const std::vector<std::shared_ptr<GameObject>>& objs) {
+                                    for (const auto& o : objs) {
+                                        if (o && !o->IsDestroyed()) {
+                                            allObjs.push_back(o);
+                                            addObjs(o->GetChildren());
+                                        }
+                                    }
+                                };
+                                addObjs(rootObjs);
+                            }
+                            
+                            std::string currentName = "None";
+                            if (*ptr != 0 && component->GetGameObject() && component->GetGameObject()->GetScene()) {
+                                auto currentObj = component->GetGameObject()->GetScene()->FindGameObjectByID(*ptr);
+                                if (currentObj) currentName = currentObj->GetName();
+                            }
+                            
+                            if (ImGui::BeginCombo(hiddenName.c_str(), currentName.c_str())) {
+                                if (ImGui::Selectable("None", *ptr == 0)) {
+                                    uint64_t oldVal = *ptr;
+                                    *ptr = 0;
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<uint64_t>>(
+                                        oldVal, 0, [ptr](const uint64_t& v) { *ptr = v; }));
+                                }
+                                for (const auto& obj : allObjs) {
+                                    if (!obj || obj->IsDestroyed()) continue;
+                                    bool isSelected = (*ptr == obj->GetInstanceID());
+                                    std::string displayName = obj->GetName();
+                                    if (displayName.empty()) displayName = "Unnamed Object";
+                                    
+                                    if (ImGui::Selectable(displayName.c_str(), isSelected)) {
+                                        uint64_t oldVal = *ptr;
+                                        uint64_t newVal = obj->GetInstanceID();
+                                        *ptr = newVal;
+                                        actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<uint64_t>>(
+                                            oldVal, newVal, [ptr](const uint64_t& v) { *ptr = v; }));
+                                    }
+                                    if (isSelected) ImGui::SetItemDefaultFocus();
+                                }
+                                ImGui::EndCombo();
                             }
                             break;
                         }

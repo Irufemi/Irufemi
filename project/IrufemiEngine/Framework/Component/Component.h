@@ -10,7 +10,7 @@ class GameObject;
 #include "Engine/Core/Math/Vector4.h"
 struct Ray;
 
-enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator, Enum };
+enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator, Enum, GameObjectRef };
 
 struct ComponentProperty {
     std::string name;
@@ -157,6 +157,7 @@ public:
     ComponentProperty& RegisterEnum(const std::string& name, int* ptr, const std::vector<std::string>& enumNames) { properties_.push_back({name, ComponentPropertyType::Enum, ptr, 0.0f, 0.0f, enumNames, "", *ptr}); return properties_.back(); }
     ComponentProperty& RegisterProperty(const std::string& name, bool* ptr) { properties_.push_back({name, ComponentPropertyType::Bool, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
     ComponentProperty& RegisterProperty(const std::string& name, std::string* ptr) { properties_.push_back({name, ComponentPropertyType::String, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    ComponentProperty& RegisterGameObjectRef(const std::string& name, uint64_t* ptr) { properties_.push_back({name, ComponentPropertyType::GameObjectRef, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
     ComponentProperty& RegisterProperty(const std::string& name, Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y}}); return properties_.back(); }
     ComponentProperty& RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z}}); return properties_.back(); }
     ComponentProperty& RegisterProperty(const std::string& name, Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z, ptr->w}}); return properties_.back(); }
@@ -181,6 +182,7 @@ public:
                 case ComponentPropertyType::Int: j[prop.name] = *static_cast<int*>(prop.data); break;
                 case ComponentPropertyType::Bool: j[prop.name] = *static_cast<bool*>(prop.data); break;
                 case ComponentPropertyType::String: j[prop.name] = *static_cast<std::string*>(prop.data); break;
+                case ComponentPropertyType::GameObjectRef: j[prop.name] = *static_cast<uint64_t*>(prop.data); break;
                 case ComponentPropertyType::Float2: {
                     auto* v = static_cast<Vector2*>(prop.data);
                     j[prop.name] = { v->x, v->y };
@@ -225,6 +227,7 @@ public:
                 case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = j[prop.name].get<int>(); break;
                 case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = j[prop.name].get<bool>(); break;
                 case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = j[prop.name].get<std::string>(); break;
+                case ComponentPropertyType::GameObjectRef: *static_cast<uint64_t*>(prop.data) = j[prop.name].get<uint64_t>(); break;
                 case ComponentPropertyType::Float2: {
                     auto* v = static_cast<Vector2*>(prop.data);
                     auto arr = j[prop.name];

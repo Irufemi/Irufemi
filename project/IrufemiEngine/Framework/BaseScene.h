@@ -100,14 +100,16 @@ public:
     std::shared_ptr<GameObject> FindGameObject(const std::string& name);
 
     /**
+     * @brief オブジェクトのインスタンスIDから該当する shared_ptr の GameObject を探して返す（O(1)検索）
+     */
+    std::shared_ptr<GameObject> FindGameObjectByID(uint64_t id);
+
+    /**
      * @brief 指定した名前を持つすべての GameObject を返す
      */
     std::vector<std::shared_ptr<GameObject>> FindGameObjects(const std::string& name);
 
-    /**
-     * @brief インスタンスIDから該当する GameObject を探して返す
-     */
-    std::shared_ptr<GameObject> FindGameObjectByID(uint64_t instanceId);
+
 
     /**
      * @brief 指定したタグを持つ全てのGameObjectを取得する

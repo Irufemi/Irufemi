@@ -9,7 +9,7 @@
 
 void RailRelativeFollowerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
-    RegisterProperty("Target Object Name", &targetObjectName_);
+    RegisterGameObjectRef("Target Object", &targetObjectID_);
     RegisterProperty("Distance Offset", &distanceOffset_);
     RegisterProperty("Local Offset X", &localOffset_.x);
     RegisterProperty("Local Offset Y", &localOffset_.y);
@@ -19,12 +19,21 @@ void RailRelativeFollowerComponent::OnRegisterProperties() {
 void RailRelativeFollowerComponent::Initialize() {
 }
 
+void RailRelativeFollowerComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
+    if (targetObjectID_ != 0) {
+        auto it = idMap.find(targetObjectID_);
+        if (it != idMap.end()) {
+            targetObjectID_ = it->second;
+        }
+    }
+}
+
 void RailRelativeFollowerComponent::Start() {
     if (!gameObject_) return;
     auto scene = gameObject_->GetScene();
     if (scene) {
-        // 名前でターゲットオブジェクトを検索
-        auto target = scene->FindGameObject(targetObjectName_);
+        // IDでターゲットオブジェクトを検索 (O(1)で高速かつ確実)
+        auto target = scene->FindGameObjectByID(targetObjectID_);
         if (target) {
             targetObject_ = target;
             targetFollower_ = target->GetComponent<SplineFollowerComponent>();

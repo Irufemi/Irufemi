@@ -24,8 +24,10 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "RailRelativeFollowerComponent"; }
 
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
+
 private:
-    std::string targetObjectName_ = "PlayerCart";  ///< 追従する基準となるターゲットのオブジェクト名
+    uint64_t targetObjectID_ = 0;                  ///< 追従する基準となるターゲットのオブジェクトID
     float distanceOffset_ = 80.0f;                 ///< ターゲットからどれだけ前方に離れるか (m)
     Vector3 localOffset_ = {0.0f, 0.0f, 0.0f};     ///< レール中心からのXYローカルオフセット
 

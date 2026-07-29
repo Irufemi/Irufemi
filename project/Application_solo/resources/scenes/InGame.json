@@ -3804,7 +3804,7 @@
             "Local Offset X": 0.0,
             "Local Offset Y": 10.0,
             "Local Offset Z": 0.0,
-            "Target Object Name": "PlayerCart"
+            "Target Object": 666616630839427138
           },
           "type": "RailRelativeFollowerComponent"
         },
