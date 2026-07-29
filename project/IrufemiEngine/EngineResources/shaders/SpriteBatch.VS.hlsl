@@ -1,7 +1,7 @@
 // SpriteBatch.VS.hlsl
 // Instancing VS for 2D Sprites
 
-#include "./Object2D.hlsli"
+#include "Object2D.hlsli"
 #include "VertexData.hlsli"
 
 struct InstanceData

@@ -2,8 +2,8 @@
 // RootParameter[4] (VS) に SRV テーブルをバインド(t0)
 // 出力は Object3d.hlsli の VertexShaderOutput に合わせる
 
-#include "./Object3d.hlsli"
-#include "./Lighting.hlsli"
+#include "Object3d.hlsli"
+#include "Lighting.hlsli"
 #include "VertexData.hlsli"
 
 ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
@@ -19,11 +19,7 @@ struct InstanceData
 StructuredBuffer<InstanceData> gBlocks : register(t0);
 
 // struct VertexShaderInput は VertexData.hlsli で定義
-struct Camera {
-	float32_t4x4 view;
-	float32_t4x4 projection;
-	float32_t3 worldPosition;
-};
+#include "Camera.hlsli"
 ConstantBuffer<Camera> gCamera : register(b2);
 
 VertexShaderOutput main(VertexInput input, uint32_t instanceId : SV_InstanceID)

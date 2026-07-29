@@ -1,12 +1,7 @@
 #include "Line.hlsli"
 #include "VertexData.hlsli"
 
-struct TransformationMatrix
-{
-	float32_t4x4 WVP;
-	float32_t4x4 World; // 未使用
-	float32_t4x4 WorldInverseTranspose; // 未使用
-};
+#include "Transform.hlsli"
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 // struct VertexShaderInput は VertexData.hlsli で定義

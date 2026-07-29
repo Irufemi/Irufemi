@@ -17,15 +17,7 @@ SamplerState gSamplerClamp : register(s1);
 
 /*LambertianReflectance*/
 
-struct DirectionalLight
-{
-	 //!< ライトの色
-	float32_t4 color;
-    //!< ライトの向き
-	float32_t3 direction;
-    //!< 輝度
-	float intensity;
-};
+#include "Lighting.hlsli"
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
 
 /*テクスチャを貼ろう*/

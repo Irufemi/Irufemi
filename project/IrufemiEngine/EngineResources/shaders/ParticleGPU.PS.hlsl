@@ -9,12 +9,7 @@
 
 ConstantBuffer<Material> gMaterial : register(b0);
 
-struct DirectionalLight
-{
-    float32_t4 color;
-    float32_t3 direction;
-    float intensity;
-};
+#include "Lighting.hlsli"
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
 
 #include "Bindless.hlsli"

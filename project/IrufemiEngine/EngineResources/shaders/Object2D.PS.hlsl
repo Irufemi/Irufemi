@@ -1,7 +1,7 @@
 // - αカットアウト(閾値0.5)のみ
 // - ライティング関連は削除
 
-#include "./Object2D.hlsli" // 2D用の入出力定義へと変更
+#include "Object2D.hlsli" // 2D用の入出力定義へと変更
 #include "Material.hlsli"
 
 ConstantBuffer<Material> gMaterial : register(b0);

@@ -1,7 +1,7 @@
 /*テクスチャを貼ろう*/
 
-#include "./Object3d.hlsli"
-#include "./Lighting.hlsli"
+#include "Object3d.hlsli"
+#include "Lighting.hlsli"
 
 /*三角形の色を変えよう*/
 

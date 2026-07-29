@@ -1,11 +1,7 @@
 #include "Text.hlsli"
 #include "VertexData.hlsli"
 
-struct TransformationMatrix
-{
-    float32_t4x4 WVP;
-    float32_t4x4 World;
-};
+#include "Transform.hlsli"
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 VertexShaderOutput main(VertexInput input)

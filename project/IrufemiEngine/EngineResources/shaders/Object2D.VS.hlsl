@@ -1,13 +1,9 @@
 // Sprite 用最小 VS(CPU側のCBレイアウトはWVP+Worldのまま維持。Worldは未使用)
 
-#include "./Object2D.hlsli"
+#include "Object2D.hlsli"
 #include "VertexData.hlsli"
 
-struct TransformationMatrix
-{
-	float32_t4x4 WVP;
-	float32_t4x4 World; // レイアウト維持のため残す(未使用)
-};
+#include "Transform.hlsli"
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 // struct VertexShaderInput は VertexData.hlsli で定義
