@@ -322,7 +322,7 @@
         },
         {
           "data": {
-            "Speed": 0.05000000074505806,
+            "Speed": 10.0,
             "Target Path Name": "PathManager"
           },
           "type": "SplineFollowerComponent"

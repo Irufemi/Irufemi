@@ -14,6 +14,7 @@ void SplineComponent::OnRegisterProperties() {
 void SplineComponent::Initialize() {
     debugLineBatch_ = std::make_unique<Line3DBatch>();
     debugLineBatch_->Initialize();
+    UpdateDistanceTable();
 }
 
 void SplineComponent::Draw() {
@@ -176,6 +177,7 @@ void SplineComponent::UpdateDistanceTable() {
 
 float SplineComponent::GetTotalLength() const {
     if (distanceLUT_.empty() && waypoints_.size() >= 2) {
+        const_cast<SplineComponent*>(this)->UpdateDistanceTable();
     }
     return totalLength_;
 }
