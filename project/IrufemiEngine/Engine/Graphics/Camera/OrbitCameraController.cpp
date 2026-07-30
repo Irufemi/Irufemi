@@ -1,4 +1,4 @@
-﻿#include "OrbitCameraController.h"
+#include "OrbitCameraController.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include <windows.h> // VK_LSHIFT, VK_RSHIFT
 #include <algorithm>

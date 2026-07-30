@@ -1,4 +1,4 @@
-﻿#include "LineResource.h"
+#include "LineResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"

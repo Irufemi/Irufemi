@@ -1,4 +1,4 @@
-﻿#include "OBBColliderComponent.h"
+#include "OBBColliderComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"

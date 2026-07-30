@@ -1,4 +1,4 @@
-﻿#include "Primitive2DRendererComponentEditor.h"
+#include "Primitive2DRendererComponentEditor.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>

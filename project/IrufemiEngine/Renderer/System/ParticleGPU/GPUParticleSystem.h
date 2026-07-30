@@ -1,4 +1,4 @@
-﻿#include "../Core/IRenderable.h"
+#include "../Core/IRenderable.h"
 #pragma once
 
 #include "../../../Engine/Core/Math/Vector3.h"

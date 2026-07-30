@@ -1,4 +1,4 @@
-﻿#include "RaycastComponent.h"
+#include "RaycastComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Core/Math/MathFunction.h"

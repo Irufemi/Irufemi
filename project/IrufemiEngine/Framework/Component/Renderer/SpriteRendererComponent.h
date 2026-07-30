@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "../Component.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include <memory>

@@ -1,4 +1,4 @@
-﻿#include "TextRendererComponent.h"
+#include "TextRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Engine/Core/Utility/StringUtility.h"

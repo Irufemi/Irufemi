@@ -1,4 +1,4 @@
-﻿#include "Collision.h"
+#include "Collision.h"
 #include "../Math.h"
 #include "AABB.h"
 #include "OBB.h"

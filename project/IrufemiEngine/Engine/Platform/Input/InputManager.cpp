@@ -1,4 +1,4 @@
-﻿#include "InputManager.h"
+#include "InputManager.h"
 
 void InputManager::Initialize(HWND hwnd) {
     hwnd_ = hwnd;

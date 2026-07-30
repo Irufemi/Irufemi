@@ -1,4 +1,4 @@
-﻿#include "GPUParticleManager.h"
+#include "GPUParticleManager.h"
 #include "../../../Engine/Manager/DrawManager.h"
 #include "../../../Engine/IrufemiEngine.h"
 

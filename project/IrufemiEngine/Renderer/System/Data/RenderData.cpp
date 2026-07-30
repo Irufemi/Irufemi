@@ -1,4 +1,4 @@
-﻿#include "Renderer/System/Data/RenderData.h"
+#include "Renderer/System/Data/RenderData.h"
 #include "Engine/Manager/PrimitiveManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Graphics/Camera/Camera.h"

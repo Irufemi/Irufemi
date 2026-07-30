@@ -1,4 +1,4 @@
-﻿#include "AnimatorComponent.h"
+#include "AnimatorComponent.h"
 #include "../../GameObject.h"
 #include "../Renderer/SkinnedMeshRendererComponent.h"
 #include "../TransformComponent.h"

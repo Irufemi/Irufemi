@@ -1,4 +1,4 @@
-﻿#include "Camera.h"
+#include "Camera.h"
 
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/Core/Math/Math.h"

@@ -1,4 +1,4 @@
-﻿#include "Ease.h"
+#include "Ease.h"
 
 #include "Engine/Core/Math/Math.h"
 #include <algorithm>

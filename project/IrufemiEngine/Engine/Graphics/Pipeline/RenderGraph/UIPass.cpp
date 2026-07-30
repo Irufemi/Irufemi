@@ -1,4 +1,4 @@
-﻿#include "UIPass.h"
+#include "UIPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "RenderGraphBuilder.h"

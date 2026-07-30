@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Framework/Component/Component.h"
 #include <string>
 #include "Framework/UIAnimator.h"

@@ -1,4 +1,4 @@
-﻿#include "AABBColliderComponent.h"
+#include "AABBColliderComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"

@@ -1,4 +1,4 @@
-﻿#include "BossStateIdle.h"
+#include "BossStateIdle.h"
 #include "BossStateCoreExposed.h"
 #include "BossComponent.h"
 #include "../EnemyBeamComponent.h"

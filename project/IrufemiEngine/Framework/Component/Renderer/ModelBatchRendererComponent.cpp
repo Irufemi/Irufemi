@@ -1,4 +1,4 @@
-﻿#include "ModelBatchRendererComponent.h"
+#include "ModelBatchRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Renderer/Object/Batch/ModelBatch.h"

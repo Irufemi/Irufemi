@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/StringUtility.h"
 #include "Engine/Core/Utility/Log.h"
 #include "Engine/Core/Utility/FileSystem.h"

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Quaternion.h"

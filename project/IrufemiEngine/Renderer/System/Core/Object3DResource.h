@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "../Core/BaseResource.h"
 #include <vector>
 #include "../../../Engine/Graphics/DirectX/DirectXCommon.h"

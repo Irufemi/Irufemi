@@ -1,4 +1,4 @@
-﻿#include "UISelectionGroup.h"
+#include "UISelectionGroup.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"

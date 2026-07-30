@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DXRootSignatureManager.h"
 #include "../../Core/Utility/Log.h"
 #include <cassert>

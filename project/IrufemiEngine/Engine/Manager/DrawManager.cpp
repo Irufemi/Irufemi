@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/Log.h"
 #include <iostream>
 #include "DrawManager.h"

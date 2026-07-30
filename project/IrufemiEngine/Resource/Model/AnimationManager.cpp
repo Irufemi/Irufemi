@@ -1,4 +1,4 @@
-﻿#include "AnimationManager.h"
+#include "AnimationManager.h"
 #include "Engine/Core/Utility/Log.h"
 #include <iostream>
 #include "Data/Animation.h"

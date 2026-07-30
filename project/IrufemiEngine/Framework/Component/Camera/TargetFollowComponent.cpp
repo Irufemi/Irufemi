@@ -1,4 +1,4 @@
-﻿#include "TargetFollowComponent.h"
+#include "TargetFollowComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/BaseScene.h"

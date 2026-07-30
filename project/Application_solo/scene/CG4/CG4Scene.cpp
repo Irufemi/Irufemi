@@ -1,4 +1,4 @@
-﻿#include "CG4Scene.h"
+#include "CG4Scene.h"
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
 

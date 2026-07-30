@@ -1,4 +1,4 @@
-﻿#include "EditorActionManager.h"
+#include "EditorActionManager.h"
 
 #ifdef EditorMode
 #include "EditorManager.h"

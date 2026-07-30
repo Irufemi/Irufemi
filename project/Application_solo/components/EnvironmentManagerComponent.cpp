@@ -1,4 +1,4 @@
-﻿#include "EnvironmentManagerComponent.h"
+#include "EnvironmentManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"

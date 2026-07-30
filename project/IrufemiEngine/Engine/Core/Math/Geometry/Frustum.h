@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "../../Shape/Plane.h"
 #include "../Matrix4x4.h"

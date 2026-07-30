@@ -1,4 +1,4 @@
-﻿#include "ParticleEmitterComponentEditor.h"
+#include "ParticleEmitterComponentEditor.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>

@@ -1,4 +1,4 @@
-﻿#include "BoneAttachmentComponent.h"
+#include "BoneAttachmentComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"

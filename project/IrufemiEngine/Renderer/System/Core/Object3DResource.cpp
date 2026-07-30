@@ -1,4 +1,4 @@
-﻿#include "Object3DResource.h"
+#include "Object3DResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "GPUParticleSystem.h"
 #include <unordered_map>
 #include <memory>

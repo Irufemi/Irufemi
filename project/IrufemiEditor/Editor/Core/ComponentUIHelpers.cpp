@@ -1,4 +1,4 @@
-﻿#include "ComponentUIHelpers.h"
+#include "ComponentUIHelpers.h"
 
 #ifdef EditorMode
 #include "Engine/IrufemiEngine.h"

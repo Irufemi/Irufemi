@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #define NOMINMAX
 #include "DebugUI.h"
 #include <Windows.h>

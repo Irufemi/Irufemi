@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "GPUParticleSystem.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Core/Shape/Sphere.h"

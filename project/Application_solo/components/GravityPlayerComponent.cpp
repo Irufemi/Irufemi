@@ -1,4 +1,4 @@
-﻿#include "GravityPlayerComponent.h"
+#include "GravityPlayerComponent.h"
 #include "PlayerTargetingComponent.h"
 #include "DebrisComponent.h"
 #include "DebrisManagerComponent.h"

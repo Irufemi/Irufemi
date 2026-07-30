@@ -1,4 +1,4 @@
-﻿#include "DebrisComponent.h"
+#include "DebrisComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"

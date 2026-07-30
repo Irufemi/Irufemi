@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DirectXCommon.h"
 
 #include "Resource/Texture/TextureUtility.h"

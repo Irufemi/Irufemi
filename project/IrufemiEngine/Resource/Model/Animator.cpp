@@ -1,4 +1,4 @@
-﻿#include "Animator.h"
+#include "Animator.h"
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Model/AnimationManager.h"
 #include "Engine/Manager/DebugUI.h"

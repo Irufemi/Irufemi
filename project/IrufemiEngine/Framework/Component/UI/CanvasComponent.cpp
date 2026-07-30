@@ -1,4 +1,4 @@
-﻿#include "CanvasComponent.h"
+#include "CanvasComponent.h"
 #include "../../GameObject.h"
 #include "../Renderer/SpriteRendererComponent.h"
 

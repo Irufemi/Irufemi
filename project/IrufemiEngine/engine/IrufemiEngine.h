@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Graphics/DirectX/DirectXCommon.h"
 #include "Graphics/DirectX/D3DResourceLeakChecker.h"

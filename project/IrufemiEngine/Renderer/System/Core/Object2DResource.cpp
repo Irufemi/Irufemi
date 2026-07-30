@@ -1,4 +1,4 @@
-﻿#include "Object2DResource.h"
+#include "Object2DResource.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"

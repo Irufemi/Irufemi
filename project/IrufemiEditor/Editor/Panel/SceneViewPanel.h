@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifdef EditorMode
 #include "../IEditorPanel.h"

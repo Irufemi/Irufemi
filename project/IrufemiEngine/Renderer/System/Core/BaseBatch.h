@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Renderer/System/Core/IRenderable.h"
 #include <vector>

@@ -1,4 +1,4 @@
-﻿#include "EffectManagerComponent.h"
+#include "EffectManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"

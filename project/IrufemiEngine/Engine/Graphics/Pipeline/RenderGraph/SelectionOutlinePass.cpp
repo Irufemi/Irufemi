@@ -1,4 +1,4 @@
-﻿#include "SelectionOutlinePass.h"
+#include "SelectionOutlinePass.h"
 #include "RenderGraph.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"

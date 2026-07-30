@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "DirectionalLight.h"
 #include "../../Core/Math/Matrix4x4.h"

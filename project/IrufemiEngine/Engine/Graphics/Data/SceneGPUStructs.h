@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CameraForGPU.h"
 #include "DirectionalLight.h"

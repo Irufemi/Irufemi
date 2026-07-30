@@ -1,4 +1,4 @@
-﻿#include "RailShooterEnemyComponent.h"
+#include "RailShooterEnemyComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h" // 描画オンオフ用

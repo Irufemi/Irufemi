@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "../Component.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
 #include "Engine/Core/Type/Primitive2DType.h"

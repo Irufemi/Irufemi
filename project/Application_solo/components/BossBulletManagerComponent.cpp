@@ -1,4 +1,4 @@
-﻿#include "BossBulletManagerComponent.h"
+#include "BossBulletManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"

@@ -1,4 +1,4 @@
-﻿#include "NumericalSequence.h"
+#include "NumericalSequence.h"
 #include <cmath>
 
 

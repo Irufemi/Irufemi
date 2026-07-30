@@ -1,4 +1,4 @@
-﻿#include "GameApplication.h"
+#include "GameApplication.h"
 
 #include <memory>
 #include <string>

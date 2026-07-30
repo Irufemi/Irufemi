@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "../../../Engine/Core/Math/Matrix4x4.h"
 #include "VertexWeightData.h"

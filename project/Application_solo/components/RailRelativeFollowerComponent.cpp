@@ -1,4 +1,4 @@
-﻿#include "RailRelativeFollowerComponent.h"
+#include "RailRelativeFollowerComponent.h"
 #include "SplineFollowerComponent.h"
 #include "Framework/Component/Utility/SplineComponent.h"
 #include "Framework/Component/TransformComponent.h"

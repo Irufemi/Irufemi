@@ -1,4 +1,4 @@
-﻿#include "PostProcessPass.h"
+#include "PostProcessPass.h"
 #include "Engine/Core/Math/Math.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"

@@ -1,4 +1,4 @@
-﻿#include "PrimitiveRendererComponent.h"
+#include "PrimitiveRendererComponent.h"
 
 #include "../../GameObject.h"
 #include "../TransformComponent.h"

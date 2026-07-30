@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #define NOMINMAX
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "VoxelParticleSystem.h"

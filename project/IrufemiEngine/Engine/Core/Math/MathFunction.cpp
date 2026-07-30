@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include "MathFunction.h"
 #include <cmath>
 #include <algorithm> 

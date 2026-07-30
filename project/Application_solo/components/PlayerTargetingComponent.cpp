@@ -1,4 +1,4 @@
-﻿#include "PlayerTargetingComponent.h"
+#include "PlayerTargetingComponent.h"
 #include "TargetableComponent.h"
 #include "RailShooterEnemyComponent.h"
 #include "Boss/BossComponent.h"

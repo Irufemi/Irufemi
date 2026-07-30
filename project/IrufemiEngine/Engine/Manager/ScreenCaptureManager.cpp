@@ -1,4 +1,4 @@
-﻿#include "ScreenCaptureManager.h"
+#include "ScreenCaptureManager.h"
 #include "../Graphics/DirectX/DirectXCommon.h"
 #include "../Graphics/DirectX/DirectXUtils.h"
 #include "../Graphics/DirectX/RenderTexture.h"

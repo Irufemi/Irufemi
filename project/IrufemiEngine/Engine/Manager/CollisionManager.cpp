@@ -1,4 +1,4 @@
-﻿#include "CollisionManager.h"
+#include "CollisionManager.h"
 #include "Engine/Core/Utility/Log.h"
 #include <iostream>
 #include "Framework/Component/Collider/ColliderComponent.h"

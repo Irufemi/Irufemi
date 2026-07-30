@@ -1,4 +1,4 @@
-﻿#include "Primitive2DRendererComponent.h"
+#include "Primitive2DRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"

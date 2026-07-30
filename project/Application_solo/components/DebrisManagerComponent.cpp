@@ -1,4 +1,4 @@
-﻿#include "DebrisManagerComponent.h"
+#include "DebrisManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"

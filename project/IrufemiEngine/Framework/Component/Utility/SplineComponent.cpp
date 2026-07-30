@@ -1,4 +1,4 @@
-﻿#include "SplineComponent.h"
+#include "SplineComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Renderer/Object/Line/LineClass.h"

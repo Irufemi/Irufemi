@@ -1,4 +1,4 @@
-﻿#include "ModelImporter.h"
+#include "ModelImporter.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>

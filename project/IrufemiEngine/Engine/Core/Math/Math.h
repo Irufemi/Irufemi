@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file Math.h
  * @brief IrufemiEngine 数学ライブラリ一括インクルードヘッダー
  */

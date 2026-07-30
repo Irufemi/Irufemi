@@ -1,4 +1,4 @@
-﻿#include "TransformComponentEditor.h"
+#include "TransformComponentEditor.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>

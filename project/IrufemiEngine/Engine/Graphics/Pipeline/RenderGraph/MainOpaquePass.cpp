@@ -1,4 +1,4 @@
-﻿#include "MainOpaquePass.h"
+#include "MainOpaquePass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "../../DirectX/ShadowMap.h"

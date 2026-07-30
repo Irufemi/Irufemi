@@ -1,4 +1,4 @@
-﻿#include "VoxelParticleComponent.h"
+#include "VoxelParticleComponent.h"
 #include "../../GameObject.h"
 #include "../../BaseScene.h"
 #include "../TransformComponent.h"

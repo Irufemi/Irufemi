@@ -1,4 +1,4 @@
-﻿#include "FontManager.h"
+#include "FontManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/System/ThreadPool.h"

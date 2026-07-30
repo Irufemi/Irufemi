@@ -1,4 +1,4 @@
-﻿#include "ReticleUIComponent.h"
+#include "ReticleUIComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"

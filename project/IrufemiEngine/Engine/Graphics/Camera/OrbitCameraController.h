@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Core/Math/Vector3.h"

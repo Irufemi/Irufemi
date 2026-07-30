@@ -1,4 +1,4 @@
-﻿#include "BossBulletComponent.h"
+#include "BossBulletComponent.h"
 #include "BossBulletManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"

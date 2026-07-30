@@ -1,4 +1,4 @@
-﻿#include "SphereColliderComponent.h"
+#include "SphereColliderComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Engine/Core/Math/Vector4.h"
 
 struct BombCoreParams {

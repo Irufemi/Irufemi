@@ -1,4 +1,4 @@
-﻿#include "SkinnedMeshRendererComponent.h"
+#include "SkinnedMeshRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Engine/IrufemiEngine.h"

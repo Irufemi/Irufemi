@@ -1,4 +1,4 @@
-﻿#include "RenderTexture.h"
+#include "RenderTexture.h"
 #include "DirectXCommon.h"
 #include "DescriptorPool.h"
 #include "../../Manager/DrawManager.h"

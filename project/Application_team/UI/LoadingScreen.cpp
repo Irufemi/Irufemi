@@ -1,4 +1,4 @@
-﻿#include "LoadingScreen.h"
+#include "LoadingScreen.h"
 #include "../Engine/IrufemiEngine.h"
 #include "../Renderer/Object/2D/Sprite/Sprite.h"
 #include "../Renderer/Object/2D/Primitive/Primitive2DObject.h"

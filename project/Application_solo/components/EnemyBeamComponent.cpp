@@ -1,4 +1,4 @@
-﻿#include "EnemyBeamComponent.h"
+#include "EnemyBeamComponent.h"
 #include "Framework/GameObject.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"

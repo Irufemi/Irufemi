@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "../Graphics/Data/VertexData.h"
 #include "../Core/Type/PrimitiveType.h"

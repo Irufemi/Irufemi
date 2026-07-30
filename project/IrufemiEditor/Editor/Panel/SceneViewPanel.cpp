@@ -1,4 +1,4 @@
-﻿#include "SceneViewPanel.h"
+#include "SceneViewPanel.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Framework/SceneManager.h"
 

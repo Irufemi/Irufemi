@@ -1,4 +1,4 @@
-﻿#include "TransformComponent.h"
+#include "TransformComponent.h"
 #include "../GameObject.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/System/ComponentPool.h"

@@ -1,4 +1,4 @@
-﻿#include "TopMostPass.h"
+#include "TopMostPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "RenderGraphBuilder.h"

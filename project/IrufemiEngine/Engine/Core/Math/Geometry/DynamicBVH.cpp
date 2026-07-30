@@ -1,4 +1,4 @@
-﻿#include "DynamicBVH.h"
+#include "DynamicBVH.h"
 #include <algorithm>
 #include <cmath>
 #include <cassert>

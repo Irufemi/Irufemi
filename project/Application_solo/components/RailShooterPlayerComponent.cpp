@@ -1,4 +1,4 @@
-﻿#include "RailShooterPlayerComponent.h"
+#include "RailShooterPlayerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"

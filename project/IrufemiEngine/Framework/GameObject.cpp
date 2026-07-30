@@ -1,4 +1,4 @@
-﻿#include "GameObject.h"
+#include "GameObject.h"
 #include "BaseScene.h"
 
 #include "Component/Component.h"

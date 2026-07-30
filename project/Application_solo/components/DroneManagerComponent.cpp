@@ -1,4 +1,4 @@
-﻿#include "DroneManagerComponent.h"
+#include "DroneManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Renderer/Object/Batch/ModelBatch.h"

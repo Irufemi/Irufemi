@@ -1,4 +1,4 @@
-﻿#include "DebugEnemySpawnerComponent.h"
+#include "DebugEnemySpawnerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"

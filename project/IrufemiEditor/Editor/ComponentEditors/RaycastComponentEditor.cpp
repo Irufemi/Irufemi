@@ -1,4 +1,4 @@
-﻿#include "RaycastComponentEditor.h"
+#include "RaycastComponentEditor.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>

@@ -1,4 +1,4 @@
-﻿#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "IrufemiEngine.h"
 
 #include "Platform/Input/InputManager.h"

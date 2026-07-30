@@ -1,4 +1,4 @@
-﻿#include "VoxelParticleManager.h"
+#include "VoxelParticleManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
 

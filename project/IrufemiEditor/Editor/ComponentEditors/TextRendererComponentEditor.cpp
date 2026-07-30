@@ -1,4 +1,4 @@
-﻿#include "TextRendererComponentEditor.h"
+#include "TextRendererComponentEditor.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>

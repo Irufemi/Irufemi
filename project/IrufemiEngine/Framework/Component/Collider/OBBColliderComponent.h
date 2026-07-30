@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "ColliderComponent.h"
 #include "Engine/Core/Math/Geometry/OBB.h"
 #include "Engine/Core/Math/Vector3.h"

@@ -1,4 +1,4 @@
-﻿#include "SkeletonDebugRendererComponent.h"
+#include "SkeletonDebugRendererComponent.h"
 #include "SkinnedMeshRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"

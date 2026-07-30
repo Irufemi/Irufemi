@@ -1,4 +1,4 @@
-﻿#include "SpriteRendererComponentEditor.h"
+#include "SpriteRendererComponentEditor.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>

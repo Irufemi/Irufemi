@@ -1,4 +1,4 @@
-﻿#include "VoxelParticleComponentEditor.h"
+#include "VoxelParticleComponentEditor.h"
 #ifdef EditorMode
 #include <imgui.h>
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
