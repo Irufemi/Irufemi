@@ -62,10 +62,24 @@ struct ObjMesh {
 };
 
 // 階層(Node)を統合した拡張版 ObjModel
+/**
+ * @class ObjModel
+ * @brief Wavefront OBJ 形式などの3Dモデルデータを保持するクラス
+ * @details 頂点データやマテリアル情報を管理し、描画パイプラインへモデルデータを供給します。
+ */
 struct ObjModel {
+    /** @brief モデルを構成するメッシュ（頂点・インデックス・マテリアルのセット）のリスト */
     std::vector<ObjMesh> meshes;
+
+    /** @brief シーン階層のルートノード */
     Node rootNode; // 追加: シーン階層ルート
+
+    /** @brief スキンクラスター（ボーンウェイト）データのマップ */
     std::map<std::string, JointWeightData> skinClusterData;
+
+    /** @brief モデル全体の境界球（高速なカリング用） */
     Irufemi::Sphere boundingSphere; // 追加: モデル全体の境界球
+
+    /** @brief モデル全体のローカルAABB（高精度ピッキング用） */
     Irufemi::AABB boundingBox; // 追加: モデル全体のローカルAABB（高精度ピッキング用）
 };
