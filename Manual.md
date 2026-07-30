@@ -20,6 +20,25 @@
 - **`resources/` (リソースデータ)**
   - 3Dモデル（`.obj`, `.gltf`）やテクスチャ（`.png`）、音声（`.wav`）は必ず各Applicationディレクトリ直下の `resources/` 内（`model/`, `ui/`, `audio/` 等）に配置してください。
 
+### 1.1.0 C++ コーディング規約（引数渡しのベストプラクティス）
+
+IrufemiEngineのコアやコンポーネントを拡張する際、パフォーマンス（特にコピーコストやエイリアシング回避）を意識した以下の「モダンC++ / AAAエンジン基準」の引数渡しルールを厳守してください。
+
+1. **小さな数学型（16バイト以下）は「値渡し」**
+   - 対象: `Vector2`, `Vector3`, `Vector4`, `Quaternion` など
+   - 理由: SIMDレジスタ渡しによる高速化と、ポインタのエイリアシング回避のため。
+   - 例: `Vector3 Add(Vector3 a, Vector3 b);`
+
+2. **大きな数学型・構造体（16バイト超過）は「`const` 参照渡し」**
+   - 対象: `Matrix4x4`, `Transform`, `Segment`, `Ray`, `AABB`, `CollisionResult` など
+   - 理由: レジスタに乗り切らずスタックにコピーされるオーバーヘッド（コピーコスト）を防ぐため。
+   - 例: `Vector3 Transform(Vector3 v, const Matrix4x4& m);`
+
+3. **文字列 (`std::string`)**
+   - **単なる読み取り (検索等) の場合**: `std::string_view` (C++17) を使用する。
+   - **メンバ変数に保存 (Sinkパターン) の場合**: 「値渡し ＋ `std::move`」に統一する。
+   - 例: `void SetName(std::string name) { name_ = std::move(name); }`
+
 ---
 
 ### 1.1.1 外部ライブラリの手動セットアップ（クローン直後の手順）
