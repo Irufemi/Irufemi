@@ -1,3 +1,4 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
@@ -5,9 +6,7 @@
 SamplerState gSampler : register(s0);
 
 // SmoothingParams 定数バッファ
-struct SmoothingParams {
-    int32_t kernelSize; // 3, 5, 7, ...
-};
+
 ConstantBuffer<SmoothingParams> gParams : register(b0);
 
 

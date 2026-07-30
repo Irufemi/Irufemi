@@ -1,15 +1,11 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
 SamplerState gSampler : register(s0);
 
-struct DualKawaseBlurParams {
-    float blurRadius;
-    float intensity;
-    int iterationCount;
-    float pad;
-};
+
 ConstantBuffer<DualKawaseBlurParams> gKawaseParams : register(b0);
 
 

@@ -1,3 +1,4 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "PostProcess.hlsli"
 
@@ -6,13 +7,7 @@
  * @brief 分離型ガウスぼかしシェーダー（縦または横の1次元パス）
  */
 
-struct BloomParams {
-    float32_t2 direction;   // ぼかし方向 ({1,0} or {0,1})
-    float32_t threshold;
-    float32_t sigma;
-    float32_t intensity;
-    int32_t kernelSize;
-};
+
 
 ConstantBuffer<BloomParams> gBloom : register(b0);
 SamplerState gSampler : register(s0);

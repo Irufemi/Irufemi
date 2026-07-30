@@ -1,13 +1,9 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
-struct VignetteParams {
-    float4 color;
-    float radius;
-    float softness;
-    float2 pad;
-};
+
 
 ConstantBuffer<VignetteParams> gVignette : register(b0);
 SamplerState gSampler : register(s0);

@@ -1,13 +1,10 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 #include "SpaceTransforms.hlsli"
 
-struct OutlineParams {
-    float32_t intensity;
-    float32_t3 pad;
-    float32_t4x4 projectionInverse;
-};
+
 
 ConstantBuffer<OutlineParams> gOutline : register(b0);
 SamplerState gSampler : register(s0);

@@ -1,16 +1,9 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
-struct LightShaftsParams {
-    float32_t2 lightScreenPos;
-    float32_t density;
-    float32_t decay;
-    float32_t weight;
-    float32_t exposure;
-    int32_t samples;
-    float32_t pad;
-};
+
 
 ConstantBuffer<LightShaftsParams> gParams : register(b0);
 

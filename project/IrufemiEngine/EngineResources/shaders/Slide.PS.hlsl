@@ -1,13 +1,11 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
 SamplerState gSampler : register(s0);
 
-struct SlideParams {
-    float32_t4 color;
-    float32_t threshold;
-};
+
 
 ConstantBuffer<SlideParams> gParams : register(b0);
 

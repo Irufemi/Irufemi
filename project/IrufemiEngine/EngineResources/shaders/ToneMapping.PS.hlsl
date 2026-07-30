@@ -1,12 +1,10 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
 // --- 定数バッファ ---
-struct ToneMappingParams {
-    float32_t exposure; // 露出補正
-    float32_t3 padding;
-};
+
 
 ConstantBuffer<ToneMappingParams> gParams : register(b0);
 

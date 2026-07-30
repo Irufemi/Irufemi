@@ -1,12 +1,9 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "PostProcess.hlsli"
 
 // ガウスフィルタ用定数バッファ
-struct GaussianParams {
-    float32_t2 direction;
-    float32_t sigma;
-    int32_t kernelSize;
-};
+
 
 ConstantBuffer<GaussianParams> gParams : register(b0);
 SamplerState gSampler : register(s0);

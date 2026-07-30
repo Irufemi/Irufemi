@@ -1,14 +1,11 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
 SamplerState gSampler : register(s0);
 
-struct HSVParams {
-    float32_t hue;
-    float32_t saturation;
-    float32_t value;
-};
+
 ConstantBuffer<HSVParams> gHSVParams : register(b0);
 
 float32_t WrapValue(float32_t value, float32_t minRange, float32_t maxRange) {

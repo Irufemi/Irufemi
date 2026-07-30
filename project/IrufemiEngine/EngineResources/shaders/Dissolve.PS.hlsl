@@ -1,16 +1,11 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
 SamplerState gSampler : register(s0);
 
-struct DissolveParams {
-    float32_t4 edgeColor;
-    float32_t4 backgroundColor; // 追加：C++側との位置合わせのため
-    float32_t threshold;
-    float32_t edgeRange;
-    int32_t noiseType;
-};
+
 
 ConstantBuffer<DissolveParams> gParams : register(b0);
 

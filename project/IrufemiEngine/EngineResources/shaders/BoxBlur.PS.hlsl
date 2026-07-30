@@ -1,3 +1,4 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "PostProcess.hlsli"
 
@@ -6,11 +7,7 @@
  * @brief 分離型ボックスぼかしシェーダー（縦または横の1次元パス）
  */
 
-struct SmoothingParams {
-    float32_t2 direction;   // ぼかし方向 ({1,0} or {0,1})
-    int32_t kernelSize;
-    float32_t pad;
-};
+
 
 ConstantBuffer<SmoothingParams> gSmoothing : register(b0);
 SamplerState gSampler : register(s0);
