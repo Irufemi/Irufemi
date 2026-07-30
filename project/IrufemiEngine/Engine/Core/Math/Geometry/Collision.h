@@ -1,6 +1,8 @@
-#pragma once
+﻿#pragma once
 #include "../Math.h"
 
+
+namespace Irufemi {
 // 前方宣言
 struct Sphere;
 struct Plane;
@@ -290,3 +292,4 @@ namespace Collision {
     bool GetOBBSegmentIntersection(const OBB& obb, const Segment& segment, Vector3& outIntersection);
 
 } // namespace Collision
+} // namespace Irufemi

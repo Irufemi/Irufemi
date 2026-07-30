@@ -1,7 +1,9 @@
-#include "Vector4.h"
+﻿#include "Vector4.h"
 #include <stdexcept>
 #include <cassert>
 
+
+namespace Irufemi {
 const Vector4 Vector4::zero = { 0.0f, 0.0f, 0.0f, 0.0f };
 const Vector4 Vector4::one = { 1.0f, 1.0f, 1.0f, 1.0f };
 const Vector4 Vector4::right = { 1.0f, 0.0f, 0.0f, 0.0f };
@@ -118,3 +120,5 @@ Vector4 operator/(const Vector4& lhs, const Vector4& rhs) {
     return { lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z, lhs.w / rhs.w };
 }
 
+
+} // namespace Irufemi

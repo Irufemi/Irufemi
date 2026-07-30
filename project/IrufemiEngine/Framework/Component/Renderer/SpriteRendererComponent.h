@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Component.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include <memory>
@@ -44,5 +44,5 @@ private:
     bool isFlipY_ = false;
     float anchor_[2] = { 0.5f, 0.5f };
     float size_[2] = { 640.0f, 360.0f };
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 };

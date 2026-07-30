@@ -1,4 +1,4 @@
-#include "MainTransparentPass.h"
+﻿#include "MainTransparentPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "../../DirectX/ShadowMap.h"
@@ -52,7 +52,7 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false, bool isDebugPrimitive = false) {
         if (queue.empty()) return;
         
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         ID3D12PipelineState* currentCustomPSO = nullptr;
@@ -113,7 +113,7 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     // 6. GPU Particles
     const auto& gpuParticleQueue = drawManager->GetGPUParticleQueue();
     if (!gpuParticleQueue.empty()) {
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         ID3D12PipelineState* currentCustomPSO = nullptr;
@@ -144,7 +144,7 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
             drawManager->DrawGPUParticle(p);
         }
     }
-    // 7. Voxel Particles
+    // 7. Irufemi::Voxel Particles
     const auto& voxelParticleQueue = drawManager->GetVoxelParticleQueue();
     if (!voxelParticleQueue.empty()) {
         for (const auto& p : voxelParticleQueue) {

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../../System/Core/IRenderable.h"
 #include <d3d12.h>
@@ -43,8 +43,8 @@ public:
     void SetPosition(const float& x, const float& y, const float& z = 0.0f) { if(resource_) resource_->transform_.translate = {x,y,z}; isDirty_ = true; }
     void SetRotation(const float& rotate) { if(resource_) resource_->transform_.rotate = {0.0f, 0.0f, rotate}; isDirty_ = true; }
     void SetScale(const float& scaleX, const float& scaleY) { if(resource_) resource_->transform_.scale = {scaleX, scaleY, 1.0f}; isDirty_ = true; }
-    void SetColor(const Vector4& color) { color_ = color; if(resource_) resource_->GetMaterialData()->color = color; isDirty_ = true; }
-    Vector4 GetColor() const { return color_; }
+    void SetColor(const Irufemi::Vector4& color) { color_ = color; if(resource_) resource_->GetMaterialData()->color = color; isDirty_ = true; }
+    Irufemi::Vector4 GetColor() const { return color_; }
     void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
     bool IsTopMost() const { return isTopMost_; }
     void SetBaseScale(float baseScale) { baseScale_ = baseScale; isTextDirty_ = true; }
@@ -56,8 +56,8 @@ public:
     float GetBaseScale() const { return baseScale_; }
     TextAlignment GetAlignment() const { return alignment_; }
     
-    const Vector2& GetLocalBoundsMin() const { return localBoundsMin_; }
-    const Vector2& GetLocalBoundsMax() const { return localBoundsMax_; }
+    const Irufemi::Vector2& GetLocalBoundsMin() const { return localBoundsMin_; }
+    const Irufemi::Vector2& GetLocalBoundsMax() const { return localBoundsMax_; }
     
     // Engine dependencies
     static void SetFontManager(FontManager* fm) { fontManager_ = fm; }
@@ -74,10 +74,10 @@ private:
     std::string fontId_ = "MainFont";
     float baseScale_ = 64.0f; // MSDF生成時のピクセルサイズを基準とするスケーリング
     TextAlignment alignment_ = TextAlignment::Left;
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
     
-    Vector2 localBoundsMin_ = {0.0f, 0.0f};
-    Vector2 localBoundsMax_ = {0.0f, 0.0f};
+    Irufemi::Vector2 localBoundsMin_ = {0.0f, 0.0f};
+    Irufemi::Vector2 localBoundsMax_ = {0.0f, 0.0f};
     
     bool isDirty_ = true;
     bool isTextDirty_ = true;
@@ -88,7 +88,7 @@ private:
     static CameraManager* cameraManager_;
     static DebugUI* ui_;
     
-    Matrix4x4 lastViewMatrix_ = {};
-    Matrix4x4 lastProjectionMatrix_ = {};
+    Irufemi::Matrix4x4 lastViewMatrix_ = {};
+    Irufemi::Matrix4x4 lastProjectionMatrix_ = {};
     ResourceHandle lastAtlasHandle_ = {};
 };

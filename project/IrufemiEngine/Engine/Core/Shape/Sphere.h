@@ -1,8 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include "../Math/Vector3.h"
 
+
+namespace Irufemi {
 struct Sphere {
     //!< 中心点
 	Vector3 center = {0.0f, 0.0f, 0.0f};
@@ -11,3 +13,5 @@ struct Sphere {
     float radius = 1.0f;
 };
 
+
+} // namespace Irufemi

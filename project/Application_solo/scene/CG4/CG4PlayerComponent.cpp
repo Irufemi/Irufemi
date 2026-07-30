@@ -1,4 +1,4 @@
-#include "CG4PlayerComponent.h"
+﻿#include "CG4PlayerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Logic/AnimatorComponent.h"
@@ -51,20 +51,20 @@ void CG4PlayerComponent::Update() {
     if (input->IsKeyDown('D') || input->IsKeyDown(VK_RIGHT)) moveX += 1.0f;
 
     // 正規化
-    Vector3 moveDir = { moveX, 0.0f, moveZ };
+    Irufemi::Vector3 moveDir = { moveX, 0.0f, moveZ };
     float length = moveDir.Length();
     if (length > 0.01f) {
         moveDir.Normalize();
         
         // 移動処理
-        Vector3 currentPos = transform->GetPosition();
+        Irufemi::Vector3 currentPos = transform->GetPosition();
         currentPos += moveDir * moveSpeed_ * engine->GetGameDeltaTime();
         transform->SetPosition(currentPos);
 
         // 進行方向への旋回処理
         // モデルがデフォルトで手前（Z-方向）を向いているため、+PI して進行方向に向かせる
-        float targetAngle = atan2f(moveDir.x, moveDir.z) + Math::PI;
-        Vector3 currentRot = transform->GetRotation();
+        float targetAngle = atan2f(moveDir.x, moveDir.z) + Irufemi::Math::PI;
+        Irufemi::Vector3 currentRot = transform->GetRotation();
         
         currentRot.y = targetAngle;
         transform->SetRotation(currentRot);

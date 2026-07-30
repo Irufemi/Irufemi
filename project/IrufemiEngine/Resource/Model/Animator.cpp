@@ -1,4 +1,4 @@
-#include "Animator.h"
+﻿#include "Animator.h"
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Model/AnimationManager.h"
 #include "Engine/Manager/DebugUI.h"
@@ -89,7 +89,7 @@ void Animator::Update(SkeletonPose& targetPose) {
     AnimationManager::SkeletonUpdate(targetPose);
 }
 
-void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime, Vector3& outDeltaTrans, Quaternion& outDeltaRot) {
+void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime, Irufemi::Vector3& outDeltaTrans, Irufemi::Quaternion& outDeltaRot) {
     outDeltaTrans = {0.0f, 0.0f, 0.0f};
     outDeltaRot = {0.0f, 0.0f, 0.0f, 1.0f};
     if (!anim || !skeleton) return;
@@ -113,15 +113,15 @@ void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skel
     const NodeAnimation& rootAnim = rootIt->second;
 
     if (!rootAnim.translate.keyframes.empty()) {
-        Vector3 prevPos = AnimationManager::CalculateValue(rootAnim.translate, prevTime);
-        Vector3 currPos = AnimationManager::CalculateValue(rootAnim.translate, currTime);
+        Irufemi::Vector3 prevPos = AnimationManager::CalculateValue(rootAnim.translate, prevTime);
+        Irufemi::Vector3 currPos = AnimationManager::CalculateValue(rootAnim.translate, currTime);
         outDeltaTrans = currPos - prevPos;
     }
     if (!rootAnim.rotate.keyframes.empty()) {
-        Quaternion prevRot = AnimationManager::CalculateValue(rootAnim.rotate, prevTime);
-        Quaternion currRot = AnimationManager::CalculateValue(rootAnim.rotate, currTime);
+        Irufemi::Quaternion prevRot = AnimationManager::CalculateValue(rootAnim.rotate, prevTime);
+        Irufemi::Quaternion currRot = AnimationManager::CalculateValue(rootAnim.rotate, currTime);
         // Quaternionの差分 (prevRot^-1 * currRot)
-        outDeltaRot = Math::Multiply(Math::Inverse(prevRot), currRot);
+        outDeltaRot = Irufemi::Math::Multiply(Irufemi::Math::Inverse(prevRot), currRot);
     }
 }
 

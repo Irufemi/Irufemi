@@ -1,4 +1,4 @@
-#include "GameApplication.h"
+﻿#include "GameApplication.h"
 
 #include <memory>
 #include <string>
@@ -57,7 +57,7 @@ namespace {
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
     const std::wstring kTitle = L"Application_solo";
-    const Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
+    const Irufemi::Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         = "InGame";

@@ -1,4 +1,4 @@
-#include "Object3DResource.h"
+﻿#include "Object3DResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
@@ -61,7 +61,7 @@ void Object3DResource::CreateResource() {
         
         cpuMaterialData_.color = {1,1,1,1};
         cpuMaterialData_.enableLighting = true;
-        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+        cpuMaterialData_.uvTransform = Irufemi::Math::MakeIdentity4x4();
         cpuMaterialData_.metallic = 0.0f;
         cpuMaterialData_.roughness = 0.5f;
         cpuMaterialData_.environmentCoefficient = 0.0f;
@@ -97,21 +97,21 @@ void Object3DResource::Unmap() {
 void Object3DResource::UpdateTransform(const Camera& camera) {
 
 
-    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // CPU側のマテリアルキャッシュにのみ反映させる
 
     // 法線変換用：平行移動を除いた World を使う
-    Matrix4x4 worldForNormal = transformationMatrix_.world;
+    Irufemi::Matrix4x4 worldForNormal = transformationMatrix_.world;
     worldForNormal.m[3][0] = 0.0f;
     worldForNormal.m[3][1] = 0.0f;
     worldForNormal.m[3][2] = 0.0f;
     worldForNormal.m[3][3] = 1.0f;
     
     // 逆転置行列を計算
-    transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+    transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
 
     // マテリアルの CPUキャッシュ更新 (描画直前の SyncBeforeDraw で GPUへ送られる)
-    cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+    cpuMaterialData_.uvTransform = Irufemi::Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
     
     MarkAsDirty();
 }

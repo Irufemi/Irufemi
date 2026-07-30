@@ -241,7 +241,7 @@ public: //メンバ関数
      * @param[in] renderTargets 出力先の RenderTexture のリスト
      * @param[in] clearColors 各 RenderTexture の背景クリア色
      */
-    void BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<struct Vector4>& clearColors);
+    void BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<Irufemi::Vector4>& clearColors);
 
     /**
      * @brief 複数の RenderTexture への描画を終了する
@@ -253,7 +253,7 @@ public: //メンバ関数
      * @param[in] rt 出力先の RenderTexture
      * @param[in] clearColor 背景クリア色
      */
-    void BeginRenderTexture(class RenderTexture* rt, const struct Vector4& clearColor, class RenderTexture* rt2 = nullptr, const struct Vector4& clearColor2 = {0.0f, 0.0f, 0.0f, 0.0f});
+    void BeginRenderTexture(class RenderTexture* rt, const Irufemi::Vector4& clearColor, class RenderTexture* rt2 = nullptr, const Irufemi::Vector4& clearColor2 = Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f});
 
     /**
      * @brief RenderTexture への描画を終了する
@@ -282,7 +282,7 @@ public: //メンバ関数
     /**
      * @brief フレーム単位の共通データを定数バッファに書き込む
      */
-    void SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Vector2& resolution = {1280.0f, 720.0f});
+    void SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Irufemi::Vector2& resolution = {1280.0f, 720.0f});
 
     /**
      * @brief キャッシュされたフレームデータを用いて現在のフレームバッファを同期する（ポーズなどでSetFrameDataが呼ばれなかった時用）
@@ -297,7 +297,7 @@ private:
     std::vector<AreaLight> cachedAreaLights_;
     
     // シャドウマップのカスタムパラメータ
-    Vector3 shadowTargetPos_{ 0, 0, 0 };
+    Irufemi::Vector3 shadowTargetPos_{ 0, 0, 0 };
     float shadowOrthoSize_{ 128.0f };
     bool useCustomShadowParams_{ false };
 
@@ -310,7 +310,7 @@ public:
      * @param targetPos 注視点（通常はプレイヤーとボスの中心）
      * @param orthoSize 描画範囲（通常はプレイヤーとボスの距離に基づく）
      */
-    void SetShadowParameters(const Vector3& targetPos, float orthoSize) {
+    void SetShadowParameters(const Irufemi::Vector3& targetPos, float orthoSize) {
         shadowTargetPos_ = targetPos;
         shadowOrthoSize_ = orthoSize;
         useCustomShadowParams_ = true;

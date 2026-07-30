@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include <string>
 #include "Framework/UIAnimator.h"
@@ -35,7 +35,7 @@ private:
 
     bool isTransitionPending_ = false;
     float transitionTimer_ = 0.0f;
-    Vector3 originalScale_ = {1.0f, 1.0f, 1.0f};
+    Irufemi::Vector3 originalScale_ = {1.0f, 1.0f, 1.0f};
 
     ButtonComponent* button_ = nullptr;
     TransformComponent* transform_ = nullptr;

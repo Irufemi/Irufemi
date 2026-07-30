@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file Math.h
  * @brief IrufemiEngine 数学ライブラリ一括インクルードヘッダー
  */
@@ -12,3 +12,7 @@
 #include "Matrix4x4.h"
 #include "Quaternion.h"
 #include "MathFunction.h"
+
+namespace Irufemi {
+
+} // namespace Irufemi

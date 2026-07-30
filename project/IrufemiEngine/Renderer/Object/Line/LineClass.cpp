@@ -1,4 +1,4 @@
-#include "LineClass.h"
+﻿#include "LineClass.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 
 #include "Engine/Graphics/Camera/Camera.h"
@@ -52,7 +52,7 @@ void Line3DBatch::Update() {
     }
 }
 
-void Line3DBatch::AddInstance(const Vector3& start, const Vector3& end, const Vector4& color, float life) {
+void Line3DBatch::AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color, float life) {
     if (activeCount_ < maxInstances_) {
         auto& instance = instances_[activeCount_];
         instance.start = start;

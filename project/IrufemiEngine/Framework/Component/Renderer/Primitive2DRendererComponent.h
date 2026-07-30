@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Component.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
 #include "Engine/Core/Type/Primitive2DType.h"
@@ -32,21 +32,21 @@ public:
 #endif
 
     // プロパティ操作
-    void SetShape(Primitive2DType type);
-    void SetColor(const Vector4& color);
+    void SetShape(Irufemi::Primitive2DType type);
+    void SetColor(const Irufemi::Vector4& color);
     void SetTexture(const std::string& texturePath);
-    void SetPivot(const Vector2& pivot);
-    void SetSize(const Vector2& size);
+    void SetPivot(const Irufemi::Vector2& pivot);
+    void SetSize(const Irufemi::Vector2& size);
     void SetThickness(float thickness);
     void SetSubdivision(int subdivision);
     void SetTopMost(bool isTopMost);
 
     // プロパティ取得（Editor用など）
-    Primitive2DType GetShape() const { return static_cast<Primitive2DType>(currentTypeIndex_); }
-    const Vector4& GetColor() const { return color_; }
+    Irufemi::Primitive2DType GetShape() const { return static_cast<Irufemi::Primitive2DType>(currentTypeIndex_); }
+    const Irufemi::Vector4& GetColor() const { return color_; }
     const std::string& GetTexture() const { return texturePath_; }
-    const Vector2& GetPivot() const { return pivot_; }
-    const Vector2& GetSize() const { return size_; }
+    const Irufemi::Vector2& GetPivot() const { return pivot_; }
+    const Irufemi::Vector2& GetSize() const { return size_; }
     float GetThickness() const { return thickness_; }
     int GetSubdivision() const { return subdivision_; }
     bool IsTopMost() const { return isTopMost_; }
@@ -66,9 +66,9 @@ private:
     bool isTopMost_ = false;
     
     // 描画パラメータのバックアップ（Primitive2DObject生成前やSerialize用）
-    Vector2 size_ = { 100.0f, 100.0f };
-    Vector2 pivot_ = { 0.5f, 0.5f };
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector2 size_ = { 100.0f, 100.0f };
+    Irufemi::Vector2 pivot_ = { 0.5f, 0.5f };
+    Irufemi::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
     float thickness_ = 2.0f;
     int subdivision_ = 32;
 };

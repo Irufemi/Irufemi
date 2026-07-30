@@ -1,4 +1,4 @@
-#include "OBBColliderComponent.h"
+﻿#include "OBBColliderComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
@@ -30,11 +30,11 @@ void OBBColliderComponent::DrawDebug() {
 
 
 
-OBB OBBColliderComponent::GetWorldOBB() const {
-    OBB obb;
+Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
+    Irufemi::OBB obb;
     if (transform_) {
-        Vector3 worldPos = transform_->GetWorldPosition();
-        Vector3 worldScale = transform_->GetWorldScale();
+        Irufemi::Vector3 worldPos = transform_->GetWorldPosition();
+        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
 
         obb.orientations[0] = transform_->GetWorldRight();
         obb.orientations[1] = transform_->GetWorldUp();
@@ -57,11 +57,11 @@ OBB OBBColliderComponent::GetWorldOBB() const {
     return obb;
 }
 
-AABB OBBColliderComponent::GetBoundingBox() const {
-    OBB obb = GetWorldOBB();
-    AABB aabb;
+Irufemi::AABB OBBColliderComponent::GetBoundingBox() const {
+    Irufemi::OBB obb = GetWorldOBB();
+    Irufemi::AABB aabb;
     // OBBを包含するAABBの半径(各軸ごとの最大投影長)を計算
-    Vector3 extents;
+    Irufemi::Vector3 extents;
     extents.x = std::abs(obb.orientations[0].x * obb.size.x) + std::abs(obb.orientations[1].x * obb.size.y) + std::abs(obb.orientations[2].x * obb.size.z);
     extents.y = std::abs(obb.orientations[0].y * obb.size.x) + std::abs(obb.orientations[1].y * obb.size.y) + std::abs(obb.orientations[2].y * obb.size.z);
     extents.z = std::abs(obb.orientations[0].z * obb.size.x) + std::abs(obb.orientations[1].z * obb.size.y) + std::abs(obb.orientations[2].z * obb.size.z);

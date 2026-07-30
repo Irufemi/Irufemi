@@ -1,4 +1,4 @@
-#include "SplineComponent.h"
+﻿#include "SplineComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Renderer/Object/Line/LineClass.h"
@@ -23,12 +23,12 @@ void SplineComponent::Draw() {
     if (drawDebugRail_ && debugLineBatch_ && waypoints_.size() >= 2) {
         debugLineBatch_->ClearInstances();
         const int segments = 100;
-        Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f}; // 緑色
-        Vector3 prevPos = GetPointAt(0.0f);
+        Irufemi::Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f}; // 緑色
+        Irufemi::Vector3 prevPos = GetPointAt(0.0f);
         
         for (int i = 1; i <= segments; ++i) {
             float t = static_cast<float>(i) / static_cast<float>(segments);
-            Vector3 currentPos = GetPointAt(t);
+            Irufemi::Vector3 currentPos = GetPointAt(t);
             debugLineBatch_->AddInstance(prevPos, currentPos, color);
             prevPos = currentPos;
         }
@@ -40,7 +40,7 @@ void SplineComponent::Draw() {
     }
 }
 
-Vector3 SplineComponent::GetPointAt(float t) const {
+Irufemi::Vector3 SplineComponent::GetPointAt(float t) const {
     if (waypoints_.empty()) return {0.0f, 0.0f, 0.0f};
     if (waypoints_.size() == 1) return waypoints_[0];
 
@@ -60,15 +60,15 @@ Vector3 SplineComponent::GetPointAt(float t) const {
     float localT = scaledT - index;
 
     // Catmull-Rom スプライン補間のための制御点4つを取得
-    Vector3 p0 = waypoints_[(std::max)(0, index - 1)];
-    Vector3 p1 = waypoints_[index];
-    Vector3 p2 = waypoints_[(std::min)(segments, index + 1)];
-    Vector3 p3 = waypoints_[(std::min)(segments, index + 2)];
+    Irufemi::Vector3 p0 = waypoints_[(std::max)(0, index - 1)];
+    Irufemi::Vector3 p1 = waypoints_[index];
+    Irufemi::Vector3 p2 = waypoints_[(std::min)(segments, index + 1)];
+    Irufemi::Vector3 p3 = waypoints_[(std::min)(segments, index + 2)];
 
     float t2 = localT * localT;
     float t3 = t2 * localT;
 
-    Vector3 result;
+    Irufemi::Vector3 result;
     result.x = 0.5f * ((2.0f * p1.x) + (-p0.x + p2.x) * localT +
                        (2.0f * p0.x - 5.0f * p1.x + 4.0f * p2.x - p3.x) * t2 +
                        (-p0.x + 3.0f * p1.x - 3.0f * p2.x + p3.x) * t3);
@@ -84,7 +84,7 @@ Vector3 SplineComponent::GetPointAt(float t) const {
     return result;
 }
 
-Vector3 SplineComponent::GetTangentAt(float t) const {
+Irufemi::Vector3 SplineComponent::GetTangentAt(float t) const {
     if (waypoints_.size() < 2) return {0.0f, 0.0f, 1.0f}; // デフォルトの進行方向
     
     // 少し先の点を計算して差分から接線を求める (簡易的な近似)
@@ -98,10 +98,10 @@ Vector3 SplineComponent::GetTangentAt(float t) const {
         t2 = std::clamp(t, 0.0f, 1.0f);
     }
     
-    Vector3 p1 = GetPointAt(t1);
-    Vector3 p2 = GetPointAt(t2);
+    Irufemi::Vector3 p1 = GetPointAt(t1);
+    Irufemi::Vector3 p2 = GetPointAt(t2);
     
-    Vector3 tangent = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+    Irufemi::Vector3 tangent = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
     float length = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
     
     if (length > 0.0001f) {
@@ -128,7 +128,7 @@ void SplineComponent::UpdateWaypointsFromChildren() {
             // Check if any position changed (simple check)
             for (size_t i = 0; i < children.size() && i < waypoints_.size(); ++i) {
                 if (auto transform = children[i]->GetComponent<TransformComponent>()) {
-                    Vector3 pos = transform->GetPosition();
+                    Irufemi::Vector3 pos = transform->GetPosition();
                     if (std::abs(pos.x - waypoints_[i].x) > 0.001f ||
                         std::abs(pos.y - waypoints_[i].y) > 0.001f ||
                         std::abs(pos.z - waypoints_[i].z) > 0.001f) {
@@ -163,11 +163,11 @@ void SplineComponent::UpdateDistanceTable() {
     if (waypoints_.size() < 2) return;
     
     int numSamples = (std::max)(10, static_cast<int>(waypoints_.size()) * 20);
-    Vector3 prevPos = GetPointAt(0.0f);
+    Irufemi::Vector3 prevPos = GetPointAt(0.0f);
     for (int i = 1; i <= numSamples; ++i) {
         float t = static_cast<float>(i) / static_cast<float>(numSamples);
-        Vector3 currPos = GetPointAt(t);
-        Vector3 diff = {currPos.x - prevPos.x, currPos.y - prevPos.y, currPos.z - prevPos.z};
+        Irufemi::Vector3 currPos = GetPointAt(t);
+        Irufemi::Vector3 diff = {currPos.x - prevPos.x, currPos.y - prevPos.y, currPos.z - prevPos.z};
         float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
         totalLength_ += dist;
         distanceLUT_.push_back(totalLength_);
@@ -182,7 +182,7 @@ float SplineComponent::GetTotalLength() const {
     return totalLength_;
 }
 
-Vector3 SplineComponent::GetPointAtDistance(float distance) const {
+Irufemi::Vector3 SplineComponent::GetPointAtDistance(float distance) const {
     if (waypoints_.empty()) return {0.0f, 0.0f, 0.0f};
     if (waypoints_.size() == 1 || distanceLUT_.empty() || totalLength_ <= 0.0f) return waypoints_[0];
 
@@ -205,7 +205,7 @@ Vector3 SplineComponent::GetPointAtDistance(float distance) const {
     return GetPointAt(t);
 }
 
-Vector3 SplineComponent::GetTangentAtDistance(float distance) const {
+Irufemi::Vector3 SplineComponent::GetTangentAtDistance(float distance) const {
     if (waypoints_.size() < 2) return {0.0f, 0.0f, 1.0f};
     
     float delta = 0.01f;
@@ -217,10 +217,10 @@ Vector3 SplineComponent::GetTangentAtDistance(float distance) const {
         d2 = std::clamp(totalLength_, 0.0f, totalLength_);
     }
     
-    Vector3 p1 = GetPointAtDistance(d1);
-    Vector3 p2 = GetPointAtDistance(d2);
+    Irufemi::Vector3 p1 = GetPointAtDistance(d1);
+    Irufemi::Vector3 p2 = GetPointAtDistance(d2);
     
-    Vector3 tangent = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+    Irufemi::Vector3 tangent = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
     float length = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
     
     if (length > 0.0001f) {

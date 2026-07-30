@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -137,7 +137,7 @@ public: // メンバ関数
 	/**
 	 * @brief レンダーターゲットテクスチャリソースの生成
 	 */
-	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4* clearColor);
+	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Irufemi::Vector4* clearColor);
 
 	/**
 	 * @brief FPS固定のための初期化

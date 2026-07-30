@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "../Vector3.h"
 #include "Ball.h"
 
 struct Spring{
     //アンカー。固定された端の位置
-	Vector3 anchor{};
+	Irufemi::Vector3 anchor{};
     //自然長
     float naturalLength{};
     //剛性。バネ定数k
@@ -16,7 +16,7 @@ struct Spring{
     float deltaTime = 1.0f / 60.0f;
 
     //ボール
-    Ball ball{};
+    Irufemi::Ball ball{};
 
 };
 

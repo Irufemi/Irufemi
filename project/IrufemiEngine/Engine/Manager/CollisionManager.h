@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <vector>
 #include <set>
 #include <memory>
@@ -19,7 +19,7 @@ struct RaycastHit {
     bool isHit = false;
     GameObject* hitObject = nullptr;
     ColliderComponent* hitCollider = nullptr;
-    Vector3 hitPoint;
+    Irufemi::Vector3 hitPoint;
     float distance = 0.0f;
 };
 
@@ -77,17 +77,17 @@ public:
     /// @param layerMask 判定対象とするレイヤーのビットマスク
     /// @param ignoreObject 判定から除外するオブジェクト（自分自身を無視するためなど）
     /// @return 何かに当たった場合はtrue
-    bool Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+    bool Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
 
     /**
      * @brief スレッドプールを利用した非同期レイキャスト
      * @param pool 使用するエンジンのThreadPool
      * @return 判定結果とHitInfoのペアを返すstd::future
      */
-    std::future<std::pair<bool, RaycastHit>> RaycastAsync(ThreadPool* pool, const Ray& ray, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+    std::future<std::pair<bool, RaycastHit>> RaycastAsync(ThreadPool* pool, const Irufemi::Ray& ray, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
 
     /// @brief デバッグ用のレイを描画キューに追加する
-    void DrawDebugRay(const Ray& ray, float distance, const Vector4& color = {1,0,0,1});
+    void DrawDebugRay(const Irufemi::Ray& ray, float distance, const Irufemi::Vector4& color = {1,0,0,1});
 
 private:
     CollisionManager(const CollisionManager&) = delete;
@@ -107,14 +107,14 @@ private:
 
     // Raycast描画キャッシュ
     struct DebugRayInfo {
-        Ray ray;
+        Irufemi::Ray ray;
         float distance;
-        Vector4 color;
+        Irufemi::Vector4 color;
     };
     std::vector<DebugRayInfo> debugRays_;
 
     // 前フレームの衝突ペアを保持（Enter / Stay / Exit 用）
     std::set<std::pair<ColliderComponent*, ColliderComponent*>> previousCollisions_;
 
-    DynamicBVH dynamicBVH_;
+    Irufemi::DynamicBVH dynamicBVH_;
 };

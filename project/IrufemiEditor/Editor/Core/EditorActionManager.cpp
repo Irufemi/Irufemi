@@ -1,4 +1,4 @@
-#include "EditorActionManager.h"
+﻿#include "EditorActionManager.h"
 
 #ifdef EditorMode
 #include "EditorManager.h"
@@ -67,7 +67,7 @@ void EditorActionManager::ClearHistory() {
     redoStack_.clear();
 }
 
-void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Vector3& position) {
+void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Irufemi::Vector3& position) {
     if (!editorManager_) return;
     auto* engine = editorManager_->GetEngine();
     if (!engine || !engine->GetSceneManager()) return;
@@ -139,10 +139,10 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
         obj = std::make_shared<GameObject>(typeName);
         obj->AddComponent<TransformComponent>();
         auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-        if (typeName == "Cube") renderer->SetShape(PrimitiveType::Cube);
-        else if (typeName == "Sphere") renderer->SetShape(PrimitiveType::Sphere);
-        else if (typeName == "Cylinder") renderer->SetShape(PrimitiveType::Cylinder);
-        else if (typeName == "Plane") renderer->SetShape(PrimitiveType::Plane);
+        if (typeName == "Cube") renderer->SetShape(Irufemi::PrimitiveType::Cube);
+        else if (typeName == "Sphere") renderer->SetShape(Irufemi::PrimitiveType::Sphere);
+        else if (typeName == "Cylinder") renderer->SetShape(Irufemi::PrimitiveType::Cylinder);
+        else if (typeName == "Plane") renderer->SetShape(Irufemi::PrimitiveType::Plane);
         obj->Initialize();
     } else if (typeName == "Model") {
         obj = std::make_shared<GameObject>("Model");

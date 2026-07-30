@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 
@@ -34,7 +34,7 @@ public:
     void SetTarget(std::weak_ptr<GameObject> target) { targetObject_ = target; }
     std::weak_ptr<GameObject> GetTarget() const { return targetObject_; }
     void SetOrbitParams(float angle, float radius) { orbitAngle_ = angle; orbitRadius_ = radius; }
-    void SetThrowDirection(const Vector3& dir) { throwDirection_ = dir; }
+    void SetThrowDirection(const Irufemi::Vector3& dir) { throwDirection_ = dir; }
 
     void SetVirtualId(int id) { virtualId_ = id; }
     int GetVirtualId() const { return virtualId_; }
@@ -57,8 +57,8 @@ private:
     float GetEnemyDamage() const;
     float GetCameraShakeIntensity() const;
     int GetCameraShakeDurationFrames() const;
-    Vector4 GetPlayerAuraColor() const;
-    Vector4 GetBossAuraColor() const;
+    Irufemi::Vector4 GetPlayerAuraColor() const;
+    Irufemi::Vector4 GetBossAuraColor() const;
     float GetCatchDistanceSq() const;
     float GetBossShieldRadius() const;
     float GetPullYOffset() const;
@@ -70,8 +70,8 @@ private:
     float baseIdleY_ = 0.0f;
     float idleTimeY_ = 0.0f;
     float orbitAngle_ = 0.0f;
-    Vector3 throwDirection_ = {0,0,0};
-    Vector3 throwOrigin_ = {0,0,0};
+    Irufemi::Vector3 throwDirection_ = {0,0,0};
+    Irufemi::Vector3 throwOrigin_ = {0,0,0};
 
     // ボス用Orbitパラメータ
     float bossOrbitAngleX_ = 0.0f;

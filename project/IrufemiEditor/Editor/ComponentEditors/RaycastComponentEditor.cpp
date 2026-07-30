@@ -1,4 +1,4 @@
-#include "RaycastComponentEditor.h"
+﻿#include "RaycastComponentEditor.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>
@@ -34,8 +34,8 @@ void RaycastComponentEditor::Draw(Component* component, EditorActionManager* act
             ImGui::PopItemWidth();
             ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->localOffset_);
             ComponentUIHelpers::DrawPropertyResetButton("##OriginReset", comp->localOffset_.x != 0.0f || comp->localOffset_.y != 0.0f || comp->localOffset_.z != 0.0f, [&]() {
-                Vector3 oldO = comp->localOffset_;
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldO, Vector3{0,0,0}, &comp->localOffset_);
+                Irufemi::Vector3 oldO = comp->localOffset_;
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldO, Irufemi::Vector3{0,0,0}, &comp->localOffset_);
             });
 
             ImGui::TableNextRow();
@@ -46,8 +46,8 @@ void RaycastComponentEditor::Draw(Component* component, EditorActionManager* act
             ImGui::PopItemWidth();
             ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->localDirection_);
             ComponentUIHelpers::DrawPropertyResetButton("##DirReset", comp->localDirection_.x != 0.0f || comp->localDirection_.y != 0.0f || comp->localDirection_.z != 1.0f, [&]() {
-                Vector3 oldD = comp->localDirection_;
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldD, Vector3{0,0,1}, &comp->localDirection_);
+                Irufemi::Vector3 oldD = comp->localDirection_;
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldD, Irufemi::Vector3{0,0,1}, &comp->localDirection_);
             });
 
             ImGui::TableNextRow();

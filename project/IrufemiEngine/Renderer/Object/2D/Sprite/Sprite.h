@@ -1,4 +1,4 @@
-#include "../../../System/Core/IRenderable.h"
+﻿#include "../../../System/Core/IRenderable.h"
 #pragma once
 
 #include <d3d12.h>
@@ -39,20 +39,20 @@ private:
     static DebugUI* ui_;
 
     // サイズとアンカー
-    Vector2 size_{ 640.0f, 360.0f };   // 既存の見た目互換のため初期値を640x360に
-    Vector2 anchor_{ 0.0f, 0.0f };     // 左上(0,0) / 中央(0.5,0.5) / 右下(1,1)
+    Irufemi::Vector2 size_{ 640.0f, 360.0f };   // 既存の見た目互換のため初期値を640x360に
+    Irufemi::Vector2 anchor_{ 0.0f, 0.0f };     // 左上(0,0) / 中央(0.5,0.5) / 右下(1,1)
 
     // フリップ状態
     bool isFlipX_ = false;
     bool isFlipY_ = false;
 
     // 現在のテクスチャのピクセルサイズ(取得できない場合は 0)
-    Vector2 textureSize_{ 0.0f, 0.0f };
+    Irufemi::Vector2 textureSize_{ 0.0f, 0.0f };
 
     // 切り出し矩形(ピクセル指定)
     bool  useTexRect_ = false;
-    Vector2 texRectLeftTop_{ 0.0f, 0.0f }; // px
-    Vector2 texRectSize_{ 0.0f, 0.0f };    // px
+    Irufemi::Vector2 texRectLeftTop_{ 0.0f, 0.0f }; // px
+    Irufemi::Vector2 texRectSize_{ 0.0f, 0.0f };    // px
 
     /**
      * @brief 現在のテクスチャ解像度にスプライトサイズを合わせる（内部用）
@@ -97,11 +97,11 @@ public: //メンバ関数
     /** @name ゲッター */
     ///@{
     Object2DResource* GetD3D12Resource() { return this->resource_.get(); }
-    const Vector2& GetSize() const { return size_; }
-    const Vector2& GetAnchor() const { return anchor_; }
-    const Vector2 GetPosition2D() const;
-    const Vector3& GetRotation()const { return resource_ ? resource_->transform_.rotate : Vector3{}; }
-    const Vector4& GetColor()const { return resource_->GetMaterialData()->color; }
+    const Irufemi::Vector2& GetSize() const { return size_; }
+    const Irufemi::Vector2& GetAnchor() const { return anchor_; }
+    const Irufemi::Vector2 GetPosition2D() const;
+    const Irufemi::Vector3& GetRotation()const { return resource_ ? resource_->transform_.rotate : Irufemi::Vector3{}; }
+    const Irufemi::Vector4& GetColor()const { return resource_->GetMaterialData()->color; }
     bool IsFlipX() const { return isFlipX_; }
     bool IsFlipY() const { return isFlipY_; }
     std::string GetTextureName() const;
@@ -134,12 +134,12 @@ public: //メンバ関数
     /**
      * @brief 回転を設定（Z軸回転）
      */
-    void SetRotation(const float& rotate) { if (resource_) { resource_->transform_.rotate = Vector3{ 0.0f,0.0f,rotate }; } isDirty_ = true; }
+    void SetRotation(const float& rotate) { if (resource_) { resource_->transform_.rotate = Irufemi::Vector3{ 0.0f,0.0f,rotate }; } isDirty_ = true; }
 
     /**
      * @brief 色（RGBA）を設定
      */
-    void SetColor(const Vector4& color) { resource_->GetMaterialData()->color = color; isDirty_ = true; }
+    void SetColor(const Irufemi::Vector4& color) { resource_->GetMaterialData()->color = color; isDirty_ = true; }
 
     /**
      * @brief 反転状態を一括設定
@@ -199,8 +199,8 @@ private:
     bool isDirty_ = true;
     bool isTopMost_ = false; // 最前面UIフラグ
     float uiScale_ = 1.0f;   // UIスケール
-    Matrix4x4 lastViewMatrix_ = {};
-    Matrix4x4 lastProjectionMatrix_ = {};
+    Irufemi::Matrix4x4 lastViewMatrix_ = {};
+    Irufemi::Matrix4x4 lastProjectionMatrix_ = {};
 };
 
 

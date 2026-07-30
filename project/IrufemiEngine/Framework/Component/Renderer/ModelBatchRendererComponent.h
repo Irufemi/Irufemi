@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Component.h"
 #include <memory>
 #include <string>
@@ -35,8 +35,8 @@ public:
     IRenderable* GetRenderable() override;
     
     // エディタのRaycast用
-    Sphere GetWorldSphere() const;
-    bool Raycast(const Ray& ray, float& outDistance) const override;
+    Irufemi::Sphere GetWorldSphere() const;
+    bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
 
     std::string GetComponentName() const override { return "ModelBatchRendererComponent"; }
     nlohmann::json Serialize() override;
@@ -52,13 +52,13 @@ public:
      * @brief バッチ描画するインスタンスを追加します。
      * @param t インスタンスのローカルトランスフォーム（またはワールド）
      */
-    void AddInstance(const Transform& t, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Irufemi::Transform& t, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
 
     /**
      * @brief ワールド行列を直接指定してインスタンスを追加します。
      * @param world ワールド行列
      */
-    void AddInstanceWorld(const Matrix4x4& world, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstanceWorld(const Irufemi::Matrix4x4& world, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
 
     /**
      * @brief 登録されたインスタンスをすべてクリアします。毎フレーム呼ぶ必要があります。

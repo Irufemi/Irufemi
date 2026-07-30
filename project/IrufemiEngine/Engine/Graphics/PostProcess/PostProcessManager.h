@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Core/Math/Vector2.h"
 #include "../../Core/Math/Vector4.h"
@@ -111,8 +111,8 @@ public:
      * @brief 個別オブジェクトに適用する詳細エフェクト用パラメータ（汎用構造体）
      */
     struct CustomEffectParams {
-        Vector4 color1 = { 1.0f, 1.0f, 1.0f, 1.0f }; // Edge Color, Slide Color, etc.
-        Vector4 color2 = { 0.0f, 0.0f, 0.0f, 1.0f }; // Background Color
+        Irufemi::Vector4 color1 = { 1.0f, 1.0f, 1.0f, 1.0f }; // Edge Color, Slide Color, etc.
+        Irufemi::Vector4 color2 = { 0.0f, 0.0f, 0.0f, 1.0f }; // Background Color
         float param1 = 0.0f; // Threshold, Intensity, etc.
         float param2 = 0.0f; // Edge Range, Radius, etc.
         float param3 = 0.0f; // Noise Type, Softness, etc.
@@ -145,7 +145,7 @@ public:
      * @brief ビネットエフェクト用パラメータ
      */
     struct VignetteParams {
-        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< ビネットの色 (RGB)
+        Irufemi::Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< ビネットの色 (RGB)
         float radius = 0.8f;    ///< 減衰の開始半径 (0.0~1.5)
         float softness = 0.5f;  ///< 減衰の柔らかさ (0.0~1.0)
         float pad[2];           // 16バイトアライメント用パディング
@@ -156,7 +156,7 @@ public:
      * @brief 平滑化エフェクト用パラメータ
      */
     struct SmoothingParams {
-        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
+        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
         int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
         float pad;
     };
@@ -166,7 +166,7 @@ public:
      * @brief ガウスぼかし用パラメータ
      */
     struct GaussianParams {
-        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
+        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
         float sigma = 2.0f;     ///< 標準偏差（ぼけ具合）
         int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
     };
@@ -176,7 +176,7 @@ public:
      * @brief 放射状ぼかし用パラメータ
      */
     struct RadialBlurParams {
-        Vector2 center = { 0.5f, 0.5f }; ///< ぼかしの中心点 (UV空間 0.0 ~ 1.0)
+        Irufemi::Vector2 center = { 0.5f, 0.5f }; ///< ぼかしの中心点 (UV空間 0.0 ~ 1.0)
         float blurWidth = 0.01f;         ///< ぼかしの幅
         int32_t numSamples = 10;         ///< サンプル数
     };
@@ -188,7 +188,7 @@ public:
     struct OutlineParams {
         float intensity = 6.0f;         ///< アウトラインの強度
         float pad[3];
-        Matrix4x4 projectionInverse;    ///< 逆投影行列 (自動でセットされる)
+        Irufemi::Matrix4x4 projectionInverse;    ///< 逆投影行列 (自動でセットされる)
     };
 
     /**
@@ -198,7 +198,7 @@ public:
     struct LuminanceOutlineParams {
         float threshold = 0.5f;                         ///< 輪郭抽出のしきい値
         float pad[3];                                   // 16バイトアライメント
-        Vector4 outlineColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< アウトラインの色
+        Irufemi::Vector4 outlineColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< アウトラインの色
     };
 
     /**
@@ -225,8 +225,8 @@ public:
      * @brief ディゾルブエフェクト用パラメータ
      */
     struct DissolveParams {
-        Vector4 edgeColor = { 1.0f, 0.4f, 0.3f, 1.0f }; ///< 境界線の色
-        Vector4 backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< 背景色 (追加)
+        Irufemi::Vector4 edgeColor = { 1.0f, 0.4f, 0.3f, 1.0f }; ///< 境界線の色
+        Irufemi::Vector4 backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< 背景色 (追加)
         float threshold = 0.0f;                         ///< 消失しきい値 (0.0 ~ 1.0)
         float edgeRange = 0.03f;                        ///< 境界線の幅
         int32_t noiseType = 0;                          ///< 使用するノイズテクスチャのインデックス (0 or 1)
@@ -255,7 +255,7 @@ public:
      * @brief フェードエフェクト用パラメータ
      */
     struct FadeParams {
-        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< フェード色
+        Irufemi::Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< フェード色
         float intensity = 0.0f;                      ///< 強度 (0.0 ~ 1.0)
     };
 
@@ -264,7 +264,7 @@ public:
      * @brief スライドエフェクト用パラメータ
      */
     struct SlideParams {
-        Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< スライドの色
+        Irufemi::Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< スライドの色
         float threshold = 0.0f;                      ///< 進行度 (0.0 ~ 1.0)
     };
 
@@ -273,7 +273,7 @@ public:
      * @brief ブルームエフェクト用パラメータ
      */
     struct BloomParams {
-        Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
+        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
         float threshold = 0.8f;             ///< 高輝度抽出のしきい値
         float sigma = 3.0f;                 ///< ぼかしの強さ
         float intensity = 1.0f;             ///< ブルームの強度
@@ -352,10 +352,10 @@ public:
      * @brief 方向ブラーエフェクト用パラメータ
      */
     struct DirectionalBlurParams {
-        Vector2 direction = { 1.0f, 0.0f }; ///< ブラーの方向
+        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ブラーの方向
         float strength = 0.05f;             ///< ブラーの強さ
         int samples = 10;                   ///< サンプル数
-        // 16バイト境界は { Vector2(8), float(4), int(4) } = 16バイト なのでpad不要
+        // 16バイト境界は { Irufemi::Vector2(8), float(4), int(4) } = 16バイト なのでpad不要
     };
 
     /**
@@ -385,7 +385,7 @@ public:
      * @brief ゴッドレイ（光の筋）エフェクト用パラメータ
      */
     struct LightShaftsParams {
-        Vector2 lightScreenPos = { 0.5f, 0.5f }; ///< 光源のスクリーン座標 (0.0~1.0)
+        Irufemi::Vector2 lightScreenPos = { 0.5f, 0.5f }; ///< 光源のスクリーン座標 (0.0~1.0)
         float density = 1.0f;                    ///< サンプリング密度
         float decay = 0.95f;                     ///< 減衰率
         float weight = 0.5f;                     ///< 重み
@@ -404,7 +404,7 @@ public:
         int32_t effects[16];
 
         // Vignette
-        Vector4 vignetteColor;
+        Irufemi::Vector4 vignetteColor;
         float vignetteRadius;
         float vignetteSoftness;
         float pad1[2];
@@ -415,8 +415,8 @@ public:
         float pad_noise[2]; // HLSLの float4(dissolveEdgeColor) 用に16バイト境界までパディング
 
         // Dissolve
-        Vector4 dissolveEdgeColor;
-        Vector4 dissolveBackgroundColor;
+        Irufemi::Vector4 dissolveEdgeColor;
+        Irufemi::Vector4 dissolveBackgroundColor;
         float dissolveThreshold;
         float dissolveEdgeRange;
 
@@ -430,22 +430,22 @@ public:
         float pad2[2]; // HLSLの float4(fadeColor) 用に16バイト境界までパディング
 
         // Fade
-        Vector4 fadeColor;
+        Irufemi::Vector4 fadeColor;
         float fadeIntensity;
         float pad3[3]; // HLSLの float4(slideColor) 用に16バイト境界までパディング
 
         // Slide
-        Vector4 slideColor;
+        Irufemi::Vector4 slideColor;
         float slideThreshold;
         float pad4[3]; // HLSLの float4x4(projectionInverse) 用に16バイト境界までパディング
 
         // Outline
-        Matrix4x4 projectionInverse;
+        Irufemi::Matrix4x4 projectionInverse;
         float outlineIntensity;
         float pad_outline[3]; // HLSLの float2(radialBlurCenter) 用に16バイト境界までパディング
 
         // RadialBlur
-        Vector2 radialBlurCenter;
+        Irufemi::Vector2 radialBlurCenter;
         float radialBlurWidth;
         int32_t radialBlurSamples;
 
@@ -455,7 +455,7 @@ public:
         float pad_glitch[2]; // パディング
 
         // LuminanceBasedOutline
-        Vector4 luminanceOutlineColor;
+        Irufemi::Vector4 luminanceOutlineColor;
         float luminanceOutlineThreshold;
         float pad_lumOutline[3];
 
@@ -492,7 +492,7 @@ public:
         float pad_displacementMap;
 
         // DirectionalBlur
-        Vector2 directionalBlurDirection;
+        Irufemi::Vector2 directionalBlurDirection;
         float directionalBlurStrength;
         int directionalBlurSamples;
 

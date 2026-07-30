@@ -1,4 +1,4 @@
-#include "SkeletonDebugRendererComponent.h"
+﻿#include "SkeletonDebugRendererComponent.h"
 #include "SkinnedMeshRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
@@ -18,7 +18,7 @@ SkeletonDebugRendererComponent::SkeletonDebugRendererComponent() {
 SkeletonDebugRendererComponent::~SkeletonDebugRendererComponent() {}
 
 void SkeletonDebugRendererComponent::Initialize() {
-    boneMeshes_->Initialize(PrimitiveType::Octahedron, "resources/whiteTexture.png");
+    boneMeshes_->Initialize(Irufemi::PrimitiveType::Octahedron, "resources/whiteTexture.png");
     boneMeshes_->SetDepthWrite(PSOManager::DepthWrite::Off);
 
     debugAxesLines_->Initialize();
@@ -43,24 +43,24 @@ void SkeletonDebugRendererComponent::Update() {
 
     if (!skeletonData || !currentPose || currentPose->jointPoses.empty()) return;
 
-    Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform->GetWorldScale(), transform->GetWorldRotation(), transform->GetWorldPosition());
+    Irufemi::Matrix4x4 worldMatrix = Irufemi::Math::MakeAffineMatrix(transform->GetWorldScale(), transform->GetWorldRotation(), transform->GetWorldPosition());
 
     for (size_t i = 0; i < currentPose->jointPoses.size(); ++i) {
-        const Matrix4x4& jointMat = currentPose->jointPoses[i].skeletonSpaceMatrix;
-        Matrix4x4 jointWorldMat = jointMat * worldMatrix;
-        Vector3 jointPosition = { jointWorldMat.m[3][0], jointWorldMat.m[3][1], jointWorldMat.m[3][2] };
+        const Irufemi::Matrix4x4& jointMat = currentPose->jointPoses[i].skeletonSpaceMatrix;
+        Irufemi::Matrix4x4 jointWorldMat = jointMat * worldMatrix;
+        Irufemi::Vector3 jointPosition = { jointWorldMat.m[3][0], jointWorldMat.m[3][1], jointWorldMat.m[3][2] };
 
         float currentBoneLength = 0.05f; // Fallback for root or bones without parents
-        Vector3 parentPosition = jointPosition;
+        Irufemi::Vector3 parentPosition = jointPosition;
         int depth = 0;
 
         if (currentPose->data->joints[i].parent) {
             const int32_t parentIndex = *currentPose->data->joints[i].parent;
-            const Matrix4x4& parentMat = currentPose->jointPoses[parentIndex].skeletonSpaceMatrix;
-            Matrix4x4 parentWorldMat = parentMat * worldMatrix;
+            const Irufemi::Matrix4x4& parentMat = currentPose->jointPoses[parentIndex].skeletonSpaceMatrix;
+            Irufemi::Matrix4x4 parentWorldMat = parentMat * worldMatrix;
             parentPosition = { parentWorldMat.m[3][0], parentWorldMat.m[3][1], parentWorldMat.m[3][2] };
             
-            Vector3 dir = { jointPosition.x - parentPosition.x, jointPosition.y - parentPosition.y, jointPosition.z - parentPosition.z };
+            Irufemi::Vector3 dir = { jointPosition.x - parentPosition.x, jointPosition.y - parentPosition.y, jointPosition.z - parentPosition.z };
             currentBoneLength = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
 
             int32_t curr = parentIndex;
@@ -72,25 +72,25 @@ void SkeletonDebugRendererComponent::Update() {
 
         // ボーン接続の描画（八面体）
         if (showBones_ && currentPose->data->joints[i].parent && currentBoneLength > 0.0f) {
-            Vector3 dir = { jointPosition.x - parentPosition.x, jointPosition.y - parentPosition.y, jointPosition.z - parentPosition.z };
-            Vector3 yAxis = { dir.x / currentBoneLength, dir.y / currentBoneLength, dir.z / currentBoneLength };
-            Vector3 xAxis;
+            Irufemi::Vector3 dir = { jointPosition.x - parentPosition.x, jointPosition.y - parentPosition.y, jointPosition.z - parentPosition.z };
+            Irufemi::Vector3 yAxis = { dir.x / currentBoneLength, dir.y / currentBoneLength, dir.z / currentBoneLength };
+            Irufemi::Vector3 xAxis;
             if (std::abs(yAxis.y) > 0.999f) {
                 xAxis = {1.0f, 0.0f, 0.0f};
             } else {
-                Vector3 up = {0.0f, 1.0f, 0.0f};
+                Irufemi::Vector3 up = {0.0f, 1.0f, 0.0f};
                 xAxis = {up.y * yAxis.z - up.z * yAxis.y, up.z * yAxis.x - up.x * yAxis.z, up.x * yAxis.y - up.y * yAxis.x};
                 float xl = std::sqrt(xAxis.x * xAxis.x + xAxis.y * xAxis.y + xAxis.z * xAxis.z);
                 xAxis.x /= xl; xAxis.y /= xl; xAxis.z /= xl;
             }
-            Vector3 zAxis = {xAxis.y * yAxis.z - xAxis.z * yAxis.y, xAxis.z * yAxis.x - xAxis.x * yAxis.z, xAxis.x * yAxis.y - xAxis.y * yAxis.x};
+            Irufemi::Vector3 zAxis = {xAxis.y * yAxis.z - xAxis.z * yAxis.y, xAxis.z * yAxis.x - xAxis.x * yAxis.z, xAxis.x * yAxis.y - xAxis.y * yAxis.x};
 
             float thickness = currentBoneLength * 0.1f;
             xAxis.x *= thickness; xAxis.y *= thickness; xAxis.z *= thickness;
             yAxis.x *= currentBoneLength;    yAxis.y *= currentBoneLength;    yAxis.z *= currentBoneLength;
             zAxis.x *= thickness; zAxis.y *= thickness; zAxis.z *= thickness;
 
-            Matrix4x4 boneWorld = {
+            Irufemi::Matrix4x4 boneWorld = {
                 xAxis.x, xAxis.y, xAxis.z, 0.0f,
                 yAxis.x, yAxis.y, yAxis.z, 0.0f,
                 zAxis.x, zAxis.y, zAxis.z, 0.0f,
@@ -100,7 +100,7 @@ void SkeletonDebugRendererComponent::Update() {
             float hue = std::fmod(depth * 30.0f, 360.0f);
             float c = 1.0f;
             float x = c * (1.0f - std::abs(std::fmod(hue / 60.0f, 2.0f) - 1.0f));
-            Vector4 color = {0, 0, 0, 0.6f};
+            Irufemi::Vector4 color = {0, 0, 0, 0.6f};
             if (hue < 60)      { color.x = c; color.y = x; color.z = 0; }
             else if (hue < 120){ color.x = x; color.y = c; color.z = 0; }
             else if (hue < 180){ color.x = 0; color.y = c; color.z = x; }
@@ -112,11 +112,11 @@ void SkeletonDebugRendererComponent::Update() {
 
         // 全てのボーンのローカル座標系（XYZ軸）を描画
         if (showAxes_) {
-            Vector3 axisX = { jointWorldMat.m[0][0], jointWorldMat.m[0][1], jointWorldMat.m[0][2] };
-            Vector3 axisY = { jointWorldMat.m[1][0], jointWorldMat.m[1][1], jointWorldMat.m[1][2] };
-            Vector3 axisZ = { jointWorldMat.m[2][0], jointWorldMat.m[2][1], jointWorldMat.m[2][2] };
+            Irufemi::Vector3 axisX = { jointWorldMat.m[0][0], jointWorldMat.m[0][1], jointWorldMat.m[0][2] };
+            Irufemi::Vector3 axisY = { jointWorldMat.m[1][0], jointWorldMat.m[1][1], jointWorldMat.m[1][2] };
+            Irufemi::Vector3 axisZ = { jointWorldMat.m[2][0], jointWorldMat.m[2][1], jointWorldMat.m[2][2] };
             
-            auto Normalize = [](Vector3& v) {
+            auto Normalize = [](Irufemi::Vector3& v) {
                 float l = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
                 if (l > 0.0f) { v.x /= l; v.y /= l; v.z /= l; }
             };

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../../System/Core/IRenderable.h"
 #include <d3d12.h>
@@ -36,8 +36,8 @@ public:
     void Update();
 
     // インスタンスの追加
-    void AddInstance(const Transform& transform, const Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f});
-    void AddInstance(const Vector2& position, const Vector2& size, float rotation = 0.0f, const Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f}, const Vector2& anchor = {0.5f, 0.5f});
+    void AddInstance(const Irufemi::Transform& transform, const Irufemi::Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f});
+    void AddInstance(const Irufemi::Vector2& position, const Irufemi::Vector2& size, float rotation = 0.0f, const Irufemi::Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f}, const Irufemi::Vector2& anchor = {0.5f, 0.5f});
     
     void ClearInstances();
 
@@ -62,15 +62,15 @@ public:
 
 private:
     struct SpriteInstance {
-        Transform transform;
-        Vector4 color;
-        Vector2 anchor; 
-        Vector2 size;   
+        Irufemi::Transform transform;
+        Irufemi::Vector4 color;
+        Irufemi::Vector2 anchor; 
+        Irufemi::Vector2 size;   
     };
 
     struct InstanceData {
-        Matrix4x4 WVP;
-        Vector4 color;
+        Irufemi::Matrix4x4 WVP;
+        Irufemi::Vector4 color;
     };
 
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
@@ -84,7 +84,7 @@ private:
     uint32_t visibleInstanceCount_ = 0;
     bool instanceDirty_ = false;
     bool isTopMost_ = false;
-    Vector2 textureSize_{0.0f, 0.0f};
+    Irufemi::Vector2 textureSize_{0.0f, 0.0f};
     
     ID3D12PipelineState* customPSO_ = nullptr;
     D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;

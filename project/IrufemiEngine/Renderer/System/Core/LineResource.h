@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Core/BaseResource.h"
 #include <vector>
 #include <wrl.h>
@@ -38,7 +38,7 @@ public:
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
-    Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+    Irufemi::Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 

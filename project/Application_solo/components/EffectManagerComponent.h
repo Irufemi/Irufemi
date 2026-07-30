@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include <string>
@@ -29,7 +29,7 @@ public:
      * @param effectKey "Hit" などのエフェクトの種類を示すキー
      * @param worldPosition 再生する座標
      */
-    void PlayEffect(const std::string& effectKey, const Vector3& worldPosition);
+    void PlayEffect(const std::string& effectKey, const Irufemi::Vector3& worldPosition);
 
     /**
      * @brief シングルトン的なアクセスを提供する（シーン内に1つだけ存在する想定）

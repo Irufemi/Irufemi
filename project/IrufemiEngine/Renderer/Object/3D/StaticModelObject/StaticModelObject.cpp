@@ -1,4 +1,4 @@
-#include "StaticModelObject.h" // リネーム済み
+﻿#include "StaticModelObject.h" // リネーム済み
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include <filesystem>
 #include <algorithm>
@@ -19,8 +19,8 @@
 
 StaticModelObject::~StaticModelObject() {}
 
-void StaticModelObject::CalculateNodeTransforms(const Node& node, const Matrix4x4& parentMatrix) {
-    Matrix4x4 globalMatrix = node.localMatrix * parentMatrix;
+void StaticModelObject::CalculateNodeTransforms(const Node& node, const Irufemi::Matrix4x4& parentMatrix) {
+    Irufemi::Matrix4x4 globalMatrix = node.localMatrix * parentMatrix;
     nodeGlobalTransforms_[node.name] = globalMatrix;
     
     for (const auto& child : node.children) {
@@ -126,8 +126,8 @@ void StaticModelObject::Update() {
     if (!isResourceInitialized_) return;
 
     // オブジェクト全体のワールド行列を計算
-    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    Matrix4x4 objectWorld = transformationMatrix_.world;
+    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    Irufemi::Matrix4x4 objectWorld = transformationMatrix_.world;
 
     // rootNodeの行列を適用(モデルデータに階層情報があれば)
     if (m->cpuModel) {
@@ -140,13 +140,13 @@ void StaticModelObject::Update() {
         
         // 階層全体のトランスフォームを計算
         nodeGlobalTransforms_.clear();
-        CalculateNodeTransforms(m->cpuModel->rootNode, Math::MakeIdentity4x4());
+        CalculateNodeTransforms(m->cpuModel->rootNode, Irufemi::Math::MakeIdentity4x4());
     }
 
     // 各メッシュごとにノード階層を考慮したワールド行列を割り当てる
     for (size_t i = 0; i < meshResources_.size(); ++i) {
         auto& res = meshResources_[i];
-        Matrix4x4 meshWorld = objectWorld; // 基準はRootを含まないもの
+        Irufemi::Matrix4x4 meshWorld = objectWorld; // 基準はRootを含まないもの
 
         if (m->cpuModel && m->cpuModel->skinClusterData.empty()) {
             // 非スキニング時のみ、ノード階層を考慮する
@@ -162,10 +162,10 @@ void StaticModelObject::Update() {
 
         res->transformationMatrix_.world = meshWorld;
 
-        Matrix4x4 worldForNormal = meshWorld;
+        Irufemi::Matrix4x4 worldForNormal = meshWorld;
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-        res->transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        res->transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
 
         res->MarkAsDirty();
     }
@@ -220,8 +220,8 @@ void StaticModelObject::Draw() {
     if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
@@ -232,18 +232,18 @@ void StaticModelObject::Draw() {
 
     // 視錐台カリング
     if (isCullingEnabled_ && m->cpuModel) {
-        const Sphere& modelSphere = m->cpuModel->boundingSphere;
+        const Irufemi::Sphere& modelSphere = m->cpuModel->boundingSphere;
 
         // ワールド空間の境界球を計算
-        Sphere worldSphere;
-        worldSphere.center = Math::Transform(modelSphere.center, transformationMatrix_.world);
+        Irufemi::Sphere worldSphere;
+        worldSphere.center = Irufemi::Math::Transform(modelSphere.center, transformationMatrix_.world);
 
         // スケールの最大値を適用して半径を変換
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
         worldSphere.radius = modelSphere.radius * maxScale * 1.1f; // 10% マージン
 
         // 判定
-        if (!Collision::IsCollision(activeCam->GetFrustum(), worldSphere)) {
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), worldSphere)) {
             return; // 描画スキップ
         }
     }
@@ -273,10 +273,10 @@ void StaticModelObject::DispatchCompute() {
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
-        Sphere boundingSphere;
+        Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
-        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 視錐台カリングされている場合はComputeもスキップ
         }
     }

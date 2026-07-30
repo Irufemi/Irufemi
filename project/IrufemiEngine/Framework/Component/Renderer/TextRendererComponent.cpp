@@ -1,4 +1,4 @@
-#include "TextRendererComponent.h"
+﻿#include "TextRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Engine/Core/Utility/StringUtility.h"
@@ -62,19 +62,19 @@ void TextRendererComponent::Draw() {
     textObj_->Draw();
 }
 
-bool TextRendererComponent::Raycast(const Ray& ray, float& outDistance) const {
+bool TextRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
     if (!gameObject_) return false;
     auto transform = gameObject_->GetComponent<TransformComponent>();
     if (!transform) return false;
     
     // 簡易的にBoundingSphereで判定
-    Sphere sphere;
+    Irufemi::Sphere sphere;
     sphere.center = transform->GetWorldPosition();
     float maxScale = (std::max)({transform->GetWorldScale().x, transform->GetWorldScale().y});
     // Textの横幅は文字数によるため、少し大きめの半径を確保（暫定）
     sphere.radius = maxScale * baseScale_ * (text_.length() * 0.5f); 
 
-    return Collision::IsCollision(ray, sphere, outDistance);
+    return Irufemi::Collision::IsCollision(ray, sphere, outDistance);
 }
 
 void TextRendererComponent::SetText(const std::wstring& text) {
@@ -99,7 +99,7 @@ void TextRendererComponent::SetBaseScale(float baseScale) {
     }
 }
 
-void TextRendererComponent::SetColor(const Vector4& color) {
+void TextRendererComponent::SetColor(const Irufemi::Vector4& color) {
     color_ = color;
     if (textObj_) {
         textObj_->SetColor(color_);

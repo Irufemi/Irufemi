@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <memory>
 #include <string>
@@ -70,7 +70,7 @@ public:
      * @brief 指定した座標にエフェクトを発生させる
      * @param position 発生させるワールド座標
      */
-    void Play(const Vector3& position);
+    void Play(const Irufemi::Vector3& position);
 
     /**
      * @brief 位置・回転・スケールを指定してエフェクトを発生させる（スイングなどの方向固定用）
@@ -78,7 +78,7 @@ public:
      * @param rotation 回転角
      * @param scale 追加スケール倍率
      */
-    void Play(const Vector3& position, const Vector3& rotation, const Vector3& scale = { 1.0f, 1.0f, 1.0f });
+    void Play(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation, const Irufemi::Vector3& scale = { 1.0f, 1.0f, 1.0f });
 
     /**
      * @brief エフェクトが再生中かどうかを取得する
@@ -87,25 +87,25 @@ public:
     bool IsActive() const { return isActive_; }
 
 struct HitEffectConfig {
-    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     float lifeMin = 1.0f;
     float lifeMax = 1.0f;
     float jitter = 0.0f;
-    Vector3 startScaleMin = { 0.05f, 0.4f, 1.0f };
-    Vector3 startScaleMax = { 0.05f, 1.5f, 1.0f };
-    Vector3 endScaleMin = { 0.05f, 0.0f, 1.0f };
-    Vector3 endScaleMax = { 0.05f, 0.0f, 1.0f };
+    Irufemi::Vector3 startScaleMin = { 0.05f, 0.4f, 1.0f };
+    Irufemi::Vector3 startScaleMax = { 0.05f, 1.5f, 1.0f };
+    Irufemi::Vector3 endScaleMin = { 0.05f, 0.0f, 1.0f };
+    Irufemi::Vector3 endScaleMax = { 0.05f, 0.0f, 1.0f };
     int emitCount = 8;
 };
 
 struct ImpactConfig {
-    PrimitiveType planeShape = PrimitiveType::Plane;
+    Irufemi::PrimitiveType planeShape = Irufemi::PrimitiveType::Plane;
     std::string planeTexture = "resources/circle2.png";
-    PrimitiveType ringShape = PrimitiveType::Ring;
+    Irufemi::PrimitiveType ringShape = Irufemi::PrimitiveType::Ring;
     std::string ringTexture = "resources/gradationLine.png";
 
-    Vector2 uvScale = { 5.0f, 1.0f }; // RingのU方向スケール
-    Vector2 uvScrollSpeed = { 1.0f, 0.0f }; // Ringのスクロール速度
+    Irufemi::Vector2 uvScale = { 5.0f, 1.0f }; // RingのU方向スケール
+    Irufemi::Vector2 uvScrollSpeed = { 1.0f, 0.0f }; // Ringのスクロール速度
     bool useClamp = true; // Ringの白丸回避用
     
     // Plane固有設定
@@ -117,23 +117,23 @@ struct ImpactConfig {
     int ringEmitCount = 1;
     
     float jitter = 0.0f; // 座標のゆらぎ（時間経過での移動を防ぐため0.0）
-    Vector3 planeStartScaleMin = { 0.05f, 0.4f, 1.0f };
-    Vector3 planeStartScaleMax = { 0.05f, 1.5f, 1.0f };
-    Vector3 ringStartScaleMin = { 0.8f, 0.8f, 1.0f };
-    Vector3 ringStartScaleMax = { 0.8f, 0.8f, 1.0f };
-    Vector3 planeEndScaleMin = { 0.05f, 0.0f, 1.0f };
-    Vector3 planeEndScaleMax = { 0.05f, 0.0f, 1.0f };
-    Vector3 ringEndScaleMin = { 0.0f, 0.0f, 0.0f };
-    Vector3 ringEndScaleMax = { 0.0f, 0.0f, 0.0f };
+    Irufemi::Vector3 planeStartScaleMin = { 0.05f, 0.4f, 1.0f };
+    Irufemi::Vector3 planeStartScaleMax = { 0.05f, 1.5f, 1.0f };
+    Irufemi::Vector3 ringStartScaleMin = { 0.8f, 0.8f, 1.0f };
+    Irufemi::Vector3 ringStartScaleMax = { 0.8f, 0.8f, 1.0f };
+    Irufemi::Vector3 planeEndScaleMin = { 0.05f, 0.0f, 1.0f };
+    Irufemi::Vector3 planeEndScaleMax = { 0.05f, 0.0f, 1.0f };
+    Irufemi::Vector3 ringEndScaleMin = { 0.0f, 0.0f, 0.0f };
+    Irufemi::Vector3 ringEndScaleMax = { 0.0f, 0.0f, 0.0f };
     float lifeMin = 2.0f;
     float lifeMax = 2.0f;
-    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
 struct AuraConfig {
-    Vector3 scale = { 1.0f, 1.0f, 1.0f };
-    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    Vector2 uvScrollSpeed = { -0.1f, 0.0f }; // 横にゆっくり流れるように変更
+    Irufemi::Vector3 scale = { 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector2 uvScrollSpeed = { -0.1f, 0.0f }; // 横にゆっくり流れるように変更
     bool flipV = true;
     bool useClamp = true; // 新規追加したサンプラー(U:Wrap, V:Clamp)が適用されるためtrueをデフォルトに
     std::string texture = "resources/gradationLine.png";
@@ -143,13 +143,13 @@ struct AuraConfig {
     AuraConfig& GetAuraConfig() { return auraConfig_; }
 
 struct SwingConfig {
-    PrimitiveType shape = PrimitiveType::Ring;                  //!< 使用するプリミティブ形状（デフォルト: Ring）
+    Irufemi::PrimitiveType shape = Irufemi::PrimitiveType::Ring;                  //!< 使用するプリミティブ形状（デフォルト: Ring）
     std::string texture = "resources/gradationLine.png";        //!< 使用するテクスチャパス
-    Vector4 color = { 1.0f, 0.65f, 0.1f, 1.0f };                //!< スイングエフェクトのデフォルトカラー
-    Vector3 startScale = { 1.0f, 1.0f, 1.0f };                  //!< 開始スケール（半径は呼び出し元で直接指定）
-    Vector3 endScale = { 1.0f, 1.0f, 1.0f };                    //!< 終了スケール
-    Vector2 uvScrollSpeed = { 0.0f, 0.0f };                     //!< 動的メッシュ生成で軌跡が伸びるためスクロールは不要
-    Vector2 uvScale = { 1.0f, 1.0f };                           //!< UVタイリングスケール
+    Irufemi::Vector4 color = { 1.0f, 0.65f, 0.1f, 1.0f };                //!< スイングエフェクトのデフォルトカラー
+    Irufemi::Vector3 startScale = { 1.0f, 1.0f, 1.0f };                  //!< 開始スケール（半径は呼び出し元で直接指定）
+    Irufemi::Vector3 endScale = { 1.0f, 1.0f, 1.0f };                    //!< 終了スケール
+    Irufemi::Vector2 uvScrollSpeed = { 0.0f, 0.0f };                     //!< 動的メッシュ生成で軌跡が伸びるためスクロールは不要
+    Irufemi::Vector2 uvScale = { 1.0f, 1.0f };                           //!< UVタイリングスケール
     float lifeTime = 0.33f;                                     //!< エフェクトの生存時間（約20フレーム = 0.33秒）
     bool useClamp = true;                                       //!< 白丸回避用クランプサンプラー使用フラグ
     
@@ -166,19 +166,19 @@ struct SwingConfig {
  * @brief 3D爆発エフェクトの設定データ
  */
 struct ExplosionConfig {
-    PrimitiveType coreShape = PrimitiveType::Sphere;             //!< 3D爆風コアの形状（SphereまたはIcoSphere）
+    Irufemi::PrimitiveType coreShape = Irufemi::PrimitiveType::Sphere;             //!< 3D爆風コアの形状（SphereまたはIcoSphere）
     std::string coreTexture = "resources/noise0.png";            //!< 爆風テクスチャ（既存のノイズを使用）
-    PrimitiveType waveShape = PrimitiveType::Ring;               //!< 衝撃波の形状
+    Irufemi::PrimitiveType waveShape = Irufemi::PrimitiveType::Ring;               //!< 衝撃波の形状
     std::string waveTexture = "resources/gradationLine.png";     //!< 衝撃波のテクスチャ
 
-    Vector4 color = { 1.0f, 0.4f, 0.05f, 1.0f };                 //!< 燃え上がる高輝度オレンジ
-    Vector3 coreStartScale = { 0.1f, 0.1f, 0.1f };               //!< 爆風の開始サイズ
-    Vector3 coreEndScale = { 2.5f, 2.5f, 2.5f };                 //!< 爆風の終了サイズ（小さく高密度に修正）
-    Vector3 waveStartScale = { 0.5f, 0.5f, 0.5f };               //!< 衝撃波の開始サイズ
-    Vector3 waveEndScale = { 7.0f, 7.0f, 7.0f };                 //!< 衝撃波の終了サイズ（スパークの飛散範囲に合わせて調整）
+    Irufemi::Vector4 color = { 1.0f, 0.4f, 0.05f, 1.0f };                 //!< 燃え上がる高輝度オレンジ
+    Irufemi::Vector3 coreStartScale = { 0.1f, 0.1f, 0.1f };               //!< 爆風の開始サイズ
+    Irufemi::Vector3 coreEndScale = { 2.5f, 2.5f, 2.5f };                 //!< 爆風の終了サイズ（小さく高密度に修正）
+    Irufemi::Vector3 waveStartScale = { 0.5f, 0.5f, 0.5f };               //!< 衝撃波の開始サイズ
+    Irufemi::Vector3 waveEndScale = { 7.0f, 7.0f, 7.0f };                 //!< 衝撃波の終了サイズ（スパークの飛散範囲に合わせて調整）
 
     float lifeTime = 0.4f;                                       //!< 爆発の生存時間（秒）
-    Vector2 uvScrollSpeed = { 0.5f, -0.3f };                     //!< コアのうねり用UVスクロール速度
+    Irufemi::Vector2 uvScrollSpeed = { 0.5f, -0.3f };                     //!< コアのうねり用UVスクロール速度
 };
 
 private:
@@ -198,23 +198,23 @@ private:
     AuraConfig auraConfig_;
     SwingConfig swingConfig_;                                   //!< スイング設定パラメータ
     ExplosionConfig explosionConfig_;                           //!< ★追加: 3D爆破設定
-    Vector2 currentUVOffset_ = { 0.0f, 0.0f };
+    Irufemi::Vector2 currentUVOffset_ = { 0.0f, 0.0f };
     PrimitiveResource customAuraResource_;                       //!< カスタム炎型オーラのリソース
 
     
     // スイング・爆破用生存・制御用変数
     bool isActive_ = false;                                     //!< アクティブ状態フラグ
     float lifeTimer_ = 0.0f;                                    //!< 残り寿命タイマー
-    Vector3 basePosition_ = { 0.0f, 0.0f, 0.0f };               //!< 発生位置キャッシュ
-    Vector3 baseRotation_ = { 0.0f, 0.0f, 0.0f };               //!< 発生回転キャッシュ
-    Vector3 baseScale_ = { 1.0f, 1.0f, 1.0f };                  //!< 発生スケールキャッシュ
+    Irufemi::Vector3 basePosition_ = { 0.0f, 0.0f, 0.0f };               //!< 発生位置キャッシュ
+    Irufemi::Vector3 baseRotation_ = { 0.0f, 0.0f, 0.0f };               //!< 発生回転キャッシュ
+    Irufemi::Vector3 baseScale_ = { 1.0f, 1.0f, 1.0f };                  //!< 発生スケールキャッシュ
 
     // 全エフェクト共通の設定
-    PrimitiveType currentShape_ = PrimitiveType::Plane;
+    Irufemi::PrimitiveType currentShape_ = Irufemi::PrimitiveType::Plane;
     std::string currentTextureName_ = "resources/circle2.png";
 
     // 描画設定
-    BlendMode blendMode_ = BlendMode::kBlendModeAdd;
+    Irufemi::BlendMode blendMode_ = Irufemi::BlendMode::kBlendModeAdd;
     PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Disable;
     PSOManager::CullMode cullMode_ = PSOManager::CullMode::None;
     bool isBillboard_ = true;

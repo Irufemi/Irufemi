@@ -1,4 +1,4 @@
-#include "BossBulletComponent.h"
+﻿#include "BossBulletComponent.h"
 #include "BossBulletManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
@@ -12,7 +12,7 @@ void BossBulletComponent::OnRegisterProperties() {
     // 登録が必要なプロパティがあれば記述
 }
 
-void BossBulletComponent::Shoot(BossBulletManagerComponent* manager, const Vector3& startPos, const Vector3& velocity, float lifeTime) {
+void BossBulletComponent::Shoot(BossBulletManagerComponent* manager, const Irufemi::Vector3& startPos, const Irufemi::Vector3& velocity, float lifeTime) {
     manager_ = manager;
     velocity_ = velocity;
     lifeTimer_ = lifeTime;
@@ -23,8 +23,8 @@ void BossBulletComponent::Shoot(BossBulletManagerComponent* manager, const Vecto
         transform->SetPosition(startPos);
         // velocityの方向を向かせる処理（必要であれば）
         if (velocity.LengthSquared() > 0.001f) {
-            Matrix4x4 rotMat = Math::DirectionToDirection(Vector3{0, 0, 1}, velocity.GetNormalized());
-            transform->SetRotation(Math::ExtractEulerFromMatrix(rotMat));
+            Irufemi::Matrix4x4 rotMat = Irufemi::Math::DirectionToDirection(Irufemi::Vector3{0, 0, 1}, velocity.GetNormalized());
+            transform->SetRotation(Irufemi::Math::ExtractEulerFromMatrix(rotMat));
         }
     }
 }
@@ -37,7 +37,7 @@ void BossBulletComponent::Update() {
     // 移動処理
     auto transform = GetGameObject()->GetComponent<TransformComponent>();
     if (transform) {
-        Vector3 pos = transform->GetWorldPosition();
+        Irufemi::Vector3 pos = transform->GetWorldPosition();
         pos += velocity_ * deltaTime;
         transform->SetPosition(pos);
     }

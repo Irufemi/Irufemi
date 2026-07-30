@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Utility/ObjectPool.h"
 #include "Engine/Core/Math/Vector3.h"
@@ -18,9 +18,9 @@ class ModelBatchRendererComponent;
  */
 struct VirtualInstance {
     int id_;
-    Vector3 position_ = {0.0f, 0.0f, 0.0f};
-    Vector3 rotation_ = {0.0f, 0.0f, 0.0f};
-    Vector3 scale_ = {1.0f, 1.0f, 1.0f};
+    Irufemi::Vector3 position_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 rotation_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 scale_ = {1.0f, 1.0f, 1.0f};
     bool isPromoted_ = false;
     bool isDestroyed_;
     ObjectPool<GameObject>::Handle promotedHandle_;
@@ -52,7 +52,7 @@ public:
      * @brief 仮想インスタンスを追加する
      * @return 割り当てられたID
      */
-    int AddVirtualInstance(const Vector3& pos, const Vector3& rot = {0, 0, 0}, const Vector3& scale = {1, 1, 1});
+    int AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot = {0, 0, 0}, const Irufemi::Vector3& scale = {1, 1, 1});
 
     /**
      * @brief 仮想インスタンスを論理削除する

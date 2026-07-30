@@ -1,4 +1,4 @@
-#include "AABBColliderComponent.h"
+﻿#include "AABBColliderComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
@@ -29,16 +29,16 @@ void AABBColliderComponent::DrawDebug() {
 
 
 
-AABB AABBColliderComponent::GetWorldAABB() const {
-    AABB aabb;
+Irufemi::AABB AABBColliderComponent::GetWorldAABB() const {
+    Irufemi::AABB aabb;
     if (transform_) {
-        Vector3 worldPos = transform_->GetWorldPosition();
-        Vector3 worldScale = transform_->GetWorldScale();
+        Irufemi::Vector3 worldPos = transform_->GetWorldPosition();
+        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
         
-        Vector3 center = { worldPos.x + localOffset_.x * worldScale.x, 
+        Irufemi::Vector3 center = { worldPos.x + localOffset_.x * worldScale.x, 
                            worldPos.y + localOffset_.y * worldScale.y, 
                            worldPos.z + localOffset_.z * worldScale.z };
-        Vector3 scaledSize = { localSize_.x * worldScale.x, 
+        Irufemi::Vector3 scaledSize = { localSize_.x * worldScale.x, 
                                localSize_.y * worldScale.y, 
                                localSize_.z * worldScale.z };
         

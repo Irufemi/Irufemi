@@ -1,4 +1,4 @@
-#include "GravityPlayerComponent.h"
+﻿#include "GravityPlayerComponent.h"
 #include "PlayerTargetingComponent.h"
 #include "DebrisComponent.h"
 #include "DebrisManagerComponent.h"
@@ -128,7 +128,7 @@ void GravityPlayerComponent::HandlePullInput() {
             
             debrisComp->SetState(DebrisState::Pulled);
             debrisComp->SetTarget(gameObject_->shared_from_this());
-            debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, orbitAngleRandomMax_), Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
+            debrisComp->SetOrbitParams(Irufemi::Random::GeneratorFloat(0.0f, orbitAngleRandomMax_), Irufemi::Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
             orbitingDebris_.push_back(targetToSteal);
             
             // キューにあったものを奪った場合は、手動ロックを解除する
@@ -145,7 +145,7 @@ void GravityPlayerComponent::HandlePullInput() {
             if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
                 debrisComp->SetState(DebrisState::Pulled);
                 debrisComp->SetTarget(gameObject_->shared_from_this());
-                debrisComp->SetOrbitParams(Random::GeneratorFloat(0.0f, orbitAngleRandomMax_), Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
+                debrisComp->SetOrbitParams(Irufemi::Random::GeneratorFloat(0.0f, orbitAngleRandomMax_), Irufemi::Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
                 orbitingDebris_.push_back(debrisObj);
             }
         }
@@ -223,12 +223,12 @@ void GravityPlayerComponent::UpdateThrowing() {
                     comp->SetTarget(throwTarget);
                 } else {
                     comp->SetTarget(std::weak_ptr<GameObject>());
-                    Vector3 debrisPos = debris->GetComponent<TransformComponent>()->GetWorldPosition();
+                    Irufemi::Vector3 debrisPos = debris->GetComponent<TransformComponent>()->GetWorldPosition();
 
                     if (throwTarget) {
                         // ターゲットはいたが死んでいた場合、その死んだ座標へ直進させる
-                        Vector3 deadPos = throwTarget->GetComponent<TransformComponent>()->GetWorldPosition();
-                        Vector3 throwDir = Math::Normalize(Math::Subtract(deadPos, debrisPos));
+                        Irufemi::Vector3 deadPos = throwTarget->GetComponent<TransformComponent>()->GetWorldPosition();
+                        Irufemi::Vector3 throwDir = Irufemi::Math::Normalize(Irufemi::Math::Subtract(deadPos, debrisPos));
                         comp->SetThrowDirection(throwDir);
                     } else {
                         // 完全なノーロック時の場合、マウスカーソルの奥へレイキャスト
@@ -238,20 +238,20 @@ void GravityPlayerComponent::UpdateThrowing() {
                             auto camera = cameraManager->GetActiveCamera();
                             float width = camera->GetViewportWidth();
                             float height = camera->GetViewportHeight();
-                            Vector2 mousePos = inputManager->GetMousePosition();
+                            Irufemi::Vector2 mousePos = inputManager->GetMousePosition();
                             
-                            Matrix4x4 viewProjInv = Math::Inverse(camera->GetViewProjectionMatrix3D());
-                            Ray ray = Math::ScreenPointToRay(mousePos, width, height, viewProjInv);
+                            Irufemi::Matrix4x4 viewProjInv = Irufemi::Math::Inverse(camera->GetViewProjectionMatrix3D());
+                            Irufemi::Ray ray = Irufemi::Math::ScreenPointToRay(mousePos, width, height, viewProjInv);
                             
                             RaycastHit hitInfo;
-                            Vector3 targetPoint;
+                            Irufemi::Vector3 targetPoint;
                             if (engine->GetCollisionManager()->Raycast(ray, hitInfo, noLockThrowDistance_)) {
                                 targetPoint = hitInfo.hitPoint;
                             } else {
-                                targetPoint = Math::Add(ray.origin, Math::Multiply(noLockThrowDistance_, ray.diff));
+                                targetPoint = Irufemi::Math::Add(ray.origin, Irufemi::Math::Multiply(noLockThrowDistance_, ray.diff));
                             }
                             
-                            Vector3 throwDir = Math::Normalize(Math::Subtract(targetPoint, debrisPos));
+                            Irufemi::Vector3 throwDir = Irufemi::Math::Normalize(Irufemi::Math::Subtract(targetPoint, debrisPos));
                             comp->SetThrowDirection(throwDir);
                         }
                     }

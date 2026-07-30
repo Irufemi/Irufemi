@@ -1,10 +1,12 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Shape/Plane.h"
 #include "../Matrix4x4.h"
 #include <array>
 #include <cmath>
 
+
+namespace Irufemi {
 /**
  * @struct Frustum
  * @brief 視錐台を構成する6組の平面を保持する構造体
@@ -78,3 +80,5 @@ struct Frustum {
         }
     }
 };
+
+} // namespace Irufemi

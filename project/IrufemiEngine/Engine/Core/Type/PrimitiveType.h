@@ -1,5 +1,7 @@
-#pragma once
+﻿#pragma once
 
+
+namespace Irufemi {
 enum class PrimitiveType {
     Triangle,
     Plane,
@@ -16,3 +18,4 @@ enum class PrimitiveType {
     Grid,
     Octahedron
 };
+} // namespace Irufemi

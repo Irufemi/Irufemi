@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 
@@ -25,7 +25,7 @@ public:
      * @param velocity 進行方向と速度
      * @param lifeTime 生存時間
      */
-    void Shoot(BossBulletManagerComponent* manager, const Vector3& startPos, const Vector3& velocity, float lifeTime = 5.0f);
+    void Shoot(BossBulletManagerComponent* manager, const Irufemi::Vector3& startPos, const Irufemi::Vector3& velocity, float lifeTime = 5.0f);
 
     /**
      * @brief プレイヤーの投げたガレキなどに命中し、相殺された時の処理
@@ -34,7 +34,7 @@ public:
 
 private:
     BossBulletManagerComponent* manager_ = nullptr;
-    Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
     float lifeTimer_ = 0.0f;
     bool isActiveBullet_ = false;
 };

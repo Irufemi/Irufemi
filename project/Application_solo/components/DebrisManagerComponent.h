@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include <memory>
@@ -45,7 +45,7 @@ public:
     void MarkForRelease(std::shared_ptr<GameObject> debris);
 
     // プレイヤーからの引き寄せ処理用：指定座標から一番近い未昇格のがれきを実体化して返す
-    std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Vector3& pos, float radius);
+    std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Irufemi::Vector3& pos, float radius);
 
     // 破壊通知
     void NotifyDestroyed(int virtualId);
@@ -60,15 +60,15 @@ public:
     float GetDebrisPullYOffset() const { return debrisPullYOffset_; }
     float GetCameraShakeIntensity() const { return cameraShakeIntensity_; }
     int GetCameraShakeDurationFrames() const { return cameraShakeDurationFrames_; }
-    Vector4 GetPlayerAuraColor() const { return playerAuraColor_; }
-    Vector4 GetBossAuraColor() const { return bossAuraColor_; }
-    Vector4 GetIdleAuraColor() const { return idleAuraColor_; }
+    Irufemi::Vector4 GetPlayerAuraColor() const { return playerAuraColor_; }
+    Irufemi::Vector4 GetBossAuraColor() const { return bossAuraColor_; }
+    Irufemi::Vector4 GetIdleAuraColor() const { return idleAuraColor_; }
     float GetCatchDistanceSq() const { return catchDistanceSq_; }
     float GetBossShieldRadius() const { return bossShieldRadius_; }
 
-    Vector3 GetDebrisBaseScale() const { return debrisBaseScale_; }
+    Irufemi::Vector3 GetDebrisBaseScale() const { return debrisBaseScale_; }
     float GetColliderRadius() const { return colliderRadius_; }
-    Vector3 GetAuraScale() const { return auraScale_; }
+    Irufemi::Vector3 GetAuraScale() const { return auraScale_; }
     float GetMaxThrowDistanceSq() const { return maxThrowDistance_ * maxThrowDistance_; }
 
 private:
@@ -94,15 +94,15 @@ private:
     float debrisPullYOffset_ = 2.0f;
     float cameraShakeIntensity_ = 0.5f;
     int cameraShakeDurationFrames_ = 10;
-    Vector4 playerAuraColor_ = { 0.0f, 0.8f, 1.0f, 0.4f };
-    Vector4 bossAuraColor_ = { 0.8f, 0.0f, 0.6f, 0.4f };
-    Vector4 idleAuraColor_ = { 0.6f, 0.2f, 1.0f, 0.4f };
+    Irufemi::Vector4 playerAuraColor_ = { 0.0f, 0.8f, 1.0f, 0.4f };
+    Irufemi::Vector4 bossAuraColor_ = { 0.8f, 0.0f, 0.6f, 0.4f };
+    Irufemi::Vector4 idleAuraColor_ = { 0.6f, 0.2f, 1.0f, 0.4f };
     float catchDistanceSq_ = 2.0f;
     float bossShieldRadius_ = 8.0f;
 
-    Vector3 debrisBaseScale_ = { 0.5f, 0.5f, 0.5f };
+    Irufemi::Vector3 debrisBaseScale_ = { 0.5f, 0.5f, 0.5f };
     float colliderRadius_ = 0.5f;
-    Vector3 auraScale_ = { 2.2f, 2.2f, 2.2f };
+    Irufemi::Vector3 auraScale_ = { 2.2f, 2.2f, 2.2f };
     float maxThrowDistance_ = 1500.0f;
 
     std::vector<std::shared_ptr<GameObject>> pendingReleases_;

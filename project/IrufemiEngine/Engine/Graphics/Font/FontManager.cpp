@@ -1,4 +1,4 @@
-#include "FontManager.h"
+﻿#include "FontManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/System/ThreadPool.h"
@@ -247,8 +247,8 @@ void FontManager::PrecacheText(const std::string& fontId, const std::wstring& te
                         // GlyphInfo作成
                         GlyphInfo info{};
                         info.character = char32;
-                        info.uvTopLeft = Vector2(static_cast<float>(rect.x) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y) / Impl::ATLAS_HEIGHT);
-                        info.uvBottomRight = Vector2(static_cast<float>(rect.x + rect.w) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y + rect.h) / Impl::ATLAS_HEIGHT);
+                        info.uvTopLeft = Irufemi::Vector2(static_cast<float>(rect.x) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y) / Impl::ATLAS_HEIGHT);
+                        info.uvBottomRight = Irufemi::Vector2(static_cast<float>(rect.x + rect.w) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y + rect.h) / Impl::ATLAS_HEIGHT);
                         info.width = static_cast<float>(rect.w);
                         info.height = static_cast<float>(rect.h);
                         info.offsetX = static_cast<float>(bounds.l * scale) - Impl::PADDING;

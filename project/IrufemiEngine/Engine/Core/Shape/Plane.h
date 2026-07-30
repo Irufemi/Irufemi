@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "../Math/Vector3.h"
 
+
+namespace Irufemi {
 //平面とは無限遠平面のこと。範囲に限りがない。
 
 struct Plane{
@@ -12,3 +14,5 @@ struct Plane{
     float distance{};
 };
 
+
+} // namespace Irufemi

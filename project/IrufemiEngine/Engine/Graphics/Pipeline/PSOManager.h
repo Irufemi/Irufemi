@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <dxcapi.h> 
 #include <wrl.h>
@@ -91,7 +91,7 @@ public:
      * @param cull カリングモード
      * @return キャッシュまたは新規生成されたPSO
      */
-    ID3D12PipelineState* GetPSO(const std::string& name, BlendMode blend, DepthWrite depth, CullMode cull);
+    ID3D12PipelineState* GetPSO(const std::string& name, Irufemi::BlendMode blend, DepthWrite depth, CullMode cull);
 
     /**
      * @brief コンピュートシェーダの登録
@@ -170,13 +170,13 @@ private:
         const ShaderSet& shaders,
         CullMode cull) const;
 
-    /** @brief BlendMode から D3D12_BLEND_DESC を作成 */
-    static D3D12_BLEND_DESC MakeBlend(BlendMode m);
+    /** @brief Irufemi::BlendMode から D3D12_BLEND_DESC を作成 */
+    static D3D12_BLEND_DESC MakeBlend(Irufemi::BlendMode m);
     /** @brief DepthWrite から D3D12_DEPTH_STENCIL_DESC を作成 */
     static D3D12_DEPTH_STENCIL_DESC MakeDepth(DepthWrite w);
 
     /** @brief 設定セット（シェーダ、ブレンド、デプス、カリング）からハッシュ値を計算 */
-    static uint64_t Hash(const std::string& name, BlendMode b, DepthWrite d, CullMode c);
+    static uint64_t Hash(const std::string& name, Irufemi::BlendMode b, DepthWrite d, CullMode c);
 
     /** @name ディスクキャッシュ (PSO Blob) */
     ///@{

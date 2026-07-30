@@ -1,8 +1,10 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Quaternion.h"
 #include <stdexcept>
 #include <cassert>
 
+
+namespace Irufemi {
 float& Quaternion::operator[](int index) {
 	switch (index) {
 	case 0: return x;
@@ -101,4 +103,6 @@ Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs) {
         lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z
     };
 }
-
+
+
+} // namespace Irufemi

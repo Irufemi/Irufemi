@@ -1,4 +1,4 @@
-#include "Primitive2DObject.h"
+﻿#include "Primitive2DObject.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Manager/DebugUI.h"
@@ -23,7 +23,7 @@ IrufemiEngine* Primitive2DObject::engine_ = nullptr;
 
 // --- Initialize / Update / Draw ---
 
-void Primitive2DObject::Initialize(Primitive2DType type, const std::string& textureName) {
+void Primitive2DObject::Initialize(Irufemi::Primitive2DType type, const std::string& textureName) {
     resource_ = std::make_unique<Object2DResource>();
     type_ = type;
     isMeshDirty_ = true;
@@ -83,36 +83,36 @@ void Primitive2DObject::Debug(const char* label) {
     const char* shapeNames[] = {"Rect", "Triangle", "Circle", "Ring", "Line"};
     int currentShape = static_cast<int>(type_);
     if (ImGui::Combo("Shape", &currentShape, shapeNames, IM_ARRAYSIZE(shapeNames))) {
-        SetShape(static_cast<Primitive2DType>(currentShape));
+        SetShape(static_cast<Irufemi::Primitive2DType>(currentShape));
     }
 
-    // --- Transform & Size ---
+    // --- Irufemi::Transform & Size ---
     if (ImGui::CollapsingHeader("Transform & Layout", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::DragFloat2("Size", &size_.x, 1.0f))
             SetSize(size_);
         if (ImGui::DragFloat2("Pivot", &pivot_.x, 0.01f, 0.0f, 1.0f))
             SetPivot(pivot_);
 
-        Vector3 pos = GetPosition();
+        Irufemi::Vector3 pos = GetPosition();
         if (ImGui::DragFloat3("Position", &pos.x, 1.0f))
             SetPosition(pos);
 
-        Vector3 rot = GetRotation();
+        Irufemi::Vector3 rot = GetRotation();
         if (ImGui::DragFloat3("Rotation", &rot.x, 0.01f)) {
             resource_->transform_.rotate = rot;
         }
 
-        Vector3 scale = GetScale();
+        Irufemi::Vector3 scale = GetScale();
         if (ImGui::DragFloat3("Scale", &scale.x, 0.01f))
             SetScale(scale);
     }
 
     // --- Shape Params ---
-    if (type_ == Primitive2DType::Ring || type_ == Primitive2DType::Line) {
+    if (type_ == Irufemi::Primitive2DType::Ring || type_ == Irufemi::Primitive2DType::Line) {
         if (ImGui::DragFloat("Thickness", &thickness_, 1.0f, 1.0f, 1000.0f))
             SetThickness(thickness_);
     }
-    if (type_ == Primitive2DType::Circle || type_ == Primitive2DType::Ring) {
+    if (type_ == Irufemi::Primitive2DType::Circle || type_ == Irufemi::Primitive2DType::Ring) {
         int sub = static_cast<int>(subdivision_);
         if (ImGui::DragInt("Subdivision", &sub, 1, 3, 128)) {
             subdivision_ = static_cast<uint32_t>(sub);
@@ -141,7 +141,7 @@ void Primitive2DObject::Debug(const char* label) {
 
 // --- Setters ---
 
-void Primitive2DObject::SetShape(Primitive2DType type) {
+void Primitive2DObject::SetShape(Irufemi::Primitive2DType type) {
     if (type_ != type) {
         type_ = type;
         isMeshDirty_ = true;
@@ -157,17 +157,17 @@ void Primitive2DObject::SetSubdivision(uint32_t subdiv) {
     }
 }
 
-void Primitive2DObject::SetSize(const Vector2& size) {
+void Primitive2DObject::SetSize(const Irufemi::Vector2& size) {
     size_ = size;
     isMeshDirty_ = true;
 }
 
-void Primitive2DObject::SetPivot(const Vector2& pivot) {
+void Primitive2DObject::SetPivot(const Irufemi::Vector2& pivot) {
     pivot_ = pivot;
     isMeshDirty_ = true;
 }
 
-void Primitive2DObject::SetPosition(const Vector3& position) {
+void Primitive2DObject::SetPosition(const Irufemi::Vector3& position) {
     if (resource_)
         resource_->transform_.translate = position;
 }
@@ -177,12 +177,12 @@ void Primitive2DObject::SetRotationZ(float rad) {
         resource_->transform_.rotate.z = rad;
 }
 
-void Primitive2DObject::SetScale(const Vector3& scale) {
+void Primitive2DObject::SetScale(const Irufemi::Vector3& scale) {
     if (resource_)
         resource_->transform_.scale = scale;
 }
 
-void Primitive2DObject::SetColor(const Vector4& color) {
+void Primitive2DObject::SetColor(const Irufemi::Vector4& color) {
     if (resource_)
         resource_->GetMaterialData()->color = color;
 }
@@ -205,7 +205,7 @@ void Primitive2DObject::SetTexture(const std::string& textureName) {
 
 void Primitive2DObject::SetThickness(float thickness) {
     thickness_ = thickness;
-    if (type_ == Primitive2DType::Ring || type_ == Primitive2DType::Line) {
+    if (type_ == Irufemi::Primitive2DType::Ring || type_ == Irufemi::Primitive2DType::Line) {
         isMeshDirty_ = true;
     }
 }
@@ -220,19 +220,19 @@ void Primitive2DObject::RebuildMesh() {
     resource_->indexDataList_.clear();
 
     switch (type_) {
-    case Primitive2DType::Rect:
+    case Irufemi::Primitive2DType::Rect:
         BuildRect();
         break;
-    case Primitive2DType::Triangle:
+    case Irufemi::Primitive2DType::Triangle:
         BuildTriangle();
         break;
-    case Primitive2DType::Circle:
+    case Irufemi::Primitive2DType::Circle:
         BuildCircle(subdivision_);
         break;
-    case Primitive2DType::Ring:
+    case Irufemi::Primitive2DType::Ring:
         BuildRing(subdivision_);
         break;
-    case Primitive2DType::Line:
+    case Irufemi::Primitive2DType::Line:
         BuildLine();
         break;
     }

@@ -1,4 +1,4 @@
-#include "ButtonComponent.h"
+﻿#include "ButtonComponent.h"
 #include "Framework/SceneManager.h"
 #include "../../GameObject.h"
 #include "../../BaseScene.h"
@@ -26,21 +26,21 @@ void ButtonComponent::Initialize() {
     }
 }
 
-bool ButtonComponent::CheckBounds(const Vector2& mousePos) {
+bool ButtonComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
     if (!transform_ || !sprite_) return false;
     
-    Vector3 pos = transform_->GetWorldPosition();
-    Vector3 scale = transform_->GetWorldScale();
+    Irufemi::Vector3 pos = transform_->GetWorldPosition();
+    Irufemi::Vector3 scale = transform_->GetWorldScale();
     
     auto* s = sprite_->GetSprite();
     if (!s) return false;
     
     // スプライトのアンカーとサイズを取得
-    Vector2 anchor = s->GetAnchor();
-    Vector2 baseSize = s->GetSize();
+    Irufemi::Vector2 anchor = s->GetAnchor();
+    Irufemi::Vector2 baseSize = s->GetSize();
     
     // Hitbox Scale を加味した幅・高さを算出
-    // （※sprite_->GetSize() は既に Transform の Scale が適用された描画上のサイズを返すため、
+    // （※sprite_->GetSize() は既に Irufemi::Transform の Scale が適用された描画上のサイズを返すため、
     //  ここでは scale.x/y を二重に掛けないようにする）
     float width = baseSize.x * hitboxScale_.x;
     float height = baseSize.y * hitboxScale_.y;
@@ -68,8 +68,8 @@ void ButtonComponent::Update() {
     auto cameraManager = engine->GetCameraManager();
     if (!input || !cameraManager || !cameraManager->GetActiveCamera()) return;
     
-    Vector2 mousePos = input->GetMousePosition();
-    Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
+    Irufemi::Vector2 mousePos = input->GetMousePosition();
+    Irufemi::Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
     
     isHovered_ = CheckBounds(uiPos);
     isClicked_ = false;
@@ -92,7 +92,7 @@ void ButtonComponent::Update() {
             }
         } else {
             // ホバー中
-            Vector4 color = hoverColor_;
+            Irufemi::Vector4 color = hoverColor_;
             if (enableHoverPulse_) {
                 float animAlpha = animator_.GetPulseAlpha(0.7f, 0.3f, 5.0f);
                 color.w *= animAlpha;
@@ -106,7 +106,7 @@ void ButtonComponent::Update() {
         }
     } else {
         // 通常状態（待機中）
-        Vector4 color = normalColor_;
+        Irufemi::Vector4 color = normalColor_;
         if (enableIdlePulse_) {
             // PromptControllerと同じパルスアニメーション（ベース0.6、振幅0.4、速度3.0）
             float animAlpha = animator_.GetPulseAlpha(0.6f, 0.4f, 3.0f);

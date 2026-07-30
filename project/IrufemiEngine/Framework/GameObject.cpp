@@ -1,4 +1,4 @@
-#include "GameObject.h"
+﻿#include "GameObject.h"
 #include "BaseScene.h"
 
 #include "Component/Component.h"
@@ -18,10 +18,10 @@
 #include <atomic>
 #include "Engine/Core/Math/Random/Random.h"
 
-GameObject::GameObject() : instanceId_(Random::GeneratorUint64(1, ULLONG_MAX)) {
+GameObject::GameObject() : instanceId_(Irufemi::Random::GeneratorUint64(1, ULLONG_MAX)) {
 }
 
-GameObject::GameObject(const std::string& name) : instanceId_(Random::GeneratorUint64(1, ULLONG_MAX)), name_(name) {
+GameObject::GameObject(const std::string& name) : instanceId_(Irufemi::Random::GeneratorUint64(1, ULLONG_MAX)), name_(name) {
 }
 
 
@@ -485,7 +485,7 @@ void GameObject::SendCollisionExit(GameObject* hitObject) {
     }
 }
 
-std::shared_ptr<GameObject> GameObject::Instantiate(const std::string& prefabPath, const Vector3& position) {
+std::shared_ptr<GameObject> GameObject::Instantiate(const std::string& prefabPath, const Irufemi::Vector3& position) {
     if (scene_) {
         return scene_->InstantiatePrefab(prefabPath, position);
     }
@@ -493,7 +493,7 @@ std::shared_ptr<GameObject> GameObject::Instantiate(const std::string& prefabPat
 }
 
 void GameObject::RegenerateInstanceID(bool recursive) {
-    instanceId_ = Random::GeneratorUint64(1, ULLONG_MAX);
+    instanceId_ = Irufemi::Random::GeneratorUint64(1, ULLONG_MAX);
     if (recursive) {
         for (auto& child : children_) {
             child->RegenerateInstanceID(true);
@@ -513,7 +513,7 @@ void GameObject::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMa
 void GameObject::RemapJSONInstanceIDs(nlohmann::json& j, std::unordered_map<uint64_t, uint64_t>& outIdMap) {
     if (j.contains("instanceId")) {
         uint64_t oldId = j["instanceId"];
-        uint64_t newId = Random::GeneratorUint64(1, ULLONG_MAX);
+        uint64_t newId = Irufemi::Random::GeneratorUint64(1, ULLONG_MAX);
         j["instanceId"] = newId;
         outIdMap[oldId] = newId;
     }

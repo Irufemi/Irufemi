@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include <string>
@@ -25,7 +25,7 @@ public:
 
 private:
     uint64_t targetObjectID_ = 0; ///< 追従対象の GameObject ID
-    Vector3 offset_ = {0.0f, 2.0f, -5.0f}; ///< ターゲットからの相対距離 (右, 上, 前)
+    Irufemi::Vector3 offset_ = {0.0f, 2.0f, -5.0f}; ///< ターゲットからの相対距離 (右, 上, 前)
     float followDelay_ = 0.9f; ///< 追従の遅延係数（1.0 に近いほど遅れる、0.0で即座に追従）
 
     TransformComponent* targetTransform_ = nullptr; ///< キャッシュ用

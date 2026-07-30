@@ -1,4 +1,4 @@
-#include "PostProcessPass.h"
+﻿#include "PostProcessPass.h"
 #include "Engine/Core/Math/Math.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
@@ -147,7 +147,7 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     }
     if (needsProjectionInverse) {
         if (auto* perFrameData = drawManager->GetPerFrameData()) {
-            ppMgr->GetOutlineParams().projectionInverse = Math::Inverse(perFrameData->camera.projection);
+            ppMgr->GetOutlineParams().projectionInverse = Irufemi::Math::Inverse(perFrameData->camera.projection);
         }
     }
 

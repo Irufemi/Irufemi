@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../../Core/Math/Vector4.h"
 
 /**
@@ -6,8 +6,8 @@
  * @brief 電撃エフェクト（Lightning Crawl）の調整用パラメータ構造体
  */
 struct LightningParams {
-    Vector4 color = { 0.8f, 0.4f, 1.0f, 1.0f };     //!< 表面の色
-    Vector4 coreColor = { 1.0f, 1.0f, 1.2f, 1.0f }; //!< 内部（芯）の色
+    Irufemi::Vector4 color = { 0.8f, 0.4f, 1.0f, 1.0f };     //!< 表面の色
+    Irufemi::Vector4 coreColor = { 1.0f, 1.0f, 1.2f, 1.0f }; //!< 内部（芯）の色
     float speed = 1.0f;                             //!< アニメーション速度
     float intensity = 1.0f;                         //!< 表面の輝度
     float noiseScale = 1.0f;                        //!< 表面ノイズ密度

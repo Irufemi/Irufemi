@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include <vector>
@@ -35,17 +35,17 @@ private:
     struct SpawnedEnvInfo {
         std::weak_ptr<GameObject> obj;
         std::string prefabPath;
-        Vector3 originalPos;
-        Vector3 originalRot;
-        Vector3 originalScale;
+        Irufemi::Vector3 originalPos;
+        Irufemi::Vector3 originalRot;
+        Irufemi::Vector3 originalScale;
     };
 
     struct BatchCollisionSetting {
         std::string prefabPath; // Now effectively 'prefabName' (e.g. Env_Pillar)
-        Vector3 collisionSize;
-        Vector3 previousSize;
-        Vector3 collisionOffset;
-        Vector3 previousOffset;
+        Irufemi::Vector3 collisionSize;
+        Irufemi::Vector3 previousSize;
+        Irufemi::Vector3 collisionOffset;
+        Irufemi::Vector3 previousOffset;
         int placementType; // 0: Building (スナップ), 1: Floating (そのまま)
         int previousPlacementType;
     };

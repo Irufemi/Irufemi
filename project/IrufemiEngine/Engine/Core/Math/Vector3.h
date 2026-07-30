@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include <cmath>
 
+
+namespace Irufemi {
 /**
  * @struct Vector3
  * @brief 3次元ベクトル
@@ -103,4 +105,6 @@ Vector3 operator*(const Vector3& lhs, const Vector3& rhs);
 Vector3 operator/(const Vector3& lhs, const Vector3& rhs);
 
 /** @} */
-
+
+
+} // namespace Irufemi

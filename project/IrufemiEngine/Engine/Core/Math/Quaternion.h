@@ -1,5 +1,7 @@
-#pragma once
+﻿#pragma once
 
+
+namespace Irufemi {
 /**
  * @struct Quaternion
  * @brief クォータニオン (四元数)
@@ -77,4 +79,6 @@ Quaternion operator/(Quaternion q, float s);
 Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs);
 
 /** @} */
-
+
+
+} // namespace Irufemi

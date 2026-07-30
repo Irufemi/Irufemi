@@ -1,4 +1,4 @@
-#include "SpriteBatch.h"
+﻿#include "SpriteBatch.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
@@ -60,7 +60,7 @@ void SpriteBatch::Initialize(const std::string& textureName) {
         baseResource_->GetMaterialData()->enableLighting = false;
         baseResource_->GetMaterialData()->hasTexture = true;
         baseResource_->GetMaterialData()->lightingMode = 2; // Unlit
-        baseResource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+        baseResource_->GetMaterialData()->uvTransform = Irufemi::Math::MakeIdentity4x4();
     }
 
     if (textureManager_) {
@@ -89,13 +89,13 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     }
 }
 
-void SpriteBatch::AddInstance(const Transform& transform, const Vector4& color) {
+void SpriteBatch::AddInstance(const Irufemi::Transform& transform, const Irufemi::Vector4& color) {
     instances_.push_back({ transform, color, {0.5f, 0.5f}, {textureSize_.x * transform.scale.x, textureSize_.y * transform.scale.y} });
     instanceDirty_ = true;
 }
 
-void SpriteBatch::AddInstance(const Vector2& position, const Vector2& size, float rotation, const Vector4& color, const Vector2& anchor) {
-    Transform tf;
+void SpriteBatch::AddInstance(const Irufemi::Vector2& position, const Irufemi::Vector2& size, float rotation, const Irufemi::Vector4& color, const Irufemi::Vector2& anchor) {
+    Irufemi::Transform tf;
     tf.translate = { position.x, position.y, 0.0f };
     tf.scale = { 1.0f, 1.0f, 1.0f };
     tf.rotate = { 0.0f, 0.0f, rotation };
@@ -163,27 +163,27 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
     Camera* camera = cameraManager_->GetActiveCamera();
     if (!camera) return;
 
-    Matrix4x4 viewProj = camera->GetOrthographicMatrix(); // Sprite uses Orthographic
+    Irufemi::Matrix4x4 viewProj = camera->GetOrthographicMatrix(); // Sprite uses Orthographic
 
     for (uint32_t i = 0; i < visibleInstanceCount_; ++i) {
         const auto& inst = instances_[i];
 
         // スケールは元サイズ(size)をベースに掛ける
-        Vector3 scale = { inst.size.x, inst.size.y, 1.0f };
+        Irufemi::Vector3 scale = { inst.size.x, inst.size.y, 1.0f };
         
         // アンカーの適用（0..1の四角形を平行移動させる）
         // 左上が0,0、右下が1,1。アンカーが0.5,0.5なら、-0.5ずらす
-        Matrix4x4 anchorTrans = Math::MakeTranslateMatrix(Vector3{-inst.anchor.x, -inst.anchor.y, 0.0f});
-        Matrix4x4 scaleMat = Math::MakeScaleMatrix(scale);
-        Matrix4x4 rotMat = Math::MakeRotateZMatrix(inst.transform.rotate.z);
-        Matrix4x4 transMat = Math::MakeTranslateMatrix(inst.transform.translate);
+        Irufemi::Matrix4x4 anchorTrans = Irufemi::Math::MakeTranslateMatrix(Irufemi::Vector3{-inst.anchor.x, -inst.anchor.y, 0.0f});
+        Irufemi::Matrix4x4 scaleMat = Irufemi::Math::MakeScaleMatrix(scale);
+        Irufemi::Matrix4x4 rotMat = Irufemi::Math::MakeRotateZMatrix(inst.transform.rotate.z);
+        Irufemi::Matrix4x4 transMat = Irufemi::Math::MakeTranslateMatrix(inst.transform.translate);
 
         // World = Anchor * Scale * Rot * Trans
-        Matrix4x4 worldMat = Math::Multiply(anchorTrans, scaleMat);
-        worldMat = Math::Multiply(worldMat, rotMat);
-        worldMat = Math::Multiply(worldMat, transMat);
+        Irufemi::Matrix4x4 worldMat = Irufemi::Math::Multiply(anchorTrans, scaleMat);
+        worldMat = Irufemi::Math::Multiply(worldMat, rotMat);
+        worldMat = Irufemi::Math::Multiply(worldMat, transMat);
 
-        instanceData_[frameIndex][i].WVP = Math::Multiply(worldMat, viewProj);
+        instanceData_[frameIndex][i].WVP = Irufemi::Math::Multiply(worldMat, viewProj);
         instanceData_[frameIndex][i].color = inst.color;
     }
 
@@ -210,7 +210,7 @@ void SpriteBatch::Draw(bool isTopMost) {
     packet.resource = baseResource_.get();
     packet.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
     packet.instanceCount = visibleInstanceCount_;
-    packet.blendMode = BlendMode::kBlendModeNormal;
+    packet.blendMode = Irufemi::BlendMode::kBlendModeNormal;
     packet.depthWrite = PSOManager::DepthWrite::Off;
     packet.cullMode = PSOManager::CullMode::None;
     packet.customPSO = customPSO_;

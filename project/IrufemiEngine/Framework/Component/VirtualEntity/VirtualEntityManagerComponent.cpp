@@ -1,4 +1,4 @@
-#include "VirtualEntityManagerComponent.h"
+﻿#include "VirtualEntityManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
@@ -36,7 +36,7 @@ void VirtualEntityManagerComponent::Setup(int poolSize, int maxVirtualInstances,
     }
 }
 
-int VirtualEntityManagerComponent::AddVirtualInstance(const Vector3& pos, const Vector3& rot, const Vector3& scale) {
+int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot, const Irufemi::Vector3& scale) {
     if (freeIds_.empty()) return -1; // 上限到達
 
     int id = freeIds_.front();
@@ -176,7 +176,7 @@ void VirtualEntityManagerComponent::Update() {
     // 仮想インスタンス（未昇格）の描画
     for (auto& vi : dense_) {
         if (!vi.isPromoted_) {
-            Transform t;
+            Irufemi::Transform t;
             t.translate = vi.position_;
             t.rotate = vi.rotation_;
             t.scale = vi.scale_;

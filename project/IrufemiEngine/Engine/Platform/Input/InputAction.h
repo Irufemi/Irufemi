@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include "../../Core/Math/Vector2.h"
@@ -72,7 +72,7 @@ struct InputActionValue {
     float GetAsAxis1D() const { return x; }
     
     /** @brief 2Dアナログ（スティックやマウス移動）としての値を取得 */
-    Vector2 GetAsAxis2D() const { return { x, y }; }
+    Irufemi::Vector2 GetAsAxis2D() const { return { x, y }; }
 };
 
 /**

@@ -1,4 +1,4 @@
-#include "LineResource.h"
+﻿#include "LineResource.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
@@ -21,7 +21,7 @@ LineResource::~LineResource() {
 void LineResource::CreateResource() {
     if (!s_dxCommon_) return;
 
-    // Line は基本 2 頂点
+    // Irufemi::Line は基本 2 頂点
     if (!vertexResource_) {
         vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * 2);
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
@@ -41,7 +41,7 @@ void LineResource::CreateResource() {
         materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
         
         cpuMaterialData_.color = {1,1,1,1};
-        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+        cpuMaterialData_.uvTransform = Irufemi::Math::MakeIdentity4x4();
         
         for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
             engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
@@ -74,10 +74,10 @@ void LineResource::Unmap() {
 }
 
 void LineResource::UpdateTransform(const Camera& camera) {
-    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
+    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.WVP = Irufemi::Math::Multiply(transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
-    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
+    transformationMatrix_.WVP = Irufemi::Math::Multiply(transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
     MarkAsDirty();
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "GPUParticleSystem.h"
 #include <unordered_map>
 #include <memory>
@@ -31,7 +31,7 @@ public:
     /**
      * @brief 指定したテクスチャ、ブレンドモード、タイムスケール設定に対するシステムを取得し、エミッターを登録する
      */
-    EmitterHandle RegisterEmitter(const std::string& texturePath, BlendMode blendMode, bool isUnscaledTime, bool enableLighting);
+    EmitterHandle RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting);
 
     /**
      * @brief 登録したエミッターを解放する
@@ -67,7 +67,7 @@ private:
 
     struct SystemKey {
         std::string texturePath;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         bool isUnscaledTime;
         bool enableLighting;
 

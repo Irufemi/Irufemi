@@ -1,4 +1,4 @@
-#include "ReticleUIComponent.h"
+﻿#include "ReticleUIComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"
@@ -22,11 +22,11 @@ void ReticleUIComponent::Update() {
     auto inputManager = engine->GetInputManager();
     auto cameraManager = engine->GetCameraManager();
     if (inputManager && cameraManager && cameraManager->GetActiveCamera()) {
-        Vector2 mousePos = inputManager->GetMousePosition();
-        Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
+        Irufemi::Vector2 mousePos = inputManager->GetMousePosition();
+        Irufemi::Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
         
         // Transformのポジションをマウス座標に合わせる
         // Zは一番手前（カメラの手前）などに適宜設定
-        transform->SetPosition(Vector3{ uiPos.x, uiPos.y, 0.0f });
+        transform->SetPosition(Irufemi::Vector3{ uiPos.x, uiPos.y, 0.0f });
     }
 }

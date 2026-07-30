@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Component.h"
 #include "../../../Renderer/Object/3D/AnimationModel/AnimatedMeshObject.h"
@@ -26,7 +26,7 @@ public:
     void OnRegisterProperties() override;
     
     std::string GetComponentName() const override { return "SkinnedMeshRendererComponent"; }
-    bool Raycast(const Ray& ray, float& outDistance) const override;
+    bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
     IRenderable* GetRenderable() override { return animatedMesh_.get(); }
 
     void LoadModel(const std::string& filename);

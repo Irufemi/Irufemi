@@ -1,4 +1,4 @@
-#include "SplineNodeComponent.h"
+﻿#include "SplineNodeComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
@@ -28,16 +28,16 @@ void SplineNodeComponent::Draw() {
     }
 }
 
-bool SplineNodeComponent::Raycast(const Ray& ray, float& outDistance) const {
+bool SplineNodeComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
     if (!gameObject_) return false;
     
     auto transform = gameObject_->GetComponent<TransformComponent>();
     if (!transform) return false;
 
-    Vector3 center = transform->GetWorldPosition();
+    Irufemi::Vector3 center = transform->GetWorldPosition();
     
     // Rayと球の交差判定 (線分・直線の交点計算)
-    Vector3 m = {ray.origin.x - center.x, ray.origin.y - center.y, ray.origin.z - center.z};
+    Irufemi::Vector3 m = {ray.origin.x - center.x, ray.origin.y - center.y, ray.origin.z - center.z};
     
     float b = m.x * ray.diff.x + m.y * ray.diff.y + m.z * ray.diff.z;
     float c = (m.x * m.x + m.y * m.y + m.z * m.z) - radius_ * radius_;

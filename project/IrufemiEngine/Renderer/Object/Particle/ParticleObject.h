@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
@@ -51,17 +51,17 @@ public:
      * @brief パーティクル発生の中心座標を設定し、変更があればGPU転送フラグを立てます
      * @param pos 新しいワールド座標
      */
-    void SetPosition(const Vector3& pos) { if (position_.x != pos.x || position_.y != pos.y || position_.z != pos.z) { position_ = pos; MarkDirty(); } }
-    Vector3 GetPosition() const { return position_; }
+    void SetPosition(const Irufemi::Vector3& pos) { if (position_.x != pos.x || position_.y != pos.y || position_.z != pos.z) { position_ = pos; MarkDirty(); } }
+    Irufemi::Vector3 GetPosition() const { return position_; }
 
-    void SetRotation(const Vector3& rot) { if (rotation_.x != rot.x || rotation_.y != rot.y || rotation_.z != rot.z) { rotation_ = rot; MarkDirty(); } }
-    Vector3 GetRotation() const { return rotation_; }
+    void SetRotation(const Irufemi::Vector3& rot) { if (rotation_.x != rot.x || rotation_.y != rot.y || rotation_.z != rot.z) { rotation_ = rot; MarkDirty(); } }
+    Irufemi::Vector3 GetRotation() const { return rotation_; }
 
     void SetTexturePath(const std::string& path);
     std::string GetTexturePath() const { return texturePath_; }
 
-    void SetBlendMode(BlendMode mode);
-    BlendMode GetBlendMode() const { return blendMode_; }
+    void SetBlendMode(Irufemi::BlendMode mode);
+    Irufemi::BlendMode GetBlendMode() const { return blendMode_; }
 
     void SetEnableLighting(bool val);
     bool GetEnableLighting() const { return enableLighting_; }
@@ -117,8 +117,8 @@ public:
     void SetAttractorStrength(float strength) { if (attractorStrength_ != strength) { attractorStrength_ = strength; MarkDirty(); } }
     float GetAttractorStrength() const { return attractorStrength_; }
 
-    void SetAttractorPos(const Vector3& pos) { if (attractorPos_.x != pos.x || attractorPos_.y != pos.y || attractorPos_.z != pos.z) { attractorPos_ = pos; MarkDirty(); } }
-    Vector3 GetAttractorPos() const { return attractorPos_; }
+    void SetAttractorPos(const Irufemi::Vector3& pos) { if (attractorPos_.x != pos.x || attractorPos_.y != pos.y || attractorPos_.z != pos.z) { attractorPos_ = pos; MarkDirty(); } }
+    Irufemi::Vector3 GetAttractorPos() const { return attractorPos_; }
 
     void SetJitter(float jitter) { if (jitter_ != jitter) { jitter_ = jitter; MarkDirty(); } }
     float GetJitter() const { return jitter_; }
@@ -126,29 +126,29 @@ public:
     void SetBillboardMode(int mode) { if (billboardMode_ != mode) { billboardMode_ = mode; MarkDirty(); } }
     int GetBillboardMode() const { return billboardMode_; }
 
-    void SetColor(const Vector4& color) { if (color_.x != color.x || color_.y != color.y || color_.z != color.z || color_.w != color.w) { color_ = color; MarkDirty(); } }
-    Vector4 GetColor() const { return color_; }
+    void SetColor(const Irufemi::Vector4& color) { if (color_.x != color.x || color_.y != color.y || color_.z != color.z || color_.w != color.w) { color_ = color; MarkDirty(); } }
+    Irufemi::Vector4 GetColor() const { return color_; }
 
-    void SetMidColor(const Vector4& color) { if (midColor_.x != color.x || midColor_.y != color.y || midColor_.z != color.z || midColor_.w != color.w) { midColor_ = color; MarkDirty(); } }
-    Vector4 GetMidColor() const { return midColor_; }
+    void SetMidColor(const Irufemi::Vector4& color) { if (midColor_.x != color.x || midColor_.y != color.y || midColor_.z != color.z || midColor_.w != color.w) { midColor_ = color; MarkDirty(); } }
+    Irufemi::Vector4 GetMidColor() const { return midColor_; }
 
-    void SetStartScale(const Vector3& scale) { if (startScale_.x != scale.x || startScale_.y != scale.y || startScale_.z != scale.z) { startScale_ = scale; MarkDirty(); } }
-    Vector3 GetStartScale() const { return startScale_; }
+    void SetStartScale(const Irufemi::Vector3& scale) { if (startScale_.x != scale.x || startScale_.y != scale.y || startScale_.z != scale.z) { startScale_ = scale; MarkDirty(); } }
+    Irufemi::Vector3 GetStartScale() const { return startScale_; }
 
-    void SetMidScale(const Vector3& scale) { if (midScale_.x != scale.x || midScale_.y != scale.y || midScale_.z != scale.z) { midScale_ = scale; MarkDirty(); } }
-    Vector3 GetMidScale() const { return midScale_; }
+    void SetMidScale(const Irufemi::Vector3& scale) { if (midScale_.x != scale.x || midScale_.y != scale.y || midScale_.z != scale.z) { midScale_ = scale; MarkDirty(); } }
+    Irufemi::Vector3 GetMidScale() const { return midScale_; }
 
-    void SetEndScale(const Vector3& scale) { if (endScale_.x != scale.x || endScale_.y != scale.y || endScale_.z != scale.z) { endScale_ = scale; MarkDirty(); } }
-    Vector3 GetEndScale() const { return endScale_; }
+    void SetEndScale(const Irufemi::Vector3& scale) { if (endScale_.x != scale.x || endScale_.y != scale.y || endScale_.z != scale.z) { endScale_ = scale; MarkDirty(); } }
+    Irufemi::Vector3 GetEndScale() const { return endScale_; }
 
     void SetMidPoint(float point) { if (midPoint_ != point) { midPoint_ = point; MarkDirty(); } }
     float GetMidPoint() const { return midPoint_; }
 
-    void SetDirection(const Vector3& dir) { if (direction_.x != dir.x || direction_.y != dir.y || direction_.z != dir.z) { direction_ = dir; MarkDirty(); } }
-    Vector3 GetDirection() const { return direction_; }
+    void SetDirection(const Irufemi::Vector3& dir) { if (direction_.x != dir.x || direction_.y != dir.y || direction_.z != dir.z) { direction_ = dir; MarkDirty(); } }
+    Irufemi::Vector3 GetDirection() const { return direction_; }
 
-    void SetAreaSize(const Vector3& size) { if (areaSize_.x != size.x || areaSize_.y != size.y || areaSize_.z != size.z) { areaSize_ = size; MarkDirty(); } }
-    Vector3 GetAreaSize() const { return areaSize_; }
+    void SetAreaSize(const Irufemi::Vector3& size) { if (areaSize_.x != size.x || areaSize_.y != size.y || areaSize_.z != size.z) { areaSize_ = size; MarkDirty(); } }
+    Irufemi::Vector3 GetAreaSize() const { return areaSize_; }
 
     void SetEnableTrail(bool enable) { if (enableTrail_ != enable) { enableTrail_ = enable; MarkDirty(); } }
     bool GetEnableTrail() const { return enableTrail_; }
@@ -174,11 +174,11 @@ public:
 
 private:
     // トランスフォーム
-    Vector3 position_ = { 0.0f, 0.0f, 0.0f };
-    Vector3 rotation_ = { 0.0f, 0.0f, 0.0f }; // 現在は主に方向として使用
+    Irufemi::Vector3 position_ = { 0.0f, 0.0f, 0.0f };
+    Irufemi::Vector3 rotation_ = { 0.0f, 0.0f, 0.0f }; // 現在は主に方向として使用
 
     std::string texturePath_ = "resources/circle.png";
-    BlendMode blendMode_ = BlendMode::kBlendModeAdd;
+    Irufemi::BlendMode blendMode_ = Irufemi::BlendMode::kBlendModeAdd;
     bool enableLighting_ = false;
     bool isUnscaledTime_ = false;
     bool emitOnAwake_ = true;
@@ -188,7 +188,7 @@ private:
     ResourceHandle emitterModelHandle_;
     
     // エミッターの基本パラメータ
-    int emitType_ = 0; // 0: Sphere, 1: Beam, 2: Box, 3: Cylinder
+    int emitType_ = 0; // 0: Irufemi::Sphere, 1: Beam, 2: Box, 3: Irufemi::Cylinder
     float emissionRate_ = 50.0f; // 1秒あたりの発生数
     float lifeTimeMin_ = 0.5f;
     float lifeTimeMax_ = 1.0f;
@@ -206,7 +206,7 @@ private:
     float bounce_ = 0.0f;          // 床でのバウンド係数
     float groundHeight_ = -100.0f; // 床のY座標
     float attractorStrength_ = 0.0f; // 吸引力
-    Vector3 attractorPos_ = {0.0f, 0.0f, 0.0f}; // 吸引位置
+    Irufemi::Vector3 attractorPos_ = {0.0f, 0.0f, 0.0f}; // 吸引位置
     float jitter_ = 0.0f;          // 不規則なブレ
     bool enableTrail_ = false;
     float trailFrequency_ = 0.05f;
@@ -216,15 +216,15 @@ private:
 
     // ビジュアル・ライフタイム
     int billboardMode_ = 1; // 0: None, 1: Billboard, 2: Y-Axis
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
-    Vector4 midColor_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // 中間色
-    Vector3 startScale_ = { 1.0f, 1.0f, 1.0f };
-    Vector3 midScale_ = { 1.0f, 1.0f, 1.0f };       // 中間スケール
-    Vector3 endScale_ = { 0.0f, 0.0f, 0.0f };
+    Irufemi::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 midColor_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // 中間色
+    Irufemi::Vector3 startScale_ = { 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector3 midScale_ = { 1.0f, 1.0f, 1.0f };       // 中間スケール
+    Irufemi::Vector3 endScale_ = { 0.0f, 0.0f, 0.0f };
     float midPoint_ = 0.5f;                         // 中間点の位置(0.0~1.0)
     
-    Vector3 direction_ = { 0.0f, 0.0f, 0.0f };
-    Vector3 areaSize_ = { 10.0f, 10.0f, 10.0f };    // Boxエミッター用サイズ
+    Irufemi::Vector3 direction_ = { 0.0f, 0.0f, 0.0f };
+    Irufemi::Vector3 areaSize_ = { 10.0f, 10.0f, 10.0f };    // Boxエミッター用サイズ
 
 private:
     void UpdateSystem();

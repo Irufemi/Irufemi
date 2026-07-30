@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <vector>
 #include <memory>
@@ -170,7 +170,7 @@ public:
     /**
      * @brief 所属するシーンにプレハブから新しい GameObject を生成して追加する
      */
-    std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath, const Vector3& position = {0,0,0});
+    std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath, const Irufemi::Vector3& position = {0,0,0});
 
     // --- エディタ用フラグ ---
     void SetIsFolder(bool isFolder) { isFolder_ = isFolder; }

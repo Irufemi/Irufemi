@@ -6,8 +6,10 @@
 #include "Engine/Core/Math/Geometry/AABB.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 
+
 class ColliderComponent;
 
+namespace Irufemi {
 /**
  * @struct BVHNode
  * @brief TLASを構成する動的AABBツリーのノード。
@@ -91,3 +93,5 @@ private:
     /// @brief AABB同士の交差判定
     bool Intersects(const AABB& a, const AABB& b) const;
 };
+
+} // namespace Irufemi

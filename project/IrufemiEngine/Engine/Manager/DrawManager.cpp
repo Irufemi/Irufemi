@@ -1,4 +1,4 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/Log.h"
 #include <iostream>
 #include "DrawManager.h"
@@ -365,7 +365,7 @@ void DrawManager::PostDraw() {
     dxCommon_->UpdateFixFPS();
 }
 
-void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Vector2& resolution) {
+void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Irufemi::Vector2& resolution) {
     cachedPerFrame_.camera = camera;
     cachedPerFrame_.time = time;
     cachedPerFrame_.deltaTime = deltaTime;
@@ -405,7 +405,7 @@ void DrawManager::SyncCachedFrameData() {
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
-            Vector3 targetPos = useCustomShadowParams_ ? shadowTargetPos_ : cachedPerFrame_.camera.worldPosition;
+            Irufemi::Vector3 targetPos = useCustomShadowParams_ ? shadowTargetPos_ : cachedPerFrame_.camera.worldPosition;
             float orthoSize = useCustomShadowParams_ ? shadowOrthoSize_ : 128.0f;
             shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, targetPos, orthoSize);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
@@ -833,8 +833,8 @@ void DrawManager::SubmitTransparent3D(const Object3DResource* resource, const D3
     p.distanceToCamera = 0.0f;
     if (auto engine = dxCommon_->GetEngine()) {
         if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
-            Vector3 camPos = camera->GetTranslate();
-            Vector3 objPos = resource->transform_.translate;
+            Irufemi::Vector3 camPos = camera->GetTranslate();
+            Irufemi::Vector3 objPos = resource->transform_.translate;
             float dx = camPos.x - objPos.x;
             float dy = camPos.y - objPos.y;
             float dz = camPos.z - objPos.z;
@@ -1026,7 +1026,7 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
     commandList_->IASetIndexBuffer(&packet.ibv);
 
     // VoxelParticle 特有のバインド
-    // Slot 1: Transform (b0) <- VoxelSystemCb
+    // Slot 1: Irufemi::Transform (b0) <- VoxelSystemCb
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.systemCbAddress);
     // Slot 4: Instancing (t0) <- Emitters
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.emitterHandle);
@@ -1041,7 +1041,7 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
     }
 }
 
-void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<struct Vector4>& clearColors) {
+void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<Irufemi::Vector4>& clearColors) {
     if (renderTargets.empty()) return;
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvHandles;
@@ -1099,7 +1099,7 @@ void DrawManager::EndRenderTextures(const std::vector<class RenderTexture*>& ren
     }
 }
 
-void DrawManager::BeginRenderTexture(RenderTexture* rt, const Vector4& clearColor, RenderTexture* rt2, const Vector4& clearColor2) {
+void DrawManager::BeginRenderTexture(RenderTexture* rt, const Irufemi::Vector4& clearColor, RenderTexture* rt2, const Irufemi::Vector4& clearColor2) {
     // 1. Transition Barrier (SRV -> RenderTarget)
     DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
     if (rt2) {

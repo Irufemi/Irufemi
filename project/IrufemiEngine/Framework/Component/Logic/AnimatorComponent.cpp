@@ -1,4 +1,4 @@
-#include "AnimatorComponent.h"
+﻿#include "AnimatorComponent.h"
 #include "../../GameObject.h"
 #include "../Renderer/SkinnedMeshRendererComponent.h"
 #include "../TransformComponent.h"
@@ -52,13 +52,13 @@ void AnimatorComponent::Update() {
             if (applyRootMotion_ && GetGameObject()) {
                 auto transform = GetGameObject()->GetComponent<TransformComponent>();
                 if (transform) {
-                    Vector3 deltaTrans = animator_->GetDeltaRootTranslation();
-                    Quaternion deltaRot = animator_->GetDeltaRootRotation();
+                    Irufemi::Vector3 deltaTrans = animator_->GetDeltaRootTranslation();
+                    Irufemi::Quaternion deltaRot = animator_->GetDeltaRootRotation();
 
                     // 現在のGameObjectのTransformに対して適用
                     // TODO: 厳密にはキャラクターの現在の回転を考慮してdeltaTransをワールド空間に変換して足す必要がある
                     // 今回は簡易的にローカル移動量をそのまま加算する
-                    transform->SetPosition(Math::Add(transform->GetPosition(), deltaTrans));
+                    transform->SetPosition(Irufemi::Math::Add(transform->GetPosition(), deltaTrans));
                     
                     // 回転も合成する場合（TransformComponentがオイラー角ならQuaternionに変換してから合成して戻す）
                     // ひとまず移動のみ適用でも効果は確認できる

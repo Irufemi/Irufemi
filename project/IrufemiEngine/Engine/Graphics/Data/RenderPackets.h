@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <d3d12.h>
 #include <cstdint>
@@ -22,7 +22,7 @@ namespace RenderPackets {
     struct Standard3DPacket {
         const class Object3DResource* resource;
         const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
@@ -35,7 +35,7 @@ namespace RenderPackets {
 
     struct SpritePacket {
         const class Object2DResource* resource;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         ID3D12PipelineState* customPSO = nullptr;
@@ -48,7 +48,7 @@ namespace RenderPackets {
         const class LineResource* resource;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT instanceCount;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         ID3D12PipelineState* customPSO = nullptr;
@@ -66,7 +66,7 @@ namespace RenderPackets {
         D3D12_GPU_DESCRIPTOR_HANDLE sortListSrvHandle;
         uint32_t instanceCount;
         ID3D12Resource* particleResource;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         ID3D12PipelineState* customPSO = nullptr;
@@ -100,7 +100,7 @@ namespace RenderPackets {
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT indexCount;
         UINT instanceCount;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
@@ -113,7 +113,7 @@ namespace RenderPackets {
         D3D12_GPU_VIRTUAL_ADDRESS materialAddress;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT instanceCount;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         bool castShadows;
@@ -139,7 +139,7 @@ namespace RenderPackets {
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT indexCount;
         UINT instanceCount;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         ID3D12PipelineState* customPSO = nullptr;
@@ -150,7 +150,7 @@ namespace RenderPackets {
         const class Object2DResource* resource;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
         UINT instanceCount;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         ID3D12PipelineState* customPSO = nullptr;
@@ -163,7 +163,7 @@ namespace RenderPackets {
         UINT indexCount;
         UINT instanceCount;
         D3D12_GPU_DESCRIPTOR_HANDLE instancingSrvHandleGPU;
-        BlendMode blendMode;
+        Irufemi::BlendMode blendMode;
         PSOManager::DepthWrite depthWrite;
         PSOManager::CullMode cullMode;
         ID3D12PipelineState* customPSO = nullptr;

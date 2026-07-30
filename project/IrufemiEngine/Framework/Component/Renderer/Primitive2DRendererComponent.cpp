@@ -1,4 +1,4 @@
-#include "Primitive2DRendererComponent.h"
+﻿#include "Primitive2DRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"
@@ -9,7 +9,7 @@ Primitive2DRendererComponent::~Primitive2DRendererComponent() {}
 void Primitive2DRendererComponent::Initialize() {
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive2DObject>();
-        primitive_->Initialize(static_cast<Primitive2DType>(currentTypeIndex_));
+        primitive_->Initialize(static_cast<Irufemi::Primitive2DType>(currentTypeIndex_));
         
         // 初期設定の適用
         if (!texturePath_.empty()) {
@@ -38,7 +38,7 @@ void Primitive2DRendererComponent::Update() {
         primitive_->SetRotationZ(transform_->GetWorldRotation().z);
         
         // TransformのScaleは、コンポーネントが保持するベースサイズ(size_)に対する乗数として適用
-        Vector2 finalSize = { size_.x * transform_->GetWorldScale().x, size_.y * transform_->GetWorldScale().y };
+        Irufemi::Vector2 finalSize = { size_.x * transform_->GetWorldScale().x, size_.y * transform_->GetWorldScale().y };
         primitive_->SetSize(finalSize);
     }
 
@@ -53,14 +53,14 @@ void Primitive2DRendererComponent::Draw() {
     }
 }
 
-void Primitive2DRendererComponent::SetShape(Primitive2DType type) {
+void Primitive2DRendererComponent::SetShape(Irufemi::Primitive2DType type) {
     currentTypeIndex_ = static_cast<int>(type);
     if (primitive_) {
         primitive_->SetShape(type);
     }
 }
 
-void Primitive2DRendererComponent::SetColor(const Vector4& color) {
+void Primitive2DRendererComponent::SetColor(const Irufemi::Vector4& color) {
     color_ = color;
     if (primitive_) {
         primitive_->SetColor(color_);
@@ -74,18 +74,18 @@ void Primitive2DRendererComponent::SetTexture(const std::string& texturePath) {
     }
 }
 
-void Primitive2DRendererComponent::SetPivot(const Vector2& pivot) {
+void Primitive2DRendererComponent::SetPivot(const Irufemi::Vector2& pivot) {
     pivot_ = pivot;
     if (primitive_) {
         primitive_->SetPivot(pivot_);
     }
 }
 
-void Primitive2DRendererComponent::SetSize(const Vector2& size) {
+void Primitive2DRendererComponent::SetSize(const Irufemi::Vector2& size) {
     size_ = size;
     // Updateで最終的なサイズが再計算されるが、初期値として直接セットしておく
     if (primitive_ && transform_) {
-        Vector2 finalSize = { size_.x * transform_->GetWorldScale().x, size_.y * transform_->GetWorldScale().y };
+        Irufemi::Vector2 finalSize = { size_.x * transform_->GetWorldScale().x, size_.y * transform_->GetWorldScale().y };
         primitive_->SetSize(finalSize);
     } else if (primitive_) {
         primitive_->SetSize(size_);
@@ -150,7 +150,7 @@ void Primitive2DRendererComponent::Deserialize(const nlohmann::json& j) {
 
     // すでにインスタンス化されている場合はパラメータを適用
     if (primitive_) {
-        primitive_->SetShape(static_cast<Primitive2DType>(currentTypeIndex_));
+        primitive_->SetShape(static_cast<Irufemi::Primitive2DType>(currentTypeIndex_));
         if (!texturePath_.empty()) {
             primitive_->SetTexture(texturePath_);
         }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "VoxelParticleSystem.h"
 #include <vector>
@@ -8,7 +8,7 @@
 #include "Engine/Core/Math/Vector3Int.h"
 
 class IrufemiEngine;
-struct OBB;
+namespace Irufemi { struct OBB; }
 
 class VoxelParticleManager {
 public:
@@ -29,7 +29,7 @@ public:
     /**
      * @brief 指定したモデルと解像度に対するシステムを取得し、エミッター（インスタンス）を登録する
      */
-    EmitterHandle RegisterEmitter(const std::string& modelName, const Vector3Int& resolution);
+    EmitterHandle RegisterEmitter(const std::string& modelName, const Irufemi::Vector3Int& resolution);
 
     /**
      * @brief 登録したエミッターを解放する
@@ -45,12 +45,12 @@ public:
     /**
      * @brief 事前に指定された数のパーティクルシステムをロード・確保する
      */
-    void ReservePool(const std::string& modelName, const Vector3Int& resolution, int preAllocateCount = 1000);
+    void ReservePool(const std::string& modelName, const Irufemi::Vector3Int& resolution, int preAllocateCount = 1000);
 
     /**
      * @brief その場での爆発エフェクトを発生させる
      */
-    void PlayExplosion(const std::string& modelName, const Vector3& worldPos, const Vector3& velocity, const Vector3& rotate, const Vector3& scale, const VoxelEmitter& params, const Vector3Int& resolution);
+    void PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params, const Irufemi::Vector3Int& resolution);
 
 private:
     VoxelParticleManager(const VoxelParticleManager&) = delete;
@@ -58,7 +58,7 @@ private:
 
     struct SystemKey {
         std::string modelName;
-        Vector3Int resolution;
+        Irufemi::Vector3Int resolution;
 
         bool operator==(const SystemKey& other) const {
             return modelName == other.modelName && 

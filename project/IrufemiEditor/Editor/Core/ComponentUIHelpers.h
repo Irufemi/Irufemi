@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #ifdef EditorMode
 #include <memory>
@@ -59,7 +59,7 @@ public:
     template<typename T>
     static void DrawColliderCommonProperties(T* comp, EditorActionManager* actionManager) {
         if (BeginPropertyTable("ColliderProperties")) {
-            Vector3 offset = comp->GetLocalOffset();
+            Irufemi::Vector3 offset = comp->GetLocalOffset();
             ImGui::TableNextRow();
             DrawPropertyLabel("Offset");
             ImGui::TableSetColumnIndex(1);
@@ -68,10 +68,10 @@ public:
                 comp->SetLocalOffset(offset);
             }
             ImGui::PopItemWidth();
-            CheckUndoRedoDrag(actionManager, &offset, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetLocalOffset(v); }));
+            CheckUndoRedoDrag(actionManager, &offset, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetLocalOffset(v); }));
             DrawPropertyResetButton("##OffsetReset", offset.x != 0.0f || offset.y != 0.0f || offset.z != 0.0f, [&]() {
-                Vector3 oldO = comp->GetLocalOffset();
-                PushInstantUndo(actionManager, oldO, Vector3{0,0,0}, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetLocalOffset(v); }));
+                Irufemi::Vector3 oldO = comp->GetLocalOffset();
+                PushInstantUndo(actionManager, oldO, Irufemi::Vector3{0,0,0}, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetLocalOffset(v); }));
             });
             
             if constexpr (std::is_same_v<T, SphereColliderComponent>) {
@@ -90,7 +90,7 @@ public:
                     PushInstantUndo(actionManager, oldR, 1.0f, std::function<void(const float&)>([comp](const float& v){ comp->SetLocalRadius(v); }));
                 });
             } else {
-                Vector3 size = comp->GetLocalSize();
+                Irufemi::Vector3 size = comp->GetLocalSize();
                 ImGui::TableNextRow();
                 DrawPropertyLabel("Size (Extents)");
                 ImGui::TableSetColumnIndex(1);
@@ -99,10 +99,10 @@ public:
                     comp->SetLocalSize(size);
                 }
                 ImGui::PopItemWidth();
-                CheckUndoRedoDrag(actionManager, &size, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetLocalSize(v); }));
+                CheckUndoRedoDrag(actionManager, &size, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetLocalSize(v); }));
                 DrawPropertyResetButton("##SizeReset", size.x != 1.0f || size.y != 1.0f || size.z != 1.0f, [&]() {
-                    Vector3 oldS = comp->GetLocalSize();
-                    PushInstantUndo(actionManager, oldS, Vector3{1,1,1}, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetLocalSize(v); }));
+                    Irufemi::Vector3 oldS = comp->GetLocalSize();
+                    PushInstantUndo(actionManager, oldS, Irufemi::Vector3{1,1,1}, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetLocalSize(v); }));
                 });
             }
             

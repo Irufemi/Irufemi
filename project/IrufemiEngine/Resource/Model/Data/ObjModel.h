@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../../Engine/Core/Math/Vector2.h"
 #include "../../../Engine/Core/Math/Vector3.h"
@@ -16,11 +16,11 @@
 
 struct ObjMaterial {
     // Kd
-    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     // Ka
-    Vector3 ambient = { 0.1f, 0.1f, 0.1f };
+    Irufemi::Vector3 ambient = { 0.1f, 0.1f, 0.1f };
     // Ks
-    Vector3 specular = { 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector3 specular = { 1.0f, 1.0f, 1.0f };
     
     float roughness = 0.5f;  
     float metallic = 0.0f;
@@ -40,7 +40,7 @@ struct ObjMaterial {
     // アルファテスト用閾値 (0.0f = すべて通す, 1.0f = すべて棄却)
     float alphaReference = 0.5f;
 
-    Matrix4x4 uvTransform = Math::MakeIdentity4x4();
+    Irufemi::Matrix4x4 uvTransform = Irufemi::Math::MakeIdentity4x4();
 
     std::string textureFilePath = "";
     std::string normalMapFilePath = "";
@@ -66,6 +66,6 @@ struct ObjModel {
     std::vector<ObjMesh> meshes;
     Node rootNode; // 追加: シーン階層ルート
     std::map<std::string, JointWeightData> skinClusterData;
-    Sphere boundingSphere; // 追加: モデル全体の境界球
-    AABB boundingBox; // 追加: モデル全体のローカルAABB（高精度ピッキング用）
+    Irufemi::Sphere boundingSphere; // 追加: モデル全体の境界球
+    Irufemi::AABB boundingBox; // 追加: モデル全体のローカルAABB（高精度ピッキング用）
 };

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl.h>
 #include <vector>
@@ -34,8 +34,8 @@ public:
     
     void Update();
 
-    void AddSphere(const Vector3& center, float radius, const Vector4& color);
-    void AddCube(const Matrix4x4& transform, const Vector4& color);
+    void AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color);
+    void AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color);
     
     void ClearInstances();
     void BuildInstanceBuffer();
@@ -43,8 +43,8 @@ public:
 
 private:
     struct InstanceData {
-        Matrix4x4 world;
-        Vector4 color;
+        Irufemi::Matrix4x4 world;
+        Irufemi::Vector4 color;
     };
 
     void CreateSphereResource();
@@ -55,7 +55,7 @@ private:
     DrawManager* drawManager_ = nullptr;
     DescriptorPool* srvAllocator_ = nullptr;
 
-    // --- Sphere Data ---
+    // --- Irufemi::Sphere Data ---
     Microsoft::WRL::ComPtr<ID3D12Resource> sphereVertexResource_;
     D3D12_VERTEX_BUFFER_VIEW sphereVBV_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> sphereIndexResource_;

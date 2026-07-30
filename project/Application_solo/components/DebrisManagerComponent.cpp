@@ -1,4 +1,4 @@
-#include "DebrisManagerComponent.h"
+﻿#include "DebrisManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
@@ -70,10 +70,10 @@ void DebrisManagerComponent::Initialize() {
         
         auto auraModel = aura->AddComponent<PrimitiveRendererComponent>();
         auraModel->Initialize();
-        auraModel->SetShape(PrimitiveType::Sphere); // 軽量なプリミティブ球を使用
+        auraModel->SetShape(Irufemi::PrimitiveType::Sphere); // 軽量なプリミティブ球を使用
         
         if (auto primitive = static_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
-            auto pso = BaseModel::GetIrufemiEngine()->GetPSOManager()->GetPSO("EnergyCore", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
+            auto pso = BaseModel::GetIrufemiEngine()->GetPSOManager()->GetPSO("EnergyCore", Irufemi::BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
             primitive->SetCustomPSO(pso);
             primitive->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
             primitive->SetColor(idleAuraColor_);
@@ -101,9 +101,9 @@ void DebrisManagerComponent::Update() {
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
     // デバッグ用: 1キーを押したら10個ランダムな場所にスポーンさせる
     if (input->IsKeyPressed('1') || input->IsKeyPressedDIK(0x02 /*DIK_1*/)) {
-        Vector3 spawnBase = {0.0f, 0.0f, 0.0f};
-        Vector3 forward = {0.0f, 0.0f, 1.0f};
-        Vector3 right = {1.0f, 0.0f, 0.0f};
+        Irufemi::Vector3 spawnBase = {0.0f, 0.0f, 0.0f};
+        Irufemi::Vector3 forward = {0.0f, 0.0f, 1.0f};
+        Irufemi::Vector3 right = {1.0f, 0.0f, 0.0f};
         
         auto scene = gameObject_->GetScene();
         if (scene) {
@@ -119,11 +119,11 @@ void DebrisManagerComponent::Update() {
         }
 
         for (int i = 0; i < 10; ++i) {
-            float distFwd = Random::GeneratorFloat(30.0f, 80.0f);
-            float distRight = Random::GeneratorFloat(-20.0f, 20.0f);
-            float height = Random::GeneratorFloat(-5.0f, 15.0f);
+            float distFwd = Irufemi::Random::GeneratorFloat(30.0f, 80.0f);
+            float distRight = Irufemi::Random::GeneratorFloat(-20.0f, 20.0f);
+            float height = Irufemi::Random::GeneratorFloat(-5.0f, 15.0f);
             
-            Vector3 pos = {
+            Irufemi::Vector3 pos = {
                 spawnBase.x + forward.x * distFwd + right.x * distRight,
                 spawnBase.y + height,
                 spawnBase.z + forward.z * distFwd + right.z * distRight
@@ -133,7 +133,7 @@ void DebrisManagerComponent::Update() {
             if (vid >= 0) {
                 DebrisAnimData anim;
                 anim.baseIdleY_ = pos.y;
-                anim.idleTimeY_ = Random::GeneratorFloat(0.0f, 100.0f);
+                anim.idleTimeY_ = Irufemi::Random::GeneratorFloat(0.0f, 100.0f);
                 animDataList_[vid] = anim;
                 activeIds_.push(vid);
             }
@@ -150,9 +150,9 @@ void DebrisManagerComponent::Update() {
 
     // デバッグ用: 9キーを押したら10,000個を一気にスポーンさせる（ストレステスト）
     if (input->IsKeyPressed('9') || input->IsKeyPressedDIK(0x0A /*DIK_9*/)) {
-        Vector3 spawnBase = {0.0f, 0.0f, 0.0f};
-        Vector3 forward = {0.0f, 0.0f, 1.0f};
-        Vector3 right = {1.0f, 0.0f, 0.0f};
+        Irufemi::Vector3 spawnBase = {0.0f, 0.0f, 0.0f};
+        Irufemi::Vector3 forward = {0.0f, 0.0f, 1.0f};
+        Irufemi::Vector3 right = {1.0f, 0.0f, 0.0f};
         
         auto scene = gameObject_->GetScene();
         if (scene) {
@@ -169,11 +169,11 @@ void DebrisManagerComponent::Update() {
 
         // 1万個のガレキを広い範囲にばらまく
         for (int i = 0; i < 10000; ++i) {
-            float distFwd = Random::GeneratorFloat(10.0f, 300.0f);  // 前方奥深く
-            float distRight = Random::GeneratorFloat(-150.0f, 150.0f); // 左右広く
-            float height = Random::GeneratorFloat(-10.0f, 100.0f);     // 上下広く
+            float distFwd = Irufemi::Random::GeneratorFloat(10.0f, 300.0f);  // 前方奥深く
+            float distRight = Irufemi::Random::GeneratorFloat(-150.0f, 150.0f); // 左右広く
+            float height = Irufemi::Random::GeneratorFloat(-10.0f, 100.0f);     // 上下広く
             
-            Vector3 pos = {
+            Irufemi::Vector3 pos = {
                 spawnBase.x + forward.x * distFwd + right.x * distRight,
                 spawnBase.y + height,
                 spawnBase.z + forward.z * distFwd + right.z * distRight
@@ -183,7 +183,7 @@ void DebrisManagerComponent::Update() {
             if (vid >= 0) {
                 DebrisAnimData anim;
                 anim.baseIdleY_ = pos.y;
-                anim.idleTimeY_ = Random::GeneratorFloat(0.0f, 100.0f);
+                anim.idleTimeY_ = Irufemi::Random::GeneratorFloat(0.0f, 100.0f);
                 animDataList_[vid] = anim;
                 activeIds_.push(vid);
             }
@@ -245,7 +245,7 @@ void DebrisManagerComponent::MarkForRelease(std::shared_ptr<GameObject> debris) 
     }
 }
 
-std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(const Vector3& pos, float radius) {
+std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(const Irufemi::Vector3& pos, float radius) {
     auto& virtualInstances = virtualManager_->GetDenseInstances();
     float bestDistSq = radius * radius;
     int bestId = -1;

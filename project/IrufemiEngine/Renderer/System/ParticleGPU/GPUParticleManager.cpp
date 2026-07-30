@@ -1,4 +1,4 @@
-#include "GPUParticleManager.h"
+﻿#include "GPUParticleManager.h"
 #include "../../../Engine/Manager/DrawManager.h"
 #include "../../../Engine/IrufemiEngine.h"
 
@@ -31,7 +31,7 @@ void GPUParticleManager::ClearAllParticles() {
     }
 }
 
-GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, BlendMode blendMode, bool isUnscaledTime, bool enableLighting) {
+GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting) {
     SystemKey key{ texturePath, blendMode, isUnscaledTime, enableLighting };
     auto& ctx = systems_[key];
 

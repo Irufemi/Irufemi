@@ -1,4 +1,4 @@
-#include "BossBulletManagerComponent.h"
+﻿#include "BossBulletManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
@@ -68,7 +68,7 @@ void BossBulletManagerComponent::OnRegisterProperties() {
     RegisterProperty("Default Life Time", &defaultLifeTime_);
 }
 
-void BossBulletManagerComponent::SpawnBullet(const Vector3& position, const Vector3& velocity) {
+void BossBulletManagerComponent::SpawnBullet(const Irufemi::Vector3& position, const Irufemi::Vector3& velocity) {
     if (!virtualManager_) return;
     
     int vid = virtualManager_->AddVirtualInstance(position, {0,0,0}, bulletScale_);

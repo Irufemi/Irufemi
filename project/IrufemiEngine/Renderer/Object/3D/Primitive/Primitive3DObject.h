@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../../System/Core/IRenderable.h"
 #include <memory>
@@ -33,7 +33,7 @@ public:
      * @param[in] type 初期形状タイプ
      * @param[in] texturePath 使用するテクスチャのパス
      */
-    void Initialize(PrimitiveType type, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(Irufemi::PrimitiveType type, const std::string& textureName = "resources/uvChecker.png");
 
     /**
      * @brief 更新処理
@@ -69,19 +69,19 @@ public:
     bool IsCullingEnabled() const { return isCullingEnabled_; }
 
     // --- 補助メソッド ---
-    Vector3 GetCenter() const { return transform_.transform.translate; }
-    Vector3 GetRight() const;
-    Vector3 GetUp() const;
-    Vector3 GetDirection() const;
+    Irufemi::Vector3 GetCenter() const { return transform_.transform.translate; }
+    Irufemi::Vector3 GetRight() const;
+    Irufemi::Vector3 GetUp() const;
+    Irufemi::Vector3 GetDirection() const;
 
     // --- ヘルパーSetter ---
-    void SetTransform(const Transform& t) { transform_.transform = t; transform_.isDirty = true; }
-    void SetPosition(const Vector3& pos) { transform_.transform.translate = pos; transform_.isDirty = true; }
-    void SetRotate(const Vector3& rot) { transform_.transform.rotate = rot; transform_.isDirty = true; }
-    void SetScale(const Vector3& scale) { transform_.transform.scale = scale; transform_.isDirty = true; }
-    void SetColor(const Vector4& color) { material_.color = color; }
+    void SetTransform(const Irufemi::Transform& t) { transform_.transform = t; transform_.isDirty = true; }
+    void SetPosition(const Irufemi::Vector3& pos) { transform_.transform.translate = pos; transform_.isDirty = true; }
+    void SetRotate(const Irufemi::Vector3& rot) { transform_.transform.rotate = rot; transform_.isDirty = true; }
+    void SetScale(const Irufemi::Vector3& scale) { transform_.transform.scale = scale; transform_.isDirty = true; }
+    void SetColor(const Irufemi::Vector4& color) { material_.color = color; }
     void SetTexture(const std::string& path) { material_.texturePath = path; }
-    void SetShape(PrimitiveType type) { mesh_.ChangeMesh(type); transform_.isDirty = true; }
+    void SetShape(Irufemi::PrimitiveType type) { mesh_.ChangeMesh(type); transform_.isDirty = true; }
     void SetCustomPSO(ID3D12PipelineState* pso) { if (mesh_.resource) mesh_.resource->SetCustomPSO(pso); }
     void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { if (mesh_.resource) mesh_.resource->SetCustomCBVAddress(addr); }
 

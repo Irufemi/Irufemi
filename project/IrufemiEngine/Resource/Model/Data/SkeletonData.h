@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -19,8 +19,8 @@ struct JointData {
     std::vector<int32_t> children;
     
     // Bind Pose (初期状態のTransformとローカル行列)
-    QuaternionTransform bindTransform;
-    Matrix4x4 bindLocalMatrix;
+    Irufemi::QuaternionTransform bindTransform;
+    Irufemi::Matrix4x4 bindLocalMatrix;
 };
 
 /**

@@ -1,4 +1,4 @@
-#include "Object2DResource.h"
+﻿#include "Object2DResource.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
@@ -102,13 +102,13 @@ void Object2DResource::Unmap() {
 
 void Object2DResource::UpdateTransform(const Camera& camera) {
 
-    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // 2D なので正射影行列を掛ける
-    transformationMatrix_.WVP = Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
+    transformationMatrix_.WVP = Irufemi::Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
     // CPU側のマテリアルキャッシュにのみ反映させる
     cpuMaterialData_.uvTransform =
-        Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+        Irufemi::Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
 
     MarkAsDirty();
 }

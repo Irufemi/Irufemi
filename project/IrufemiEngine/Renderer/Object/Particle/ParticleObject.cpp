@@ -1,4 +1,4 @@
-#include "ParticleObject.h"
+﻿#include "ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Resource/Model/ModelManager.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -76,7 +76,7 @@ void ParticleObject::SetTexturePath(const std::string& path) {
     }
 }
 
-void ParticleObject::SetBlendMode(BlendMode mode) {
+void ParticleObject::SetBlendMode(Irufemi::BlendMode mode) {
     if (blendMode_ != mode) {
         blendMode_ = mode;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
@@ -263,7 +263,7 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
         SetTexturePath(j["texturePath"]);
     }
     if (j.contains("blendMode")) {
-        SetBlendMode(static_cast<BlendMode>(j["blendMode"].get<int>()));
+        SetBlendMode(static_cast<Irufemi::BlendMode>(j["blendMode"].get<int>()));
     }
     if (j.contains("enableLighting")) {
         SetEnableLighting(j["enableLighting"].get<bool>());
@@ -443,7 +443,7 @@ void ParticleObject::DebugUI(const char* name) {
             const char* blendNames[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen", "Premultiplied" };
             int currentBlend = static_cast<int>(blendMode_);
             if (ImGui::Combo("Blend Mode", &currentBlend, blendNames, 7)) {
-                SetBlendMode(static_cast<BlendMode>(currentBlend));
+                SetBlendMode(static_cast<Irufemi::BlendMode>(currentBlend));
                 changed = true;
             }
             

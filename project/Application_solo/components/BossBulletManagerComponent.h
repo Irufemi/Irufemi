@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include <memory>
@@ -23,7 +23,7 @@ public:
     /**
      * @brief 指定した座標と速度で弾を発射する
      */
-    void SpawnBullet(const Vector3& position, const Vector3& velocity);
+    void SpawnBullet(const Irufemi::Vector3& position, const Irufemi::Vector3& velocity);
 
     /**
      * @brief 弾の回収（寿命や被弾など）
@@ -32,13 +32,13 @@ public:
 
 private:
     struct BossBulletData {
-        Vector3 velocity;
+        Irufemi::Vector3 velocity;
         float lifeTimer;
     };
 
     int maxBullets_ = 2000;
     float defaultLifeTime_ = 5.0f;
-    Vector3 bulletScale_ = { 0.5f, 0.5f, 0.5f };
+    Irufemi::Vector3 bulletScale_ = { 0.5f, 0.5f, 0.5f };
 
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
     std::vector<BossBulletData> bulletDataList_;

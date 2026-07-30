@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../System/Core/BaseBatch.h"
 #include "Engine/Manager/PrimitiveManager.h"
@@ -17,7 +17,7 @@ public:
      * @param type 生成する形状の種類
      * @param textureName 適用するテクスチャパス
      */
-    void Initialize(PrimitiveType type, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(Irufemi::PrimitiveType type, const std::string& textureName = "resources/uvChecker.png");
 
     /**
      * @brief リング形状専用の初期化
@@ -37,7 +37,7 @@ private:
     void EnsureSharedTexture(const std::string& textureName);
     
 private:
-    PrimitiveType type_ = PrimitiveType::Sphere;
+    Irufemi::PrimitiveType type_ = Irufemi::PrimitiveType::Sphere;
     bool isCustomPrimitive_ = false; // リングなどの個別パラメータを使用するか
     PrimitiveResource customPrimitiveResource_; // カスタム用のリソース
 };

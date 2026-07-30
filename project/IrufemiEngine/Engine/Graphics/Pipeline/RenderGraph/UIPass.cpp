@@ -1,4 +1,4 @@
-#include "UIPass.h"
+﻿#include "UIPass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "RenderGraphBuilder.h"
@@ -33,7 +33,7 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
         if (queue.empty()) return;
         
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         ID3D12PipelineState* currentCustomPSO = nullptr;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Manager/CollisionManager.h"
@@ -37,8 +37,8 @@ protected:
     const RaycastHit& GetHitInfo() const { return hitInfo_; }
 
     // 設定
-    Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
-    Vector3 localDirection_ = { 0.0f, 0.0f, 1.0f }; // ローカルZ軸方向
+    Irufemi::Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
+    Irufemi::Vector3 localDirection_ = { 0.0f, 0.0f, 1.0f }; // ローカルZ軸方向
     float maxDistance_ = 100.0f;
     uint32_t mask_ = 0xFFFFFFFF; // 全てのレイヤーと判定
 
@@ -50,5 +50,5 @@ protected:
 private:
     TransformComponent* transform_ = nullptr;
     RaycastHit hitInfo_;
-    Ray currentRay_;
+    Irufemi::Ray currentRay_;
 };

@@ -1,4 +1,4 @@
-#include "VoxelParticleManager.h"
+﻿#include "VoxelParticleManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Graphics/Pipeline/PSOManager.h"
 
@@ -6,7 +6,7 @@ void VoxelParticleManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 }
 
-VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const std::string& modelName, const Vector3Int& resolution) {
+VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const std::string& modelName, const Irufemi::Vector3Int& resolution) {
     SystemKey key{ modelName, resolution };
     auto& context = systems_[key];
 
@@ -120,7 +120,7 @@ void VoxelParticleManager::Update(float deltaTime) {
 void VoxelParticleManager::Draw() {
     for (auto& pair : systems_) {
         if (pair.second.system) {
-            engine_->SetBlend(BlendMode::kBlendModeNormal);
+            engine_->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
             engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
             engine_->SetCull(PSOManager::CullMode::Back);
             pair.second.system->Draw();
@@ -128,12 +128,12 @@ void VoxelParticleManager::Draw() {
     }
 }
 
-void VoxelParticleManager::ReservePool(const std::string& modelName, const Vector3Int& resolution, int preAllocateCount) {
+void VoxelParticleManager::ReservePool(const std::string& modelName, const Irufemi::Vector3Int& resolution, int preAllocateCount) {
     auto handle = RegisterEmitter(modelName, resolution);
     UnregisterEmitter(handle);
 }
 
-void VoxelParticleManager::PlayExplosion(const std::string& modelName, const Vector3& worldPos, const Vector3& velocity, const Vector3& rotate, const Vector3& scale, const VoxelEmitter& params, const Vector3Int& resolution) {
+void VoxelParticleManager::PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params, const Irufemi::Vector3Int& resolution) {
     auto handle = RegisterEmitter(modelName, resolution);
     if (!handle.IsValid()) return; // 制限オーバーで取得できなかった場合は処理しない
 

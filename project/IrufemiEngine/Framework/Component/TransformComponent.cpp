@@ -1,24 +1,24 @@
-#include "TransformComponent.h"
+﻿#include "TransformComponent.h"
 #include "../GameObject.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/System/ComponentPool.h"
 
 // Setters
-void TransformComponent::SetPosition(const Vector3& position) {
+void TransformComponent::SetPosition(const Irufemi::Vector3& position) {
     if (position_.x != position.x || position_.y != position.y || position_.z != position.z) {
         position_ = position;
         isLocalDirty_ = true;
     }
 }
 
-void TransformComponent::SetRotation(const Vector3& rotation) {
+void TransformComponent::SetRotation(const Irufemi::Vector3& rotation) {
     if (rotation_.x != rotation.x || rotation_.y != rotation.y || rotation_.z != rotation.z) {
         rotation_ = rotation;
         isLocalDirty_ = true;
     }
 }
 
-void TransformComponent::SetScale(const Vector3& scale) {
+void TransformComponent::SetScale(const Irufemi::Vector3& scale) {
     if (scale_.x != scale.x || scale_.y != scale.y || scale_.z != scale.z) {
         scale_ = scale;
         isLocalDirty_ = true;
@@ -26,7 +26,7 @@ void TransformComponent::SetScale(const Vector3& scale) {
 }
 
 // Lazy Evaluated World Getters
-const Vector3& TransformComponent::GetWorldPosition() const {
+const Irufemi::Vector3& TransformComponent::GetWorldPosition() const {
     if (!isWorldTransformExtracted_) {
         // ComputeMatrixは呼ばれている前提。ワールド行列から再抽出する
         worldPosition_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
@@ -34,14 +34,14 @@ const Vector3& TransformComponent::GetWorldPosition() const {
     return worldPosition_;
 }
 
-const Vector3& TransformComponent::GetWorldRotation() const {
+const Irufemi::Vector3& TransformComponent::GetWorldRotation() const {
     if (!isWorldTransformExtracted_) {
-        worldRotation_ = Math::ExtractEulerFromMatrix(worldMatrix_);
+        worldRotation_ = Irufemi::Math::ExtractEulerFromMatrix(worldMatrix_);
         // worldScale_ も一緒に計算しておく
-        Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
-        Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
-        Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
-        worldScale_ = { Math::Length(xaxis), Math::Length(yaxis), Math::Length(zaxis) };
+        Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
+        Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
+        Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
+        worldScale_ = { Irufemi::Math::Length(xaxis), Irufemi::Math::Length(yaxis), Irufemi::Math::Length(zaxis) };
         
         worldPosition_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
         
@@ -50,23 +50,23 @@ const Vector3& TransformComponent::GetWorldRotation() const {
     return worldRotation_;
 }
 
-const Vector3& TransformComponent::GetWorldScale() const {
+const Irufemi::Vector3& TransformComponent::GetWorldScale() const {
     if (!isWorldTransformExtracted_) {
         GetWorldRotation(); // worldRotation_ の計算と一緒に処理される
     }
     return worldScale_;
 }
 
-Vector3 TransformComponent::GetWorldRight() const {
-    return Math::Normalize(Vector3{ worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] });
+Irufemi::Vector3 TransformComponent::GetWorldRight() const {
+    return Irufemi::Math::Normalize(Irufemi::Vector3{ worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] });
 }
 
-Vector3 TransformComponent::GetWorldUp() const {
-    return Math::Normalize(Vector3{ worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] });
+Irufemi::Vector3 TransformComponent::GetWorldUp() const {
+    return Irufemi::Math::Normalize(Irufemi::Vector3{ worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] });
 }
 
-Vector3 TransformComponent::GetWorldForward() const {
-    return Math::Normalize(Vector3{ worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] });
+Irufemi::Vector3 TransformComponent::GetWorldForward() const {
+    return Irufemi::Math::Normalize(Irufemi::Vector3{ worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] });
 }
 
 void TransformComponent::ComputeMatrix(bool force) {
@@ -79,7 +79,7 @@ void TransformComponent::ComputeMatrix(bool force) {
 
     // ローカル行列の計算（変更があった場合のみ）
     if (isLocalDirty_) {
-        localMatrix_ = Math::MakeAffineMatrix(scale_, rotation_, position_);
+        localMatrix_ = Irufemi::Math::MakeAffineMatrix(scale_, rotation_, position_);
         isLocalDirty_ = false;
         isWorldDirty_ = true; // ローカルが変わればワールドも必ず変わる
     }
@@ -96,7 +96,7 @@ void TransformComponent::ComputeMatrix(bool force) {
             
             // 自分か親のどちらかが更新されたならワールド行列を再計算
             if (isWorldDirty_ || parentTransform->lastUpdateFrame_ == currentFrame_) {
-                worldMatrix_ = Math::Multiply(localMatrix_, parentTransform->GetWorldMatrix());
+                worldMatrix_ = Irufemi::Math::Multiply(localMatrix_, parentTransform->GetWorldMatrix());
                 isWorldDirty_ = false;
                 isWorldTransformExtracted_ = false; // ワールド座標が変化したので抽出フラグを下ろす
                 parentChanged = true;

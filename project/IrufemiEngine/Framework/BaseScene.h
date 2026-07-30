@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "IScene.h"
 #include <memory>
 #include <vector>
@@ -72,7 +72,7 @@ public:
      * @param position 初期座標
      * @return 生成された GameObject のポインタ
      */
-    std::shared_ptr<GameObject> InstantiatePrefab(const std::string& prefabPath, const Vector3& position = {0,0,0});
+    std::shared_ptr<GameObject> InstantiatePrefab(const std::string& prefabPath, const Irufemi::Vector3& position = {0,0,0});
 
     /**
      * @brief シーンが保持する GameObject のリストを取得する

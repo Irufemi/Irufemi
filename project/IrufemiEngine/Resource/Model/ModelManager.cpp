@@ -1,4 +1,4 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/StringUtility.h"
 #include "Engine/Core/Utility/Log.h"
 #include "Engine/Core/Utility/FileSystem.h"
@@ -523,44 +523,44 @@ std::string ModelManager::FindFileRecursive(const std::string& filename) const {
 
 namespace {
     // レイと三角形の交差判定
-    bool IntersectRayTriangle(const Vector3& origin, const Vector3& direction,
-        const Vector3& v0, const Vector3& v1, const Vector3& v2,
+    bool IntersectRayTriangle(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction,
+        const Irufemi::Vector3& v0, const Irufemi::Vector3& v1, const Irufemi::Vector3& v2,
         float& t) {
         const float kEpsilon = 1e-6f;
-        Vector3 edge1 = Math::Subtract(v1, v0);
-        Vector3 edge2 = Math::Subtract(v2, v0);
-        Vector3 h = Math::Cross(direction, edge2);
-        float a = Math::Dot(edge1, h);
+        Irufemi::Vector3 edge1 = Irufemi::Math::Subtract(v1, v0);
+        Irufemi::Vector3 edge2 = Irufemi::Math::Subtract(v2, v0);
+        Irufemi::Vector3 h = Irufemi::Math::Cross(direction, edge2);
+        float a = Irufemi::Math::Dot(edge1, h);
         if (a > -kEpsilon && a < kEpsilon)
             return false; // レイは三角形と平行
 
         float f = 1.0f / a;
-        Vector3 s = Math::Subtract(origin, v0);
-        float u = f * Math::Dot(s, h);
+        Irufemi::Vector3 s = Irufemi::Math::Subtract(origin, v0);
+        float u = f * Irufemi::Math::Dot(s, h);
         if (u < 0.0f || u > 1.0f)
             return false;
 
-        Vector3 q = Math::Cross(s, edge1);
-        float v = f * Math::Dot(direction, q);
+        Irufemi::Vector3 q = Irufemi::Math::Cross(s, edge1);
+        float v = f * Irufemi::Math::Dot(direction, q);
         if (v < 0.0f || u + v > 1.0f)
             return false;
 
-        t = f * Math::Dot(edge2, q);
+        t = f * Irufemi::Math::Dot(edge2, q);
         return (t > kEpsilon);
     }
 
     // 点と三角形の最近接点を求める
-    Vector3 ClosestPointOnTriangle(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
-        Vector3 ab = b - a;
-        Vector3 ac = c - a;
-        Vector3 ap = p - a;
-        float d1 = Math::Dot(ab, ap);
-        float d2 = Math::Dot(ac, ap);
+    Irufemi::Vector3 ClosestPointOnTriangle(const Irufemi::Vector3& p, const Irufemi::Vector3& a, const Irufemi::Vector3& b, const Irufemi::Vector3& c) {
+        Irufemi::Vector3 ab = b - a;
+        Irufemi::Vector3 ac = c - a;
+        Irufemi::Vector3 ap = p - a;
+        float d1 = Irufemi::Math::Dot(ab, ap);
+        float d2 = Irufemi::Math::Dot(ac, ap);
         if (d1 <= 0.0f && d2 <= 0.0f) return a;
 
-        Vector3 bp = p - b;
-        float d3 = Math::Dot(ab, bp);
-        float d4 = Math::Dot(ac, bp);
+        Irufemi::Vector3 bp = p - b;
+        float d3 = Irufemi::Math::Dot(ab, bp);
+        float d4 = Irufemi::Math::Dot(ac, bp);
         if (d3 >= 0.0f && d4 <= d3) return b;
 
         float vc = d1 * d4 - d3 * d2;
@@ -569,9 +569,9 @@ namespace {
             return a + v * ab;
         }
 
-        Vector3 cp = p - c;
-        float d5 = Math::Dot(ab, cp);
-        float d6 = Math::Dot(ac, cp);
+        Irufemi::Vector3 cp = p - c;
+        float d5 = Irufemi::Math::Dot(ab, cp);
+        float d6 = Irufemi::Math::Dot(ac, cp);
         if (d6 >= 0.0f && d5 <= d6) return c;
 
         float vb = d5 * d2 - d1 * d6;
@@ -593,13 +593,13 @@ namespace {
     }
 
     // 重心座標を計算
-    Vector3 Barycentric(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
-        Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
-        float d00 = Math::Dot(v0, v0);
-        float d01 = Math::Dot(v0, v1);
-        float d11 = Math::Dot(v1, v1);
-        float d20 = Math::Dot(v2, v0);
-        float d21 = Math::Dot(v2, v1);
+    Irufemi::Vector3 Barycentric(const Irufemi::Vector3& p, const Irufemi::Vector3& a, const Irufemi::Vector3& b, const Irufemi::Vector3& c) {
+        Irufemi::Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
+        float d00 = Irufemi::Math::Dot(v0, v0);
+        float d01 = Irufemi::Math::Dot(v0, v1);
+        float d11 = Irufemi::Math::Dot(v1, v1);
+        float d20 = Irufemi::Math::Dot(v2, v0);
+        float d21 = Irufemi::Math::Dot(v2, v1);
         float denom = d00 * d11 - d01 * d01;
         float v = (d11 * d20 - d01 * d21) / denom;
         float w = (d00 * d21 - d01 * d20) / denom;
@@ -608,11 +608,11 @@ namespace {
     }
 }
 
-VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager) {
+VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Irufemi::Vector3Int& resolution, TextureManager* textureManager) {
     VoxelizedModel result;
     result.resolution = resolution;
 
-    // 1. AABB(バウンディングボックス)の計算
+    // 1. Irufemi::AABB(バウンディングボックス)の計算
     result.aabbMin = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
     result.aabbMax = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
 
@@ -627,19 +627,19 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
         }
     }
 
-    Vector3 aabbSize = {
+    Irufemi::Vector3 aabbSize = {
         result.aabbMax.x - result.aabbMin.x,
         result.aabbMax.y - result.aabbMin.y,
         result.aabbMax.z - result.aabbMin.z
     };
-    Vector3 voxelSize = { aabbSize.x / resolution.x, aabbSize.y / resolution.y, aabbSize.z / resolution.z };
+    Irufemi::Vector3 voxelSize = { aabbSize.x / resolution.x, aabbSize.y / resolution.y, aabbSize.z / resolution.z };
 
     // 2. 全てのボクセルをループ処理
     for (int z = 0; z < resolution.z; ++z) {
         for (int y = 0; y < resolution.y; ++y) {
             for (int x = 0; x < resolution.x; ++x) {
                 // 3. 各ボクセルの中心座標を計算
-                Vector3 voxelCenter = {
+                Irufemi::Vector3 voxelCenter = {
                     result.aabbMin.x + (x + 0.5f) * voxelSize.x,
                     result.aabbMin.y + (y + 0.5f) * voxelSize.y,
                     result.aabbMin.z + (z + 0.5f) * voxelSize.z
@@ -648,7 +648,7 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                 int intersections = 0;
 
                 // 3方向にレイを飛ばして多数決で内外判定 (1方向だと法線平行のポリゴンで誤判定しやすい)
-                const Vector3 rayDirs[3] = {
+                const Irufemi::Vector3 rayDirs[3] = {
                     { 1.0f, 0.0f, 0.0f }, // X+
                     { 0.0f, 1.0f, 0.0f }, // Y+
                     { 0.0f, 0.0f, 1.0f }, // Z+
@@ -667,9 +667,9 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                         VertexData v1 = mesh.indices.empty() ? mesh.vertices[i + 1] : mesh.vertices[mesh.indices[i + 1]];
                         VertexData v2 = mesh.indices.empty() ? mesh.vertices[i + 2] : mesh.vertices[mesh.indices[i + 2]];
 
-                        Vector3 p0 = { v0.position.x, v0.position.y, v0.position.z };
-                        Vector3 p1 = { v1.position.x, v1.position.y, v1.position.z };
-                        Vector3 p2 = { v2.position.x, v2.position.y, v2.position.z };
+                        Irufemi::Vector3 p0 = { v0.position.x, v0.position.y, v0.position.z };
+                        Irufemi::Vector3 p1 = { v1.position.x, v1.position.y, v1.position.z };
+                        Irufemi::Vector3 p2 = { v2.position.x, v2.position.y, v2.position.z };
 
                         // 3方向それぞれ独立にカウント
                         for (int d = 0; d < 3; ++d) {
@@ -680,9 +680,9 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                         }
 
                         // 最も近いポリゴンを見つける
-                        Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
-                        Vector3 diff = closestPoint - voxelCenter;
-                        float distanceSq = Math::Dot(diff, diff);
+                        Irufemi::Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
+                        Irufemi::Vector3 diff = closestPoint - voxelCenter;
+                        float distanceSq = Irufemi::Math::Dot(diff, diff);
 
                         if (distanceSq < minDistance) {
                             minDistance = distanceSq;
@@ -705,41 +705,41 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                 // 内部のボクセルのみ生成（2/3方向以上が内部判定で採用）
                 if (insideVotes >= 2)
                 {
-                    Voxel newVoxel;
+                    Irufemi::Voxel newVoxel;
                     newVoxel.position = voxelCenter;
                     newVoxel.normal = { 0.0f, 1.0f, 0.0f };      // 初期法線
                     newVoxel.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 初期色
                     newVoxel.uv = { 0.0f, 0.0f };                // 初期UV
 
                     if (closestMesh != nullptr) {
-                        Vector3 p0 = { closestTri[0].position.x, closestTri[0].position.y, closestTri[0].position.z };
-                        Vector3 p1 = { closestTri[1].position.x, closestTri[1].position.y, closestTri[1].position.z };
-                        Vector3 p2 = { closestTri[2].position.x, closestTri[2].position.y, closestTri[2].position.z };
+                        Irufemi::Vector3 p0 = { closestTri[0].position.x, closestTri[0].position.y, closestTri[0].position.z };
+                        Irufemi::Vector3 p1 = { closestTri[1].position.x, closestTri[1].position.y, closestTri[1].position.z };
+                        Irufemi::Vector3 p2 = { closestTri[2].position.x, closestTri[2].position.y, closestTri[2].position.z };
 
                         // Barycentric(重心座標)の計算
-                        Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
-                        Vector3 uvw = Barycentric(closestPoint, p0, p1, p2);
+                        Irufemi::Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
+                        Irufemi::Vector3 uvw = Barycentric(closestPoint, p0, p1, p2);
 
                         // ==========================================
                         // 法線(Normal)の補間と設定
                         // ==========================================
-                        Vector3 n0 = closestTri[0].normal;
-                        Vector3 n1 = closestTri[1].normal;
-                        Vector3 n2 = closestTri[2].normal;
+                        Irufemi::Vector3 n0 = closestTri[0].normal;
+                        Irufemi::Vector3 n1 = closestTri[1].normal;
+                        Irufemi::Vector3 n2 = closestTri[2].normal;
 
-                        Vector3 interpolatedNormal = {
+                        Irufemi::Vector3 interpolatedNormal = {
                             n0.x * uvw.x + n1.x * uvw.y + n2.x * uvw.z,
                             n0.y * uvw.x + n1.y * uvw.y + n2.y * uvw.z,
                             n0.z * uvw.x + n1.z * uvw.y + n2.z * uvw.z
                         };
-                        newVoxel.normal = Math::Normalize(interpolatedNormal); // 正規化してボクセルに保存
+                        newVoxel.normal = Irufemi::Math::Normalize(interpolatedNormal); // 正規化してボクセルに保存
 
                         // UVの取得
-                        Vector2 uv0 = closestTri[0].texcoord;
-                        Vector2 uv1 = closestTri[1].texcoord;
-                        Vector2 uv2 = closestTri[2].texcoord;
+                        Irufemi::Vector2 uv0 = closestTri[0].texcoord;
+                        Irufemi::Vector2 uv1 = closestTri[1].texcoord;
+                        Irufemi::Vector2 uv2 = closestTri[2].texcoord;
 
-                        Vector2 interpolatedUV = {
+                        Irufemi::Vector2 interpolatedUV = {
                             uv0.x * uvw.x + uv1.x * uvw.y + uv2.x * uvw.z,
                             uv0.y * uvw.x + uv1.y * uvw.y + uv2.y * uvw.z
                         };
@@ -767,30 +767,30 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                                     uint8_t* npixel = npixels + (ntexY * nrowPitch) + (ntexX * npixelStride);
 
                                     // 1. サンプリングしたRGB[0, 255]を[-1.0, 1.0]のベクトルに変換
-                                    Vector3 sampledNormal;
+                                    Irufemi::Vector3 sampledNormal;
                                     sampledNormal.x = (npixel[0] / 255.0f) * 2.0f - 1.0f;
                                     sampledNormal.y = (npixel[1] / 255.0f) * 2.0f - 1.0f;
                                     sampledNormal.z = (npixel[2] / 255.0f) * 2.0f - 1.0f;
 
                                     // 2. 接空間ベクトル (Tangent, Bitangent) の計算
-                                    Vector3 edge1 = p1 - p0;
-                                    Vector3 edge2 = p2 - p0;
-                                    Vector2 deltaUV1 = uv1 - uv0;
-                                    Vector2 deltaUV2 = uv2 - uv0;
+                                    Irufemi::Vector3 edge1 = p1 - p0;
+                                    Irufemi::Vector3 edge2 = p2 - p0;
+                                    Irufemi::Vector2 deltaUV1 = uv1 - uv0;
+                                    Irufemi::Vector2 deltaUV2 = uv2 - uv0;
 
                                     float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
                                     
-                                    Vector3 tangent;
+                                    Irufemi::Vector3 tangent;
                                     tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
                                     tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
                                     tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-                                    tangent = Math::Normalize(tangent);
+                                    tangent = Irufemi::Math::Normalize(tangent);
 
                                     // グラム・シュミットの直交化を用いてTangentを再直交化
-                                    tangent = Math::Normalize(tangent - newVoxel.normal * Math::Dot(tangent, newVoxel.normal));
+                                    tangent = Irufemi::Math::Normalize(tangent - newVoxel.normal * Irufemi::Math::Dot(tangent, newVoxel.normal));
 
                                     // Bitangentの計算 (NormalとTangentの外積に、UV方向による符号を掛ける)
-                                    Vector3 bitangent = Math::Cross(newVoxel.normal, tangent);
+                                    Irufemi::Vector3 bitangent = Irufemi::Math::Cross(newVoxel.normal, tangent);
                                     if (f < 0.0f) {
                                         bitangent.x *= -1.0f;
                                         bitangent.y *= -1.0f;
@@ -799,12 +799,12 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
 
                                     // 3. Tangent SpaceからLocal Spaceへの変換行列で合成
                                     // Matrix TBN( tangent, bitangent, newVoxel.normal )
-                                    Vector3 localNormal;
+                                    Irufemi::Vector3 localNormal;
                                     localNormal.x = tangent.x * sampledNormal.x + bitangent.x * sampledNormal.y + newVoxel.normal.x * sampledNormal.z;
                                     localNormal.y = tangent.y * sampledNormal.x + bitangent.y * sampledNormal.y + newVoxel.normal.y * sampledNormal.z;
                                     localNormal.z = tangent.z * sampledNormal.x + bitangent.z * sampledNormal.y + newVoxel.normal.z * sampledNormal.z;
 
-                                    newVoxel.normal = Math::Normalize(localNormal);
+                                    newVoxel.normal = Irufemi::Math::Normalize(localNormal);
                                 }
                             }
                         }
@@ -863,7 +863,7 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
     return result;
 }
 
-std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution) {
+std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::string& filename, const Irufemi::Vector3Int& resolution) {
     ResourceHandle handle = LoadModel(filename);
     ManagedModel* managedModel = Resolve(handle);
 
@@ -897,4 +897,4 @@ std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::strin
     managedModel->cachedVoxelModels.push_back(vModel);
     
     return vModel;
-}
+}

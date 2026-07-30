@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 #include "Engine/Core/Math/Vector3.h"
@@ -11,7 +11,7 @@ struct AnimationCurve {
 };
 
 struct NodeAnimation {
-    AnimationCurve<Vector3> translate;
-    AnimationCurve<Quaternion> rotate;
-    AnimationCurve<Vector3> scale;
+    AnimationCurve<Irufemi::Vector3> translate;
+    AnimationCurve<Irufemi::Quaternion> rotate;
+    AnimationCurve<Irufemi::Vector3> scale;
 };

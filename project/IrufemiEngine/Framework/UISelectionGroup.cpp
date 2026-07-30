@@ -1,4 +1,4 @@
-#include "UISelectionGroup.h"
+﻿#include "UISelectionGroup.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
@@ -90,11 +90,11 @@ void UISelectionGroup::Update(InputManager* input) {
 
         // 選択状況に応じて色を適用
         float animAlpha = animator_.GetPulseAlpha(0.6f, 0.4f, 3.0f); // PromptController風のゆっくりした明滅
-        Vector4 currentActiveColor = activeBaseColor_;
+        Irufemi::Vector4 currentActiveColor = activeBaseColor_;
         currentActiveColor.w *= animAlpha;
 
         for (int i = 0; i < static_cast<int>(items_.size()); ++i) {
-            Vector4 applyColor = (i == selectedIndex_) ? currentActiveColor : inactiveColor_;
+            Irufemi::Vector4 applyColor = (i == selectedIndex_) ? currentActiveColor : inactiveColor_;
             
             if (std::holds_alternative<Sprite*>(items_[i])) {
                 if (auto* sprite = std::get<Sprite*>(items_[i])) {
@@ -117,7 +117,7 @@ void UISelectionGroup::Update(InputManager* input) {
         for (int i = 0; i < static_cast<int>(items_.size()); ++i) {
             if (i == selectedIndex_) {
                 // 選択されたものはフラッシュ
-                Vector4 applyColor = activeBaseColor_;
+                Irufemi::Vector4 applyColor = activeBaseColor_;
                 applyColor.w = isVisible_ ? 1.0f : 0.0f; // フラッシュ用にアルファを切り替え
                 
                 if (std::holds_alternative<Sprite*>(items_[i])) {
@@ -130,7 +130,7 @@ void UISelectionGroup::Update(InputManager* input) {
                 }
             } else {
                 // 選ばれなかったものは非表示、もしくはそのまま
-                Vector4 invisibleColor = inactiveColor_;
+                Irufemi::Vector4 invisibleColor = inactiveColor_;
                 invisibleColor.w = 0.0f;
                 if (std::holds_alternative<Sprite*>(items_[i])) {
                     if (auto* sprite = std::get<Sprite*>(items_[i])) sprite->SetColor(invisibleColor);

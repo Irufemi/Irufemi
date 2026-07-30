@@ -1,4 +1,4 @@
-#include "SplineFollowerComponent.h"
+﻿#include "SplineFollowerComponent.h"
 #include "Framework/Component/Utility/SplineComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
@@ -53,8 +53,8 @@ void SplineFollowerComponent::Update() {
         if (currentDistance_ > totalLength) currentDistance_ = totalLength;
 
         // レール上の座標と接線（進行方向）を距離ベースで取得
-        Vector3 basePos = cachedPath_->GetPointAtDistance(currentDistance_);
-        Vector3 tangent = cachedPath_->GetTangentAtDistance(currentDistance_);
+        Irufemi::Vector3 basePos = cachedPath_->GetPointAtDistance(currentDistance_);
+        Irufemi::Vector3 tangent = cachedPath_->GetTangentAtDistance(currentDistance_);
 
         auto transform = gameObject_->GetComponent<TransformComponent>();
         if (transform) {

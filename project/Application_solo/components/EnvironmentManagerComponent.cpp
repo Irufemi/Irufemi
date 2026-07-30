@@ -1,4 +1,4 @@
-#include "EnvironmentManagerComponent.h"
+﻿#include "EnvironmentManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
@@ -45,8 +45,8 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
         if (!found) {
             newSettings.push_back({
                 name, 
-                Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, -1.0f, -1.0f),
-                Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f),
+                Irufemi::Vector3(-1.0f, -1.0f, -1.0f), Irufemi::Vector3(-1.0f, -1.0f, -1.0f),
+                Irufemi::Vector3(0.0f, 0.0f, 0.0f), Irufemi::Vector3(0.0f, 0.0f, 0.0f),
                 0, 0
             });
         }
@@ -86,7 +86,7 @@ void EnvironmentManagerComponent::Start() {
                     }
                 }
 
-                Vector3 origPos, origRot, origScale;
+                Irufemi::Vector3 origPos, origRot, origScale;
                 if (auto transform = child->GetComponent<TransformComponent>()) {
                     origPos = transform->GetPosition();
                     origRot = transform->GetRotation();
@@ -123,7 +123,7 @@ void EnvironmentManagerComponent::Update() {
             setting.previousOffset = setting.collisionOffset;
             anyChanged = true;
         }
-        // placementType is tracked but unused since manual placement defines Transform
+        // placementType is tracked but unused since manual placement defines Irufemi::Transform
         if (setting.placementType != setting.previousPlacementType) {
             setting.previousPlacementType = setting.placementType;
         }
@@ -154,7 +154,7 @@ void EnvironmentManagerComponent::Draw() {
         }
     }
 
-    // 2. 管理下のオブジェクトから Transform を取得し、バッチに登録
+    // 2. 管理下のオブジェクトから Irufemi::Transform を取得し、バッチに登録
     for (const auto& info : spawnedObjects_) {
         if (auto obj = info.obj.lock()) {
             if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {

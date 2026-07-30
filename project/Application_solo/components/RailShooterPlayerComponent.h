@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 
@@ -17,14 +17,14 @@ public:
 
 private:
     float xySpeed_ = 10.0f;           ///< 上下左右に避ける（回避運動）スピード
-    Vector3 currentOffset_ = {0,0,0}; ///< レールの中心からどのくらいずれているか（上下左右のズレ幅）
+    Irufemi::Vector3 currentOffset_ = {0,0,0}; ///< レールの中心からどのくらいずれているか（上下左右のズレ幅）
 
     // 画面内を動き回れる範囲（限界値）
-    Vector3 moveLimitMin_ = {-10.0f, -10.0f, 0.0f}; ///< 移動できる限界の左下座標
-    Vector3 moveLimitMax_ = { 10.0f,  10.0f, 0.0f}; ///< 移動できる限界の右上座標
+    Irufemi::Vector3 moveLimitMin_ = {-10.0f, -10.0f, 0.0f}; ///< 移動できる限界の左下座標
+    Irufemi::Vector3 moveLimitMax_ = { 10.0f,  10.0f, 0.0f}; ///< 移動できる限界の右上座標
 
     // --- グラビティ操作・慣性・姿勢制御パラメータ ---
-    Vector3 currentVelocity_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 currentVelocity_ = {0.0f, 0.0f, 0.0f};
     float acceleration_ = 150.0f; // 急発進の加速度
     float friction_ = 10.0f;      // 急制動の摩擦係数
     float maxSpeed_ = 15.0f;      // 最高速度

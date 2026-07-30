@@ -1,4 +1,4 @@
-#include "AnimatedMeshObject.h"
+﻿#include "AnimatedMeshObject.h"
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Core/Math/Math.h"
@@ -99,20 +99,20 @@ void AnimatedMeshObject::Update(const SkeletonPose* externalPose) {
         currentPose_ = &internalPose_;
     }
 
-    worldMatrix_ = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    worldMatrix_ = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
     if (!m->cpuModel->skinClusterData.empty()) {
         transformationMatrix_.world = worldMatrix_;
-        Matrix4x4 worldForNormal = transformationMatrix_.world;
+        Irufemi::Matrix4x4 worldForNormal = transformationMatrix_.world;
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-        transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
     } else {
         transformationMatrix_.world = localMatrix_ * worldMatrix_;
-        Matrix4x4 worldForNormal = transformationMatrix_.world;
+        Irufemi::Matrix4x4 worldForNormal = transformationMatrix_.world;
         worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-        transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+        transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
     }
 
 
@@ -154,10 +154,10 @@ void AnimatedMeshObject::DispatchCompute() {
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
-        Sphere boundingSphere;
+        Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
-        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; 
         }
     }
@@ -174,14 +174,14 @@ void AnimatedMeshObject::Draw() {
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
-        Sphere boundingSphere;
+        Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
-        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) return;
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) return;
     }
 
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update(currentPose_);

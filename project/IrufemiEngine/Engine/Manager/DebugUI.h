@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
@@ -20,13 +20,13 @@ class Object3DResource;
 class Object2DResource;
 struct Material;
 struct ObjMaterial;
-struct Transform;
-struct Matrix4x4;
+namespace Irufemi { struct Transform; }
+namespace Irufemi { struct Matrix4x4; }
 struct DirectionalLight;
 struct PointLight;
 struct SpotLight;
 struct AreaLight;
-struct Sphere;
+namespace Irufemi { struct Sphere; }
 struct Animation;
 struct LightningParams;
 
@@ -134,17 +134,17 @@ public: // メンバ関数
     /**
      * @brief 3Dトランスフォームの編集
      */
-    static void DebugTransform(Transform& transform);
+    static void DebugTransform(Irufemi::Transform& transform);
 
     /**
      * @brief 2Dトランスフォーム（スプライト用）の編集
      */
-    static void DebugTransform2D(Transform& transform);
+    static void DebugTransform2D(Irufemi::Transform& transform);
 
     /**
      * @brief トランスフォーム情報のテキスト表示
      */
-    static void TextTransform(Transform& transform, const char* name = "");
+    static void TextTransform(Irufemi::Transform& transform, const char* name = "");
     ///@}
 
     /** @name マテリアル・テクスチャのデバッグ */
@@ -166,9 +166,9 @@ public: // メンバ関数
 
     static void DebugDirectionalLight(DirectionalLight* directionalLightData);
 
-    static void DebugUvTransform(Transform& uvTransform);
+    static void DebugUvTransform(Irufemi::Transform& uvTransform);
 
-    static void DebugUvTransform(Matrix4x4& uvTransform);
+    static void DebugUvTransform(Irufemi::Matrix4x4& uvTransform);
 
     /**
      * @brief マテリアルの個別オーバーライド設定を編集するUI
@@ -197,7 +197,7 @@ public: // メンバ関数
     /**
      * @brief 形状情報の表示（球体等）
      */
-    static void DebugSphereInfo(Sphere& sphere);
+    static void DebugSphereInfo(Irufemi::Sphere& sphere);
 
     /**
      * @brief パフォーマンスオーバーレイの表示（FPS/ms表示）
@@ -239,7 +239,7 @@ public: // メンバ関数
      * @brief PSO設定（描画ステート）の編集UI
      */
     static void DebugPsoSettings(
-        BlendMode* blendMode,
+        Irufemi::BlendMode* blendMode,
         PSOManager::DepthWrite* depthWrite,
         PSOManager::CullMode* cullMode,
         const char* unique_id = "##PsoSettings"

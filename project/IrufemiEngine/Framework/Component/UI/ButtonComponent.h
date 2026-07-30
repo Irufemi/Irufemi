@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Component.h"
 #include <string>
 #include "Engine/Core/Math/Vector4.h"
@@ -26,17 +26,17 @@ public:
     bool IsClicked() const { return isClicked_; }
 
 private:
-    bool CheckBounds(const struct Vector2& mousePos);
+    bool CheckBounds(const Irufemi::Vector2& mousePos);
     
-    Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
-    Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
+    Irufemi::Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+    Irufemi::Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
+    Irufemi::Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
 
     bool enableHoverPulse_ = true; // ホバー時にサイン波で明滅するかどうか
     bool enableIdlePulse_ = true;  // 待機中（ホバーしていない時）も明滅するかどうか
 
     // 当たり判定のスケール調整（画像自体の余白などを省くため）
-    Vector2 hitboxScale_{ 1.0f, 1.0f };
+    Irufemi::Vector2 hitboxScale_{ 1.0f, 1.0f };
 
     // --- 内部状態 ---
     UIAnimator animator_;

@@ -1,4 +1,4 @@
-#include "LockonMarkerUIComponent.h"
+﻿#include "LockonMarkerUIComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"
@@ -30,7 +30,7 @@ void LockonMarkerUIComponent::Initialize() {
     IRUFEMI_ASSERT(psoManager != nullptr && "PSOManager is null");
 
     // 2D用のブレンドモード(通常透過: Normal)を指定
-    auto pso = psoManager->GetPSO("LuminanceAlpha2D", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
+    auto pso = psoManager->GetPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
     IRUFEMI_ASSERT(pso != nullptr && "LuminanceAlpha2D PSO not found!");
     markerBatch_->SetCustomPSO(pso);
 }
@@ -98,16 +98,16 @@ void LockonMarkerUIComponent::Update() {
         if (!transform) continue;
 
         // 3D座標から2Dスクリーン座標への手動変換（Zは0.0～1.0の深度）
-        Vector3 worldPos = transform->GetWorldPosition();
-        Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
-        Vector3 clipPos = Math::Transform(worldPos, viewProj);
+        Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+        Irufemi::Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
+        Irufemi::Vector3 clipPos = Irufemi::Math::Transform(worldPos, viewProj);
         
-        Vector3 screenPos;
+        Irufemi::Vector3 screenPos;
         screenPos.z = clipPos.z;
         screenPos.x = (clipPos.x + 1.0f) * 0.5f * camera->GetViewportWidth();
         screenPos.y = (1.0f - clipPos.y) * 0.5f * camera->GetViewportHeight();
         
-        Vector2 uiPos = camera->ScreenToUIPosition({ screenPos.x, screenPos.y });
+        Irufemi::Vector2 uiPos = camera->ScreenToUIPosition({ screenPos.x, screenPos.y });
         screenPos.x = uiPos.x;
         screenPos.y = uiPos.y;
         
@@ -120,8 +120,8 @@ void LockonMarkerUIComponent::Update() {
         }
 
         // 距離に応じた基本スケールの計算（遠近法: 基準距離50.0fとして反比例）
-        Vector3 cameraPos = camera->GetTranslate();
-        float dist3D = Math::Length(Math::Subtract(worldPos, cameraPos));
+        Irufemi::Vector3 cameraPos = camera->GetTranslate();
+        float dist3D = Irufemi::Math::Length(Irufemi::Math::Subtract(worldPos, cameraPos));
         float distanceScale = std::clamp(50.0f / (std::max)(dist3D, 1.0f), 0.3f, 1.2f);
         marker.targetScale = distanceScale;
 
@@ -137,7 +137,7 @@ void LockonMarkerUIComponent::Update() {
 
         int idx = drawCountsCache_[target.get()]++;
         float finalScale = marker.currentScale;
-        Vector2 finalPos = { screenPos.x, screenPos.y };
+        Irufemi::Vector2 finalPos = { screenPos.x, screenPos.y };
         
         // 回転と色の設定
         float maxLocks = (std::max)(1.0f, static_cast<float>(maxLockonCount_));
@@ -146,7 +146,7 @@ void LockonMarkerUIComponent::Update() {
         
         // ターゲットを重ねるごとに G と B 成分を減らし、赤みを強くする (White -> Orange -> Red)
         float intensity = std::clamp(1.0f - (idx * 0.25f), 0.1f, 1.0f);
-        Vector4 color = { 1.0f, intensity, intensity, 1.0f };
+        Irufemi::Vector4 color = { 1.0f, intensity, intensity, 1.0f };
 
         if (idx > 0) {
             // 同心円（スタック）方式：重なるごとに少しずつ小さくする
@@ -160,9 +160,9 @@ void LockonMarkerUIComponent::Update() {
             rotation = engine->GetGameTime() * 1.5f;
         }
 
-        // バッチにインスタンスを追加 (SpriteBatchのAddInstanceはVector2, Vector2, rotation, color, anchor)
+        // バッチにインスタンスを追加 (SpriteBatchのAddInstanceはVector2, Irufemi::Vector2, rotation, color, anchor)
         float size = 64.0f * finalScale;
-        markerBatch_->AddInstance(finalPos, Vector2{size, size}, rotation, color);
+        markerBatch_->AddInstance(finalPos, Irufemi::Vector2{size, size}, rotation, color);
         
         markerIndex++;
     }

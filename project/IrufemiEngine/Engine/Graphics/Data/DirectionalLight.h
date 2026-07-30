@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Core/Math/Vector3.h"
 #include "../../Core/Math/Vector4.h"
@@ -7,9 +7,9 @@
 
 struct DirectionalLight {
     //!< ライトの色
-    Vector4 color;
+    Irufemi::Vector4 color;
     //!< ライトの向き
-    Vector3 direction;
+    Irufemi::Vector3 direction;
     //!< 輝度
     float intensity;
 };

@@ -1,4 +1,4 @@
-#include "VoxelParticleComponent.h"
+﻿#include "VoxelParticleComponent.h"
 #include "../../GameObject.h"
 #include "../../BaseScene.h"
 #include "../TransformComponent.h"
@@ -62,7 +62,7 @@ void VoxelParticleComponent::Emit() {
     // 拡張用：Emit（ポタポタ落ちるような挙動等）が必要になった場合はここに実装
 }
 
-void VoxelParticleComponent::Explode(const Vector3& velocity, const Vector3& rotate, const Vector3& scale) {
+void VoxelParticleComponent::Explode(const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale) {
     if (!isInitialized_) return;
 
     IrufemiEngine* engine = nullptr;
@@ -74,7 +74,7 @@ void VoxelParticleComponent::Explode(const Vector3& velocity, const Vector3& rot
 
     if (engine) {
         if (auto manager = engine->GetVoxelParticleManager()) {
-            Vector3 worldPos = {0,0,0};
+            Irufemi::Vector3 worldPos = {0,0,0};
             if (auto* go = GetGameObject()) {
                 if (auto transform = go->GetComponent<TransformComponent>()) {
                     worldPos = transform->GetWorldPosition();

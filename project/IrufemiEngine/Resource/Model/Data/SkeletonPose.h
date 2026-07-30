@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Engine/Core/Math/QuaternionTransform.h"
 #include "Engine/Core/Math/Matrix4x4.h"
@@ -14,9 +14,9 @@ struct NodeAnimation;
  * @brief 各インスタンスごとの動的なボーンの状態
  */
 struct JointPose {
-    QuaternionTransform transform; // 現在のローカルTransform
-    Matrix4x4 localMatrix;         // 現在のローカル行列
-    Matrix4x4 skeletonSpaceMatrix; // スケルトン空間（ルートからの累積）行列
+    Irufemi::QuaternionTransform transform; // 現在のローカルTransform
+    Irufemi::Matrix4x4 localMatrix;         // 現在のローカル行列
+    Irufemi::Matrix4x4 skeletonSpaceMatrix; // スケルトン空間（ルートからの累積）行列
 };
 
 /**

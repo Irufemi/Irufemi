@@ -1,4 +1,4 @@
-#include "DroneManagerComponent.h"
+﻿#include "DroneManagerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
@@ -41,10 +41,10 @@ void DroneManagerComponent::Update() {
     auto bossTransform = bossObj->GetComponent<TransformComponent>();
     if (!bossTransform) return;
     
-    Vector3 bossPos = bossTransform->GetWorldPosition();
+    Irufemi::Vector3 bossPos = bossTransform->GetWorldPosition();
     
     // プレイヤーの座標取得
-    Vector3 playerPos = bossPos; // デフォルト
+    Irufemi::Vector3 playerPos = bossPos; // デフォルト
     bool hasPlayer = false;
     if (auto player = player_.lock()) {
         if (auto playerTransform = player->GetComponent<TransformComponent>()) {
@@ -68,16 +68,16 @@ void DroneManagerComponent::Update() {
         // 2. 座標の計算
         float x = std::cos(anim.orbitAngle) * orbitRadius_;
         float y = std::sin(anim.orbitAngle) * orbitRadius_;
-        Vector3 targetPos = bossPos + Vector3{x, y, 0.0f};
+        Irufemi::Vector3 targetPos = bossPos + Irufemi::Vector3{x, y, 0.0f};
         
         // 3. 向きの計算
-        Vector3 rot = {0.0f, 0.0f, 0.0f};
+        Irufemi::Vector3 rot = {0.0f, 0.0f, 0.0f};
         if (hasPlayer) {
-            Vector3 dirToPlayer = Math::Subtract(playerPos, targetPos).GetNormalized();
-            rot = Math::LookRotation(dirToPlayer);
+            Irufemi::Vector3 dirToPlayer = Irufemi::Math::Subtract(playerPos, targetPos).GetNormalized();
+            rot = Irufemi::Math::LookRotation(dirToPlayer);
         } else {
-            Vector3 dirToBoss = Math::Subtract(bossPos, targetPos).GetNormalized();
-            rot = Math::LookRotation(dirToBoss);
+            Irufemi::Vector3 dirToBoss = Irufemi::Math::Subtract(bossPos, targetPos).GetNormalized();
+            rot = Irufemi::Math::LookRotation(dirToBoss);
         }
         
         // 4. 当たり判定（GameObject）のTransform更新
@@ -92,13 +92,13 @@ void DroneManagerComponent::Update() {
         if (anim.fireTimer >= fireInterval_) {
             anim.fireTimer = 0.0f;
             if (bulletManager_ && hasPlayer) {
-                Vector3 dirToPlayer = Math::Subtract(playerPos, targetPos).GetNormalized();
-                bulletManager_->SpawnBullet(targetPos, Math::Multiply(30.0f, dirToPlayer));
+                Irufemi::Vector3 dirToPlayer = Irufemi::Math::Subtract(playerPos, targetPos).GetNormalized();
+                bulletManager_->SpawnBullet(targetPos, Irufemi::Math::Multiply(30.0f, dirToPlayer));
             }
         }
         
         // 6. GPUバッチ描画用インスタンスデータの登録
-        Transform batchT;
+        Irufemi::Transform batchT;
         batchT.translate = targetPos;
         batchT.rotate = rot;
         batchT.scale = {1.0f, 1.0f, 1.0f}; // Prefabのスケーリングを適用する場合は変更
@@ -136,7 +136,7 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
     
     if (!dronePool_) return;
 
-    float angleStep = (Math::PI * 2.0f) / count;
+    float angleStep = (Irufemi::Math::PI * 2.0f) / count;
 
     for (int i = 0; i < count; ++i) {
         auto handle = dronePool_->Acquire();
@@ -148,7 +148,7 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
                 
                 DroneAnimData anim;
                 anim.orbitAngle = angleStep * i;
-                anim.fireTimer = Random::GeneratorFloat(0.0f, fireInterval_);
+                anim.fireTimer = Irufemi::Random::GeneratorFloat(0.0f, fireInterval_);
                 animDataList_.push_back(anim);
             }
         }

@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "MathFunction.h"
 #include <cmath>
 #include <algorithm> 
@@ -12,6 +12,8 @@
 #include "../Shape/Triangle.h"
 
 
+
+namespace Irufemi {
 namespace Math {
 
 
@@ -587,3 +589,5 @@ namespace Math {
     }
 
 }
+
+} // namespace Irufemi

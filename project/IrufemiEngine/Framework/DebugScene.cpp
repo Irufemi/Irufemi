@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @file DebugScene.cpp
  * @brief エンジンの各機能のテストおよび実装例を示すためのデバッグ用シーンクラスの実装
  */
@@ -22,7 +22,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
     
     Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
-    activeCamera->SetTranslate(Vector3{ 0.0f, 0.0f, -10.0f });
+    activeCamera->SetTranslate(Irufemi::Vector3{ 0.0f, 0.0f, -10.0f });
     activeCamera->UpdateMatrix();
 
     auto areaLight = std::make_unique<AreaLight>();
@@ -135,13 +135,13 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     }
     if (isActivePrimitiveObj_) {
         primitiveObj_ = std::make_unique<Primitive3DObject>();
-        primitiveObj_->Initialize(PrimitiveType::Cube);
+        primitiveObj_->Initialize(Irufemi::PrimitiveType::Cube);
         primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
     // 電撃エフェクトの初期化
     lightningCylinder_ = std::make_unique<Primitive3DObject>();
-    lightningCylinder_->Initialize(PrimitiveType::Cylinder);
+    lightningCylinder_->Initialize(Irufemi::PrimitiveType::Cylinder);
     lightningCylinder_->SetScale({ 0.2f, 10.0f, 0.2f }); // ビームっぽく細長く
     lightningCylinder_->SetPosition({ -2.0f, 0.0f, 0.0f });
 
@@ -352,7 +352,7 @@ void DebugScene::Update() {
     if (isActivePrimitiveObj_) {
         if (!primitiveObj_) {
             primitiveObj_ = std::make_unique<Primitive3DObject>();
-            primitiveObj_->Initialize(PrimitiveType::Cube);
+            primitiveObj_->Initialize(Irufemi::PrimitiveType::Cube);
         }
         primitiveObj_->Update();
     }
@@ -374,7 +374,7 @@ void DebugScene::Update() {
     if (isActivePrimitive2DObj_) {
         if (!primitive2DObj_) {
             primitive2DObj_ = std::make_unique<Primitive2DObject>();
-            primitive2DObj_->Initialize(Primitive2DType::Circle, "resources/uvChecker.png");
+            primitive2DObj_->Initialize(Irufemi::Primitive2DType::Circle, "resources/uvChecker.png");
             primitive2DObj_->SetSize({ 100.0f, 100.0f });
             primitive2DObj_->SetPosition({ 640.0f, 360.0f, 0.0f });
             primitive2DObj_->SetPivot({ 0.5f, 0.5f });
@@ -407,7 +407,7 @@ void DebugScene::Draw() {
     BaseScene::Draw();
     
     // 3D
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
     engine_->ApplyPSO("Object3D");
@@ -431,7 +431,7 @@ void DebugScene::Draw() {
         lightningCylinder_->SyncBeforeDraw();
 
         engine_->GetDrawManager()->SubmitPostRender([this]() {
-            engine_->SetBlend(BlendMode::kBlendModeAdd);
+            engine_->SetBlend(Irufemi::BlendMode::kBlendModeAdd);
             engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
             engine_->SetCull(PSOManager::CullMode::None);
 
@@ -440,31 +440,31 @@ void DebugScene::Draw() {
 
             RenderPackets::Standard3DPacket packet{};
             packet.resource = lightningCylinder_->GetMesh().resource.get();
-            packet.blendMode = BlendMode::kBlendModeAdd;
+            packet.blendMode = Irufemi::BlendMode::kBlendModeAdd;
             packet.depthWrite = PSOManager::DepthWrite::Disable;
             packet.cullMode = PSOManager::CullMode::None;
             engine_->GetDrawManager()->DrawStandard3D(packet);
 
             // 状態を戻す
-            engine_->SetBlend(BlendMode::kBlendModeNormal);
+            engine_->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
             engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
             engine_->SetCull(PSOManager::CullMode::Back);
         });
     }
 
-    engine_->SetBlend(BlendMode::kBlendModeAdd);
+    engine_->SetBlend(Irufemi::BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
 
     // Effect と Particle は Additive / DepthDisable で描画
     engine_->SetCull(PSOManager::CullMode::None);
-    engine_->SetBlend(BlendMode::kBlendModeAdd);
+    engine_->SetBlend(Irufemi::BlendMode::kBlendModeAdd);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Particle");
 
     // Managerが描画するのでここでは何もしない
 
     // 2D
-    engine_->SetBlend(BlendMode::kBlendModeNormal);
+    engine_->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Sprite");
 

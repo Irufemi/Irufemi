@@ -1,4 +1,4 @@
-#include "ErrorUtility.h"
+﻿#include "ErrorUtility.h"
 #include "Log.h"
 #include "StringUtility.h"
 #include <iostream>

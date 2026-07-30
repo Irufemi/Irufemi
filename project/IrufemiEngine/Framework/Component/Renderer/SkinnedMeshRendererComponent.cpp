@@ -1,4 +1,4 @@
-#include "SkinnedMeshRendererComponent.h"
+﻿#include "SkinnedMeshRendererComponent.h"
 #include "../../GameObject.h"
 #include "../TransformComponent.h"
 #include "Engine/IrufemiEngine.h"
@@ -49,7 +49,7 @@ void SkinnedMeshRendererComponent::Draw() {
     animatedMesh_->Draw();
 }
 
-bool SkinnedMeshRendererComponent::Raycast(const Ray& ray, float& outDistance) const {
+bool SkinnedMeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
     if (!animatedMesh_) return false;
     auto cpuModel = animatedMesh_->GetCpuModel();
     if (!cpuModel) return false;
@@ -58,45 +58,45 @@ bool SkinnedMeshRendererComponent::Raycast(const Ray& ray, float& outDistance) c
     if (!transform) return false;
 
     // ローカルAABBから中心とサイズを取得
-    Vector3 localCenter = (cpuModel->boundingBox.min + cpuModel->boundingBox.max) * 0.5f;
-    Vector3 localHalfSize = (cpuModel->boundingBox.max - cpuModel->boundingBox.min) * 0.5f;
+    Irufemi::Vector3 localCenter = (cpuModel->boundingBox.min + cpuModel->boundingBox.max) * 0.5f;
+    Irufemi::Vector3 localHalfSize = (cpuModel->boundingBox.max - cpuModel->boundingBox.min) * 0.5f;
 
-    OBB obb;
+    Irufemi::OBB obb;
     
     // スケルトンのルートノードのTransform（スケール等）を適用する
-    Matrix4x4 rootTransform = Math::MakeIdentity4x4();
+    Irufemi::Matrix4x4 rootTransform = Irufemi::Math::MakeIdentity4x4();
     auto skeletonData = animatedMesh_->GetSkeletonData();
     if (skeletonData && !skeletonData->joints.empty()) {
         rootTransform = skeletonData->joints[0].bindLocalMatrix;
     }
 
     // ワールド行列を用いて中心点を変換
-    Matrix4x4 wmat = rootTransform * transform->GetWorldMatrix();
-    obb.center = Math::Transform(localCenter, wmat);
+    Irufemi::Matrix4x4 wmat = rootTransform * transform->GetWorldMatrix();
+    obb.center = Irufemi::Math::Transform(localCenter, wmat);
 
     // ワールド行列の各軸ベクトルを抽出して正規化（回転）＆スケール適用
-    Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
-    Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
-    Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
+    Irufemi::Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
+    Irufemi::Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
+    Irufemi::Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
 
-    float lenX = Math::Length(xAxis);
-    float lenY = Math::Length(yAxis);
-    float lenZ = Math::Length(zAxis);
+    float lenX = Irufemi::Math::Length(xAxis);
+    float lenY = Irufemi::Math::Length(yAxis);
+    float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f) obb.orientations[0] = Math::Normalize(xAxis);
+    if (lenX > 0.0001f) obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
     else obb.orientations[0] = {1.0f, 0.0f, 0.0f};
 
-    if (lenY > 0.0001f) obb.orientations[1] = Math::Normalize(yAxis);
+    if (lenY > 0.0001f) obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
     else obb.orientations[1] = {0.0f, 1.0f, 0.0f};
 
-    if (lenZ > 0.0001f) obb.orientations[2] = Math::Normalize(zAxis);
+    if (lenZ > 0.0001f) obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
     else obb.orientations[2] = {0.0f, 0.0f, 1.0f};
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;
     obb.size.z = localHalfSize.z * lenZ;
 
-    return Collision::IsCollision(ray, obb, outDistance);
+    return Irufemi::Collision::IsCollision(ray, obb, outDistance);
 }
 
 nlohmann::json SkinnedMeshRendererComponent::Serialize() {

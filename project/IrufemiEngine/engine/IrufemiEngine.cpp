@@ -1,4 +1,4 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #include "IrufemiEngine.h"
 
 #include "Platform/Input/InputManager.h"
@@ -122,7 +122,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   screenCaptureManager_ = std::make_unique<ScreenCaptureManager>();
 
   // 乱数エンジンのシードを設定
-  Random::SeedEngine();
+  Irufemi::Random::SeedEngine();
 
   // AudioManagerの生成と初期化(Media Foundation含む)
   audioManager_ = std::make_unique<AudioManager>();
@@ -451,11 +451,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Initialize(title, clientWidth, clientHeight);
 }
 
-// 追加: Vector4 版 Initialize
+// 追加: Irufemi::Vector4 版 Initialize
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight,
-                               const Vector4 &clearColor) {
+                               const Irufemi::Vector4 &clearColor) {
   clearColor_ = {clearColor.x, clearColor.y, clearColor.z, clearColor.w};
   Initialize(title, clientWidth, clientHeight);
 }
@@ -803,7 +803,7 @@ void IrufemiEngine::ProcessFrame() {
   }
 
   // ステートのリセット（前フレームの描画ステートを引き継がないようにする）
-  currentBlend_ = BlendMode::kBlendModeNormal;
+  currentBlend_ = Irufemi::BlendMode::kBlendModeNormal;
   currentDepth_ = PSOManager::DepthWrite::Enable;
   currentCull_ = PSOManager::CullMode::Back;
 
@@ -825,12 +825,12 @@ void IrufemiEngine::ProcessFrame() {
       velocityTexture_.get()
   };
   
-  std::vector<Vector4> clearColors = {
-      Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]}, // Color
-      Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Mask
-      Vector4{0.0f, 0.0f, 1.0f, 1.0f}, // Normal
-      Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Material
-      Vector4{0.0f, 0.0f, 0.0f, 0.0f}  // Velocity
+  std::vector<Irufemi::Vector4> clearColors = {
+      Irufemi::Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]}, // Color
+      Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Mask
+      Irufemi::Vector4{0.0f, 0.0f, 1.0f, 1.0f}, // Normal
+      Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Material
+      Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f}  // Velocity
   };
   
   drawManager_->BeginRenderTextures(renderTargets, clearColors);
@@ -975,17 +975,17 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
   // Shadowパスの場合は自動的にシャドウ用シェーダに切り替える(元のコードの仕様維持)
   if (drawManager_->IsShadowPass()) {
       if (shaderName == "Object3D") {
-          auto* pso = GetPSOManager()->GetPSO("Shadow", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          auto* pso = GetPSOManager()->GetPSO("Shadow", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
       else if (shaderName == "Skinning") {
-          auto* pso = GetPSOManager()->GetPSO("ShadowSkinning", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          auto* pso = GetPSOManager()->GetPSO("ShadowSkinning", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
       else if (shaderName == "Batch") {
-          auto* pso = GetPSOManager()->GetPSO("ShadowBatch", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          auto* pso = GetPSOManager()->GetPSO("ShadowBatch", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
@@ -995,7 +995,7 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
   
   // Skybox用の特殊対応 (元のコードでは CullMode::Front 決め打ちでブレンドと深度は不要だった)
   if (shaderName == "Skybox") {
-      auto* pso = GetPSOManager()->GetPSO("Skybox", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
+      auto* pso = GetPSOManager()->GetPSO("Skybox", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
       if (pso) drawManager_->BindPSO(pso);
       return;
   }

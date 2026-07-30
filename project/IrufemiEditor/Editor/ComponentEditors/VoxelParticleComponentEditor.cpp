@@ -1,4 +1,4 @@
-#include "VoxelParticleComponentEditor.h"
+﻿#include "VoxelParticleComponentEditor.h"
 #ifdef EditorMode
 #include <imgui.h>
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
@@ -37,7 +37,7 @@ void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManage
                 ComponentUIHelpers::PushInstantUndo(actionManager, oldM, std::string(""), std::function<void(const std::string&)>([voxelComponent](const std::string& v){ voxelComponent->SetOverrideModelName(v); }));
             });
             
-            Vector3Int resolution = voxelComponent->GetResolution();
+            Irufemi::Vector3Int resolution = voxelComponent->GetResolution();
             int res[3] = {resolution.x, resolution.y, resolution.z};
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Resolution");
@@ -47,16 +47,16 @@ void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManage
                 voxelComponent->SetResolution({res[0], res[1], res[2]});
             }
             ImGui::PopItemWidth();
-            static Vector3Int startRes;
+            static Irufemi::Vector3Int startRes;
             if (ImGui::IsItemActivated()) startRes = resolution;
             if (ImGui::IsItemDeactivatedAfterEdit()) {
-                Vector3Int endRes = {res[0], res[1], res[2]};
-                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Vector3Int>>(
-                    startRes, endRes, [voxelComponent](const Vector3Int& v){ voxelComponent->SetResolution(v); }));
+                Irufemi::Vector3Int endRes = {res[0], res[1], res[2]};
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3Int>>(
+                    startRes, endRes, [voxelComponent](const Irufemi::Vector3Int& v){ voxelComponent->SetResolution(v); }));
             }
             ComponentUIHelpers::DrawPropertyResetButton("##ResReset", resolution.x != 10 || resolution.y != 10 || resolution.z != 10, [&]() {
-                Vector3Int oldR = voxelComponent->GetResolution();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldR, Vector3Int{10,10,10}, std::function<void(const Vector3Int&)>([voxelComponent](const Vector3Int& v){ voxelComponent->SetResolution(v); }));
+                Irufemi::Vector3Int oldR = voxelComponent->GetResolution();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldR, Irufemi::Vector3Int{10,10,10}, std::function<void(const Irufemi::Vector3Int&)>([voxelComponent](const Irufemi::Vector3Int& v){ voxelComponent->SetResolution(v); }));
             });
 
             int preAllocate = voxelComponent->GetPreAllocateCount();

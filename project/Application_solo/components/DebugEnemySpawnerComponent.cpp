@@ -1,4 +1,4 @@
-#include "DebugEnemySpawnerComponent.h"
+﻿#include "DebugEnemySpawnerComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
@@ -50,7 +50,7 @@ void DebugEnemySpawnerComponent::Update() {
 
     // '2'キーで敵をスポーン
     if (input->IsKeyPressed('2')) {
-        Vector3 spawnPos = {0.0f, 0.0f, 50.0f};
+        Irufemi::Vector3 spawnPos = {0.0f, 0.0f, 50.0f};
 
         auto scene = gameObject_->GetScene();
         if (scene) {
@@ -60,8 +60,8 @@ void DebugEnemySpawnerComponent::Update() {
                     // プレイヤーの現在位置から Z軸前方に 50m、XYはランダムに散らす
                     spawnPos = transform->GetPosition();
                     spawnPos.z += 50.0f;
-                    spawnPos.x += Random::GeneratorFloat(-10.0f, 10.0f);
-                    spawnPos.y += Random::GeneratorFloat(-5.0f, 5.0f);
+                    spawnPos.x += Irufemi::Random::GeneratorFloat(-10.0f, 10.0f);
+                    spawnPos.y += Irufemi::Random::GeneratorFloat(-5.0f, 5.0f);
                 }
             }
         }
@@ -70,7 +70,7 @@ void DebugEnemySpawnerComponent::Update() {
     }
 }
 
-void DebugEnemySpawnerComponent::SpawnEnemy(const Vector3& position) {
+void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position) {
     if (!enemyPool_) return;
 
     auto handle = enemyPool_->Acquire();

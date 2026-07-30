@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <memory>
@@ -26,8 +26,8 @@ public:
     void Update(SkeletonPose& targetPose);
 
     /// @brief ルートモーション用の移動量（1フレーム間の差分）を取得する
-    Vector3 GetDeltaRootTranslation() const { return deltaRootTranslation_; }
-    Quaternion GetDeltaRootRotation() const { return deltaRootRotation_; }
+    Irufemi::Vector3 GetDeltaRootTranslation() const { return deltaRootTranslation_; }
+    Irufemi::Quaternion GetDeltaRootRotation() const { return deltaRootRotation_; }
 
     /// @brief デバッグ用UI
     void Debug(const char* objName = " ");
@@ -56,9 +56,9 @@ private:
     bool isBlending_ = false;
 
     // ルートモーション用
-    Vector3 deltaRootTranslation_ = {0.0f, 0.0f, 0.0f};
-    Quaternion deltaRootRotation_ = {0.0f, 0.0f, 0.0f, 1.0f};
+    Irufemi::Vector3 deltaRootTranslation_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Quaternion deltaRootRotation_ = {0.0f, 0.0f, 0.0f, 1.0f};
 
     // ヘルパ
-    void ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime, Vector3& outDeltaTrans, Quaternion& outDeltaRot);
+    void ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime, Irufemi::Vector3& outDeltaTrans, Irufemi::Quaternion& outDeltaRot);
 };

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Renderer/System/Core/BaseBatch.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h" // For Primitive2DType
@@ -22,7 +22,7 @@ public:
      * @param type 生成する形状の種類
      * @param textureName 適用するテクスチャパス
      */
-    void Initialize(Primitive2DType type, const std::string& textureName = "resources/uvChecker.png");
+    void Initialize(Irufemi::Primitive2DType type, const std::string& textureName = "resources/uvChecker.png");
 
     /**
      * @brief 描画命令を発行（DrawManager に登録）
@@ -42,7 +42,7 @@ public:
     const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
     const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
     uint32_t GetIndexCount() const { return indexCount_; }
-    Primitive2DType GetType() const { return type_; }
+    Irufemi::Primitive2DType GetType() const { return type_; }
 
 protected:
     float GetBoundingSphereRadius() const override { return 1000.0f; /* 2D なので適当な大きな値 */ }
@@ -58,7 +58,7 @@ protected:
     void CreateResource();
 
 private:
-    Primitive2DType type_ = Primitive2DType::Rect;
+    Irufemi::Primitive2DType type_ = Irufemi::Primitive2DType::Rect;
     uint32_t subdivision_ = 16;
     float thickness_ = 0.1f;
     bool isMeshDirty_ = true;

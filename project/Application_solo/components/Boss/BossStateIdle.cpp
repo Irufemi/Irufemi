@@ -1,4 +1,4 @@
-#include "BossStateIdle.h"
+﻿#include "BossStateIdle.h"
 #include "BossStateCoreExposed.h"
 #include "BossComponent.h"
 #include "../EnemyBeamComponent.h"
@@ -28,16 +28,16 @@ void BossStateIdle::Update(BossComponent* boss) {
                 boss->beamTimer_ = 0.0f;
                 
                 if (auto myTrans = boss->gameObject_->GetComponent<TransformComponent>()) {
-                    Vector3 startPos = myTrans->GetWorldPosition();
+                    Irufemi::Vector3 startPos = myTrans->GetWorldPosition();
                     
-                    Matrix4x4 worldMat = myTrans->GetWorldMatrix();
-                    Vector3 forward = { -worldMat.m[2][0], -worldMat.m[2][1], -worldMat.m[2][2] };
-                    forward = Math::Normalize(forward);
+                    Irufemi::Matrix4x4 worldMat = myTrans->GetWorldMatrix();
+                    Irufemi::Vector3 forward = { -worldMat.m[2][0], -worldMat.m[2][1], -worldMat.m[2][2] };
+                    forward = Irufemi::Math::Normalize(forward);
                     
-                    startPos = Math::Add(startPos, Math::Multiply(boss->beamOffsetZ_, forward)); 
+                    startPos = Irufemi::Math::Add(startPos, Irufemi::Math::Multiply(boss->beamOffsetZ_, forward)); 
                     startPos.y += boss->beamOffsetY_;
                     
-                    Vector3 targetPos = Math::Add(startPos, Math::Multiply(boss->beamRange_, forward));
+                    Irufemi::Vector3 targetPos = Irufemi::Math::Add(startPos, Irufemi::Math::Multiply(boss->beamRange_, forward));
                     boss->beamComponent_->Fire(startPos, targetPos);
                 }
             }

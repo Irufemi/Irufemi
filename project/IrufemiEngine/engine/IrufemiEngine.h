@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Graphics/DirectX/DirectXCommon.h"
 #include "Graphics/DirectX/D3DResourceLeakChecker.h"
@@ -117,7 +117,7 @@ public: // メンバ関数
      * @brief エンジンの初期化（クリアカラー指定付き - Vector4版）
      */
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
-                    const Vector4& clearColor);
+                    const Irufemi::Vector4& clearColor);
 
     /**
      * @brief ウィンドウリサイズ時の処理
@@ -297,7 +297,7 @@ public: // セッター
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
     
     // セッター(引数なし描画のためのプリセット切替)
-    void SetBlend(BlendMode m) { currentBlend_ = m; }
+    void SetBlend(Irufemi::BlendMode m) { currentBlend_ = m; }
     void SetDepthWrite(PSOManager::DepthWrite w) { currentDepth_ = w; }
     // 追加: Cull の切替
     void SetCull(PSOManager::CullMode c) { currentCull_ = c; }
@@ -305,8 +305,8 @@ public: // セッター
     // 追加: クリアカラーのセッター(いつでも変更可能)
     void SetClearColor(float r, float g, float b, float a = 1.0f) { clearColor_ = { r, g, b, a }; }
     void SetClearColor(const std::array<float, 4>& c) { clearColor_ = c; }
-    // 追加: Vector4 版
-    void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
+    // 追加: Irufemi::Vector4 版
+    void SetClearColor(const Irufemi::Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
     PostProcessMode GetPostProcessMode() const { return postProcessManager_->GetMode(); }
     void SetPostProcessMode(PostProcessMode mode) { postProcessManager_->SetMode(mode); }
@@ -336,7 +336,7 @@ public: // セッター
 
 public:
     // 状態(現在のブレンドと深度書き込み)
-    BlendMode currentBlend_ = BlendMode::kBlendModeNormal;
+    Irufemi::BlendMode currentBlend_ = Irufemi::BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable;
     PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; // 追加: デフォルトは Back
 

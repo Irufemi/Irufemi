@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Vector2.h"
 #include "Vector3.h"
@@ -6,6 +6,8 @@
 #include "Matrix4x4.h"
 #include "Quaternion.h"
 
+
+namespace Irufemi {
 //前方宣言
 struct Segment2D;
 struct Segment;
@@ -419,3 +421,5 @@ namespace Math {
 
 }
 
+
+} // namespace Irufemi

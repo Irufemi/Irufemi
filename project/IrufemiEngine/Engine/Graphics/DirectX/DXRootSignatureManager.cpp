@@ -1,4 +1,4 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DXRootSignatureManager.h"
 #include "../../Core/Utility/Log.h"
 #include <cassert>
@@ -121,7 +121,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::Material].Descriptor.RegisterSpace = 0;
         rootParameters[(UINT)RootSlot::Material].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
-        // Slot 1: Transform (b0, VS)
+        // Slot 1: Irufemi::Transform (b0, VS)
         rootParameters[(UINT)RootSlot::Transform].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Transform].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
         rootParameters[(UINT)RootSlot::Transform].Descriptor.ShaderRegister = 0;

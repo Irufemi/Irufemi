@@ -1,4 +1,4 @@
-#include "../../System/Core/IRenderable.h"
+﻿#include "../../System/Core/IRenderable.h"
 #pragma once
 
 #include <d3d12.h>
@@ -30,7 +30,7 @@ public:
 
     void Initialize();
     void Update();
-    void AddInstance(const Vector3& start, const Vector3& end, const Vector4& color, float life = 1.0f);
+    void AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color, float life = 1.0f);
     void ClearInstances();
     void BuildInstanceBuffer(bool force = false);
     void SyncBeforeDraw() override;
@@ -52,9 +52,9 @@ public:
 
 private:
     struct LineInstance {
-        Vector3 start;
-        Vector3 end;
-        Vector4 color;
+        Irufemi::Vector3 start;
+        Irufemi::Vector3 end;
+        Irufemi::Vector4 color;
         float life = 1.0f;
         float age = 0.0f;
         bool active = false;
@@ -62,9 +62,9 @@ private:
 
     // VS 側が読む1インスタンス分のデータ
     struct InstanceData {
-        Vector4 start;
-        Vector4 end;
-        Vector4 color;
+        Irufemi::Vector4 start;
+        Irufemi::Vector4 end;
+        Irufemi::Vector4 color;
     };
 
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);

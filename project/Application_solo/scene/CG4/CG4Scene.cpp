@@ -1,4 +1,4 @@
-#include "CG4Scene.h"
+﻿#include "CG4Scene.h"
 #include "Framework/SceneManager.h"
 #include "Irufemi.h"
 
@@ -83,7 +83,7 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
     // スケールを棒状に(細長く)
     weaponTransform->SetScale({0.05f, 0.4f, 0.05f});
     auto weaponRenderer = weaponObj->AddComponent<PrimitiveRendererComponent>();
-    weaponRenderer->SetShape(PrimitiveType::Cylinder);
+    weaponRenderer->SetShape(Irufemi::PrimitiveType::Cylinder);
     weaponRenderer->SetColor({0.6f, 0.3f, 0.1f, 1.0f}); // 木の棒っぽい色
 
     auto weaponAttachment = weaponObj->AddComponent<BoneAttachmentComponent>();

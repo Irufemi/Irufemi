@@ -1,4 +1,4 @@
-#include "BaseScene.h"
+﻿#include "BaseScene.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/IrufemiEngine.h"
 #include "Engine/Platform/Input/InputManager.h"
@@ -258,7 +258,7 @@ void BaseScene::Update() {
         }
     }
 
-    // --- Transform の DOD一括更新 (GameObject本体の更新前に行う) ---
+    // --- Irufemi::Transform の DOD一括更新 (GameObject本体の更新前に行う) ---
     TransformComponent::UpdateAll();
 
     // --- GameObject の更新 (マルチスレッド化) ---
@@ -472,7 +472,7 @@ bool BaseScene::DownVK(uint8_t vk) const { return engine_->GetInputManager()->Is
 bool BaseScene::PressedVK(uint8_t vk) const { return engine_->GetInputManager()->IsKeyPressed(vk); }
 bool BaseScene::ReleasedVK(uint8_t vk) const { return engine_->GetInputManager()->IsKeyReleased(vk); }
 
-std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& prefabPath, const Vector3& position) {
+std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& prefabPath, const Irufemi::Vector3& position) {
     auto obj = SceneSerializer::LoadPrefab(prefabPath);
     if (obj) {
         // プレハブリンク機能により、プレハブ由来でもシリアライズ可能とする

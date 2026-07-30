@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Renderer/System/Core/IRenderable.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Resource/Model/Data/SkeletonData.h"
@@ -48,8 +48,8 @@ private:
     std::vector<D3D12_VERTEX_BUFFER_VIEW> drawVbvs_;
     std::vector<D3D12_VERTEX_BUFFER_VIEW> outlineVbvs_;
     
-    Matrix4x4 localMatrix_;
-    Matrix4x4 worldMatrix_;
+    Irufemi::Matrix4x4 localMatrix_;
+    Irufemi::Matrix4x4 worldMatrix_;
 
     uint32_t lastSkinnedFrameIndex_ = 0;
     std::string filename_;

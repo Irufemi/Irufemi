@@ -1,4 +1,4 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #define NOMINMAX
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "VoxelParticleSystem.h"
@@ -52,7 +52,7 @@ VoxelParticleSystem::~VoxelParticleSystem() {
   }
 }
 
-void VoxelParticleSystem::Initialize(const std::string &modelName, const Vector3Int &resolution) {
+void VoxelParticleSystem::Initialize(const std::string &modelName, const Irufemi::Vector3Int &resolution) {
   IRUFEMI_ASSERT(engine_);
   status_.store(LoadingStatus::Loading);
   auto* modelManager = engine_->GetObjModelManager();
@@ -163,11 +163,11 @@ bool VoxelParticleSystem::IsInFrustum(uint32_t index) const {
     Camera* activeCam = camManager->GetActiveCamera();
     if (!activeCam) return true;
 
-    Sphere sphere;
+    Irufemi::Sphere sphere;
     sphere.center = emittersData_[index].emitPosition;
     sphere.radius = 80.0f;
     
-    return Collision::IsCollision(activeCam->GetFrustum(), sphere);
+    return Irufemi::Collision::IsCollision(activeCam->GetFrustum(), sphere);
 }
 
 void VoxelParticleSystem::DispatchCompute() {
@@ -322,10 +322,10 @@ void VoxelParticleSystem::CreateResources() {
   auto *srvPool = dxCommon->GetSrvPool();
   auto *device = engine_->GetDevice();
 
-  voxelBuffer_ = dxCommon->CreateBufferResource(sizeof(Voxel) * voxelCount_);
-  Voxel *voxelData = nullptr;
+  voxelBuffer_ = dxCommon->CreateBufferResource(sizeof(Irufemi::Voxel) * voxelCount_);
+  Irufemi::Voxel *voxelData = nullptr;
   voxelBuffer_->Map(0, nullptr, reinterpret_cast<void **>(&voxelData));
-  std::memcpy(voxelData, voxelModel_->voxels.data(), sizeof(Voxel) * voxelCount_);
+  std::memcpy(voxelData, voxelModel_->voxels.data(), sizeof(Irufemi::Voxel) * voxelCount_);
   voxelBuffer_->Unmap(0, nullptr);
 
   voxelSrvIndex_ = srvPool->Allocate();
@@ -338,7 +338,7 @@ void VoxelParticleSystem::CreateResources() {
   voxelSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
   voxelSrvDesc.Buffer.FirstElement = 0;
   voxelSrvDesc.Buffer.NumElements = voxelCount_;
-  voxelSrvDesc.Buffer.StructureByteStride = sizeof(Voxel);
+  voxelSrvDesc.Buffer.StructureByteStride = sizeof(Irufemi::Voxel);
   device->CreateShaderResourceView(voxelBuffer_.Get(), &voxelSrvDesc, voxelSrvHandleCPU_);
 
   uint32_t totalVoxels = voxelCount_ * maxInstances_;
@@ -400,7 +400,7 @@ void VoxelParticleSystem::CreatePSO() {
   updatePSO_ = psoManager->GetComputePSO("VoxelParticleUpdate");
   IRUFEMI_ASSERT(initializePSO_ && emitPSO_ && updatePSO_);
 
-  drawPSO_ = psoManager->GetPSO("VoxelParticle", BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
+  drawPSO_ = psoManager->GetPSO("VoxelParticle", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Enable, PSOManager::CullMode::Back);
   IRUFEMI_ASSERT(drawPSO_);
 }
 

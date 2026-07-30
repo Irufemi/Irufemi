@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl.h>
 #include <cstdint>
@@ -18,7 +18,7 @@ public:
     // Initialize
     // srvFormat: 指定がない(DXGI_FORMAT_UNKNOWN)場合は format と同じ形式で SRV を作成する
     // ---------------------------------------------------------
-    void Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor, DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN);
+    void Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Irufemi::Vector4& clearColor, DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN);
 
     void InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resource* resource, DXGI_FORMAT format, DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN);
     

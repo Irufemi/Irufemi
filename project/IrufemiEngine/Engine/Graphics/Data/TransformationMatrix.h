@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Core/Math/Matrix4x4.h"
 
@@ -7,7 +7,7 @@
  * @brief 3Dオブジェクトの変換行列をGPUへ送るための構造体
  */
 struct TransformationMatrix {
-    Matrix4x4 WVP;
-    Matrix4x4 world;
-    Matrix4x4 WorldInverseTranspose;
+    Irufemi::Matrix4x4 WVP;
+    Irufemi::Matrix4x4 world;
+    Irufemi::Matrix4x4 WorldInverseTranspose;
 };

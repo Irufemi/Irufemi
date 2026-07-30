@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Utility/ObjectPool.h"
@@ -17,7 +17,7 @@ public:
     std::string GetComponentName() const override { return "DebugEnemySpawnerComponent"; }
 
 private:
-    void SpawnEnemy(const Vector3& position);
+    void SpawnEnemy(const Irufemi::Vector3& position);
 
     int maxEnemies_ = 50;
     std::unique_ptr<ObjectPool<GameObject>> enemyPool_;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Core/Math/Vector3.h"
@@ -23,7 +23,7 @@ public:
      * @param targetPosition フォーカスする対象の座標
      * @param distance カメラと対象との距離（0以下の場合は現在の距離を維持）
      */
-    void Focus(Camera* camera, const Vector3& targetPosition, float distance = -1.0f);
+    void Focus(Camera* camera, const Irufemi::Vector3& targetPosition, float distance = -1.0f);
 
     /**
      * @brief 現在のカメラの位置・回転から、注視点（Target）を再計算し状態を同期させます。
@@ -45,8 +45,8 @@ public:
 
 private:
     bool isInitialized_ = false;
-    Vector3 target_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 target_ = {0.0f, 0.0f, 0.0f};
     float distance_ = 10.0f;
-    Vector3 lastCameraPosition_ = {0.0f, 0.0f, 0.0f};
-    Vector3 lastCameraRotation_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 lastCameraPosition_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 lastCameraRotation_ = {0.0f, 0.0f, 0.0f};
 };

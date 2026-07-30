@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Renderer/System/Core/IRenderable.h"
 #include <vector>
@@ -37,8 +37,8 @@ public:
     void SetUseGPUCulling(bool use) { useGPUCulling_ = use; }
     bool GetUseGPUCulling() const { return useGPUCulling_; }
 
-    void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
-    BlendMode GetBlendMode() const { return blendMode_; }
+    void SetBlendMode(Irufemi::BlendMode blendMode) { blendMode_ = blendMode; }
+    Irufemi::BlendMode GetBlendMode() const { return blendMode_; }
 
     void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
     PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
@@ -56,21 +56,21 @@ public:
     D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
 
     // Color controls
-    void SetColor(const Vector4& color);
+    void SetColor(const Irufemi::Vector4& color);
     void SetEnvironmentCoefficient(float coefficient);
-    void SetInstanceColor(uint32_t index, const Vector4& color);
-    void SetAllInstanceColor(const Vector4& color);
+    void SetInstanceColor(uint32_t index, const Irufemi::Vector4& color);
+    void SetAllInstanceColor(const Irufemi::Vector4& color);
 
     // Instances
-    void AddInstance(const Transform& t, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
-    void AddInstance(const Transform& t, const Vector4& color, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
-    void AddInstance(const Vector3& center, float scale = 1.0f, const Vector3& rotate = {0,0,0}, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
-    void AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Irufemi::Transform& t, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Irufemi::Transform& t, const Irufemi::Vector4& color, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Irufemi::Vector3& center, float scale = 1.0f, const Irufemi::Vector3& rotate = {0,0,0}, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Irufemi::Vector3& center, float scale, const Irufemi::Vector3& rotate, const Irufemi::Vector4& color, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
     
     // World matrix based instances
-    void AddInstanceWorld(const Matrix4x4& world, const Vector4& color = {1,1,1,1}, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstanceWorld(const Irufemi::Matrix4x4& world, const Irufemi::Vector4& color = {1,1,1,1}, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
 
-    void UpdateInstance(uint32_t index, const Transform& t);
+    void UpdateInstance(uint32_t index, const Irufemi::Transform& t);
     void ClearInstances();
 
     virtual void BuildInstanceBuffer(bool force = false);
@@ -92,23 +92,23 @@ public:
 
 protected:
     struct InstanceData {
-        Matrix4x4 WVP;
-        Matrix4x4 World;
-        Matrix4x4 WorldInverseTranspose;
-        Vector4   color;
-        Vector4   customEffect; // x: type, y: param, z: enableMask, w: padding
+        Irufemi::Matrix4x4 WVP;
+        Irufemi::Matrix4x4 World;
+        Irufemi::Matrix4x4 WorldInverseTranspose;
+        Irufemi::Vector4   color;
+        Irufemi::Vector4   customEffect; // x: type, y: param, z: enableMask, w: padding
     };
 
     struct TransformData {
-        Vector4 position; // w is padding
-        Vector4 rotation; // w is padding
-        Vector4 scale;    // w is padding
-        Vector4 color;
-        Vector4 customEffect; // x: type, y: param, z: enableMask, w: padding
+        Irufemi::Vector4 position; // w is padding
+        Irufemi::Vector4 rotation; // w is padding
+        Irufemi::Vector4 scale;    // w is padding
+        Irufemi::Vector4 color;
+        Irufemi::Vector4 customEffect; // x: type, y: param, z: enableMask, w: padding
     };
 
     struct CullingData {
-        Vector4 planes[6];
+        Irufemi::Vector4 planes[6];
         uint32_t maxInstanceCount;
         float localRadius;
         float time;
@@ -135,12 +135,12 @@ protected:
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight>            instancingSrvGPU_{};
     std::array<uint32_t, kMaxFramesInFlight>                               instancingSrvIndex_{};
 
-    std::vector<Transform> instances_;
-    std::vector<Vector4>   instanceColors_;
-    std::vector<Vector4>   instanceEffects_;
-    std::vector<Matrix4x4> instanceWorlds_;
-    std::vector<Vector4>   instanceWorldColors_;
-    std::vector<Vector4>   instanceWorldEffects_;
+    std::vector<Irufemi::Transform> instances_;
+    std::vector<Irufemi::Vector4>   instanceColors_;
+    std::vector<Irufemi::Vector4>   instanceEffects_;
+    std::vector<Irufemi::Matrix4x4> instanceWorlds_;
+    std::vector<Irufemi::Vector4>   instanceWorldColors_;
+    std::vector<Irufemi::Vector4>   instanceWorldEffects_;
 
     bool                   instanceDirty_ = false;
     bool                   isCullingEnabled_ = true;
@@ -169,7 +169,7 @@ protected:
     uint32_t lastUpdateFrameIndex_ = 0;
     bool isDirty_ = true;
 
-    BlendMode blendMode_ = BlendMode::kBlendModeNormal;
+    Irufemi::BlendMode blendMode_ = Irufemi::BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Enable;
     PSOManager::CullMode cullMode_ = PSOManager::CullMode::Back;
     bool castShadows_ = true;

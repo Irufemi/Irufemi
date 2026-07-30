@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "IRenderable.h"
 #include "MultiBufferSyncState.h"
 
@@ -56,33 +56,33 @@ public: // ゲッター・セッター
     // 指定したインデックスのメッシュのマテリアルを取得(書き込み可能)
     ObjMaterial* GetMaterial(size_t meshIndex);
 
-    void SetColor(const Vector4& color) { color_ = color; MarkAsDirty(); }
-    const Vector4& GetColor() const { return color_; }
+    void SetColor(const Irufemi::Vector4& color) { color_ = color; MarkAsDirty(); }
+    const Irufemi::Vector4& GetColor() const { return color_; }
     
     void SetMaterialOverrides(const std::unordered_map<size_t, ObjMaterial>* overrides) { materialOverrides_ = overrides; MarkAsDirty(); }
     const std::unordered_map<size_t, ObjMaterial>* GetMaterialOverrides() const { return materialOverrides_; }
 
     void SetAlpha(float alpha) { color_.w = alpha; MarkAsDirty(); }
 
-    void SetPosition(const Vector3& position) { transform_.translate = position; MarkAsDirty(); }
-    const Vector3& GetPosition() const { return transform_.translate; }
+    void SetPosition(const Irufemi::Vector3& position) { transform_.translate = position; MarkAsDirty(); }
+    const Irufemi::Vector3& GetPosition() const { return transform_.translate; }
 
     std::shared_ptr<ObjModel> GetCpuModel() const;
 
-    void SetTranslate(const Vector3& translate) { transform_.translate = translate; MarkAsDirty(); }
+    void SetTranslate(const Irufemi::Vector3& translate) { transform_.translate = translate; MarkAsDirty(); }
 
-    void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; MarkAsDirty(); }
-    const Vector3& GetRotate() const { return transform_.rotate; }
+    void SetRotate(const Irufemi::Vector3& rotate) { transform_.rotate = rotate; MarkAsDirty(); }
+    const Irufemi::Vector3& GetRotate() const { return transform_.rotate; }
 
     void SetRotateX(const float& rotate) { transform_.rotate.x = rotate; MarkAsDirty(); }
     void SetRotateY(const float& rotate) { transform_.rotate.y = rotate; MarkAsDirty(); }
     void SetRotateZ(const float& rotate) { transform_.rotate.z = rotate; MarkAsDirty(); }
 
-    void SetScale(const Vector3& scale) { transform_.scale = scale; MarkAsDirty(); }
-    const Vector3& GetScale() const { return transform_.scale; }
+    void SetScale(const Irufemi::Vector3& scale) { transform_.scale = scale; MarkAsDirty(); }
+    const Irufemi::Vector3& GetScale() const { return transform_.scale; }
 
-    void SetTransform(const Transform& transform) { transform_ = transform; MarkAsDirty(); }
-    const Transform& GetTransform() const { return transform_; }
+    void SetTransform(const Irufemi::Transform& transform) { transform_ = transform; MarkAsDirty(); }
+    const Irufemi::Transform& GetTransform() const { return transform_; }
 
     void SetEnvironmentCoefficient(float coefficient) { environmentCoefficient_ = coefficient; isDirty_ = true; MarkAsDirty(); }
     float GetEnvironmentCoefficient() const { return environmentCoefficient_; }
@@ -128,9 +128,9 @@ protected: // メンバ変数
     bool isModelChanged_ = false; // モデル切り替えフラグ
 
     // オブジェクト全体のTransform
-    Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+    Irufemi::Transform transform_{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
     TransformationMatrix transformationMatrix_{};
-    Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
+    Irufemi::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f }; // インスタンスカラー
     float environmentCoefficient_ = 1.0f; // インスタンス環境マップ係数
     int32_t lightingModeOverride_ = -1; // -1:使用しない, 0以上:上書き
     int32_t useClampSamplerOverride_ = -1; // -1:使用しない, 0以上:上書き
@@ -157,6 +157,6 @@ protected: // メンバ変数
 
     bool isCullingEnabled_ = true;
     bool castShadows_ = true;
-    Matrix4x4 lastViewMatrix_ = {};
-    Matrix4x4 lastProjectionMatrix_ = {};
+    Irufemi::Matrix4x4 lastViewMatrix_ = {};
+    Irufemi::Matrix4x4 lastProjectionMatrix_ = {};
 };

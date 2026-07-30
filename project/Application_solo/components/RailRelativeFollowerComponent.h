@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include <string>
@@ -29,7 +29,7 @@ public:
 private:
     uint64_t targetObjectID_ = 0;                  ///< 追従する基準となるターゲットのオブジェクトID
     float distanceOffset_ = 80.0f;                 ///< ターゲットからどれだけ前方に離れるか (m)
-    Vector3 localOffset_ = {0.0f, 0.0f, 0.0f};     ///< レール中心からのXYローカルオフセット
+    Irufemi::Vector3 localOffset_ = {0.0f, 0.0f, 0.0f};     ///< レール中心からのXYローカルオフセット
 
     std::weak_ptr<GameObject> targetObject_;
     SplineFollowerComponent* targetFollower_ = nullptr;

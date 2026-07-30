@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Component.h"
 #include <memory>
 #include <string>
@@ -32,8 +32,8 @@ public:
     IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(obj_.get()); }
     
     // エディタのRaycast用
-    Sphere GetWorldSphere() const;
-    bool Raycast(const Ray& ray, float& outDistance) const override;
+    Irufemi::Sphere GetWorldSphere() const;
+    bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
 
     std::string GetComponentName() const override { return "MeshRendererComponent"; }
     nlohmann::json Serialize() override;

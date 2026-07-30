@@ -1,4 +1,4 @@
-#include "EditorManager.h"
+﻿#include "EditorManager.h"
 
 #ifdef EditorMode
 #include <filesystem>

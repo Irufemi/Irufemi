@@ -1,4 +1,4 @@
-#include "SphereColliderComponent.h"
+﻿#include "SphereColliderComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/Manager/CollisionManager.h"
@@ -30,11 +30,11 @@ void SphereColliderComponent::DrawDebug() {
 
 
 
-Sphere SphereColliderComponent::GetWorldSphere() const {
-    Sphere sphere;
+Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
+    Irufemi::Sphere sphere;
     if (transform_) {
-        Vector3 worldPos = transform_->GetWorldPosition();
-        Vector3 worldScale = transform_->GetWorldScale();
+        Irufemi::Vector3 worldPos = transform_->GetWorldPosition();
+        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
         
         // スケールの最大成分を半径に掛ける
         float scaleX = worldScale.x;
@@ -55,9 +55,9 @@ Sphere SphereColliderComponent::GetWorldSphere() const {
     return sphere;
 }
 
-AABB SphereColliderComponent::GetBoundingBox() const {
-    Sphere sphere = GetWorldSphere();
-    AABB aabb;
+Irufemi::AABB SphereColliderComponent::GetBoundingBox() const {
+    Irufemi::Sphere sphere = GetWorldSphere();
+    Irufemi::AABB aabb;
     aabb.min = { sphere.center.x - sphere.radius, sphere.center.y - sphere.radius, sphere.center.z - sphere.radius };
     aabb.max = { sphere.center.x + sphere.radius, sphere.center.y + sphere.radius, sphere.center.z + sphere.radius };
     return aabb;

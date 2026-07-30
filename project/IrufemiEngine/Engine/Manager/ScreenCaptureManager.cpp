@@ -1,4 +1,4 @@
-#include "ScreenCaptureManager.h"
+﻿#include "ScreenCaptureManager.h"
 #include "../Graphics/DirectX/DirectXCommon.h"
 #include "../Graphics/DirectX/DirectXUtils.h"
 #include "../Graphics/DirectX/RenderTexture.h"
@@ -123,8 +123,8 @@ void ScreenCaptureManager::RecordMetadata(IrufemiEngine* engine) {
     
     if (auto camManager = engine->GetCameraManager()) {
         if (auto cam = camManager->GetActiveCamera()) {
-            Vector3 pos = cam->GetTranslate();
-            Vector3 rot = cam->GetRotate();
+            Irufemi::Vector3 pos = cam->GetTranslate();
+            Irufemi::Vector3 rot = cam->GetRotate();
             ss << "  \"camera\": {\n";
             ss << "    \"position\": [" << pos.x << ", " << pos.y << ", " << pos.z << "],\n";
             ss << "    \"rotation\": [" << rot.x << ", " << rot.y << ", " << rot.z << "]\n";

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include "Data/Animation.h"
@@ -47,7 +47,7 @@ public: // 静的ヘルパ
     /// <param name="keyframes"></param>
     /// <param name="time"></param>
     /// <returns></returns>
-    static Vector3 CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time);
+    static Irufemi::Vector3 CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time);
 
     /// <summary>
     /// 任意の時刻の値を取得する
@@ -55,7 +55,7 @@ public: // 静的ヘルパ
     /// <param name="keyframes"></param>
     /// <param name="time"></param>
     /// <returns></returns>
-    static Quaternion CalculateValue(const std::vector<KeyframeQuaternion>& keyframes, float time);
+    static Irufemi::Quaternion CalculateValue(const std::vector<KeyframeQuaternion>& keyframes, float time);
 
     /// <summary>
     /// 任意の時刻の値を取得する
@@ -63,7 +63,7 @@ public: // 静的ヘルパ
     /// <param name="keyframes"></param>
     /// <param name="time"></param>
     /// <returns></returns>
-    static Vector3 CalculateValue(const AnimationCurve<Vector3>& keyframes, float time);
+    static Irufemi::Vector3 CalculateValue(const AnimationCurve<Irufemi::Vector3>& keyframes, float time);
 
     /// <summary>
     /// 任意の時刻の値を取得する
@@ -71,7 +71,7 @@ public: // 静的ヘルパ
     /// <param name="keyframes"></param>
     /// <param name="time"></param>
     /// <returns></returns>
-    static Quaternion CalculateValue(const AnimationCurve<Quaternion>& keyframes, float time);
+    static Irufemi::Quaternion CalculateValue(const AnimationCurve<Irufemi::Quaternion>& keyframes, float time);
 
     /// <summary>
     /// 任意の時刻の値を取得する(オイラー角)
@@ -79,7 +79,7 @@ public: // 静的ヘルパ
     /// <param name="keyframes"></param>
     /// <param name="time"></param>
     /// <returns></returns>
-    static Vector3 CalculateValueAsEuler(const AnimationCurve<Quaternion>& keyframes, float time);
+    static Irufemi::Vector3 CalculateValueAsEuler(const AnimationCurve<Irufemi::Quaternion>& keyframes, float time);
 
     /// <summary>
     /// Nodeの階層構造からSkeletonDataを作る

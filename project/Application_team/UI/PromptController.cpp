@@ -1,4 +1,4 @@
-#include "PromptController.h"
+﻿#include "PromptController.h"
 #include "Engine/Platform/Input/InputManager.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
@@ -26,7 +26,7 @@ void PromptController::Update(InputManager* input) {
         
         if (targetObj_) targetObj_->SetAlpha(alpha);
         if (targetSprite_) {
-            Vector4 color = targetSprite_->GetColor();
+            Irufemi::Vector4 color = targetSprite_->GetColor();
             color.w = alpha;
             targetSprite_->SetColor(color);
         }
@@ -47,7 +47,7 @@ void PromptController::Update(InputManager* input) {
         // アルファ値は最大にしておく
         if (targetObj_) targetObj_->SetAlpha(1.0f);
         if (targetSprite_) {
-            Vector4 color = targetSprite_->GetColor();
+            Irufemi::Vector4 color = targetSprite_->GetColor();
             color.w = 1.0f;
             targetSprite_->SetColor(color);
         }

@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "../Math/Vector3.h"
 
+
+namespace Irufemi {
 struct Ball {
     //ボールの位置
 	Vector3 position;
@@ -16,3 +18,4 @@ struct Ball {
     //ボールの色
     unsigned int color;
 };
+} // namespace Irufemi

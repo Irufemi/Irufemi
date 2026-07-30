@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
 #include <d3d12.h>
@@ -76,24 +76,24 @@ private: // メンバ変数(resource)
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_ = nullptr;
 
-    /// Transform
+    /// Irufemi::Transform
     // transform(scale,rotate,translate)
-    Transform transform_ = {
+    Irufemi::Transform transform_ = {
         {500.0f,500.0f,500.0f},   //scale
         {0.0f,0.0f,0.0f},   //rotate
         {0.0f,0.0f,0.0f}    //translate
     };
     struct SkyboxTransformationMatrix {
-        Matrix4x4 WVP;
-        Matrix4x4 World;
-        Matrix4x4 WorldInverseTranspose;
+        Irufemi::Matrix4x4 WVP;
+        Irufemi::Matrix4x4 World;
+        Irufemi::Matrix4x4 WorldInverseTranspose;
     };
     SkyboxTransformationMatrix transformationMatrix_{};
     ConstantBuffer<SkyboxTransformationMatrix> transformationBuffer_;
 
     // Material
     struct SkyboxMaterial {
-        Vector4 color;
+        Irufemi::Vector4 color;
         float intensity;
         uint32_t textureIndex; // [Bindless]
         uint32_t padding[2];
@@ -111,8 +111,8 @@ private: // メンバ変数(resource)
 
     // 行列更新の最適化用
     bool isDirty_ = true;
-    Matrix4x4 lastViewMatrix_ = {};
-    Matrix4x4 lastProjectionMatrix_ = {};
+    Irufemi::Matrix4x4 lastViewMatrix_ = {};
+    Irufemi::Matrix4x4 lastProjectionMatrix_ = {};
 
 };
 

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Framework/Component/Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include <vector>
@@ -23,24 +23,24 @@ public:
      * @param t 進行度 (0.0=開始地点, 1.0=終了地点)
      * @return 補間された座標
      */
-    Vector3 GetPointAt(float t) const;
+    Irufemi::Vector3 GetPointAt(float t) const;
 
     /**
      * @brief 指定した進行度(t)における接線（進行方向）ベクトルを取得する
      * @param t 進行度 (0.0~1.0)
      * @return 正規化された接線ベクトル
      */
-    Vector3 GetTangentAt(float t) const;
+    Irufemi::Vector3 GetTangentAt(float t) const;
 
     /**
      * @brief 距離（m）ベースでスプライン上の座標を取得する
      */
-    Vector3 GetPointAtDistance(float distance) const;
+    Irufemi::Vector3 GetPointAtDistance(float distance) const;
 
     /**
      * @brief 距離（m）ベースで接線（進行方向）を取得する
      */
-    Vector3 GetTangentAtDistance(float distance) const;
+    Irufemi::Vector3 GetTangentAtDistance(float distance) const;
 
     /**
      * @brief スプラインの総距離（m）を取得する
@@ -53,8 +53,8 @@ public:
     void UpdateDistanceTable();
 
     // ウェイポイントのリストを取得・設定
-    const std::vector<Vector3>& GetWaypoints() const { return waypoints_; }
-    void SetWaypoints(const std::vector<Vector3>& points) { 
+    const std::vector<Irufemi::Vector3>& GetWaypoints() const { return waypoints_; }
+    void SetWaypoints(const std::vector<Irufemi::Vector3>& points) { 
         waypoints_ = points; 
         UpdateDistanceTable(); 
     }
@@ -67,7 +67,7 @@ public:
     void Draw() override;
 
 private:
-    std::vector<Vector3> waypoints_; ///< スプラインの制御点
+    std::vector<Irufemi::Vector3> waypoints_; ///< スプラインの制御点
     std::vector<float> distanceLUT_; ///< 距離のルックアップテーブル (t=0.0~1.0を等分した距離の累積)
     float totalLength_ = 0.0f;       ///< スプラインの総距離
     int lastChildCount_ = -1;        ///< 子オブジェクト数のキャッシュ

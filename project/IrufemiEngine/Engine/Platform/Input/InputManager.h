@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <memory>
 #include "Keyboard.h"
 #include "GamePad.h"
@@ -124,12 +124,12 @@ public:
     bool IsMouseButtonDown(Mouse::Button button)     const;
     bool IsMouseButtonPressed(Mouse::Button button)  const;
     bool IsMouseButtonReleased(Mouse::Button button) const;
-    const Vector2& GetMousePosition()   const;
-    const Vector2& GetMouseDelta()      const;
+    const Irufemi::Vector2& GetMousePosition()   const;
+    const Irufemi::Vector2& GetMouseDelta()      const;
     float GetMouseWheelDelta()          const;
     
     /** @brief エディタ用：仮想的なマウスローカル座標を上書き設定する */
-    void SetVirtualMousePosition(const Vector2& pos, bool enable) {
+    void SetVirtualMousePosition(const Irufemi::Vector2& pos, bool enable) {
         if (mouse_) mouse_->SetVirtualPosition(pos, enable);
     }
     ///@}
@@ -148,4 +148,4 @@ private:
     // 前フレームと現在のフレームのアクション値を保持（Triggered等の判定用）
     std::unordered_map<std::string, InputActionValue> currentActionValues_{};
     std::unordered_map<std::string, InputActionValue> previousActionValues_{};
-};
+};

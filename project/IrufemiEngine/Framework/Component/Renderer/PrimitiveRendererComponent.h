@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../Component.h"
 #include <memory>
 #include <string>
@@ -23,8 +23,8 @@ public:
     IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(primitive_.get()); }
     
     // エディタのRaycast用
-    Sphere GetWorldSphere() const;
-    bool Raycast(const Ray& ray, float& outDistance) const override;
+    Irufemi::Sphere GetWorldSphere() const;
+    bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
 
 #ifdef EditorMode
     friend class PrimitiveRendererComponentEditor;
@@ -35,8 +35,8 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     // プロパティ操作
-    void SetShape(PrimitiveType type);
-    void SetColor(const struct Vector4& color);
+    void SetShape(Irufemi::PrimitiveType type);
+    void SetColor(const Irufemi::Vector4& color);
     void SetTexture(const std::string& texturePath);
     void SetEnableLighting(bool enable);
     void SetLightingMode(int mode);
@@ -59,7 +59,7 @@ private:
     int subdivisions_ = 16;
     float height_ = 1.0f;
     
-    // Cylinder / Cone 用
+    // Irufemi::Cylinder / Cone 用
     float topRadius_ = 1.0f;
     float bottomRadius_ = 1.0f;
     bool hasTop_ = true;

@@ -1,4 +1,4 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #define NOMINMAX
 #include "DebugUI.h"
 #include <Windows.h>
@@ -313,7 +313,7 @@ void DebugUI::DebugLights(
                 ImGui::DragFloat3("SL Position", &templateSpotLight_->position.x, 0.01f);
                 ImGui::DragFloat("SL Intensity", &templateSpotLight_->intensity, 0.01f, 0.0f);
                 ImGui::DragFloat3("SL Direction", &templateSpotLight_->direction.x, 0.01f);
-                templateSpotLight_->direction = Math::Normalize(templateSpotLight_->direction);
+                templateSpotLight_->direction = Irufemi::Math::Normalize(templateSpotLight_->direction);
                 ImGui::DragFloat("SL Distance", &templateSpotLight_->distance, 0.01f, 0.0f);
                 ImGui::DragFloat("SL Decay", &templateSpotLight_->decay, 0.01f, 0.0f);
                 ImGui::DragFloat("SL CosAngle", &templateSpotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
@@ -329,7 +329,7 @@ void DebugUI::DebugLights(
                 ImGui::DragFloat3("AL Position", &templateAreaLight_->position.x, 0.01f);
                 ImGui::DragFloat("AL Intensity", &templateAreaLight_->intensity, 0.01f, 0.0f);
                 ImGui::DragFloat3("AL Direction", &templateAreaLight_->direction.x, 0.01f);
-                templateAreaLight_->direction = Math::Normalize(templateAreaLight_->direction);
+                templateAreaLight_->direction = Irufemi::Math::Normalize(templateAreaLight_->direction);
                 ImGui::DragFloat("AL Range", &templateAreaLight_->range, 0.01f, 0.0f);
                 ImGui::DragFloat2("AL Size", &templateAreaLight_->size.x, 0.01f, 0.0f);
                 if (ImGui::Button("Add AreaLight to Scene")) {
@@ -344,7 +344,7 @@ void DebugUI::DebugLights(
             if (directionalLight && ImGui::BeginTabItem("Directional")) {
                 ImGui::ColorEdit4("Color", &directionalLight->color.x);
                 ImGui::DragFloat3("Direction", &directionalLight->direction.x, 0.01f);
-                directionalLight->direction = Math::Normalize(directionalLight->direction);
+                directionalLight->direction = Irufemi::Math::Normalize(directionalLight->direction);
                 ImGui::DragFloat("Intensity", &directionalLight->intensity, 0.01f, 0.0f);
                 ImGui::EndTabItem();
             }
@@ -393,7 +393,7 @@ void DebugUI::DebugLights(
                         ImGui::DragFloat3("Position", &light->position.x, 0.01f);
                         ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
                         ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
-                        light->direction = Math::Normalize(light->direction);
+                        light->direction = Irufemi::Math::Normalize(light->direction);
                         ImGui::DragFloat("Distance", &light->distance, 0.01f, 0.0f);
                         ImGui::DragFloat("Decay", &light->decay, 0.01f, 0.0f);
                         ImGui::DragFloat("CosAngle", &light->cosAngle, 0.01f, 0.0f, 1.0f);
@@ -423,7 +423,7 @@ void DebugUI::DebugLights(
                         ImGui::DragFloat3("Position", &light->position.x, 0.01f);
                         ImGui::DragFloat("Intensity", &light->intensity, 0.01f, 0.0f);
                         ImGui::DragFloat3("Direction", &light->direction.x, 0.01f);
-                        light->direction = Math::Normalize(light->direction);
+                        light->direction = Irufemi::Math::Normalize(light->direction);
                         ImGui::DragFloat("Range", &light->range, 0.01f, 0.0f);
                         ImGui::DragFloat2("Size", &light->size.x, 0.01f, 0.0f);
                         ImGui::PopID();
@@ -445,7 +445,7 @@ void DebugUI::DebugLights(
 }
 
 // transform
-void DebugUI::DebugTransform([[maybe_unused]] Transform& transform) {
+void DebugUI::DebugTransform([[maybe_unused]] Irufemi::Transform& transform) {
 #ifdef USE_IMGUI
 
     if (ImGui::CollapsingHeader("transform")) {
@@ -472,7 +472,7 @@ void DebugUI::DebugTransform([[maybe_unused]] Transform& transform) {
 }
 
 // transform
-void DebugUI::DebugTransform2D([[maybe_unused]] Transform& transform) {
+void DebugUI::DebugTransform2D([[maybe_unused]] Irufemi::Transform& transform) {
 #ifdef USE_IMGUI
 
     if (ImGui::CollapsingHeader("transform")) {
@@ -488,7 +488,7 @@ void DebugUI::DebugTransform2D([[maybe_unused]] Transform& transform) {
 #endif // USE_IMGUI
 }
 
-void DebugUI::TextTransform([[maybe_unused]] Transform& transform, [[maybe_unused]] const char* name) {
+void DebugUI::TextTransform([[maybe_unused]] Irufemi::Transform& transform, [[maybe_unused]] const char* name) {
 #ifdef USE_IMGUI
 
     std::string header = std::string("transform") + name;
@@ -513,7 +513,7 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
     ImGui::DragFloat(("Roughness" + id_str).c_str(), &material->roughness, 0.01f, 0.0f, 1.0f);
     ImGui::DragFloat(("Environment Coefficient" + id_str).c_str(), &material->environmentCoefficient, 0.01f, 0.0f, 1.0f);
 
-    // UV Transform
+    // UV Irufemi::Transform
     if (ImGui::TreeNode(("UV Transform" + id_str).c_str())) {
         DebugUvTransform(material->uvTransform);
         ImGui::TreePop();
@@ -616,7 +616,7 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
             materialData->useClampSampler = useClamp ? 1 : 0;
         }
 
-        // --- UV Transform 編集(より実用的に) ---
+        // --- UV Irufemi::Transform 編集(より実用的に) ---
         // materialData->uvTransform は 4x4 行列。
         // 編集用に translate/scale/rotate(Z) を抽出し、編集後に再構成する。
         // 抽出は「一般的な affine(回転 + scale + translate)を想定した簡易逆変換」です。
@@ -641,13 +641,13 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
         }
 
         if (changed) {
-            // Transform 構造を使って行列を再構成(function/Math.h の MakeAffineMatrix を利用)
-            Transform uvT;
+            // Irufemi::Transform 構造を使って行列を再構成(function/Math.h の MakeAffineMatrix を利用)
+            Irufemi::Transform uvT;
             uvT.translate = { tx, ty, 0.0f };
             uvT.scale = { sx, sy, 1.0f };
             uvT.rotate = { 0.0f, 0.0f, rot }; // rad
 
-            materialData->uvTransform = Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
+            materialData->uvTransform = Irufemi::Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
         }
     }
 #endif // USE_IMGUI
@@ -718,7 +718,7 @@ void DebugUI::DebugDirectionalLight([[maybe_unused]] DirectionalLight* direction
 }
 
 // UvTransform
-void DebugUI::DebugUvTransform([[maybe_unused]] Transform& uvTransform) {
+void DebugUI::DebugUvTransform([[maybe_unused]] Irufemi::Transform& uvTransform) {
 #ifdef USE_IMGUI
 
     if (ImGui::CollapsingHeader("uvTransform")) {
@@ -730,7 +730,7 @@ void DebugUI::DebugUvTransform([[maybe_unused]] Transform& uvTransform) {
 }
 
 // UvTransform
-void DebugUI::DebugUvTransform([[maybe_unused]] Matrix4x4& uvTransform) {
+void DebugUI::DebugUvTransform([[maybe_unused]] Irufemi::Matrix4x4& uvTransform) {
 #ifdef USE_IMGUI
     if (ImGui::CollapsingHeader("uvTransform")) {
         // 編集用に translate/scale/rotate(Z) を抽出
@@ -749,18 +749,18 @@ void DebugUI::DebugUvTransform([[maybe_unused]] Matrix4x4& uvTransform) {
         if (ImGui::SliderAngle("UVRotate", &rot)) changed = true;
 
         if (changed) {
-            // Transform 構造を使って行列を再構成
-            Transform uvT;
+            // Irufemi::Transform 構造を使って行列を再構成
+            Irufemi::Transform uvT;
             uvT.translate = { tx, ty, 0.0f };
             uvT.scale = { sx, sy, 1.0f };
             uvT.rotate = { 0.0f, 0.0f, rot }; // rad
-            uvTransform = Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
+            uvTransform = Irufemi::Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
         }
     }
 #endif // USE_IMGUI
 }
-// Sphere
-void DebugUI::DebugSphereInfo([[maybe_unused]] Sphere& sphere) {
+// Irufemi::Sphere
+void DebugUI::DebugSphereInfo([[maybe_unused]] Irufemi::Sphere& sphere) {
 #ifdef USE_IMGUI
 
     if (ImGui::CollapsingHeader("info")) {
@@ -777,7 +777,7 @@ void DebugUI::FPSDebug() {
 
     ImGuiIO& io = ImGui::GetIO();
     
-    // エンジン側の PerFrame 時間管理 (DeltaTime) を使用して計算する
+    // エンジン側の Irufemi::PerFrame 時間管理 (DeltaTime) を使用して計算する
     float dt = io.DeltaTime;
     if (dxCommon_ && dxCommon_->GetEngine()) {
         dt = dxCommon_->GetEngine()->GetRealDeltaTime();
@@ -1169,7 +1169,7 @@ void DebugUI::SceneSelectorTab([[maybe_unused]] SceneManager* sm) {
 
 
 void DebugUI::DebugPsoSettings(
-    [[maybe_unused]] BlendMode* blendMode,
+    [[maybe_unused]] Irufemi::BlendMode* blendMode,
     [[maybe_unused]] PSOManager::DepthWrite* depthWrite,
     [[maybe_unused]] PSOManager::CullMode* cullMode,
     [[maybe_unused]] const char* unique_id) {
@@ -1184,7 +1184,7 @@ void DebugUI::DebugPsoSettings(
     std::string blendLabel = "Blend Mode";
     blendLabel += unique_id;
     if (ImGui::Combo(blendLabel.c_str(), &blendIdx, blendNames, IM_ARRAYSIZE(blendNames))) {
-        *blendMode = static_cast<BlendMode>(blendIdx);
+        *blendMode = static_cast<Irufemi::BlendMode>(blendIdx);
     }
 
     // Depth Write

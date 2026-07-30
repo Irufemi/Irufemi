@@ -1,4 +1,4 @@
-#include "DebrisComponent.h"
+﻿#include "DebrisComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Engine/IrufemiEngine.h"
@@ -39,8 +39,8 @@ float DebrisComponent::GetBossDamage() const { return manager_ ? manager_->GetDe
 float DebrisComponent::GetEnemyDamage() const { return manager_ ? manager_->GetDebrisEnemyDamage() : 100.0f; }
 float DebrisComponent::GetCameraShakeIntensity() const { return manager_ ? manager_->GetCameraShakeIntensity() : 0.5f; }
 int DebrisComponent::GetCameraShakeDurationFrames() const { return manager_ ? manager_->GetCameraShakeDurationFrames() : 10; }
-Vector4 DebrisComponent::GetPlayerAuraColor() const { return manager_ ? manager_->GetPlayerAuraColor() : Vector4{0.0f, 0.8f, 1.0f, 0.4f}; }
-Vector4 DebrisComponent::GetBossAuraColor() const { return manager_ ? manager_->GetBossAuraColor() : Vector4{0.8f, 0.0f, 0.6f, 0.4f}; }
+Irufemi::Vector4 DebrisComponent::GetPlayerAuraColor() const { return manager_ ? manager_->GetPlayerAuraColor() : Irufemi::Vector4{0.0f, 0.8f, 1.0f, 0.4f}; }
+Irufemi::Vector4 DebrisComponent::GetBossAuraColor() const { return manager_ ? manager_->GetBossAuraColor() : Irufemi::Vector4{0.8f, 0.0f, 0.6f, 0.4f}; }
 float DebrisComponent::GetCatchDistanceSq() const { return manager_ ? manager_->GetCatchDistanceSq() : 2.0f; }
 float DebrisComponent::GetBossShieldRadius() const { return manager_ ? manager_->GetBossShieldRadius() : 8.0f; }
 float DebrisComponent::GetPullYOffset() const { return manager_ ? manager_->GetDebrisPullYOffset() : 2.0f; }
@@ -137,7 +137,7 @@ void DebrisComponent::SetState(DebrisState newState) {
         for (auto& child : gameObject_->GetChildren()) {
             if (child && child->GetName() == "DebrisAura") {
                 bool isActive = false;
-                Vector4 auraColor = { 1.0f, 1.0f, 1.0f, 0.7f };
+                Irufemi::Vector4 auraColor = { 1.0f, 1.0f, 1.0f, 0.7f };
 
                 switch (state_) {
                 case DebrisState::Pulled:
@@ -201,13 +201,13 @@ void DebrisComponent::SetState(DebrisState newState) {
     }
 
     if (state_ == DebrisState::BossOrbiting) {
-        bossOrbitAngleX_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
-        bossOrbitAngleY_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
-        bossOrbitAngleZ_ = Random::GeneratorFloat(0.0f, Math::PI * 2.0f);
-        bossOrbitSpeedX_ = Random::GeneratorFloat(-1.2f, 1.2f);
-        bossOrbitSpeedY_ = Random::GeneratorFloat(-3.0f, 3.0f);
-        bossOrbitSpeedZ_ = Random::GeneratorFloat(-1.2f, 1.2f);
-        bossOrbitRadiusOffset_ = Random::GeneratorFloat(-1.0f, 1.0f);
+        bossOrbitAngleX_ = Irufemi::Random::GeneratorFloat(0.0f, Irufemi::Math::PI * 2.0f);
+        bossOrbitAngleY_ = Irufemi::Random::GeneratorFloat(0.0f, Irufemi::Math::PI * 2.0f);
+        bossOrbitAngleZ_ = Irufemi::Random::GeneratorFloat(0.0f, Irufemi::Math::PI * 2.0f);
+        bossOrbitSpeedX_ = Irufemi::Random::GeneratorFloat(-1.2f, 1.2f);
+        bossOrbitSpeedY_ = Irufemi::Random::GeneratorFloat(-3.0f, 3.0f);
+        bossOrbitSpeedZ_ = Irufemi::Random::GeneratorFloat(-1.2f, 1.2f);
+        bossOrbitRadiusOffset_ = Irufemi::Random::GeneratorFloat(-1.0f, 1.0f);
     }
 
     if (state_ == DebrisState::Thrown && gameObject_) {
@@ -234,14 +234,14 @@ void DebrisComponent::Update() {
             if (auto target = targetObject_.lock()) {
                 auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
-                    Vector3 targetPos = targetTransform->GetWorldPosition();
+                    Irufemi::Vector3 targetPos = targetTransform->GetWorldPosition();
                     // ターゲット(プレイヤー)に向かってLerpで移動
-                    Vector3 diff = {
+                    Irufemi::Vector3 diff = {
                         targetPos.x - transform->GetWorldPosition().x,
                         targetPos.y + GetPullYOffset() - transform->GetWorldPosition().y, // 少し上に引き寄せる
                         targetPos.z - transform->GetWorldPosition().z
                     };
-                    Vector3 pos = transform->GetWorldPosition();
+                    Irufemi::Vector3 pos = transform->GetWorldPosition();
                     pos.x += diff.x * GetPullSpeed() * deltaTime;
                     pos.y += diff.y * GetPullSpeed() * deltaTime;
                     pos.z += diff.z * GetPullSpeed() * deltaTime;
@@ -263,13 +263,13 @@ void DebrisComponent::Update() {
                     orbitAngle_ += GetOrbitSpeed() * deltaTime;
                     
                     // プレイヤーの周囲を回転するローカル座標を計算
-                    Vector3 offset = {
+                    Irufemi::Vector3 offset = {
                         std::cos(orbitAngle_) * orbitRadius_,
                         std::sin(orbitAngle_ * 2.0f) * 0.5f + 1.0f, // 8の字にフワフワ
                         std::sin(orbitAngle_) * orbitRadius_
                     };
                     
-                    Vector3 pos = transform->GetWorldPosition();
+                    Irufemi::Vector3 pos = transform->GetWorldPosition();
                     pos.x = targetTransform->GetWorldPosition().x + offset.x;
                     pos.y = targetTransform->GetWorldPosition().y + offset.y;
                     pos.z = targetTransform->GetWorldPosition().z + offset.z;
@@ -287,12 +287,12 @@ void DebrisComponent::Update() {
                     bossOrbitAngleY_ += bossOrbitSpeedY_ * shieldRotationSpeed * deltaTime;
                     bossOrbitAngleZ_ += bossOrbitSpeedZ_ * shieldRotationSpeed * deltaTime;
 
-                    Matrix4x4 rotMatrix = Math::MakeRotateXYZMatrix(Vector3{bossOrbitAngleX_, bossOrbitAngleY_, bossOrbitAngleZ_});
+                    Irufemi::Matrix4x4 rotMatrix = Irufemi::Math::MakeRotateXYZMatrix(Irufemi::Vector3{bossOrbitAngleX_, bossOrbitAngleY_, bossOrbitAngleZ_});
                     float currentRadius = GetBossShieldRadius() + bossOrbitRadiusOffset_;
-                    Vector3 baseOffset = { 0, 0, currentRadius };
-                    Vector3 localPos = Math::TransformNormal(baseOffset, rotMatrix);
+                    Irufemi::Vector3 baseOffset = { 0, 0, currentRadius };
+                    Irufemi::Vector3 localPos = Irufemi::Math::TransformNormal(baseOffset, rotMatrix);
 
-                    Vector3 pos = transform->GetWorldPosition();
+                    Irufemi::Vector3 pos = transform->GetWorldPosition();
                     pos.x = targetTransform->GetWorldPosition().x + localPos.x;
                     pos.y = targetTransform->GetWorldPosition().y + localPos.y;
                     pos.z = targetTransform->GetWorldPosition().z + localPos.z;
@@ -309,7 +309,7 @@ void DebrisComponent::Update() {
                 auto targetTransform = target->GetComponent<TransformComponent>();
                 if (targetTransform) {
                     // 敵に向かって高速ホーミング移動
-                    Vector3 diff = {
+                    Irufemi::Vector3 diff = {
                         targetTransform->GetWorldPosition().x - transform->GetWorldPosition().x,
                         targetTransform->GetWorldPosition().y - transform->GetWorldPosition().y,
                         targetTransform->GetWorldPosition().z - transform->GetWorldPosition().z
@@ -323,7 +323,7 @@ void DebrisComponent::Update() {
             }
             
             // ターゲットがない（または既に死んだ）場合でも、計算された(または初期設定された)方向に飛び続ける
-            Vector3 pos = transform->GetWorldPosition();
+            Irufemi::Vector3 pos = transform->GetWorldPosition();
             pos.x += throwDirection_.x * GetThrowSpeed() * deltaTime;
             pos.y += throwDirection_.y * GetThrowSpeed() * deltaTime;
             pos.z += throwDirection_.z * GetThrowSpeed() * deltaTime;

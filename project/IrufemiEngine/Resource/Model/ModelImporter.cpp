@@ -1,4 +1,4 @@
-#include "ModelImporter.h"
+﻿#include "ModelImporter.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -53,8 +53,8 @@ namespace {
     }
 
     void CalculateBoundingSphere(ObjModel& model) {
-        Vector3 minV = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
-        Vector3 maxV = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
+        Irufemi::Vector3 minV = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
+        Irufemi::Vector3 maxV = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
         bool hasVertices = false;
 
         for (const auto& mesh : model.meshes) {
@@ -70,21 +70,21 @@ namespace {
         }
 
         if (!hasVertices) {
-            model.boundingBox = AABB{ {0,0,0}, {0,0,0} };
+            model.boundingBox = Irufemi::AABB{ {0,0,0}, {0,0,0} };
             model.boundingSphere.center = { 0, 0, 0 };
             model.boundingSphere.radius = 0.0f;
             return;
         }
 
-        model.boundingBox = AABB{ minV, maxV };
+        model.boundingBox = Irufemi::AABB{ minV, maxV };
         model.boundingSphere.center = (minV + maxV) * 0.5f;
 
         float maxDistSq = 0.0f;
         for (const auto& mesh : model.meshes) {
             for (const auto& vertex : mesh.vertices) {
-                Vector3 pos = { vertex.position.x, vertex.position.y, vertex.position.z };
-                Vector3 diff = pos - model.boundingSphere.center;
-                float distSq = Math::Dot(diff, diff);
+                Irufemi::Vector3 pos = { vertex.position.x, vertex.position.y, vertex.position.z };
+                Irufemi::Vector3 diff = pos - model.boundingSphere.center;
+                float distSq = Irufemi::Math::Dot(diff, diff);
                 maxDistSq = (std::max)(maxDistSq, distSq);
             }
         }
@@ -129,7 +129,7 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
         out.enableLighting = true;
         out.lightingMode = 3;
         out.environmentCoefficient = 0.0f;
-        out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
+        out.uvTransform = Irufemi::Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Irufemi::Vector3{ 0,0,0 }, { 0,0,0 });
 
         if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
             aiString texPath;
@@ -221,8 +221,8 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
             aiVector3D scale, translate;
             aiQuaternion rotate;
             bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
-            Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix({ scale.x, scale.y, scale.z }, { rotate.x, rotate.y, rotate.z, rotate.w }, { translate.x, translate.y, translate.z });
-            jointWeightData.inverseBindPoseMatrix = Math::Inverse(bindPoseMatrix);
+            Irufemi::Matrix4x4 bindPoseMatrix = Irufemi::Math::MakeAffineMatrix({ scale.x, scale.y, scale.z }, { rotate.x, rotate.y, rotate.z, rotate.w }, { translate.x, translate.y, translate.z });
+            jointWeightData.inverseBindPoseMatrix = Irufemi::Math::Inverse(bindPoseMatrix);
 
             for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {
                 jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight, bone->mWeights[weightIndex].mVertexId + vertexOffset });

@@ -1,4 +1,4 @@
-#include "RailRelativeFollowerComponent.h"
+﻿#include "RailRelativeFollowerComponent.h"
 #include "SplineFollowerComponent.h"
 #include "Framework/Component/Utility/SplineComponent.h"
 #include "Framework/Component/TransformComponent.h"
@@ -85,24 +85,24 @@ void RailRelativeFollowerComponent::Update() {
     if (targetDistance < 0.0f) targetDistance = 0.0f;
 
     // レール上の座標と接線（進行方向）を取得
-    Vector3 basePos = cachedPath_->GetPointAtDistance(targetDistance);
-    Vector3 tangent = cachedPath_->GetTangentAtDistance(targetDistance);
+    Irufemi::Vector3 basePos = cachedPath_->GetPointAtDistance(targetDistance);
+    Irufemi::Vector3 tangent = cachedPath_->GetTangentAtDistance(targetDistance);
     
     // 基本となる回転（Z前方）を計算
     float yaw = std::atan2(tangent.x, tangent.z);
     float pitch = std::asin(-tangent.y);
-    Vector3 rotation = {pitch, yaw, 0.0f};
+    Irufemi::Vector3 rotation = {pitch, yaw, 0.0f};
 
     // XYローカルオフセットの適用（レール中心から上下左右へのズレ）
-    Matrix4x4 rotMat = Math::MakeRotateXYZMatrix(rotation);
-    Vector3 right = { rotMat.m[0][0], rotMat.m[0][1], rotMat.m[0][2] };
-    Vector3 up    = { rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2] };
-    Vector3 forward={ rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2] };
+    Irufemi::Matrix4x4 rotMat = Irufemi::Math::MakeRotateXYZMatrix(rotation);
+    Irufemi::Vector3 right = { rotMat.m[0][0], rotMat.m[0][1], rotMat.m[0][2] };
+    Irufemi::Vector3 up    = { rotMat.m[1][0], rotMat.m[1][1], rotMat.m[1][2] };
+    Irufemi::Vector3 forward={ rotMat.m[2][0], rotMat.m[2][1], rotMat.m[2][2] };
 
-    Vector3 finalPos = basePos;
-    finalPos = Math::Add(finalPos, Math::Multiply(localOffset_.x, right));
-    finalPos = Math::Add(finalPos, Math::Multiply(localOffset_.y, up));
-    finalPos = Math::Add(finalPos, Math::Multiply(localOffset_.z, forward));
+    Irufemi::Vector3 finalPos = basePos;
+    finalPos = Irufemi::Math::Add(finalPos, Irufemi::Math::Multiply(localOffset_.x, right));
+    finalPos = Irufemi::Math::Add(finalPos, Irufemi::Math::Multiply(localOffset_.y, up));
+    finalPos = Irufemi::Math::Add(finalPos, Irufemi::Math::Multiply(localOffset_.z, forward));
 
     auto transform = gameObject_->GetComponent<TransformComponent>();
     if (transform) {

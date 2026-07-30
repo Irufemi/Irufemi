@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -16,8 +16,8 @@ class IrufemiEngine;
  */
 struct GlyphInfo {
     char32_t character;
-    Vector2 uvTopLeft;
-    Vector2 uvBottomRight;
+    Irufemi::Vector2 uvTopLeft;
+    Irufemi::Vector2 uvBottomRight;
     float width;
     float height;
     float offsetX;    // 描画基準点からのXズレ (Bearing X)

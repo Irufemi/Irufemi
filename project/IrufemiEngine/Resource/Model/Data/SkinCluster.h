@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 #include "Engine/Core/Math/Matrix4x4.h"
@@ -15,7 +15,7 @@ struct SkinningInformation {
 };
 
 struct SkinCluster {
-    std::vector<Matrix4x4> inverseBindPoseMatrices;
+    std::vector<Irufemi::Matrix4x4> inverseBindPoseMatrices;
     Microsoft::WRL::ComPtr<ID3D12Resource> influenceResource;
     D3D12_VERTEX_BUFFER_VIEW influenceBufferView;
     std::span<VertexInfluence> mappedInfluence;

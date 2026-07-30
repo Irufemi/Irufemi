@@ -1,4 +1,4 @@
-#include "MainOpaquePass.h"
+﻿#include "MainOpaquePass.h"
 #include "../../../Manager/DrawManager.h"
 #include "../../../IrufemiEngine.h"
 #include "../../DirectX/ShadowMap.h"
@@ -36,7 +36,7 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto DrawWithPSO = [&](const auto& queue, auto applyPSOFunc, auto drawFunc) {
         if (queue.empty()) return;
         
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         ID3D12PipelineState* currentCustomPSO = nullptr;

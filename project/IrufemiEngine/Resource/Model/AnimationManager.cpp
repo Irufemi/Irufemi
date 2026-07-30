@@ -1,4 +1,4 @@
-#include "AnimationManager.h"
+﻿#include "AnimationManager.h"
 #include "Engine/Core/Utility/Log.h"
 #include <iostream>
 #include "Data/Animation.h"
@@ -133,7 +133,7 @@ void AnimationManager::OnDirectoryChanged() {
 }
 
 // 任意の時刻の値を取得する
-Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time) {
+Irufemi::Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
     IRUFEMI_ASSERT(!keyframes.empty()); // キーがないものは返す値がわからないのでダメ
@@ -158,7 +158,7 @@ Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& key
 }
 
 // 任意の時刻の値を取得する
-Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQuaternion>& keyframes, float time) {
+Irufemi::Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQuaternion>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
     IRUFEMI_ASSERT(!keyframes.empty()); // キーがないものは返す値がわからないのでダメ
@@ -183,7 +183,7 @@ Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQuaternion
 }
 
 // 任意の時刻の値を取得する
-Vector3 AnimationManager::CalculateValue(const AnimationCurve<Vector3>& keyframes, float time) {
+Irufemi::Vector3 AnimationManager::CalculateValue(const AnimationCurve<Irufemi::Vector3>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
     IRUFEMI_ASSERT(!keyframes.keyframes.empty()); // キーがないものは返す値がわからないのでダメ
@@ -208,7 +208,7 @@ Vector3 AnimationManager::CalculateValue(const AnimationCurve<Vector3>& keyframe
 }
 
 // 任意の時刻の値を取得する
-Quaternion AnimationManager::CalculateValue(const AnimationCurve<Quaternion>& keyframes, float time) {
+Irufemi::Quaternion AnimationManager::CalculateValue(const AnimationCurve<Irufemi::Quaternion>& keyframes, float time) {
 
     // まずは関数の先頭で特殊なケースを除外しておく
     IRUFEMI_ASSERT(!keyframes.keyframes.empty()); // キーがないものは返す値がわからないのでダメ
@@ -225,7 +225,7 @@ Quaternion AnimationManager::CalculateValue(const AnimationCurve<Quaternion>& ke
         if (keyframes.keyframes[index].time <= time && time <= keyframes.keyframes[nextIndex].time) {
             // 範囲内を補間する
             float t = (time - keyframes.keyframes[index].time) / (keyframes.keyframes[nextIndex].time - keyframes.keyframes[index].time);
-            return Math::Slerp(keyframes.keyframes[index].value, keyframes.keyframes[nextIndex].value, t);
+            return Irufemi::Math::Slerp(keyframes.keyframes[index].value, keyframes.keyframes[nextIndex].value, t);
         }
     }
     // ここまできた場合は一番後の時刻よりも後ろなので最後の値を返すことにする
@@ -233,9 +233,9 @@ Quaternion AnimationManager::CalculateValue(const AnimationCurve<Quaternion>& ke
 }
 
 // 任意の時刻の値を取得する(オイラー角)
-Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Quaternion>& keyframes, float time) {
-    Quaternion rotation = CalculateValue(keyframes, time);
-    return Math::ToEuler(rotation);
+Irufemi::Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Irufemi::Quaternion>& keyframes, float time) {
+    Irufemi::Quaternion rotation = CalculateValue(keyframes, time);
+    return Irufemi::Math::ToEuler(rotation);
 }
 
 // Nodeの階層構造からSkeletonDataを作る
@@ -261,7 +261,7 @@ SkeletonPose AnimationManager::CreateSkeletonPose(const SkeletonData* data) {
     for (size_t i = 0; i < data->joints.size(); ++i) {
         pose.jointPoses[i].transform = data->joints[i].bindTransform;
         pose.jointPoses[i].localMatrix = data->joints[i].bindLocalMatrix;
-        pose.jointPoses[i].skeletonSpaceMatrix = Math::MakeIdentity4x4();
+        pose.jointPoses[i].skeletonSpaceMatrix = Irufemi::Math::MakeIdentity4x4();
     }
     
     // バインドポーズの初期状態として、正しい skeletonSpaceMatrix を計算しておく
@@ -297,7 +297,7 @@ void AnimationManager::SkeletonUpdate(SkeletonPose& skeleton) {
         JointPose& jointPose = skeleton.jointPoses[i];
         const JointData& jointData = skeleton.data->joints[i];
 
-        jointPose.localMatrix = Math::MakeAffineMatrix(jointPose.transform.scale, jointPose.transform.rotate, jointPose.transform.translate);
+        jointPose.localMatrix = Irufemi::Math::MakeAffineMatrix(jointPose.transform.scale, jointPose.transform.rotate, jointPose.transform.translate);
         if (jointData.parent) { // 親がいれば親の行列を掛ける
             jointPose.skeletonSpaceMatrix = jointPose.localMatrix * skeleton.jointPoses[*jointData.parent].skeletonSpaceMatrix;
         } else { // 親がいないんでlocalMatrixとskeletonSpaceMatrixは一致する
@@ -372,13 +372,13 @@ void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& a
             nodeAnimB = &itB->second;
         }
 
-        Vector3 transA = jointPose.transform.translate;
-        Quaternion rotA = jointPose.transform.rotate;
-        Vector3 scaleA = jointPose.transform.scale;
+        Irufemi::Vector3 transA = jointPose.transform.translate;
+        Irufemi::Quaternion rotA = jointPose.transform.rotate;
+        Irufemi::Vector3 scaleA = jointPose.transform.scale;
         
-        Vector3 transB = transA;
-        Quaternion rotB = rotA;
-        Vector3 scaleB = scaleA;
+        Irufemi::Vector3 transB = transA;
+        Irufemi::Quaternion rotB = rotA;
+        Irufemi::Vector3 scaleB = scaleA;
 
         if (nodeAnimA) {
             transA = CalculateValue(nodeAnimA->translate, timeA);
@@ -398,7 +398,7 @@ void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& a
             // ルートの移動・回転・スケールは適用対象外（外部で抽出するか、そのまま維持）
         } else {
             jointPose.transform.translate = Lerp(transA, transB, weight);
-            jointPose.transform.rotate = Math::Slerp(rotA, rotB, weight);
+            jointPose.transform.rotate = Irufemi::Math::Slerp(rotA, rotB, weight);
             jointPose.transform.scale = Lerp(scaleA, scaleB, weight);
         }
     }
@@ -563,7 +563,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
 
 
     skinCluster.inverseBindPoseMatrices.resize(skeleton.joints.size());
-    std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(), [] {return Math::MakeIdentity4x4(); });
+    std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(), [] {return Irufemi::Math::MakeIdentity4x4(); });
 
     /// ModelDataを解析してInstanceを埋める
     for (const auto& jointWeight : objModel.skinClusterData) {
@@ -638,7 +638,7 @@ void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const Skeleto
     for (size_t jointIndex = 0; jointIndex < skeleton.jointPoses.size(); ++jointIndex) {
         IRUFEMI_ASSERT(jointIndex < skinCluster.inverseBindPoseMatrices.size());
         skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.jointPoses[jointIndex].skeletonSpaceMatrix;
-        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix = Math::Transpose(Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
+        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix = Irufemi::Math::Transpose(Irufemi::Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
     }
 }
 

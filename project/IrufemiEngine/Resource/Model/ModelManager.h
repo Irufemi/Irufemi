@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <unordered_map>
 #include <memory>
@@ -153,7 +153,7 @@ public:
      * @param resolution ボクセルの分割数（解像度）
      * @return 共有される VoxelizedModel へのポインタ（失敗時は nullptr）
      */
-    std::shared_ptr<VoxelizedModel> GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution);
+    std::shared_ptr<VoxelizedModel> GetVoxelizedModel(const std::string& filename, const Irufemi::Vector3Int& resolution);
 
     /**
      * @brief 指定したフォルダ以下のモデルをすべて先行ロードする
@@ -230,7 +230,7 @@ public:
     /**
      * @brief ヴォクセル化モデルを生成する
      */
-    static VoxelizedModel VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager);
+    static VoxelizedModel VoxelizeModel(const ObjModel& model, const Irufemi::Vector3Int& resolution, TextureManager* textureManager);
 
 private:
     /**

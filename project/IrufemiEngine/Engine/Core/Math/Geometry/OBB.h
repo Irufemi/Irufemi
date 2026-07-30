@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "../Vector3.h"
 
+
+namespace Irufemi {
 struct OBB {
     // !< 中心点
     Vector3 center;
@@ -10,3 +12,4 @@ struct OBB {
     // !< 座標軸方向の長さの半分。中心から面までの距離
     Vector3 size;
 };
+} // namespace Irufemi

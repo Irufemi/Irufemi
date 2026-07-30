@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "ColliderComponent.h"
 #include "Engine/Core/Math/Geometry/AABB.h"
 #include "Engine/Core/Math/Vector3.h"
@@ -23,38 +23,38 @@ public:
 
     std::string GetComponentName() const override { return "AABBColliderComponent"; }
     ColliderType GetColliderType() const override { return ColliderType::AABB; }
-    AABB GetBoundingBox() const override { return GetWorldAABB(); }
+    Irufemi::AABB GetBoundingBox() const override { return GetWorldAABB(); }
 
     /// @brief ワールド空間上での現在のAABBを取得
-    AABB GetWorldAABB() const;
+    Irufemi::AABB GetWorldAABB() const;
 
     /**
      * @brief ボックスの中心からのズレ（ローカル座標）を設定します
      * @param offset 設定するオフセット値
      */
-    void SetLocalOffset(const Vector3& offset) { localOffset_ = offset; }
+    void SetLocalOffset(const Irufemi::Vector3& offset) { localOffset_ = offset; }
 
     /**
      * @brief ボックスの中心からのズレ（ローカル座標）を取得します
-     * @return const Vector3& オフセット値
+     * @return const Irufemi::Vector3& オフセット値
      */
-    const Vector3& GetLocalOffset() const { return localOffset_; }
+    const Irufemi::Vector3& GetLocalOffset() const { return localOffset_; }
 
     /**
      * @brief ボックスの半幅（Extents）を設定します
      * @param size 設定する半幅
      */
-    void SetLocalSize(const Vector3& size) { localSize_ = size; }
+    void SetLocalSize(const Irufemi::Vector3& size) { localSize_ = size; }
 
     /**
      * @brief ボックスの半幅（Extents）を取得します
-     * @return const Vector3& 半幅
+     * @return const Irufemi::Vector3& 半幅
      */
-    const Vector3& GetLocalSize() const { return localSize_; }
+    const Irufemi::Vector3& GetLocalSize() const { return localSize_; }
 
 private:
     TransformComponent* transform_ = nullptr;
 
-    Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f }; //!< 中心からのズレ
-    Vector3 localSize_   = { 1.0f, 1.0f, 1.0f }; //!< ボックスの半幅（Extents）
+    Irufemi::Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f }; //!< 中心からのズレ
+    Irufemi::Vector3 localSize_   = { 1.0f, 1.0f, 1.0f }; //!< ボックスの半幅（Extents）
 };

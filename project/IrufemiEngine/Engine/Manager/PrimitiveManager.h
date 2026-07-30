@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../Graphics/Data/VertexData.h"
 #include "../Core/Type/PrimitiveType.h"
@@ -35,8 +35,8 @@ struct RingParams {
     float endAngle = 360.0f;             ///< 終了角度(度数法)
     uint32_t segments = 32;              ///< 分割数
     bool verticalUV = false;             ///< UVをV方向に変更するかどうか
-    Vector4 innerColor = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 内側の頂点カラー
-    Vector4 outerColor = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 外側の頂点カラー
+    Irufemi::Vector4 innerColor = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 内側の頂点カラー
+    Irufemi::Vector4 outerColor = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 外側の頂点カラー
     float startAlpha = 0.0f;             ///< 開始地点のアルファ値（フェード用）
     float endAlpha = 0.0f;               ///< 終了地点のアルファ値（フェード用）
     float fadeRangeAngle = 0.0f;         ///< フェードにかかる角度の範囲(度数法)
@@ -59,18 +59,18 @@ public:
      * @param[in] type 形状のタイプ
      * @return 頂点とインデックスのリストを含む PrimitiveData
      */
-    const PrimitiveData& GetPrimitiveData(PrimitiveType type);
+    const PrimitiveData& GetPrimitiveData(Irufemi::PrimitiveType type);
 
     /**
      * @brief 指定した形状の頂点データのみを取得する
      */
-    const std::vector<VertexData>& GetVertices(PrimitiveType type);
+    const std::vector<VertexData>& GetVertices(Irufemi::PrimitiveType type);
 
     /**
      * @brief 指定した形状の GPU リソース（BufferView）を取得する（GPUキャッシュ）
      * @details 標準設定（サイズ1.0等）のバッファを共有します。
      */
-    const PrimitiveResource& GetStandardResource(PrimitiveType type);
+    const PrimitiveResource& GetStandardResource(Irufemi::PrimitiveType type);
 
     /**
      * @brief シリンダー形状専用の GPU リソースを取得する（蓋の有無を考慮したGPUキャッシュ）
@@ -128,8 +128,8 @@ private:
     static void GenerateTorusIndices(PrimitiveData& data, uint32_t majorSegments, uint32_t minorSegments);
 
 private:
-    std::map<PrimitiveType, PrimitiveData> cpuCache_;
-    std::map<PrimitiveType, PrimitiveResource> gpuCache_;
+    std::map<Irufemi::PrimitiveType, PrimitiveData> cpuCache_;
+    std::map<Irufemi::PrimitiveType, PrimitiveResource> gpuCache_;
     std::map<uint32_t, PrimitiveResource> cylinderGpuCache_;
 };
 

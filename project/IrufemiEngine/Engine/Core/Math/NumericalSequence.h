@@ -1,7 +1,9 @@
-#pragma once
+﻿#pragma once
 #include <vector>
 #include <cstdint>
 
+
+namespace Irufemi {
 /**
  * @namespace Math::Sequence
  * @brief 数列に関する計算を行うユーティリティ
@@ -46,3 +48,5 @@ namespace Math::Sequence {
      */
     std::vector<float> GenerateGeometric(float firstTerm, float ratio, uint32_t count);
 }
+
+} // namespace Irufemi

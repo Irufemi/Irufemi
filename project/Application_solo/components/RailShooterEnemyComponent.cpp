@@ -1,4 +1,4 @@
-#include "RailShooterEnemyComponent.h"
+﻿#include "RailShooterEnemyComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h" // 描画オンオフ用
@@ -54,9 +54,9 @@ void RailShooterEnemyComponent::Update() {
             // 前方(Z軸正方向など)に進む
             // Transformの rotation_ を元に向きベクトルを計算して足す
             float yaw = transform->GetRotation().y;
-            Vector3 forward = { std::sin(yaw), 0.0f, std::cos(yaw) };
+            Irufemi::Vector3 forward = { std::sin(yaw), 0.0f, std::cos(yaw) };
             
-            Vector3 pos = transform->GetPosition();
+            Irufemi::Vector3 pos = transform->GetPosition();
             pos.x += forward.x * speed_ * deltaTime;
             pos.y += forward.y * speed_ * deltaTime;
             pos.z += forward.z * speed_ * deltaTime;

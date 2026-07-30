@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <memory>
 #include <string>
@@ -18,7 +18,7 @@ struct PrimitiveData;
  * @brief 座標変換（位置・回転・スケール）を管理するコンポーネント
  */
 struct PrimitiveTransform {
-    Transform transform; //!< トランスフォーム情報
+    Irufemi::Transform transform; //!< トランスフォーム情報
     bool isDirty = true; //!< 行列再計算が必要な場合のフラグ
 
     /**
@@ -34,14 +34,14 @@ struct PrimitiveTransform {
  * @brief メッシュ形状（頂点・インデックス情報）を管理するデータ
  */
 struct MeshDesc {
-    PrimitiveType type;                          //!< 現在のプリミティブ形状タイプ
+    Irufemi::PrimitiveType type;                          //!< 現在のプリミティブ形状タイプ
     std::unique_ptr<Object3DResource> resource; //!< D3D12リソース
 
     /**
      * @brief 指定した形状タイプにメッシュを切り替える
      * @param[in] newType 新しい形状タイプ
      */
-    void ChangeMesh(PrimitiveType newType);
+    void ChangeMesh(Irufemi::PrimitiveType newType);
 
     /**
      * @brief カスタムの PrimitiveData を用いて独自にメッシュリソースを再生成する
@@ -64,13 +64,13 @@ struct MaterialDesc {
     std::string loadedTexturePath; //!< 前回ロードしたパス（変更検知用）
     ResourceHandle textureHandle; //!< AAA: キャッシュ用ハンドル
     int selectedTextureIndex = 0; //!< ImGui選択用インデックス
-    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; //!< ベースカラー
+    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; //!< ベースカラー
     bool enableLighting = true;   //!< ライティングの有無
     int lightingMode = 3;         //!< ライティングモード (0:None, 1:Lambert, 2:Half-Lambert, 3:PBR)
     float metallic = 0.0f;        //!< 金属度
     float roughness = 0.5f;       //!< 粗さ
     
-    Matrix4x4 uvTransform = {
+    Irufemi::Matrix4x4 uvTransform = {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,

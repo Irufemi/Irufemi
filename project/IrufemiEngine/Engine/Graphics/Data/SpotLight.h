@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../Core/Math/Vector3.h"
 #include "../../Core/Math/Vector4.h"
@@ -6,13 +6,13 @@
 
 struct SpotLight{
     //!< ライトの色
-    Vector4 color;
+    Irufemi::Vector4 color;
     //!< ライトの位置
-    Vector3 position;
+    Irufemi::Vector3 position;
     //! 輝度
     float intensity;
     //!< スポットライトの方向
-    Vector3 direction;
+    Irufemi::Vector3 direction;
     //!< ライトの届く最大距離
     float distance;
     //!<減衰率

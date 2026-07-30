@@ -1,4 +1,4 @@
-#include "DebugPrimitiveRenderer.h"
+﻿#include "DebugPrimitiveRenderer.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Manager/DrawManager.h"
@@ -50,7 +50,7 @@ void DebugPrimitiveRenderer::CreateSphereResource() {
             float c = std::cos(angle);
             float s = std::sin(angle);
 
-            Vector3 pos;
+            Irufemi::Vector3 pos;
             if (ring == 0) pos = { c, s, 0.0f };
             else if (ring == 1) pos = { 0.0f, c, s };
             else pos = { s, 0.0f, c };
@@ -101,7 +101,7 @@ void DebugPrimitiveRenderer::CreateCubeResource() {
         0,4, 1,5, 2,6, 3,7  // Pillars
     };
 
-    Vector3 positions[8] = {
+    Irufemi::Vector3 positions[8] = {
         { -0.5f, -0.5f, -0.5f },
         {  0.5f, -0.5f, -0.5f },
         {  0.5f, -0.5f,  0.5f },
@@ -152,17 +152,17 @@ void DebugPrimitiveRenderer::ClearInstances() {
     activeCubeCount_ = 0;
 }
 
-void DebugPrimitiveRenderer::AddSphere(const Vector3& center, float radius, const Vector4& color) {
+void DebugPrimitiveRenderer::AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (activeSphereCount_ < maxSphereInstances_) {
         auto& instance = sphereInstances_[activeSphereCount_];
-        instance.world = Math::MakeScaleMatrix({radius, radius, radius}) * Math::MakeTranslateMatrix(center);
+        instance.world = Irufemi::Math::MakeScaleMatrix({radius, radius, radius}) * Irufemi::Math::MakeTranslateMatrix(center);
         instance.color = color;
         activeSphereCount_++;
     }
 }
 
-void DebugPrimitiveRenderer::AddCube(const Matrix4x4& transform, const Vector4& color) {
+void DebugPrimitiveRenderer::AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (activeCubeCount_ < maxCubeInstances_) {
         auto& instance = cubeInstances_[activeCubeCount_];
@@ -179,7 +179,7 @@ void DebugPrimitiveRenderer::Update() {
 void DebugPrimitiveRenderer::EnsureInstancingSRVs() {
     uint32_t frameIndex = dx_->GetFrameIndex();
     
-    // Sphere
+    // Irufemi::Sphere
     if (sphereSrvIndex_[frameIndex] == UINT32_MAX) {
         sphereSrvIndex_[frameIndex] = srvAllocator_->Allocate();
         sphereSrvGPU_[frameIndex] = srvAllocator_->GetGPUHandle(sphereSrvIndex_[frameIndex]);
@@ -201,7 +201,7 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
     Camera* activeCam = dx_->GetEngine()->GetCameraManager()->GetActiveCamera();
     if (!activeCam) return;
 
-    // Sphere Buffer
+    // Irufemi::Sphere Buffer
     if (activeSphereCount_ > 0) {
         if (activeSphereCount_ > sphereInstanceCapacity_[frameIndex]) {
             if (sphereInstanceBuffer_[frameIndex]) {
