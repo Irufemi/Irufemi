@@ -15,8 +15,11 @@ void PostUIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, Ir
     // 自身に書き戻す、またはバックバッファに書き込むための事前ステート
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    // マスクバッファをシェーダーリソースとして要求する
-    builder.RequireState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    // G-Bufferをシェーダーリソースとして要求する
+    if (auto tex = engine->GetEffectMaskTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetNormalTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetMaterialTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetVelocityTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     workTextureHandles_.clear();
 
@@ -63,7 +66,7 @@ void PostUIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // バリア遷移
     DirectXUtils::TransitionBarrier(cmdList, ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    renderGraph->RegisterResourceState(ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    renderGraph->SetInitialResourceState(ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     
     DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 

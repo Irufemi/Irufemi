@@ -15,8 +15,11 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     // 自身に書き戻すため、最終的な出力先として RENDER_TARGET を要求する
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    // マスクバッファをシェーダーリソースとして要求する
-    builder.RequireState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    // G-Bufferをシェーダーリソースとして要求する
+    if (auto tex = engine->GetEffectMaskTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetNormalTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetMaterialTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetVelocityTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     workTextureHandles_.clear();
     bloomExtractHandle_ = kInvalidHandle;
@@ -158,7 +161,7 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // バリア遷移
     DirectXUtils::TransitionBarrier(cmdList, ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    renderGraph->RegisterResourceState(ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    renderGraph->SetInitialResourceState(ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     
     DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -172,6 +175,6 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
             cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
         );
-        renderGraph->RegisterResourceState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        renderGraph->SetInitialResourceState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
     }
 }

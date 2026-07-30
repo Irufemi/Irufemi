@@ -938,10 +938,10 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
       
       // 再構築された永続リソースの初期ステートをRenderGraphへ再登録する
       if (mainRenderTexture_ && mainRenderTexture_->GetResource()) {
-          drawManager_->RegisterResourceState(mainRenderTexture_->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          drawManager_->SetInitialResourceState(mainRenderTexture_->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
       }
       if (dxCommon_ && dxCommon_->GetDepthStencilResource()) {
-          drawManager_->RegisterResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+          drawManager_->SetInitialResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
       }
   }
 }

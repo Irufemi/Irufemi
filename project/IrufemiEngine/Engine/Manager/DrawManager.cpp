@@ -139,7 +139,7 @@ void DrawManager::Initialize(DirectXCommon* dx) {
         shadowMaps_[i]->Initialize(dxCommon_, 2048, 2048);
         
         // RenderGraph にリソースの初期ステートを登録
-        renderGraph_->RegisterResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        renderGraph_->SetInitialResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 
     // Command Signature for GPU Culling (ExecuteIndirect)
@@ -215,15 +215,21 @@ void DrawManager::OnResize(int32_t width, int32_t height) {
         for (int i = 0; i < kMaxFramesInFlight; ++i) {
             if (shadowMaps_[i]) {
                 // フレーム完了時点ではSRV状態になっているため、その状態を登録
-                renderGraph_->RegisterResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                renderGraph_->SetInitialResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             }
         }
     }
 }
 
-void DrawManager::RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
+void DrawManager::SetInitialResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
     if (renderGraph_) {
-        renderGraph_->RegisterResourceState(resource, state);
+        renderGraph_->SetInitialResourceState(resource, state);
+    }
+}
+
+void DrawManager::SetFinalResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
+    if (renderGraph_) {
+        renderGraph_->SetFinalResourceState(resource, state);
     }
 }
 
@@ -1278,56 +1284,41 @@ void DrawManager::EndShadowPass() {
 void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     if (renderGraph_) {
         // メインレンダリングテクスチャの初期状態を登録 (RenderGraph内で遷移するため)
-        renderGraph_->RegisterResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        renderGraph_->SetInitialResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         if (engine->GetEffectMaskTexture()) {
-            renderGraph_->RegisterResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         if (engine->GetNormalTexture()) {
-            renderGraph_->RegisterResourceState(engine->GetNormalTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetNormalTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         if (engine->GetMaterialTexture()) {
-            renderGraph_->RegisterResourceState(engine->GetMaterialTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetMaterialTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         if (engine->GetVelocityTexture()) {
-            renderGraph_->RegisterResourceState(engine->GetVelocityTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetVelocityTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         
         // 深度バッファの初期状態も登録 (DepthBasedOutline 等で参照するため)
-        renderGraph_->RegisterResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        renderGraph_->SetInitialResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
-        renderGraph_->Execute(this, engine);
-        
+        // 実行後の最終ステート（SRV）を登録
 #ifdef EditorMode
-        // RenderGraph 終了後、メインテクスチャを ImGui 等で読み取れるように SRV ステートに戻す
-        D3D12_RESOURCE_STATES mainState = renderGraph_->GetResourceState(engine->GetMainRenderTexture()->GetResource());
-        if (mainState != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
-            DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetMainRenderTexture()->GetResource(), mainState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        }
+        renderGraph_->SetFinalResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 #endif
         if (engine->GetEffectMaskTexture()) {
-            D3D12_RESOURCE_STATES maskState = renderGraph_->GetResourceState(engine->GetEffectMaskTexture()->GetResource());
-            if (maskState != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
-                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetEffectMaskTexture()->GetResource(), maskState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            }
+            renderGraph_->SetFinalResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (engine->GetNormalTexture()) {
-            D3D12_RESOURCE_STATES state = renderGraph_->GetResourceState(engine->GetNormalTexture()->GetResource());
-            if (state != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
-                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetNormalTexture()->GetResource(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            }
+            renderGraph_->SetFinalResourceState(engine->GetNormalTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (engine->GetMaterialTexture()) {
-            D3D12_RESOURCE_STATES state = renderGraph_->GetResourceState(engine->GetMaterialTexture()->GetResource());
-            if (state != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
-                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetMaterialTexture()->GetResource(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            }
+            renderGraph_->SetFinalResourceState(engine->GetMaterialTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (engine->GetVelocityTexture()) {
-            D3D12_RESOURCE_STATES state = renderGraph_->GetResourceState(engine->GetVelocityTexture()->GetResource());
-            if (state != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) {
-                DirectXUtils::TransitionBarrier(dxCommon_->GetCommandList(), engine->GetVelocityTexture()->GetResource(), state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            }
+            renderGraph_->SetFinalResourceState(engine->GetVelocityTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
+
+        renderGraph_->Execute(this, engine);
     }
 
     // RenderGraph 終了後はバックバッファを描画対象とする (TopMost UI など用)

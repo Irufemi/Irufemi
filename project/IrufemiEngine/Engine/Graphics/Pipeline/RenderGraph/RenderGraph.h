@@ -85,7 +85,12 @@ public:
     /**
      * @brief 特定のリソースの現在のステートを登録する（初期ステートの通知用）
      */
-    void RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
+    void SetInitialResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
+
+    /**
+     * @brief 描画終了後に、特定のリソースを特定のステートに戻すよう要求する
+     */
+    void SetFinalResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
 
     /**
      * @brief リソースの現在の追跡ステートを取得する
@@ -101,6 +106,7 @@ public:
 private:
     std::vector<std::unique_ptr<IRenderPass>> passes_;
     std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES> resourceStates_;
+    std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES> finalResourceStates_;
     std::unordered_map<uint64_t, ID3D12Resource*> activeResourceByOffset_;
 
     std::unique_ptr<TransientResourceManager> transientResourceManager_;

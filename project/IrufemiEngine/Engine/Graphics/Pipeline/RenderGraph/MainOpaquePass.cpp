@@ -8,6 +8,18 @@ void MainOpaquePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager
     if (auto shadowMap = drawManager->GetShadowMap()) {
         builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
+    
+    // G-Bufferをレンダーターゲットとして要求
+    if (auto tex = engine->GetMainRenderTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetEffectMaskTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetNormalTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetMaterialTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetVelocityTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    
+    // 深度バッファを書き込み可能として要求
+    if (auto dx = drawManager->GetDxCommon()) {
+        builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    }
 }
 
 void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {

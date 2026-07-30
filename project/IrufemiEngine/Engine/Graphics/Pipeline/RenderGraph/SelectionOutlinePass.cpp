@@ -69,7 +69,7 @@ void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engi
     // 2. アウトラインの合成描画
     DirectXUtils::TransitionBarrier(cmdList, maskTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     // RenderGraphに最新のステートを通知し、次フレームで正しく遷移バリアが張られるようにする
-    renderGraph->RegisterResourceState(maskTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    renderGraph->SetInitialResourceState(maskTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     D3D12_CPU_DESCRIPTOR_HANDLE mainRtv = engine->GetMainRenderTexture()->GetRtvHandle();
     cmdList->OMSetRenderTargets(1, &mainRtv, false, nullptr);

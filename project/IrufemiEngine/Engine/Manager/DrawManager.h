@@ -166,7 +166,12 @@ public: //メンバ関数
     /**
      * @brief RenderGraphにリソースの初期ステートを登録する（リサイズ時用）
      */
-    void RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
+    void SetInitialResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
+
+    /**
+     * @brief RenderGraphにリソースの期待する最終ステートを登録する
+     */
+    void SetFinalResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
     ///@}
 
     /** @name パイプライン・描画フロー制御 */
