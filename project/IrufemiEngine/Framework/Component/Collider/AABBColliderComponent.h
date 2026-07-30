@@ -15,14 +15,41 @@ public:
     AABBColliderComponent();
     ~AABBColliderComponent() override;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
+    /**
+     * @brief DrawDebug を実行する。
+     */
     void DrawDebug() override;
+    /**
+     * @brief Serialize を実行する。
+     */
     nlohmann::json Serialize() override;
+    /**
+     * @brief Deserialize を実行する。
+     */
     void Deserialize(const nlohmann::json& j) override;
 
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "AABBColliderComponent"; }
+    /**
+     * @brief ColliderType を取得する。
+     * @return 取得された ColliderType
+     */
     ColliderType GetColliderType() const override { return ColliderType::AABB; }
+    /**
+     * @brief BoundingBox を取得する。
+     * @return 取得された BoundingBox
+     */
     Irufemi::AABB GetBoundingBox() const override { return GetWorldAABB(); }
 
     /// @brief ワールド空間上での現在のAABBを取得

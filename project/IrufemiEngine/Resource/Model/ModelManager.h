@@ -287,5 +287,8 @@ private:
     std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用（シーンを止めない）
     
     std::unique_ptr<DirectoryWatcher> directoryWatcher_;
+    /**
+     * @brief OnDirectoryChanged を実行する。
+     */
     void OnDirectoryChanged();
 };

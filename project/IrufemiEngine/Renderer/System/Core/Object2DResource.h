@@ -24,9 +24,18 @@ public:
      *          定数バッファは未割り当ての場合のみ新規に Allocate します。
      */
     void CreateResource() override;
+    /**
+     * @brief Map を実行する。
+     */
     void Map() override;
+    /**
+     * @brief Unmap を実行する。
+     */
     void Unmap() override;
 
+    /**
+     * @brief UpdateTransform を実行する。
+     */
     void UpdateTransform(const Camera& camera);
 
 public:
@@ -46,6 +55,10 @@ public:
     // --- マテリアル ---
     Irufemi::Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     Material cpuMaterialData_{};
+    /**
+     * @brief MaterialData を取得する。
+     * @return 取得された MaterialData
+     */
     Material* GetMaterialData() { return &cpuMaterialData_; }
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
@@ -58,7 +71,15 @@ public:
 
     static class TextureManager* sTextureManager;
 
+    /**
+     * @brief TransformVAddress を取得する。
+     * @return 取得された TransformVAddress
+     */
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
+    /**
+     * @brief MaterialVAddress を取得する。
+     * @return 取得された MaterialVAddress
+     */
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
     
 
@@ -67,11 +88,30 @@ public:
     ID3D12PipelineState* customPSO_ = nullptr;
     D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
     
+    /**
+     * @brief CustomPSO を設定する。
+     * @param[in] pso 設定する CustomPSO の値
+     */
     void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    /**
+     * @brief CustomPSO を取得する。
+     * @return 取得された CustomPSO
+     */
     ID3D12PipelineState* GetCustomPSO() const { return customPSO_; }
+    /**
+     * @brief CustomCBVAddress を設定する。
+     * @param[in] address 設定する CustomCBVAddress の値
+     */
     void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS address) { customCBVAddress_ = address; }
+    /**
+     * @brief CustomCBVAddress を取得する。
+     * @return 取得された CustomCBVAddress
+     */
     D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
 
+    /**
+     * @brief SyncBeforeDraw を実行する。
+     */
     void SyncBeforeDraw();
 
 private:

@@ -57,6 +57,9 @@ public:
      * @brief エフェクトの描画
      */
     void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
 
     /**
@@ -64,6 +67,10 @@ public:
      * @param name ImGui上で表示するノード名
      */
     void Debug(const char* name = "Effect");
+    /**
+     * @brief Engine を設定する。
+     * @param[in] engine 設定する Engine の値
+     */
     static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
     
     /**

@@ -14,13 +14,29 @@ public:
     TargetFollowComponent() = default;
     ~TargetFollowComponent() override = default;
 
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
 
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "TargetFollowComponent"; }
 
 
+    /**
+     * @brief OnIDRemapped を実行する。
+     */
     void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
 private:

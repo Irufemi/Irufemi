@@ -80,6 +80,10 @@ public:
      * @brief TransientResourceManagerの初期化
      */
     void InitializeTransientResourceManager(class DirectXCommon* dxCommon);
+    /**
+     * @brief TransientResourceManager を取得する。
+     * @return 取得された TransientResourceManager
+     */
     TransientResourceManager* GetTransientResourceManager() { return transientResourceManager_.get(); }
 
     /**

@@ -35,26 +35,75 @@ public:
     void SyncBeforeDraw() override;
 
     // --- Mesh properties ---
+    /**
+     * @brief Subdivision を設定する。
+     * @param[in] subdiv 設定する Subdivision の値
+     */
     void SetSubdivision(uint32_t subdiv);
+    /**
+     * @brief Thickness を設定する。
+     * @param[in] thickness 設定する Thickness の値
+     */
     void SetThickness(float thickness);
     
     // --- ゲッター ---
+    /**
+     * @brief VertexBufferView を取得する。
+     * @return 取得された VertexBufferView
+     */
     const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
+    /**
+     * @brief IndexBufferView を取得する。
+     * @return 取得された IndexBufferView
+     */
     const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
+    /**
+     * @brief IndexCount を取得する。
+     * @return 取得された IndexCount
+     */
     uint32_t GetIndexCount() const { return indexCount_; }
+    /**
+     * @brief Type を取得する。
+     * @return 取得された Type
+     */
     Irufemi::Primitive2DType GetType() const { return type_; }
 
 protected:
+    /**
+     * @brief BoundingSphereRadius を取得する。
+     * @return 取得された BoundingSphereRadius
+     */
     float GetBoundingSphereRadius() const override { return 1000.0f; /* 2D なので適当な大きな値 */ }
     
     // メッシュ再構築
+    /**
+     * @brief RebuildMesh を実行する。
+     */
     void RebuildMesh();
+    /**
+     * @brief BuildRect を実行する。
+     */
     void BuildRect();
+    /**
+     * @brief BuildTriangle を実行する。
+     */
     void BuildTriangle();
+    /**
+     * @brief BuildCircle を実行する。
+     */
     void BuildCircle(uint32_t subdivision);
+    /**
+     * @brief BuildRing を実行する。
+     */
     void BuildRing(uint32_t subdivision);
+    /**
+     * @brief BuildLine を実行する。
+     */
     void BuildLine();
 
+    /**
+     * @brief CreateResource を実行する。
+     */
     void CreateResource();
 
 private:

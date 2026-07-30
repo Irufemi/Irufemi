@@ -44,8 +44,17 @@ public:
      * @brief 描画処理
      */
     void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw(bool isUI);
+    /**
+     * @brief DrawOutlineMask を実行する。
+     */
     void DrawOutlineMask() override;
 
     /**
@@ -53,6 +62,9 @@ public:
      * @param[in] camera 描画に使用するカメラ
      */
     void Draw(const Camera& camera);
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw(const Camera& camera, bool isUI);
 
     /**
@@ -62,27 +74,99 @@ public:
     void Debug(const char* label = "Primitive Object");
 
     // --- 各コンポーネントへのアクセサ ---
+    /**
+     * @brief Transform を取得する。
+     * @return 取得された Transform
+     */
     PrimitiveTransform& GetTransform() { return transform_; }
+    /**
+     * @brief Transform を取得する。
+     * @return 取得された Transform
+     */
     const PrimitiveTransform& GetTransform() const { return transform_; }
+    /**
+     * @brief Mesh を取得する。
+     * @return 取得された Mesh
+     */
     MeshDesc& GetMesh() { return mesh_; }
+    /**
+     * @brief Material を取得する。
+     * @return 取得された Material
+     */
     MaterialDesc& GetMaterial() { return material_; }
+    /**
+     * @brief IsCullingEnabled かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsCullingEnabled() const { return isCullingEnabled_; }
 
     // --- 補助メソッド ---
+    /**
+     * @brief Center を取得する。
+     * @return 取得された Center
+     */
     Irufemi::Vector3 GetCenter() const { return transform_.transform.translate; }
+    /**
+     * @brief Right を取得する。
+     * @return 取得された Right
+     */
     Irufemi::Vector3 GetRight() const;
+    /**
+     * @brief Up を取得する。
+     * @return 取得された Up
+     */
     Irufemi::Vector3 GetUp() const;
+    /**
+     * @brief Direction を取得する。
+     * @return 取得された Direction
+     */
     Irufemi::Vector3 GetDirection() const;
 
     // --- ヘルパーSetter ---
+    /**
+     * @brief Transform を設定する。
+     * @param[in] t 設定する Transform の値
+     */
     void SetTransform(const Irufemi::Transform& t) { transform_.transform = t; transform_.isDirty = true; }
+    /**
+     * @brief Position を設定する。
+     * @param[in] pos 設定する Position の値
+     */
     void SetPosition(const Irufemi::Vector3& pos) { transform_.transform.translate = pos; transform_.isDirty = true; }
+    /**
+     * @brief Rotate を設定する。
+     * @param[in] rot 設定する Rotate の値
+     */
     void SetRotate(const Irufemi::Vector3& rot) { transform_.transform.rotate = rot; transform_.isDirty = true; }
+    /**
+     * @brief Scale を設定する。
+     * @param[in] scale 設定する Scale の値
+     */
     void SetScale(const Irufemi::Vector3& scale) { transform_.transform.scale = scale; transform_.isDirty = true; }
+    /**
+     * @brief Color を設定する。
+     * @param[in] color 設定する Color の値
+     */
     void SetColor(const Irufemi::Vector4& color) { material_.color = color; }
+    /**
+     * @brief Texture を設定する。
+     * @param[in] path 設定する Texture の値
+     */
     void SetTexture(const std::string& path) { material_.texturePath = path; }
+    /**
+     * @brief Shape を設定する。
+     * @param[in] type 設定する Shape の値
+     */
     void SetShape(Irufemi::PrimitiveType type) { mesh_.ChangeMesh(type); transform_.isDirty = true; }
+    /**
+     * @brief CustomPSO を設定する。
+     * @param[in] pso 設定する CustomPSO の値
+     */
     void SetCustomPSO(ID3D12PipelineState* pso) { if (mesh_.resource) mesh_.resource->SetCustomPSO(pso); }
+    /**
+     * @brief CustomCBVAddress を設定する。
+     * @param[in] addr 設定する CustomCBVAddress の値
+     */
     void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { if (mesh_.resource) mesh_.resource->SetCustomCBVAddress(addr); }
 
     /**
@@ -91,8 +175,20 @@ public:
      */
     void ReinitializeMesh(const PrimitiveData& data);
 
+    /**
+     * @brief CullingEnabled を設定する。
+     * @param[in] enabled 設定する CullingEnabled の値
+     */
     void SetCullingEnabled(bool enabled) { isCullingEnabled_ = enabled; }
+    /**
+     * @brief CastShadows を設定する。
+     * @param[in] cast 設定する CastShadows の値
+     */
     void SetCastShadows(bool cast) { castShadows_ = cast; }
+    /**
+     * @brief CastShadows を取得する。
+     * @return 取得された CastShadows
+     */
     bool GetCastShadows() const { return castShadows_; }
 
     // --- コールバック ---
@@ -108,10 +204,30 @@ public:
     void SetIsTransparent(bool isTransparent) { isTransparent_ = isTransparent; }
 
     // --- 静的各種マネージャの設定 ---
+    /**
+     * @brief TextureManager を設定する。
+     * @param[in] texM 設定する TextureManager の値
+     */
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    /**
+     * @brief TextureManager を取得する。
+     * @return 取得された TextureManager
+     */
     static TextureManager* GetTextureManager() { return textureManager_; }
+    /**
+     * @brief DrawManager を設定する。
+     * @param[in] drawM 設定する DrawManager の値
+     */
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    /**
+     * @brief DebugUI を設定する。
+     * @param[in] ui 設定する DebugUI の値
+     */
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    /**
+     * @brief Engine を設定する。
+     * @param[in] engine 設定する Engine の値
+     */
     static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
 
 private:

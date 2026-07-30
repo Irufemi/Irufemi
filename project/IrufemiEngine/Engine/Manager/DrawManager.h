@@ -86,33 +86,118 @@ private:
 
 public:
     // --- Queue Getters for RenderPasses ---
+    /**
+     * @brief Standard3DQueue を取得する。
+     * @return 取得された Standard3DQueue
+     */
     const std::vector<RenderPackets::Standard3DPacket>& GetStandard3DQueue() const { return standard3DQueue_; }
+    /**
+     * @brief Transparent3DQueue を取得する。
+     * @return 取得された Transparent3DQueue
+     */
     const std::vector<RenderPackets::Standard3DPacket>& GetTransparent3DQueue() const { return transparent3DQueue_; }
+    /**
+     * @brief UI3DQueue を取得する。
+     * @return 取得された UI3DQueue
+     */
     const std::vector<RenderPackets::Standard3DPacket>& GetUI3DQueue() const { return ui3DQueue_; }
+    /**
+     * @brief SelectionMaskQueue を取得する。
+     * @return 取得された SelectionMaskQueue
+     */
     const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const { return selectionMaskQueue_; }
+    /**
+     * @brief SelectionMaskQueue2D を取得する。
+     * @return 取得された SelectionMaskQueue2D
+     */
     const std::vector<RenderPackets::SpritePacket>& GetSelectionMaskQueue2D() const { return selectionMaskQueue2D_; }
+    /**
+     * @brief SpriteQueue を取得する。
+     * @return 取得された SpriteQueue
+     */
     const std::vector<RenderPackets::SpritePacket>& GetSpriteQueue() const { return spriteQueue_; }
+    /**
+     * @brief SpriteBatchQueue を取得する。
+     * @return 取得された SpriteBatchQueue
+     */
     const std::vector<RenderPackets::SpriteBatchPacket>& GetSpriteBatchQueue() const { return spriteBatchQueue_; }
 
+    /**
+     * @brief LineQueue を取得する。
+     * @return 取得された LineQueue
+     */
     const std::vector<RenderPackets::LinePacket>& GetLineQueue() const { return lineQueue_; }
+    /**
+     * @brief GPUParticleQueue を取得する。
+     * @return 取得された GPUParticleQueue
+     */
     const std::vector<RenderPackets::GPUParticlePacket>& GetGPUParticleQueue() const { return gpuParticleQueue_; }
+    /**
+     * @brief VoxelParticleQueue を取得する。
+     * @return 取得された VoxelParticleQueue
+     */
     const std::vector<RenderPackets::VoxelParticlePacket>& GetVoxelParticleQueue() const { return voxelParticleQueue_; }
+    /**
+     * @brief SkyboxQueue を取得する。
+     * @return 取得された SkyboxQueue
+     */
     const std::vector<RenderPackets::SkyboxPacket>& GetSkyboxQueue() const { return skyboxQueue_; }
+    /**
+     * @brief PrimitiveBatchQueue を取得する。
+     * @return 取得された PrimitiveBatchQueue
+     */
     const std::vector<RenderPackets::PrimitiveBatchPacket>& GetPrimitiveBatchQueue() const { return primitiveBatchQueue_; }
+    /**
+     * @brief Primitive2DBatchQueue を取得する。
+     * @return 取得された Primitive2DBatchQueue
+     */
     const std::vector<RenderPackets::Primitive2DBatchPacket>& GetPrimitive2DBatchQueue() const { return primitive2DBatchQueue_; }
+    /**
+     * @brief ModelBatchQueue を取得する。
+     * @return 取得された ModelBatchQueue
+     */
     const std::vector<RenderPackets::ModelBatchPacket>& GetModelBatchQueue() const { return modelBatchQueue_; }
+    /**
+     * @brief DebugPrimitiveQueue を取得する。
+     * @return 取得された DebugPrimitiveQueue
+     */
     const std::vector<RenderPackets::DebugPrimitivePacket>& GetDebugPrimitiveQueue() const { return debugPrimitiveQueue_; }
     const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
+    /**
+     * @brief TopMostSpriteQueue を取得する。
+     * @return 取得された TopMostSpriteQueue
+     */
     const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
+    /**
+     * @brief TopMostSpriteBatchQueue を取得する。
+     * @return 取得された TopMostSpriteBatchQueue
+     */
     const std::vector<RenderPackets::SpriteBatchPacket>& GetTopMostSpriteBatchQueue() const { return topMostSpriteBatchQueue_; }
     
     // --- Text Queues ---
+    /**
+     * @brief TextQueue を取得する。
+     * @return 取得された TextQueue
+     */
     const std::vector<RenderPackets::SpritePacket>& GetTextQueue() const { return textQueue_; }
+    /**
+     * @brief TopMostTextQueue を取得する。
+     * @return 取得された TopMostTextQueue
+     */
     const std::vector<RenderPackets::SpritePacket>& GetTopMostTextQueue() const { return topMostTextQueue_; }
 
     // --- Execute Queues ---
+    /**
+     * @brief ExecuteRenderQueues を実行する。
+     */
     void ExecuteRenderQueues(class IrufemiEngine* engine);
+    /**
+     * @brief ClearRenderQueues を実行する。
+     */
     void ClearRenderQueues();
+    /**
+     * @brief ClearAllQueues を実行する。
+     */
     void ClearAllQueues() {
         ClearRenderQueues();
         computeTasks_.clear();
@@ -159,8 +244,17 @@ public: //メンバ関数
     DrawManager();
     ~DrawManager();
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(DirectXCommon* dx);
+    /**
+     * @brief Finalize を実行する。
+     */
     void Finalize();
+    /**
+     * @brief OnResize を実行する。
+     */
     void OnResize(int32_t width, int32_t height);
     
     /**
@@ -181,8 +275,18 @@ public: //メンバ関数
      * @param[in] pso バインドするパイプラインステート
      */
     void BindPSO(ID3D12PipelineState* pso);
+    /**
+     * @brief BeginShadowPass を実行する。
+     */
     void BeginShadowPass();
+    /**
+     * @brief EndShadowPass を実行する。
+     */
     void EndShadowPass();
+    /**
+     * @brief IsShadowPass かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsShadowPass() const { return isShadowPass_; }
 
     /**
@@ -334,6 +438,10 @@ public:
      * @param[in] envMapHandle 環境マップテクスチャのGPUハンドル
      */
     void SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle);
+    /**
+     * @brief EnvironmentMap を取得する。
+     * @return 取得された EnvironmentMap
+     */
     D3D12_GPU_DESCRIPTOR_HANDLE GetEnvironmentMap() const { return environmentMapHandle_; }
     ///@}
 
@@ -344,27 +452,45 @@ public:
      * @brief 矩形領域（Region）の描画
      */
     void SubmitModelBatch(const RenderPackets::ModelBatchPacket& packet);
+    /**
+     * @brief DrawModelBatch を実行する。
+     */
     void DrawModelBatch(const RenderPackets::ModelBatchPacket& packet);
 
     /**
      * @brief 汎用的な領域描画（頂点バッファ・インデックスバッファ直接指定）
      */
     void SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet);
+    /**
+     * @brief DrawPrimitiveBatch を実行する。
+     */
     void DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet);
 
     /**
      * @brief 2D汎用図形領域描画（インスタンシング対応の2Dプリミティブバッチ）
      */
     void SubmitPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet);
+    /**
+     * @brief DrawPrimitive2DBatch を実行する。
+     */
     void DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet);
 
     /**
      * @brief インスタンス化された線の描画
      */
     void SubmitLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount, PSOManager::DepthWrite depthWrite = PSOManager::DepthWrite::Enable);
+    /**
+     * @brief DrawLineInstanced を実行する。
+     */
     void DrawLineInstanced(const RenderPackets::LinePacket& packet);
 
+    /**
+     * @brief SubmitDebugPrimitive を実行する。
+     */
     void SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet);
+    /**
+     * @brief DrawDebugPrimitive を実行する。
+     */
     void DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet);
 
     /**
@@ -376,40 +502,85 @@ public:
      * @brief 半透明・エフェクト用の3D標準描画のキューに追加（距離ソート用）
      */
     void SubmitTransparent3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = false, ID3D12Resource* vertexBufferResourceOverride = nullptr, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV = 0);
+    /**
+     * @brief SubmitUI3D を実行する。
+     */
     void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    /**
+     * @brief SubmitOutlineMask を実行する。
+     */
     void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, ID3D12Resource* vertexBufferResourceOverride = nullptr);
+    /**
+     * @brief SubmitTextOutlineMask を実行する。
+     */
     void SubmitTextOutlineMask(const class Object2DResource* resource);
+    /**
+     * @brief DrawStandard3D を実行する。
+     */
     void DrawStandard3D(const RenderPackets::Standard3DPacket& packet);
 
     /**
      * @brief 2Dオブジェクト（スプライト等）の標準描画 (Sprite.hlsl)
      */
     void SubmitSprite(const class Object2DResource* resource);
+    /**
+     * @brief DrawSprite を実行する。
+     */
     void DrawSprite(const RenderPackets::SpritePacket& packet);
 
+    /**
+     * @brief SubmitSpriteBatch を実行する。
+     */
     void SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
+    /**
+     * @brief DrawSpriteBatch を実行する。
+     */
     void DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
 
+    /**
+     * @brief SubmitTopMostSpriteBatch を実行する。
+     */
     void SubmitTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
+    /**
+     * @brief DrawTopMostSpriteBatch を実行する。
+     */
     void DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet);
 
+    /**
+     * @brief SubmitTopMostSprite を実行する。
+     */
     void SubmitTopMostSprite(const class Object2DResource* resource);
 
     // --- Text ---
+    /**
+     * @brief SubmitText を実行する。
+     */
     void SubmitText(const class Object2DResource* resource);
+    /**
+     * @brief SubmitTopMostText を実行する。
+     */
     void SubmitTopMostText(const class Object2DResource* resource);
+    /**
+     * @brief DrawText を実行する。
+     */
     void DrawText(const RenderPackets::SpritePacket& packet);
 
     /**
      * @brief スカイボックスの描画コマンドを送信する
      */
     void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, const UINT& indexCount);
+    /**
+     * @brief DrawSkybox を実行する。
+     */
     void DrawSkybox(const RenderPackets::SkyboxPacket& packet);
 
     /**
      * @brief GPUパーティクルのインスタンス描画 (GPUParticle.hlsl)
      */
     void SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet);
+    /**
+     * @brief DrawGPUParticle を実行する。
+     */
     void DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet);
     
     // VoxelParticle 用の描画 (VoxelParticle.hlsl)
@@ -424,6 +595,9 @@ public:
         ID3D12Resource* particleResource,
         ID3D12PipelineState* drawPSO
     );
+    /**
+     * @brief DrawVoxelParticle を実行する。
+     */
     void DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& packet);
     ///@}
 
@@ -443,8 +617,20 @@ public:
     /** @name 状態取得・ユーティリティ */
     ///@{
     PerFrameData* GetPerFrameData() const { return frameResources_[dxCommon_->GetFrameIndex()].perFrameData; }
+    /**
+     * @brief RenderGraph を取得する。
+     * @return 取得された RenderGraph
+     */
     class RenderGraph* GetRenderGraph() const { return renderGraph_.get(); }
+    /**
+     * @brief DxCommon を取得する。
+     * @return 取得された DxCommon
+     */
     DirectXCommon* GetDxCommon() const { return dxCommon_; }
+    /**
+     * @brief ShadowMap を取得する。
+     * @return 取得された ShadowMap
+     */
     ShadowMap* GetShadowMap() const { return shadowMaps_[dxCommon_->GetFrameIndex()].get(); }
     ///@}
 

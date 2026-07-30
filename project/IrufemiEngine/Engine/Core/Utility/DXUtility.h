@@ -9,6 +9,9 @@
 #include <windows.h>
 
 namespace Irufemi {
+    /**
+     * @brief CheckHResult を実行する。
+     */
     inline void CheckHResult(HRESULT hr, const char* msg, const char* file, int line) {
         if (FAILED(hr)) {
             std::string errorMsg = std::string("DirectX Error! [") + msg + "]\n";

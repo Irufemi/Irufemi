@@ -93,6 +93,9 @@ public:
     }
 
 private:
+    /**
+     * @brief Unmap を実行する。
+     */
     void Unmap() {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
             if (resources_[i] && mappedRawData_[i]) {

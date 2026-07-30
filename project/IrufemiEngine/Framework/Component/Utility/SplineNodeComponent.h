@@ -12,10 +12,23 @@ public:
     SplineNodeComponent() = default;
     ~SplineNodeComponent() override = default;
 
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
+    /**
+     * @brief Raycast を実行する。
+     */
     bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
     
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "SplineNodeComponent"; }
 
 private:

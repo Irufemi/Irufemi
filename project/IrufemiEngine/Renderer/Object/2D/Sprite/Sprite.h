@@ -86,6 +86,9 @@ public: //メンバ関数
      * @brief 描画コマンドの積み込み
      */
     void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
 
     /**
@@ -97,13 +100,45 @@ public: //メンバ関数
     /** @name ゲッター */
     ///@{
     Object2DResource* GetD3D12Resource() { return this->resource_.get(); }
+    /**
+     * @brief Size を取得する。
+     * @return 取得された Size
+     */
     const Irufemi::Vector2& GetSize() const { return size_; }
+    /**
+     * @brief Anchor を取得する。
+     * @return 取得された Anchor
+     */
     const Irufemi::Vector2& GetAnchor() const { return anchor_; }
+    /**
+     * @brief Position2D を取得する。
+     * @return 取得された Position2D
+     */
     const Irufemi::Vector2 GetPosition2D() const;
+    /**
+     * @brief Rotation を取得する。
+     * @return 取得された Rotation
+     */
     const Irufemi::Vector3& GetRotation()const { return resource_ ? resource_->transform_.rotate : Irufemi::Vector3{}; }
+    /**
+     * @brief Color を取得する。
+     * @return 取得された Color
+     */
     const Irufemi::Vector4& GetColor()const { return resource_->GetMaterialData()->color; }
+    /**
+     * @brief IsFlipX かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsFlipX() const { return isFlipX_; }
+    /**
+     * @brief IsFlipY かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsFlipY() const { return isFlipY_; }
+    /**
+     * @brief TextureName を取得する。
+     * @return 取得された TextureName
+     */
     std::string GetTextureName() const;
     ///@}
 
@@ -145,7 +180,15 @@ public: //メンバ関数
      * @brief 反転状態を一括設定
      */
     void SetFlip(bool flipX, bool flipY) { isFlipX_ = flipX; isFlipY_ = flipY; isDirty_ = true; }
+    /**
+     * @brief FlipX を設定する。
+     * @param[in] flip 設定する FlipX の値
+     */
     void SetFlipX(bool flip) { isFlipX_ = flip; isDirty_ = true; }
+    /**
+     * @brief FlipY を設定する。
+     * @param[in] flip 設定する FlipY の値
+     */
     void SetFlipY(bool flip) { isFlipY_ = flip; isDirty_ = true; }
 
     /**
@@ -173,6 +216,11 @@ public: //メンバ関数
     /** @name 便利エイリアス */
     ///@{
     void SetPositionTopLeft(const float& x, const float& y) { SetAnchor(0.0f, 0.0f); SetPosition(x, y); }
+    /**
+     * @brief PositionCenter を設定する。
+     * @param[in] x 設定する PositionCenter の値
+     * @param[in] y 設定する PositionCenter の値
+     */
     void SetPositionCenter(const float& x, const float& y) { SetAnchor(0.5f, 0.5f); SetPosition(x, y); }
     ///@}
 
@@ -188,9 +236,25 @@ public: //メンバ関数
     /** @name 静的メンバ設定（エンジン内部用） */
     ///@{
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    /**
+     * @brief TextureManager を取得する。
+     * @return 取得された TextureManager
+     */
     static TextureManager* GetTextureManager() { return textureManager_; }
+    /**
+     * @brief DrawManager を設定する。
+     * @param[in] drawM 設定する DrawManager の値
+     */
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    /**
+     * @brief DebugUI を設定する。
+     * @param[in] ui 設定する DebugUI の値
+     */
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    /**
+     * @brief CameraManager を設定する。
+     * @param[in] camM 設定する CameraManager の値
+     */
     static void SetCameraManager(CameraManager* camM) { cameraManager_ = camM; }
     ///@}
 

@@ -408,6 +408,9 @@ namespace Math {
      * @brief 値を最小値と最大値の間にクランプする
      */
     template <typename T>
+    /**
+     * @brief Clamp を実行する。
+     */
     constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
         return (v < lo) ? lo : (hi < v) ? hi : v;
     }

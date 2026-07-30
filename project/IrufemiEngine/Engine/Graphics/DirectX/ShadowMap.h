@@ -55,9 +55,25 @@ public:
     /** @name ゲッター */
     ///@{
     D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const { return srvHandleGPU_; }
+    /**
+     * @brief SrvIndex を取得する。
+     * @return 取得された SrvIndex
+     */
     uint32_t GetSrvIndex() const { return srvIndex_; }
+    /**
+     * @brief DsvHandle を取得する。
+     * @return 取得された DsvHandle
+     */
     D3D12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const { return dsvHandleCPU_; }
+    /**
+     * @brief Resource を取得する。
+     * @return 取得された Resource
+     */
     ID3D12Resource* GetResource() const { return resource_.Get(); }
+    /**
+     * @brief ViewProjection を取得する。
+     * @return 取得された ViewProjection
+     */
     const Irufemi::Matrix4x4& GetViewProjection() const { return viewProjection_; }
     ///@}
 

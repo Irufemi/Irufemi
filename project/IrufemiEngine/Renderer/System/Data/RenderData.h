@@ -49,6 +49,10 @@ struct MeshDesc {
      */
     void ChangeMesh(const PrimitiveData& data);
 
+    /**
+     * @brief PrimitiveManager を設定する。
+     * @param[in] pm 設定する PrimitiveManager の値
+     */
     static void SetPrimitiveManager(PrimitiveManager* pm) { primitiveManager_ = pm; }
 
 private:

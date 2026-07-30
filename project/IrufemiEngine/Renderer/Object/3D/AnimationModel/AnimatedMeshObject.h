@@ -22,21 +22,50 @@ public:
     AnimatedMeshObject();
     ~AnimatedMeshObject() override;
 
+    /**
+     * @brief DispatchCompute を実行する。
+     */
     void DispatchCompute() override;
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(const std::string& filename);
     
     /// @brief 外部からポーズを渡して更新。nullptrの場合は内部のバインドポーズまたは前回状態を維持。
     void Update(const SkeletonPose* externalPose = nullptr);
 
+    /**
+     * @brief SyncBeforeDraw を実行する。
+     */
     void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
+    /**
+     * @brief DrawOutlineMask を実行する。
+     */
     void DrawOutlineMask() override;
+    /**
+     * @brief Debug を実行する。
+     */
     void Debug(const char* objName = " ");
 
+    /**
+     * @brief SkeletonData を取得する。
+     * @return 取得された SkeletonData
+     */
     const SkeletonData* GetSkeletonData() const;
+    /**
+     * @brief InternalSkeletonPose を取得する。
+     * @return 取得された InternalSkeletonPose
+     */
     SkeletonPose* GetInternalSkeletonPose(); // プログラマの手動制御用
 
 private:
+    /**
+     * @brief InitializeResources を実行する。
+     */
     void InitializeResources();
 
 private:

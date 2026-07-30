@@ -85,19 +85,61 @@ public:
     ///@{
     // 個別生成用（キャッシュしない。特殊なパラメータが必要な場合用）
     static PrimitiveData CreateSphere(float radius, uint32_t subdivision);
+    /**
+     * @brief CreateCube を実行する。
+     */
     static PrimitiveData CreateCube(float width, float height, float depth);
+    /**
+     * @brief CreateCylinder を実行する。
+     */
     static PrimitiveData CreateCylinder(float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop = true, bool hasBottom = true, bool centered = true);
+    /**
+     * @brief CreateCylinder を実行する。
+     */
     static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments, bool hasTop = true, bool hasBottom = true);
+    /**
+     * @brief CreateCone を実行する。
+     */
     static PrimitiveData CreateCone(float radius, float height, uint32_t segments);
+    /**
+     * @brief CreateTorus を実行する。
+     */
     static PrimitiveData CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
+    /**
+     * @brief CreateIcoSphere を実行する。
+     */
     static PrimitiveData CreateIcoSphere(float radius, uint32_t subdivision);
+    /**
+     * @brief CreateGrid を実行する。
+     */
     static PrimitiveData CreateGrid(float width, float height, uint32_t xSegments, uint32_t ySegments);
+    /**
+     * @brief CreateRing を実行する。
+     */
     static PrimitiveData CreateRing(const RingParams& params);
+    /**
+     * @brief CreateRing を実行する。
+     */
     static PrimitiveData CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV);
+    /**
+     * @brief CreatePlane を実行する。
+     */
     static PrimitiveData CreatePlane(float width = 1.0f, float height = 1.0f);
+    /**
+     * @brief CreateTriangle を実行する。
+     */
     static PrimitiveData CreateTriangle();
+    /**
+     * @brief CreateTetra を実行する。
+     */
     static PrimitiveData CreateTetra();
+    /**
+     * @brief CreateCircle を実行する。
+     */
     static PrimitiveData CreateCircle(float radius, uint32_t segments);
+    /**
+     * @brief CreateOctahedron を実行する。
+     */
     static PrimitiveData CreateOctahedron();
     ///@}
 
@@ -115,16 +157,40 @@ public:
 
 private:
     // --- 頂点生成・インデックス生成の分割ヘルパー ---
+    /**
+     * @brief GenerateSphereVertices を実行する。
+     */
     static void GenerateSphereVertices(PrimitiveData& data, float radius, uint32_t subdivision);
+    /**
+     * @brief GenerateSphereIndices を実行する。
+     */
     static void GenerateSphereIndices(PrimitiveData& data, uint32_t subdivision);
     
+    /**
+     * @brief GenerateCylinderVertices を実行する。
+     */
     static void GenerateCylinderVertices(PrimitiveData& data, float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop, bool hasBottom, bool centered);
+    /**
+     * @brief GenerateCylinderIndices を実行する。
+     */
     static void GenerateCylinderIndices(PrimitiveData& data, uint32_t segments, bool hasTop, bool hasBottom);
 
+    /**
+     * @brief GenerateRingVertices を実行する。
+     */
     static void GenerateRingVertices(PrimitiveData& data, const RingParams& params);
+    /**
+     * @brief GenerateRingIndices を実行する。
+     */
     static void GenerateRingIndices(PrimitiveData& data, uint32_t segments);
 
+    /**
+     * @brief GenerateTorusVertices を実行する。
+     */
     static void GenerateTorusVertices(PrimitiveData& data, float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
+    /**
+     * @brief GenerateTorusIndices を実行する。
+     */
     static void GenerateTorusIndices(PrimitiveData& data, uint32_t majorSegments, uint32_t minorSegments);
 
 private:

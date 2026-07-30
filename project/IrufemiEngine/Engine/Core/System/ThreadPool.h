@@ -55,6 +55,9 @@ public:
      * @brief キューで待機中のタスク数を取得
      */
     size_t GetQueuedTaskCount() const {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(queueMutex_);
         return tasks_.size();
     }
@@ -91,6 +94,9 @@ inline ThreadPool::ThreadPool(size_t numThreads) : stop_(false) {
             while(true) {
                 std::function<void()> task;
                 {
+                    /**
+                     * @brief lock を実行する。
+                     */
                     std::unique_lock<std::mutex> lock(this->queueMutex_);
                     this->condition_.wait(lock, [this] { 
                         return this->stop_ || !this->tasks_.empty(); 
@@ -122,6 +128,9 @@ auto ThreadPool::Enqueue(F&& f, Args&&... args)
         
     std::future<return_type> res = task->get_future();
     {
+        /**
+         * @brief lock を実行する。
+         */
         std::unique_lock<std::mutex> lock(queueMutex_);
         if(stop_) {
             throw std::runtime_error("Enqueue on stopped ThreadPool");
@@ -146,6 +155,9 @@ auto ThreadPool::Enqueue(std::shared_ptr<TaskGroup> group, F&& f, Args&&... args
 
     std::future<return_type> res = task->get_future();
     {
+        /**
+         * @brief lock を実行する。
+         */
         std::unique_lock<std::mutex> lock(queueMutex_);
         if (stop_) {
             if (group) group->NotifyTaskFinished();
@@ -165,6 +177,9 @@ auto ThreadPool::Enqueue(std::shared_ptr<TaskGroup> group, F&& f, Args&&... args
 
 inline ThreadPool::~ThreadPool() {  
     {
+        /**
+         * @brief lock を実行する。
+         */
         std::unique_lock<std::mutex> lock(queueMutex_);
         stop_ = true;
         // アプリケーション終了時など、未実行のタスクを破棄して速やかにスレッドを終了させる

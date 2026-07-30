@@ -175,9 +175,18 @@ public: // 静的ヘルパ
     static void SkinClusterUpdate(SkinCluster& skinCluster, const SkeletonPose& skeleton, uint32_t frameIndex);
 
 private: // 内部ヘルパ
+    /**
+     * @brief NormalizeAndResolve を実行する。
+     */
     std::string NormalizeAndResolve(const std::string& filename) const;
+    /**
+     * @brief StartsWith を実行する。
+     */
     static bool StartsWith(const std::string& s, const std::string& prefix);
     static std::pair<std::string, std::string> SplitDirectoryAndFile(const std::string& full);
+    /**
+     * @brief FindFileRecursive を実行する。
+     */
     std::string FindFileRecursive(const std::string& filename) const;
 
 private:
@@ -195,6 +204,9 @@ private:
     std::vector<std::string> availableAnimations_;
     
     std::unique_ptr<DirectoryWatcher> directoryWatcher_;
+    /**
+     * @brief OnDirectoryChanged を実行する。
+     */
     void OnDirectoryChanged();
 };
 

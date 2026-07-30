@@ -25,7 +25,13 @@ public:
     /** @name 初期化・更新 */
     ///@{
     void Initialize(HWND hwnd);
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
+    /**
+     * @brief Clear を実行する。
+     */
     void Clear();
     ///@}
 

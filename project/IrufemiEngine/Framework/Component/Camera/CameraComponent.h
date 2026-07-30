@@ -13,24 +13,65 @@ public:
     CameraComponent();
     ~CameraComponent() override;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
 
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "CameraComponent"; }
 
     // --- ゲッター・セッター ---
+    /**
+     * @brief Camera を取得する。
+     * @return 取得された Camera
+     */
     std::shared_ptr<Camera> GetCamera() const { return camera_; }
     
+    /**
+     * @brief FovAngleY を取得する。
+     * @return 取得された FovAngleY
+     */
     float GetFovAngleY() const { return fovAngleY_; }
+    /**
+     * @brief FovAngleY を設定する。
+     * @param[in] fov 設定する FovAngleY の値
+     */
     void SetFovAngleY(float fov) { fovAngleY_ = fov; }
 
+    /**
+     * @brief NearZ を取得する。
+     * @return 取得された NearZ
+     */
     float GetNearZ() const { return nearZ_; }
+    /**
+     * @brief NearZ を設定する。
+     * @param[in] nearZ 設定する NearZ の値
+     */
     void SetNearZ(float nearZ) { nearZ_ = nearZ; }
 
+    /**
+     * @brief FarZ を取得する。
+     * @return 取得された FarZ
+     */
     float GetFarZ() const { return farZ_; }
+    /**
+     * @brief FarZ を設定する。
+     * @param[in] farZ 設定する FarZ の値
+     */
     void SetFarZ(float farZ) { farZ_ = farZ; }
 
 protected:
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
 
 private:

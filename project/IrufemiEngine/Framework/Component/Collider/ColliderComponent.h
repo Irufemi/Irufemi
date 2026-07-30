@@ -18,13 +18,26 @@ public:
 
     virtual ~ColliderComponent();
 
+    /**
+     * @brief Initialize を実行する。
+     */
     virtual void Initialize() override {}
+    /**
+     * @brief Update を実行する。
+     */
     virtual void Update() override {}
+    /**
+     * @brief Draw を実行する。
+     */
     virtual void Draw() override {}
     
     /// @brief デバッグ用の当たり判定の枠線を描画する
     virtual void DrawDebug() = 0;
 
+    /**
+     * @brief CollisionManager を設定する。
+     * @param[in] manager 設定する CollisionManager の値
+     */
     static void SetCollisionManager(CollisionManager* manager) { collisionManager_ = manager; }
 
 protected:

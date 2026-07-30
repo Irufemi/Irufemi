@@ -61,7 +61,15 @@ public:
     /** @name デバイス取得（推奨API） */
     ///@{
     Keyboard* GetKeyboard() { return keyboard_.get(); }
+    /**
+     * @brief GamePad を取得する。
+     * @return 取得された GamePad
+     */
     GamePad*  GetGamePad()  { return gamepad_.get(); }
+    /**
+     * @brief Mouse を取得する。
+     * @return 取得された Mouse
+     */
     Mouse*    GetMouse()    { return mouse_.get(); }
     ///@}
 
@@ -69,6 +77,11 @@ public:
     /** @name キー状態の取得 */
     ///@{
     bool IsKeyDown(uint8_t key) const;
+    /**
+     * @brief 指定したキーが今フレームで離された瞬間かどうかを判定する。
+     * @param[in] key 仮想キーコード
+     * @return 離された瞬間ならtrue
+     */
     bool IsKeyUp(uint8_t key) const;
     /** @brief キーが押された瞬間か判定（立ち上がり） */
     bool IsKeyPressed(uint8_t key) const;
@@ -79,8 +92,20 @@ public:
     /** @name DIK互換API */
     ///@{
     bool IsKeyDownDIK(uint8_t dik) const;
+    /**
+     * @brief IsKeyUpDIK かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyUpDIK(uint8_t dik) const;
+    /**
+     * @brief IsKeyPressedDIK かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyPressedDIK(uint8_t dik) const;
+    /**
+     * @brief IsKeyReleasedDIK かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyReleasedDIK(uint8_t dik) const;
     ///@}
     ///@}
@@ -90,6 +115,10 @@ public:
     /** @name ボタン入力状態 */
     ///@{
     bool IsButtonDown(WORD button) const;
+    /**
+     * @brief IsButtonUp かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsButtonUp(WORD button) const;
     /** @brief ボタンが押された瞬間か判定 */
     bool IsButtonPressed(WORD button) const;
@@ -97,35 +126,112 @@ public:
     bool IsButtonReleased(WORD button) const;
     ///@}
 
+    /**
+     * @brief LeftStickX を取得する。
+     * @return 取得された LeftStickX
+     */
     float GetLeftStickX()  const;
+    /**
+     * @brief LeftStickY を取得する。
+     * @return 取得された LeftStickY
+     */
     float GetLeftStickY()  const;
+    /**
+     * @brief RightStickX を取得する。
+     * @return 取得された RightStickX
+     */
     float GetRightStickX() const;
+    /**
+     * @brief RightStickY を取得する。
+     * @return 取得された RightStickY
+     */
     float GetRightStickY() const;
 
+    /**
+     * @brief LeftTrigger を取得する。
+     * @return 取得された LeftTrigger
+     */
     float GetLeftTrigger()  const;
+    /**
+     * @brief RightTrigger を取得する。
+     * @return 取得された RightTrigger
+     */
     float GetRightTrigger() const;
 
+    /**
+     * @brief StartDown を実行する。
+     */
     bool StartDown()     const;
+    /**
+     * @brief StartPressed を実行する。
+     */
     bool StartPressed()  const;
+    /**
+     * @brief StartReleased を実行する。
+     */
     bool StartReleased() const;
 
+    /**
+     * @brief DPadUp を実行する。
+     */
     bool DPadUp()    const;
+    /**
+     * @brief DPadDown を実行する。
+     */
     bool DPadDown()  const;
+    /**
+     * @brief DPadLeft を実行する。
+     */
     bool DPadLeft()  const;
+    /**
+     * @brief DPadRight を実行する。
+     */
     bool DPadRight() const;
+    /**
+     * @brief DPadUpPressed を実行する。
+     */
     bool DPadUpPressed()    const;
+    /**
+     * @brief DPadDownPressed を実行する。
+     */
     bool DPadDownPressed()  const;
+    /**
+     * @brief DPadLeftPressed を実行する。
+     */
     bool DPadLeftPressed()  const;
+    /**
+     * @brief DPadRightPressed を実行する。
+     */
     bool DPadRightPressed() const;
     ///@}
 
     /** @name マウス入力（互換用API） */
     ///@{
     bool IsMouseButtonDown(Mouse::Button button)     const;
+    /**
+     * @brief IsMouseButtonPressed かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsMouseButtonPressed(Mouse::Button button)  const;
+    /**
+     * @brief IsMouseButtonReleased かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsMouseButtonReleased(Mouse::Button button) const;
+    /**
+     * @brief MousePosition を取得する。
+     * @return 取得された MousePosition
+     */
     const Irufemi::Vector2& GetMousePosition()   const;
+    /**
+     * @brief MouseDelta を取得する。
+     * @return 取得された MouseDelta
+     */
     const Irufemi::Vector2& GetMouseDelta()      const;
+    /**
+     * @brief MouseWheelDelta を取得する。
+     * @return 取得された MouseWheelDelta
+     */
     float GetMouseWheelDelta()          const;
     
     /** @brief エディタ用：仮想的なマウスローカル座標を上書き設定する */

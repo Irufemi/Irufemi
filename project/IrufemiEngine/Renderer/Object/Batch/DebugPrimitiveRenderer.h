@@ -30,15 +30,36 @@ public:
 
     ~DebugPrimitiveRenderer();
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(DirectXCommon* dx, DrawManager* drawM, DescriptorPool* srvAlloc);
     
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
 
+    /**
+     * @brief AddSphere を実行する。
+     */
     void AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color);
+    /**
+     * @brief AddCube を実行する。
+     */
     void AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color);
     
+    /**
+     * @brief ClearInstances を実行する。
+     */
     void ClearInstances();
+    /**
+     * @brief BuildInstanceBuffer を実行する。
+     */
     void BuildInstanceBuffer();
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw();
 
 private:
@@ -47,8 +68,17 @@ private:
         Irufemi::Vector4 color;
     };
 
+    /**
+     * @brief CreateSphereResource を実行する。
+     */
     void CreateSphereResource();
+    /**
+     * @brief CreateCubeResource を実行する。
+     */
     void CreateCubeResource();
+    /**
+     * @brief EnsureInstancingSRVs を実行する。
+     */
     void EnsureInstancingSRVs();
 
     DirectXCommon* dx_ = nullptr;

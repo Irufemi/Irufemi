@@ -48,9 +48,18 @@ public:
     /** @name デスクリプタヒープの割り当て・解放 */
     ///@{
     uint32_t AllocateRTVIndex();
+    /**
+     * @brief FreeRTVIndex を実行する。
+     */
     void FreeRTVIndex(uint32_t index, uint64_t currentFenceValue);
 
+    /**
+     * @brief AllocateDSVIndex を実行する。
+     */
     uint32_t AllocateDSVIndex();
+    /**
+     * @brief FreeDSVIndex を実行する。
+     */
     void FreeDSVIndex(uint32_t index, uint64_t currentFenceValue);
 
     /**
@@ -63,19 +72,63 @@ public:
     /** @name ゲッター */
     ///@{
     IDXGISwapChain4* GetSwapChain() const { return swapChain_.Get(); }
+    /**
+     * @brief SwapChainResource を取得する。
+     * @return 取得された SwapChainResource
+     */
     ID3D12Resource* GetSwapChainResource(UINT index) const { return swapChainResources_[index].Get(); }
+    /**
+     * @brief DepthStencilResource を取得する。
+     * @return 取得された DepthStencilResource
+     */
     ID3D12Resource* GetDepthStencilResource() const { return depthStencilResource_.Get(); }
 
+    /**
+     * @brief RTVDescriptorHeap を取得する。
+     * @return 取得された RTVDescriptorHeap
+     */
     ID3D12DescriptorHeap* GetRTVDescriptorHeap() const { return rtvDescriptorHeap_.Get(); }
+    /**
+     * @brief DSVDescriptorHeap を取得する。
+     * @return 取得された DSVDescriptorHeap
+     */
     ID3D12DescriptorHeap* GetDSVDescriptorHeap() const { return dsvDescriptorHeap_.Get(); }
 
+    /**
+     * @brief RTVCPUDescriptorHandle を取得する。
+     * @return 取得された RTVCPUDescriptorHandle
+     */
     D3D12_CPU_DESCRIPTOR_HANDLE GetRTVCPUDescriptorHandle(uint32_t index) const;
+    /**
+     * @brief RTVGPUDescriptorHandle を取得する。
+     * @return 取得された RTVGPUDescriptorHandle
+     */
     D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index) const;
+    /**
+     * @brief DSVCPUDescriptorHandle を取得する。
+     * @return 取得された DSVCPUDescriptorHandle
+     */
     D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCPUDescriptorHandle(uint32_t index) const;
+    /**
+     * @brief DSVGPUDescriptorHandle を取得する。
+     * @return 取得された DSVGPUDescriptorHandle
+     */
     D3D12_GPU_DESCRIPTOR_HANDLE GetDSVGPUDescriptorHandle(uint32_t index) const;
 
+    /**
+     * @brief RtvDesc を取得する。
+     * @return 取得された RtvDesc
+     */
     D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return rtvDesc_; }
+    /**
+     * @brief SwapChainDesc を取得する。
+     * @return 取得された SwapChainDesc
+     */
     DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return swapChainDesc_; }
+    /**
+     * @brief RtvHandles を取得する。
+     * @return 取得された RtvHandles
+     */
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return rtvHandles_[index]; }
     ///@}
 
@@ -89,9 +142,21 @@ private:
      * @brief 各種オブジェクトの生成処理
      */
     void CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd, int32_t width, int32_t height);
+    /**
+     * @brief CreateDescriptorHeaps を実行する。
+     */
     void CreateDescriptorHeaps(ID3D12Device* device);
+    /**
+     * @brief InitializeRenderTargets を実行する。
+     */
     void InitializeRenderTargets(ID3D12Device* device);
+    /**
+     * @brief CreateDepthStencil を実行する。
+     */
     void CreateDepthStencil(ID3D12Device* device, int32_t width, int32_t height);
+    /**
+     * @brief ReleaseSwapChainResources を実行する。
+     */
     void ReleaseSwapChainResources();
 
 private:

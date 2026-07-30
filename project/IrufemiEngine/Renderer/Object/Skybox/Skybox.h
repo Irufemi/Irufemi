@@ -36,28 +36,72 @@ public: // メンバ関数
     // デストラクタ
     ~Skybox();
     // 初期化
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(const std::string& textureName = "resources/rostock_laage_airport_4k.dds");
     // 更新
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
+    /**
+     * @brief SyncBeforeDraw を実行する。
+     */
     void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
     // デバッグ
+    /**
+     * @brief Debug を実行する。
+     */
     void Debug();
 public: // メンバ関数(セッター/ゲッター)
     // engineセッター
+    /**
+     * @brief Engine を設定する。
+     * @param[in] engine 設定する Engine の値
+     */
     static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
     // ID3D12Resource関連ゲッター
+    /**
+     * @brief VertexBufferView を取得する。
+     * @return 取得された VertexBufferView
+     */
     const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
+    /**
+     * @brief IndexBufferView を取得する。
+     * @return 取得された IndexBufferView
+     */
     const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
+    /**
+     * @brief TextureHandle を取得する。
+     * @return 取得された TextureHandle
+     */
     ResourceHandle GetTextureHandle() const { return textureHandle_; }
     // indexのサイズ取得
+    /**
+     * @brief IndexSize を取得する。
+     * @return 取得された IndexSize
+     */
     UINT GetIndexSize() const { return static_cast<UINT>(indexDataList_.size()); }
 private: // メンバ関数(内部ヘルパ)
     // ID3D12Resourceの生成
+    /**
+     * @brief CreateResource を実行する。
+     */
     void CreateResource();
     // ID3D12ResourceのMap
+    /**
+     * @brief MapResource を実行する。
+     */
     void MapResource();
     // Id3D12ResourceのUnMap
+    /**
+     * @brief UnMapResource を実行する。
+     */
     void UnMapResource();
 
 

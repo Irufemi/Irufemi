@@ -15,14 +15,30 @@ public:
     VoxelParticleManager() = default;
     ~VoxelParticleManager() = default;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(IrufemiEngine* engine);
+    /**
+     * @brief Update を実行する。
+     */
     void Update(float deltaTime);
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw();
+    /**
+     * @brief Clear を実行する。
+     */
     void Clear();
 
     struct EmitterHandle {
         VoxelParticleSystem* system = nullptr;
         uint32_t emitterIndex = 0xFFFFFFFF;
+        /**
+         * @brief IsValid かどうかを判定する。
+         * @return 判定結果 (true/false)
+         */
         bool IsValid() const { return system != nullptr && emitterIndex != 0xFFFFFFFF; }
     };
 
@@ -40,6 +56,10 @@ public:
      * @brief エミッターデータを更新する
      */
     void UpdateEmitterData(const EmitterHandle& handle, const VoxelEmitter& data);
+    /**
+     * @brief EmitterData を取得する。
+     * @return 取得された EmitterData
+     */
     const VoxelEmitter& GetEmitterData(const EmitterHandle& handle) const;
 
     /**

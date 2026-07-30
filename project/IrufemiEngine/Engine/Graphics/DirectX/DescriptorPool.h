@@ -14,29 +14,78 @@ public:
     static constexpr uint32_t kInvalid = 0xFFFFFFFFu; // std::numeric_limits<uint32_t>::max() の代用
 
     DescriptorPool() = default;
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(ID3D12Device* device);
 
+    /**
+     * @brief Allocate を実行する。
+     */
     uint32_t Allocate(uint32_t count = 1);
+    /**
+     * @brief Free を実行する。
+     */
     void Free(uint32_t index);
+    /**
+     * @brief FreeAfterFence を実行する。
+     */
     void FreeAfterFence(uint32_t index, uint64_t safeFence);
+    /**
+     * @brief GarbageCollect を実行する。
+     */
     void GarbageCollect(uint64_t completedFence);
 
     // 使用中インデックス集合(昇順ユニーク)を渡してフリーリストを再構築
+    /**
+     * @brief RebuildFreeListExcept を実行する。
+     */
     void RebuildFreeListExcept(const std::vector<uint32_t>& usedSortedUnique);
 
     // 先頭の予約(ImGui 等)
+    /**
+     * @brief ReservePrefix を実行する。
+     */
     void ReservePrefix(uint32_t count);
 
+    /**
+     * @brief CPUHandle を取得する。
+     * @return 取得された CPUHandle
+     */
     D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;
+    /**
+     * @brief GPUHandle を取得する。
+     * @return 取得された GPUHandle
+     */
     D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const;
+    /**
+     * @brief IndexFromGPUHandle を取得する。
+     * @return 取得された IndexFromGPUHandle
+     */
     uint32_t GetIndexFromGPUHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle) const;
 
     // SRV作成
+    /**
+     * @brief CreateSRVForTexture2D を実行する。
+     */
     void CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels);
+    /**
+     * @brief CreateSRVForStructuredBuffer を実行する。
+     */
     void CreateSRVForStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
 
+    /**
+     * @brief Heap を取得する。
+     * @return 取得された Heap
+     */
     ID3D12DescriptorHeap* GetHeap() const { return heap_.Get(); }
+    /**
+     * @brief Capacity を実行する。
+     */
     uint32_t Capacity() const { return kMaxSRVCount; }
+    /**
+     * @brief BaseIndex を実行する。
+     */
     uint32_t BaseIndex() const { return baseIndex_; }
 
 private:

@@ -186,24 +186,66 @@ public:
     /** @name 初期化・更新・描画 */
     ///@{
     void DispatchCompute() override;
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(const std::string& textureName = "resources/circle.png");
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
+    /**
+     * @brief SyncBeforeDraw を実行する。
+     */
     void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
+    /**
+     * @brief Debug を実行する。
+     */
     void Debug();
     ///@}
 
     /** @name 再生制御 */
     ///@{
     void Play(uint32_t emitterIndex = 0) { isPlaying_ = true; if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].emit = 1; totalTime_ = 0.0f; }
+    /**
+     * @brief Stop を実行する。
+     */
     void Stop(uint32_t emitterIndex = 0) { isPlaying_ = false; if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].emit = 0; }
+    /**
+     * @brief Pause を実行する。
+     */
     void Pause() { isPlaying_ = false; }
+    /**
+     * @brief Resume を実行する。
+     */
     void Resume() { isPlaying_ = true; }
+    /**
+     * @brief Clear を実行する。
+     */
     void Clear();
 
+    /**
+     * @brief Loop を設定する。
+     * @param[in] loop 設定する Loop の値
+     */
     void SetLoop(bool loop) { isLooping_ = loop; }
+    /**
+     * @brief Duration を設定する。
+     * @param[in] duration 設定する Duration の値
+     */
     void SetDuration(float duration) { duration_ = duration; }
+    /**
+     * @brief CullingEnabled を設定する。
+     * @param[in] enable 設定する CullingEnabled の値
+     */
     void SetCullingEnabled(bool enable) { isCullingEnabled_ = enable; }
+    /**
+     * @brief Emit を実行する。
+     */
     void Emit(uint32_t count, uint32_t emitterIndex = 0);
     ///@}
 
@@ -254,6 +296,13 @@ public:
      */
     void SetParticleColor(const Irufemi::Vector4& startMin, const Irufemi::Vector4& startMax, const Irufemi::Vector4& endMin, const Irufemi::Vector4& endMax, uint32_t emitterIndex = 0);
     
+    /**
+     * @brief MidColor を設定する。
+     * @param[in] midMin 設定する MidColor の値
+     * @param[in] midMax 設定する MidColor の値
+     * @param[in] midPoint 設定する MidColor の値
+     * @param[in] 0 設定する MidColor の値
+     */
     void SetMidColor(const Irufemi::Vector4& midMin, const Irufemi::Vector4& midMax, float midPoint, uint32_t emitterIndex = 0);
 
     /**
@@ -269,6 +318,11 @@ public:
     void SetDirection(const Irufemi::Vector3& dir, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) { emittersData_[emitterIndex].directionX = dir.x; emittersData_[emitterIndex].directionY = dir.y; emittersData_[emitterIndex].directionZ = dir.z; } }
     /** @brief 座標のゆらぎ（Jitter）を設定する */
     void SetJitter(float jitter, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].jitter = jitter; }
+    /**
+     * @brief EnableRandomRotation を設定する。
+     * @param[in] enable 設定する EnableRandomRotation の値
+     * @param[in] 0 設定する EnableRandomRotation の値
+     */
     void SetEnableRandomRotation(bool enable, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].enableRandomRotation = enable ? 1 : 0; }
     /** @brief ビルボードモードの設定 (0: なし, 1: 通常ビルボード, 2: 速度方向ビルボード) */
     void SetBillboardMode(uint32_t mode, uint32_t emitterIndex = 0) { if (emitterIndex < emittersData_.size()) emittersData_[emitterIndex].billboardMode = mode; }
@@ -290,16 +344,53 @@ public:
     /** @name 描画設定（パイプライン） */
     ///@{
     void SetBlendMode(Irufemi::BlendMode blend) { selectedBlend_ = blend; }
+    /**
+     * @brief UnscaledTime を設定する。
+     * @param[in] isUnscaled 設定する UnscaledTime の値
+     */
     void SetUnscaledTime(bool isUnscaled) { isUnscaledTime_ = isUnscaled; }
+    /**
+     * @brief DepthWrite を設定する。
+     * @param[in] depth 設定する DepthWrite の値
+     */
     void SetDepthWrite(PSOManager::DepthWrite depth) { selectedDepth_ = depth; }
+    /**
+     * @brief Cull を設定する。
+     * @param[in] cull 設定する Cull の値
+     */
     void SetCull(PSOManager::CullMode cull) { selectedCull_ = cull; }
+    /**
+     * @brief CustomPSO を設定する。
+     * @param[in] psoName 設定する CustomPSO の値
+     */
     void SetCustomPSO(const std::string& psoName) { customPSOName_ = psoName; }
+    /**
+     * @brief EnableLighting を設定する。
+     * @param[in] val 設定する EnableLighting の値
+     */
     void SetEnableLighting(bool val) { cpuMaterialData_.enableLighting = val ? 1 : 0; }
 
     /** @name タイプ別エミッター設定 */
     ///@{
     void SetSphereEmitter(const Irufemi::Vector3& pos, float radius, float emissionRate, uint32_t emitterIndex = 0);
+    /**
+     * @brief HemisphereEmitter を設定する。
+     * @param[in] pos 設定する HemisphereEmitter の値
+     * @param[in] radius 設定する HemisphereEmitter の値
+     * @param[in] emissionRate 設定する HemisphereEmitter の値
+     * @param[in] 0 設定する HemisphereEmitter の値
+     */
     void SetHemisphereEmitter(const Irufemi::Vector3& pos, float radius, float emissionRate, uint32_t emitterIndex = 0);
+    /**
+     * @brief BeamEmitter を設定する。
+     * @param[in] pos 設定する BeamEmitter の値
+     * @param[in] direction 設定する BeamEmitter の値
+     * @param[in] radius 設定する BeamEmitter の値
+     * @param[in] velocity 設定する BeamEmitter の値
+     * @param[in] spread 設定する BeamEmitter の値
+     * @param[in] emissionRate 設定する BeamEmitter の値
+     * @param[in] 0 設定する BeamEmitter の値
+     */
     void SetBeamEmitter(const Irufemi::Vector3& pos, const Irufemi::Vector3& direction, float radius, float velocity, float spread, float emissionRate, uint32_t emitterIndex = 0);
 
     /** @name アトラス・物理挙動設定 */
@@ -376,20 +467,55 @@ public:
     /** @name 静的マネージャ設定 */
     ///@{
     static void SetDXCommon(DirectXCommon* dxCommon) { dxCommon_ = dxCommon; }
+    /**
+     * @brief DrawManager を設定する。
+     * @param[in] drawManager 設定する DrawManager の値
+     */
     static void SetDrawManager(DrawManager* drawManager) { drawManager_ = drawManager; }
+    /**
+     * @brief TextureManager を設定する。
+     * @param[in] textureManager 設定する TextureManager の値
+     */
     static void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
+    /**
+     * @brief Engine を設定する。
+     * @param[in] engine 設定する Engine の値
+     */
     static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+    /**
+     * @brief Engine を取得する。
+     * @return 取得された Engine
+     */
     static IrufemiEngine* GetEngine() { return engine_; }
 
+    /**
+     * @brief TextureManager を取得する。
+     * @return 取得された TextureManager
+     */
     static TextureManager* GetTextureManager() { return textureManager_; }
     ///@}
 
 private:
+    /**
+     * @brief DrawAABB を実行する。
+     */
     void DrawAABB(const Irufemi::Vector3& min, const Irufemi::Vector3& max, const Irufemi::Vector4& color);
+    /**
+     * @brief DrawCircle を実行する。
+     */
     void DrawCircle(const Irufemi::Vector3& center, float radius, const Irufemi::Vector3& axis, const Irufemi::Vector4& color);
+    /**
+     * @brief DrawSphereWireframe を実行する。
+     */
     void DrawSphereWireframe(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color);
+    /**
+     * @brief DrawCylinderWireframe を実行する。
+     */
     void DrawCylinderWireframe(const Irufemi::Vector3& center, const Irufemi::Vector3& direction, float radius, float height, const Irufemi::Vector4& color);
 
+    /**
+     * @brief UpdateDebugLines を実行する。
+     */
     void UpdateDebugLines();
 
     /**

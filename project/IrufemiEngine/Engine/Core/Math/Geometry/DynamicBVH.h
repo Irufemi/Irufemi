@@ -22,6 +22,10 @@ struct BVHNode {
     int32_t rightChildIndex = -1;
     ColliderComponent* collider = nullptr; //!< 葉ノードの場合のみ有効
 
+    /**
+     * @brief IsLeaf かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsLeaf() const {
         return leftChildIndex == -1 && rightChildIndex == -1;
     }

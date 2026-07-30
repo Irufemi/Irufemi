@@ -84,7 +84,13 @@ public: //メンバ関数
      * @brief 描画コマンドの積み込み
      */
      void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
+    /**
+     * @brief DrawOutlineMask を実行する。
+     */
     void DrawOutlineMask() override;
 
     /**

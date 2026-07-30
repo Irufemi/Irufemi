@@ -150,18 +150,34 @@ public: // メンバ関数
      */
     void SetRotate(const Irufemi::Vector3& rotate) { this->rotate_ = rotate; }
 
+    /**
+     * @brief ViewMatrix を設定する。
+     * @param[in] viewMatrix 設定する ViewMatrix の値
+     */
     void SetViewMatrix(const Irufemi::Matrix4x4& viewMatrix) { 
         this->viewMatrix_ = viewMatrix; 
         this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
     }
 
+    /**
+     * @brief PerspectiveFovMatrix を設定する。
+     * @param[in] perspectiveFovMatrix 設定する PerspectiveFovMatrix の値
+     */
     void SetPerspectiveFovMatrix(const Irufemi::Matrix4x4& perspectiveFovMatrix) { 
         this->perspectiveFovMatrix_ = perspectiveFovMatrix; 
         this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
     }
 
+    /**
+     * @brief FarClip を設定する。
+     * @param[in] farClip 設定する FarClip の値
+     */
     void SetFarClip(const float& farClip) { this->farClip_ = farClip; }
 
+    /**
+     * @brief FovY を設定する。
+     * @param[in] fovY 設定する FovY の値
+     */
     void SetFovY(const float& fovY) { this->fovAngleY_ = fovY; }
 
 
@@ -214,13 +230,33 @@ public: // メンバ関数
      * @return const Irufemi::Matrix4x4& ビューポート変換行列
      */
     const Irufemi::Matrix4x4& GetViewportMatrix() const { return viewportMatrix_; }
+    /**
+     * @brief Frustum を取得する。
+     * @return 取得された Frustum
+     */
     const Irufemi::Frustum& GetFrustum() const { return frustum_; }
 
+    /**
+     * @brief ViewProjectionMatrix2D を取得する。
+     * @return 取得された ViewProjectionMatrix2D
+     */
     Irufemi::Matrix4x4 GetViewProjectionMatrix2D();
 
+    /**
+     * @brief ViewProjectionMatrix3D を取得する。
+     * @return 取得された ViewProjectionMatrix3D
+     */
     Irufemi::Matrix4x4 GetViewProjectionMatrix3D();
 
+    /**
+     * @brief NearZ を取得する。
+     * @return 取得された NearZ
+     */
     const float& GetNearZ() const { return nearZ_; }
+    /**
+     * @brief FarZ を取得する。
+     * @return 取得された FarZ
+     */
     const float& GetFarZ() const { return farZ_; }
 
 
@@ -268,7 +304,15 @@ public:
     void UpdateMatrix();
 
     // 2Dで使うための現在のビューポートサイズ取得
+    /**
+     * @brief ViewportWidth を取得する。
+     * @return 取得された ViewportWidth
+     */
     const float& GetViewportWidth() const { return width_; }
+    /**
+     * @brief ViewportHeight を取得する。
+     * @return 取得された ViewportHeight
+     */
     const float& GetViewportHeight() const { return height_; }
 
 };

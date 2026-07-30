@@ -41,7 +41,15 @@ public:
      */
     void SetMemoryBudget(size_t maxBytes);
     
+    /**
+     * @brief MemoryBudget を取得する。
+     * @return 取得された MemoryBudget
+     */
     size_t GetMemoryBudget() const { return maxMemoryBytes_; }
+    /**
+     * @brief CurrentMemoryUsage を取得する。
+     * @return 取得された CurrentMemoryUsage
+     */
     size_t GetCurrentMemoryUsage() const { return currentMemoryUsage_; }
 
     /**
@@ -83,6 +91,10 @@ public:
      * @brief リソースのロード完了状態を設定する
      */
     void SetLoaded(ResourceHandle handle, bool loaded);
+    /**
+     * @brief IsLoaded かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsLoaded(ResourceHandle handle) const;
 
     /**

@@ -13,9 +13,19 @@ public:
     SplineComponent() = default;
     ~SplineComponent() override = default;
 
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
 
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "SplineComponent"; }
 
     /**
@@ -53,7 +63,15 @@ public:
     void UpdateDistanceTable();
 
     // ウェイポイントのリストを取得・設定
+    /**
+     * @brief Waypoints を取得する。
+     * @return 取得された Waypoints
+     */
     const std::vector<Irufemi::Vector3>& GetWaypoints() const { return waypoints_; }
+    /**
+     * @brief Waypoints を設定する。
+     * @param[in] points 設定する Waypoints の値
+     */
     void SetWaypoints(const std::vector<Irufemi::Vector3>& points) { 
         waypoints_ = points; 
         UpdateDistanceTable(); 
@@ -63,7 +81,13 @@ public:
      * @brief 子オブジェクトのTransformからウェイポイントを更新する
      */
     void UpdateWaypointsFromChildren();
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
 
 private:

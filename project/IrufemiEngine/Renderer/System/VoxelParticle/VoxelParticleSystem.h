@@ -96,35 +96,95 @@ public:
   VoxelParticleSystem() = default;
   ~VoxelParticleSystem();
 
+  /**
+   * @brief Engine を設定する。
+   * @param[in] engine 設定する Engine の値
+   */
   static void SetEngine(IrufemiEngine *engine) { engine_ = engine; }
 
+  /**
+   * @brief Initialize を実行する。
+   */
   void Initialize(const std::string &modelName, const Irufemi::Vector3Int &resolution);
 
+  /**
+   * @brief DispatchCompute を実行する。
+   */
   void DispatchCompute() override;
 
+  /**
+   * @brief Update を実行する。
+   */
   void Update(float deltaTime);
+  /**
+   * @brief Draw を実行する。
+   */
   void Draw() override;
+  /**
+   * @brief SyncBeforeDraw を実行する。
+   */
   void SyncBeforeDraw() override {}
+  /**
+   * @brief Debug を実行する。
+   */
   void Debug(const char *name);
 
+  /**
+   * @brief UpdateEmitterData を実行する。
+   */
   void UpdateEmitterData(uint32_t index, const VoxelEmitter& data);
+  /**
+   * @brief EmitterData を取得する。
+   * @return 取得された EmitterData
+   */
   const VoxelEmitter& GetEmitterData(uint32_t index) const {
       if (index < emittersData_.size()) return emittersData_[index];
       static VoxelEmitter dummy;
       return dummy;
   }
 
+  /**
+   * @brief IsLoaded かどうかを判定する。
+   * @return 判定結果 (true/false)
+   */
   bool IsLoaded() const { return status_.load() == LoadingStatus::Loaded; }
+  /**
+   * @brief Status を取得する。
+   * @return 取得された Status
+   */
   LoadingStatus GetStatus() const { return status_.load(); }
 
+  /**
+   * @brief MaxInstances を取得する。
+   * @return 取得された MaxInstances
+   */
   uint32_t GetMaxInstances() const { return maxInstances_; }
 
 private:
+  /**
+   * @brief CreateResources を実行する。
+   */
   void CreateResources();
+  /**
+   * @brief CreatePSO を実行する。
+   */
   void CreatePSO();
+  /**
+   * @brief CreateCubeMesh を実行する。
+   */
   void CreateCubeMesh(float sizeX, float sizeY, float sizeZ);
+  /**
+   * @brief FinishInitialization を実行する。
+   */
   void FinishInitialization();
+  /**
+   * @brief UpdateBuffers を実行する。
+   */
   void UpdateBuffers();
+  /**
+   * @brief IsInFrustum かどうかを判定する。
+   * @return 判定結果 (true/false)
+   */
   bool IsInFrustum(uint32_t index) const;
 
 private:

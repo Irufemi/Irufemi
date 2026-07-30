@@ -16,16 +16,40 @@ public:
     ButtonComponent() = default;
     ~ButtonComponent() override = default;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
     
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "ButtonComponent"; }
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
 
+    /**
+     * @brief IsHovered かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsHovered() const { return isHovered_; }
+    /**
+     * @brief IsClicked かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsClicked() const { return isClicked_; }
 
 private:
+    /**
+     * @brief CheckBounds を実行する。
+     */
     bool CheckBounds(const Irufemi::Vector2& mousePos);
     
     Irufemi::Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};

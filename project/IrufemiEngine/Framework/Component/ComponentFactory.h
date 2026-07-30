@@ -14,7 +14,13 @@ public:
         CreatorFunc creator;
     };
 
+    /**
+     * @brief Register を実行する。
+     */
     static void Register(const std::string& typeName, const char* category, CreatorFunc func);
+    /**
+     * @brief Create を実行する。
+     */
     static std::shared_ptr<Component> Create(const std::string& typeName);
     static const std::map<std::string, ComponentRegistration>& GetFactoryMap();
 

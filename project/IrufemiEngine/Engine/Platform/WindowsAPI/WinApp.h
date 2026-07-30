@@ -55,13 +55,36 @@ public:
     /** @name ゲッター */
     ///@{
     HWND GetHwnd() const { return hwnd_; }
+    /**
+     * @brief HInstance を取得する。
+     * @return 取得された HInstance
+     */
     HINSTANCE GetHInstance() const { return hInstance_; }
+    /**
+     * @brief ClientWidth を取得する。
+     * @return 取得された ClientWidth
+     */
     int GetClientWidth() const { return clientWidth_; }
+    /**
+     * @brief ClientHeight を取得する。
+     * @return 取得された ClientHeight
+     */
     int GetClientHeight() const { return clientHeight_; }
+    /**
+     * @brief IsCursorLocked かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsCursorLocked() const { return cursorLocked_; }
     
     // ドラッグ＆ドロップで取得したファイルパス
+    /**
+     * @brief DroppedFilePath を取得する。
+     * @return 取得された DroppedFilePath
+     */
     std::string GetDroppedFilePath() const { return droppedFilePath_; }
+    /**
+     * @brief ClearDroppedFilePath を実行する。
+     */
     void ClearDroppedFilePath() { droppedFilePath_.clear(); }
     ///@}
 

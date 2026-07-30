@@ -26,9 +26,16 @@ public: // メンバ関数
     void Initialize();
 
     // ゲッター  
+    /**
+     * @brief LogStream を取得する。
+     * @return 取得された LogStream
+     */
     std::ofstream& GetLogStream() { return logStream; }
 
     // 出力ウィンドウに文字を出す  
+    /**
+     * @brief OutPutLog を実行する。
+     */
     static void OutPutLog(std::ostream& os, const std::string& message);
 
     /**

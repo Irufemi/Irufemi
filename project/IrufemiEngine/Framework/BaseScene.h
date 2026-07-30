@@ -166,7 +166,13 @@ public:
     virtual void DrawDebugTab() override;
 
     // --- シリアライズ機能 ---
+    /**
+     * @brief Serialize を実行する。
+     */
     virtual nlohmann::json Serialize() const override;
+    /**
+     * @brief Deserialize を実行する。
+     */
     virtual void Deserialize(const nlohmann::json& j) override;
 
 protected:
@@ -197,21 +203,58 @@ protected:
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
 
     // --- フレームデータの自動送信 ---
+    /**
+     * @brief SubmitFrameData を実行する。
+     */
     void SubmitFrameData();
 
     // ── 入力ヘルパ ──
     // InputManager をラップした安全なヘルパー
+    /**
+     * @brief DownVK を実行する。
+     */
     bool DownVK(uint8_t vk) const;
+    /**
+     * @brief PressedVK を実行する。
+     */
     bool PressedVK(uint8_t vk) const;
+    /**
+     * @brief ReleasedVK を実行する。
+     */
     bool ReleasedVK(uint8_t vk) const;
 
+    /**
+     * @brief DownDIK を実行する。
+     */
     bool DownDIK(uint8_t dik) const;
+    /**
+     * @brief PressedDIK を実行する。
+     */
     bool PressedDIK(uint8_t dik) const;
+    /**
+     * @brief ReleasedDIK を実行する。
+     */
     bool ReleasedDIK(uint8_t dik) const;
 
     // 互換性のため（既存の IsKeyPressed 等も呼び出しやすくする）
+    /**
+     * @brief IsKeyDown かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyDown(uint8_t vk) const { return DownVK(vk); }
+    /**
+     * @brief IsKeyPressed かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyPressed(uint8_t vk) const { return PressedVK(vk); }
+    /**
+     * @brief IsButtonDown かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsButtonDown(unsigned short button) const;
+    /**
+     * @brief IsButtonPressed かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsButtonPressed(unsigned short button) const;
 };

@@ -46,6 +46,9 @@ struct Vector2 final {
 	/** @{ */
 	bool operator==(const Vector2& rhs) const { return x == rhs.x && y == rhs.y; }
 	bool operator!=(const Vector2& rhs) const { return !(*this == rhs); }
+	/**
+	 * @brief Equals を実行する。
+	 */
 	bool Equals(const Vector2& other, float epsilon = 1e-5f) const {
 		return std::abs(x - other.x) <= epsilon && std::abs(y - other.y) <= epsilon;
 	}
@@ -54,7 +57,13 @@ struct Vector2 final {
 	/** @name 数学関数 */
 	/** @{ */
 	inline float LengthSquared() const { return x * x + y * y; }
+	/**
+	 * @brief Length を実行する。
+	 */
 	inline float Length() const { return std::sqrt(LengthSquared()); }
+	/**
+	 * @brief Normalize を実行する。
+	 */
 	inline void Normalize() {
 		float lenSq = LengthSquared();
 		if (lenSq > 0.0f) {
@@ -63,17 +72,27 @@ struct Vector2 final {
 			y *= invLen;
 		}
 	}
+	/**
+	 * @brief Normalized を取得する。
+	 * @return 取得された Normalized
+	 */
 	inline Vector2 GetNormalized() const {
 		Vector2 v = *this;
 		v.Normalize();
 		return v;
 	}
+	/**
+	 * @brief Dot を実行する。
+	 */
 	inline float Dot(const Vector2& rhs) const { return x * rhs.x + y * rhs.y; }
 	/** @} */
 
 	/** @name データアクセサ */
 	/** @{ */
 	const float* data() const { return &x; }
+	/**
+	 * @brief data を実行する。
+	 */
 	float* data() { return &x; }
 	/** @} */
 };

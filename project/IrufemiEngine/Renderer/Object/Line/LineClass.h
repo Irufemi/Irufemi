@@ -28,26 +28,83 @@ public:
     }
     ~Line3DBatch();
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize();
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
+    /**
+     * @brief AddInstance を実行する。
+     */
     void AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color, float life = 1.0f);
+    /**
+     * @brief ClearInstances を実行する。
+     */
     void ClearInstances();
+    /**
+     * @brief BuildInstanceBuffer を実行する。
+     */
     void BuildInstanceBuffer(bool force = false);
+    /**
+     * @brief SyncBeforeDraw を実行する。
+     */
     void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
 
     // --- DrawManager から参照する Getter 群 ---
+    /**
+     * @brief BaseResource を取得する。
+     * @return 取得された BaseResource
+     */
     LineResource* GetBaseResource() const { return baseLineResource_.get(); }
+    /**
+     * @brief InstancingSrvHandleGPU を取得する。
+     * @return 取得された InstancingSrvHandleGPU
+     */
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
+    /**
+     * @brief InstanceCountU32 を取得する。
+     * @return 取得された InstanceCountU32
+     */
     UINT GetInstanceCountU32() const { return static_cast<UINT>(activeCount_); }
 
+    /**
+     * @brief DepthWrite を設定する。
+     * @param[in] depthWrite 設定する DepthWrite の値
+     */
     void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
+    /**
+     * @brief DepthWrite を取得する。
+     * @return 取得された DepthWrite
+     */
     PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
 
     // 依存注入
+    /**
+     * @brief DirectXCommon を設定する。
+     * @param[in] dx 設定する DirectXCommon の値
+     */
     static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
+    /**
+     * @brief SrvAllocator を設定する。
+     * @param[in] alloc 設定する SrvAllocator の値
+     */
     static void SetSrvAllocator(DescriptorPool* alloc) { s_srvAllocator_ = alloc; }
+    /**
+     * @brief DrawManager を設定する。
+     * @param[in] drawM 設定する DrawManager の値
+     */
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    /**
+     * @brief Engine を設定する。
+     * @param[in] engine 設定する Engine の値
+     */
     static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
 
 private:
@@ -67,7 +124,13 @@ private:
         Irufemi::Vector4 color;
     };
 
+    /**
+     * @brief CreateOrResizeInstanceBuffer を実行する。
+     */
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
+    /**
+     * @brief EnsureInstancingSRV を実行する。
+     */
     void EnsureInstancingSRV();
 
 private:

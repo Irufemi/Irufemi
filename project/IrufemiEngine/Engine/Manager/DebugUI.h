@@ -66,6 +66,9 @@ private: // メンバ変数
     float cachedMaxMs_ = 0.0f;
     float cachedP99Ms_ = 0.0f;   // 99th percentile frame time (≒ 1% worst)
     float cachedFps_ = 0.0f;
+    /**
+     * @brief UpdatePerfStats_ を実行する。
+     */
     void UpdatePerfStats_(float newFrameMs); // ★集計用内部関数
 
     bool showPerformance_ = true; // ★パフォーマンス情報の表示フラグ
@@ -98,6 +101,9 @@ public: // メンバ関数
     ///@}
 
 #ifdef USE_IMGUI
+    /**
+     * @brief WndProcHandler を実行する。
+     */
     static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
 
@@ -151,23 +157,44 @@ public: // メンバ関数
     ///@{
     static void DebugMaterialBy3D(Material* material);
     
+    /**
+     * @brief DebugMaterialBy2D を実行する。
+     */
     static void DebugMaterialBy2D(Material* material);
 
+    /**
+     * @brief DebugObjMaterial を実行する。
+     */
     static void DebugObjMaterial(ObjMaterial* material, const char* unique_id = "");
 
+    /**
+     * @brief DebugMaterialByParticle を実行する。
+     */
     static void DebugMaterialByParticle(Material* material);
 
     /**
      * @brief テクスチャの選択・変更UI
      */
     void DebugTexture(Object3DResource* resource, int& selectedTextureIndex);
+    /**
+     * @brief DebugTexture を実行する。
+     */
     void DebugTexture(Object2DResource* resource, int& selectedTextureIndex);
 
 
+    /**
+     * @brief DebugDirectionalLight を実行する。
+     */
     static void DebugDirectionalLight(DirectionalLight* directionalLightData);
 
+    /**
+     * @brief DebugUvTransform を実行する。
+     */
     static void DebugUvTransform(Irufemi::Transform& uvTransform);
 
+    /**
+     * @brief DebugUvTransform を実行する。
+     */
     static void DebugUvTransform(Irufemi::Matrix4x4& uvTransform);
 
     /**

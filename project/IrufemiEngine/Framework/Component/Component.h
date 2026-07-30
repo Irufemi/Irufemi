@@ -22,11 +22,20 @@ struct ComponentProperty {
     std::string tooltip = "";
     nlohmann::json defaultValue;
 
+    /**
+     * @brief Tooltip を設定する。
+     * @param[in] text 設定する Tooltip の値
+     */
     ComponentProperty& SetTooltip(const std::string& text) {
         tooltip = text;
         return *this;
     }
 
+    /**
+     * @brief MinMax を設定する。
+     * @param[in] min 設定する MinMax の値
+     * @param[in] max 設定する MinMax の値
+     */
     ComponentProperty& SetMinMax(float min, float max) {
         minVal = min;
         maxVal = max;
@@ -151,23 +160,62 @@ public:
      * @brief プロパティの登録ヘルパー
      */
     ComponentProperty& RegisterProperty(const std::string& name, float* ptr) { properties_.push_back({name, ComponentPropertyType::Float, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterPropertyRange を実行する。
+     */
     ComponentProperty& RegisterPropertyRange(const std::string& name, float* ptr, float min, float max) { properties_.push_back({name, ComponentPropertyType::Float, ptr, min, max, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, int* ptr) { properties_.push_back({name, ComponentPropertyType::Int, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterPropertyRange を実行する。
+     */
     ComponentProperty& RegisterPropertyRange(const std::string& name, int* ptr, int min, int max) { properties_.push_back({name, ComponentPropertyType::Int, ptr, static_cast<float>(min), static_cast<float>(max), {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterEnum を実行する。
+     */
     ComponentProperty& RegisterEnum(const std::string& name, int* ptr, const std::vector<std::string>& enumNames) { properties_.push_back({name, ComponentPropertyType::Enum, ptr, 0.0f, 0.0f, enumNames, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, bool* ptr) { properties_.push_back({name, ComponentPropertyType::Bool, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, std::string* ptr) { properties_.push_back({name, ComponentPropertyType::String, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterGameObjectRef を実行する。
+     */
     ComponentProperty& RegisterGameObjectRef(const std::string& name, uint64_t* ptr) { properties_.push_back({name, ComponentPropertyType::GameObjectRef, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y}}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z}}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z, ptr->w}}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, std::vector<Irufemi::Vector3>* ptr) { 
         nlohmann::json jArray = nlohmann::json::array();
         for (const auto& v : *ptr) jArray.push_back({ v.x, v.y, v.z });
         properties_.push_back({name, ComponentPropertyType::Float3Array, ptr, 0.0f, 0.0f, {}, "", jArray}); 
         return properties_.back(); 
     }
+    /**
+     * @brief RegisterHeader を実行する。
+     */
     ComponentProperty& RegisterHeader(const std::string& name) { properties_.push_back({name, ComponentPropertyType::Header, nullptr, 0.0f, 0.0f, {}, "", nullptr}); return properties_.back(); }
+    /**
+     * @brief RegisterSeparator を実行する。
+     */
     ComponentProperty& RegisterSeparator() { properties_.push_back({"", ComponentPropertyType::Separator, nullptr, 0.0f, 0.0f, {}, "", nullptr}); return properties_.back(); }
 
     /**

@@ -34,5 +34,8 @@ public:
         bool isFinalOutput = true);
 
 private:
+    /**
+     * @brief RequiresSeparatePass を実行する。
+     */
     bool RequiresSeparatePass(PostProcessManager::Mode mode) const;
 };

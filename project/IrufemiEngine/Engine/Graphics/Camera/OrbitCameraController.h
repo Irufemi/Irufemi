@@ -41,6 +41,11 @@ public:
         Diagonal,    // 斜め見下ろし
         Front        // 正面
     };
+    /**
+     * @brief Preset を設定する。
+     * @param[in] preset 設定する Preset の値
+     * @param[in] camera 設定する Preset の値
+     */
     void SetPreset(Preset preset, Camera* camera);
 
 private:

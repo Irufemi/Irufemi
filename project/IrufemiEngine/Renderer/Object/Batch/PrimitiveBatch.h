@@ -24,16 +24,33 @@ public:
      */
     void InitializeRing(const RingParams& params, const std::string& textureName = "resources/uvChecker.png");
 
+    /**
+     * @brief PrimitiveManager を設定する。
+     * @param[in] manager 設定する PrimitiveManager の値
+     */
     static void SetPrimitiveManager(PrimitiveManager* manager) { primitiveManager_ = manager; }
 
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
 
 protected:
     inline static PrimitiveManager* primitiveManager_ = nullptr;
+    /**
+     * @brief BoundingSphereRadius を取得する。
+     * @return 取得された BoundingSphereRadius
+     */
     float GetBoundingSphereRadius() const override;
 
 private:
+    /**
+     * @brief EnsureMaterialResources を実行する。
+     */
     void EnsureMaterialResources();
+    /**
+     * @brief EnsureSharedTexture を実行する。
+     */
     void EnsureSharedTexture(const std::string& textureName);
     
 private:

@@ -559,6 +559,9 @@ public:
      * @return インスタンスID (0はデフォルト/未登録)
      */
     uint32_t RegisterCustomEffectParams(const CustomEffectParams& params) {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(customParamsMutex_);
         if (customEffectParamsList_.size() >= kMaxCustomEffectParams - 1) { // 0 is reserved
             return kMaxCustomEffectParams - 1; // Fallback to last available
@@ -571,6 +574,9 @@ public:
      * @brief 個別エフェクトの詳細パラメータのリストをクリアする（毎フレーム呼び出す）
      */
     void ClearCustomEffectParams() {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(customParamsMutex_);
         customEffectParamsList_.clear();
     }
@@ -579,6 +585,9 @@ public:
 
     /** @brief 描画フェーズに備えて保留中の状態を同期する */
     void CommitPendingModes() {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         activePreUI_ = pendingPreUI_;
         activePostUI_ = pendingPostUI_;
@@ -598,6 +607,9 @@ public:
 
     /** @brief エフェクトをスタックに追加 */
     void AddActiveMode(Mode mode, Layer layer = Layer::PreUI) {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         if (layer == Layer::PreUI) pendingPreUI_.push_back(mode);
         else pendingPostUI_.push_back(mode);
@@ -620,6 +632,9 @@ public:
 
     /** @brief 指定したエフェクトをスタックから削除 */
     void RemoveActiveMode(Mode mode) {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.erase(std::remove(pendingPreUI_.begin(), pendingPreUI_.end(), mode), pendingPreUI_.end());
         pendingPostUI_.erase(std::remove(pendingPostUI_.begin(), pendingPostUI_.end(), mode), pendingPostUI_.end());
@@ -627,6 +642,9 @@ public:
 
     /** @brief 全てのエフェクトを解除（クリア） */
     void ClearActiveModes() {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.clear();
         pendingPostUI_.clear();
@@ -640,6 +658,9 @@ public:
      * 各シーンの `Initialize()` または `Finalize()` で呼び出すことを推奨します。
      */
     void Reset() {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.clear();
         activePreUI_.clear();
@@ -650,6 +671,9 @@ public:
 
     /** @brief エフェクトスタックを一括設定 (互換性のため PreUI に設定) */
     void SetActiveModes(const std::vector<Mode>& modes) {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_ = modes;
         pendingPostUI_.clear(); // 必要に応じて分離するか検討
@@ -657,6 +681,9 @@ public:
 
     /** @brief エフェクトスタックをレイヤー別に設定 */
     void SetActiveModes(const std::vector<Mode>& preUI, const std::vector<Mode>& postUI) {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_ = preUI;
         pendingPostUI_ = postUI;
@@ -673,6 +700,9 @@ public:
     
     /** @brief 互換性のための単一セット (既存リストをクリアして1つ追加) */
     void SetMode(Mode mode, Layer layer = Layer::PreUI) { 
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.clear(); 
         pendingPostUI_.clear();
@@ -690,46 +720,183 @@ public:
     }
     
     // 各エフェクトのパラメータ取得 (シーンからの演出用)
+    /**
+     * @brief NoiseParams を取得する。
+     * @return 取得された NoiseParams
+     */
     NoiseParams& GetNoiseParams() { return noiseParams_; }
+    /**
+     * @brief VignetteParams を取得する。
+     * @return 取得された VignetteParams
+     */
     VignetteParams& GetVignetteParams() { return vignetteParams_; }
+    /**
+     * @brief SmoothingParams を取得する。
+     * @return 取得された SmoothingParams
+     */
     SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
+    /**
+     * @brief GaussianParams を取得する。
+     * @return 取得された GaussianParams
+     */
     GaussianParams& GetGaussianParams() { return gaussianParams_; }
+    /**
+     * @brief RadialBlurParams を取得する。
+     * @return 取得された RadialBlurParams
+     */
     RadialBlurParams& GetRadialBlurParams() { return radialBlurParams_; }
+    /**
+     * @brief OutlineParams を取得する。
+     * @return 取得された OutlineParams
+     */
     OutlineParams& GetOutlineParams() { return outlineParams_; }
+    /**
+     * @brief DissolveParams を取得する。
+     * @return 取得された DissolveParams
+     */
     DissolveParams& GetDissolveParams() { return dissolveParams_; }
+    /**
+     * @brief HSVParams を取得する。
+     * @return 取得された HSVParams
+     */
     HSVParams& GetHSVParams() { return hsvParams_; }
+    /**
+     * @brief ToneMappingParams を取得する。
+     * @return 取得された ToneMappingParams
+     */
     ToneMappingParams& GetToneMappingParams() { return toneMappingParams_; }
+    /**
+     * @brief FadeParams を取得する。
+     * @return 取得された FadeParams
+     */
     FadeParams& GetFadeParams() { return fadeParams_; }
+    /**
+     * @brief SlideParams を取得する。
+     * @return 取得された SlideParams
+     */
     SlideParams& GetSlideParams() { return slideParams_; }
+    /**
+     * @brief BloomParams を取得する。
+     * @return 取得された BloomParams
+     */
     BloomParams& GetBloomParams() { return bloomParams_; }
+    /**
+     * @brief GlitchParams を取得する。
+     * @return 取得された GlitchParams
+     */
     GlitchParams& GetGlitchParams() { return glitchParams_; }
+    /**
+     * @brief DualKawaseBlurParams を取得する。
+     * @return 取得された DualKawaseBlurParams
+     */
     DualKawaseBlurParams& GetDualKawaseBlurParams() { return dualKawaseParams_; }
+    /**
+     * @brief LuminanceOutlineParams を取得する。
+     * @return 取得された LuminanceOutlineParams
+     */
     LuminanceOutlineParams& GetLuminanceOutlineParams() { return luminanceOutlineParams_; }
+    /**
+     * @brief PixelationParams を取得する。
+     * @return 取得された PixelationParams
+     */
     PixelationParams& GetPixelationParams() { return pixelationParams_; }
+    /**
+     * @brief PointillismParams を取得する。
+     * @return 取得された PointillismParams
+     */
     PointillismParams& GetPointillismParams() { return pointillismParams_; }
+    /**
+     * @brief PosterizationParams を取得する。
+     * @return 取得された PosterizationParams
+     */
     PosterizationParams& GetPosterizationParams() { return posterizationParams_; }
+    /**
+     * @brief NightVisionParams を取得する。
+     * @return 取得された NightVisionParams
+     */
     NightVisionParams& GetNightVisionParams() { return nightVisionParams_; }
+    /**
+     * @brief KaleidoscopeParams を取得する。
+     * @return 取得された KaleidoscopeParams
+     */
     KaleidoscopeParams& GetKaleidoscopeParams() { return kaleidoscopeParams_; }
+    /**
+     * @brief ChromaticAberrationParams を取得する。
+     * @return 取得された ChromaticAberrationParams
+     */
     ChromaticAberrationParams& GetChromaticAberrationParams() { return chromaticAberrationParams_; }
+    /**
+     * @brief DisplacementMapParams を取得する。
+     * @return 取得された DisplacementMapParams
+     */
     DisplacementMapParams& GetDisplacementMapParams() { return displacementMapParams_; }
+    /**
+     * @brief DirectionalBlurParams を取得する。
+     * @return 取得された DirectionalBlurParams
+     */
     DirectionalBlurParams& GetDirectionalBlurParams() { return directionalBlurParams_; }
+    /**
+     * @brief HalftoneParams を取得する。
+     * @return 取得された HalftoneParams
+     */
     HalftoneParams& GetHalftoneParams() { return halftoneParams_; }
+    /**
+     * @brief DepthOfFieldParams を取得する。
+     * @return 取得された DepthOfFieldParams
+     */
     DepthOfFieldParams& GetDepthOfFieldParams() { return dofParams_; }
+    /**
+     * @brief LightShaftsParams を取得する。
+     * @return 取得された LightShaftsParams
+     */
     LightShaftsParams& GetLightShaftsParams() { return lightShaftsParams_; }
 
+    /**
+     * @brief DissolveNoiseIndex を設定する。
+     * @param[in] index 設定する DissolveNoiseIndex の値
+     * @param[in] srvIndex 設定する DissolveNoiseIndex の値
+     */
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
         if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
     }
     
+    /**
+     * @brief DepthSrvIndex を設定する。
+     * @param[in] srvIndex 設定する DepthSrvIndex の値
+     */
     void SetDepthSrvIndex(uint32_t srvIndex) { depthSrvIndex_ = srvIndex; }
+    /**
+     * @brief NormalSrvIndex を設定する。
+     * @param[in] srvIndex 設定する NormalSrvIndex の値
+     */
     void SetNormalSrvIndex(uint32_t srvIndex) { normalSrvIndex_ = srvIndex; }
+    /**
+     * @brief MaterialSrvIndex を設定する。
+     * @param[in] srvIndex 設定する MaterialSrvIndex の値
+     */
     void SetMaterialSrvIndex(uint32_t srvIndex) { materialSrvIndex_ = srvIndex; }
+    /**
+     * @brief VelocitySrvIndex を設定する。
+     * @param[in] srvIndex 設定する VelocitySrvIndex の値
+     */
     void SetVelocitySrvIndex(uint32_t srvIndex) { velocitySrvIndex_ = srvIndex; }
 
 private:
+    /**
+     * @brief CreatePSOs を実行する。
+     */
     void CreatePSOs();
+    /**
+     * @brief CreateConstantBuffers を実行する。
+     */
     void CreateConstantBuffers();
+    /**
+     * @brief DrawSinglePass を実行する。
+     */
     void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass = false, ID3D12PipelineState* psoOverride = nullptr);
+    /**
+     * @brief CreateBuffer を実行する。
+     */
     Microsoft::WRL::ComPtr<ID3D12Resource> CreateBuffer(size_t size);
 
 private:

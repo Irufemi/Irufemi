@@ -10,6 +10,10 @@ struct ResourceHandle {
     uint32_t index = 0xFFFFFFFF;     // プール内のインデックス
     uint32_t generation = 0xFFFFFFFF; // 世代（使い回し時の誤参照防止用）
 
+    /**
+     * @brief IsValid かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsValid() const { return index != 0xFFFFFFFF; }
     
     bool operator==(const ResourceHandle& other) const {

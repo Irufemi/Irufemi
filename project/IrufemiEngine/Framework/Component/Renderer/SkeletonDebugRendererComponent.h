@@ -18,18 +18,52 @@ public:
     SkeletonDebugRendererComponent();
     ~SkeletonDebugRendererComponent() override;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
+    /**
+     * @brief CanUpdateInEditMode かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool CanUpdateInEditMode() const override { return true; }
 
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "SkeletonDebugRendererComponent"; }
 
+    /**
+     * @brief Serialize を実行する。
+     */
     nlohmann::json Serialize() override;
+    /**
+     * @brief Deserialize を実行する。
+     */
     void Deserialize(const nlohmann::json& j) override;
 
+    /**
+     * @brief ShowBones を設定する。
+     * @param[in] show 設定する ShowBones の値
+     */
     void SetShowBones(bool show) { showBones_ = show; }
+    /**
+     * @brief ShowAxes を設定する。
+     * @param[in] show 設定する ShowAxes の値
+     */
     void SetShowAxes(bool show) { showAxes_ = show; }
 
 private:

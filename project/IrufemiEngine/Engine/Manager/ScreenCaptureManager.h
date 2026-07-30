@@ -33,9 +33,18 @@ public:
     ScreenCaptureManager();
     ~ScreenCaptureManager();
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(DirectXCommon* dxCommon, ThreadPool* threadPool);
+    /**
+     * @brief Finalize を実行する。
+     */
     void Finalize();
 
+    /**
+     * @brief Update を実行する。
+     */
     void Update(); // 毎フレームの完了チェックなど
 
     // キャプチャリクエストAPI
@@ -45,18 +54,40 @@ public:
     bool RequestCaptureDepth(const std::wstring& filePath, std::function<void()> onComplete = nullptr);
 
     // 内部用のフック呼び出し（描画パイプラインから呼ばれる）
+    /**
+     * @brief OnPreUIDraw を実行する。
+     */
     void OnPreUIDraw(ID3D12GraphicsCommandList* commandList, RenderTexture* mainRenderTexture);
+    /**
+     * @brief OnPostUIDraw を実行する。
+     */
     void OnPostUIDraw(ID3D12GraphicsCommandList* commandList, ID3D12Resource* backBuffer);
+    /**
+     * @brief OnPostDepthDraw を実行する。
+     */
     void OnPostDepthDraw(ID3D12GraphicsCommandList* commandList, ID3D12Resource* depthBuffer);
     
     // スカイボックス等を除外するためのフラグ取得
+    /**
+     * @brief IsCaptureWithAlphaRequested かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsCaptureWithAlphaRequested() const;
 
     // メタデータ生成用
+    /**
+     * @brief RecordMetadata を実行する。
+     */
     void RecordMetadata(IrufemiEngine* engine);
 
 private:
+    /**
+     * @brief ExecuteCopyTask を実行する。
+     */
     void ExecuteCopyTask(ID3D12Resource* sourceResource, D3D12_RESOURCE_STATES currentState, const ScreenCaptureRequest& req);
+    /**
+     * @brief GenerateMetadataJson を実行する。
+     */
     void GenerateMetadataJson(const std::wstring& imagePath);
 
 private:

@@ -19,13 +19,23 @@ public:
     /** @name 初期化・更新 */
     ///@{
     void Initialize();
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
+    /**
+     * @brief Clear を実行する。
+     */
     void Clear();
     ///@}
 
     /** @name キー状態の取得 */
     ///@{
     bool IsKeyDown(uint8_t key) const;
+    /**
+     * @brief IsKeyUp かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyUp(uint8_t key) const;
     /** @brief キーが押された瞬間か判定（立ち上がり） */
     bool IsKeyPressed(uint8_t key) const;
@@ -36,8 +46,20 @@ public:
     /** @name DIK互換API */
     ///@{
     bool IsKeyDownDIK(uint8_t dik) const;
+    /**
+     * @brief IsKeyUpDIK かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyUpDIK(uint8_t dik) const;
+    /**
+     * @brief IsKeyPressedDIK かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyPressedDIK(uint8_t dik) const;
+    /**
+     * @brief IsKeyReleasedDIK かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyReleasedDIK(uint8_t dik) const;
     ///@}
 

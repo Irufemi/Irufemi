@@ -59,11 +59,30 @@ public:
     bool* GetIsDrawDebugLinePtr() { return &isDrawDebugLine_; }
 
     // --- 動的レイヤー管理 ---
+    /**
+     * @brief LoadLayers を実行する。
+     */
     void LoadLayers(const std::string& filepath);
+    /**
+     * @brief SaveLayers を実行する。
+     */
     void SaveLayers(const std::string& filepath);
+    /**
+     * @brief LayerNames を取得する。
+     * @return 取得された LayerNames
+     */
     std::vector<std::string>& GetLayerNames() { return layerNames_; }
+    /**
+     * @brief AddLayer を実行する。
+     */
     void AddLayer(const std::string& name);
+    /**
+     * @brief RemoveLayer を実行する。
+     */
     void RemoveLayer(int index);
+    /**
+     * @brief RenameLayer を実行する。
+     */
     void RenameLayer(int index, const std::string& name);
 
     /// @brief レイヤー名からビットマスクを取得する

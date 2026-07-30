@@ -181,6 +181,9 @@ private:
     /** @name ディスクキャッシュ (PSO Blob) */
     ///@{
     std::vector<uint8_t> LoadCachedBlob(const std::string& cacheFileName) const;
+    /**
+     * @brief SaveCachedBlob を実行する。
+     */
     void SaveCachedBlob(const std::string& cacheFileName, ID3D12PipelineState* pso) const;
     ///@}
     ///@}

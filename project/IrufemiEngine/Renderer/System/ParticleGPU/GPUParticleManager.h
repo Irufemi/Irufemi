@@ -11,10 +11,25 @@ public:
     GPUParticleManager() = default;
     ~GPUParticleManager() = default;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize();
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw();
+    /**
+     * @brief Finalize を実行する。
+     */
     void Finalize();
+    /**
+     * @brief Debug を実行する。
+     */
     void Debug();
     
     /**
@@ -25,6 +40,10 @@ public:
     struct EmitterHandle {
         GPUParticleSystem* system = nullptr;
         uint32_t emitterIndex = 0xFFFFFFFF;
+        /**
+         * @brief IsValid かどうかを判定する。
+         * @return 判定結果 (true/false)
+         */
         bool IsValid() const { return system != nullptr && emitterIndex != 0xFFFFFFFF; }
     };
 
@@ -42,16 +61,34 @@ public:
      * @brief エミッターデータを更新する
      */
     void UpdateEmitterData(const EmitterHandle& handle, const GPUParticleEmitter& data);
+    /**
+     * @brief MeshEmitterBuffer を設定する。
+     * @param[in] handle 設定する MeshEmitterBuffer の値
+     * @param[in] vbAddress 設定する MeshEmitterBuffer の値
+     */
     void SetMeshEmitterBuffer(EmitterHandle handle, D3D12_GPU_VIRTUAL_ADDRESS vbAddress);
 
     /** @name Field Management */
     ///@{
     struct FieldHandle {
         uint32_t index = 0xFFFFFFFF;
+        /**
+         * @brief IsValid かどうかを判定する。
+         * @return 判定結果 (true/false)
+         */
         bool IsValid() const { return index != 0xFFFFFFFF; }
     };
+    /**
+     * @brief RegisterField を実行する。
+     */
     FieldHandle RegisterField();
+    /**
+     * @brief UnregisterField を実行する。
+     */
     void UnregisterField(const FieldHandle& handle);
+    /**
+     * @brief UpdateFieldData を実行する。
+     */
     void UpdateFieldData(const FieldHandle& handle, const ParticleField& data);
     ///@}
 

@@ -14,23 +14,70 @@ public:
     VoxelParticleComponent();
     ~VoxelParticleComponent() override;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
     
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "VoxelParticleComponent"; }
+    /**
+     * @brief Serialize を実行する。
+     */
     nlohmann::json Serialize() override;
+    /**
+     * @brief Deserialize を実行する。
+     */
     void Deserialize(const nlohmann::json& j) override;
 
+    /**
+     * @brief OverrideModelName を取得する。
+     * @return 取得された OverrideModelName
+     */
     const std::string& GetOverrideModelName() const { return overrideModelName_; }
+    /**
+     * @brief OverrideModelName を設定する。
+     * @param[in] name 設定する OverrideModelName の値
+     */
     void SetOverrideModelName(const std::string& name) { overrideModelName_ = name; }
 
+    /**
+     * @brief Resolution を取得する。
+     * @return 取得された Resolution
+     */
     Irufemi::Vector3Int GetResolution() const { return resolution_; }
+    /**
+     * @brief Resolution を設定する。
+     * @param[in] res 設定する Resolution の値
+     */
     void SetResolution(const Irufemi::Vector3Int& res) { resolution_ = res; }
 
+    /**
+     * @brief PreAllocateCount を取得する。
+     * @return 取得された PreAllocateCount
+     */
     int GetPreAllocateCount() const { return preAllocateCount_; }
+    /**
+     * @brief PreAllocateCount を設定する。
+     * @param[in] count 設定する PreAllocateCount の値
+     */
     void SetPreAllocateCount(int count) { preAllocateCount_ = count; }
 
+    /**
+     * @brief EmitterParams を取得する。
+     * @return 取得された EmitterParams
+     */
     VoxelEmitter& GetEmitterParams() { return emitterParams_; }
 
     /**
