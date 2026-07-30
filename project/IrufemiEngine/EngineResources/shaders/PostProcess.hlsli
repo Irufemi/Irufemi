@@ -33,6 +33,7 @@ static const int32_t kPostProcessMode_DepthOfField = 27;
 
 // --- ヘルパー関数 ---
 #include "Noise.hlsli"
+#include "SpaceTransforms.hlsli"
 
 // 輝度(Luminance)の取得
 float32_t GetLuminance(float32_t3 color) {
@@ -221,8 +222,7 @@ float32_t3 ApplyDepthBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uv
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             float32_t depth = depthTex.Sample(smp, uv + float32_t2(x, y) * uvStepSize).r;
-            float32_t4 viewSpace = mul(float32_t4(0, 0, depth, 1), projectionInverse);
-            float32_t vz = viewSpace.z / viewSpace.w;
+            float32_t vz = ReconstructViewZ(depth, projectionInverse);
             
             float32_t wx = (x == 0) ? 0 : (x < 0 ? -1.0/6.0 : 1.0/6.0);
             float32_t wy = (y == 0) ? 0 : (y < 0 ? -1.0/6.0 : 1.0/6.0);
@@ -558,8 +558,7 @@ float32_t3 ApplyHalftone(float32_t3 color, float32_t2 uv, float32_t2 screenRes, 
 float32_t3 ApplyDepthOfField(float32_t3 color, float32_t2 uv, Texture2D<float32_t4> depthTex, SamplerState smpPoint, SamplerState smpLinear, float32_t4x4 projInv, float focusDist, float focusRange, float blurSize, int32_t samples, float32_t2 screenRes, Texture2D<float32_t4> tex) {
     // 1. 深度取得 & NDC -> View Z に変換
     float ndcDepth = depthTex.SampleLevel(smpPoint, uv, 0).r;
-    float4 viewSpace = mul(float4(0.0f, 0.0f, ndcDepth, 1.0f), projInv);
-    float viewZ = viewSpace.z / viewSpace.w;
+    float viewZ = ReconstructViewZ(ndcDepth, projInv);
     
     // 2. ボケみ (CoC: Circle of Confusion) の計算 (0.0 ~ 1.0)
     float coc = abs(viewZ - focusDist) / max(focusRange, 0.001f);

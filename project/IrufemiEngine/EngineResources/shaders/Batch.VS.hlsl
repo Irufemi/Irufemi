@@ -2,7 +2,8 @@
 // RootParameter[4] (VS) に SRV テーブルをバインド(t0)
 // 出力は Object3d.hlsli の VertexShaderOutput に合わせる
 
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "Lighting.hlsli"
 #include "VertexData.hlsli"
 

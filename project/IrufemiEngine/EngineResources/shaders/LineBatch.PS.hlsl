@@ -1,6 +1,6 @@
 #include "LineBatch.hlsli"
 
-#include "GBufferOutput.hlsli"
+#include "BasePassPixelOutput.hlsli"
 
 PixelShaderOutput main(VertexShaderOutput input)
 {

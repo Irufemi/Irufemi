@@ -5,7 +5,7 @@
 ConstantBuffer<LightCommonData> gLightCommon : register(b1);
 ConstantBuffer<PerFrameData> gPerFrame : register(b2);
 
-#include "GBufferOutput.hlsli"
+#include "BasePassPixelOutput.hlsli"
 
 // 3Dハッシュ関数（ノイズ生成用）
 float Hash3D(float3 p) {

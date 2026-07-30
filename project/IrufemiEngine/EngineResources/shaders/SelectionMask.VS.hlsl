@@ -1,5 +1,6 @@
 #include "VertexData.hlsli"
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "PerFrame.hlsli"
 
 struct PixelInput {

@@ -1,4 +1,4 @@
-#include "GBufferOutput.hlsli"
+#include "BasePassPixelOutput.hlsli"
 #include "DebugPrimitive.hlsli"
 
 

@@ -14,7 +14,7 @@ ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
 
 #include "Bindless.hlsli"
 
-#include "GBufferOutput.hlsli"
+#include "BasePassPixelOutput.hlsli"
 
 /*テクスチャを貼ろう*/
 

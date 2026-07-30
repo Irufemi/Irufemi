@@ -1,7 +1,8 @@
 
 /*テクスチャを貼ろう*/
 
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "Lighting.hlsli"
 #include "VertexData.hlsli"
 

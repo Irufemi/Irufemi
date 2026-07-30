@@ -1,4 +1,5 @@
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "Noise.hlsli"
 #include "PerFrame.hlsli"
 

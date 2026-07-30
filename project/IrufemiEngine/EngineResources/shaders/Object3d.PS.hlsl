@@ -1,6 +1,7 @@
 /*テクスチャを貼ろう*/
 
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "Lighting.hlsli"
 
 /*三角形の色を変えよう*/
@@ -8,7 +9,7 @@
 ConstantBuffer<Material> gMaterial : register(b0);
 #include "Bindless.hlsli"
 
-#include "GBufferOutput.hlsli"
+#include "BasePassPixelOutput.hlsli"
 
 /*テクスチャを貼ろう*/
 

@@ -1,7 +1,4 @@
-
-/*テクスチャを貼ろう*/
-
-///Object3d/hlsliを使うようにする
+#pragma once
 
 struct VertexShaderOutput
 {
@@ -10,13 +7,6 @@ struct VertexShaderOutput
 	float32_t3 normal : NORMAL0;
 	float32_t3 worldPosition : POSITION0;
 	float4 shadowPos : SHADOW_POS;
-	float4 color : COLOR0; // 追加
+	float4 color : COLOR0;
 	float4 customEffect : CUSTOM_EFFECT;
-};
-
-struct TransformationMatrix
-{
-	float32_t4x4 WVP;
-	float32_t4x4 World;
-	float32_t4x4 WorldInverseTranspose;
 };

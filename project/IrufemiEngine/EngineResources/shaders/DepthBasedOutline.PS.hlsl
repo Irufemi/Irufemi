@@ -1,6 +1,7 @@
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
+#include "SpaceTransforms.hlsli"
 
 struct OutlineParams {
     float32_t intensity;
@@ -47,8 +48,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
             
             // 深度のサンプリング
             float32_t ndcDepth = gExtraTexture.Sample(gSamplerPoint, texcoord).r;
-            float32_t4 viewSpace = mul(float32_t4(0.0f, 0.0f, ndcDepth, 1.0f), gOutline.projectionInverse);
-            float32_t viewZ = viewSpace.z * rcp(viewSpace.w);
+            float32_t viewZ = ReconstructViewZ(ndcDepth, gOutline.projectionInverse);
             
             // 法線のサンプリング
             float32_t3 normal = gNormalTexture.Sample(gSamplerPoint, texcoord).xyz;

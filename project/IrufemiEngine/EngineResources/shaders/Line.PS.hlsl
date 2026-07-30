@@ -5,7 +5,7 @@ ConstantBuffer<Material> gMaterial : register(b0);
 
 #include "Bindless.hlsli"
 
-#include "GBufferOutput.hlsli"
+#include "BasePassPixelOutput.hlsli"
 
 PixelShaderOutput main(VertexShaderOutput input)
 {
