@@ -115,6 +115,12 @@ void GameObject::Update(bool isPlayMode) {
         comp->Update();
     }
     
+    // 破棄された子オブジェクトをリストから削除 (GC)
+    children_.erase(std::remove_if(children_.begin(), children_.end(),
+        [](const std::shared_ptr<GameObject>& child) {
+            return !child || child->IsDestroyed();
+        }), children_.end());
+
     for (size_t i = 0; i < children_.size(); ++i) {
         children_[i]->Update(isPlayMode);
     }

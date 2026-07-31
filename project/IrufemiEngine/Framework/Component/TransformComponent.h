@@ -204,14 +204,14 @@ private:
     Irufemi::Vector3 scale_ = { 1.0f, 1.0f, 1.0f };
     bool inheritScale_ = true; // 親のスケールを継承するかどうか
 
+    // --- Matrices ---
+    Irufemi::Matrix4x4 localMatrix_ = Irufemi::Math::MakeIdentity4x4();
+    Irufemi::Matrix4x4 worldMatrix_ = Irufemi::Math::MakeIdentity4x4();
+
     // --- World Irufemi::Transform Data (Lazy Evaluated) ---
     mutable Irufemi::Vector3 worldPosition_ = { 0.0f, 0.0f, 0.0f };
     mutable Irufemi::Vector3 worldRotation_ = { 0.0f, 0.0f, 0.0f };
     mutable Irufemi::Vector3 worldScale_ = { 1.0f, 1.0f, 1.0f };
-
-    // --- Matrices ---
-    Irufemi::Matrix4x4 localMatrix_ = Irufemi::Math::MakeIdentity4x4();
-    Irufemi::Matrix4x4 worldMatrix_ = Irufemi::Math::MakeIdentity4x4();
 
     // --- Flags & Versioning (Lazy Evaluation) ---
     bool isLocalDirty_ = true;
@@ -222,5 +222,5 @@ private:
     uint64_t transformVersion_ = 1;
     // 前回 ComputeMatrix したときの親のバージョン番号
     uint64_t parentTransformVersionLastComputed_ = 0;
+    GameObject* parentLastComputed_ = nullptr;
 };
-

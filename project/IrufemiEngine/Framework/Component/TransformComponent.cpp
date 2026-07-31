@@ -85,7 +85,7 @@ void TransformComponent::SetWorldRotation(const Irufemi::Vector3& worldRotation)
 void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            // シンプルにワールドスケールを親のワールドスケールで割る
+            ComputeMatrix(); // 自分の行列を最新化することで、親の行列も再帰的に最新化される
             Irufemi::Vector3 parentScale = parentT->GetWorldScale();
             scale_ = { 
                 parentScale.x != 0.0f ? worldScale.x / parentScale.x : 0.0f,
@@ -103,6 +103,7 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     Irufemi::Matrix4x4 localMat = worldMatrix;
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
+            ComputeMatrix(); // 親の行列を最新化するため
             Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
             localMat = Irufemi::Math::Multiply(worldMatrix, invMat);
         }
@@ -129,15 +130,7 @@ void TransformComponent::UpdateMatrixImmediate() {
 const Irufemi::Vector3& TransformComponent::GetWorldPosition() const {
     if (!isWorldTransformExtracted_) {
         // ComputeMatrixは呼ばれている前提。ワールド行列から再抽出する
-        worldPosition_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-    }
-    return worldPosition_;
-}
-
-const Irufemi::Vector3& TransformComponent::GetWorldRotation() const {
-    if (!isWorldTransformExtracted_) {
         worldRotation_ = Irufemi::Math::ExtractEulerFromMatrix(worldMatrix_);
-        // worldScale_ も一緒に計算しておく
         Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
         Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
         Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
@@ -146,12 +139,19 @@ const Irufemi::Vector3& TransformComponent::GetWorldRotation() const {
         
         isWorldTransformExtracted_ = true;
     }
+    return worldPosition_;
+}
+
+const Irufemi::Vector3& TransformComponent::GetWorldRotation() const {
+    if (!isWorldTransformExtracted_) {
+        GetWorldPosition(); // 共通化して再利用
+    }
     return worldRotation_;
 }
 
 const Irufemi::Vector3& TransformComponent::GetWorldScale() const {
     if (!isWorldTransformExtracted_) {
-        GetWorldRotation(); // worldRotation_ の計算と一緒に処理される
+        GetWorldPosition(); // 共通化して再利用
     }
     return worldScale_;
 }
@@ -171,16 +171,25 @@ Irufemi::Vector3 TransformComponent::GetWorldForward() const {
 void TransformComponent::ComputeMatrix(bool force) {
     bool parentChanged = false;
 
-    if (auto parent = gameObject_->GetParent()) {
-        if (auto parentT = parent->GetComponent<TransformComponent>()) {
+    GameObject* currentParent = gameObject_->GetParent().get();
+    if (currentParent) {
+        if (auto parentT = currentParent->GetComponent<TransformComponent>()) {
             // 親がDirtyなら計算させる（再帰的）
             parentT->ComputeMatrix(force);
             
             uint64_t currentParentVersion = parentT->GetTransformVersion();
-            if (parentTransformVersionLastComputed_ != currentParentVersion) {
+            if (parentTransformVersionLastComputed_ != currentParentVersion ||
+                parentLastComputed_ != currentParent) {
                 parentChanged = true;
                 parentTransformVersionLastComputed_ = currentParentVersion;
+                parentLastComputed_ = currentParent;
             }
+        }
+    } else {
+        if (parentLastComputed_ != nullptr) {
+            parentChanged = true;
+            parentLastComputed_ = nullptr;
+            parentTransformVersionLastComputed_ = 0;
         }
     }
 
