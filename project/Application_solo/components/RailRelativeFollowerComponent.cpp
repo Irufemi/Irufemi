@@ -106,7 +106,7 @@ void RailRelativeFollowerComponent::Update() {
 
     auto transform = GetTransform();
     if (transform) {
-        transform->SetPosition(finalPos);
-        transform->SetRotation(rotation);
+        transform->SetWorldPosition(finalPos);
+        transform->SetWorldRotation(rotation);
     }
 }

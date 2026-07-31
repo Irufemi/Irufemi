@@ -20,11 +20,11 @@ void BossBulletComponent::Shoot(BossBulletManagerComponent* manager, const Irufe
 
     auto transform = GetTransform();
     if (transform) {
-        transform->SetPosition(startPos);
+        transform->SetWorldPosition(startPos);
         // velocityの方向を向かせる処理（必要であれば）
         if (velocity.LengthSquared() > 0.001f) {
             Irufemi::Matrix4x4 rotMat = Irufemi::Math::DirectionToDirection(Irufemi::Vector3{0, 0, 1}, velocity.GetNormalized());
-            transform->SetRotation(Irufemi::Math::ExtractEulerFromMatrix(rotMat));
+            transform->SetWorldRotation(Irufemi::Math::ExtractEulerFromMatrix(rotMat));
         }
     }
 }
@@ -39,7 +39,7 @@ void BossBulletComponent::Update() {
     if (transform) {
         Irufemi::Vector3 pos = transform->GetWorldPosition();
         pos += velocity_ * deltaTime;
-        transform->SetPosition(pos);
+        transform->SetWorldPosition(pos);
     }
 
     // 寿命管理

@@ -6,6 +6,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   0.0,
@@ -40,6 +41,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   5.0,
                   2.0,
@@ -74,6 +76,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -5.0,
                   -2.0,
@@ -108,6 +111,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   4.0,
@@ -142,6 +146,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   0.0,
@@ -176,6 +181,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   19.5,
                   -3.0,
@@ -210,6 +216,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   13.5,
                   -3.0,
@@ -244,6 +251,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   2.799999952316284,
                   1.7999999523162842,
@@ -278,6 +286,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -8.899999618530273,
                   14.5,
@@ -312,6 +321,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -17.399999618530273,
                   20.0,
@@ -346,6 +356,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -19.899999618530273,
                   14.100000381469727,
@@ -380,6 +391,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -15.5,
                   1.2999999523162842,
@@ -414,6 +426,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -5.599999904632568,
                   -3.0,
@@ -448,6 +461,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   6.199999809265137,
                   -3.0,
@@ -482,6 +496,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   15.899999618530273,
                   2.0999999046325684,
@@ -516,6 +531,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   14.699999809265137,
@@ -550,6 +566,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   17.100000381469727,
                   20.0,
@@ -584,6 +601,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   8.199999809265137,
                   13.899999618530273,
@@ -618,6 +636,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -3.5,
                   1.100000023841858,
@@ -652,6 +671,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -14.0,
                   -3.0,
@@ -686,6 +706,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -19.600000381469727,
                   -3.0,
@@ -720,6 +741,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -18.399999618530273,
                   2.299999952316284,
@@ -754,6 +776,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -10.699999809265137,
                   14.899999618530273,
@@ -788,6 +811,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.699999988079071,
                   20.0,
@@ -822,6 +846,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   11.800000190734863,
                   13.699999809265137,
@@ -856,6 +881,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   18.899999618530273,
                   0.8999999761581421,
@@ -890,6 +916,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   19.299999237060547,
                   -3.0,
@@ -924,6 +951,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   13.0,
                   -3.0,
@@ -958,6 +986,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   2.200000047683716,
                   2.5999999046325684,
@@ -992,6 +1021,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -9.399999618530273,
                   15.100000381469727,
@@ -1026,6 +1056,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -17.799999237060547,
                   20.0,
@@ -1060,6 +1091,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -19.899999618530273,
                   13.5,
@@ -1094,6 +1126,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -15.0,
                   0.6000000238418579,
@@ -1128,6 +1161,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -4.900000095367432,
                   -3.0,
@@ -1162,6 +1196,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   6.900000095367432,
                   -3.0,
@@ -1196,6 +1231,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   16.299999237060547,
                   2.799999952316284,
@@ -1230,6 +1266,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -1454,6 +1491,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   0.0,
@@ -1518,6 +1556,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -1552,6 +1591,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               -5.0,
@@ -1588,6 +1628,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -1677,6 +1718,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -1747,6 +1789,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -1817,6 +1860,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -1887,6 +1931,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -1957,6 +2002,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -2027,6 +2073,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -2097,6 +2144,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -2167,6 +2215,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -2237,6 +2286,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -2307,6 +2357,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -2377,6 +2428,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -2447,6 +2499,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -2517,6 +2570,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -2587,6 +2641,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -2657,6 +2712,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -2727,6 +2783,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -2797,6 +2854,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -2867,6 +2925,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -2937,6 +2996,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -20.0,
                   -5.0,
@@ -3007,6 +3067,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   20.0,
                   -5.0,
@@ -3077,6 +3138,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   -5.0,
@@ -3147,6 +3209,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   -5.0,
@@ -3217,6 +3280,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   -5.0,
@@ -3287,6 +3351,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   -5.0,
@@ -3357,6 +3422,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   -5.0,
@@ -3427,6 +3493,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   -10.0,
                   0.0,
@@ -3497,6 +3564,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   10.0,
                   0.0,
@@ -3567,6 +3635,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   5.0,
@@ -3637,6 +3706,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -3703,6 +3773,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -3735,6 +3806,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   0.0,
@@ -3768,6 +3840,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               10.0,
@@ -3877,6 +3950,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               4.0,
@@ -3925,6 +3999,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -3958,6 +4033,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -4012,6 +4088,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,
@@ -4044,6 +4121,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   0.0,
@@ -4086,6 +4164,7 @@
           "components": [
             {
               "data": {
+                "inheritScale": true,
                 "position": [
                   0.0,
                   0.0,
@@ -4132,6 +4211,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               0.0,
               0.0,

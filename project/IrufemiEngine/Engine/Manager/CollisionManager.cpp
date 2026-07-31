@@ -207,14 +207,14 @@ void CollisionManager::CheckAllCollisions() {
                             Irufemi::Vector3 pushA = Irufemi::Math::Multiply(result.depth * 0.5f, result.normal);
                             Irufemi::Vector3 pushB = Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
                             
-                            transformA->SetPosition(Irufemi::Math::Add(transformA->GetPosition(), pushA));
-                            transformB->SetPosition(Irufemi::Math::Add(transformB->GetPosition(), pushB));
+                            transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
+                            transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
                         } else if (transformA) {
                             Irufemi::Vector3 pushA = Irufemi::Math::Multiply(result.depth, result.normal);
-                            transformA->SetPosition(Irufemi::Math::Add(transformA->GetPosition(), pushA));
+                            transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
                         } else if (transformB) {
                             Irufemi::Vector3 pushB = Irufemi::Math::Multiply(result.depth, Irufemi::Math::Multiply(-1.0f, result.normal));
-                            transformB->SetPosition(Irufemi::Math::Add(transformB->GetPosition(), pushB));
+                            transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
                         }
                     }
                 }

@@ -428,18 +428,23 @@ namespace Math {
     }
 
     Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix) {
+        // 抽出前にスケールを除去する（各軸ベクトルを正規化）
+        Vector3 lx = Normalize(Vector3{matrix.m[0][0], matrix.m[0][1], matrix.m[0][2]});
+        Vector3 ly = Normalize(Vector3{matrix.m[1][0], matrix.m[1][1], matrix.m[1][2]});
+        Vector3 lz = Normalize(Vector3{matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]});
+
         Vector3 euler{};
         // MakeRotateXYZMatrix (Rx * Ry * Rz) に対応する抽出式
-        float cy = std::sqrt(matrix.m[0][0] * matrix.m[0][0] + matrix.m[0][1] * matrix.m[0][1]);
+        float cy = std::sqrt(lx.x * lx.x + lx.y * lx.y); // 元の matrix.m[0][0], matrix.m[0][1]
         constexpr float kEpsilon = 1e-6f;
 
         if (cy > kEpsilon) {
-            euler.x = std::atan2(matrix.m[1][2], matrix.m[2][2]);
-            euler.y = std::atan2(-matrix.m[0][2], cy);
-            euler.z = std::atan2(matrix.m[0][1], matrix.m[0][0]);
+            euler.x = std::atan2(ly.z, lz.z);
+            euler.y = std::atan2(-lx.z, cy);
+            euler.z = std::atan2(lx.y, lx.x);
         } else {
-            euler.x = std::atan2(-matrix.m[2][1], matrix.m[1][1]);
-            euler.y = std::atan2(-matrix.m[0][2], cy);
+            euler.x = std::atan2(-lz.y, ly.y);
+            euler.y = std::atan2(-lx.z, cy);
             euler.z = 0.0f;
         }
         return euler;

@@ -92,7 +92,7 @@ public:
      */
     Irufemi::Vector3 GetWorldForward() const;
 
-    // --- Setters ---
+    // --- Setters (Local) ---
     /**
      * @brief Position を設定する。
      * @param[in] position 設定する Position の値
@@ -109,10 +109,75 @@ public:
      */
     void SetScale(const Irufemi::Vector3& scale);
 
+    // --- Setters (World) ---
+    /**
+     * @brief ワールド座標を設定し、親の逆行列を用いてローカル座標に反映する。
+     * @param[in] worldPosition 設定するワールド座標
+     */
+    void SetWorldPosition(const Irufemi::Vector3& worldPosition);
+    /**
+     * @brief ワールド回転を設定し、親の逆行列を用いてローカル回転に反映する。
+     * @param[in] worldRotation 設定するワールド回転 (Euler角)
+     */
+    void SetWorldRotation(const Irufemi::Vector3& worldRotation);
+    /**
+     * @brief ワールドスケールを設定し、親の逆スケールを用いてローカルスケールに反映する。
+     * @param[in] worldScale 設定するワールドスケール
+     */
+    void SetWorldScale(const Irufemi::Vector3& worldScale);
+    /**
+     * @brief ワールド行列を直接設定し、ローカル成分 (Pos/Rot/Scale) に分解して反映する。
+     * @param[in] worldMatrix 設定するワールド行列
+     */
+    void SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix);
+
+    /**
+     * @brief 次のフレームを待たずに、現在の状態から強制的に行列を即時再計算する。
+     */
+    void UpdateMatrixImmediate();
+
     /**
      * @brief ワールド行列の再計算を強制する（親が変更された時などに使用）
      */
-    void MarkWorldDirty() { isWorldDirty_ = true; }
+    void MarkWorldDirty() { 
+        isWorldDirty_ = true; 
+        transformVersion_++;
+    }
+
+    /**
+     * @brief ローカル行列の再計算をフラグ立てする（位置・回転・スケール変更時に使用）
+     */
+    void MarkLocalDirty() {
+        isLocalDirty_ = true;
+        transformVersion_++;
+    }
+
+    /**
+     * @brief 現在のトランスフォームのバージョン番号を取得する（親が子の更新要否を判定するために使用）
+     */
+    uint64_t GetTransformVersion() const { return transformVersion_; }
+
+    /**
+     * @brief 子にとっての「親のワールド行列」を取得する（inheritScale_ を考慮）
+     */
+    Irufemi::Matrix4x4 GetParentMatrixForChild() const;
+
+    /**
+     * @brief 親のスケールを継承するかどうかを設定する。
+     * @param[in] inheritScale 継承する場合は true
+     */
+    void SetInheritScale(bool inheritScale) {
+        if (inheritScale_ != inheritScale) {
+            inheritScale_ = inheritScale;
+            MarkWorldDirty();
+        }
+    }
+
+    /**
+     * @brief 親のスケールを継承するかどうかを取得する。
+     * @return 継承する場合は true
+     */
+    bool GetInheritScale() const { return inheritScale_; }
 
     /**
      * @brief ComponentName を取得する。
@@ -137,6 +202,7 @@ private:
     Irufemi::Vector3 position_ = { 0.0f, 0.0f, 0.0f };
     Irufemi::Vector3 rotation_ = { 0.0f, 0.0f, 0.0f }; // Euler angles in radians
     Irufemi::Vector3 scale_ = { 1.0f, 1.0f, 1.0f };
+    bool inheritScale_ = true; // 親のスケールを継承するかどうか
 
     // --- World Irufemi::Transform Data (Lazy Evaluated) ---
     mutable Irufemi::Vector3 worldPosition_ = { 0.0f, 0.0f, 0.0f };
@@ -147,14 +213,14 @@ private:
     Irufemi::Matrix4x4 localMatrix_ = Irufemi::Math::MakeIdentity4x4();
     Irufemi::Matrix4x4 worldMatrix_ = Irufemi::Math::MakeIdentity4x4();
 
-    // --- Flags ---
+    // --- Flags & Versioning (Lazy Evaluation) ---
     bool isLocalDirty_ = true;
     bool isWorldDirty_ = true;
     mutable bool isWorldTransformExtracted_ = false;
 
-    // UpdateAll用のフレームキャッシュ
-    uint32_t lastCheckedFrame_ = 0;
-    uint32_t lastWorldMatrixUpdateFrame_ = 0;
-    static inline uint32_t currentFrame_ = 1;
+    // トランスフォームの状態が変化したことを追跡するためのバージョン番号
+    uint64_t transformVersion_ = 1;
+    // 前回 ComputeMatrix したときの親のバージョン番号
+    uint64_t parentTransformVersionLastComputed_ = 0;
 };
 

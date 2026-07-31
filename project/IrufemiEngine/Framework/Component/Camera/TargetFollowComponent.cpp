@@ -110,22 +110,10 @@ void TargetFollowComponent::Update() {
     newRotWorld.y += (targetTransform_->GetWorldRotation().y - newRotWorld.y) * t;
     newRotWorld.z += (targetTransform_->GetWorldRotation().z - newRotWorld.z) * t;
     
-    // 計算したワールド座標・回転からワールド行列を作成し、親の逆行列を掛けてローカルに戻す
+    // 計算したワールド座標・回転からワールド行列を作成し、一度に設定する
     Irufemi::Matrix4x4 targetWorldMat = Irufemi::Math::MakeAffineMatrix({1,1,1}, newRotWorld, newPosWorld);
-    Irufemi::Matrix4x4 finalLocalMat = targetWorldMat;
-    if (auto myParent = gameObject_->GetParent()) {
-        if (auto parentT = myParent->GetComponent<TransformComponent>()) {
-            finalLocalMat = Irufemi::Math::Multiply(targetWorldMat, Irufemi::Math::Inverse(parentT->GetWorldMatrix()));
-        }
-    }
-    
-    Irufemi::Vector3 finalLocalPos = { finalLocalMat.m[3][0], finalLocalMat.m[3][1], finalLocalMat.m[3][2] };
-    Irufemi::Vector3 finalLocalRot = Irufemi::Math::ExtractEulerFromMatrix(finalLocalMat);
-
-    myTransform->SetPosition(finalLocalPos);
-    myTransform->SetRotation(finalLocalRot);
+    myTransform->SetWorldMatrix(targetWorldMat);
 
     // 次のコンポーネント（CameraComponent等）のために強制更新
-    myTransform->MarkWorldDirty();
-    myTransform->ComputeMatrix(true);
+    myTransform->UpdateMatrixImmediate();
 }

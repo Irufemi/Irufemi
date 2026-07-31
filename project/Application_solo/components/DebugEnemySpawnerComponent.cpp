@@ -86,9 +86,8 @@ void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position) {
         }
 
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
-            transform->SetPosition(position);
-            // プレイヤー側(Z負方向)を向くように回転
-            transform->SetRotation({0.0f, 3.14159f, 0.0f});
+            transform->SetWorldPosition(position);
+            transform->SetWorldRotation({0.0f, 3.14159f, 0.0f});
         }
         
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
