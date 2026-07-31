@@ -17,7 +17,16 @@ public:
      * @brief 自身の行列を計算する（Dirtyフラグベースの遅延評価付き）
      * @param force 親が変更された等の理由による強制更新フラグ
      */
-    void ComputeMatrix(bool force = false);
+    void ComputeMatrix(bool force = false) const;
+
+    /**
+     * @brief ダーティフラグが立っている場合、行列を最新化する（Lazy Evaluation用ヘルパー）
+     */
+    inline void CheckAndComputeMatrix() const {
+        if (isLocalDirty_ || isWorldDirty_) {
+            ComputeMatrix(false);
+        }
+    }
 
     /**
      * @brief プール上の全Transformを一括更新する（DOD）
@@ -51,12 +60,18 @@ public:
      * @brief WorldMatrix を取得する。
      * @return 取得された WorldMatrix
      */
-    const Irufemi::Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
+    const Irufemi::Matrix4x4& GetWorldMatrix() const { 
+        CheckAndComputeMatrix();
+        return worldMatrix_; 
+    }
     /**
      * @brief LocalMatrix を取得する。
      * @return 取得された LocalMatrix
      */
-    const Irufemi::Matrix4x4& GetLocalMatrix() const { return localMatrix_; }
+    const Irufemi::Matrix4x4& GetLocalMatrix() const { 
+        CheckAndComputeMatrix();
+        return localMatrix_; 
+    }
 
     // ワールド情報の遅延抽出 Getter
     /**
@@ -205,8 +220,8 @@ private:
     bool inheritScale_ = true; // 親のスケールを継承するかどうか
 
     // --- Matrices ---
-    Irufemi::Matrix4x4 localMatrix_ = Irufemi::Math::MakeIdentity4x4();
-    Irufemi::Matrix4x4 worldMatrix_ = Irufemi::Math::MakeIdentity4x4();
+    mutable Irufemi::Matrix4x4 localMatrix_ = Irufemi::Math::MakeIdentity4x4();
+    mutable Irufemi::Matrix4x4 worldMatrix_ = Irufemi::Math::MakeIdentity4x4();
 
     // --- World Irufemi::Transform Data (Lazy Evaluated) ---
     mutable Irufemi::Vector3 worldPosition_ = { 0.0f, 0.0f, 0.0f };
@@ -214,13 +229,13 @@ private:
     mutable Irufemi::Vector3 worldScale_ = { 1.0f, 1.0f, 1.0f };
 
     // --- Flags & Versioning (Lazy Evaluation) ---
-    bool isLocalDirty_ = true;
-    bool isWorldDirty_ = true;
+    mutable bool isLocalDirty_ = true;
+    mutable bool isWorldDirty_ = true;
     mutable bool isWorldTransformExtracted_ = false;
 
     // トランスフォームの状態が変化したことを追跡するためのバージョン番号
-    uint64_t transformVersion_ = 1;
+    mutable uint64_t transformVersion_ = 1;
     // 前回 ComputeMatrix したときの親のバージョン番号
-    uint64_t parentTransformVersionLastComputed_ = 0;
-    GameObject* parentLastComputed_ = nullptr;
+    mutable uint64_t parentTransformVersionLastComputed_ = 0;
+    mutable GameObject* parentLastComputed_ = nullptr;
 };
