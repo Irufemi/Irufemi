@@ -23,7 +23,7 @@ void ConsolePanel::Draw() {
 
     ImGui::BeginChild("LogRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
     
-    const auto& logHistory = Log::GetLogHistory();
+    auto logHistory = Log::GetLogHistory();
     for (const auto& logEntry : logHistory) {
         if (logEntry.isError) {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));

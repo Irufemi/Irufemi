@@ -50,6 +50,8 @@ void Log::OutPutLog(std::ostream& os, const std::string& message) {
     OutputDebugStringA(message.c_str());
 
     bool isError = (&os == &std::cerr);
+    
+    std::lock_guard<std::mutex> lock(logMutex_);
     logHistory_.push_back({ message, isError });
     if (logHistory_.size() > MAX_LOG_LINES) {
         logHistory_.erase(logHistory_.begin());

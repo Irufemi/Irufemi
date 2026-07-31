@@ -5,6 +5,7 @@
 #include <string>  
 
 #include <vector>
+#include <mutex>
 
 class Log
 {
@@ -17,6 +18,7 @@ public:
 private: // メンバ変数  
     std::ofstream logStream;
     inline static std::vector<LogEntry> logHistory_; // ログの履歴バッファ
+    inline static std::mutex logMutex_; // ログ履歴保護用ミューテックス
     static const size_t MAX_LOG_LINES = 1000;    // メモリ保護のための最大行数
 
 public: // メンバ関数  
@@ -41,10 +43,16 @@ public: // メンバ関数
     /**
      * @brief 現在のログ履歴を取得します（エディタのコンソールパネル用）
      */
-    static const std::vector<LogEntry>& GetLogHistory() { return logHistory_; }
+    static std::vector<LogEntry> GetLogHistory() { 
+        std::lock_guard<std::mutex> lock(logMutex_);
+        return logHistory_; 
+    }
 
     /**
      * @brief ログ履歴をクリアします
      */
-    static void ClearLogHistory() { logHistory_.clear(); }
+    static void ClearLogHistory() { 
+        std::lock_guard<std::mutex> lock(logMutex_);
+        logHistory_.clear(); 
+    }
 };

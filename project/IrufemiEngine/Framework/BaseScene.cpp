@@ -258,9 +258,6 @@ void BaseScene::Update() {
         }
     }
 
-    // --- Irufemi::Transform の DOD一括更新 (GameObject本体の更新前に行う) ---
-    TransformComponent::UpdateAll();
-
     // --- GameObject の更新 (マルチスレッド化) ---
     std::vector<std::future<void>> updateFutures;
     for (size_t i = 0; i < gameObjects_.size(); ++i) {
@@ -276,6 +273,10 @@ void BaseScene::Update() {
         future.wait();
     }
     
+    // --- Irufemi::Transform の DOD一括更新 ---
+    // (GameObjectのUpdateによって移動した最新の位置を描画・当たり判定に反映させるため、必ずUpdateの後に呼ぶ)
+    TransformComponent::UpdateAll();
+
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
     if (isPlayMode && engine_) {
         engine_->GetCollisionManager()->CheckAllCollisions();

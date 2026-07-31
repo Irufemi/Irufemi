@@ -39,12 +39,16 @@ Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
         float scaleY = worldScale.y;
         float scaleZ = worldScale.z;
         
+        // オブジェクトの回転とスケールを考慮したワールド空間のローカルオフセット
+        Irufemi::Vector3 worldOffset = 
+            GetTransform()->GetWorldRight() * (localOffset_.x * scaleX) +
+            GetTransform()->GetWorldUp() * (localOffset_.y * scaleY) +
+            GetTransform()->GetWorldForward() * (localOffset_.z * scaleZ);
+            
         float maxXY = scaleX > scaleY ? scaleX : scaleY;
         float maxScale = maxXY > scaleZ ? maxXY : scaleZ;
         
-        sphere.center = { worldPos.x + localOffset_.x * scaleX, 
-                          worldPos.y + localOffset_.y * scaleY, 
-                          worldPos.z + localOffset_.z * scaleZ };
+        sphere.center = worldPos + worldOffset;
         sphere.radius = localRadius_ * maxScale;
     } else {
         sphere.center = localOffset_;
