@@ -110,6 +110,11 @@ public:
     void SetScale(const Irufemi::Vector3& scale);
 
     /**
+     * @brief ワールド行列の再計算を強制する（親が変更された時などに使用）
+     */
+    void MarkWorldDirty() { isWorldDirty_ = true; }
+
+    /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
@@ -148,9 +153,8 @@ private:
     mutable bool isWorldTransformExtracted_ = false;
 
     // UpdateAll用のフレームキャッシュ
-    uint32_t lastUpdateFrame_ = 0;
+    uint32_t lastCheckedFrame_ = 0;
+    uint32_t lastWorldMatrixUpdateFrame_ = 0;
     static inline uint32_t currentFrame_ = 1;
 };
 
-// ComponentPool 対応を宣言
-template<> struct IsPooledComponent<TransformComponent> : std::true_type {};

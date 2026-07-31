@@ -136,3 +136,6 @@ private:
  */
 template <typename T>
 struct IsPooledComponent : std::false_type {};
+
+class TransformComponent;
+template<> struct IsPooledComponent<TransformComponent> : std::true_type {};

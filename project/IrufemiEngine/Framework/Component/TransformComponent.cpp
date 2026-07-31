@@ -70,8 +70,8 @@ Irufemi::Vector3 TransformComponent::GetWorldForward() const {
 }
 
 void TransformComponent::ComputeMatrix(bool force) {
-    // 既に計算済みならスキップ
-    if (!force && !isLocalDirty_ && !isWorldDirty_ && lastUpdateFrame_ == currentFrame_) {
+    // 既にチェック済みで、強制更新もDirtyフラグも立っていないならスキップ
+    if (!force && !isLocalDirty_ && !isWorldDirty_ && lastCheckedFrame_ == currentFrame_) {
         return;
     }
 
@@ -83,8 +83,6 @@ void TransformComponent::ComputeMatrix(bool force) {
         isLocalDirty_ = false;
         isWorldDirty_ = true; // ローカルが変わればワールドも必ず変わる
     }
-
-    bool parentChanged = false;
     
     // 親のワールド行列を加味して自身のワールド行列を計算
     if (auto parent = gameObject_->GetParent()) {
@@ -94,25 +92,27 @@ void TransformComponent::ComputeMatrix(bool force) {
                 parentTransform->ComputeMatrix(force);
             }
             
-            // 自分か親のどちらかが更新されたならワールド行列を再計算
-            if (isWorldDirty_ || parentTransform->lastUpdateFrame_ == currentFrame_) {
+            // 自分か親のどちらかが実際にワールド行列を更新したなら、再計算する
+            if (isWorldDirty_ || parentTransform->lastWorldMatrixUpdateFrame_ == currentFrame_) {
                 worldMatrix_ = Irufemi::Math::Multiply(localMatrix_, parentTransform->GetWorldMatrix());
                 isWorldDirty_ = false;
                 isWorldTransformExtracted_ = false; // ワールド座標が変化したので抽出フラグを下ろす
-                parentChanged = true;
+                lastWorldMatrixUpdateFrame_ = currentFrame_;
             }
         } else if (isWorldDirty_) {
             worldMatrix_ = localMatrix_;
             isWorldDirty_ = false;
             isWorldTransformExtracted_ = false;
+            lastWorldMatrixUpdateFrame_ = currentFrame_;
         }
     } else if (isWorldDirty_) {
         worldMatrix_ = localMatrix_;
         isWorldDirty_ = false;
         isWorldTransformExtracted_ = false;
+        lastWorldMatrixUpdateFrame_ = currentFrame_;
     }
 
-    lastUpdateFrame_ = currentFrame_;
+    lastCheckedFrame_ = currentFrame_;
 }
 
 void TransformComponent::UpdateAll() {

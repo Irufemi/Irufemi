@@ -150,6 +150,10 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
     
     child->parent_ = shared_from_this();
     children_.push_back(child);
+
+    if (auto childTransform = child->GetComponent<TransformComponent>()) {
+        childTransform->MarkWorldDirty();
+    }
 }
 
 void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
@@ -165,12 +169,21 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
     } else {
         children_.insert(children_.begin() + index, child);
     }
+
+    if (auto childTransform = child->GetComponent<TransformComponent>()) {
+        childTransform->MarkWorldDirty();
+    }
 }
 
 void GameObject::RemoveChild(std::shared_ptr<GameObject> child) {
     auto it = std::find(children_.begin(), children_.end(), child);
     if (it != children_.end()) {
         (*it)->parent_.reset();
+        
+        if (auto childTransform = (*it)->GetComponent<TransformComponent>()) {
+            childTransform->MarkWorldDirty();
+        }
+
         children_.erase(it);
     }
 }
