@@ -51,8 +51,8 @@ void TargetFollowComponent::Update() {
     if (!myTransform) return;
 
     // プレイヤーの向き（回転角度）から進行方向をベースとしたローカル座標系を作成
-    float yaw = targetTransform_->GetRotation().y;
-    float pitch = targetTransform_->GetRotation().x;
+    float yaw = targetTransform_->GetWorldRotation().y;
+    float pitch = targetTransform_->GetWorldRotation().x;
 
     // プレイヤーを基準とした回転行列の方向成分を計算
     Irufemi::Vector3 forward = {
@@ -91,23 +91,41 @@ void TargetFollowComponent::Update() {
 
     // プレイヤー位置に、プレイヤーの向きに基づいたローカルオフセットを足す
     Irufemi::Vector3 targetCamPos = {
-        targetTransform_->GetPosition().x + right.x * offset_.x + up.x * offset_.y + forward.x * offset_.z,
-        targetTransform_->GetPosition().y + right.y * offset_.x + up.y * offset_.y + forward.y * offset_.z,
-        targetTransform_->GetPosition().z + right.z * offset_.x + up.z * offset_.y + forward.z * offset_.z
+        targetTransform_->GetWorldPosition().x + right.x * offset_.x + up.x * offset_.y + forward.x * offset_.z,
+        targetTransform_->GetWorldPosition().y + right.y * offset_.x + up.y * offset_.y + forward.y * offset_.z,
+        targetTransform_->GetWorldPosition().z + right.z * offset_.x + up.z * offset_.y + forward.z * offset_.z
     };
 
     // 滑らかな追従 (線形補間/Lerp) を行う (フレームレート非依存)
     float t = 1.0f - std::pow(followDelay_, deltaTime); 
-    Irufemi::Vector3 newPos = myTransform->GetPosition();
-    newPos.x += (targetCamPos.x - newPos.x) * t;
-    newPos.y += (targetCamPos.y - newPos.y) * t;
-    newPos.z += (targetCamPos.z - newPos.z) * t;
-    myTransform->SetPosition(newPos);
-
+    Irufemi::Vector3 currentPosWorld = myTransform->GetWorldPosition();
+    Irufemi::Vector3 newPosWorld = currentPosWorld;
+    newPosWorld.x += (targetCamPos.x - newPosWorld.x) * t;
+    newPosWorld.y += (targetCamPos.y - newPosWorld.y) * t;
+    newPosWorld.z += (targetCamPos.z - newPosWorld.z) * t;
     // カメラの向き（角度）もプレイヤーの向きに追従させる（Lerpで滑らかに旋回）
-    Irufemi::Vector3 newRot = myTransform->GetRotation();
-    newRot.x += (targetTransform_->GetRotation().x - newRot.x) * t;
-    newRot.y += (targetTransform_->GetRotation().y - newRot.y) * t;
-    newRot.z += (targetTransform_->GetRotation().z - newRot.z) * t;
-    myTransform->SetRotation(newRot);
+    Irufemi::Vector3 currentRotWorld = myTransform->GetWorldRotation();
+    Irufemi::Vector3 newRotWorld = currentRotWorld;
+    newRotWorld.x += (targetTransform_->GetWorldRotation().x - newRotWorld.x) * t;
+    newRotWorld.y += (targetTransform_->GetWorldRotation().y - newRotWorld.y) * t;
+    newRotWorld.z += (targetTransform_->GetWorldRotation().z - newRotWorld.z) * t;
+    
+    // 計算したワールド座標・回転からワールド行列を作成し、親の逆行列を掛けてローカルに戻す
+    Irufemi::Matrix4x4 targetWorldMat = Irufemi::Math::MakeAffineMatrix({1,1,1}, newRotWorld, newPosWorld);
+    Irufemi::Matrix4x4 finalLocalMat = targetWorldMat;
+    if (auto myParent = gameObject_->GetParent()) {
+        if (auto parentT = myParent->GetComponent<TransformComponent>()) {
+            finalLocalMat = Irufemi::Math::Multiply(targetWorldMat, Irufemi::Math::Inverse(parentT->GetWorldMatrix()));
+        }
+    }
+    
+    Irufemi::Vector3 finalLocalPos = { finalLocalMat.m[3][0], finalLocalMat.m[3][1], finalLocalMat.m[3][2] };
+    Irufemi::Vector3 finalLocalRot = Irufemi::Math::ExtractEulerFromMatrix(finalLocalMat);
+
+    myTransform->SetPosition(finalLocalPos);
+    myTransform->SetRotation(finalLocalRot);
+
+    // 次のコンポーネント（CameraComponent等）のために強制更新
+    myTransform->MarkWorldDirty();
+    myTransform->ComputeMatrix(true);
 }

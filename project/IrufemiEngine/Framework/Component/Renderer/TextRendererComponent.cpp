@@ -48,9 +48,9 @@ void TextRendererComponent::Update() {
     }
 
     // Transformの変更をTextオブジェクトに反映
-    textObj_->SetPosition(GetTransform()->GetPosition().x, GetTransform()->GetPosition().y, GetTransform()->GetPosition().z);
-    textObj_->SetRotation(GetTransform()->GetRotation().z); // 2DなのでZ軸回転
-    textObj_->SetScale(GetTransform()->GetScale().x, GetTransform()->GetScale().y);
+    textObj_->SetPosition(GetTransform()->GetWorldPosition().x, GetTransform()->GetWorldPosition().y, GetTransform()->GetWorldPosition().z);
+    textObj_->SetRotation(GetTransform()->GetWorldRotation().z); // 2DなのでZ軸回転
+    textObj_->SetScale(GetTransform()->GetWorldScale().x, GetTransform()->GetWorldScale().y);
 
     textObj_->Update();
 }

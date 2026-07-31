@@ -46,14 +46,25 @@ void BoneAttachmentComponent::Update() {
                     boneWorldMat = localMat * targetTransform->GetWorldMatrix();
                 }
 
-                // 自身のTransformComponentに適用
+                // 自身のTransformComponentに適用するため、自身の親の逆行列を掛けてローカル行列に変換する
+                Irufemi::Matrix4x4 finalLocalMat = boneWorldMat;
+                if (auto myParent = gameObject->GetParent()) {
+                    if (auto parentT = myParent->GetComponent<TransformComponent>()) {
+                        finalLocalMat = Irufemi::Math::Multiply(boneWorldMat, Irufemi::Math::Inverse(parentT->GetWorldMatrix()));
+                    }
+                }
+
                 // 位置と回転を同期
-                Irufemi::Vector3 boneWorldPos = { boneWorldMat.m[3][0], boneWorldMat.m[3][1], boneWorldMat.m[3][2] };
-                transform->SetPosition(boneWorldPos);
+                Irufemi::Vector3 boneLocalPos = { finalLocalMat.m[3][0], finalLocalMat.m[3][1], finalLocalMat.m[3][2] };
+                transform->SetPosition(boneLocalPos);
                 
                 // 行列から回転成分を抽出してEuler角に変換
-                Irufemi::Vector3 rot = Irufemi::Math::ExtractEulerFromMatrix(boneWorldMat);
+                Irufemi::Vector3 rot = Irufemi::Math::ExtractEulerFromMatrix(finalLocalMat);
                 transform->SetRotation(rot);
+
+                // 更新を即座に反映させる（次のコンポーネントが描画などに使うため）
+                transform->MarkWorldDirty();
+                transform->ComputeMatrix(true);
             }
         }
     }
