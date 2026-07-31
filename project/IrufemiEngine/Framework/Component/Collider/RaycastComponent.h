@@ -67,7 +67,6 @@ protected:
     std::function<void(const RaycastHit&)> onHit_;
 
 private:
-    TransformComponent* transform_ = nullptr;
     RaycastHit hitInfo_;
     Irufemi::Ray currentRay_;
 };

@@ -68,7 +68,5 @@ private:
     bool isHovered_ = false;
     bool isClicked_ = false; // クリックされた瞬間
     bool isPressedOnButton_ = false; // ボタン上で押下中かどうか
-
-    TransformComponent* transform_ = nullptr;
     SpriteRendererComponent* sprite_ = nullptr;
 };

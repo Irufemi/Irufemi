@@ -26,7 +26,6 @@ void ModelBatchRendererComponent::Initialize() {
     batch_->SetUseGPUCulling(useGPUCulling_);
 
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
@@ -49,9 +48,9 @@ IRenderable* ModelBatchRendererComponent::GetRenderable() {
 
 Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {
     Irufemi::Sphere result = { Irufemi::Vector3{0,0,0}, 1.0f }; // default
-    if (transform_) {
-        result.center = transform_->GetWorldPosition();
-        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
+    if (GetTransform()) {
+        result.center = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = maxScale;
     }
@@ -59,15 +58,15 @@ Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {
 }
 
 bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!batch_ || !transform_) return false;
+    if (!batch_ || !GetTransform()) return false;
 
     // バッチ全体のAABBや個々のインスタンスとのRaycastは重いため、
     // エディタ等での簡易選択用として親のTransformにのみ当たり判定を付ける
     Irufemi::Vector3 localHalfSize = {0.5f, 0.5f, 0.5f};
 
     Irufemi::OBB obb;
-    const Irufemi::Matrix4x4& wmat = transform_->GetWorldMatrix();
-    obb.center = transform_->GetWorldPosition();
+    const Irufemi::Matrix4x4& wmat = GetTransform()->GetWorldMatrix();
+    obb.center = GetTransform()->GetWorldPosition();
 
     Irufemi::Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
     Irufemi::Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };

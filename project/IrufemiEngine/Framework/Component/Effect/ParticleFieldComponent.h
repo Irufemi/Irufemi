@@ -81,7 +81,6 @@ public:
     ParticleField& GetFieldData() { return fieldData_; }
 
 private:
-    TransformComponent* transform_ = nullptr;
     GPUParticleManager::FieldHandle fieldHandle_;
     
     ParticleField fieldData_;

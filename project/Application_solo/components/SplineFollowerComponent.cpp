@@ -56,7 +56,7 @@ void SplineFollowerComponent::Update() {
         Irufemi::Vector3 basePos = cachedPath_->GetPointAtDistance(currentDistance_);
         Irufemi::Vector3 tangent = cachedPath_->GetTangentAtDistance(currentDistance_);
 
-        auto transform = gameObject_->GetComponent<TransformComponent>();
+        auto transform = GetTransform();
         if (transform) {
             transform->SetPosition(basePos);
             

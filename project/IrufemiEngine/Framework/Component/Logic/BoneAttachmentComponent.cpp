@@ -18,7 +18,7 @@ void BoneAttachmentComponent::Update() {
     auto gameObject = GetGameObject();
     if (!gameObject) return;
     
-    auto transform = gameObject->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     auto scene = gameObject->GetScene();

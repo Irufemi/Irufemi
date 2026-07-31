@@ -157,8 +157,6 @@ public:
 
 private:
     std::unique_ptr<Text> textObj_;
-    TransformComponent* transform_ = nullptr;
-    
     std::wstring text_ = L"Text";
     std::string textU8_ = "Text"; // For Reflection
     std::string fontId_ = "MainFont";

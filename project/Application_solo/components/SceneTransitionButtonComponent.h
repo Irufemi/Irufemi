@@ -38,6 +38,5 @@ private:
     Irufemi::Vector3 originalScale_ = {1.0f, 1.0f, 1.0f};
 
     ButtonComponent* button_ = nullptr;
-    TransformComponent* transform_ = nullptr;
     SpriteRendererComponent* sprite_ = nullptr;
 };

@@ -86,5 +86,4 @@ public:
 
 private:
     std::unique_ptr<ParticleObject> particleObj_;
-    TransformComponent* transform_ = nullptr;
 };

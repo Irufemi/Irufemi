@@ -71,8 +71,6 @@ public:
 
 private:
     std::unique_ptr<Sprite> sprite_;
-    TransformComponent* transform_ = nullptr;
-    
     std::string texturePath_ = "";
     bool isTopMost_ = false;
     bool isFlipX_ = false;

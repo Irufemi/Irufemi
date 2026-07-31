@@ -27,7 +27,7 @@ void BossStateIdle::Update(BossComponent* boss) {
             if (boss->beamTimer_ >= boss->beamInterval_) {
                 boss->beamTimer_ = 0.0f;
                 
-                if (auto myTrans = boss->gameObject_->GetComponent<TransformComponent>()) {
+                if (auto myTrans = boss->GetTransform()) {
                     Irufemi::Vector3 startPos = myTrans->GetWorldPosition();
                     
                     Irufemi::Matrix4x4 worldMat = myTrans->GetWorldMatrix();

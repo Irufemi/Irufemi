@@ -102,8 +102,6 @@ public:
     float GetLocalRadius() const { return localRadius_; }
 
 private:
-    TransformComponent* transform_ = nullptr;
-
     Irufemi::Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
     float localRadius_   = 1.0f;
 };

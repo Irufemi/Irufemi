@@ -123,7 +123,6 @@ private:
 
 private:
     std::unique_ptr<Primitive3DObject> primitive_;
-    TransformComponent* transform_ = nullptr;
     int currentTypeIndex_ = 2; // デフォルトは Cube (2)
 
     // --- メッシュ生成用パラメータ ---

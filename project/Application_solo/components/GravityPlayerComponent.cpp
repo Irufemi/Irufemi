@@ -83,7 +83,7 @@ void GravityPlayerComponent::HandlePullInput() {
         auto scene = gameObject_->GetScene();
         if (!scene) return;
 
-        auto transform = gameObject_->GetComponent<TransformComponent>();
+        auto transform = GetTransform();
         if (!transform) return;
 
         // 1. ロックオン済み、またはホバー中のターゲットを取得

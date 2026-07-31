@@ -47,7 +47,7 @@ void TargetFollowComponent::Update() {
 
     if (!targetTransform_) return;
 
-    auto myTransform = gameObject_->GetComponent<TransformComponent>();
+    auto myTransform = GetTransform();
     if (!myTransform) return;
 
     // プレイヤーの向き（回転角度）から進行方向をベースとしたローカル座標系を作成

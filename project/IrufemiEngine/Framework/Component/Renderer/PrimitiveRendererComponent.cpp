@@ -21,15 +21,14 @@ void PrimitiveRendererComponent::Initialize() {
     }
 
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
 void PrimitiveRendererComponent::Update() {
-    if (transform_ && primitive_) {
-        primitive_->SetPosition(transform_->GetWorldPosition());
-        primitive_->SetRotate(transform_->GetWorldRotation());
-        primitive_->SetScale(transform_->GetWorldScale());
+    if (GetTransform() && primitive_) {
+        primitive_->SetPosition(GetTransform()->GetWorldPosition());
+        primitive_->SetRotate(GetTransform()->GetWorldRotation());
+        primitive_->SetScale(GetTransform()->GetWorldScale());
     }
 
     if (primitive_) {
@@ -232,8 +231,8 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
 
 Irufemi::Sphere PrimitiveRendererComponent::GetWorldSphere() const {
     Irufemi::Sphere result = { Irufemi::Vector3{0,0,0}, 1.0f }; // default
-    if (transform_) {
-        result.center = transform_->GetWorldPosition();
+    if (GetTransform()) {
+        result.center = GetTransform()->GetWorldPosition();
         
         // 形状に応じて大まかな半径を決定
         float baseRadius = radius_;
@@ -241,7 +240,7 @@ Irufemi::Sphere PrimitiveRendererComponent::GetWorldSphere() const {
             baseRadius = 1.0f; // Cubeは1x1x1なので対角線の半分は約0.866だが余裕を持つ
         }
         
-        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = baseRadius * maxScale * 2.0f; // 安全マージン
     }
@@ -249,15 +248,15 @@ Irufemi::Sphere PrimitiveRendererComponent::GetWorldSphere() const {
 }
 
 bool PrimitiveRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!primitive_ || !transform_) return false;
+    if (!primitive_ || !GetTransform()) return false;
 
     // プリミティブ形状の基本AABB（一辺1のキューブ）
     Irufemi::Vector3 localHalfSize = { 0.5f, 0.5f, 0.5f };
 
     Irufemi::OBB obb;
-    obb.center = transform_->GetWorldPosition();
+    obb.center = GetTransform()->GetWorldPosition();
 
-    const Irufemi::Matrix4x4& wmat = transform_->GetWorldMatrix();
+    const Irufemi::Matrix4x4& wmat = GetTransform()->GetWorldMatrix();
     Irufemi::Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
     Irufemi::Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
     Irufemi::Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };

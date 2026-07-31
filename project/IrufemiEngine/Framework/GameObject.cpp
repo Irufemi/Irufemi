@@ -19,9 +19,15 @@
 #include "Engine/Core/Math/Random/Random.h"
 
 GameObject::GameObject() : instanceId_(Irufemi::Random::GeneratorUint64(1, ULLONG_MAX)) {
+    AddComponent<TransformComponent>();
 }
 
 GameObject::GameObject(const std::string& name) : instanceId_(Irufemi::Random::GeneratorUint64(1, ULLONG_MAX)), name_(name) {
+    AddComponent<TransformComponent>();
+}
+
+TransformComponent* GameObject::GetTransform() const {
+    return GetComponent<TransformComponent>();
 }
 
 
@@ -355,14 +361,33 @@ void GameObject::Deserialize(const nlohmann::json& j) {
         std::vector<std::shared_ptr<Component>> loadedComps;
         for (const auto& cj : baseJ["components"]) {
             std::string type = cj["type"];
-            std::shared_ptr<Component> newComp = ComponentFactory::Create(type);
+            std::shared_ptr<Component> newComp;
+            bool isExisting = false;
+
+            if (type == "TransformComponent") {
+                // コンストラクタで既にアタッチされているTransformを再利用する
+                if (auto existingTransform = GetComponent<TransformComponent>()) {
+                    for (auto& comp : components_) {
+                        if (comp.get() == existingTransform) {
+                            newComp = comp;
+                            isExisting = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!newComp) {
+                newComp = ComponentFactory::Create(type);
+            }
             
             if (newComp) {
-                // AddComponentと同等の登録処理をInitializeの前に行う
-                newComp->SetGameObject(this);
-                components_.push_back(newComp);
-                componentMap_[typeid(*newComp)].push_back(newComp.get());
-                newComp->OnRegisterProperties();
+                if (!isExisting) {
+                    // AddComponentと同等の登録処理をInitializeの前に行う
+                    newComp->SetGameObject(this);
+                    components_.push_back(newComp);
+                    componentMap_[typeid(*newComp)].push_back(newComp.get());
+                    newComp->OnRegisterProperties();
+                }
                 
                 // ベースデータのプロパティを復元
                 if (cj.contains("data")) {
@@ -404,12 +429,31 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                 
                 // ベースデータに存在しない場合は新規追加
                 if (!existsInBase) {
-                    std::shared_ptr<Component> newComp = ComponentFactory::Create(localType);
+                    std::shared_ptr<Component> newComp;
+                    bool isExisting = false;
+                    
+                    if (localType == "TransformComponent") {
+                        if (auto existingTransform = GetComponent<TransformComponent>()) {
+                            for (auto& comp : components_) {
+                                if (comp.get() == existingTransform) {
+                                    newComp = comp;
+                                    isExisting = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!newComp) {
+                        newComp = ComponentFactory::Create(localType);
+                    }
+                    
                     if (newComp) {
-                        newComp->SetGameObject(this);
-                        components_.push_back(newComp);
-                        componentMap_[typeid(*newComp)].push_back(newComp.get());
-                        newComp->OnRegisterProperties();
+                        if (!isExisting) {
+                            newComp->SetGameObject(this);
+                            components_.push_back(newComp);
+                            componentMap_[typeid(*newComp)].push_back(newComp.get());
+                            newComp->OnRegisterProperties();
+                        }
                         
                         if (localCj.contains("data")) {
                             newComp->Deserialize(localCj["data"]);

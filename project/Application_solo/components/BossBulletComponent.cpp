@@ -18,7 +18,7 @@ void BossBulletComponent::Shoot(BossBulletManagerComponent* manager, const Irufe
     lifeTimer_ = lifeTime;
     isActiveBullet_ = true;
 
-    auto transform = GetGameObject()->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (transform) {
         transform->SetPosition(startPos);
         // velocityの方向を向かせる処理（必要であれば）
@@ -35,7 +35,7 @@ void BossBulletComponent::Update() {
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
 
     // 移動処理
-    auto transform = GetGameObject()->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (transform) {
         Irufemi::Vector3 pos = transform->GetWorldPosition();
         pos += velocity_ * deltaTime;

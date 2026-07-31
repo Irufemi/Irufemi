@@ -13,15 +13,13 @@ OBBColliderComponent::~OBBColliderComponent() {
 
 void OBBColliderComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
     // 初期化時にCollisionManagerに自身を登録する
     if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void OBBColliderComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 }
 
@@ -32,13 +30,13 @@ void OBBColliderComponent::DrawDebug() {
 
 Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
     Irufemi::OBB obb;
-    if (transform_) {
-        Irufemi::Vector3 worldPos = transform_->GetWorldPosition();
-        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
+    if (GetTransform()) {
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
 
-        obb.orientations[0] = transform_->GetWorldRight();
-        obb.orientations[1] = transform_->GetWorldUp();
-        obb.orientations[2] = transform_->GetWorldForward();
+        obb.orientations[0] = GetTransform()->GetWorldRight();
+        obb.orientations[1] = GetTransform()->GetWorldUp();
+        obb.orientations[2] = GetTransform()->GetWorldForward();
         
         // Offsetも回転・スケールを考慮
         obb.center = worldPos 

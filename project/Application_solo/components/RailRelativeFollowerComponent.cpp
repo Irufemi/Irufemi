@@ -104,7 +104,7 @@ void RailRelativeFollowerComponent::Update() {
     finalPos = Irufemi::Math::Add(finalPos, Irufemi::Math::Multiply(localOffset_.y, up));
     finalPos = Irufemi::Math::Add(finalPos, Irufemi::Math::Multiply(localOffset_.z, forward));
 
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (transform) {
         transform->SetPosition(finalPos);
         transform->SetRotation(rotation);

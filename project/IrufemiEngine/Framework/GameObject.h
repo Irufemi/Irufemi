@@ -134,13 +134,19 @@ public:
      * @brief 指定した型のコンポーネントを取得する。
      * @return 見つかった場合はそのポインタ、無ければnullptr
      */
-    T* GetComponent() {
+    T* GetComponent() const {
         auto it = componentMap_.find(typeid(T));
         if (it != componentMap_.end() && !it->second.empty()) {
             return static_cast<T*>(it->second.front());
         }
         return nullptr;
     }
+
+    /**
+     * @brief 自身のアタッチされている TransformComponent を取得するショートカット
+     * @return TransformComponent* (GameObjectは必ずTransformを持つため、基本的にはnullptrにならない)
+     */
+    class TransformComponent* GetTransform() const;
 
     /**
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントを1つ探して取得する

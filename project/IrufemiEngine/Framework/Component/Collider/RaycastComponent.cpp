@@ -6,19 +6,17 @@
 
 void RaycastComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
 void RaycastComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 
-    if (transform_) {
+    if (GetTransform()) {
         // ワールド空間でのレイの起点と方向を計算
-        Irufemi::Vector3 worldPos = transform_->GetWorldPosition();
-        Irufemi::Matrix4x4 worldMat = transform_->GetWorldMatrix();
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Matrix4x4 worldMat = GetTransform()->GetWorldMatrix();
         
         // オフセットの適用
         Irufemi::Vector3 worldOffset = Irufemi::Math::TransformNormal(localOffset_, worldMat);

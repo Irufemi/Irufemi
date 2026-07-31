@@ -543,7 +543,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     auto newChild = std::make_shared<GameObject>();
                     newChild->SetName("RailPoint_" + std::to_string(go->GetChildren().size() + 1));
                     newChild->SetIsSerializable(true);
-                    newChild->AddComponent<TransformComponent>();
+                    newChild->GetTransform();
                     newChild->AddComponent<SplineNodeComponent>();
                     go->AddChild(newChild);
                     
@@ -583,7 +583,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             auto newChild = std::make_shared<GameObject>();
                             newChild->SetName("RailPoint_" + std::to_string(idx++));
                             newChild->SetIsSerializable(true);
-                            auto transform = newChild->AddComponent<TransformComponent>();
+                            auto transform = newChild->GetTransform();
                             newChild->AddComponent<SplineNodeComponent>();
                             transform->SetPosition(wp);
                             newChild->SetScene(go->GetScene());

@@ -38,7 +38,7 @@ void CameraComponent::Initialize() {
 void CameraComponent::Update() {
     if (!gameObject_ || !camera_) return;
 
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     // GameObjectのTransformとCameraの座標・角度を同期

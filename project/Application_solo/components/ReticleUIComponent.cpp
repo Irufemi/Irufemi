@@ -14,7 +14,7 @@ void ReticleUIComponent::Initialize() {
 void ReticleUIComponent::Update() {
     if (!gameObject_) return;
 
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     // マウスカーソルの座標を取得

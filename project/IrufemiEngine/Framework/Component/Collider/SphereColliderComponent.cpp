@@ -14,14 +14,12 @@ SphereColliderComponent::~SphereColliderComponent() {
 
 void SphereColliderComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
     if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void SphereColliderComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 }
 
@@ -32,9 +30,9 @@ void SphereColliderComponent::DrawDebug() {
 
 Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
     Irufemi::Sphere sphere;
-    if (transform_) {
-        Irufemi::Vector3 worldPos = transform_->GetWorldPosition();
-        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
+    if (GetTransform()) {
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         
         // スケールの最大成分を半径に掛ける
         float scaleX = worldScale.x;

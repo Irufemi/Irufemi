@@ -53,7 +53,7 @@ void DebrisManagerComponent::Initialize() {
 
     auto debrisFactory = [this]() -> std::shared_ptr<GameObject> {
         auto obj = std::make_shared<GameObject>("Debris");
-        auto transform = obj->AddComponent<TransformComponent>();
+        auto transform = obj->GetTransform();
         transform->SetScale(debrisBaseScale_); 
         
         obj->AddComponent<DebrisComponent>();
@@ -65,7 +65,7 @@ void DebrisManagerComponent::Initialize() {
         
         // --- Aura (EnergyCore) ---
         auto aura = std::make_shared<GameObject>("DebrisAura");
-        auto auraTransform = aura->AddComponent<TransformComponent>();
+        auto auraTransform = aura->GetTransform();
         auraTransform->SetScale(auraScale_);
         
         auto auraModel = aura->AddComponent<PrimitiveRendererComponent>();

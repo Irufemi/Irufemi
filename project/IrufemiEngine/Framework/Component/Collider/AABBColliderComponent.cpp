@@ -12,15 +12,13 @@ AABBColliderComponent::~AABBColliderComponent() {
 
 void AABBColliderComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
     // 初期化時にCollisionManagerに自身を登録する
     if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void AABBColliderComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 }
 
@@ -31,9 +29,9 @@ void AABBColliderComponent::DrawDebug() {
 
 Irufemi::AABB AABBColliderComponent::GetWorldAABB() const {
     Irufemi::AABB aabb;
-    if (transform_) {
-        Irufemi::Vector3 worldPos = transform_->GetWorldPosition();
-        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
+    if (GetTransform()) {
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         
         Irufemi::Vector3 center = { worldPos.x + localOffset_.x * worldScale.x, 
                            worldPos.y + localOffset_.y * worldScale.y, 

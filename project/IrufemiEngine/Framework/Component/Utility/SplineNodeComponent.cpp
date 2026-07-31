@@ -15,7 +15,7 @@ void SplineNodeComponent::OnRegisterProperties() {
 void SplineNodeComponent::Draw() {
     if (!drawDebug_ || !gameObject_) return;
     
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     auto scene = gameObject_->GetScene();
@@ -31,7 +31,7 @@ void SplineNodeComponent::Draw() {
 bool SplineNodeComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
     if (!gameObject_) return false;
     
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return false;
 
     Irufemi::Vector3 center = transform->GetWorldPosition();

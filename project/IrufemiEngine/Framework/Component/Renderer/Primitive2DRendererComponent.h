@@ -154,8 +154,6 @@ public:
 
 private:
     std::unique_ptr<Primitive2DObject> primitive_;
-    TransformComponent* transform_ = nullptr;
-    
     int currentTypeIndex_ = 0; // デフォルトは Rect
     std::string texturePath_ = "";
     bool isTopMost_ = false;

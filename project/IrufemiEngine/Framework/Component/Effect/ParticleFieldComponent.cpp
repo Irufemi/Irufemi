@@ -19,16 +19,14 @@ ParticleFieldComponent::~ParticleFieldComponent() {
 }
 
 void ParticleFieldComponent::Initialize() {
-    transform_ = GetGameObject()->GetComponent<TransformComponent>();
-    
     if (GetGameObject() && GetGameObject()->GetScene() && GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
         fieldHandle_ = GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()->RegisterField();
     }
 }
 
 void ParticleFieldComponent::Update() {
-    if (transform_) {
-        fieldData_.position = transform_->GetWorldPosition();
+    if (GetTransform()) {
+        fieldData_.position = GetTransform()->GetWorldPosition();
     }
     
     if (fieldHandle_.IsValid() && GetGameObject() && GetGameObject()->GetScene() && GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {

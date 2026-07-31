@@ -338,6 +338,12 @@ public:
      */
     GameObject* GetGameObject() const { return gameObject_; }
 
+    /**
+     * @brief 所属するGameObjectのアタッチされた TransformComponent を取得するショートカット
+     * @return TransformComponent* 
+     */
+    class TransformComponent* GetTransform() const;
+
 protected:
     GameObject* gameObject_ = nullptr; ///< 親GameObjectへのポインタ
     std::vector<ComponentProperty> properties_; ///< 自動シリアライズ・UI化用のプロパティリスト

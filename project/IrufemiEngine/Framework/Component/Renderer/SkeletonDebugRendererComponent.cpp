@@ -34,7 +34,7 @@ void SkeletonDebugRendererComponent::Update() {
     auto skinnedMesh = GetGameObject()->GetComponent<SkinnedMeshRendererComponent>();
     if (!skinnedMesh || !skinnedMesh->GetRawObject()) return;
 
-    auto transform = GetGameObject()->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     auto rawObj = skinnedMesh->GetRawObject();

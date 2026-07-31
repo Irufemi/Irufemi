@@ -21,16 +21,15 @@ void ButtonComponent::OnRegisterProperties() {
 
 void ButtonComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
         sprite_ = gameObject_->GetComponent<SpriteRendererComponent>();
     }
 }
 
 bool ButtonComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
-    if (!transform_ || !sprite_) return false;
+    if (!GetTransform() || !sprite_) return false;
     
-    Irufemi::Vector3 pos = transform_->GetWorldPosition();
-    Irufemi::Vector3 scale = transform_->GetWorldScale();
+    Irufemi::Vector3 pos = GetTransform()->GetWorldPosition();
+    Irufemi::Vector3 scale = GetTransform()->GetWorldScale();
     
     auto* s = sprite_->GetSprite();
     if (!s) return false;

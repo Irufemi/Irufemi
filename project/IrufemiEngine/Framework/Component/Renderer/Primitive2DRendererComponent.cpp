@@ -24,21 +24,20 @@ void Primitive2DRendererComponent::Initialize() {
     }
 
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
 void Primitive2DRendererComponent::Update() {
-    if (transform_ && primitive_) {
+    if (GetTransform() && primitive_) {
         // Primitive2DObjectは主に画面空間での描画を想定しているため、
         // Transformのx, yをポジションとし、zをソート順等の奥行きとして渡す
-        primitive_->SetPosition(transform_->GetWorldPosition());
+        primitive_->SetPosition(GetTransform()->GetWorldPosition());
         
         // 2DなのでZ軸回転のみサポート
-        primitive_->SetRotationZ(transform_->GetWorldRotation().z);
+        primitive_->SetRotationZ(GetTransform()->GetWorldRotation().z);
         
         // TransformのScaleは、コンポーネントが保持するベースサイズ(size_)に対する乗数として適用
-        Irufemi::Vector2 finalSize = { size_.x * transform_->GetWorldScale().x, size_.y * transform_->GetWorldScale().y };
+        Irufemi::Vector2 finalSize = { size_.x * GetTransform()->GetWorldScale().x, size_.y * GetTransform()->GetWorldScale().y };
         primitive_->SetSize(finalSize);
     }
 
@@ -84,8 +83,8 @@ void Primitive2DRendererComponent::SetPivot(const Irufemi::Vector2& pivot) {
 void Primitive2DRendererComponent::SetSize(const Irufemi::Vector2& size) {
     size_ = size;
     // Updateで最終的なサイズが再計算されるが、初期値として直接セットしておく
-    if (primitive_ && transform_) {
-        Irufemi::Vector2 finalSize = { size_.x * transform_->GetWorldScale().x, size_.y * transform_->GetWorldScale().y };
+    if (primitive_ && GetTransform()) {
+        Irufemi::Vector2 finalSize = { size_.x * GetTransform()->GetWorldScale().x, size_.y * GetTransform()->GetWorldScale().y };
         primitive_->SetSize(finalSize);
     } else if (primitive_) {
         primitive_->SetSize(size_);

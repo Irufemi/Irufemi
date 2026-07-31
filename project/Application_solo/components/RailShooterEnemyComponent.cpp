@@ -50,7 +50,7 @@ void RailShooterEnemyComponent::Update() {
         if (deltaTime <= 0.0f) {
             return;
         } 
-        if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
+        if (auto transform = GetTransform()) {
             // 前方(Z軸正方向など)に進む
             // Transformの rotation_ を元に向きベクトルを計算して足す
             float yaw = transform->GetRotation().y;

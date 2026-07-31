@@ -18,7 +18,7 @@ void CG4PlayerComponent::Update() {
     auto gameObject = GetGameObject();
     if (!gameObject) return;
 
-    auto transform = gameObject->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     auto animator = gameObject->GetComponent<AnimatorComponent>();
     if (!transform) return;
 

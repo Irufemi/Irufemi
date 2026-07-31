@@ -20,7 +20,7 @@ void DebugEnemySpawnerComponent::Start() {
         auto enemy = std::make_shared<GameObject>("DebugEnemy");
         // scene->AddGameObject(enemy);
         
-        auto transform = enemy->AddComponent<TransformComponent>();
+        auto transform = enemy->GetTransform();
         transform->SetScale({1.2f, 1.2f, 1.2f});
 
         enemy->AddComponent<PrimitiveRendererComponent>();

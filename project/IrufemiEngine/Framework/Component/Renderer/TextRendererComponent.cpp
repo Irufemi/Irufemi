@@ -18,15 +18,12 @@ void TextRendererComponent::Initialize() {
     textObj_->SetColor(color_);
     textObj_->SetTopMost(isTopMost_);
     textObj_->SetAlignment(alignment_);
-
-    transform_ = gameObject_->GetComponent<TransformComponent>();
-    
     // ロード画面中に生成を終わらせるため、初期化時に強制アップデート（非同期タスク待ち・頂点生成）
     textObj_->Update();
 }
 
 void TextRendererComponent::Update() {
-    if (!transform_ || !textObj_) return;
+    if (!GetTransform() || !textObj_) return;
 
     // Reflection / Deserialize sync
     std::wstring newText = ConvertString(textU8_);
@@ -51,9 +48,9 @@ void TextRendererComponent::Update() {
     }
 
     // Transformの変更をTextオブジェクトに反映
-    textObj_->SetPosition(transform_->GetPosition().x, transform_->GetPosition().y, transform_->GetPosition().z);
-    textObj_->SetRotation(transform_->GetRotation().z); // 2DなのでZ軸回転
-    textObj_->SetScale(transform_->GetScale().x, transform_->GetScale().y);
+    textObj_->SetPosition(GetTransform()->GetPosition().x, GetTransform()->GetPosition().y, GetTransform()->GetPosition().z);
+    textObj_->SetRotation(GetTransform()->GetRotation().z); // 2DなのでZ軸回転
+    textObj_->SetScale(GetTransform()->GetScale().x, GetTransform()->GetScale().y);
 
     textObj_->Update();
 }
@@ -64,7 +61,7 @@ void TextRendererComponent::Draw() {
 
 bool TextRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
     if (!gameObject_) return false;
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return false;
     
     // 簡易的にBoundingSphereで判定

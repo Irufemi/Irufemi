@@ -24,7 +24,7 @@ void RailShooterPlayerComponent::Update() {
         return;
     }
 
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     // --- キー入力による上下左右の回避運動 ---

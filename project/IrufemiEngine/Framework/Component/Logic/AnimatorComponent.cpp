@@ -50,7 +50,7 @@ void AnimatorComponent::Update() {
             
             // ルートモーションをGameObjectのTransformに適用する
             if (applyRootMotion_ && GetGameObject()) {
-                auto transform = GetGameObject()->GetComponent<TransformComponent>();
+                auto transform = GetTransform();
                 if (transform) {
                     Irufemi::Vector3 deltaTrans = animator_->GetDeltaRootTranslation();
                     Irufemi::Quaternion deltaRot = animator_->GetDeltaRootRotation();

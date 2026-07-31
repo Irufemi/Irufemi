@@ -31,7 +31,7 @@ void SkinnedMeshRendererComponent::Update() {
         LoadModel(modelFilename_);
     }
 
-    if (auto transform = GetGameObject()->GetComponent<TransformComponent>()) {
+    if (auto transform = GetTransform()) {
         animatedMesh_->SetTranslate(transform->GetWorldPosition());
         animatedMesh_->SetRotate(transform->GetWorldRotation());
         animatedMesh_->SetScale(transform->GetWorldScale());
@@ -54,7 +54,7 @@ bool SkinnedMeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDi
     auto cpuModel = animatedMesh_->GetCpuModel();
     if (!cpuModel) return false;
     
-    auto transform = GetGameObject()->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return false;
 
     // ローカルAABBから中心とサイズを取得

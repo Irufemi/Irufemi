@@ -54,7 +54,7 @@ void DebrisComponent::OnEnable() {
     targetObject_.reset();
     idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
     
-    if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
+    if (auto transform = GetTransform()) {
         baseIdleY_ = transform->GetPosition().y;
     }
 }
@@ -113,7 +113,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
         if (auto camera = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera()) {
             camera->Shake(GetCameraShakeIntensity(), GetCameraShakeDurationFrames());
         }
-        if (auto t = gameObject_->GetComponent<TransformComponent>()) {
+        if (auto t = GetTransform()) {
             if (auto effectManager = EffectManagerComponent::GetInstance()) {
                 effectManager->PlayEffect("Hit", t->GetWorldPosition());
             }
@@ -211,7 +211,7 @@ void DebrisComponent::SetState(DebrisState newState) {
     }
 
     if (state_ == DebrisState::Thrown && gameObject_) {
-        if (auto transform = gameObject_->GetComponent<TransformComponent>()) {
+        if (auto transform = GetTransform()) {
             throwOrigin_ = transform->GetWorldPosition();
         }
     }
@@ -219,7 +219,7 @@ void DebrisComponent::SetState(DebrisState newState) {
 
 void DebrisComponent::Update() {
     if (!gameObject_) return;
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();

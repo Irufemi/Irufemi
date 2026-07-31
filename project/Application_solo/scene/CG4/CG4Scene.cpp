@@ -55,7 +55,7 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
     // プレイヤーの右手から発生するパーティクル
     auto handParticleObj = std::make_shared<GameObject>("HandParticleEmitter");
     AddGameObject(handParticleObj);
-    handParticleObj->AddComponent<TransformComponent>();
+    handParticleObj->GetTransform();
     auto handEmitter = handParticleObj->AddComponent<ParticleEmitterComponent>();
     if (auto po = handEmitter->GetParticleObject()) {
         po->SetEmitType(1); // 1: Beam (円錐状の拡散)
@@ -79,7 +79,7 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
     // 左手の武器（適当な棒）
     auto weaponObj = std::make_shared<GameObject>("Weapon_Stick");
     AddGameObject(weaponObj);
-    auto weaponTransform = weaponObj->AddComponent<TransformComponent>();
+    auto weaponTransform = weaponObj->GetTransform();
     // スケールを棒状に(細長く)
     weaponTransform->SetScale({0.05f, 0.4f, 0.05f});
     auto weaponRenderer = weaponObj->AddComponent<PrimitiveRendererComponent>();

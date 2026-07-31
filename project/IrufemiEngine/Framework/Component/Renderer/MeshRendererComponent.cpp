@@ -25,7 +25,6 @@ void MeshRendererComponent::Initialize() {
 
     // 親の GameObject から TransformComponent を探して保持しておく
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
@@ -50,10 +49,10 @@ void MeshRendererComponent::SetCustomEffectParam(float param) {
 
 void MeshRendererComponent::Update() {
     // TransformComponent があれば、その座標を StaticModelObject に渡す（同期）
-    if (transform_ && obj_) {
-        obj_->SetTranslate(transform_->GetWorldPosition());
-        obj_->SetRotate(transform_->GetWorldRotation());
-        obj_->SetScale(transform_->GetWorldScale());
+    if (GetTransform() && obj_) {
+        obj_->SetTranslate(GetTransform()->GetWorldPosition());
+        obj_->SetRotate(GetTransform()->GetWorldRotation());
+        obj_->SetScale(GetTransform()->GetWorldScale());
     }
 
     // StaticModelObject の行列計算などを実行
@@ -72,11 +71,11 @@ void MeshRendererComponent::Draw() {
 
 Irufemi::Sphere MeshRendererComponent::GetWorldSphere() const {
     Irufemi::Sphere result = { Irufemi::Vector3{0,0,0}, 1.0f }; // default
-    if (transform_) {
-        result.center = transform_->GetWorldPosition();
+    if (GetTransform()) {
+        result.center = GetTransform()->GetWorldPosition();
         // StaticModelObject の cpuModel があれば正確な半径を取得
         // ここでは便宜上スケールの最大値を半径として扱う（もしくは定数）
-        Irufemi::Vector3 worldScale = transform_->GetWorldScale();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = maxScale;
     }
@@ -84,7 +83,7 @@ Irufemi::Sphere MeshRendererComponent::GetWorldSphere() const {
 }
 
 bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!obj_ || !transform_) return false;
+    if (!obj_ || !GetTransform()) return false;
     auto cpuModel = obj_->GetCpuModel();
     if (!cpuModel) return false;
 
@@ -94,7 +93,7 @@ bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance)
 
     Irufemi::OBB obb;
     // ワールド行列を用いて中心点を変換
-    const Irufemi::Matrix4x4& wmat = transform_->GetWorldMatrix();
+    const Irufemi::Matrix4x4& wmat = GetTransform()->GetWorldMatrix();
     obb.center = Irufemi::Math::Transform(localCenter, wmat);
 
     // ワールド行列の各軸ベクトルを抽出して正規化（回転）＆スケール適用
