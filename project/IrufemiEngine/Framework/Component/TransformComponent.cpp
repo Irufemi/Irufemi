@@ -35,11 +35,10 @@ Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
             if (!inheritScale_) {
-                // スケールを除去し、回転と位置だけで再構築（せん断防止）
-                // 親のGetWorldPosition()等を呼ぶと抽出処理が走るため、既に計算済みのWorldMatrixから直接抽出する
-                const Irufemi::Matrix4x4& parentWorld = parentT->GetWorldMatrix();
-                Irufemi::Vector3 pPos = { parentWorld.m[3][0], parentWorld.m[3][1], parentWorld.m[3][2] };
-                Irufemi::Quaternion quat = Irufemi::Math::ToQuaternionFromMatrix(parentWorld);
+                // スケールを除去し、回転と位置だけで再構築（せん断・マイナススケール破綻防止）
+                // 負のスケール時の回転抽出バグを防ぐため、安全に抽出されたWorldRotationQuat等を使用する
+                Irufemi::Vector3 pPos = parentT->GetWorldPosition();
+                Irufemi::Quaternion quat = parentT->GetWorldRotationQuat();
                 Irufemi::Vector3 pScale = { 1.0f, 1.0f, 1.0f };
                 return Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
             }
@@ -142,10 +141,28 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     
     position_ = { localMat.m[3][0], localMat.m[3][1], localMat.m[3][2] };
     
-    // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
+    // スケール軸を抽出
+    Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
+    Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
+    Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
+
+    // 行列の3x3部分の行列式を計算してフリップ（反転）状態を確認する
+    float det = 
+        xaxis.x * (yaxis.y * zaxis.z - yaxis.z * zaxis.y) -
+        xaxis.y * (yaxis.x * zaxis.z - yaxis.z * zaxis.x) +
+        xaxis.z * (yaxis.x * zaxis.y - yaxis.y * zaxis.x);
+
+    // 基本は設定前のローカルスケールの符号を維持する
     float sx = std::copysign(1.0f, scale_.x);
     float sy = std::copysign(1.0f, scale_.y);
     float sz = std::copysign(1.0f, scale_.z);
+
+    // しかし、入力された行列のフリップ状態が既存のスケールのフリップ状態と異なる場合、
+    // 回転抽出が破綻（NaN等）するのを防ぐため、X軸の符号を強制的に反転させる
+    if ((sx * sy * sz) * det < 0.0f) {
+        sx = -sx;
+    }
+    
     Irufemi::Matrix4x4 pureRotMat = localMat;
     pureRotMat.m[0][0] *= sx; pureRotMat.m[0][1] *= sx; pureRotMat.m[0][2] *= sx;
     pureRotMat.m[1][0] *= sy; pureRotMat.m[1][1] *= sy; pureRotMat.m[1][2] *= sy;
@@ -153,16 +170,10 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
 
     rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
     
-    // スケールを計算
-    Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
-    Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
-    Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
-    
-    // 設定前のローカルスケールの符号を維持する
     scale_ = { 
-        std::copysign(Irufemi::Math::Length(xaxis), scale_.x), 
-        std::copysign(Irufemi::Math::Length(yaxis), scale_.y), 
-        std::copysign(Irufemi::Math::Length(zaxis), scale_.z) 
+        std::copysign(Irufemi::Math::Length(xaxis), sx), 
+        std::copysign(Irufemi::Math::Length(yaxis), sy), 
+        std::copysign(Irufemi::Math::Length(zaxis), sz) 
     };
     
     MarkLocalDirty();
