@@ -257,5 +257,5 @@ private:
     mutable uint64_t transformVersion_ = 1;
     // 前回 ComputeMatrix したときの親のバージョン番号
     mutable uint64_t parentTransformVersionLastComputed_ = 0;
-    mutable GameObject* parentLastComputed_ = nullptr;
+    mutable uint64_t parentInstanceIdLastComputed_ = 0;
 };

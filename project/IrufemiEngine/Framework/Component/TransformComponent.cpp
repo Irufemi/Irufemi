@@ -80,7 +80,16 @@ void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRo
                 Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
                 Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
                 
-                rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(localMat));
+                // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
+                float sx = std::copysign(1.0f, scale_.x);
+                float sy = std::copysign(1.0f, scale_.y);
+                float sz = std::copysign(1.0f, scale_.z);
+                Irufemi::Matrix4x4 pureRotMat = localMat;
+                pureRotMat.m[0][0] *= sx; pureRotMat.m[0][1] *= sx; pureRotMat.m[0][2] *= sx;
+                pureRotMat.m[1][0] *= sy; pureRotMat.m[1][1] *= sy; pureRotMat.m[1][2] *= sy;
+                pureRotMat.m[2][0] *= sz; pureRotMat.m[2][1] *= sz; pureRotMat.m[2][2] *= sz;
+
+                rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
                 MarkLocalDirty();
                 return;
             }
@@ -132,7 +141,17 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     }
     
     position_ = { localMat.m[3][0], localMat.m[3][1], localMat.m[3][2] };
-    rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(localMat));
+    
+    // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
+    float sx = std::copysign(1.0f, scale_.x);
+    float sy = std::copysign(1.0f, scale_.y);
+    float sz = std::copysign(1.0f, scale_.z);
+    Irufemi::Matrix4x4 pureRotMat = localMat;
+    pureRotMat.m[0][0] *= sx; pureRotMat.m[0][1] *= sx; pureRotMat.m[0][2] *= sx;
+    pureRotMat.m[1][0] *= sy; pureRotMat.m[1][1] *= sy; pureRotMat.m[1][2] *= sy;
+    pureRotMat.m[2][0] *= sz; pureRotMat.m[2][1] *= sz; pureRotMat.m[2][2] *= sz;
+
+    rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
     
     // スケールを計算
     Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
@@ -159,7 +178,6 @@ void TransformComponent::ExtractWorldTransform() const {
         return;
     }
     
-    worldRotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_));
     Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
     Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
     Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
@@ -184,6 +202,17 @@ void TransformComponent::ExtractWorldTransform() const {
         std::copysign(Irufemi::Math::Length(yaxis), worldSign.y), 
         std::copysign(Irufemi::Math::Length(zaxis), worldSign.z) 
     };
+    
+    // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
+    float sx = std::copysign(1.0f, worldScale_.x);
+    float sy = std::copysign(1.0f, worldScale_.y);
+    float sz = std::copysign(1.0f, worldScale_.z);
+    Irufemi::Matrix4x4 pureRotMat = worldMatrix_;
+    pureRotMat.m[0][0] *= sx; pureRotMat.m[0][1] *= sx; pureRotMat.m[0][2] *= sx;
+    pureRotMat.m[1][0] *= sy; pureRotMat.m[1][1] *= sy; pureRotMat.m[1][2] *= sy;
+    pureRotMat.m[2][0] *= sz; pureRotMat.m[2][1] *= sz; pureRotMat.m[2][2] *= sz;
+    
+    worldRotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
     worldPosition_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
     
     isWorldTransformExtracted_ = true;
@@ -238,16 +267,17 @@ void TransformComponent::ComputeMatrix(bool force) const {
         parentT->CheckAndComputeMatrix();
         
         uint64_t currentParentVersion = parentT->GetTransformVersion();
+        uint64_t currentParentId = currentParent->GetInstanceID();
         if (parentTransformVersionLastComputed_ != currentParentVersion ||
-            parentLastComputed_ != currentParent) {
+            parentInstanceIdLastComputed_ != currentParentId) {
             parentChanged = true;
             parentTransformVersionLastComputed_ = currentParentVersion;
-            parentLastComputed_ = currentParent;
+            parentInstanceIdLastComputed_ = currentParentId;
         }
     } else {
-        if (parentLastComputed_ != nullptr) {
+        if (parentInstanceIdLastComputed_ != 0) {
             parentChanged = true;
-            parentLastComputed_ = nullptr;
+            parentInstanceIdLastComputed_ = 0;
             parentTransformVersionLastComputed_ = 0;
         }
     }
