@@ -2,6 +2,7 @@
 #include "../GameObject.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/System/ComponentPool.h"
+#include <cmath>
 
 // Setters
 void TransformComponent::SetPosition(const Irufemi::Vector3& position) {
@@ -33,15 +34,14 @@ void TransformComponent::SetScale(const Irufemi::Vector3& scale) {
 Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            Irufemi::Matrix4x4 parentMat = parentT->GetWorldMatrix();
             if (!inheritScale_) {
                 // スケールを除去し、回転と位置だけで再構築（せん断防止）
-                Irufemi::Vector3 pPos = { parentMat.m[3][0], parentMat.m[3][1], parentMat.m[3][2] };
-                Irufemi::Quaternion quat = Irufemi::Math::ToQuaternionFromMatrix(parentMat);
+                Irufemi::Vector3 pPos = parentT->GetWorldPosition();
+                Irufemi::Quaternion quat = parentT->GetWorldRotationQuat();
                 Irufemi::Vector3 pScale = { 1.0f, 1.0f, 1.0f };
-                parentMat = Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
+                return Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
             }
-            return parentMat;
+            return parentT->GetWorldMatrix();
         }
     }
     return Irufemi::Math::MakeIdentity4x4();
@@ -68,11 +68,8 @@ void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRo
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
             CheckAndComputeMatrix();
-            Irufemi::Vector3 wPos = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-            Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
-            Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
-            Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
-            Irufemi::Vector3 wScale = { Irufemi::Math::Length(xaxis), Irufemi::Math::Length(yaxis), Irufemi::Math::Length(zaxis) };
+            Irufemi::Vector3 wPos = GetWorldPosition();
+            Irufemi::Vector3 wScale = GetWorldScale();
             
             Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(wScale, worldRotation, wPos);
             Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
@@ -90,8 +87,8 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
             CheckAndComputeMatrix();
-            Irufemi::Vector3 wPos = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-            Irufemi::Quaternion wRot = Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_);
+            Irufemi::Vector3 wPos = GetWorldPosition();
+            Irufemi::Quaternion wRot = GetWorldRotationQuat();
             
             Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(worldScale, wRot, wPos);
             Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
@@ -100,7 +97,13 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
             Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
             Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
             Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
-            scale_ = { Irufemi::Math::Length(xaxis), Irufemi::Math::Length(yaxis), Irufemi::Math::Length(zaxis) };
+            
+            // worldScale の符号（プラス/マイナス）を正確に維持する
+            scale_ = { 
+                std::copysign(Irufemi::Math::Length(xaxis), worldScale.x), 
+                std::copysign(Irufemi::Math::Length(yaxis), worldScale.y), 
+                std::copysign(Irufemi::Math::Length(zaxis), worldScale.z) 
+            };
             
             MarkLocalDirty();
             return;
@@ -226,7 +229,7 @@ void TransformComponent::ComputeMatrix(bool force) const {
     
     // ワールド行列の計算
     if (isWorldDirty_ || parentChanged || force) {
-        if (gameObject_->GetParent() && gameObject_->GetParent()->GetComponent<TransformComponent>()) {
+        if (parentT) {
             worldMatrix_ = Irufemi::Math::Multiply(localMatrix_, GetParentMatrixForChild());
         } else {
             worldMatrix_ = localMatrix_;

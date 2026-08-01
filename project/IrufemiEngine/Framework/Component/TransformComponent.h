@@ -175,7 +175,6 @@ public:
      */
     void MarkWorldDirty() { 
         isWorldDirty_ = true; 
-        transformVersion_++;
     }
 
     /**
@@ -183,7 +182,6 @@ public:
      */
     void MarkLocalDirty() {
         isLocalDirty_ = true;
-        transformVersion_++;
     }
 
     /**
