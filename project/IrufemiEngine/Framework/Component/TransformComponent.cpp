@@ -113,11 +113,21 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
                 Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
                 Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
                 
-                // worldScale の符号（プラス/マイナス）を正確に維持する
+                // worldScale の符号と親の符号から、正確なローカルスケールの符号を逆算する
+                float pSignX = 1.0f;
+                float pSignY = 1.0f;
+                float pSignZ = 1.0f;
+                if (inheritScale_) {
+                    Irufemi::Vector3 pScale = parentT->GetWorldScale();
+                    pSignX = std::copysign(1.0f, pScale.x);
+                    pSignY = std::copysign(1.0f, pScale.y);
+                    pSignZ = std::copysign(1.0f, pScale.z);
+                }
+                
                 scale_ = { 
-                    std::copysign(Irufemi::Math::Length(xaxis), worldScale.x), 
-                    std::copysign(Irufemi::Math::Length(yaxis), worldScale.y), 
-                    std::copysign(Irufemi::Math::Length(zaxis), worldScale.z) 
+                    std::copysign(Irufemi::Math::Length(xaxis), worldScale.x * pSignX), 
+                    std::copysign(Irufemi::Math::Length(yaxis), worldScale.y * pSignY), 
+                    std::copysign(Irufemi::Math::Length(zaxis), worldScale.z * pSignZ) 
                 };
                 
                 MarkLocalDirty();
@@ -200,9 +210,10 @@ void TransformComponent::ExtractWorldTransform() const {
             if (auto parentT = parent->GetComponent<TransformComponent>()) {
                 if (inheritScale_) {
                     Irufemi::Vector3 pScale = parentT->GetWorldScale();
-                    worldSign.x *= pScale.x;
-                    worldSign.y *= pScale.y;
-                    worldSign.z *= pScale.z;
+                    // 浮動小数点のオーバーフロー/アンダーフローを防ぐため、符号のみを伝播させる
+                    worldSign.x = std::copysign(1.0f, worldSign.x) * std::copysign(1.0f, pScale.x);
+                    worldSign.y = std::copysign(1.0f, worldSign.y) * std::copysign(1.0f, pScale.y);
+                    worldSign.z = std::copysign(1.0f, worldSign.z) * std::copysign(1.0f, pScale.z);
                 }
             }
         }
