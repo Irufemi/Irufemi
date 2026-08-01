@@ -31,7 +31,7 @@ namespace Math {
 
     Vector2 Normalize(Vector2 vector) {
         float len = Length(vector);
-        if (len == 0.0f) {
+        if (len < 1e-6f) {
             return { 0.0f, 0.0f };
         }
         return vector / len;
@@ -41,7 +41,10 @@ namespace Math {
         Vector2 ab = segment.end - segment.origin;
         Vector2 ap = point - segment.origin;
 
-        float t = Dot(ap, ab) / Dot(ab, ab);
+        float sq = Dot(ab, ab);
+        if (sq < 1e-6f) return segment.origin;
+
+        float t = Dot(ap, ab) / sq;
 
         if (t < 0.0f) {
             return segment.origin;
@@ -78,7 +81,7 @@ namespace Math {
 
     Vector3 Normalize(Vector3 vector) {
         float len = Length(vector);
-        if (len == 0.0f) return { 0.0f, 0.0f, 0.0f };
+        if (len < 1e-6f) return { 0.0f, 0.0f, 0.0f };
         return vector / len;
     }
 
@@ -91,8 +94,10 @@ namespace Math {
     }
 
     Vector3 ClosestPoint(Vector3 point, const Segment& segment) {
+        float diffSq = Dot(segment.diff, segment.diff);
+        if (diffSq < 1e-6f) return segment.origin;
         Vector3 a = point - segment.origin;
-        float t = Dot(a, segment.diff) / Dot(segment.diff, segment.diff);
+        float t = Dot(a, segment.diff) / diffSq;
         t = Clamp(t, 0.0f, 1.0f);
         return segment.origin + t * segment.diff;
     }
@@ -100,15 +105,19 @@ namespace Math {
 
 
     Vector3 ClosestPoint(Vector3 point, const Ray& ray) {
+        float diffSq = Dot(ray.diff, ray.diff);
+        if (diffSq < 1e-6f) return ray.origin;
         Vector3 a = point - ray.origin;
-        float t = Dot(a, ray.diff) / Dot(ray.diff, ray.diff);
+        float t = Dot(a, ray.diff) / diffSq;
         t = std::max(t, 0.0f); 
         return ray.origin + t * ray.diff;
     }
 
     Vector3 ClosestPoint(Vector3 point, const Line& line) {
+        float diffSq = Dot(line.diff, line.diff);
+        if (diffSq < 1e-6f) return line.origin;
         Vector3 a = point - line.origin;
-        float t = Dot(a, line.diff) / Dot(line.diff, line.diff);
+        float t = Dot(a, line.diff) / diffSq;
         return line.origin + t * line.diff;
     }
 
@@ -174,10 +183,10 @@ namespace Math {
     Vector4 Normalize(Vector4 v)
     {
         float len = Length(v);
-        if (len != 0.0f) {
+        if (len > 1e-6f) {
             return v / len;
         }
-        return v;
+        return { 0.0f, 0.0f, 0.0f, 0.0f };
     }
 #pragma endregion
 
@@ -498,7 +507,7 @@ namespace Math {
 
     Quaternion Normalize(const Quaternion& q) {
         float n = Norm(q);
-        if (n < 1e-6f) return q;
+        if (n < 1e-6f) return IdentityQuaternion();
         return { q.x / n, q.y / n, q.z / n, q.w / n };
     }
 
