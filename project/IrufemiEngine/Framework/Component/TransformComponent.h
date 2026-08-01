@@ -248,6 +248,11 @@ private:
     mutable bool isWorldDirty_ = true;
     mutable bool isWorldTransformExtracted_ = false;
 
+    /**
+     * @brief ワールド行列から座標・回転・スケールを再抽出する
+     */
+    void ExtractWorldTransform() const;
+
     // トランスフォームの状態が変化したことを追跡するためのバージョン番号
     mutable uint64_t transformVersion_ = 1;
     // 前回 ComputeMatrix したときの親のバージョン番号

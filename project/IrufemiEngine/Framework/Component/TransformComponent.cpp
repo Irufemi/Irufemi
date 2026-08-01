@@ -18,7 +18,7 @@ void TransformComponent::SetRotation(const Irufemi::Vector3& rotation) {
 
 void TransformComponent::SetRotationQuat(const Irufemi::Quaternion& rotation) {
     if (rotation_.x != rotation.x || rotation_.y != rotation.y || rotation_.z != rotation.z || rotation_.w != rotation.w) {
-        rotation_ = rotation;
+        rotation_ = Irufemi::Math::Normalize(rotation);
         MarkLocalDirty();
     }
 }
@@ -49,12 +49,14 @@ Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
 
 // --- Setters (World) ---
 void TransformComponent::SetWorldPosition(const Irufemi::Vector3& worldPosition) {
-    if (auto parent = gameObject_->GetParent()) {
-        if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
-            position_ = Irufemi::Math::Transform(worldPosition, invMat);
-            MarkLocalDirty();
-            return;
+    if (gameObject_) {
+        if (auto parent = gameObject_->GetParent()) {
+            if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
+                position_ = Irufemi::Math::Transform(worldPosition, invMat);
+                MarkLocalDirty();
+                return;
+            }
         }
     }
     SetPosition(worldPosition);
@@ -65,48 +67,52 @@ void TransformComponent::SetWorldRotation(const Irufemi::Vector3& worldRotation)
 }
 
 void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRotation) {
-    if (auto parent = gameObject_->GetParent()) {
-        if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            CheckAndComputeMatrix();
-            Irufemi::Vector3 wPos = GetWorldPosition();
-            Irufemi::Vector3 wScale = GetWorldScale();
-            
-            Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(wScale, worldRotation, wPos);
-            Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
-            Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
-            
-            rotation_ = Irufemi::Math::ToQuaternionFromMatrix(localMat);
-            MarkLocalDirty();
-            return;
+    if (gameObject_) {
+        if (auto parent = gameObject_->GetParent()) {
+            if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                CheckAndComputeMatrix();
+                Irufemi::Vector3 wPos = GetWorldPosition();
+                Irufemi::Vector3 wScale = GetWorldScale();
+                
+                Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(wScale, worldRotation, wPos);
+                Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
+                Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
+                
+                rotation_ = Irufemi::Math::ToQuaternionFromMatrix(localMat);
+                MarkLocalDirty();
+                return;
+            }
         }
     }
     SetRotationQuat(worldRotation);
 }
 
 void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
-    if (auto parent = gameObject_->GetParent()) {
-        if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            CheckAndComputeMatrix();
-            Irufemi::Vector3 wPos = GetWorldPosition();
-            Irufemi::Quaternion wRot = GetWorldRotationQuat();
-            
-            Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(worldScale, wRot, wPos);
-            Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
-            Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
-            
-            Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
-            Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
-            Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
-            
-            // worldScale の符号（プラス/マイナス）を正確に維持する
-            scale_ = { 
-                std::copysign(Irufemi::Math::Length(xaxis), worldScale.x), 
-                std::copysign(Irufemi::Math::Length(yaxis), worldScale.y), 
-                std::copysign(Irufemi::Math::Length(zaxis), worldScale.z) 
-            };
-            
-            MarkLocalDirty();
-            return;
+    if (gameObject_) {
+        if (auto parent = gameObject_->GetParent()) {
+            if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                CheckAndComputeMatrix();
+                Irufemi::Vector3 wPos = GetWorldPosition();
+                Irufemi::Quaternion wRot = GetWorldRotationQuat();
+                
+                Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(worldScale, wRot, wPos);
+                Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
+                Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
+                
+                Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
+                Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
+                Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
+                
+                // worldScale の符号（プラス/マイナス）を正確に維持する
+                scale_ = { 
+                    std::copysign(Irufemi::Math::Length(xaxis), worldScale.x), 
+                    std::copysign(Irufemi::Math::Length(yaxis), worldScale.y), 
+                    std::copysign(Irufemi::Math::Length(zaxis), worldScale.z) 
+                };
+                
+                MarkLocalDirty();
+                return;
+            }
         }
     }
     SetScale(worldScale);
@@ -114,10 +120,12 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
 
 void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     Irufemi::Matrix4x4 localMat = worldMatrix;
-    if (auto parent = gameObject_->GetParent()) {
-        if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
-            localMat = Irufemi::Math::Multiply(worldMatrix, invMat);
+    if (gameObject_) {
+        if (auto parent = gameObject_->GetParent()) {
+            if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
+                localMat = Irufemi::Math::Multiply(worldMatrix, invMat);
+            }
         }
     }
     
@@ -128,7 +136,13 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
     Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
     Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
-    scale_ = { Irufemi::Math::Length(xaxis), Irufemi::Math::Length(yaxis), Irufemi::Math::Length(zaxis) };
+    
+    // 設定前のローカルスケールの符号を維持する
+    scale_ = { 
+        std::copysign(Irufemi::Math::Length(xaxis), scale_.x), 
+        std::copysign(Irufemi::Math::Length(yaxis), scale_.y), 
+        std::copysign(Irufemi::Math::Length(zaxis), scale_.z) 
+    };
     
     MarkLocalDirty();
 }
@@ -138,20 +152,45 @@ void TransformComponent::UpdateMatrixImmediate() {
     ComputeMatrix(true);
 }
 
+void TransformComponent::ExtractWorldTransform() const {
+    if (isWorldTransformExtracted_) {
+        return;
+    }
+    
+    worldRotation_ = Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_);
+    Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
+    Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
+    Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
+    
+    // 親のワールドスケールの符号と自身のローカルスケールの符号から、現在のワールドスケールの符号を決定する
+    Irufemi::Vector3 worldSign = scale_;
+    if (gameObject_) {
+        if (auto parent = gameObject_->GetParent()) {
+            if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                if (inheritScale_) {
+                    Irufemi::Vector3 pScale = parentT->GetWorldScale();
+                    worldSign.x *= pScale.x;
+                    worldSign.y *= pScale.y;
+                    worldSign.z *= pScale.z;
+                }
+            }
+        }
+    }
+    
+    worldScale_ = { 
+        std::copysign(Irufemi::Math::Length(xaxis), worldSign.x), 
+        std::copysign(Irufemi::Math::Length(yaxis), worldSign.y), 
+        std::copysign(Irufemi::Math::Length(zaxis), worldSign.z) 
+    };
+    worldPosition_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
+    
+    isWorldTransformExtracted_ = true;
+}
+
 // Lazy Evaluated World Getters
 const Irufemi::Vector3& TransformComponent::GetWorldPosition() const {
     CheckAndComputeMatrix();
-    if (!isWorldTransformExtracted_) {
-        // ワールド行列から再抽出する
-        worldRotation_ = Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_);
-        Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
-        Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
-        Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
-        worldScale_ = { Irufemi::Math::Length(xaxis), Irufemi::Math::Length(yaxis), Irufemi::Math::Length(zaxis) };
-        worldPosition_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-        
-        isWorldTransformExtracted_ = true;
-    }
+    ExtractWorldTransform();
     return worldPosition_;
 }
 
@@ -161,17 +200,13 @@ Irufemi::Vector3 TransformComponent::GetWorldRotation() const {
 
 const Irufemi::Quaternion& TransformComponent::GetWorldRotationQuat() const {
     CheckAndComputeMatrix();
-    if (!isWorldTransformExtracted_) {
-        GetWorldPosition(); // 共通化して再利用
-    }
+    ExtractWorldTransform();
     return worldRotation_;
 }
 
 const Irufemi::Vector3& TransformComponent::GetWorldScale() const {
     CheckAndComputeMatrix();
-    if (!isWorldTransformExtracted_) {
-        GetWorldPosition(); // 共通化して再利用
-    }
+    ExtractWorldTransform();
     return worldScale_;
 }
 
