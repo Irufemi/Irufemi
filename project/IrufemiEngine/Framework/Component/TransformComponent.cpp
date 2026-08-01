@@ -51,7 +51,6 @@ Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
 void TransformComponent::SetWorldPosition(const Irufemi::Vector3& worldPosition) {
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            CheckAndComputeMatrix();
             Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
             position_ = Irufemi::Math::Transform(worldPosition, invMat);
             MarkLocalDirty();
@@ -114,7 +113,6 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     Irufemi::Matrix4x4 localMat = worldMatrix;
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            CheckAndComputeMatrix(); // 親の行列を最新化するため
             Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
             localMat = Irufemi::Math::Multiply(worldMatrix, invMat);
         }
@@ -193,18 +191,18 @@ void TransformComponent::ComputeMatrix(bool force) const {
     bool parentChanged = false;
 
     GameObject* currentParent = gameObject_->GetParent().get();
-    if (currentParent) {
-        if (auto parentT = currentParent->GetComponent<TransformComponent>()) {
-            // 親がDirtyなら計算させる（再帰的）
-            parentT->CheckAndComputeMatrix();
-            
-            uint64_t currentParentVersion = parentT->GetTransformVersion();
-            if (parentTransformVersionLastComputed_ != currentParentVersion ||
-                parentLastComputed_ != currentParent) {
-                parentChanged = true;
-                parentTransformVersionLastComputed_ = currentParentVersion;
-                parentLastComputed_ = currentParent;
-            }
+    TransformComponent* parentT = currentParent ? currentParent->GetComponent<TransformComponent>() : nullptr;
+
+    if (parentT) {
+        // 親がDirtyなら計算させる（再帰的）
+        parentT->CheckAndComputeMatrix();
+        
+        uint64_t currentParentVersion = parentT->GetTransformVersion();
+        if (parentTransformVersionLastComputed_ != currentParentVersion ||
+            parentLastComputed_ != currentParent) {
+            parentChanged = true;
+            parentTransformVersionLastComputed_ = currentParentVersion;
+            parentLastComputed_ = currentParent;
         }
     } else {
         if (parentLastComputed_ != nullptr) {
