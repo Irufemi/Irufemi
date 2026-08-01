@@ -2,6 +2,7 @@
 #include "Component.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Matrix4x4.h"
+#include "Engine/Core/Math/Quaternion.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Core/System/ComponentPool.h"
 
@@ -23,9 +24,7 @@ public:
      * @brief ダーティフラグが立っている場合、行列を最新化する（Lazy Evaluation用ヘルパー）
      */
     inline void CheckAndComputeMatrix() const {
-        if (isLocalDirty_ || isWorldDirty_) {
-            ComputeMatrix(false);
-        }
+        ComputeMatrix(false);
     }
 
     /**
@@ -46,10 +45,15 @@ public:
      */
     const Irufemi::Vector3& GetPosition() const { return position_; }
     /**
-     * @brief Rotation を取得する。
+     * @brief Rotation (Euler) を取得する。(後方互換用)
      * @return 取得された Rotation
      */
-    const Irufemi::Vector3& GetRotation() const { return rotation_; }
+    Irufemi::Vector3 GetRotation() const { return Irufemi::Math::ToEuler(rotation_); }
+    /**
+     * @brief Rotation (Quaternion) を取得する。
+     * @return 取得された Rotation
+     */
+    const Irufemi::Quaternion& GetRotationQuat() const { return rotation_; }
     /**
      * @brief Scale を取得する。
      * @return 取得された Scale
@@ -80,10 +84,15 @@ public:
      */
     const Irufemi::Vector3& GetWorldPosition() const;
     /**
-     * @brief WorldRotation を取得する。
+     * @brief WorldRotation (Euler) を取得する。(後方互換用)
      * @return 取得された WorldRotation
      */
-    const Irufemi::Vector3& GetWorldRotation() const;
+    Irufemi::Vector3 GetWorldRotation() const;
+    /**
+     * @brief WorldRotation (Quaternion) を取得する。
+     * @return 取得された WorldRotation
+     */
+    const Irufemi::Quaternion& GetWorldRotationQuat() const;
     /**
      * @brief WorldScale を取得する。
      * @return 取得された WorldScale
@@ -114,10 +123,15 @@ public:
      */
     void SetPosition(const Irufemi::Vector3& position);
     /**
-     * @brief Rotation を設定する。
+     * @brief Rotation (Euler) を設定する。(後方互換用)
      * @param[in] rotation 設定する Rotation の値
      */
     void SetRotation(const Irufemi::Vector3& rotation);
+    /**
+     * @brief Rotation (Quaternion) を設定する。
+     * @param[in] rotation 設定する Rotation の値
+     */
+    void SetRotationQuat(const Irufemi::Quaternion& rotation);
     /**
      * @brief Scale を設定する。
      * @param[in] scale 設定する Scale の値
@@ -131,10 +145,15 @@ public:
      */
     void SetWorldPosition(const Irufemi::Vector3& worldPosition);
     /**
-     * @brief ワールド回転を設定し、親の逆行列を用いてローカル回転に反映する。
+     * @brief ワールド回転を設定し、親の逆行列を用いてローカル回転に反映する。(後方互換用)
      * @param[in] worldRotation 設定するワールド回転 (Euler角)
      */
     void SetWorldRotation(const Irufemi::Vector3& worldRotation);
+    /**
+     * @brief ワールド回転を設定し、親の逆行列を用いてローカル回転に反映する。
+     * @param[in] worldRotation 設定するワールド回転 (Quaternion)
+     */
+    void SetWorldRotationQuat(const Irufemi::Quaternion& worldRotation);
     /**
      * @brief ワールドスケールを設定し、親の逆スケールを用いてローカルスケールに反映する。
      * @param[in] worldScale 設定するワールドスケール
@@ -208,14 +227,12 @@ public:
      */
     void Deserialize(const nlohmann::json& j) override;
 
-#ifdef EditorMode
 
-#endif
 
 private:
     // --- Local Irufemi::Transform Data ---
     Irufemi::Vector3 position_ = { 0.0f, 0.0f, 0.0f };
-    Irufemi::Vector3 rotation_ = { 0.0f, 0.0f, 0.0f }; // Euler angles in radians
+    Irufemi::Quaternion rotation_ = { 0.0f, 0.0f, 0.0f, 1.0f }; // Quaternion (x,y,z,w) = Identity
     Irufemi::Vector3 scale_ = { 1.0f, 1.0f, 1.0f };
     bool inheritScale_ = true; // 親のスケールを継承するかどうか
 
@@ -225,7 +242,7 @@ private:
 
     // --- World Irufemi::Transform Data (Lazy Evaluated) ---
     mutable Irufemi::Vector3 worldPosition_ = { 0.0f, 0.0f, 0.0f };
-    mutable Irufemi::Vector3 worldRotation_ = { 0.0f, 0.0f, 0.0f };
+    mutable Irufemi::Quaternion worldRotation_ = { 0.0f, 0.0f, 0.0f, 1.0f };
     mutable Irufemi::Vector3 worldScale_ = { 1.0f, 1.0f, 1.0f };
 
     // --- Flags & Versioning (Lazy Evaluation) ---

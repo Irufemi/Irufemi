@@ -396,6 +396,16 @@ namespace Math {
      */
     Vector3 ToEuler(const Quaternion& q);
 
+    /**
+     * @brief オイラー角からクォータニオンへ変換 (XYZ順)
+     */
+    Quaternion ToQuaternionFromEuler(Vector3 euler);
+
+    /**
+     * @brief 回転行列からクォータニオンへ変換
+     */
+    Quaternion ToQuaternionFromMatrix(const Matrix4x4& m);
+
     /** @} */
 #pragma endregion
 

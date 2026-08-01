@@ -578,6 +578,53 @@ namespace Math {
         return ExtractEulerFromMatrix(MakeRotateMatrix(q));
     }
 
+    Quaternion ToQuaternionFromEuler(Vector3 euler) {
+        Matrix4x4 m = MakeRotateXYZMatrix(euler);
+        return ToQuaternionFromMatrix(m);
+    }
+
+    Quaternion ToQuaternionFromMatrix(const Matrix4x4& m) {
+        // スケーリング成分を取り除き、純粋な回転行列成分を抽出する
+        Vector3 xaxis = Normalize(Vector3{m.m[0][0], m.m[0][1], m.m[0][2]});
+        Vector3 yaxis = Normalize(Vector3{m.m[1][0], m.m[1][1], m.m[1][2]});
+        Vector3 zaxis = Normalize(Vector3{m.m[2][0], m.m[2][1], m.m[2][2]});
+
+        float m00 = xaxis.x, m01 = xaxis.y, m02 = xaxis.z;
+        float m10 = yaxis.x, m11 = yaxis.y, m12 = yaxis.z;
+        float m20 = zaxis.x, m21 = zaxis.y, m22 = zaxis.z;
+
+        Quaternion q;
+        float trace = m00 + m11 + m22;
+        if (trace > 0.0f) {
+            float s = 0.5f / std::sqrt(trace + 1.0f);
+            q.w = 0.25f / s;
+            q.x = (m12 - m21) * s;
+            q.y = (m20 - m02) * s;
+            q.z = (m01 - m10) * s;
+        } else {
+            if (m00 > m11 && m00 > m22) {
+                float s = 2.0f * std::sqrt(1.0f + m00 - m11 - m22);
+                q.w = (m12 - m21) / s;
+                q.x = 0.25f * s;
+                q.y = (m01 + m10) / s;
+                q.z = (m20 + m02) / s;
+            } else if (m11 > m22) {
+                float s = 2.0f * std::sqrt(1.0f + m11 - m00 - m22);
+                q.w = (m20 - m02) / s;
+                q.x = (m01 + m10) / s;
+                q.y = 0.25f * s;
+                q.z = (m12 + m21) / s;
+            } else {
+                float s = 2.0f * std::sqrt(1.0f + m22 - m00 - m11);
+                q.w = (m01 - m10) / s;
+                q.x = (m20 + m02) / s;
+                q.y = (m12 + m21) / s;
+                q.z = 0.25f * s;
+            }
+        }
+        return Normalize(q);
+    }
+
 #pragma endregion
 
     Vector3 Perpendicular(Vector3 vector) {

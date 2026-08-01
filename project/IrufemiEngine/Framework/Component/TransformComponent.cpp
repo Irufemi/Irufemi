@@ -12,7 +12,11 @@ void TransformComponent::SetPosition(const Irufemi::Vector3& position) {
 }
 
 void TransformComponent::SetRotation(const Irufemi::Vector3& rotation) {
-    if (rotation_.x != rotation.x || rotation_.y != rotation.y || rotation_.z != rotation.z) {
+    SetRotationQuat(Irufemi::Math::ToQuaternionFromEuler(rotation));
+}
+
+void TransformComponent::SetRotationQuat(const Irufemi::Quaternion& rotation) {
+    if (rotation_.x != rotation.x || rotation_.y != rotation.y || rotation_.z != rotation.z || rotation_.w != rotation.w) {
         rotation_ = rotation;
         MarkLocalDirty();
     }
@@ -31,13 +35,11 @@ Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
             Irufemi::Matrix4x4 parentMat = parentT->GetWorldMatrix();
             if (!inheritScale_) {
-                // スケールを除去
-                Irufemi::Vector3 xaxis = Irufemi::Math::Normalize(Irufemi::Vector3{ parentMat.m[0][0], parentMat.m[0][1], parentMat.m[0][2] });
-                Irufemi::Vector3 yaxis = Irufemi::Math::Normalize(Irufemi::Vector3{ parentMat.m[1][0], parentMat.m[1][1], parentMat.m[1][2] });
-                Irufemi::Vector3 zaxis = Irufemi::Math::Normalize(Irufemi::Vector3{ parentMat.m[2][0], parentMat.m[2][1], parentMat.m[2][2] });
-                parentMat.m[0][0] = xaxis.x; parentMat.m[0][1] = xaxis.y; parentMat.m[0][2] = xaxis.z;
-                parentMat.m[1][0] = yaxis.x; parentMat.m[1][1] = yaxis.y; parentMat.m[1][2] = yaxis.z;
-                parentMat.m[2][0] = zaxis.x; parentMat.m[2][1] = zaxis.y; parentMat.m[2][2] = zaxis.z;
+                // スケールを除去し、回転と位置だけで再構築（せん断防止）
+                Irufemi::Vector3 pPos = { parentMat.m[3][0], parentMat.m[3][1], parentMat.m[3][2] };
+                Irufemi::Quaternion quat = Irufemi::Math::ToQuaternionFromMatrix(parentMat);
+                Irufemi::Vector3 pScale = { 1.0f, 1.0f, 1.0f };
+                parentMat = Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
             }
             return parentMat;
         }
@@ -60,9 +62,12 @@ void TransformComponent::SetWorldPosition(const Irufemi::Vector3& worldPosition)
 }
 
 void TransformComponent::SetWorldRotation(const Irufemi::Vector3& worldRotation) {
+    SetWorldRotationQuat(Irufemi::Math::ToQuaternionFromEuler(worldRotation));
+}
+
+void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRotation) {
     if (auto parent = gameObject_->GetParent()) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            // 最新のワールド行列からスケールと位置を維持して、回転だけを差し替える
             CheckAndComputeMatrix();
             Irufemi::Vector3 wPos = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
             Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
@@ -74,12 +79,12 @@ void TransformComponent::SetWorldRotation(const Irufemi::Vector3& worldRotation)
             Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
             Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
             
-            rotation_ = Irufemi::Math::ExtractEulerFromMatrix(localMat);
+            rotation_ = Irufemi::Math::ToQuaternionFromMatrix(localMat);
             MarkLocalDirty();
             return;
         }
     }
-    SetRotation(worldRotation);
+    SetRotationQuat(worldRotation);
 }
 
 void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
@@ -87,7 +92,7 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
             CheckAndComputeMatrix();
             Irufemi::Vector3 wPos = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-            Irufemi::Vector3 wRot = Irufemi::Math::ExtractEulerFromMatrix(worldMatrix_);
+            Irufemi::Quaternion wRot = Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_);
             
             Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(worldScale, wRot, wPos);
             Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
@@ -116,7 +121,7 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     }
     
     position_ = { localMat.m[3][0], localMat.m[3][1], localMat.m[3][2] };
-    rotation_ = Irufemi::Math::ExtractEulerFromMatrix(localMat);
+    rotation_ = Irufemi::Math::ToQuaternionFromMatrix(localMat);
     
     // スケールを計算
     Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
@@ -137,7 +142,7 @@ const Irufemi::Vector3& TransformComponent::GetWorldPosition() const {
     CheckAndComputeMatrix();
     if (!isWorldTransformExtracted_) {
         // ワールド行列から再抽出する
-        worldRotation_ = Irufemi::Math::ExtractEulerFromMatrix(worldMatrix_);
+        worldRotation_ = Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_);
         Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
         Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
         Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
@@ -149,7 +154,11 @@ const Irufemi::Vector3& TransformComponent::GetWorldPosition() const {
     return worldPosition_;
 }
 
-const Irufemi::Vector3& TransformComponent::GetWorldRotation() const {
+Irufemi::Vector3 TransformComponent::GetWorldRotation() const {
+    return Irufemi::Math::ToEuler(GetWorldRotationQuat());
+}
+
+const Irufemi::Quaternion& TransformComponent::GetWorldRotationQuat() const {
     CheckAndComputeMatrix();
     if (!isWorldTransformExtracted_) {
         GetWorldPosition(); // 共通化して再利用
@@ -239,7 +248,8 @@ void TransformComponent::UpdateAll() {
 nlohmann::json TransformComponent::Serialize() {
     nlohmann::json j;
     j["position"] = { position_.x, position_.y, position_.z };
-    j["rotation"] = { rotation_.x, rotation_.y, rotation_.z };
+    Irufemi::Vector3 euler = Irufemi::Math::ToEuler(rotation_);
+    j["rotation"] = { euler.x, euler.y, euler.z };
     j["scale"]    = { scale_.x, scale_.y, scale_.z };
     j["inheritScale"] = inheritScale_;
     return j;
@@ -252,9 +262,11 @@ void TransformComponent::Deserialize(const nlohmann::json& j) {
         position_.z = j["position"][2];
     }
     if (j.contains("rotation") && j["rotation"].is_array() && j["rotation"].size() == 3) {
-        rotation_.x = j["rotation"][0];
-        rotation_.y = j["rotation"][1];
-        rotation_.z = j["rotation"][2];
+        Irufemi::Vector3 euler;
+        euler.x = j["rotation"][0];
+        euler.y = j["rotation"][1];
+        euler.z = j["rotation"][2];
+        rotation_ = Irufemi::Math::ToQuaternionFromEuler(euler);
     }
     if (j.contains("scale") && j["scale"].is_array() && j["scale"].size() == 3) {
         scale_.x = j["scale"][0];
