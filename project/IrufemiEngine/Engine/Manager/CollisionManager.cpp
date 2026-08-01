@@ -453,8 +453,22 @@ bool CollisionManager::Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, flo
     return hitInfo.isHit;
 }
 
+void CollisionManager::QueryAABB(const Irufemi::AABB& aabb, std::vector<ColliderComponent*>& outHits) const {
+    std::shared_lock<std::shared_mutex> lock(collidersMutex_);
+    dynamicBVH_.Query(aabb, outHits);
+}
+
 void CollisionManager::DrawDebugRay(const Irufemi::Ray& ray, float distance, const Irufemi::Vector4& color) {
     debugRays_.push_back({ ray, distance, color });
+}
+
+void CollisionManager::DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color) {
+    if (debugPrimitiveRenderer_) {
+        Irufemi::Vector3 center = (aabb.min + aabb.max) * 0.5f;
+        Irufemi::Vector3 size = aabb.max - aabb.min;
+        Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(size, Irufemi::Vector3::zero, center);
+        debugPrimitiveRenderer_->AddCube(transform, color);
+    }
 }
 
 std::future<std::pair<bool, RaycastHit>> CollisionManager::RaycastAsync(ThreadPool* pool, const Irufemi::Ray& ray, float maxDistance, uint32_t layerMask, GameObject* ignoreObject) {

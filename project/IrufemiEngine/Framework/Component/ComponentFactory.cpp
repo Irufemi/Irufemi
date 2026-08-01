@@ -12,6 +12,7 @@
 #include "Logic/BoneAttachmentComponent.h"
 #include "Effect/VoxelParticleComponent.h"
 #include "Effect/EffectMaskComponent.h"
+#include "Effect/ScreenEffectComponent.h"
 #include "Collider/AABBColliderComponent.h"
 #include "Collider/SphereColliderComponent.h"
 #include "Collider/OBBColliderComponent.h"
@@ -70,6 +71,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("BoneAttachmentComponent", "Logic", []() { return std::make_shared<BoneAttachmentComponent>(); });
     Register("VoxelParticleComponent", "Effect", []() { return std::make_shared<VoxelParticleComponent>(); });
     Register("EffectMaskComponent", "Effect", []() { return std::make_shared<EffectMaskComponent>(); });
+    Register("ScreenEffectComponent", "Effect", []() { return std::make_shared<ScreenEffectComponent>(); });
     Register("AABBColliderComponent", "Collider", []() { return std::make_shared<AABBColliderComponent>(); });
     Register("SphereColliderComponent", "Collider", []() { return std::make_shared<SphereColliderComponent>(); });
     Register("OBBColliderComponent", "Collider", []() { return std::make_shared<OBBColliderComponent>(); });

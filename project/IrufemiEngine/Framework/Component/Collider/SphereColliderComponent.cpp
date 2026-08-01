@@ -12,6 +12,12 @@ SphereColliderComponent::~SphereColliderComponent() {
     if (collisionManager_) collisionManager_->UnregisterCollider(this);
 }
 
+void SphereColliderComponent::OnRegisterProperties() {
+    RegisterProperty("Local Offset", &localOffset_);
+    RegisterProperty("Local Radius", &localRadius_);
+    // ToDo: Layer や Mask も必要に応じて追加する
+}
+
 void SphereColliderComponent::Initialize() {
     if (gameObject_) {
     }

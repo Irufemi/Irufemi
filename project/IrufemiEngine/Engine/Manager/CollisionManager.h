@@ -98,6 +98,9 @@ public:
     /// @return 何かに当たった場合はtrue
     bool Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
 
+    /// @brief BVHに対してAABBのクエリを行い、交差するコライダーを取得する
+    void QueryAABB(const Irufemi::AABB& aabb, std::vector<ColliderComponent*>& outHits) const;
+
     /**
      * @brief スレッドプールを利用した非同期レイキャスト
      * @param pool 使用するエンジンのThreadPool
@@ -107,6 +110,9 @@ public:
 
     /// @brief デバッグ用のレイを描画キューに追加する
     void DrawDebugRay(const Irufemi::Ray& ray, float distance, const Irufemi::Vector4& color = {1,0,0,1});
+
+    /// @brief デバッグ用のAABBを描画キューに追加する
+    void DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color = {1,0,0,1});
 
 private:
     CollisionManager(const CollisionManager&) = delete;

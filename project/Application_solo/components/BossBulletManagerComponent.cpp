@@ -5,6 +5,11 @@
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "GravityPlayerComponent.h"
+#include "Engine/Manager/CollisionManager.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 BossBulletManagerComponent::BossBulletManagerComponent() {}
 
@@ -56,6 +61,45 @@ void BossBulletManagerComponent::Update() {
         if (denseIndex >= 0) {
             auto& vi = virtualInstances[denseIndex];
             vi.position_ += data.velocity * dt;
+            
+            auto engine = BaseModel::GetIrufemiEngine();
+            auto cm = engine->GetCollisionManager();
+            if (cm) {
+                Irufemi::Vector3 minPos = { vi.position_.x - hitRadius_, vi.position_.y - hitRadius_, vi.position_.z - hitRadius_ };
+                Irufemi::Vector3 maxPos = { vi.position_.x + hitRadius_, vi.position_.y + hitRadius_, vi.position_.z + hitRadius_ };
+                Irufemi::AABB aabb{ minPos, maxPos };
+                
+                std::vector<ColliderComponent*> hits;
+                cm->QueryAABB(aabb, hits);
+                
+                if (cm->GetIsDrawDebugLinePtr() && *cm->GetIsDrawDebugLinePtr()) {
+                    cm->DrawDebugAABB(aabb, {1.0f, 0.0f, 0.0f, 1.0f});
+                }
+                
+                bool isHit = false;
+                for (auto col : hits) {
+                    if (!col) continue;
+                    auto obj = col->GetGameObject();
+                    if (obj && obj->GetName() == "Player") {
+                        if (auto playerComp = obj->GetComponent<GravityPlayerComponent>()) {
+                            if (!playerComp->IsInvincible()) {
+                                Log::OutPutLog(std::cout, "[BossBulletManager] Hit Player!\n");
+                                playerComp->TakeDamage(1);
+                                isHit = true;
+                                break;
+                            } else {
+                                Log::OutPutLog(std::cout, "[BossBulletManager] Player is invincible.\n");
+                            }
+                        }
+                    }
+                }
+                
+                if (isHit) {
+                    ReleaseBullet(vid);
+                    continue;
+                }
+            }
+            
             activeVirtualIds_.push(vid); // Keep active
         } else {
             // Already destroyed somewhere else
@@ -66,6 +110,7 @@ void BossBulletManagerComponent::Update() {
 void BossBulletManagerComponent::OnRegisterProperties() {
     RegisterProperty("Max Bullets", &maxBullets_);
     RegisterProperty("Default Life Time", &defaultLifeTime_);
+    RegisterPropertyRange("Hit Radius", &hitRadius_, 0.1f, 10.0f);
 }
 
 void BossBulletManagerComponent::SpawnBullet(const Irufemi::Vector3& position, const Irufemi::Vector3& velocity) {

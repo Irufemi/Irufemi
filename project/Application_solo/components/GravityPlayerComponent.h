@@ -21,6 +21,9 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "GravityPlayerComponent"; }
 
+    void TakeDamage(int damage);
+    bool IsInvincible() const { return invincibilityTimer_ > 0.0f; }
+
 private:
     void HandlePullInput();
     void HandleMarkInput();
@@ -42,6 +45,17 @@ private:
 
     bool isThrowing_ = false;
     float throwTimer_ = 0.0f;
+    float hoverFrequency_ = 2.0f; // 浮遊の揺れ速度
+
+    // 被弾処理用
+    float invincibilityTimer_ = 0.0f;
+    float maxInvincibilityTime_ = 1.0f;
+    bool isFlashing_ = false;
+    float flashTimer_ = 0.0f;
+    float flashInterval_ = 0.05f;
+    Irufemi::Vector4 originalBaseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+    bool colorCached_ = false;
+
     float throwInterval_ = 0.15f; // 0.15秒間隔
     int throwRemainingCount_ = 0; // 今回の射撃ループで撃つ弾数
     

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -708,6 +708,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
     <ClCompile Include="Framework\Component\Effect\ParticleEmitterComponent.cpp" />
     <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp" />
+    <ClCompile Include="Framework\Component\Effect\ScreenEffectComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ModelBatchRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
@@ -917,6 +918,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h" />
     <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h" />
+    <ClInclude Include="Framework\Component\Effect\ScreenEffectComponent.h" />
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
     <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h" />

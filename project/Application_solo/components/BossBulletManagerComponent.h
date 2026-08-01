@@ -39,6 +39,7 @@ private:
     int maxBullets_ = 2000;
     float defaultLifeTime_ = 5.0f;
     Irufemi::Vector3 bulletScale_ = { 0.5f, 0.5f, 0.5f };
+    float hitRadius_ = 2.0f;
 
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
     std::vector<BossBulletData> bulletDataList_;

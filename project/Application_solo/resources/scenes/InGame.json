@@ -1546,6 +1546,39 @@
             },
             {
               "type": "PlayerTargetingComponent"
+            },
+            {
+              "data": {
+                "layer": 1,
+                "localOffset": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "localRadius": 0.30000001192092896,
+                "mask": 4294967295
+              },
+              "type": "SphereColliderComponent"
+            },
+            {
+              "data": {
+                "duration": 0.4000000059604645,
+                "mode": 15,
+                "targetGlitchParams": {
+                  "intensity": 2.0
+                }
+              },
+              "type": "ScreenEffectComponent"
+            },
+            {
+              "data": {
+                "duration": 0.4000000059604645,
+                "mode": 15,
+                "targetGlitchParams": {
+                  "intensity": 2.0
+                }
+              },
+              "type": "ScreenEffectComponent"
             }
           ],
           "instanceId": 372368188768739661,
@@ -4198,6 +4231,7 @@
             {
               "data": {
                 "Default Life Time": 5.0,
+                "Hit Radius": 1.0,
                 "Max Bullets": 2000
               },
               "type": "BossBulletManagerComponent"

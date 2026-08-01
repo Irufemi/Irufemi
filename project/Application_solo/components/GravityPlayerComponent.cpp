@@ -15,7 +15,13 @@
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Manager/CollisionManager.h"
 #include "Boss/BossComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 #include <algorithm>
+#include <cmath>
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
+#include "Framework/Component/Effect/ScreenEffectComponent.h"
 
 void GravityPlayerComponent::OnRegisterProperties() {
     RegisterProperty("Max Orbit Count", &maxOrbitCount_);
@@ -31,6 +37,10 @@ void GravityPlayerComponent::Initialize() {
     orbitingDebris_.clear();
     isThrowing_ = false;
     throwTimer_ = 0.0f;
+    invincibilityTimer_ = 0.0f;
+    flashTimer_ = 0.0f;
+    flashInterval_ = 0.1f;
+    colorCached_ = false;
 }
 
 void GravityPlayerComponent::Start() {
@@ -47,6 +57,40 @@ void GravityPlayerComponent::Start() {
 }
 
 void GravityPlayerComponent::Update() {
+    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    if (dt <= 0.0f) return;
+
+    // --- 被弾時の無敵時間と点滅処理 ---
+    if (invincibilityTimer_ > 0.0f) {
+        invincibilityTimer_ -= dt;
+        flashTimer_ += dt;
+        
+        BaseModel* model = nullptr;
+        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
+            model = reinterpret_cast<BaseModel*>(mesh->GetRenderable());
+        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
+            model = reinterpret_cast<BaseModel*>(skinned->GetRenderable());
+        }
+        
+        if (model) {
+            if (!colorCached_) {
+                originalBaseColor_ = model->GetColor();
+                colorCached_ = true;
+            }
+            if (fmod(flashTimer_, flashInterval_ * 2.0f) < flashInterval_) {
+                model->SetColor({1.0f, 0.0f, 0.0f, 1.0f}); // 赤色
+            } else {
+                model->SetColor(originalBaseColor_); // 通常色
+            }
+        }
+        
+        if (invincibilityTimer_ <= 0.0f) {
+            if (model && colorCached_) {
+                model->SetColor(originalBaseColor_);
+            }
+        }
+    }
+
     // 無効になったガレキを除外
     orbitingDebris_.erase(
         std::remove_if(orbitingDebris_.begin(), orbitingDebris_.end(),
@@ -69,6 +113,28 @@ void GravityPlayerComponent::Update() {
         HandlePullInput();
         HandleMarkInput();
         HandleThrowInput();
+    }
+}
+
+void GravityPlayerComponent::TakeDamage(int damage) {
+    if (IsInvincible()) {
+        Log::OutPutLog(std::cout, "[GravityPlayer] TakeDamage ignored (Invincible)\n");
+        return;
+    }
+
+    Log::OutPutLog(std::cout, "[GravityPlayer] TakeDamage! Triggering flashing...\n");
+    invincibilityTimer_ = maxInvincibilityTime_;
+    isFlashing_ = true;
+    flashTimer_ = 0.0f;
+    
+    // TODO: 必要に応じてカメラシェイク発火を追加
+
+    // ポストエフェクト演出の再生
+    auto& comps = gameObject_->GetComponents();
+    for (auto& comp : comps) {
+        if (auto screenEffect = std::dynamic_pointer_cast<ScreenEffectComponent>(comp)) {
+            screenEffect->Play();
+        }
     }
 }
 

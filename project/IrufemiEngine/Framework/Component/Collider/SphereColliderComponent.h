@@ -23,6 +23,8 @@ public:
      */
     ~SphereColliderComponent() override;
 
+    void OnRegisterProperties() override;
+
     /**
      * @brief コンポーネントの初期化
      * @details アタッチされているGameObjectからTransformComponentを取得しキャッシュします。
