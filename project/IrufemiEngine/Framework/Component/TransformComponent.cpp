@@ -36,8 +36,10 @@ Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
         if (auto parentT = parent->GetComponent<TransformComponent>()) {
             if (!inheritScale_) {
                 // スケールを除去し、回転と位置だけで再構築（せん断防止）
-                Irufemi::Vector3 pPos = parentT->GetWorldPosition();
-                Irufemi::Quaternion quat = parentT->GetWorldRotationQuat();
+                // 親のGetWorldPosition()等を呼ぶと抽出処理が走るため、既に計算済みのWorldMatrixから直接抽出する
+                const Irufemi::Matrix4x4& parentWorld = parentT->GetWorldMatrix();
+                Irufemi::Vector3 pPos = { parentWorld.m[3][0], parentWorld.m[3][1], parentWorld.m[3][2] };
+                Irufemi::Quaternion quat = Irufemi::Math::ToQuaternionFromMatrix(parentWorld);
                 Irufemi::Vector3 pScale = { 1.0f, 1.0f, 1.0f };
                 return Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
             }
@@ -78,7 +80,7 @@ void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRo
                 Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
                 Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
                 
-                rotation_ = Irufemi::Math::ToQuaternionFromMatrix(localMat);
+                rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(localMat));
                 MarkLocalDirty();
                 return;
             }
@@ -130,7 +132,7 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     }
     
     position_ = { localMat.m[3][0], localMat.m[3][1], localMat.m[3][2] };
-    rotation_ = Irufemi::Math::ToQuaternionFromMatrix(localMat);
+    rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(localMat));
     
     // スケールを計算
     Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
@@ -157,7 +159,7 @@ void TransformComponent::ExtractWorldTransform() const {
         return;
     }
     
-    worldRotation_ = Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_);
+    worldRotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(worldMatrix_));
     Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
     Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
     Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };

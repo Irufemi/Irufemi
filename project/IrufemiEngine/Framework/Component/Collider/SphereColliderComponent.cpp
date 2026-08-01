@@ -35,9 +35,9 @@ Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
         Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         
         // スケールの最大成分を半径に掛ける
-        float scaleX = worldScale.x;
-        float scaleY = worldScale.y;
-        float scaleZ = worldScale.z;
+        float scaleX = std::abs(worldScale.x);
+        float scaleY = std::abs(worldScale.y);
+        float scaleZ = std::abs(worldScale.z);
         
         // オブジェクトの回転とスケールを考慮したワールド空間のローカルオフセット
         Irufemi::Vector3 worldOffset = 
