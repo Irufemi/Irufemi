@@ -588,8 +588,21 @@ namespace Math {
     }
 
     Quaternion ToQuaternionFromEuler(Vector3 euler) {
-        Matrix4x4 m = MakeRotateXYZMatrix(euler);
-        return ToQuaternionFromMatrix(m);
+        float cx = std::cos(euler.x * 0.5f);
+        float sx = std::sin(euler.x * 0.5f);
+        float cy = std::cos(euler.y * 0.5f);
+        float sy = std::sin(euler.y * 0.5f);
+        float cz = std::cos(euler.z * 0.5f);
+        float sz = std::sin(euler.z * 0.5f);
+
+        Quaternion q;
+        // XYZ順 (Roll-Pitch-Yawの適用順) に合わせた直接計算
+        q.w = cx * cy * cz + sx * sy * sz;
+        q.x = sx * cy * cz - cx * sy * sz;
+        q.y = cx * sy * cz + sx * cy * sz;
+        q.z = cx * cy * sz - sx * sy * cz;
+
+        return Normalize(q);
     }
 
     Quaternion ToQuaternionFromMatrix(const Matrix4x4& m) {

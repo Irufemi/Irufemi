@@ -53,6 +53,11 @@ void TransformComponent::SetWorldPosition(const Irufemi::Vector3& worldPosition)
     if (gameObject_) {
         if (auto parent = gameObject_->GetParent()) {
             if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                Irufemi::Vector3 pScale = parentT->GetWorldScale();
+                if (std::abs(pScale.x) < 1e-6f || std::abs(pScale.y) < 1e-6f || std::abs(pScale.z) < 1e-6f) {
+                    SetPosition(worldPosition);
+                    return;
+                }
                 Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
                 position_ = Irufemi::Math::Transform(worldPosition, invMat);
                 MarkLocalDirty();
@@ -71,6 +76,11 @@ void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRo
     if (gameObject_) {
         if (auto parent = gameObject_->GetParent()) {
             if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                Irufemi::Vector3 pScale = parentT->GetWorldScale();
+                if (std::abs(pScale.x) < 1e-6f || std::abs(pScale.y) < 1e-6f || std::abs(pScale.z) < 1e-6f) {
+                    SetRotationQuat(worldRotation);
+                    return;
+                }
                 CheckAndComputeMatrix();
                 Irufemi::Vector3 wPos = GetWorldPosition();
                 Irufemi::Vector3 wScale = GetWorldScale();
@@ -101,6 +111,11 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
     if (gameObject_) {
         if (auto parent = gameObject_->GetParent()) {
             if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                Irufemi::Vector3 pScale = parentT->GetWorldScale();
+                if (std::abs(pScale.x) < 1e-6f || std::abs(pScale.y) < 1e-6f || std::abs(pScale.z) < 1e-6f) {
+                    SetScale(worldScale);
+                    return;
+                }
                 CheckAndComputeMatrix();
                 Irufemi::Vector3 wPos = GetWorldPosition();
                 Irufemi::Quaternion wRot = GetWorldRotationQuat();
@@ -143,8 +158,13 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     if (gameObject_) {
         if (auto parent = gameObject_->GetParent()) {
             if (auto parentT = parent->GetComponent<TransformComponent>()) {
-                Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
-                localMat = Irufemi::Math::Multiply(worldMatrix, invMat);
+                Irufemi::Vector3 pScale = parentT->GetWorldScale();
+                if (std::abs(pScale.x) < 1e-6f || std::abs(pScale.y) < 1e-6f || std::abs(pScale.z) < 1e-6f) {
+                    // 親がゼロスケールの場合は逆算不能なため、worldMatrixをそのままローカル行列として扱う
+                } else {
+                    Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
+                    localMat = Irufemi::Math::Multiply(worldMatrix, invMat);
+                }
             }
         }
     }
