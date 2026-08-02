@@ -261,7 +261,7 @@ private:
     /**
      * @brief モデルの読み込み実体（内部用）
      */
-    void LoadInternal(ManagedModel* model, const std::string& fullPath);
+    void LoadInternal(std::shared_ptr<ManagedModel> model, const std::string& fullPath);
 
     /**
      * @brief 現在のシーンが初期化中かどうかを判定する
@@ -277,7 +277,7 @@ private:
     mutable std::recursive_mutex mutex_;
     ResourceCachePool modelPool_;
     mutable std::unordered_map<std::string, ResourceHandle> nameToHandleMap_;
-    std::vector<std::unique_ptr<ManagedModel>> managedModels_;
+    std::vector<std::shared_ptr<ManagedModel>> managedModels_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     
     mutable std::vector<std::string> availableModelsCache_;

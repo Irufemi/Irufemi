@@ -85,7 +85,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
             if (debrisComp->manager_) {
                 debrisComp->manager_->ReleaseDebris(otherObj->shared_from_this());
                 if (debrisComp->virtualId_ >= 0) {
-                    debrisComp->manager_->NotifyDestroyed(debrisComp->virtualId_);
+                    debrisComp->manager_->NotifyDestroyed(debrisComp->virtualId_, debrisComp->variationIndex_);
                 }
             } else {
                 otherObj->SetIsActive(false);
@@ -121,7 +121,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
         if (manager_) {
             manager_->ReleaseDebris(gameObject_->shared_from_this());
             if (virtualId_ >= 0) {
-                manager_->NotifyDestroyed(virtualId_);
+                manager_->NotifyDestroyed(virtualId_, variationIndex_);
             }
         } else {
             gameObject_->SetIsActive(false); 

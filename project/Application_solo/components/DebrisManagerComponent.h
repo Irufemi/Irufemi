@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <queue>
+#include <string>
 
 class GameObject;
 class VirtualEntityManagerComponent;
@@ -48,7 +49,7 @@ public:
     std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Irufemi::Vector3& pos, float radius);
 
     // 破壊通知
-    void NotifyDestroyed(int virtualId);
+    void NotifyDestroyed(int virtualId, int variationIndex);
 
     // Debris パラメータのゲッター
     float GetDebrisPullSpeed() const { return debrisPullSpeed_; }
@@ -72,17 +73,18 @@ public:
     float GetMaxThrowDistanceSq() const { return maxThrowDistance_ * maxThrowDistance_; }
 
 private:
-    int poolSize_ = 500;
-    int maxVirtualInstances_ = 20000; // 仮想インスタンスの最大予約数
-
-    // エンジンの基盤システム（Virtual Entity）
-    VirtualEntityManagerComponent* virtualManager_ = nullptr;
-
-    // がれき固有のアニメーションデータ（フラット配列によるキャッシュ最適化）
-    std::vector<DebrisAnimData> animDataList_;
-
-    // 生成順を追跡するためのキュー（最古のインスタンスをO(1)で特定するため）
-    std::queue<int> activeIds_;
+    // --- Data-Driven Variations ---
+    struct DebrisVariation {
+        std::string id;
+        std::string modelPath;
+        int maxPoolSize;
+        int spawnWeight;
+        VirtualEntityManagerComponent* virtualManager = nullptr;
+        std::vector<DebrisAnimData> animDataList;
+        std::queue<int> activeIds;
+        std::shared_ptr<GameObject> poolObject;
+    };
+    std::vector<DebrisVariation> variations_;
 
     // --- Debris Settings ---
     float debrisPullSpeed_ = 10.0f;

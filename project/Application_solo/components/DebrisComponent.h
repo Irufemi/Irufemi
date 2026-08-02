@@ -39,11 +39,15 @@ public:
     void SetVirtualId(int id) { virtualId_ = id; }
     int GetVirtualId() const { return virtualId_; }
     void SetManager(DebrisManagerComponent* manager) { manager_ = manager; }
+    
+    void SetVariationIndex(int index) { variationIndex_ = index; }
+    int GetVariationIndex() const { return variationIndex_; }
 
 private:
     DebrisState state_ = DebrisState::Idle;
     
     int virtualId_ = -1;
+    int variationIndex_ = -1;
     DebrisManagerComponent* manager_ = nullptr;
     
     // 追従・目標用の対象

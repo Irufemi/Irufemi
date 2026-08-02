@@ -27,8 +27,8 @@ void TextureManager::Initialize(DirectXCommon* dxCommon) {
     dxCommon_ = dxCommon;
     Texture::SetDirectXCommon(dxCommon_);
 
-    // メモリ予算の設定（例: VRAM使用量として1GBを上限とする）
-    texturePool_.SetMemoryBudget(1024ULL * 1024ULL * 1024ULL); 
+    // メモリ予算の設定（RTX 3060 (12GB/8GB) 等に合わせて設定: 2GB）
+    texturePool_.SetMemoryBudget(2048ULL * 1024ULL * 1024ULL); 
 
     // ThreadPoolの生成 (論理コア数分)
     if (!threadPool_) {
@@ -97,7 +97,7 @@ ResourceHandle TextureManager::LoadTexture(const std::string& name) {
     if (handle.index >= textureResources_.size()) {
         textureResources_.resize(handle.index + 1);
     }
-    textureResources_[handle.index] = std::make_unique<Texture>();
+    textureResources_[handle.index] = std::make_shared<Texture>();
     
     auto& tex = textureResources_[handle.index];
 
@@ -113,8 +113,8 @@ ResourceHandle TextureManager::LoadTexture(const std::string& name) {
     nameToHandleMap_[name] = handle;
 
     // 非同期タスクとして投入
-    // Raw Pointerを取り出してキャプチャ（Texture自身のライフサイクルはtextureResources_が持つ）
-    Texture* texPtr = tex.get();
+    // shared_ptrをキャプチャして、タスク実行中も生存させる
+    auto texPtr = tex;
     const_cast<TextureManager*>(this)->EnqueueTask([texPtr, name, handle, this]() {
         texPtr->Initialize(name);
         texturePool_.SetLoaded(handle, true);
@@ -151,7 +151,7 @@ ResourceHandle TextureManager::RegisterExternalTexture(const std::string& name, 
         textureResources_.resize(handle.index + 1);
     }
 
-    auto tex = std::make_unique<Texture>();
+    auto tex = std::make_shared<Texture>();
     tex->InitializeFromExternalResource(name, resource, srvIndex, srvHandle);
     textureResources_[handle.index] = std::move(tex);
     nameToHandleMap_[name] = handle;

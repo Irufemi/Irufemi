@@ -67,8 +67,8 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
         backgroundTaskGroup_ = std::make_shared<TaskGroup>();
     }
     
-    // メモリ予算の設定（例: 512MB）
-    modelPool_.SetMemoryBudget(512ULL * 1024ULL * 1024ULL);
+    // メモリ予算の設定（RTX 3060 (12GB/8GB) 等に合わせて設定: 1GB）
+    modelPool_.SetMemoryBudget(1024ULL * 1024ULL * 1024ULL);
 }
 
 void ModelManager::SetRootDirectory(std::string root) {
@@ -109,7 +109,7 @@ ResourceHandle ModelManager::LoadModel(const std::string& filename) {
     if (handle.index >= managedModels_.size()) {
         managedModels_.resize(handle.index + 1);
     }
-    managedModels_[handle.index] = std::make_unique<ManagedModel>();
+    managedModels_[handle.index] = std::make_shared<ManagedModel>();
     auto& managedModel = managedModels_[handle.index];
     managedModel->status.store(ManagedModel::LoadingStatus::Pending);
 
@@ -131,9 +131,9 @@ ResourceHandle ModelManager::LoadModel(const std::string& filename) {
 
     Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Request async load: {}", GetCurrentThreadId(), filename));
 
-    ManagedModel* rawPtr = managedModel.get();
-    const_cast<ModelManager*>(this)->EnqueueTask([rawPtr, fullPath, handle, this]() {
-        LoadInternal(rawPtr, fullPath);
+    auto managedModelPtr = managedModel;
+    const_cast<ModelManager*>(this)->EnqueueTask([managedModelPtr, fullPath, handle, this]() {
+        LoadInternal(managedModelPtr, fullPath);
         modelPool_.SetLoaded(handle, true);
     });
 
@@ -157,7 +157,7 @@ ManagedModel* ModelManager::Resolve(ResourceHandle handle) const {
     return nullptr;
 }
 
-void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& fullPath) {
+void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, const std::string& fullPath) {
 
     std::string key = SplitDirectoryAndFile(fullPath).second;
     Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Worker START: {}", GetCurrentThreadId(), key));
@@ -399,7 +399,7 @@ void ModelManager::OnDirectoryChanged() {
     // 変更が複数回呼ばれることを防ぐため少し待つ
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    std::vector<ManagedModel*> modelsToReload;
+    std::vector<std::shared_ptr<ManagedModel>> modelsToReload;
     {
         std::lock_guard<std::recursive_mutex> lock(mutex_);
         for (const auto& modelPtr : managedModels_) {
@@ -413,7 +413,7 @@ void ModelManager::OnDirectoryChanged() {
                     
                     // タイムスタンプが新しければリロード対象
                     if (currentLwt > modelPtr->lastLoadTime) {
-                        modelsToReload.push_back(modelPtr.get());
+                        modelsToReload.push_back(modelPtr);
                         modelPtr->lastLoadTime = currentLwt; // 二重検知を防ぐ
                     }
                 }
@@ -421,7 +421,7 @@ void ModelManager::OnDirectoryChanged() {
         }
     }
 
-    for (auto* model : modelsToReload) {
+    for (auto model : modelsToReload) {
         Log::OutPutLog(std::cout, "[ModelManager] Hot-Reloading: " + model->sourceFilePath);
         // Criticalタスクとして積むことで、Sceneの更新を止めて安全にリソースをスワップする
         EnqueueTask(true, [this, model]() {

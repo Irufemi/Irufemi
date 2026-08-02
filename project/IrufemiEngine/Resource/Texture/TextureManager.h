@@ -226,7 +226,7 @@ private:
 
     ResourceCachePool texturePool_;
     mutable std::unordered_map<std::string, ResourceHandle> nameToHandleMap_;
-    std::vector<std::unique_ptr<Texture>> textureResources_;
+    std::vector<std::shared_ptr<Texture>> textureResources_;
     
     mutable std::mutex mutex_;
 
