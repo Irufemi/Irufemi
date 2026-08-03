@@ -85,12 +85,24 @@ public:
      */
     void SetPoseOverride(const struct SkeletonPose* pose) { poseOverride_ = pose; }
 
+    /**
+     * @brief Visible を設定する。
+     * @param[in] visible 設定する Visible の値
+     */
+    void SetVisible(bool visible) { isVisible_ = visible; }
+    /**
+     * @brief IsVisible かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
+    bool IsVisible() const { return isVisible_; }
+
 private:
     std::unique_ptr<AnimatedMeshObject> animatedMesh_;
     std::string modelFilename_ = "";
     std::string currentLoadedFilename_ = "";
 
     const struct SkeletonPose* poseOverride_ = nullptr;
+    bool isVisible_ = true;
     
     std::unordered_map<size_t, ObjMaterial> materialOverrides_;
 

@@ -148,6 +148,14 @@ void GravityPlayerComponent::TakeDamage(int damage) {
         hp_ = 0;
         isDead_ = true;
         Log::OutPutLog(std::cout, "[GravityPlayer] Player Died!\n");
+        
+        // 自機が死んだときに自機のモデルの描画を切る
+        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
+            mesh->SetVisible(false);
+        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
+            skinned->SetVisible(false);
+        }
+        
         return;
     }
 

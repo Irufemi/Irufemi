@@ -24,6 +24,7 @@ public:
 
     void TakeDamage(int damage);
     bool IsInvincible() const { return invincibilityTimer_ > 0.0f; }
+    void SetGodMode(bool godMode) { isGodMode_ = godMode; }
 
     int GetHp() const { return hp_; }
     int GetMaxHp() const { return maxHp_; }

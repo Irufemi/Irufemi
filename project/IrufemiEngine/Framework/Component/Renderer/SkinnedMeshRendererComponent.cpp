@@ -46,6 +46,7 @@ void SkinnedMeshRendererComponent::Update() {
 }
 
 void SkinnedMeshRendererComponent::Draw() {
+    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) return;
     animatedMesh_->Draw();
 }
 

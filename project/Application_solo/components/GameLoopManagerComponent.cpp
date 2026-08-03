@@ -48,6 +48,9 @@ void GameLoopManagerComponent::Update() {
         else if (boss_ && boss_->GetHp() <= 0) {
             state_ = State::ResultTransition;
             isClear_ = true;
+            if (player_) {
+                player_->SetGodMode(true); // ゲームクリア時に被弾しないようにする
+            }
             engine->SetTimeScale(timeScaleAtResult_);
             ShowResultUI(true);
         }
