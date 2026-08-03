@@ -3899,9 +3899,9 @@
             "Beam Offset Y": -2.0,
             "Beam Offset Z": 25.0,
             "Beam Range": 1000.0,
-            "HP": 1.0,
-            "Max HP": 1.0,
-            "Max Shield Count": 1,
+            "HP": 20.0,
+            "Max HP": 20.0,
+            "Max Shield Count": 30,
             "Shield Radius": 8.0
           },
           "type": "BossComponent"

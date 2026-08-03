@@ -17,7 +17,11 @@ void CameraComponent::OnRegisterProperties() {
 
 void CameraComponent::Initialize() {
     camera_ = std::make_shared<Camera>();
-    camera_->Initialize();
+    
+    auto* engine = BaseModel::GetIrufemiEngine();
+    int clientWidth = engine ? engine->GetClientWidth() : 1280;
+    int clientHeight = engine ? engine->GetClientHeight() : 720;
+    camera_->Initialize(clientWidth, clientHeight);
     
     // プロパティ値を適用
     camera_->SetFovY(fovAngleY_);
@@ -25,7 +29,6 @@ void CameraComponent::Initialize() {
     
     // カメラマネージャに登録
     if (gameObject_) {
-        auto* engine = BaseModel::GetIrufemiEngine();
         if (engine && engine->GetCameraManager()) {
             engine->GetCameraManager()->AddCamera(gameObject_->GetName(), camera_);
             if (makeActive_) {

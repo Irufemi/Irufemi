@@ -105,6 +105,22 @@ void EditorManager::EnterPlayMode() {
     // 現在のシーン状態をバックアップ
     SceneSerializer::Save(scene, ".temp_playmode");
     playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
+
+    // === ここから追加: Play開始時にシーンをクリーンな状態にリロードする ===
+    ClearSelectedObject(); // 選択状態をクリア
+
+    // GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄
+    if (auto dxCommon = engine_->GetDirectXCommon()) {
+        dxCommon->WaitForGPU();
+    }
+    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+        baseScene->ClearGameObjects();
+    }
+    
+    // 保存したばかりのバックアップから復元して、完全に初期化し直す
+    SceneSerializer::Load(scene, ".temp_playmode");
+    // === ここまで追加 ===
+
     currentMode_ = EditorModeState::Playing;
     engine_->SetPlayMode(true);
     engine_->SetTimeScale(1.0f); // 再生時は等倍
