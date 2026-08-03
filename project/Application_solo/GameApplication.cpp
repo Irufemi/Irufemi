@@ -26,6 +26,7 @@
 #include "components/LockonMarkerUIComponent.h"
 #include "components/DroneManagerComponent.h"
 #include "components/BossBulletManagerComponent.h"
+#include "components/GameLoopManagerComponent.h"
 
 // エンジン機能
 #include "Engine/Graphics/DirectX/ShaderManager.h"
@@ -38,8 +39,6 @@
 #include "scene/title/TitleScene.h"
 #include "scene/stageSelect/SelectScene.h"
 #include "scene/inGame/GameScene.h"
-#include "scene/Clear/ClearScene.h"
-#include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
 #include "scene/TL1/TL1Scene.h"
 #include "scene/CG4/CG4Scene.h"
@@ -70,8 +69,6 @@ namespace {
         sm.Register("Title", [] { return std::make_unique<TitleScene>(); });
         sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
         sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
-        sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
-        sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });
         sm.Register("Pause", [] { return std::make_unique<PauseScene>(); });
         sm.Register("TL1", [] { return std::make_unique<TL1Scene>(); });
         sm.Register("CG4", [] { return std::make_unique<CG4Scene>(); });
@@ -142,6 +139,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("DroneManagerComponent", "Game", []() { return std::make_shared<DroneManagerComponent>(); });
     ComponentFactory::Register("BossBulletManagerComponent", "Game", []() { return std::make_shared<BossBulletManagerComponent>(); });
     ComponentFactory::Register("CG4PlayerComponent", "Game", []() { return std::make_shared<CG4PlayerComponent>(); });
+    ComponentFactory::Register("GameLoopManagerComponent", "Game", []() { return std::make_shared<GameLoopManagerComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

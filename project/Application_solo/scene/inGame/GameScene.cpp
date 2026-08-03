@@ -45,10 +45,7 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 void GameScene::Update() {
     BaseScene::Update(); // これにより GameObject 群の Update が呼ばれる
 
-    // BackSpaceキーで遷移テスト
-    if (IsKeyPressed(VK_F8)) {
-        engine_->GetSceneManager()->TransitionTo("Pause", SceneTransition::Type::Slide, 1.0f);
-    }
+
 }
 
 void GameScene::Draw() {

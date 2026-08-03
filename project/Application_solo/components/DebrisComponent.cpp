@@ -314,10 +314,20 @@ void DebrisComponent::Update() {
                         targetTransform->GetWorldPosition().y - transform->GetWorldPosition().y,
                         targetTransform->GetWorldPosition().z - transform->GetWorldPosition().z
                     };
-                    // 正規化して一定速度で飛ばす
                     float len = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
+                    float moveDist = GetThrowSpeed() * deltaTime;
                     if (len > 0.001f) {
-                        throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
+                        if (len <= moveDist) {
+                            throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
+                            Irufemi::Vector3 pos = transform->GetWorldPosition();
+                            pos.x += diff.x;
+                            pos.y += diff.y;
+                            pos.z += diff.z;
+                            transform->SetPosition(pos);
+                            return;
+                        } else {
+                            throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
+                        }
                     }
                 }
             }

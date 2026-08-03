@@ -1534,8 +1534,11 @@
             },
             {
               "data": {
+                "God Mode": false,
+                "HP": 100,
+                "Max HP": 100,
                 "Max Orbit Count": 10,
-                "NoLock Throw Dist": 1000.0,
+                "No Lock Throw Dist": 1000.0,
                 "Orbit Angle Max": 6.28000020980835,
                 "Orbit Radius Max": 4.0,
                 "Orbit Radius Min": 2.0,
@@ -1549,7 +1552,7 @@
             },
             {
               "data": {
-                "layer": 1,
+                "layer": 2,
                 "localOffset": [
                   0.0,
                   0.0,
@@ -3896,8 +3899,9 @@
             "Beam Offset Y": -2.0,
             "Beam Offset Z": 25.0,
             "Beam Range": 1000.0,
-            "Max HP": 1000.0,
-            "Max Shield Count": 100,
+            "HP": 1.0,
+            "Max HP": 1.0,
+            "Max Shield Count": 1,
             "Shield Radius": 8.0
           },
           "type": "BossComponent"
@@ -3914,7 +3918,7 @@
         },
         {
           "data": {
-            "layer": 1,
+            "layer": 4,
             "localOffset": [
               0.0,
               0.0,
@@ -4265,6 +4269,41 @@
       ],
       "instanceId": 9306585553890366926,
       "name": "BossContainer",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "inheritScale": true,
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              -0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "Result Delay Time": 3.0,
+            "Result Time Scale": 0.10000000149011612
+          },
+          "type": "GameLoopManagerComponent"
+        }
+      ],
+      "instanceId": 8040492037901668950,
+      "name": "GameManager",
       "tag": "Untagged"
     }
   ],

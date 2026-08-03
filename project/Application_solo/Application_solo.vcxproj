@@ -235,14 +235,12 @@ exit 0</Command>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</WholeProgramOptimization>
     </ClCompile>
-    <ClCompile Include="scene\GameOver\GameOverScene.cpp" />
     <ClCompile Include="scene\InGame\GameScene.cpp" />
     <ClCompile Include="scene\CG4\CG4PlayerComponent.cpp" />
     <ClCompile Include="scene\CG4\CG4Scene.cpp" />
     <ClCompile Include="scene\Pause\PauseScene.cpp" />
     <ClCompile Include="scene\TL1\TL1Scene.cpp" />
     <ClCompile Include="scene\TL1\MagicBrushClient.cpp" />
-    <ClCompile Include="scene\Clear\ClearScene.cpp" />
     <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
     <ClCompile Include="scene\Title\TitleScene.cpp" />
     <ClCompile Include="UI\LoadingScreen.cpp" />
@@ -264,6 +262,7 @@ exit 0</Command>
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
     <ClCompile Include="components\EnvironmentManagerComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
+    <ClCompile Include="components\GameLoopManagerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
     <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
     <ClCompile Include="components\EffectManagerComponent.cpp" />
@@ -275,14 +274,12 @@ exit 0</Command>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
 
-    <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="scene\InGame\GameScene.h" />
     <ClInclude Include="scene\CG4\CG4PlayerComponent.h" />
     <ClInclude Include="scene\CG4\CG4Scene.h" />
     <ClInclude Include="scene\Pause\PauseScene.h" />
     <ClInclude Include="scene\TL1\TL1Scene.h" />
     <ClInclude Include="scene\TL1\MagicBrushClient.h" />
-    <ClInclude Include="scene\Clear\ClearScene.h" />
     <ClInclude Include="scene\StageSelect\SelectScene.h" />
     <ClInclude Include="scene\Title\TitleScene.h" />
     <ClInclude Include="UI\LoadingScreen.h" />
@@ -305,6 +302,7 @@ exit 0</Command>
     <ClInclude Include="components\DebrisManagerComponent.h" />
     <ClInclude Include="components\EnvironmentManagerComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
+    <ClInclude Include="components\GameLoopManagerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
     <ClInclude Include="components\SceneTransitionButtonComponent.h" />
     <ClInclude Include="components\EffectManagerComponent.h" />

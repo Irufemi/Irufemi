@@ -111,7 +111,11 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, Irufemi::BlendM
         desc.DepthStencilState = MakeDepth(depth);
     }
     
-    desc.DSVFormat = psoDesc.dsvFormat != DXGI_FORMAT_UNKNOWN ? psoDesc.dsvFormat : dsvFormat_;
+    if (psoDesc.noDSV) {
+        desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+    } else {
+        desc.DSVFormat = psoDesc.dsvFormat != DXGI_FORMAT_UNKNOWN ? psoDesc.dsvFormat : dsvFormat_;
+    }
     
     if (psoDesc.isDepthOnly) {
         desc.NumRenderTargets = 0;

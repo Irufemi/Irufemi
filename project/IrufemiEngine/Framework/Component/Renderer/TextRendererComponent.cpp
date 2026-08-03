@@ -4,7 +4,9 @@
 #include "Engine/Core/Utility/StringUtility.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 #include "Engine/Core/Shape/Sphere.h"
+#include "Engine/Core/Utility/Log.h"
 #include <algorithm>
+#include <iostream>
 
 TextRendererComponent::TextRendererComponent() {}
 
@@ -56,6 +58,13 @@ void TextRendererComponent::Update() {
 }
 
 void TextRendererComponent::Draw() {
+    if (isTopMost_) {
+        static int debugCount = 0;
+        if (debugCount++ % 60 == 0) {
+            std::string msg = "[TextRendererComponent] Drawing TopMost Text\n";
+            Log::OutPutLog(std::cout, msg);
+        }
+    }
     textObj_->Draw();
 }
 

@@ -57,9 +57,10 @@ public:
         DXGI_FORMAT rtvFormat2 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET2 (Normal)
         DXGI_FORMAT rtvFormat3 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET3 (Material)
         DXGI_FORMAT rtvFormat4 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET4 (Velocity)
-        DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合はManagerのデフォルトを使用
+        DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合、Managerのデフォルトを使用
         bool isDepthOnly = false;       // シャドウマップなど、RTVを持たないパス用
         bool disableDepthTest = false;  // バックバッファ書き込みなど、深度テストを無効化する用
+        bool noDSV = false;             // バックバッファなど、DSVを一切バインドしないパス用 (DSVFormat = UNKNOWN を強制する)
         bool useNullInputLayout = false;// CopyImageなど、頂点バッファを入力としないパス用
     };
 

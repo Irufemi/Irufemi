@@ -99,6 +99,7 @@ void BossComponent::Update() {
 }
 
 void BossComponent::OnRegisterProperties() {
+    RegisterProperty("HP", &hp_);
     RegisterProperty("Max HP", &maxHp_);
     RegisterProperty("Max Shield Count", &maxShieldCount_);
     RegisterProperty("Shield Radius", &shieldRadius_);

@@ -24,10 +24,14 @@
 #include "Framework/Component/Effect/ScreenEffectComponent.h"
 
 void GravityPlayerComponent::OnRegisterProperties() {
+    Component::OnRegisterProperties();
     RegisterProperty("Max Orbit Count", &maxOrbitCount_);
     RegisterProperty("Pull Radius", &pullRadius_);
+    RegisterProperty("No Lock Throw Dist", &noLockThrowDistance_);
+    RegisterProperty("HP", &hp_);
+    RegisterProperty("Max HP", &maxHp_);
+    RegisterProperty("God Mode", &isGodMode_);
     RegisterProperty("Throw Interval", &throwInterval_);
-    RegisterProperty("NoLock Throw Dist", &noLockThrowDistance_);
     RegisterProperty("Orbit Radius Min", &orbitRadiusMin_);
     RegisterProperty("Orbit Radius Max", &orbitRadiusMax_);
     RegisterProperty("Orbit Angle Max", &orbitAngleRandomMax_);
@@ -57,6 +61,15 @@ void GravityPlayerComponent::Start() {
 }
 
 void GravityPlayerComponent::Update() {
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+    if (BaseModel::GetIrufemiEngine()->GetInputManager()->IsKeyPressed(VK_F9)) {
+        isGodMode_ = !isGodMode_;
+        Log::OutPutLog(std::cout, std::string("[GravityPlayer] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
+    }
+#endif
+
+    if (isDead_) return;
+
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (dt <= 0.0f) return;
 
@@ -117,12 +130,28 @@ void GravityPlayerComponent::Update() {
 }
 
 void GravityPlayerComponent::TakeDamage(int damage) {
+    if (isDead_) return;
+    
+    if (isGodMode_) {
+        Log::OutPutLog(std::cout, "[GravityPlayer] TakeDamage ignored (God Mode)\n");
+        return;
+    }
+
     if (IsInvincible()) {
         Log::OutPutLog(std::cout, "[GravityPlayer] TakeDamage ignored (Invincible)\n");
         return;
     }
 
-    Log::OutPutLog(std::cout, "[GravityPlayer] TakeDamage! Triggering flashing...\n");
+    hp_ -= damage;
+    Log::OutPutLog(std::cout, "[GravityPlayer] Took Damage! HP: " + std::to_string(hp_) + "\n");
+    if (hp_ <= 0) {
+        hp_ = 0;
+        isDead_ = true;
+        Log::OutPutLog(std::cout, "[GravityPlayer] Player Died!\n");
+        return;
+    }
+
+    Log::OutPutLog(std::cout, "[GravityPlayer] Triggering flashing...\n");
     invincibilityTimer_ = maxInvincibilityTime_;
     isFlashing_ = true;
     flashTimer_ = 0.0f;

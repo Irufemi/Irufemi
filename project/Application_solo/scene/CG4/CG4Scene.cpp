@@ -94,11 +94,6 @@ void CG4Scene::Initialize(IrufemiEngine* engine) {
 // 更新
 void CG4Scene::Update() {
     BaseScene::Update();
-
-    // BackSpaceキーで遷移テスト (例)
-    if (IsKeyPressed(VK_BACK)) {
-        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Slide, 1.0f);
-    }
 }
 
 void CG4Scene::Draw() {

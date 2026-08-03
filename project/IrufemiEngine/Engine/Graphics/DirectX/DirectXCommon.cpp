@@ -420,7 +420,16 @@ void DirectXCommon::RegisterAllShaders() {
     spriteBBDesc.shaders = { vsSprite, psSprite };
     spriteBBDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     spriteBBDesc.disableDepthTest = true;
+    spriteBBDesc.noDSV = true;
     psoManager_->RegisterShader("SpriteForBackBuffer", spriteBBDesc);
+
+    PSOManager::PipelineStateDesc spriteBatchBBDesc = spriteBBDesc;
+    spriteBatchBBDesc.shaders = { vsSpriteBatch, psSprite };
+    psoManager_->RegisterShader("SpriteBatchForBackBuffer", spriteBatchBBDesc);
+
+    PSOManager::PipelineStateDesc textBBDesc = spriteBBDesc;
+    textBBDesc.shaders = { vsText, psText };
+    psoManager_->RegisterShader("TextForBackBuffer", textBBDesc);
 
     // --- Compute PSO生成 ---
     auto computeRootSig = GetComputeRootSignature();

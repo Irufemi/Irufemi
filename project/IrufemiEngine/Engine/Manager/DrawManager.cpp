@@ -28,6 +28,7 @@ using namespace RenderPackets;
 #include "../Graphics/Pipeline/RenderGraph/MainTransparentPass.h"
 #include "../Graphics/Pipeline/RenderGraph/UIPass.h"
 #include "../Graphics/Pipeline/RenderGraph/PostUIPass.h"
+#include "../Graphics/Pipeline/RenderGraph/TopMostPass.h"
 #include "../Graphics/Pipeline/RenderGraph/PostProcessPass.h"
 #include "../Graphics/Pipeline/RenderGraph/SelectionOutlinePass.h"
 #include "../../Resource/Model/ModelManager.h"
@@ -131,6 +132,7 @@ void DrawManager::Initialize(DirectXCommon* dx) {
     renderGraph_->AddPass(std::make_unique<PostProcessPass>());
     renderGraph_->AddPass(std::make_unique<UIPass>());
     renderGraph_->AddPass(std::make_unique<PostUIPass>());
+    renderGraph_->AddPass(std::make_unique<TopMostPass>());
     renderGraph_->AddPass(std::make_unique<SelectionOutlinePass>());
 
     // シャドウマップの初期化 (2048x2048) - 全フレーム分
@@ -484,6 +486,7 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
 
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LegacyPSTexture, gpuHandle);
 
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -552,6 +555,7 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
     
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->textureHandle_);
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LegacyPSTexture, gpuHandle);
     
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
@@ -1302,9 +1306,7 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
         renderGraph_->SetInitialResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
         // 実行後の最終ステート（SRV）を登録
-#ifdef EditorMode
         renderGraph_->SetFinalResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-#endif
         if (engine->GetEffectMaskTexture()) {
             renderGraph_->SetFinalResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
@@ -1351,4 +1353,7 @@ void DrawManager::ClearRenderQueues() {
     debugPrimitiveQueue_.clear();
     postRenderQueue_.clear();
     textQueue_.clear();
+    topMostTextQueue_.clear();
+    topMostSpriteQueue_.clear();
+    topMostSpriteBatchQueue_.clear();
 }

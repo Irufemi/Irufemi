@@ -15,6 +15,7 @@ public:
     GravityPlayerComponent() = default;
     ~GravityPlayerComponent() override = default;
 
+
     void Initialize() override;
     void Start() override;
     void Update() override;
@@ -23,6 +24,10 @@ public:
 
     void TakeDamage(int damage);
     bool IsInvincible() const { return invincibilityTimer_ > 0.0f; }
+
+    int GetHp() const { return hp_; }
+    int GetMaxHp() const { return maxHp_; }
+    bool IsDead() const { return isDead_; }
 
 private:
     void HandlePullInput();
@@ -61,4 +66,10 @@ private:
     
     // ノーロック射撃時に、レイキャストが何にも当たらなかった場合の最大飛距離
     float noLockThrowDistance_ = 1000.0f; 
+
+    // --- 体力・デバッグ関連 ---
+    int hp_ = 100;
+    int maxHp_ = 100;
+    bool isDead_ = false;
+    bool isGodMode_ = false;
 };
