@@ -22,9 +22,7 @@
     <Filter Include="scene\InGame">
       <UniqueIdentifier>{5A3B514E-0791-5B46-B080-57593ACEB77C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="scene\CG4">
-      <UniqueIdentifier>{62929F92-3CF2-5C73-8D17-E558D0220CG4}</UniqueIdentifier>
-    </Filter>
+
     <Filter Include="scene\Pause">
       <UniqueIdentifier>{E394E23F-0134-58A9-A8F7-981A67EB823C}</UniqueIdentifier>
     </Filter>
@@ -48,12 +46,7 @@
     <ClCompile Include="scene\InGame\GameScene.cpp">
       <Filter>scene\InGame</Filter>
     </ClCompile>
-    <ClCompile Include="scene\CG4\CG4PlayerComponent.cpp">
-      <Filter>scene\CG4</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\CG4\CG4Scene.cpp">
-      <Filter>scene\CG4</Filter>
-    </ClCompile>
+
     <ClCompile Include="scene\Pause\PauseScene.cpp">
       <Filter>scene\Pause</Filter>
     </ClCompile>
@@ -148,12 +141,7 @@
     <ClInclude Include="scene\InGame\GameScene.h">
       <Filter>scene\InGame</Filter>
     </ClInclude>
-    <ClInclude Include="scene\CG4\CG4PlayerComponent.h">
-      <Filter>scene\CG4</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\CG4\CG4Scene.h">
-      <Filter>scene\CG4</Filter>
-    </ClInclude>
+
     <ClInclude Include="scene\Pause\PauseScene.h">
       <Filter>scene\Pause</Filter>
     </ClInclude>

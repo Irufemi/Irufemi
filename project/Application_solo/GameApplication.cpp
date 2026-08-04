@@ -41,8 +41,7 @@
 #include "scene/inGame/GameScene.h"
 #include "scene/Pause/PauseScene.h"
 #include "scene/TL1/TL1Scene.h"
-#include "scene/CG4/CG4Scene.h"
-#include "scene/CG4/CG4PlayerComponent.h"
+
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "Framework/DebugScene.h"
 #endif
@@ -71,7 +70,7 @@ namespace {
         sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
         sm.Register("Pause", [] { return std::make_unique<PauseScene>(); });
         sm.Register("TL1", [] { return std::make_unique<TL1Scene>(); });
-        sm.Register("CG4", [] { return std::make_unique<CG4Scene>(); });
+
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
@@ -138,7 +137,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("LockonMarkerUIComponent", "UI", []() { return std::make_shared<LockonMarkerUIComponent>(); });
     ComponentFactory::Register("DroneManagerComponent", "Game", []() { return std::make_shared<DroneManagerComponent>(); });
     ComponentFactory::Register("BossBulletManagerComponent", "Game", []() { return std::make_shared<BossBulletManagerComponent>(); });
-    ComponentFactory::Register("CG4PlayerComponent", "Game", []() { return std::make_shared<CG4PlayerComponent>(); });
+
     ComponentFactory::Register("GameLoopManagerComponent", "Game", []() { return std::make_shared<GameLoopManagerComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
