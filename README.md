@@ -43,6 +43,7 @@ C++ と DirectX 12 を用いてスクラッチから構築した、**GPU-Driven 
   ポインタベースの `GameObject` (OOP) では、メモリ断片化によるキャッシュミスでCPUの限界（16.6ms）がすぐに訪れる。そこで、ゲーム進行に必要な当たり判定（OBB等）はCPUに残し、視覚的な「大量の破片の物理演算」のみを Compute Shader にオフロードした。さらに、ガレキ制御等の演算は真面目に行わず `sin/cos` を用いた「騙しの物理演算（Fake Physics）」で軽量化。データ管理には、座標データを密配列で保持する `VirtualEntityManagerComponent` (Sparse Set アーキテクチャ) を採用した。
 - **【結果と定量的成果】**
   画面上に1万個のガレキが存在しても処理落ちしない高いパフォーマンスを達成。CPU側のディスパッチ負荷を **平均0.066ms** に抑えることに成功し、破壊の瞬間に1～2フレームのみ30FPS相当に落ちるものの即座に 60FPS へ復帰し、ゲームのテンポを維持した。
+- 🔗 **関連コード原本**: [`VirtualEntityManagerComponent.h`](project/IrufemiEngine/Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h)
 
 > **📷 計測環境データ**
 > ※ここに「1万個のガレキが飛んでいる画面」と「60FPSが出ているデバッグ表記」のスクリーンショットを配置してください。
@@ -74,6 +75,7 @@ graph TD
   衝突判定を $O(N \log N)$ に落とすため動的AABBツリー (BVH) を実装。さらに、ツリーのノード管理をポインタで実装するとキャッシュミスが起きるため、あえてポインタを排し **「インデックスベースの配列プール」** を用いた Data-Oriented な実装を選択した。また、ウェーブや環境は JSON/CSV で外部定義し、`EnvironmentManagerComponent` でプーリングとバッチ描画（インスタンシング）を自動化するデータ駆動設計を導入した。
 - **【結果と定量的成果】**
   プログラマ視点での高い保守性とシーンファイルの肥大化防止を達成。大量のガレキが密集してもFPSが落ちない安定した実行速度（CPUバウンドの解消）を実現した。
+- 🔗 **関連コード原本**: [`EnvironmentManagerComponent.h`](project/Application_solo/components/EnvironmentManagerComponent.h)
 
 > **📷 計測環境データ**
 > ※ここに「BVHのデバッグ描画（四角い枠）」の画面か「`std::vector<BVHNode>` でプール管理しているコード」のスクリーンショットを配置してください。
@@ -90,6 +92,7 @@ graph TD
   さらに、オブジェクトプールは生ポインタではなく **「世代(generation)付きHandle」** による管理へ移行。また、Updateループ中の直接削除による配列崩壊を防ぐため、**遅延削除キュー (Pending Kill)** を実装し、フレームの最後で一括返却するアーキテクチャを採用した。
 - **【結果と定量的成果】**
   ロード中の最大スパイクを **約4100ms から 約51ms に激減**。また、古い世代のHandleアクセスを `nullptr` で弾き、遅延削除によってマルチスレッド環境や複雑なUpdateループ下でも安全で堅牢なゼロ・アロケーション基盤を構築できた。
+- 🔗 **関連コード原本**: [`ThreadPool.h`](project/IrufemiEngine/Engine/Core/System/ThreadPool.h) / [`ObjectPool.h`](project/IrufemiEngine/Engine/Core/Utility/ObjectPool.h)
 
 **【図解: 世代付きHandleによるダングリングポインタの防御】**
 ```mermaid
@@ -118,6 +121,7 @@ graph LR
   最適化面では、**Compute Shader による GPU フラスタムカリング** を導入し `ExecuteIndirect` で一括描画。さらに、テクスチャバインドのオーバーヘッドをゼロにするため、**Bindless Resources (Descriptor Indexing)** への移行を達成した。
 - **【結果と定量的成果】**
   自作エンジンだからこそ可能な G-Buffer への直接アクセスを活かし、3D空間ノイズ（FBM等）を用いた濃密な爆煙の質感を実現。同時に、数万のオブジェクトが描画されてもCPU側にカリング負荷・バインド負荷を大きく抑えたパイプラインを確立した。
+- 🔗 **関連シェーダー**: [`ParticleGPU.PS.hlsl`](project/IrufemiEngine/EngineResources/shaders/ParticleGPU.PS.hlsl)
 
 > **📷 計測環境データ**
 > ※ここに「アウトラインや空間の歪みが綺麗にかかっているゲーム画面のアップ」と「可能なら 3つのG-Buffer の白黒サムネイル画像」を配置してください。
@@ -202,28 +206,46 @@ if (raycastFuture_.valid() && raycastFuture_.wait_for(std::chrono::seconds(0)) =
 
 ## 📁 プロジェクト構成 (Project Structure)
 
-本ソリューション (`Irufemi.sln`) は、エンジンコアとアプリケーション（ゲームロジック）を明確に分離（関心の分離）した設計になっています。
+本ソリューション (`Irufemi.sln`) は、エンジンコアとアプリケーション（ゲームロジック）、およびツール群を明確に分離（関心の分離）した以下の4プロジェクトで構成されています。
 
-```text
-WP0/
- ├── project/
- │    ├── IrufemiEngine/            [⚙️ エンジンコア・レイヤー (特定のゲーム依存なし)]
- │    │    ├── Engine/              - DirectX12ラッパー, ThreadPool, GPU Culling 等
- │    │    ├── Renderer/            - RenderGraph, G-Buffer, Bindless Resources パイプライン
- │    │    ├── Resource/            - Handleシステムを用いた非同期テクスチャ・モデル管理
- │    │    └── Framework/           - Component (ECS基盤), Dynamic BVH 衝突判定
- │    ├── IrufemiEditor/            [🛠️ エディタUI・ツール (ImGuiベース)]
- │    ├── Application_solo/         [🎮 ゲームアプリケーション・レイヤー (Gravity Shooter 等)]
- │    │    ├── components/          - ゲーム固有の振る舞い (DebrisManager, Boss 等)
- │    │    ├── scene/               - 各シーンの初期化と状態管理
- │    │    └── resources/           - 専用のテクスチャ, モデル, JSONアセット群
- │    ├── Application_team/         [🎮 ゲームアプリケーション・レイヤー (チーム制作用)]
- │    ├── externals/                [📦 サードパーティライブラリ]
- │    └── Irufemi.sln               [🔧 Visual Studio 2026 ソリューション]
- ├── docs/                          [📚 ポートフォリオ等のドキュメント格納フォルダ]
- ├── Manual.md                      [📖 チーム向けAPI取扱説明書 (2万文字)]
- └── README.md                      [📖 アーキテクチャ解説ドキュメント (当ファイル)]
-```
+| プロジェクト | 種別 | 役割 |
+| :--- | :--- | :--- |
+| **IrufemiEngine** | 静的ライブラリ (.lib) | 描画・物理・リソース・コンポーネント基盤を提供するエンジンコア |
+| **IrufemiEditor** | 静的ライブラリ (.lib) | ImGuiベースのレベルエディタ・デバッグツール群 |
+| **Application_solo** | 実行ファイル (.exe) | 個人制作ゲームのロジック・固有シーン・アセンブリ |
+| **Application_team** | 実行ファイル (.exe) | チーム制作ゲームのロジック・固有シーン・アセンブリ |
+
+### ⚙️ IrufemiEngine (`project/IrufemiEngine/`)
+エンジンのコアモジュール群です。特定のゲームに依存する処理は一切含みません。
+
+| ディレクトリ | 役割 |
+| :--- | :--- |
+| **Engine/** | DirectX12ラッパー、ウィンドウ管理、スレッドプール、各種Manager群 |
+| **Renderer/** | RenderGraph、G-Buffer、Bindless Resources パイプライン |
+| **Resource/** | Handleシステムを用いた非同期テクスチャ・モデル・オーディオ管理 |
+| **Framework/** | Componentを用いた高速なECS基盤、Dynamic BVH 衝突判定 |
+
+### 🎮 Application (`project/Application_solo/` 等)
+ゲーム固有のロジックとリソースを格納します。
+
+| ディレクトリ | 役割 |
+| :--- | :--- |
+| **components/** | ゲーム固有の振る舞い (DebrisManager, Boss 等) |
+| **scene/** | 各シーンの初期化と状態管理 |
+| **resources/** | このゲーム専用のテクスチャ、モデル、JSON等のアセット群 |
+
+---
+
+## 🎨 アセットパイプライン
+
+### 1. 3Dモデルのエクスポート
+- **ルール**: Blender等のツールでは **デフォルト設定（Y-up / 右手座標系）** でエクスポートしてください。
+- **処理**: エンジン内部（Assimp読み込み時）でDirectX用の左手座標系へ自動変換されます。
+
+### 2. テクスチャ命名規則 (Linear Workflow)
+リニアワークフローを正確に行うため、ファイル名による自動判別を行っています。
+- **数値データ (Linear)**: 接尾辞 `_n`, `_ao`, `_m`, `_r` を含めることでガンマ補正をスキップします。
+- **カラーデータ (sRGB)**: 上記以外はすべて色として扱われ、自動的にリニアライズされます。
 
 ---
 
