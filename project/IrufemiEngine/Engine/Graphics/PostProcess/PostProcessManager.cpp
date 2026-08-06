@@ -105,6 +105,17 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.radialBlurSamples = radialBlurParams_.numSamples;
   combinedParams_.glitchIntensity = glitchParams_.intensity;
   combinedParams_.glitchTime = glitchParams_.time;
+  combinedParams_.glitchEdgeMaskStrength = glitchParams_.edgeMaskStrength;
+  combinedParams_.glitchProbability = glitchParams_.probability;
+  combinedParams_.glitchBlockSizeX = glitchParams_.blockSizeX;
+  combinedParams_.glitchBlockSizeY = glitchParams_.blockSizeY;
+  combinedParams_.glitchOffsetBase = glitchParams_.offsetBase;
+  combinedParams_.glitchOffsetMax = glitchParams_.offsetMax;
+  combinedParams_.glitchRgbShiftBase = glitchParams_.rgbShiftBase;
+  combinedParams_.glitchRgbShiftMax = glitchParams_.rgbShiftMax;
+  combinedParams_.glitchScanlineFreq = glitchParams_.scanlineFreq;
+  combinedParams_.glitchScanlineIntensity = glitchParams_.scanlineIntensity;
+  combinedParams_.glitchColor = glitchParams_.color;
   
   combinedParams_.luminanceOutlineThreshold = luminanceOutlineParams_.threshold;
   combinedParams_.luminanceOutlineColor = luminanceOutlineParams_.outlineColor;

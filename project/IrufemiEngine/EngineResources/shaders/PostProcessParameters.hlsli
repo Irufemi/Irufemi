@@ -67,6 +67,20 @@ struct SmoothingParams {
 struct GlitchParams {
     float intensity;
     float time;
+    float edgeMaskStrength;
+    float probability;
+
+    float blockSizeX;
+    float blockSizeY;
+    float offsetBase;
+    float offsetMax;
+
+    float rgbShiftBase;
+    float rgbShiftMax;
+    float scanlineFreq;
+    float scanlineIntensity;
+
+    float32_t4 color;
 };
 
 struct BloomParams {
@@ -134,7 +148,19 @@ struct PostProcessParams {
     // Glitch
     float32_t glitchIntensity;
     float32_t glitchTime;
-    float32_t2 pad_glitch;
+    float32_t glitchEdgeMaskStrength;
+    float32_t glitchProbability;
+
+    float32_t glitchBlockSizeX;
+    float32_t glitchBlockSizeY;
+    float32_t glitchOffsetBase;
+    float32_t glitchOffsetMax;
+
+    float32_t glitchRgbShiftBase;
+    float32_t glitchRgbShiftMax;
+    float32_t glitchScanlineFreq;
+    float32_t glitchScanlineIntensity;
+    float32_t4 glitchColor;
     
     // LuminanceBasedOutline
     float32_t4 luminanceOutlineColor;

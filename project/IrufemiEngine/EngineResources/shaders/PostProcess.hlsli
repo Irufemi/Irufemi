@@ -176,11 +176,25 @@ float32_t3 ApplyDissolve(float32_t3 color, float32_t mask, float32_t threshold, 
  * @param smp サンプラステート
  * @return グリッチ適用後のカラー
  */
-float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_t intensity, Texture2D<float32_t4> tex, SamplerState smp, Texture2D<float32_t4> maskTex, int targetMaskId = 0) {
+float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, GlitchParams params, Texture2D<float32_t4> tex, SamplerState smp, Texture2D<float32_t4> maskTex, int targetMaskId = 0) {
+    // 画面端のマスク計算
+    float2 centerOffset = uv - float2(0.5, 0.5);
+    float dist = length(centerOffset);
+    // edgeMaskStrengthが1.0の時、中心を広く保護し、端に向かって滑らかに上がるようにする
+    float baseMask = smoothstep(0.25, 0.75, dist);
+    // よりビネットのような「端だけ急激に強くなる」カーブにするために2乗する
+    baseMask = baseMask * baseMask;
+    
+    float edgeFactor = lerp(1.0, baseMask, params.edgeMaskStrength);
+    float effectiveIntensity = params.intensity * edgeFactor;
+
     // ブロックノイズ判定とUVの水平ズレ
-    float2 block = floor(uv * float2(24.0, 9.0));
-    float noise = rand2dTo1d(block + time);
-    float offsetX = (noise - 0.5) * 0.1 * intensity;
+    float2 block = floor(uv * float2(params.blockSizeX, params.blockSizeY));
+    float noise = rand2dTo1d(block + params.time);
+    
+    // 確率で大きくズレるようにし、ベースのズレも加える
+    float isGlitch = step(1.0 - params.probability, noise);
+    float offsetX = ((noise - 0.5) * params.offsetMax * isGlitch + (noise - 0.5) * params.offsetBase) * effectiveIntensity;
     float2 displacedUv = saturate(uv + float2(offsetX, 0.0));
 
     // 個別エフェクトの場合、ズレ先が自分自身のオブジェクトでなければズレをキャンセルする
@@ -192,7 +206,7 @@ float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_
     }
 
     // RGBシフト（色ズレサンプリング）
-    float shift = 0.02 * intensity;
+    float shift = (params.rgbShiftBase + params.rgbShiftMax * isGlitch) * effectiveIntensity;
     
     float2 uvR = displacedUv + float2(shift, 0.0);
     float2 uvG = displacedUv;
@@ -211,9 +225,13 @@ float32_t3 ApplyGlitch(float32_t3 color, float32_t2 uv, float32_t time, float32_
     float g = tex.SampleLevel(smp, uvG, 0).g;
     float b = tex.SampleLevel(smp, uvB, 0).b;
     
-    // スキャンラインを加味して返す
-    float scanline = sin(uv.y * 800.0 + time * 10.0) * 0.04 * intensity;
-    return saturate(float32_t3(r, g, b) + scanline);
+    // カラーブレンド（isGlitch が発生している箇所のみ、指定色を乗せる）
+    float3 glitchedColor = float3(r, g, b);
+    float3 blendedColor = lerp(glitchedColor, glitchedColor * params.color.rgb, params.color.a * isGlitch * effectiveIntensity);
+    
+    // スキャンラインを加味して返す（乗算ブレンドっぽく適用）
+    float scanline = sin(uv.y * params.scanlineFreq + params.time * 15.0) * params.scanlineIntensity * effectiveIntensity;
+    return saturate(blendedColor * (1.0 + scanline));
 }
 
 // 11. Outline

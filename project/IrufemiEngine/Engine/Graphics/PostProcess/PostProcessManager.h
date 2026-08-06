@@ -225,7 +225,7 @@ public:
      * @brief ディゾルブエフェクト用パラメータ
      */
     struct DissolveParams {
-        Irufemi::Vector4 edgeColor = { 1.0f, 0.4f, 0.3f, 1.0f }; ///< 境界線の色
+        Irufemi::Vector4 edgeColor = { 1.0f, 1.0f, 1.0f, 1.0f }; ///< 境界線の色 (無彩色化)
         Irufemi::Vector4 backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< 背景色 (追加)
         float threshold = 0.0f;                         ///< 消失しきい値 (0.0 ~ 1.0)
         float edgeRange = 0.03f;                        ///< 境界線の幅
@@ -287,6 +287,20 @@ public:
     struct GlitchParams {
         float intensity = 1.0f; ///< グリッチの強さ
         float time = 0.0f;      ///< 時間経過（内部で更新される）
+        float edgeMaskStrength = 0.0f; ///< 画面端にかける強さ
+        float probability = 0.4f;      ///< グリッチが発生する確率 (0.0 ~ 1.0)
+
+        float blockSizeX = 16.0f;      ///< ブロックの横分割数
+        float blockSizeY = 32.0f;      ///< ブロックの縦分割数
+        float offsetBase = 0.03f;      ///< 基本の横ズレ幅
+        float offsetMax = 0.15f;       ///< グリッチ時の最大横ズレ幅
+
+        float rgbShiftBase = 0.01f;    ///< 基本のRGBズレ幅
+        float rgbShiftMax = 0.02f;     ///< グリッチ時の最大RGBズレ幅
+        float scanlineFreq = 800.0f;   ///< スキャンラインの周波数（細かさ）
+        float scanlineIntensity = 0.05f; ///< スキャンラインの濃さ
+
+        Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 0.0f }; ///< rgb = 色, a = ブレンド強度
     };
 
     /**
@@ -452,7 +466,19 @@ public:
         // Glitch
         float glitchIntensity;
         float glitchTime;
-        float pad_glitch[2]; // パディング
+        float glitchEdgeMaskStrength;
+        float glitchProbability;
+
+        float glitchBlockSizeX;
+        float glitchBlockSizeY;
+        float glitchOffsetBase;
+        float glitchOffsetMax;
+
+        float glitchRgbShiftBase;
+        float glitchRgbShiftMax;
+        float glitchScanlineFreq;
+        float glitchScanlineIntensity;
+        Irufemi::Vector4 glitchColor;
 
         // LuminanceBasedOutline
         Irufemi::Vector4 luminanceOutlineColor;
@@ -514,8 +540,8 @@ public:
         uint32_t maskTextureIndex;
         uint32_t padding_bindless;
 
-        // 256-byte alignment padding (Current size: 576 bytes, padded to 768 bytes)
-        uint32_t alignPadding[48];
+        // 256-byte alignment padding (Current size: 624 bytes, padded to 768 bytes)
+        uint32_t alignPadding[36];
     };
 
     struct BindlessParams {

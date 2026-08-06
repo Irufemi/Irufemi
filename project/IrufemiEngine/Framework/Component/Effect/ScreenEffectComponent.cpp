@@ -35,7 +35,10 @@ void ScreenEffectComponent::Play() {
     isPlaying_ = true;
     
     // UIより前にかけるか後に掛けるか。今回はPostUIレイヤーにする。
-    engine->GetPostProcessManager()->AddActiveMode(mode_, PostProcessManager::Layer::PostUI);
+    wasModeActiveBeforePlay_ = engine->GetPostProcessManager()->HasActiveMode(mode_);
+    if (!wasModeActiveBeforePlay_) {
+        engine->GetPostProcessManager()->AddActiveMode(mode_, PostProcessManager::Layer::PostUI);
+    }
 }
 
 void ScreenEffectComponent::Update() {
@@ -62,7 +65,9 @@ void ScreenEffectComponent::Update() {
             engine->GetPostProcessManager()->GetRadialBlurParams() = baseRadialBlurParams_;
         }
         
-        engine->GetPostProcessManager()->RemoveActiveMode(mode_);
+        if (!wasModeActiveBeforePlay_) {
+            engine->GetPostProcessManager()->RemoveActiveMode(mode_);
+        }
         return;
     }
 
@@ -73,6 +78,21 @@ void ScreenEffectComponent::Update() {
     if (mode_ == PostProcessMode::Glitch) {
         auto& params = engine->GetPostProcessManager()->GetGlitchParams();
         params.intensity = LerpFloat(baseGlitchParams_.intensity, targetGlitchParams_.intensity, t);
+        params.edgeMaskStrength = targetGlitchParams_.edgeMaskStrength;
+        params.probability = targetGlitchParams_.probability;
+        params.blockSizeX = targetGlitchParams_.blockSizeX;
+        params.blockSizeY = targetGlitchParams_.blockSizeY;
+        params.offsetBase = targetGlitchParams_.offsetBase;
+        params.offsetMax = targetGlitchParams_.offsetMax;
+        params.rgbShiftBase = targetGlitchParams_.rgbShiftBase;
+        params.rgbShiftMax = targetGlitchParams_.rgbShiftMax;
+        params.scanlineFreq = targetGlitchParams_.scanlineFreq;
+        params.scanlineIntensity = targetGlitchParams_.scanlineIntensity;
+        
+        params.color.x = LerpFloat(baseGlitchParams_.color.x, targetGlitchParams_.color.x, t);
+        params.color.y = LerpFloat(baseGlitchParams_.color.y, targetGlitchParams_.color.y, t);
+        params.color.z = LerpFloat(baseGlitchParams_.color.z, targetGlitchParams_.color.z, t);
+        params.color.w = LerpFloat(baseGlitchParams_.color.w, targetGlitchParams_.color.w, t);
     } 
     else if (mode_ == PostProcessMode::Vignette) {
         auto& params = engine->GetPostProcessManager()->GetVignetteParams();
@@ -105,11 +125,30 @@ nlohmann::json ScreenEffectComponent::Serialize() {
 
     if (mode_ == PostProcessMode::Glitch) {
         j["targetGlitchParams"]["intensity"] = targetGlitchParams_.intensity;
+        j["targetGlitchParams"]["edgeMaskStrength"] = targetGlitchParams_.edgeMaskStrength;
+        j["targetGlitchParams"]["probability"] = targetGlitchParams_.probability;
+        j["targetGlitchParams"]["blockSizeX"] = targetGlitchParams_.blockSizeX;
+        j["targetGlitchParams"]["blockSizeY"] = targetGlitchParams_.blockSizeY;
+        j["targetGlitchParams"]["offsetBase"] = targetGlitchParams_.offsetBase;
+        j["targetGlitchParams"]["offsetMax"] = targetGlitchParams_.offsetMax;
+        j["targetGlitchParams"]["rgbShiftBase"] = targetGlitchParams_.rgbShiftBase;
+        j["targetGlitchParams"]["rgbShiftMax"] = targetGlitchParams_.rgbShiftMax;
+        j["targetGlitchParams"]["scanlineFreq"] = targetGlitchParams_.scanlineFreq;
+        j["targetGlitchParams"]["scanlineIntensity"] = targetGlitchParams_.scanlineIntensity;
+        j["targetGlitchParams"]["glitchColor"] = { targetGlitchParams_.color.x, targetGlitchParams_.color.y, targetGlitchParams_.color.z, targetGlitchParams_.color.w };
     } 
     else if (mode_ == PostProcessMode::Vignette) {
         j["targetVignetteParams"]["color"] = { targetVignetteParams_.color.x, targetVignetteParams_.color.y, targetVignetteParams_.color.z, targetVignetteParams_.color.w };
         j["targetVignetteParams"]["radius"] = targetVignetteParams_.radius;
         j["targetVignetteParams"]["softness"] = targetVignetteParams_.softness;
+    }
+    else if (mode_ == PostProcessMode::ChromaticAberration) {
+        j["targetChromaticAberrationParams"]["intensity"] = targetChromaticAberrationParams_.intensity;
+    }
+    else if (mode_ == PostProcessMode::RadialBlur) {
+        j["targetRadialBlurParams"]["blurWidth"] = targetRadialBlurParams_.blurWidth;
+        j["targetRadialBlurParams"]["center"] = { targetRadialBlurParams_.center.x, targetRadialBlurParams_.center.y };
+        j["targetRadialBlurParams"]["numSamples"] = targetRadialBlurParams_.numSamples;
     }
     
     return j;
@@ -126,11 +165,25 @@ void ScreenEffectComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("targetGlitchParams")) {
         auto& gj = j["targetGlitchParams"];
         if (gj.contains("intensity")) targetGlitchParams_.intensity = gj["intensity"];
+        if (gj.contains("edgeMaskStrength")) targetGlitchParams_.edgeMaskStrength = gj["edgeMaskStrength"];
+        if (gj.contains("probability")) targetGlitchParams_.probability = gj["probability"];
+        if (gj.contains("blockSizeX")) targetGlitchParams_.blockSizeX = gj["blockSizeX"];
+        if (gj.contains("blockSizeY")) targetGlitchParams_.blockSizeY = gj["blockSizeY"];
+        if (gj.contains("offsetBase")) targetGlitchParams_.offsetBase = gj["offsetBase"];
+        if (gj.contains("offsetMax")) targetGlitchParams_.offsetMax = gj["offsetMax"];
+        if (gj.contains("rgbShiftBase")) targetGlitchParams_.rgbShiftBase = gj["rgbShiftBase"];
+        if (gj.contains("rgbShiftMax")) targetGlitchParams_.rgbShiftMax = gj["rgbShiftMax"];
+        if (gj.contains("scanlineFreq")) targetGlitchParams_.scanlineFreq = gj["scanlineFreq"];
+        if (gj.contains("scanlineIntensity")) targetGlitchParams_.scanlineIntensity = gj["scanlineIntensity"];
+        if (gj.contains("glitchColor")) {
+            auto& c = gj["glitchColor"];
+            targetGlitchParams_.color = { c[0], c[1], c[2], c[3] };
+        }
     }
 
     if (j.contains("targetVignetteParams")) {
         auto& vj = j["targetVignetteParams"];
-        if (vj.contains("color")) {
+        if (vj.contains("color") && vj["color"].is_array() && vj["color"].size() == 4) {
             targetVignetteParams_.color.x = vj["color"][0];
             targetVignetteParams_.color.y = vj["color"][1];
             targetVignetteParams_.color.z = vj["color"][2];
@@ -138,5 +191,20 @@ void ScreenEffectComponent::Deserialize(const nlohmann::json& j) {
         }
         if (vj.contains("radius")) targetVignetteParams_.radius = vj["radius"];
         if (vj.contains("softness")) targetVignetteParams_.softness = vj["softness"];
+    }
+
+    if (j.contains("targetChromaticAberrationParams")) {
+        auto& cj = j["targetChromaticAberrationParams"];
+        if (cj.contains("intensity")) targetChromaticAberrationParams_.intensity = cj["intensity"];
+    }
+
+    if (j.contains("targetRadialBlurParams")) {
+        auto& rj = j["targetRadialBlurParams"];
+        if (rj.contains("blurWidth")) targetRadialBlurParams_.blurWidth = rj["blurWidth"];
+        if (rj.contains("center") && rj["center"].is_array() && rj["center"].size() == 2) {
+            targetRadialBlurParams_.center.x = rj["center"][0];
+            targetRadialBlurParams_.center.y = rj["center"][1];
+        }
+        if (rj.contains("numSamples")) targetRadialBlurParams_.numSamples = rj["numSamples"];
     }
 }

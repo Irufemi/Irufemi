@@ -168,9 +168,24 @@ PixelShaderOutput main(VertexShaderOutput input) {
             case kPostProcessMode_Slide:
                 color.rgb = ApplySlide(color.rgb, uv, instanceID > 0 ? cParams.color1.rgb : gParams.slideColor.rgb, instanceID > 0 ? cParams.param1 : gParams.slideThreshold);
                 break;
-            case kPostProcessMode_Glitch:
-                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, instanceID > 0 ? cParams.param1 : gParams.glitchIntensity, gTexture, gSampler, gMaskTexture, customEffect);
+            case kPostProcessMode_Glitch: {
+                GlitchParams gp;
+                gp.intensity = instanceID > 0 ? cParams.param1 : gParams.glitchIntensity;
+                gp.time = gParams.glitchTime;
+                gp.edgeMaskStrength = gParams.glitchEdgeMaskStrength;
+                gp.probability = gParams.glitchProbability;
+                gp.blockSizeX = gParams.glitchBlockSizeX;
+                gp.blockSizeY = gParams.glitchBlockSizeY;
+                gp.offsetBase = gParams.glitchOffsetBase;
+                gp.offsetMax = gParams.glitchOffsetMax;
+                gp.rgbShiftBase = gParams.glitchRgbShiftBase;
+                gp.rgbShiftMax = gParams.glitchRgbShiftMax;
+                gp.scanlineFreq = gParams.glitchScanlineFreq;
+                gp.scanlineIntensity = gParams.glitchScanlineIntensity;
+                gp.color = gParams.glitchColor;
+                color.rgb = ApplyGlitch(color.rgb, uv, gp, gTexture, gSampler, gMaskTexture, instanceID);
                 break;
+            }
             case kPostProcessMode_Pixelation:
                 color.rgb = ApplyPixelation(uv, instanceID > 0 ? cParams.param1 : gParams.pixelationSize, float32_t2(width, height), gTexture, gSampler);
                 break;
@@ -264,9 +279,24 @@ PixelShaderOutput main(VertexShaderOutput input) {
                 color.rgb = ApplyRadialBlur(color.rgb, uv, gParams.radialBlurCenter, gParams.radialBlurWidth, gParams.radialBlurSamples, gTexture, gSampler);
                 break;
 
-            case kPostProcessMode_Glitch:
-                color.rgb = ApplyGlitch(color.rgb, uv, gParams.glitchTime, gParams.glitchIntensity, gTexture, gSampler, gMaskTexture, 0);
+            case kPostProcessMode_Glitch: {
+                GlitchParams gp;
+                gp.intensity = gParams.glitchIntensity;
+                gp.time = gParams.glitchTime;
+                gp.edgeMaskStrength = gParams.glitchEdgeMaskStrength;
+                gp.probability = gParams.glitchProbability;
+                gp.blockSizeX = gParams.glitchBlockSizeX;
+                gp.blockSizeY = gParams.glitchBlockSizeY;
+                gp.offsetBase = gParams.glitchOffsetBase;
+                gp.offsetMax = gParams.glitchOffsetMax;
+                gp.rgbShiftBase = gParams.glitchRgbShiftBase;
+                gp.rgbShiftMax = gParams.glitchRgbShiftMax;
+                gp.scanlineFreq = gParams.glitchScanlineFreq;
+                gp.scanlineIntensity = gParams.glitchScanlineIntensity;
+                gp.color = gParams.glitchColor;
+                color.rgb = ApplyGlitch(color.rgb, uv, gp, gTexture, gSampler, gMaskTexture, 0);
                 break;
+            }
                 
             case kPostProcessMode_LuminanceBasedOutline:
                 color.rgb = ApplyLuminanceBasedOutline(color.rgb, uv, uvStepSize, gParams.luminanceOutlineThreshold, gParams.luminanceOutlineColor, gTexture, gSampler);

@@ -1568,17 +1568,23 @@
                 "duration": 0.4000000059604645,
                 "mode": 15,
                 "targetGlitchParams": {
-                  "intensity": 2.0
-                }
-              },
-              "type": "ScreenEffectComponent"
-            },
-            {
-              "data": {
-                "duration": 0.4000000059604645,
-                "mode": 15,
-                "targetGlitchParams": {
-                  "intensity": 2.0
+                  "blockSizeX": 16.0,
+                  "blockSizeY": 32.0,
+                  "edgeMaskStrength": 1.0,
+                  "glitchColor": [
+                    1.0,
+                    0.10000000149011612,
+                    0.30000001192092896,
+                    0.800000011920929
+                  ],
+                  "intensity": 4.0,
+                  "offsetBase": 0.029999999329447746,
+                  "offsetMax": 0.15000000596046448,
+                  "probability": 0.4000000059604645,
+                  "rgbShiftBase": 0.009999999776482582,
+                  "rgbShiftMax": 0.019999999552965164,
+                  "scanlineFreq": 800.0,
+                  "scanlineIntensity": 0.05000000074505806
                 }
               },
               "type": "ScreenEffectComponent"
@@ -3899,7 +3905,7 @@
             "Beam Offset Y": -2.0,
             "Beam Offset Z": 25.0,
             "Beam Range": 1000.0,
-            "HP": 20.0,
+            "HP": 1.0,
             "Max HP": 1.0,
             "Max Shield Count": 1,
             "Shield Radius": 8.0

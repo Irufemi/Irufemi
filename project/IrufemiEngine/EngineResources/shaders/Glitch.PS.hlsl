@@ -22,7 +22,7 @@ PixelShaderOutput main(VertexShaderOutput input) {
     }
     
     // ApplyGlitchで処理
-    output.color.rgb = ApplyGlitch(textureColor.rgb, input.texcoord, gParams.time, gParams.intensity, gTexture, gSampler, gMaskTexture, 0);
+    output.color.rgb = ApplyGlitch(textureColor.rgb, input.texcoord, gParams, gTexture, gSampler, gMaskTexture, 0);
     output.color.a = textureColor.a;
     
     return output;

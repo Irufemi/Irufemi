@@ -32,20 +32,27 @@ public:
 
     PostProcessManager::GlitchParams& GetTargetGlitchParams() { return targetGlitchParams_; }
     PostProcessManager::VignetteParams& GetTargetVignetteParams() { return targetVignetteParams_; }
+    PostProcessManager::ChromaticAberrationParams& GetTargetChromaticAberrationParams() { return targetChromaticAberrationParams_; }
+    PostProcessManager::RadialBlurParams& GetTargetRadialBlurParams() { return targetRadialBlurParams_; }
 
 private:
     PostProcessMode mode_ = PostProcessMode::None;
     float duration_ = 0.3f;
     float currentWeight_ = 0.0f;
     bool isPlaying_ = false;
+    bool wasModeActiveBeforePlay_ = false;
 
     // 目標となるパラメータ群
     PostProcessManager::GlitchParams targetGlitchParams_;
     PostProcessManager::VignetteParams targetVignetteParams_;
+    PostProcessManager::ChromaticAberrationParams targetChromaticAberrationParams_;
+    PostProcessManager::RadialBlurParams targetRadialBlurParams_;
 
     // ベース（元の状態）のキャッシュ
     PostProcessManager::GlitchParams baseGlitchParams_;
     PostProcessManager::VignetteParams baseVignetteParams_;
+    PostProcessManager::ChromaticAberrationParams baseChromaticAberrationParams_;
+    PostProcessManager::RadialBlurParams baseRadialBlurParams_;
     bool isBaseCached_ = false;
 
     float LerpFloat(float a, float b, float t) const {

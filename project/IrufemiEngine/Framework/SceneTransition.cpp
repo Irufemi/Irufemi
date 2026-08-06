@@ -32,6 +32,7 @@ void SceneTransition::Start(Type type, float duration, bool isOut, EaseType ease
     case Type::Dissolve:
         ppManager_->AddActiveMode(PostProcessMode::Dissolve, PostProcessManager::Layer::PostUI);
         activeTransitionModes_.push_back(PostProcessMode::Dissolve);
+        ppManager_->GetDissolveParams().edgeColor = { 1.0f, 0.4f, 0.3f, 1.0f }; // 炎のようなオレンジ色
         break;
     case Type::Slide:
         ppManager_->AddActiveMode(PostProcessMode::Slide, PostProcessManager::Layer::PostUI);
