@@ -3900,8 +3900,8 @@
             "Beam Offset Z": 25.0,
             "Beam Range": 1000.0,
             "HP": 20.0,
-            "Max HP": 20.0,
-            "Max Shield Count": 30,
+            "Max HP": 1.0,
+            "Max Shield Count": 1,
             "Shield Radius": 8.0
           },
           "type": "BossComponent"
@@ -4024,6 +4024,12 @@
             "Target Object": 666616630839427138
           },
           "type": "TargetFollowComponent"
+        },
+        {
+          "data": {
+            "Global Intensity Multiplier": 1.0
+          },
+          "type": "CameraShakeComponent"
         }
       ],
       "instanceId": 1432498776640000749,

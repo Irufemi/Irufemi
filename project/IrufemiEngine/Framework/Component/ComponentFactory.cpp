@@ -23,6 +23,7 @@
 #include "UI/ButtonComponent.h"
 #include "UI/CanvasComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraShakeComponent.h"
 #include "Camera/TargetFollowComponent.h"
 #include "Utility/LifetimeComponent.h"
 #include "Utility/SplineComponent.h"
@@ -82,6 +83,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("ButtonComponent", "UI", []() { return std::make_shared<ButtonComponent>(); });
     Register("CanvasComponent", "UI", []() { return std::make_shared<CanvasComponent>(); });
     Register("CameraComponent", "Camera", []() { return std::make_shared<CameraComponent>(); });
+    Register("CameraShakeComponent", "Camera", []() { return std::make_shared<CameraShakeComponent>(); });
     Register("TargetFollowComponent", "Camera", []() { return std::make_shared<TargetFollowComponent>(); });
     Register("LifetimeComponent", "Utility", []() { return std::make_shared<LifetimeComponent>(); });
     Register("SplineComponent", "Utility", []() { return std::make_shared<SplineComponent>(); });

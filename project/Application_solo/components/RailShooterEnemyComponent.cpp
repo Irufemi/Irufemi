@@ -6,6 +6,9 @@
 #include "TargetableComponent.h"
 #include "Engine/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "Framework/BaseScene.h"
+#include "Framework/Component/Camera/CameraShakeComponent.h"
+#include "Engine/Manager/CollisionManager.h"
 
 void RailShooterEnemyComponent::OnRegisterProperties() {
     RegisterProperty("SpawnProgress", &spawnProgress_);
@@ -14,11 +17,14 @@ void RailShooterEnemyComponent::OnRegisterProperties() {
 }
 
 void RailShooterEnemyComponent::Initialize() {
-    if (!gameObject_->GetComponent<TargetableComponent>()) {
-        gameObject_->AddComponent<TargetableComponent>();
-    }
-
+    hp_ = 100; // プール再利用時にHPを回復する
     isActive_ = false;
+
+    auto targetable = gameObject_->GetComponent<TargetableComponent>();
+    if (!targetable) {
+        targetable = gameObject_->AddComponent<TargetableComponent>().get();
+        targetable->Initialize();
+    }
     
     // 初期状態では非表示にしておく
     if (gameObject_) {
@@ -31,10 +37,16 @@ void RailShooterEnemyComponent::Initialize() {
         auto collider = gameObject_->GetComponent<SphereColliderComponent>();
         if (!collider) {
             collider = gameObject_->AddComponent<SphereColliderComponent>().get();
+            collider->Initialize();
         }
         if (collider) {
             collider->isTrigger_ = true;
             collider->SetLocalRadius(1.5f);
+            
+            auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+            if (cm) {
+                collider->layer_ = cm->GetLayerMask("Enemy");
+            }
         }
     }
 }
@@ -71,6 +83,8 @@ void RailShooterEnemyComponent::Update() {
 
 void RailShooterEnemyComponent::TakeDamage(int damage) {
     if (!IsAlive()) return;
+
+
 
     hp_ -= damage;
     if (hp_ <= 0) {

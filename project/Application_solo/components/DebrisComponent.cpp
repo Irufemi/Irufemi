@@ -12,7 +12,8 @@
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
+#include "Framework/Component/Camera/CameraShakeComponent.h"
+#include "Framework/BaseScene.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include <cmath>
@@ -109,10 +110,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     }
 
     if (hit) {
-        // 軽いカメラシェイクを追加
-        if (auto camera = BaseModel::GetIrufemiEngine()->GetCameraManager()->GetActiveCamera()) {
-            camera->Shake(GetCameraShakeIntensity(), GetCameraShakeDurationFrames());
-        }
+
         if (auto t = GetTransform()) {
             if (auto effectManager = EffectManagerComponent::GetInstance()) {
                 effectManager->PlayEffect("Hit", t->GetWorldPosition());

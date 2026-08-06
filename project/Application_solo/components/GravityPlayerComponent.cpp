@@ -11,9 +11,9 @@
 #include "Renderer/System/Core/BaseModel.h"
 #include "Engine/Core/Math/Random/Random.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/MathFunction.h"
 #include "Engine/Manager/CollisionManager.h"
+#include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Boss/BossComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
@@ -164,7 +164,14 @@ void GravityPlayerComponent::TakeDamage(int damage) {
     isFlashing_ = true;
     flashTimer_ = 0.0f;
     
-    // TODO: 必要に応じてカメラシェイク発火を追加
+    // カメラシェイク発火 (プレイヤー被弾時なので強め)
+    if (auto scene = gameObject_->GetScene()) {
+        if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {
+            if (auto shakeComp = mainCameraObj->GetComponent<CameraShakeComponent>()) {
+                shakeComp->PlayShake(1.0f, 30, 20.0f); // Intensity=1.0, 30 Frames, Freq=20
+            }
+        }
+    }
 
     // ポストエフェクト演出の再生
     auto& comps = gameObject_->GetComponents();

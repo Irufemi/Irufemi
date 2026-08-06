@@ -8,6 +8,8 @@
 #include "Renderer/System/Core/BaseModel.h"
 #include "RailShooterEnemyComponent.h"
 #include "Engine/Core/Math/Random/Random.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "TargetableComponent.h"
 
 void DebugEnemySpawnerComponent::Initialize() {
 }
@@ -25,7 +27,6 @@ void DebugEnemySpawnerComponent::Start() {
 
         enemy->AddComponent<PrimitiveRendererComponent>();
         auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-
         // プール運用のため、エネミー死亡時は Destroy ではなくプールへ返却する
         enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
             deadObj->SetIsActive(false);
@@ -51,26 +52,43 @@ void DebugEnemySpawnerComponent::Update() {
     // '2'キーで敵をスポーン
     if (input->IsKeyPressed('2')) {
         Irufemi::Vector3 spawnPos = {0.0f, 0.0f, 50.0f};
+        Irufemi::Vector3 spawnRot = {0.0f, 3.14159f, 0.0f};
 
         auto scene = gameObject_->GetScene();
         if (scene) {
             auto playerObj = scene->FindGameObject("Player");
             if (playerObj) {
                 if (auto transform = playerObj->GetComponent<TransformComponent>()) {
-                    // プレイヤーの現在位置から Z軸前方に 50m、XYはランダムに散らす
-                    spawnPos = transform->GetPosition();
-                    spawnPos.z += 50.0f;
-                    spawnPos.x += Irufemi::Random::GeneratorFloat(-10.0f, 10.0f);
-                    spawnPos.y += Irufemi::Random::GeneratorFloat(-5.0f, 5.0f);
+                    // プレイヤーのワールド前方へ50m
+                    spawnPos = transform->GetWorldPosition();
+                    auto forward = transform->GetWorldForward();
+                    spawnPos.x += forward.x * 50.0f;
+                    spawnPos.y += forward.y * 50.0f;
+                    spawnPos.z += forward.z * 50.0f;
+                    
+                    // プレイヤーの右方向と上方向に少し散らす
+                    auto right = transform->GetWorldRight();
+                    auto up = transform->GetWorldUp();
+                    
+                    float randX = Irufemi::Random::GeneratorFloat(-10.0f, 10.0f);
+                    float randY = Irufemi::Random::GeneratorFloat(-5.0f, 5.0f);
+                    
+                    spawnPos.x += right.x * randX + up.x * randY;
+                    spawnPos.y += right.y * randX + up.y * randY;
+                    spawnPos.z += right.z * randX + up.z * randY;
+
+                    // プレイヤーと向かい合うように回転を設定（180度反転）
+                    spawnRot = transform->GetWorldRotation();
+                    spawnRot.y += 3.14159f;
                 }
             }
         }
 
-        SpawnEnemy(spawnPos);
+        SpawnEnemy(spawnPos, spawnRot);
     }
 }
 
-void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position) {
+void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
     if (!enemyPool_) return;
 
     auto handle = enemyPool_->Acquire();
@@ -87,7 +105,7 @@ void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position) {
 
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
             transform->SetWorldPosition(position);
-            transform->SetWorldRotation({0.0f, 3.14159f, 0.0f});
+            transform->SetWorldRotation(rotation);
         }
         
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {

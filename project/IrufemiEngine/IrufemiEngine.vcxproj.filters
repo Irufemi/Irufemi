@@ -555,6 +555,9 @@
     <ClCompile Include="Engine\Core\Utility\Ease.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\Utility\PerlinNoise.cpp">
+      <Filter>Engine\Core\Utility</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Core\Utility\ErrorUtility.cpp">
       <Filter>Engine\Core\Utility</Filter>
     </ClCompile>
@@ -700,6 +703,9 @@
       <Filter>Framework\Component\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp">
+      <Filter>Framework\Component\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Component\Camera\CameraShakeComponent.cpp">
       <Filter>Framework\Component\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Camera\TargetFollowComponent.cpp">
@@ -1041,6 +1047,9 @@
     <ClInclude Include="Engine\Core\Utility\Ease.h">
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Core\Utility\PerlinNoise.h">
+      <Filter>Engine\Core\Utility</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Core\Utility\Log.h">
       <Filter>Engine\Core\Utility</Filter>
     </ClInclude>
@@ -1300,6 +1309,9 @@
       <Filter>Framework\Component</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Camera\CameraComponent.h">
+      <Filter>Framework\Component\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Camera\CameraShakeComponent.h">
       <Filter>Framework\Component\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Camera\TargetFollowComponent.h">

@@ -26,6 +26,8 @@ void ScreenEffectComponent::Play() {
         // 現在の値をベース（基準）としてキャッシュする
         baseGlitchParams_ = engine->GetPostProcessManager()->GetGlitchParams();
         baseVignetteParams_ = engine->GetPostProcessManager()->GetVignetteParams();
+        baseChromaticAberrationParams_ = engine->GetPostProcessManager()->GetChromaticAberrationParams();
+        baseRadialBlurParams_ = engine->GetPostProcessManager()->GetRadialBlurParams();
         isBaseCached_ = true;
     }
 
@@ -54,6 +56,10 @@ void ScreenEffectComponent::Update() {
             engine->GetPostProcessManager()->GetGlitchParams() = baseGlitchParams_;
         } else if (mode_ == PostProcessMode::Vignette) {
             engine->GetPostProcessManager()->GetVignetteParams() = baseVignetteParams_;
+        } else if (mode_ == PostProcessMode::ChromaticAberration) {
+            engine->GetPostProcessManager()->GetChromaticAberrationParams() = baseChromaticAberrationParams_;
+        } else if (mode_ == PostProcessMode::RadialBlur) {
+            engine->GetPostProcessManager()->GetRadialBlurParams() = baseRadialBlurParams_;
         }
         
         engine->GetPostProcessManager()->RemoveActiveMode(mode_);
@@ -77,6 +83,18 @@ void ScreenEffectComponent::Update() {
         params.color.y = LerpFloat(baseVignetteParams_.color.y, targetVignetteParams_.color.y, t);
         params.color.z = LerpFloat(baseVignetteParams_.color.z, targetVignetteParams_.color.z, t);
         params.color.w = LerpFloat(baseVignetteParams_.color.w, targetVignetteParams_.color.w, t);
+    }
+    else if (mode_ == PostProcessMode::ChromaticAberration) {
+        auto& params = engine->GetPostProcessManager()->GetChromaticAberrationParams();
+        params.intensity = LerpFloat(baseChromaticAberrationParams_.intensity, targetChromaticAberrationParams_.intensity, t);
+    }
+    else if (mode_ == PostProcessMode::RadialBlur) {
+        auto& params = engine->GetPostProcessManager()->GetRadialBlurParams();
+        params.blurWidth = LerpFloat(baseRadialBlurParams_.blurWidth, targetRadialBlurParams_.blurWidth, t);
+        params.center.x = LerpFloat(baseRadialBlurParams_.center.x, targetRadialBlurParams_.center.x, t);
+        params.center.y = LerpFloat(baseRadialBlurParams_.center.y, targetRadialBlurParams_.center.y, t);
+        // numSamples は整数なのでターゲットの値をそのまま使用するか、フェードアウト中は一定にする。
+        params.numSamples = targetRadialBlurParams_.numSamples;
     }
 }
 

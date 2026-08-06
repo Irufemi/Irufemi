@@ -70,24 +70,7 @@ void Camera::MakeWorldMatrix() {
 
 //ビュー行列の作成
 void Camera::MakeViewMatrix() {
-    Irufemi::Vector3 shakeOffset = {0.0f, 0.0f, 0.0f};
-    if (shakeFrames_ > 0) {
-        shakeFrames_--;
-        float rx = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
-        float ry = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
-        float rz = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
-        shakeOffset = {rx * shakeIntensity_, ry * shakeIntensity_, rz * shakeIntensity_};
-    }
-
-    Irufemi::Vector3 t = {translate_.x + shakeOffset.x, translate_.y + shakeOffset.y, translate_.z + shakeOffset.z};
-    Irufemi::Matrix4x4 tempWorldForView = Irufemi::Math::MakeAffineMatrix(scale_, rotate_, t);
-
-    viewMatrix_ = Irufemi::Math::Inverse(tempWorldForView);
-}
-
-void Camera::Shake(float intensity, int durationFrames) {
-    shakeIntensity_ = intensity;
-    shakeFrames_ = shakeFrames_ > durationFrames ? shakeFrames_ : durationFrames;
+    viewMatrix_ = Irufemi::Math::Inverse(worldMatrix_); // カメラのワールド行列の逆行列がビュー行列
 }
 
 //透視投影行列の更新

@@ -44,9 +44,9 @@ void CameraComponent::Update() {
     auto transform = GetTransform();
     if (!transform) return;
 
-    // GameObjectのTransformとCameraの座標・角度を同期（ワールド座標系）
-    camera_->SetTranslate(transform->GetWorldPosition());
-    camera_->SetRotate(transform->GetWorldRotation());
+    // GameObjectのTransformとCameraの座標・角度を同期（ワールド座標系）＋ 演出オフセット
+    camera_->SetTranslate(Irufemi::Math::Add(transform->GetWorldPosition(), positionOffset_));
+    camera_->SetRotate(Irufemi::Math::Add(transform->GetWorldRotation(), rotationOffset_));
     
     // パラメータの動的更新反映
     camera_->SetFovY(fovAngleY_);
