@@ -5,11 +5,20 @@ Telemetry Monitor は、ゲーム本体（IrufemiEngine）から UDP で送信�
 
 最大の特徴として、**完全に独立したC# (WPF) アプリケーション**として動作するため、ゲームのメインループ（FPS）や処理負荷に一切の影響（オーバーヘッド）を与えずにパフォーマンスを確認できます。
 
-## 使い方
+## 使い方（起動手順）
 
-1. `Tools/TelemetryMonitor/TelemetryMonitor.sln` を Visual Studio 等で開いて実行（ビルド）します。
-2. ゲーム本体（IrufemiEngine）を起動します。
+チーム開発で共有しやすいよう、このツールは独立した単一の実行ファイル（`.exe`）としてコンパイル済みです。
+
+1. 以下の場所にある `TelemetryMonitor.exe` を直接ダブルクリックして起動します。
+   📂 `project/Binaries/TelemetryMonitor/TelemetryMonitor.exe`
+2. 続けてゲーム本体（IrufemiEngine）を起動します。
 3. 監視ツールの画面上に、エンジンから送られてきた `System/FPS` や `System/GPU_Time_ms` などのデータが自動的に表示され、更新され続けます。
+
+> **※開発者向け（ツールのコードを改修した場合）**
+> ツールのコードを変更した場合は、Visual Studio でビルドするだけでなく、以下のコマンドを実行して配布用の単一 `.exe` を更新してください。
+> ```powershell
+> dotnet publish TelemetryMonitor.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o ../../Binaries/TelemetryMonitor
+> ```
 
 ## 新しい監視データを追加する方法
 
