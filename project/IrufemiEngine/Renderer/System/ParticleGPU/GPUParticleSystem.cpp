@@ -997,19 +997,21 @@ void GPUParticleSystem::DispatchComputeShaders(
   // Wait for Init
   DirectXUtils::UAVBarriers(commandList, {sortResource_.Get()});
 
-  // 2. Execute Bitonic Sort
-  commandList->SetPipelineState(
-      dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleBitonicSort"));
-  commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_); // u0
+  // 2. Execute Bitonic Sort (AAA Approach: ソート不要なブレンドモードはスキップ)
+  if (selectedBlend_ == Irufemi::BlendMode::kBlendModeNormal) {
+    commandList->SetPipelineState(
+        dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleBitonicSort"));
+    commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_); // u0
 
-  for (uint32_t k = 2; k <= kMaxParticles; k <<= 1) {
-    for (uint32_t j = k >> 1; j > 0; j >>= 1) {
-      commandList->SetComputeRoot32BitConstant(9, k, 0); // b2, uint k
-      commandList->SetComputeRoot32BitConstant(9, j, 1); // b2, uint j
+    for (uint32_t k = 2; k <= kMaxParticles; k <<= 1) {
+      for (uint32_t j = k >> 1; j > 0; j >>= 1) {
+        commandList->SetComputeRoot32BitConstant(9, k, 0); // b2, uint k
+        commandList->SetComputeRoot32BitConstant(9, j, 1); // b2, uint j
 
-      commandList->Dispatch(kMaxParticles / 1024, 1, 1);
+        commandList->Dispatch(kMaxParticles / 1024, 1, 1);
 
-      DirectXUtils::UAVBarriers(commandList, {sortResource_.Get()});
+        DirectXUtils::UAVBarriers(commandList, {sortResource_.Get()});
+      }
     }
   }
 

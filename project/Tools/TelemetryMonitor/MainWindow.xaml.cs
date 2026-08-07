@@ -65,7 +65,7 @@ namespace TelemetryMonitor
                     if (dVal <= targetFrameTime + 0.5) StatusColorBrush = new SolidColorBrush(Color.FromRgb(0, 255, 157)); // Green
                     else StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 51, 102)); // Red
                 }
-                else if (Key.Contains("Time", StringComparison.OrdinalIgnoreCase) || Key.Contains("CPU", StringComparison.OrdinalIgnoreCase) || Key.Contains("GPU", StringComparison.OrdinalIgnoreCase))
+                else if (Key.Equals("System/CPU_Time_ms", StringComparison.OrdinalIgnoreCase) || Key.Equals("System/GPU_Time_ms", StringComparison.OrdinalIgnoreCase))
                 {
                     // 処理時間(ms): CPU/GPUの純粋な負荷。低いほど良い。16.66msが限界。
                     if (dVal < targetFrameTime * 0.6) StatusColorBrush = new SolidColorBrush(Color.FromRgb(0, 255, 157)); // 余裕 (Green)
@@ -78,7 +78,7 @@ namespace TelemetryMonitor
                 }
                 else if (Key.Contains("Particle", StringComparison.OrdinalIgnoreCase))
                 {
-                    StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 153, 0)); // Orange
+                    StatusColorBrush = new SolidColorBrush(Color.FromRgb(204, 153, 255)); // Light Purple
                 }
                 else
                 {
@@ -145,11 +145,11 @@ namespace TelemetryMonitor
                                     valueStr = dVal.ToString("0.00");
                                     
                                     // グラフ用の履歴に追加
-                                    if (key.Contains("FPS", StringComparison.OrdinalIgnoreCase))
+                                    if (key.Equals("System/FPS", StringComparison.OrdinalIgnoreCase))
                                         AddHistory(_fpsHistory, dVal);
-                                    else if (key.Contains("CPU", StringComparison.OrdinalIgnoreCase))
+                                    else if (key.Equals("System/CPU_Time_ms", StringComparison.OrdinalIgnoreCase))
                                         AddHistory(_cpuHistory, dVal);
-                                    else if (key.Contains("GPU", StringComparison.OrdinalIgnoreCase))
+                                    else if (key.Equals("System/GPU_Time_ms", StringComparison.OrdinalIgnoreCase))
                                         AddHistory(_gpuHistory, dVal);
                                 }
                                 else if (property.Value.ValueKind == JsonValueKind.Array)

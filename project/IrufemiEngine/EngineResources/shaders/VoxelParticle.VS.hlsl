@@ -1,5 +1,6 @@
 #include "VoxelParticle.hlsli"
 #include "VertexData.hlsli"
+#include "CullingUtility.hlsli"
 
 // struct VSInput は VertexData.hlsli (VertexInput) で定義
 
@@ -30,7 +31,7 @@ VertexShaderOutput main(VertexInput input, uint instanceID : SV_InstanceID)
 
 	// 非アクティブなら画面外へ飛ばす
     if (particle.isActive == 0) {
-        output.position = float4(0, -10000, 0, 1);
+        CullVertexByPosition(output.position);
         output.worldPosition = float3(0, -10000, 0);
         output.normal = float3(0, 1, 0);
         output.texcoord = input.texcoord;

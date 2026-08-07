@@ -64,8 +64,8 @@ void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
     // 現在のフレームの開始タイムスタンプを記録
     commandList->EndQuery(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, startIndex);
 
-    // ストールを防ぐため、安全にGPU処理が終わっている「前の前のフレーム」の結果をリードバックする
-    uint32_t safeFrameIndex = (frameIndex + kMaxFramesInFlight - 1) % kMaxFramesInFlight;
+    // ストールを防ぐため、安全にGPU処理が終わっている（現在のフェンスで待機完了した）フレームの結果をリードバックする
+    uint32_t safeFrameIndex = frameIndex;
     
     // CPUでマップして読む
     uint64_t* pData = nullptr;

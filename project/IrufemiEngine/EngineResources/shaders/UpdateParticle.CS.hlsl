@@ -1,5 +1,6 @@
 #include "ParticleGPU.hlsli"
 #include "RandomGenerator.hlsli"
+#include "CullingUtility.hlsli"
 #include "PerFrame.hlsli"
 
 static const uint kMaxParticles = 32768;
@@ -223,7 +224,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 }
 
                 // 自身を破棄
-                gParticles[particleIndex].scale = float3(0.0f, 0.0f, 0.0f);
+                CullInstanceByScale(gParticles[particleIndex].scale);
                 gParticles[particleIndex].color.a = 0.0f;
 
                 int freeListIndex;
