@@ -59,9 +59,15 @@ namespace TelemetryMonitor
                     else if (dVal >= 30.0) StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 204, 0)); // Yellow
                     else StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 51, 102)); // Red
                 }
+                else if (Key.Contains("FrameTime", StringComparison.OrdinalIgnoreCase))
+                {
+                    // FrameTimeは60FPS制限により16.66ms付近に張り付くため、若干のブレ(17.0ms)まで正常(Green)とする
+                    if (dVal <= targetFrameTime + 0.5) StatusColorBrush = new SolidColorBrush(Color.FromRgb(0, 255, 157)); // Green
+                    else StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 51, 102)); // Red
+                }
                 else if (Key.Contains("Time", StringComparison.OrdinalIgnoreCase) || Key.Contains("CPU", StringComparison.OrdinalIgnoreCase) || Key.Contains("GPU", StringComparison.OrdinalIgnoreCase))
                 {
-                    // 処理時間(ms): 低いほど良い。16.66msが限界。
+                    // 処理時間(ms): CPU/GPUの純粋な負荷。低いほど良い。16.66msが限界。
                     if (dVal < targetFrameTime * 0.6) StatusColorBrush = new SolidColorBrush(Color.FromRgb(0, 255, 157)); // 余裕 (Green)
                     else if (dVal <= targetFrameTime) StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 204, 0)); // 限界に近い (Yellow)
                     else StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 51, 102)); // 限界突破/処理落ち (Red)

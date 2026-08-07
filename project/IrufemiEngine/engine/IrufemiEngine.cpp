@@ -59,6 +59,10 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
+
+namespace {
+    static float s_gpuWaitTimeMs = 0.0f;
+}
 #include "Renderer/Object/Batch/PrimitiveBatch.h"
 #include "Renderer/System/Data/RenderData.h"
 #include "Renderer/Object/Skybox/Skybox.h"
@@ -824,8 +828,12 @@ void IrufemiEngine::ProcessFrame() {
   // 描画処理に入る前にImGui_::Renderを積む
   ui_->QueueDrawCommands();
 
-  // 1. バックバッファをクリア (念のため)
+  // 1. バックバッファをクリア (GPU同期待ちが発生する可能性があるため、待機時間を計測)
+  auto beforePreDraw = std::chrono::steady_clock::now();
   drawManager_->PreDraw(clearColor_, 1.0f, 0);
+  auto afterPreDraw = std::chrono::steady_clock::now();
+  
+  s_gpuWaitTimeMs = std::chrono::duration<float>(afterPreDraw - beforePreDraw).count() * 1000.0f;
 
   // (Compute Shaderの一括実行は、RenderGraph内のComputePassに移行しました)
 
@@ -866,6 +874,15 @@ void IrufemiEngine::EndFrame() {
 
   // 描画後処理
   ui_->QueuePostDrawCommands();
+
+  // CPU側の純粋な処理時間（GPU同期待ちを引いた純粋なロジック・コマンド構築時間）を計測
+  auto now = std::chrono::steady_clock::now();
+  float totalElapsedMs = std::chrono::duration<float>(now - lastFrameTime_).count() * 1000.0f;
+  
+  // CPU処理時間 = フレーム経過時間 - GPUフェンス待ち時間 (ただしマイナスにならないようclamp)
+  float pureCpuTimeMs = (std::max)(0.0f, totalElapsedMs - s_gpuWaitTimeMs);
+  TelemetrySender::GetInstance().SetMetric("System/CPU_Time_ms", pureCpuTimeMs);
+
   drawManager_->PostDraw();
 
   if (screenCaptureManager_) {
@@ -890,6 +907,7 @@ void IrufemiEngine::EndFrame() {
 
   TelemetrySender::GetInstance().SetMetric("System/FPS", emaFps);
   TelemetrySender::GetInstance().SetMetric("System/FrameTime_ms", deltaTime_ * 1000.0f);
+
   if (dxCommon_) {
       TelemetrySender::GetInstance().SetMetric("System/GPU_Time_ms", GpuProfiler::GetInstance().GetLastFrameGpuTimeMs());
   }
