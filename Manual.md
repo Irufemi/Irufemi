@@ -2132,9 +2132,24 @@ void ExampleScene::DrawDebugTab() {
 ゲームの描画ループに負荷をかけずに、パフォーマンスをリアルタイムで監視するC#製のWPFツールが用意されています。
 
 **【起動手順】**
-1. ツール側のソリューション (`Tools/TelemetryMonitor/TelemetryMonitor.sln` または csproj) をビルド＆実行します。
+チーム開発で共有しやすいよう、このツールは独立した単一の実行ファイル（`.exe`）としてビルドされています。
+1. 以下の場所にある `TelemetryMonitor.exe` を直接ダブルクリックして起動します。
+   📂 `project/Binaries/TelemetryMonitor/TelemetryMonitor.exe`
+   （※よく使う場合はデスクトップ等にショートカットを作成すると便利です）
 2. ツールが立ち上がったら、続けてゲーム本体 (`IrufemiEngine`) を起動します。
 3. UDP通信によって自動で接続され、FPSやCPU/GPUの処理時間がネオングラフで表示されます。
+
+**【表示される主な指標】**
+- **System/FPS**: 指数移動平均 (EMA) で平滑化された滑らかなFPS値です。
+- **System/FrameTime_ms**: 1フレームにかかったトータル時間（ハイブリッド・スリープによる待機時間を含む）です。60FPS時は約16.67msになります。
+- **System/CPU_Time_ms**: エンジン側のロジック計算と描画コマンド生成にかかった「純粋なCPU稼働時間」です（GPUのフェンス同期待ち時間を除外して正確に計測されます）。
+- **System/GPU_Time_ms**: 前フレームで実際にGPUが描画処理に費やした時間です。
+
+*(※プログラマー向け)*
+もしC#側のツールのソースコード（`Tools/TelemetryMonitor/`）を拡張・改修した場合は、対象ディレクトリで以下のコマンドを実行することで、チーム配布用の新しい単一exeが `Binaries` フォルダに上書き生成されます。
+```powershell
+dotnet publish TelemetryMonitor.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o ../../Binaries/TelemetryMonitor
+```
 
 **【カスタムデータの送り方】**
 ゲーム固有の変数（例：プレイヤーのHPやボスのフェーズ）を監視したい場合は、エンジン内の任意の場所から以下の1行を呼ぶだけで、ツール側に新しい折れ線グラフが追加されます。
