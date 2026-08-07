@@ -52,14 +52,14 @@ C++ と DirectX 12 を用いてスクラッチから構築した、**GPU-Driven 
 **【図解: Sparse SetとInstance Promotionによるキャッシュ最適化】**
 ```mermaid
 graph TD
-    subgraph Data-Oriented [Virtual Entity 密配列キャッシュ]
-        Dense[連続メモリ上の座標データ配列<br/>キャッシュヒット率: 極高]
+    subgraph Data-Oriented ["Virtual Entity 密配列キャッシュ"]
+        Dense["連続メモリ上の座標データ配列 (キャッシュヒット率: 極高)"]
     end
-    subgraph Object-Oriented [GameObject プール]
-        GO[実体化されたGameObject群<br/>コンポーネントによる複雑な処理]
+    subgraph Object-Oriented ["GameObject プール"]
+        GO["実体化されたGameObject群 (コンポーネントによる複雑な処理)"]
     end
-    Dense -->|干渉時・描画時のみ Promote() で実体化| GO
-    GO -->|不要になれば Demote() で返却| Dense
+    Dense -->|"干渉時・描画時のみ Promote() で実体化"| GO
+    GO -->|"不要になれば Demote() で返却"| Dense
     style Dense fill:#2b6cb0,stroke:#3182ce,stroke-width:2px,color:#fff
     style GO fill:#2d3748,stroke:#4a5568,stroke-width:1px,color:#a0aec0
 ```
@@ -97,13 +97,13 @@ graph TD
 **【図解: 世代付きHandleによるダングリングポインタの防御】**
 ```mermaid
 graph LR
-    subgraph ObjectPool [ObjectPool メモリプール]
-        Slot0[Slot 0<br/>Gen: 1, Active]
-        Slot1[Slot 1<br/>Gen: 2, Free (next: 2)]
-        Slot2[Slot 2<br/>Gen: 1, Free (next: -1)]
+    subgraph ObjectPool ["ObjectPool メモリプール"]
+        Slot0["Slot 0 (Gen: 1, Active)"]
+        Slot1["Slot 1 (Gen: 2, Free, next: 2)"]
+        Slot2["Slot 2 (Gen: 1, Free, next: -1)"]
     end
-    User[ユーザーのHandle<br/>Index: 1, Gen: 1] -.->|古い世代でアクセス| Slot1
-    Slot1 -.->|世代アンマッチで<br/>安全に弾く (nullptr返却)| User
+    User["ユーザーのHandle (Index: 1, Gen: 1)"] -.->|"古い世代でアクセス"| Slot1
+    Slot1 -.->|"世代アンマッチで 安全に弾く (nullptr返却)"| User
     style Slot0 fill:#2b6cb0,color:#fff
     style Slot1 fill:#c53030,color:#fff
     style Slot2 fill:#2d3748,color:#fff
