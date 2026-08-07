@@ -8,6 +8,7 @@ using namespace RenderPackets;
 #include <cassert>
 
 #include <dxgidebug.h>
+#include "../Profiler/GpuProfiler.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
@@ -261,6 +262,9 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     // フレーム開始時に、ポーズ中でSetFrameDataが呼ばれなくてもバッファが常に同期待ちにならないようキャッシュを現在のバッファへコピーする
     SyncCachedFrameData();
 
+    // GPU計測開始
+    GpuProfiler::GetInstance().StartFrame(commandList_);
+
     // バックバッファとRTV/DSVの取得 (これはスワップチェーン依存なのでそのままでよい)
 
     // バックバッファとRTV/DSVの取得
@@ -327,6 +331,9 @@ void DrawManager::PostDraw() {
     /*画面の色を変えよう*/
 
     ///コマンドを積み込んで確定させる
+
+    // GPU計測終了
+    GpuProfiler::GetInstance().EndFrame(commandList_);
 
     //コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
     HRESULT hr = commandList_->Close();

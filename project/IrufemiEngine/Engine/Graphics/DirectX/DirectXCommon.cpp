@@ -19,6 +19,7 @@
 #include "DXCommandManager.h"
 #include "DXSwapChainManager.h"
 #include "DirectXUtils.h"
+#include "../../Profiler/GpuProfiler.h"
 
 ID3D12CommandQueue* DirectXCommon::GetCommandQueue() { return commandManager_->GetCommandQueue(); }
 ID3D12CommandAllocator* DirectXCommon::GetCommandAllocator() { return commandManager_->GetCommandAllocator(frameIndex_); }
@@ -141,6 +142,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     CreatePSOs();
 
     CreateDepthSRV();
+    
+    // GpuProfilerの初期化
+    GpuProfiler::GetInstance().Initialize(this);
 }
 
 void DirectXCommon::CreateDepthSRV() {

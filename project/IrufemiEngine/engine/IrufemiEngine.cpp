@@ -20,6 +20,8 @@
 #include "../Framework/SceneTransition.h"
 #include "Core/System/DirectoryWatcher.h"
 #include "Graphics/Font/FontManager.h"
+#include "Profiler/TelemetrySender.h"
+#include "Profiler/GpuProfiler.h"
 
 IrufemiEngine::IrufemiEngine() = default;
 
@@ -429,6 +431,8 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>(FileSystem::GetResourcePath("shaders"), reloadCallback));
   shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>(FileSystem::GetEngineRoot() + "/EngineResources/shaders", reloadCallback));
 #endif
+
+  TelemetrySender::GetInstance().Initialize();
 }
 
   // クリアカラーをfloat配列で持つ初期化
@@ -658,6 +662,7 @@ void IrufemiEngine::Finalize() {
     winApp_.reset();
   }
 
+  TelemetrySender::GetInstance().Finalize();
   isFinalized_ = true;
 }
 
@@ -866,6 +871,14 @@ void IrufemiEngine::EndFrame() {
 
   // --- 追加: 中間リソースの遅延解放を実行 ---
   dxCommon_->ClearPendingResources();
+
+  // Telemetryデータの送信
+  TelemetrySender::GetInstance().SetMetric("System/FPS", (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f);
+  TelemetrySender::GetInstance().SetMetric("System/FrameTime_ms", deltaTime_ * 1000.0f);
+  if (dxCommon_) {
+      TelemetrySender::GetInstance().SetMetric("System/GPU_Time_ms", GpuProfiler::GetInstance().GetLastFrameGpuTimeMs());
+  }
+  TelemetrySender::GetInstance().OnFrameEnd();
 }
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {

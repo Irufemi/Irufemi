@@ -660,6 +660,12 @@
     <ClCompile Include="Engine\IrufemiEngine.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Profiler\TelemetrySender.cpp">
+      <Filter>Engine\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Profiler\GpuProfiler.cpp">
+      <Filter>Engine\Profiler</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Manager\CollisionManager.cpp">
       <Filter>Engine\Manager</Filter>
     </ClCompile>
@@ -932,6 +938,12 @@
     </ClInclude>
     <ClInclude Include="Engine\IrufemiEngine.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Profiler\TelemetrySender.h">
+      <Filter>Engine\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Profiler\GpuProfiler.h">
+      <Filter>Engine\Profiler</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Math\Math.h">
       <Filter>Engine\Core\Math</Filter>
