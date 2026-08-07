@@ -73,6 +73,8 @@ IrufemiEngine::IrufemiEngine() = default;
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxcompiler.lib")
+#pragma comment(lib, "winmm.lib")
+#include <mmsystem.h>
 
   // デストラクタ
 IrufemiEngine::~IrufemiEngine() { Finalize(); }
@@ -83,6 +85,9 @@ void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientHeight) {
   // パス解決機能の初期化 (一番最初に呼ぶ)
   FileSystem::Initialize();
+
+  // OSタイマー精度を1ミリ秒に引き上げる（AAA基準のペーシング用）
+  timeBeginPeriod(1);
 
   /*CrashHandler*/
   SetUnhandledExceptionFilter(WinApp::ExportDump);
@@ -663,6 +668,10 @@ void IrufemiEngine::Finalize() {
   }
 
   TelemetrySender::GetInstance().Finalize();
+  
+  // OSタイマー精度の引き上げを解除
+  timeEndPeriod(1);
+
   isFinalized_ = true;
 }
 
@@ -873,7 +882,13 @@ void IrufemiEngine::EndFrame() {
   dxCommon_->ClearPendingResources();
 
   // Telemetryデータの送信
-  TelemetrySender::GetInstance().SetMetric("System/FPS", (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f);
+  // 指数移動平均(EMA)を用いてFPSの変動を平滑化し、ツール上での視覚的なブレを防ぐ
+  static float emaFps = 60.0f;
+  float currentFps = (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f;
+  // 初回や異常値からの復帰時はそのまま代入、それ以外は10%の重みでなだらかに変化させる
+  emaFps = (emaFps == 0.0f || currentFps < 1.0f) ? currentFps : (emaFps * 0.9f + currentFps * 0.1f);
+
+  TelemetrySender::GetInstance().SetMetric("System/FPS", emaFps);
   TelemetrySender::GetInstance().SetMetric("System/FrameTime_ms", deltaTime_ * 1000.0f);
   if (dxCommon_) {
       TelemetrySender::GetInstance().SetMetric("System/GPU_Time_ms", GpuProfiler::GetInstance().GetLastFrameGpuTimeMs());

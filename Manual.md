@@ -2126,9 +2126,41 @@ void ExampleScene::DrawDebugTab() {
 
 ---
 
-## 8. トラブルシューティング (Troubleshooting)
+## 8. パフォーマンス監視とプロファイリング (Performance & Profiling)
 
-### 8.1 アプリケーション終了時に `LIVE_DEVICE` エラーでクラッシュする
+### 8.1 外部監視ツール (TelemetryMonitor) の使い方
+ゲームの描画ループに負荷をかけずに、パフォーマンスをリアルタイムで監視するC#製のWPFツールが用意されています。
+
+**【起動手順】**
+1. ツール側のソリューション (`Tools/TelemetryMonitor/TelemetryMonitor.sln` または csproj) をビルド＆実行します。
+2. ツールが立ち上がったら、続けてゲーム本体 (`IrufemiEngine`) を起動します。
+3. UDP通信によって自動で接続され、FPSやCPU/GPUの処理時間がネオングラフで表示されます。
+
+**【カスタムデータの送り方】**
+ゲーム固有の変数（例：プレイヤーのHPやボスのフェーズ）を監視したい場合は、エンジン内の任意の場所から以下の1行を呼ぶだけで、ツール側に新しい折れ線グラフが追加されます。
+```cpp
+#include "Profiler/TelemetrySender.h"
+
+// 毎フレームのUpdate内などで呼ぶ
+TelemetrySender::GetInstance().SetMetric("Game/PlayerHP", player->GetHP());
+```
+
+### 8.2 フレームレート制御とタイマー精度 (AAA Frame Pacing)
+本エンジンは、Windows環境下における最高精度のフレームペーシングを実現するため、「ハイブリッド・スリープ」を採用しています。
+
+**【仕様】**
+- `IrufemiEngine::Initialize` 時に `timeBeginPeriod(1)` が呼ばれ、OS全体のタイマー解像度が 1ms に引き上げられます。
+- `FrameRateController::Update` において、次のフレームまでの待機時間が 2ms を切るまでは `std::this_thread::sleep_for(1ms)` でOSに処理を譲り（省電力化）、残り時間が 2ms 未満になった瞬間に `YieldProcessor()` を用いた超高精度のスピンロック（ビジーウェイト）へ移行します。
+- これにより、「OSの寝過ごし」による意図しないFPS低下（60FPS目標なのに57FPSになってしまう問題）を完全に防ぎ、ミリ秒未満の正確なペーシングを実現しています。
+
+**【注意】**
+`TelemetrySender` からツールへ送られる `System/FPS` は、微小なジッター（数マイクロ秒のブレ）を吸収して読みやすくするため「指数移動平均 (EMA)」フィルタを通した滑らかな値になっています。
+
+---
+
+## 9. トラブルシューティング (Troubleshooting)
+
+### 9.1 アプリケーション終了時に `LIVE_DEVICE` エラーでクラッシュする
 **現象**: Visual Studio の出力ウィンドウに `D3D12 WARNING: Live ID3D12Device` と表示され、`D3DResourceLeakChecker` でブレークポイントが止まる。
 
 **原因**: 
