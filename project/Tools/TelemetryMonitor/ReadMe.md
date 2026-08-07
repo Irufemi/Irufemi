@@ -15,10 +15,11 @@ Telemetry Monitor は、ゲーム本体（IrufemiEngine）から UDP で送信�
 3. 監視ツールの画面上に、エンジンから送られてきた `System/FPS` や `System/GPU_Time_ms` などのデータが自動的に表示され、更新され続けます。
 
 > **※開発者向け（ツールのコードを改修した場合）**
-> ツールのコードを変更した場合は、Visual Studio でビルドするだけでなく、以下のコマンドを実行して配布用の単一 `.exe` を更新してください。
-> ```powershell
-> dotnet publish TelemetryMonitor.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o ../../Binaries/TelemetryMonitor
-> ```
+> ツールのコード（`MainWindow.xaml.cs` 等）を変更した場合は、Visual Studio上でビルドするだけでなく、必ず以下のバッチファイルをダブルクリックして配布用の単一 `.exe` を更新してください。
+> 
+> 📂 `project/Tools/TelemetryMonitor/BuildMonitor.bat`
+> 
+> ※このバッチファイルは単なる過去ビルドのコピーではありません。**最新のC#ソースコードを自動検知してReleaseモードでコンパイル（ビルド）し、最適化された最新の `.exe` を `Binaries` フォルダへ全自動で出力**する仕組みになっています。
 
 ## 新しい監視データを追加する方法
 

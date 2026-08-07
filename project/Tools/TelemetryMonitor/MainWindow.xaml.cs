@@ -72,6 +72,14 @@ namespace TelemetryMonitor
                     else if (dVal <= targetFrameTime) StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 204, 0)); // 限界に近い (Yellow)
                     else StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 51, 102)); // 限界突破/処理落ち (Red)
                 }
+                else if (Key.Contains("ThreadPool", StringComparison.OrdinalIgnoreCase))
+                {
+                    StatusColorBrush = new SolidColorBrush(Color.FromRgb(0, 204, 255)); // Cyan
+                }
+                else if (Key.Contains("Particle", StringComparison.OrdinalIgnoreCase))
+                {
+                    StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 153, 0)); // Orange
+                }
                 else
                 {
                     StatusColorBrush = new SolidColorBrush(Color.FromRgb(255, 255, 255)); // White

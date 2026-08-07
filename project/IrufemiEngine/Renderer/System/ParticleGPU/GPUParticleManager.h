@@ -40,12 +40,24 @@ public:
     struct EmitterHandle {
         GPUParticleSystem* system = nullptr;
         uint32_t emitterIndex = 0xFFFFFFFF;
-        /**
-         * @brief IsValid かどうかを判定する。
-         * @return 判定結果 (true/false)
-         */
-        bool IsValid() const { return system != nullptr && emitterIndex != 0xFFFFFFFF; }
-    };
+    /**
+     * @brief IsValid かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
+    bool IsValid() const { return system != nullptr && emitterIndex != 0xFFFFFFFF; }
+};
+
+/**
+ * @brief 現在稼働しているパーティクルシステム（テクスチャ）の種類数を取得する。
+ * @return アクティブなシステム数
+ */
+int GetActiveSystemCount() const { return static_cast<int>(systems_.size()); }
+
+/**
+ * @brief 使用中の全エミッター数を取得する。
+ * @return エミッターの総数
+ */
+int GetTotalEmittersUsed() const;
 
     /**
      * @brief 指定したテクスチャ、ブレンドモード、タイムスケール設定に対するシステムを取得し、エミッターを登録する

@@ -136,20 +136,19 @@ void GPUParticleManager::UpdateFieldData(const FieldHandle& handle, const Partic
 #if defined(USE_IMGUI)
 #include <imgui.h>
 #endif
+
+int GPUParticleManager::GetTotalEmittersUsed() const {
+    int totalEmitters = 0;
+    for (const auto& pair : systems_) {
+        totalEmitters += (int)(GPUParticleSystem::kMaxEmitters - pair.second.freeIndices.size());
+    }
+    return totalEmitters;
+}
+
 void GPUParticleManager::Debug() {
 #if defined(USE_IMGUI)
     if (ImGui::BeginTabItem("GPU Particle Manager")) {
-        ImGui::Text("System Statistics");
-        ImGui::Separator();
-        ImGui::Text("Active Particle Systems (Textures): %d", (int)systems_.size());
-        
-        int totalEmitters = 0;
-        int maxEmitters = static_cast<int>(systems_.size()) * GPUParticleSystem::kMaxEmitters;
-        for (const auto& pair : systems_) {
-            totalEmitters += (int)(GPUParticleSystem::kMaxEmitters - pair.second.freeIndices.size());
-        }
-        
-        ImGui::Text("Total Emitters Used: %d / %d", totalEmitters, maxEmitters);
+        ImGui::TextDisabled("(Global system stats moved to TelemetryMonitor)");
         ImGui::Separator();
         
         ImGui::Spacing();

@@ -54,25 +54,6 @@ private: // メンバ変数
 
     TextureManager* textureManager_ = nullptr;
 
-    // ★追加: パフォーマンス履歴
-    static constexpr size_t kPerfHistoryCount_ = 240;          // 約4秒分
-    std::array<float, kPerfHistoryCount_> frameTimeHistory_{}; // ms
-    size_t historyIndex_ = 0;
-    bool historyFilled_ = false;
-
-    // ★内部計算キャッシュ
-    float cachedAvgMs_ = 0.0f;
-    float cachedMinMs_ = 0.0f;
-    float cachedMaxMs_ = 0.0f;
-    float cachedP99Ms_ = 0.0f;   // 99th percentile frame time (≒ 1% worst)
-    float cachedFps_ = 0.0f;
-    /**
-     * @brief UpdatePerfStats_ を実行する。
-     */
-    void UpdatePerfStats_(float newFrameMs); // ★集計用内部関数
-
-    bool showPerformance_ = true; // ★パフォーマンス情報の表示フラグ
-
     // --- ImGui用ライト編集テンプレート ---
     static std::unique_ptr<PointLight> templatePointLight_;
     static std::unique_ptr<SpotLight> templateSpotLight_;
@@ -227,11 +208,6 @@ public: // メンバ関数
     static void DebugSphereInfo(Irufemi::Sphere& sphere);
 
     /**
-     * @brief パフォーマンスオーバーレイの表示（FPS/ms表示）
-     */
-    void FPSDebug();
-
-    /**
      * @brief シーン切り替えタブの表示
      */
     void SceneSelectorTab(SceneManager* sm);
@@ -240,11 +216,6 @@ public: // メンバ関数
      * @brief ポストプロセス調整タブの表示
      */
     void PostProcessTab(IrufemiEngine* engine);
-
-    /**
-     * @brief ThreadPool の監視タブの表示
-     */
-    void ThreadPoolTab(ThreadPool* pool);
 
     /**
      * @brief ScreenCaptureManager 用のデバッグタブ

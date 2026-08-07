@@ -706,11 +706,9 @@ void IrufemiEngine::Execute() {
 
 // ImGui
 #ifdef USE_IMGUI
-    ui_->FPSDebug();
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
-    ui_->ThreadPoolTab(threadPool_.get());
     ui_->ScreenCaptureTab(screenCaptureManager_.get());
   // デバッグ機能の追加
   if (gpuParticleManager_) {
@@ -899,6 +897,17 @@ void IrufemiEngine::EndFrame() {
   dxCommon_->ClearPendingResources();
 
   // Telemetryデータの送信
+  if (threadPool_) {
+      TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Active", (int)threadPool_->GetActiveThreadCount());
+      TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Queued", (int)threadPool_->GetQueuedTaskCount());
+      // TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Completed", (int)threadPool_->PopCompletedTaskCount()); // PopCompletedTaskCount は他で使われる可能性があるのでここでは取得のみに留めるか検討ですが、一旦は呼び出さないようにします。
+  }
+
+  if (gpuParticleManager_) {
+      TelemetrySender::GetInstance().SetMetric("GPU_Particle/Active_Systems", gpuParticleManager_->GetActiveSystemCount());
+      TelemetrySender::GetInstance().SetMetric("GPU_Particle/Total_Emitters", gpuParticleManager_->GetTotalEmittersUsed());
+  }
+
   // 指数移動平均(EMA)を用いてFPSの変動を平滑化し、ツール上での視覚的なブレを防ぐ
   static float emaFps = 60.0f;
   float currentFps = (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f;
