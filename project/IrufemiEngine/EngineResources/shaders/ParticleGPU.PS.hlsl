@@ -9,12 +9,12 @@
 
 ConstantBuffer<Material> gMaterial : register(b0);
 
+#include "Lighting.hlsli"
+ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
+
 #include "Bindless.hlsli"
 
-struct PixelShaderOutput
-{
-	float32_t4 color : SV_TARGET0;
-};
+#include "BasePassPixelOutput.hlsli"
 
 /*テクスチャを貼ろう*/
 
@@ -54,7 +54,14 @@ PixelShaderOutput main(VertexShaderOutput input)
 		textureColor = gTextures[gMaterial.textureIndex].Sample(gSamplerClamp, transformedUV.xy);
 	}
 
-	output.color = gMaterial.color * textureColor * input.color;
+	// ライトの影響を適用
+	float3 litColor = textureColor.rgb * input.color.rgb;
+	if (gMaterial.enableLighting != 0) {
+		// シンプルにライトカラーと強度を乗算（パーティクルの性質上、環境光的に全体に影響させる）
+		litColor *= (gDirectionalLight.color.rgb * gDirectionalLight.intensity);
+	}
+
+	output.color = float4(gMaterial.color.rgb * litColor, gMaterial.color.a * textureColor.a * input.color.a);
 	
 	/*2値抜き*/
 		
@@ -74,6 +81,19 @@ PixelShaderOutput main(VertexShaderOutput input)
 	// αにフェードを適用
 	output.color.a *= fade;
 	
+	output.mask.r = gMaterial.customEffectType / 255.0f;
+	output.mask.g = gMaterial.customEffectParam;
+	output.mask.b = gMaterial.enableEffectMask ? 1.0f : 0.0f;
+	output.mask.a = 1.0f;
 	
+	// パーティクルの法線はビルボードなのでZ手前固定
+	output.normal = float4(0.0f, 0.0f, -1.0f, 1.0f); 
+	
+	// パーティクルのマテリアルは仮の値
+	output.material = float4(0.0f, 1.0f, 0.0f, 1.0f);
+	
+	// ベロシティは仮
+	output.velocity = float2(0.0f, 0.0f);
+
 	return output;
 }

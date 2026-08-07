@@ -72,13 +72,13 @@ void ParticleEmitterComponentEditor::Draw(Component* component, EditorActionMana
             ImGui::PushItemWidth(-1);
             if (ImGui::Combo("##Blend Mode", &currentBlend, blendNames, 7)) {
                 auto oldB = comp->GetBlendMode();
-                auto newB = static_cast<BlendMode>(currentBlend);
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldB, newB, std::function<void(const BlendMode&)>([comp](const BlendMode& v){ comp->SetBlendMode(v); }));
+                auto newB = static_cast<Irufemi::BlendMode>(currentBlend);
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldB, newB, std::function<void(const Irufemi::BlendMode&)>([comp](const Irufemi::BlendMode& v){ comp->SetBlendMode(v); }));
             }
             ImGui::PopItemWidth();
             ComponentUIHelpers::DrawPropertyResetButton("##BlendReset", currentBlend != 2, [&]() {
                 auto oldB = comp->GetBlendMode();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldB, BlendMode::kBlendModeAdd, std::function<void(const BlendMode&)>([comp](const BlendMode& v){ comp->SetBlendMode(v); }));
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldB, Irufemi::BlendMode::kBlendModeAdd, std::function<void(const Irufemi::BlendMode&)>([comp](const Irufemi::BlendMode& v){ comp->SetBlendMode(v); }));
             });
 
             bool emitAwake = comp->GetEmitOnAwake();
@@ -118,17 +118,17 @@ void ParticleEmitterComponentEditor::Draw(Component* component, EditorActionMana
             });
 
             if (emitType == 2) {
-                Vector3 aSize = comp->GetAreaSize();
+                Irufemi::Vector3 aSize = comp->GetAreaSize();
                 ImGui::TableNextRow();
                 ComponentUIHelpers::DrawPropertyLabel("Area Size");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
                 if (ImGui::DragFloat3("##AreaSize", &aSize.x, 0.1f, 0.0f, 100.0f)) {}
                 ImGui::PopItemWidth();
-                ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &aSize, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetAreaSize(v); }));
+                ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &aSize, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetAreaSize(v); }));
                 ComponentUIHelpers::DrawPropertyResetButton("##AreaReset", aSize.x != 10.0f || aSize.y != 10.0f || aSize.z != 10.0f, [&]() {
-                    Vector3 oldA = comp->GetAreaSize();
-                    ComponentUIHelpers::PushInstantUndo(actionManager, oldA, Vector3{10,10,10}, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetAreaSize(v); }));
+                    Irufemi::Vector3 oldA = comp->GetAreaSize();
+                    ComponentUIHelpers::PushInstantUndo(actionManager, oldA, Irufemi::Vector3{10,10,10}, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetAreaSize(v); }));
                 });
             } else {
                 float rad = comp->GetRadius();
@@ -250,43 +250,43 @@ void ParticleEmitterComponentEditor::Draw(Component* component, EditorActionMana
                 ComponentUIHelpers::PushInstantUndo(actionManager, oldV, 1.0f, std::function<void(const float&)>([comp](const float& v){ comp->SetLifeTimeMax(v); }));
             });
 
-            Vector4 col = comp->GetColor();
+            Irufemi::Vector4 col = comp->GetColor();
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Start Color");
             ImGui::TableSetColumnIndex(1);
             ImGui::PushItemWidth(-1);
             if (ImGui::ColorEdit4("##Color", &col.x)) {}
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &col, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &col, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ comp->SetColor(v); }));
             ComponentUIHelpers::DrawPropertyResetButton("##ColReset", col.x != 1.0f || col.y != 1.0f || col.z != 1.0f, [&]() {
-                Vector4 oldC = comp->GetColor();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Vector4{1,1,1,1}, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
+                Irufemi::Vector4 oldC = comp->GetColor();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Irufemi::Vector4{1,1,1,1}, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ comp->SetColor(v); }));
             });
 
-            Vector3 sScale = comp->GetStartScale();
+            Irufemi::Vector3 sScale = comp->GetStartScale();
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Start Scale");
             ImGui::TableSetColumnIndex(1);
             ImGui::PushItemWidth(-1);
             if (ImGui::DragFloat3("##SScale", &sScale.x, 0.05f)) {}
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &sScale, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetStartScale(v); }));
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &sScale, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetStartScale(v); }));
             ComponentUIHelpers::DrawPropertyResetButton("##SSReset", sScale.x != 1.0f || sScale.y != 1.0f || sScale.z != 1.0f, [&]() {
-                Vector3 oldS = comp->GetStartScale();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Vector3{1,1,1}, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetStartScale(v); }));
+                Irufemi::Vector3 oldS = comp->GetStartScale();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Irufemi::Vector3{1,1,1}, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetStartScale(v); }));
             });
 
-            Vector3 eScale = comp->GetEndScale();
+            Irufemi::Vector3 eScale = comp->GetEndScale();
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("End Scale");
             ImGui::TableSetColumnIndex(1);
             ImGui::PushItemWidth(-1);
             if (ImGui::DragFloat3("##EScale", &eScale.x, 0.05f)) {}
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &eScale, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetEndScale(v); }));
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &eScale, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetEndScale(v); }));
             ComponentUIHelpers::DrawPropertyResetButton("##ESReset", eScale.x != 0.0f || eScale.y != 0.0f || eScale.z != 0.0f, [&]() {
-                Vector3 oldS = comp->GetEndScale();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Vector3{0,0,0}, std::function<void(const Vector3&)>([comp](const Vector3& v){ comp->SetEndScale(v); }));
+                Irufemi::Vector3 oldS = comp->GetEndScale();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Irufemi::Vector3{0,0,0}, std::function<void(const Irufemi::Vector3&)>([comp](const Irufemi::Vector3& v){ comp->SetEndScale(v); }));
             });
 
             ComponentUIHelpers::EndPropertyTable();

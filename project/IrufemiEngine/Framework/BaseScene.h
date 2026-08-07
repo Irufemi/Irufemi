@@ -7,6 +7,7 @@
 #include <mutex>
 #include <unordered_map>
 #include "Engine/Core/Math/Vector3.h"
+#include "Engine/Graphics/Camera/OrbitCameraController.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -17,6 +18,7 @@ struct PointLight;
 struct SpotLight;
 struct AreaLight;
 class GameObject;
+class Camera;
 
 /**
  * @class BaseScene
@@ -70,7 +72,7 @@ public:
      * @param position 初期座標
      * @return 生成された GameObject のポインタ
      */
-    std::shared_ptr<GameObject> InstantiatePrefab(const std::string& prefabPath, const Vector3& position = {0,0,0});
+    std::shared_ptr<GameObject> InstantiatePrefab(const std::string& prefabPath, const Irufemi::Vector3& position = {0,0,0});
 
     /**
      * @brief シーンが保持する GameObject のリストを取得する
@@ -98,14 +100,16 @@ public:
     std::shared_ptr<GameObject> FindGameObject(const std::string& name);
 
     /**
+     * @brief オブジェクトのインスタンスIDから該当する shared_ptr の GameObject を探して返す（O(1)検索）
+     */
+    std::shared_ptr<GameObject> FindGameObjectByID(uint64_t id);
+
+    /**
      * @brief 指定した名前を持つすべての GameObject を返す
      */
     std::vector<std::shared_ptr<GameObject>> FindGameObjects(const std::string& name);
 
-    /**
-     * @brief インスタンスIDから該当する GameObject を探して返す
-     */
-    std::shared_ptr<GameObject> FindGameObjectByID(uint64_t instanceId);
+
 
     /**
      * @brief 指定したタグを持つ全てのGameObjectを取得する
@@ -162,24 +166,35 @@ public:
     virtual void DrawDebugTab() override;
 
     // --- シリアライズ機能 ---
+    /**
+     * @brief Serialize を実行する。
+     */
     virtual nlohmann::json Serialize() const override;
+    /**
+     * @brief Deserialize を実行する。
+     */
     virtual void Deserialize(const nlohmann::json& j) override;
 
 protected:
     IrufemiEngine* engine_ = nullptr;
 
     // --- オブジェクト管理 ---
-    std::mutex sceneMutex_;
+    std::recursive_mutex sceneMutex_;
     std::vector<std::shared_ptr<GameObject>> gameObjects_;
     std::vector<std::shared_ptr<GameObject>> pendingAdds_;
     std::vector<std::shared_ptr<GameObject>> pendingRemoves_;
     
-    // 高速検索(O(1))用インデックス (同名複数登録対応)
+    // 高速検索(O(1))用インデックス
     std::unordered_map<std::string, std::vector<std::weak_ptr<GameObject>>> nameIndex_;
+    std::unordered_map<uint64_t, std::weak_ptr<GameObject>> idIndex_;
 
-    // --- コア機能 ---
-    std::unique_ptr<DebugCamera> debugCamera_;
+    // デバッグ用カメラフラグ
     bool isDebugCameraMode_ = false;
+    std::string previousActiveCameraName_ = "Main";
+
+    // デバッグ用の独立したカメラインスタンスとそのコントローラー
+    std::shared_ptr<Camera> debugCamera_;
+    std::unique_ptr<OrbitCameraController> debugCameraController_;
 
     // --- ライティング ---
     std::unique_ptr<DirectionalLight> directionalLight_;
@@ -188,21 +203,58 @@ protected:
     std::vector<std::unique_ptr<AreaLight>> areaLights_;
 
     // --- フレームデータの自動送信 ---
+    /**
+     * @brief SubmitFrameData を実行する。
+     */
     void SubmitFrameData();
 
     // ── 入力ヘルパ ──
     // InputManager をラップした安全なヘルパー
+    /**
+     * @brief DownVK を実行する。
+     */
     bool DownVK(uint8_t vk) const;
+    /**
+     * @brief PressedVK を実行する。
+     */
     bool PressedVK(uint8_t vk) const;
+    /**
+     * @brief ReleasedVK を実行する。
+     */
     bool ReleasedVK(uint8_t vk) const;
 
+    /**
+     * @brief DownDIK を実行する。
+     */
     bool DownDIK(uint8_t dik) const;
+    /**
+     * @brief PressedDIK を実行する。
+     */
     bool PressedDIK(uint8_t dik) const;
+    /**
+     * @brief ReleasedDIK を実行する。
+     */
     bool ReleasedDIK(uint8_t dik) const;
 
     // 互換性のため（既存の IsKeyPressed 等も呼び出しやすくする）
+    /**
+     * @brief IsKeyDown かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyDown(uint8_t vk) const { return DownVK(vk); }
+    /**
+     * @brief IsKeyPressed かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsKeyPressed(uint8_t vk) const { return PressedVK(vk); }
+    /**
+     * @brief IsButtonDown かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsButtonDown(unsigned short button) const;
+    /**
+     * @brief IsButtonPressed かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsButtonPressed(unsigned short button) const;
 };

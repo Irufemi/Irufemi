@@ -75,7 +75,14 @@ void BaseModel::UpdateMaterials() {
         auto& res = meshResources_[i];
         if (!res->GetMaterialData()) continue;
 
-        const ObjMaterial& cpuMat = m->cpuModel->meshes[i].material;
+        const ObjMaterial* cpuMatPtr = &m->cpuModel->meshes[i].material;
+        if (materialOverrides_) {
+            auto it = materialOverrides_->find(i);
+            if (it != materialOverrides_->end()) {
+                cpuMatPtr = &it->second;
+            }
+        }
+        const ObjMaterial& cpuMat = *cpuMatPtr;
         Material* mappedData = res->GetMaterialData();
 
         // インスタンスカラーとマテリアルカラーを乗算
@@ -109,6 +116,11 @@ void BaseModel::UpdateMaterials() {
         
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
+        
+        // エフェクトマスクとカスタムエフェクトの設定
+        mappedData->enableEffectMask = enableEffectMask_ ? 1 : cpuMat.enableEffectMask;
+        mappedData->customEffectType = customEffectType_ != 0 ? customEffectType_ : cpuMat.customEffectType;
+        mappedData->customEffectParam = customEffectParam_ != 0.0f ? customEffectParam_ : cpuMat.customEffectParam;
         
         // (マテリアルバッファへの転送は SyncBeforeDraw() で行われるため、ここでは SyncMaterialData は呼ばない)
     }

@@ -16,7 +16,7 @@ void ErrorUtility::ThrowIfFailed(HRESULT hr, const std::string& msg, const char*
         }
 
         // ログ出力（コンソールやファイル）
-        OutputDebugStringW(ConvertString(fullMsg + "\n").c_str());
+        Log::OutPutLog(std::cerr, fullMsg);
 
         throw std::runtime_error(fullMsg);
     }
@@ -45,7 +45,7 @@ void ErrorUtility::Assert(bool condition, const std::string& msg, const char* fi
         }
         
         // ログ出力
-        OutputDebugStringW(ConvertString(fullMsg).c_str());
+        Log::OutPutLog(std::cerr, fullMsg);
 
 #ifdef _DEBUG
         // Debugビルド時はダイアログを出してからデバッガで停止
@@ -69,7 +69,7 @@ void ErrorUtility::Warning(bool condition, const std::string& msg, const char* f
         }
         
         // 警告ログ出力 (将来のコンソールにも送る)
-        OutputDebugStringW(ConvertString(fullMsg).c_str());
+        Log::OutPutLog(std::cerr, fullMsg);
         
         // 処理は停止せずそのまま続行
     }

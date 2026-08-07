@@ -5,7 +5,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include <imgui.h>
 #include "imgui/ImGuizmo.h"
-#include "Editor/Utils/EditorCameraController.h"
+#include "Engine/Graphics/Camera/OrbitCameraController.h"
 
 /**
  * @class SceneViewPanel
@@ -18,7 +18,7 @@ public:
 
 private:
     EditorManager* editorManager_ = nullptr;
-    EditorCameraController cameraController_;
+    OrbitCameraController cameraController_;
 
     // --- ギズモ用状態 ---
     ImGuizmo::OPERATION currentGizmoOperation_ = ImGuizmo::TRANSLATE;
@@ -26,11 +26,11 @@ private:
 
     // --- Undo/Redo用の状態保存 ---
     bool wasUsingGizmo_ = false;
-    Vector3 gizmoStartPos_;
-    Vector3 gizmoStartRot_;
-    Vector3 gizmoStartScale_;
-    Vector3 gizmoStartColliderOffset_;
-    Vector3 gizmoStartColliderSize_;
+    Irufemi::Vector3 gizmoStartPos_;
+    Irufemi::Vector3 gizmoStartRot_;
+    Irufemi::Vector3 gizmoStartScale_;
+    Irufemi::Vector3 gizmoStartColliderOffset_;
+    Irufemi::Vector3 gizmoStartColliderSize_;
 
     // --- 内部ヘルパーメソッド ---
     void DrawToolbar(ImVec2 minPos, ImVec2 maxPos);

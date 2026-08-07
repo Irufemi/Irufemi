@@ -14,10 +14,6 @@ void SelectScene::Initialize(IrufemiEngine* engine) {
 void SelectScene::Update() {
     BaseScene::Update();
 
-    // BackSpaceキーで遷移テスト
-    if (IsKeyPressed(VK_F8)) {
-        engine_->GetSceneManager()->TransitionTo("Title", SceneTransition::Type::Slide, 1.0f);
-    }
 }
 
 void SelectScene::Draw() {

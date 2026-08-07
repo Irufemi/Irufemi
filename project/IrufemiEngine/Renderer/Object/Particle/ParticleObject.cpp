@@ -1,8 +1,11 @@
-#include "ParticleObject.h"
+﻿#include "ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Resource/Model/ModelManager.h"
+#include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Component/Component.h"
 #include <fstream>
 #include <iostream>
+#include "Engine/Core/Utility/Log.h"
 
 TextureManager* ParticleObject::textureManager_ = nullptr;
 
@@ -29,7 +32,7 @@ void ParticleObject::Initialize() {
 void ParticleObject::PrewarmSystem() {
     // パラメータは送信せず、単にマネージャーにテクスチャ等の登録（GPUバッファの確保）だけを依頼する
     if (!emitterHandle_.IsValid() && gpuParticleManager_) {
-        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
     }
 }
 
@@ -67,18 +70,29 @@ void ParticleObject::SetTexturePath(const std::string& path) {
         texturePath_ = path;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
             gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
         }
         MarkDirty();
     }
 }
 
-void ParticleObject::SetBlendMode(BlendMode mode) {
+void ParticleObject::SetBlendMode(Irufemi::BlendMode mode) {
     if (blendMode_ != mode) {
         blendMode_ = mode;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
             gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+        }
+        MarkDirty();
+    }
+}
+
+void ParticleObject::SetEnableLighting(bool val) {
+    if (enableLighting_ != val) {
+        enableLighting_ = val;
+        if (emitterHandle_.IsValid() && gpuParticleManager_) {
+            gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
         }
         MarkDirty();
     }
@@ -89,15 +103,23 @@ void ParticleObject::SetUnscaledTime(bool val) {
         isUnscaledTime_ = val;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
             gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
         }
+        MarkDirty();
+    }
+}
+
+void ParticleObject::SetEmitterModelPath(const std::string& path) {
+    if (emitterModelPath_ != path) {
+        emitterModelPath_ = path;
+        emitterModelHandle_ = ResourceHandle(); // Reset the cached handle
         MarkDirty();
     }
 }
 
 void ParticleObject::UpdateSystem() {
     if (!emitterHandle_.IsValid() && gpuParticleManager_) {
-        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
     }
 
     GPUParticleEmitter data;
@@ -163,6 +185,26 @@ void ParticleObject::UpdateSystem() {
     data.enableDeathEmit = enableDeathEmit_ ? 1 : 0;
     data.enableRandomRotation = enableRandomRotation_ ? 1 : 0;
 
+    if (emitType_ == 6) {
+        if (!emitterModelHandle_.IsValid() && !emitterModelPath_.empty()) {
+            if (modelManager_) emitterModelHandle_ = modelManager_->LoadModel(emitterModelPath_);
+        }
+        if (emitterModelHandle_.IsValid() && modelManager_) {
+            auto cachedModel_ = modelManager_->Resolve(emitterModelHandle_);
+            if (cachedModel_) {
+                auto cpuModel = cachedModel_->cpuModel;
+                if (cpuModel && !cpuModel->meshes.empty() && !cachedModel_->gpuMeshes.empty()) {
+                    auto& mesh = cpuModel->meshes[0];
+                    auto gpuMesh = cachedModel_->gpuMeshes[0];
+                    if (gpuParticleManager_ && gpuMesh->vertexResource) {
+                        gpuParticleManager_->SetMeshEmitterBuffer(emitterHandle_, gpuMesh->vertexResource->GetGPUVirtualAddress());
+                    }
+                    data.padFreqTime = static_cast<float>(mesh.vertices.size());
+                }
+            }
+        }
+    }
+
     if (burstCountPending_ > 0) {
         data.burstCount = burstCountPending_;
         burstCountPending_ = 0;
@@ -171,10 +213,11 @@ void ParticleObject::UpdateSystem() {
 }
 
 void ParticleObject::Serialize(nlohmann::json& j) const {
-    if (texturePath_ != "resources/circle.png") j["texturePath"] = texturePath_;
-    if (blendMode_ != BlendMode::kBlendModeAdd) j["blendMode"] = static_cast<int>(blendMode_);
-    if (isUnscaledTime_ != false) j["isUnscaledTime"] = isUnscaledTime_;
-    if (emitOnAwake_ != true) j["emitOnAwake"] = emitOnAwake_;
+    j["texturePath"] = texturePath_;
+    j["blendMode"] = static_cast<int>(blendMode_);
+    j["enableLighting"] = enableLighting_;
+    j["isUnscaledTime"] = isUnscaledTime_;
+    j["emitOnAwake"] = emitOnAwake_;
     
     if (emitType_ != 0) j["emitType"] = emitType_;
     if (emissionRate_ != 50.0f) j["emissionRate"] = emissionRate_;
@@ -211,13 +254,23 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     if (midPoint_ != 0.5f) j["midPoint"] = midPoint_;
     
     if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 0.0f) j["direction"] = { direction_.x, direction_.y, direction_.z };
+    if (!emitterModelPath_.empty()) j["emitterModelPath"] = emitterModelPath_;
     if (areaSize_.x != 10.0f || areaSize_.y != 10.0f || areaSize_.z != 10.0f) j["areaSize"] = { areaSize_.x, areaSize_.y, areaSize_.z };
 }
 
 void ParticleObject::Deserialize(const nlohmann::json& j) {
-    if (j.contains("texturePath")) texturePath_ = j["texturePath"].get<std::string>();
-    if (j.contains("blendMode")) blendMode_ = static_cast<BlendMode>(j["blendMode"].get<int>());
-    if (j.contains("isUnscaledTime")) isUnscaledTime_ = j["isUnscaledTime"].get<bool>();
+    if (j.contains("texturePath")) {
+        SetTexturePath(j["texturePath"]);
+    }
+    if (j.contains("blendMode")) {
+        SetBlendMode(static_cast<Irufemi::BlendMode>(j["blendMode"].get<int>()));
+    }
+    if (j.contains("enableLighting")) {
+        SetEnableLighting(j["enableLighting"].get<bool>());
+    }
+    if (j.contains("isUnscaledTime")) {
+        SetUnscaledTime(j["isUnscaledTime"].get<bool>());
+    }
     if (j.contains("emitOnAwake")) emitOnAwake_ = j["emitOnAwake"].get<bool>();
     
     if (j.contains("emitType")) emitType_ = j["emitType"].get<int>();
@@ -266,9 +319,11 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("midPoint")) midPoint_ = j["midPoint"].get<float>();
     
-    if (j.contains("direction") && j["direction"].size() == 3) {
-        direction_ = { j["direction"][0], j["direction"][1], j["direction"][2] };
+    if (j.contains("direction")) {
+        auto dir = j["direction"];
+        direction_ = { dir[0], dir[1], dir[2] };
     }
+    if (j.contains("emitterModelPath")) emitterModelPath_ = j["emitterModelPath"].get<std::string>();
     if (j.contains("areaSize") && j["areaSize"].size() == 3) {
         areaSize_ = { j["areaSize"][0], j["areaSize"][1], j["areaSize"][2] };
     }
@@ -279,7 +334,10 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
 bool ParticleObject::LoadFromJson(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        std::cerr << "Failed to open particle json: " << filepath << std::endl;
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, "Failed to open particle json: " + filepath);
         return false;
     }
     
@@ -289,7 +347,10 @@ bool ParticleObject::LoadFromJson(const std::string& filepath) {
         Deserialize(j);
         return true;
     } catch (const nlohmann::json::exception& e) {
-        std::cerr << "JSON parse error in " << filepath << ": " << e.what() << std::endl;
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, "JSON parse error in " + filepath + ": " + std::string(e.what()));
         return false;
     }
 }
@@ -373,11 +434,7 @@ void ParticleObject::DebugUI(const char* name) {
                 
                 if (ImGui::Combo("Texture", &currentIndex, namesCStr.data(), (int)namesCStr.size())) {
                     if (texturePath_ != textureNames[currentIndex]) {
-                        texturePath_ = textureNames[currentIndex];
-                        if (emitterHandle_.IsValid() && gpuParticleManager_) {
-                            gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-                            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
-                        }
+                        SetTexturePath(textureNames[currentIndex]);
                         changed = true;
                     }
                 }
@@ -386,20 +443,28 @@ void ParticleObject::DebugUI(const char* name) {
             const char* blendNames[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen", "Premultiplied" };
             int currentBlend = static_cast<int>(blendMode_);
             if (ImGui::Combo("Blend Mode", &currentBlend, blendNames, 7)) {
-                blendMode_ = static_cast<BlendMode>(currentBlend);
-                if (emitterHandle_.IsValid() && gpuParticleManager_) {
-                    gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
-                }
+                SetBlendMode(static_cast<Irufemi::BlendMode>(currentBlend));
                 changed = true;
+            }
+            
+            bool lighting = enableLighting_;
+            if (ImGui::Checkbox("Enable Lighting", &lighting)) {
+                SetEnableLighting(lighting);
             }
             
             if (ImGui::Checkbox("Unscaled Time", &isUnscaledTime_)) {
                 if (emitterHandle_.IsValid() && gpuParticleManager_) {
                     gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_);
+                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
                 }
                 changed = true;
+            }
+            
+            if (ImGui::Button("再生成")) {
+                if (gpuParticleManager_ && emitterHandle_.IsValid()) {
+                    gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+                }
             }
             
             changed |= ImGui::Checkbox("Emit On Awake", &emitOnAwake_);
@@ -421,9 +486,18 @@ void ParticleObject::DebugUI(const char* name) {
         }
 
         if (ImGui::TreeNodeEx("Shape", ImGuiTreeNodeFlags_DefaultOpen)) {
-            const char* shapeNames[] = { "Sphere", "Beam", "Box", "Cylinder" };
-            changed |= ImGui::Combo("Emit Shape", &emitType_, shapeNames, 4);
-
+            const char* typeNames[] = { "Sphere", "Beam", "Ring", "Cylinder", "Box", "Hemisphere", "Mesh" };
+            if (ImGui::Combo("Emit Type", &emitType_, typeNames, 7)) {
+                changed = true;
+            }
+            if (emitType_ == 6) {
+                // Mesh emitter settings
+                char pathBuf[256];
+                strncpy_s(pathBuf, emitterModelPath_.c_str(), sizeof(pathBuf));
+                if (ImGui::InputText("Model Path", pathBuf, sizeof(pathBuf))) {
+                    SetEmitterModelPath(pathBuf);
+                }
+            }
             const char* billboardNames[] = { "None", "Billboard", "Y-Axis" };
             changed |= ImGui::Combo("Billboard Mode", &billboardMode_, billboardNames, 3);
 

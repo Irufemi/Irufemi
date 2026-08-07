@@ -56,7 +56,7 @@ void EffectManagerComponent::Update() {
     }
 }
 
-void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Vector3& worldPosition) {
+void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Irufemi::Vector3& worldPosition) {
     if (!gameObject_) return;
 
     auto it = effectDictionary_.find(effectKey);

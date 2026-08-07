@@ -52,9 +52,15 @@ public:
         ShaderSet shaders;
         D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         DXGI_FORMAT rtvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合はManagerのデフォルトを使用
-        DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合はManagerのデフォルトを使用
+        uint32_t numRenderTargets = 1;               // ★ MRT対応: レンダリングターゲット数
+        DXGI_FORMAT rtvFormat1 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET1 (Mask)
+        DXGI_FORMAT rtvFormat2 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET2 (Normal)
+        DXGI_FORMAT rtvFormat3 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET3 (Material)
+        DXGI_FORMAT rtvFormat4 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET4 (Velocity)
+        DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合、Managerのデフォルトを使用
         bool isDepthOnly = false;       // シャドウマップなど、RTVを持たないパス用
         bool disableDepthTest = false;  // バックバッファ書き込みなど、深度テストを無効化する用
+        bool noDSV = false;             // バックバッファなど、DSVを一切バインドしないパス用 (DSVFormat = UNKNOWN を強制する)
         bool useNullInputLayout = false;// CopyImageなど、頂点バッファを入力としないパス用
     };
 
@@ -86,7 +92,7 @@ public:
      * @param cull カリングモード
      * @return キャッシュまたは新規生成されたPSO
      */
-    ID3D12PipelineState* GetPSO(const std::string& name, BlendMode blend, DepthWrite depth, CullMode cull);
+    ID3D12PipelineState* GetPSO(const std::string& name, Irufemi::BlendMode blend, DepthWrite depth, CullMode cull);
 
     /**
      * @brief コンピュートシェーダの登録
@@ -165,17 +171,20 @@ private:
         const ShaderSet& shaders,
         CullMode cull) const;
 
-    /** @brief BlendMode から D3D12_BLEND_DESC を作成 */
-    static D3D12_BLEND_DESC MakeBlend(BlendMode m);
+    /** @brief Irufemi::BlendMode から D3D12_BLEND_DESC を作成 */
+    static D3D12_BLEND_DESC MakeBlend(Irufemi::BlendMode m);
     /** @brief DepthWrite から D3D12_DEPTH_STENCIL_DESC を作成 */
     static D3D12_DEPTH_STENCIL_DESC MakeDepth(DepthWrite w);
 
     /** @brief 設定セット（シェーダ、ブレンド、デプス、カリング）からハッシュ値を計算 */
-    static uint64_t Hash(const std::string& name, BlendMode b, DepthWrite d, CullMode c);
+    static uint64_t Hash(const std::string& name, Irufemi::BlendMode b, DepthWrite d, CullMode c);
 
     /** @name ディスクキャッシュ (PSO Blob) */
     ///@{
     std::vector<uint8_t> LoadCachedBlob(const std::string& cacheFileName) const;
+    /**
+     * @brief SaveCachedBlob を実行する。
+     */
     void SaveCachedBlob(const std::string& cacheFileName, ID3D12PipelineState* pso) const;
     ///@}
     ///@}

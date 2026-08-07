@@ -19,7 +19,7 @@ struct RaycastHit {
     bool isHit = false;
     GameObject* hitObject = nullptr;
     ColliderComponent* hitCollider = nullptr;
-    Vector3 hitPoint;
+    Irufemi::Vector3 hitPoint;
     float distance = 0.0f;
 };
 
@@ -59,12 +59,34 @@ public:
     bool* GetIsDrawDebugLinePtr() { return &isDrawDebugLine_; }
 
     // --- 動的レイヤー管理 ---
+    /**
+     * @brief LoadLayers を実行する。
+     */
     void LoadLayers(const std::string& filepath);
+    /**
+     * @brief SaveLayers を実行する。
+     */
     void SaveLayers(const std::string& filepath);
+    /**
+     * @brief LayerNames を取得する。
+     * @return 取得された LayerNames
+     */
     std::vector<std::string>& GetLayerNames() { return layerNames_; }
+    /**
+     * @brief AddLayer を実行する。
+     */
     void AddLayer(const std::string& name);
+    /**
+     * @brief RemoveLayer を実行する。
+     */
     void RemoveLayer(int index);
+    /**
+     * @brief RenameLayer を実行する。
+     */
     void RenameLayer(int index, const std::string& name);
+
+    /// @brief レイヤー名からビットマスクを取得する
+    uint32_t GetLayerMask(const std::string& name) const;
 
     // --- レイキャスト ---
     /// @brief シーン内の全コライダーに対してレイを飛ばし、最も近いオブジェクトを返す
@@ -74,17 +96,23 @@ public:
     /// @param layerMask 判定対象とするレイヤーのビットマスク
     /// @param ignoreObject 判定から除外するオブジェクト（自分自身を無視するためなど）
     /// @return 何かに当たった場合はtrue
-    bool Raycast(const Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+    bool Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+
+    /// @brief BVHに対してAABBのクエリを行い、交差するコライダーを取得する
+    void QueryAABB(const Irufemi::AABB& aabb, std::vector<ColliderComponent*>& outHits) const;
 
     /**
      * @brief スレッドプールを利用した非同期レイキャスト
      * @param pool 使用するエンジンのThreadPool
      * @return 判定結果とHitInfoのペアを返すstd::future
      */
-    std::future<std::pair<bool, RaycastHit>> RaycastAsync(ThreadPool* pool, const Ray& ray, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+    std::future<std::pair<bool, RaycastHit>> RaycastAsync(ThreadPool* pool, const Irufemi::Ray& ray, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
 
     /// @brief デバッグ用のレイを描画キューに追加する
-    void DrawDebugRay(const Ray& ray, float distance, const Vector4& color = {1,0,0,1});
+    void DrawDebugRay(const Irufemi::Ray& ray, float distance, const Irufemi::Vector4& color = {1,0,0,1});
+
+    /// @brief デバッグ用のAABBを描画キューに追加する
+    void DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color = {1,0,0,1});
 
 private:
     CollisionManager(const CollisionManager&) = delete;
@@ -104,14 +132,14 @@ private:
 
     // Raycast描画キャッシュ
     struct DebugRayInfo {
-        Ray ray;
+        Irufemi::Ray ray;
         float distance;
-        Vector4 color;
+        Irufemi::Vector4 color;
     };
     std::vector<DebugRayInfo> debugRays_;
 
     // 前フレームの衝突ペアを保持（Enter / Stay / Exit 用）
     std::set<std::pair<ColliderComponent*, ColliderComponent*>> previousCollisions_;
 
-    DynamicBVH dynamicBVH_;
+    Irufemi::DynamicBVH dynamicBVH_;
 };

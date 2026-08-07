@@ -10,6 +10,7 @@
 // Component Editors
 #include "../ComponentEditors/TransformComponentEditor.h"
 #include "../ComponentEditors/MeshRendererComponentEditor.h"
+#include "../ComponentEditors/SkinnedMeshRendererComponentEditor.h"
 #include "../ComponentEditors/ModelBatchRendererComponentEditor.h"
 #include "../ComponentEditors/PrimitiveRendererComponentEditor.h"
 #include "../ComponentEditors/Primitive2DRendererComponentEditor.h"
@@ -19,10 +20,12 @@
 #include "../ComponentEditors/ParticleEmitterComponentEditor.h"
 #include "../ComponentEditors/RaycastComponentEditor.h"
 #include "../ComponentEditors/VoxelParticleComponentEditor.h"
+#include "../ComponentEditors/EffectMaskComponentEditor.h"
 
 // Engine Components
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
@@ -34,6 +37,7 @@
 #include "Framework/Component/Collider/RaycastComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
+#include "Framework/Component/Effect/EffectMaskComponent.h"
 
 // =======================================================================
 // ComponentEditorRegistry
@@ -45,6 +49,7 @@ ComponentEditorRegistry::~ComponentEditorRegistry() {}
 void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<TransformComponent, TransformComponentEditor>();
     RegisterEditor<MeshRendererComponent, MeshRendererComponentEditor>();
+    RegisterEditor<SkinnedMeshRendererComponent, SkinnedMeshRendererComponentEditor>();
     RegisterEditor<ModelBatchRendererComponent, ModelBatchRendererComponentEditor>();
     RegisterEditor<PrimitiveRendererComponent, PrimitiveRendererComponentEditor>();
     RegisterEditor<Primitive2DRendererComponent, Primitive2DRendererComponentEditor>();
@@ -56,6 +61,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<RaycastComponent, RaycastComponentEditor>();
     RegisterEditor<ParticleEmitterComponent, ParticleEmitterComponentEditor>();
     RegisterEditor<VoxelParticleComponent, VoxelParticleComponentEditor>();
+    RegisterEditor<EffectMaskComponent, EffectMaskComponentEditor>();
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {

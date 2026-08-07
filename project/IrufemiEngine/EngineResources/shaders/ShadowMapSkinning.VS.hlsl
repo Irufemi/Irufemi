@@ -49,6 +49,7 @@ VertexShaderOutput main(VertexShaderInput input) {
     output.normal = normalize(mul(skinned.normal, (float32_t3x3) gTransformationMatrix.WorldInverseTranspose));
     output.shadowPos = output.position;
     output.color = input.color;
+    output.customEffect = float32_t4(0, 0, 0, 0);
 
     return output;
 }

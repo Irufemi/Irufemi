@@ -6,19 +6,29 @@
 #include "Renderer/SpriteRendererComponent.h"
 #include "Renderer/TextRendererComponent.h"
 #include "Renderer/ModelBatchRendererComponent.h"
+#include "Renderer/SkinnedMeshRendererComponent.h"
+#include "Renderer/SkeletonDebugRendererComponent.h"
+#include "Logic/AnimatorComponent.h"
+#include "Logic/BoneAttachmentComponent.h"
 #include "Effect/VoxelParticleComponent.h"
+#include "Effect/EffectMaskComponent.h"
+#include "Effect/ScreenEffectComponent.h"
 #include "Collider/AABBColliderComponent.h"
 #include "Collider/SphereColliderComponent.h"
 #include "Collider/OBBColliderComponent.h"
 #include "Collider/RaycastComponent.h"
 #include "Audio/AudioSourceComponent.h"
 #include "Effect/ParticleEmitterComponent.h"
+#include "Effect/ParticleFieldComponent.h"
 #include "UI/ButtonComponent.h"
 #include "UI/CanvasComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraShakeComponent.h"
 #include "Camera/TargetFollowComponent.h"
 #include "Utility/LifetimeComponent.h"
 #include "Utility/SplineComponent.h"
+#include "Utility/SplineNodeComponent.h"
+#include "VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Engine/Core/System/ComponentPool.h"
 
 std::map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetMap() {
@@ -56,17 +66,27 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("ModelBatchRendererComponent", "Renderer", []() { return std::make_shared<ModelBatchRendererComponent>(); });
     Register("SpriteRendererComponent", "Renderer", []() { return std::make_shared<SpriteRendererComponent>(); });
     Register("TextRendererComponent", "Renderer", []() { return std::make_shared<TextRendererComponent>(); });
+    Register("SkinnedMeshRendererComponent", "Renderer", []() { return std::make_shared<SkinnedMeshRendererComponent>(); });
+    Register("SkeletonDebugRendererComponent", "Debug", []() { return std::make_shared<SkeletonDebugRendererComponent>(); });
+    Register("AnimatorComponent", "Logic", []() { return std::make_shared<AnimatorComponent>(); });
+    Register("BoneAttachmentComponent", "Logic", []() { return std::make_shared<BoneAttachmentComponent>(); });
     Register("VoxelParticleComponent", "Effect", []() { return std::make_shared<VoxelParticleComponent>(); });
+    Register("EffectMaskComponent", "Effect", []() { return std::make_shared<EffectMaskComponent>(); });
+    Register("ScreenEffectComponent", "Effect", []() { return std::make_shared<ScreenEffectComponent>(); });
     Register("AABBColliderComponent", "Collider", []() { return std::make_shared<AABBColliderComponent>(); });
     Register("SphereColliderComponent", "Collider", []() { return std::make_shared<SphereColliderComponent>(); });
     Register("OBBColliderComponent", "Collider", []() { return std::make_shared<OBBColliderComponent>(); });
     Register("RaycastComponent", "Collider", []() { return std::make_shared<RaycastComponent>(); });
     Register("AudioSourceComponent", "Audio", []() { return std::make_shared<AudioSourceComponent>(); });
     Register("ParticleEmitterComponent", "Effect", []() { return std::make_shared<ParticleEmitterComponent>(); });
+    Register("ParticleFieldComponent", "Effect", []() { return std::make_shared<ParticleFieldComponent>(); });
     Register("ButtonComponent", "UI", []() { return std::make_shared<ButtonComponent>(); });
     Register("CanvasComponent", "UI", []() { return std::make_shared<CanvasComponent>(); });
     Register("CameraComponent", "Camera", []() { return std::make_shared<CameraComponent>(); });
+    Register("CameraShakeComponent", "Camera", []() { return std::make_shared<CameraShakeComponent>(); });
     Register("TargetFollowComponent", "Camera", []() { return std::make_shared<TargetFollowComponent>(); });
     Register("LifetimeComponent", "Utility", []() { return std::make_shared<LifetimeComponent>(); });
     Register("SplineComponent", "Utility", []() { return std::make_shared<SplineComponent>(); });
+    Register("SplineNodeComponent", "Utility", []() { return std::make_shared<SplineNodeComponent>(); });
+    Register("VirtualEntityManagerComponent", "Utility", []() { return std::make_shared<VirtualEntityManagerComponent>(); });
 }

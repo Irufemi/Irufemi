@@ -1,4 +1,4 @@
-#include "Skybox.h"
+﻿#include "Skybox.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 
 #include "Engine/IrufemiEngine.h"
@@ -29,7 +29,7 @@ void Skybox::Initialize(const std::string& textureName) {
 
     // PrimitiveManager からスカイボックス用の形状（Cube）を取得
     PrimitiveManager* primitiveManager = engine_->GetPrimitiveManager();
-    const PrimitiveData& primitiveData = primitiveManager->GetPrimitiveData(PrimitiveType::Skybox);
+    const PrimitiveData& primitiveData = primitiveManager->GetPrimitiveData(Irufemi::PrimitiveType::Skybox);
 
     vertexDataList_ = primitiveData.vertices;
     indexDataList_ = primitiveData.indices;
@@ -85,9 +85,9 @@ void Skybox::Initialize(const std::string& textureName) {
 
 void Skybox::Update() {
 
-    Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    Irufemi::Matrix4x4 worldMatrix = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // シェーダー側でgCameraを使用するようになったためWVPの計算を省略
-    transformationMatrix_.WVP = Math::MakeIdentity4x4();
+    transformationMatrix_.WVP = Irufemi::Math::MakeIdentity4x4();
     transformationMatrix_.World = worldMatrix;
     // フラグ更新
     isDirty_ = false;
@@ -122,8 +122,8 @@ void Skybox::Draw() {
     if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
@@ -216,9 +216,9 @@ void Skybox::MapResource() {
         }
         if (transformationBuffer_[i]) {
             // 初期行列
-            transformationBuffer_[i]->WVP = Math::MakeIdentity4x4();
-            transformationBuffer_[i]->World = Math::MakeIdentity4x4();
-            transformationBuffer_[i]->WorldInverseTranspose = Math::MakeIdentity4x4();
+            transformationBuffer_[i]->WVP = Irufemi::Math::MakeIdentity4x4();
+            transformationBuffer_[i]->World = Irufemi::Math::MakeIdentity4x4();
+            transformationBuffer_[i]->WorldInverseTranspose = Irufemi::Math::MakeIdentity4x4();
         }
     }
 }

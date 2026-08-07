@@ -18,7 +18,7 @@ RenderTexture::~RenderTexture() {
     }
 }
 
-void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor, DXGI_FORMAT srvFormat) {
+void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Irufemi::Vector4& clearColor, DXGI_FORMAT srvFormat) {
     if (dxCommon_ && srvIndex_ != 0xFFFFFFFF) {
         dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = 0xFFFFFFFF;

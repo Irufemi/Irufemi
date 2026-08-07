@@ -1,5 +1,6 @@
 #include "ParticleGPU.hlsli"
 #include "RandomGenerator.hlsli"
+#include "CullingUtility.hlsli"
 #include "PerFrame.hlsli"
 
 static const uint kMaxParticles = 32768;
@@ -8,12 +9,17 @@ RWStructuredBuffer<Particle> gParticles : register(u0);
 RWStructuredBuffer<int> gFreeListIndex : register(u1);
 RWStructuredBuffer<int> gFreeList : register(u2);
 StructuredBuffer<GPUParticleEmitter> gEmitters : register(t0);
+StructuredBuffer<ParticleField> gFields : register(t1);
 ConstantBuffer<PerFrame> gPerFrame : register(b1);
 
-[numthreads(1024, 1, 1)]
+[numthreads(256, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-    uint particleIndex = DTid.x;
+    // 1スレッドで4つのパーティクルを処理する
+    uint baseIndex = DTid.x * 4;
+    for (int p = 0; p < 4; ++p)
+    {
+        uint particleIndex = baseIndex + p;
     if (particleIndex < kMaxParticles)
     {
         if (gParticles[particleIndex].currentTime < gParticles[particleIndex].lifeTime)
@@ -45,6 +51,39 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 // 物理更新: 重力と空気抵抗
                 gParticles[particleIndex].velocity.y -= emitter.gravity * dt;
                 gParticles[particleIndex].velocity *= pow(saturate(1.0f - emitter.damping), dt * 60.0f);
+                
+                // === Fields の適用 ===
+                for (uint fi = 0; fi < 64; ++fi) {
+                    ParticleField f = gFields[fi];
+                    if (f.strength == 0.0f) continue;
+                    
+                    float3 diff = f.position - gParticles[particleIndex].translate;
+                    float dist = length(diff);
+                    if (f.range > 0.0f && dist > f.range) continue;
+                    
+                    float attenuation = 1.0f;
+                    if (f.range > 0.0f) {
+                        attenuation = pow(saturate(1.0f - (dist / f.range)), f.falloff);
+                    }
+                    
+                    if (f.type == 0) { // Directional (Gravity/Wind)
+                        gParticles[particleIndex].velocity += f.direction * (f.strength * attenuation * dt);
+                    } else if (f.type == 1) { // Point Attractor/Repeller
+                        if (dist > 0.001f) {
+                            gParticles[particleIndex].velocity += (diff / dist) * (f.strength * attenuation * dt);
+                        }
+                    } else if (f.type == 2) { // Vortex
+                        if (dist > 0.001f) {
+                            float3 diffPlane = diff - dot(diff, f.axis) * f.axis;
+                            float r = length(diffPlane);
+                            if (r > 0.001f) {
+                                float3 dir = cross(f.axis, diffPlane / r);
+                                gParticles[particleIndex].velocity += dir * (f.strength * attenuation * dt);
+                                gParticles[particleIndex].velocity += (diffPlane / r) * (f.strength * 0.1f * attenuation * dt); // 中心へも少し引く
+                            }
+                        }
+                    }
+                }
 
                 // Trail放出判定
                 if (emitter.enableTrail != 0) {
@@ -185,7 +224,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 }
 
                 // 自身を破棄
-                gParticles[particleIndex].scale = float3(0.0f, 0.0f, 0.0f);
+                CullInstanceByScale(gParticles[particleIndex].scale);
                 gParticles[particleIndex].color.a = 0.0f;
 
                 int freeListIndex;
@@ -200,5 +239,6 @@ void main(uint3 DTid : SV_DispatchThreadID)
                 }
             }
         }
+    }
     }
 }

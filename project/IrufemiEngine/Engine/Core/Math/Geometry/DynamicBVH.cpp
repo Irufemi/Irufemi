@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cassert>
 
+
+namespace Irufemi {
 namespace {
     // AABBのマージン（オブジェクトが少し動いてもRebuildを避けるための「太らせる」余白）
     const float AABB_MARGIN = 0.5f;
@@ -355,3 +357,5 @@ void DynamicBVH::RaycastQuery(const Ray& ray, float maxDistance, std::vector<Col
         }
     }
 }
+
+} // namespace Irufemi

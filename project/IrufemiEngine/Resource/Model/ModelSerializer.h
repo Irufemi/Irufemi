@@ -6,7 +6,7 @@
 class ModelSerializer {
 public:
     static constexpr uint32_t kMagicNumber = 0x4C444D49; // "IMDL"
-    static constexpr uint32_t kVersion = 1;
+    static constexpr uint32_t kVersion = 2;
 
     struct Header {
         uint32_t magic;

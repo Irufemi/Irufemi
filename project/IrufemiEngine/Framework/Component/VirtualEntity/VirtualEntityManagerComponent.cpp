@@ -36,7 +36,7 @@ void VirtualEntityManagerComponent::Setup(int poolSize, int maxVirtualInstances,
     }
 }
 
-int VirtualEntityManagerComponent::AddVirtualInstance(const Vector3& pos, const Vector3& rot, const Vector3& scale) {
+int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot, const Irufemi::Vector3& scale) {
     if (freeIds_.empty()) return -1; // 上限到達
 
     int id = freeIds_.front();
@@ -118,6 +118,10 @@ std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
     return nullptr;
 }
 
+void VirtualEntityManagerComponent::OnRegisterProperties() {
+    RegisterProperty("Active Instances (Batch)", &activeInstanceCount_);
+}
+
 void VirtualEntityManagerComponent::Demote(int id) {
     if (id < 0 || id >= maxVirtualInstances_) return;
     
@@ -165,12 +169,14 @@ void VirtualEntityManagerComponent::ReleaseGameObject(std::shared_ptr<GameObject
 void VirtualEntityManagerComponent::Update() {
     if (!batchRenderer_) return;
     
+    activeInstanceCount_ = static_cast<int>(dense_.size());
+
     batchRenderer_->ClearInstances();
     
     // 仮想インスタンス（未昇格）の描画
     for (auto& vi : dense_) {
         if (!vi.isPromoted_) {
-            Transform t;
+            Irufemi::Transform t;
             t.translate = vi.position_;
             t.rotate = vi.rotation_;
             t.scale = vi.scale_;

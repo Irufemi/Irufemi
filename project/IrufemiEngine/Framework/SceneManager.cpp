@@ -8,6 +8,8 @@
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
 #include "SceneSerializer.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 
 namespace {
     /**
@@ -66,6 +68,16 @@ bool SceneManager::ChangeTo(const Key& next) {
         it->scene->Finalize();
     }
     sceneStack_.clear();
+
+    // 次のシーンへ行く前にパーティクルの状態をクリア
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
+
+    // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
+    if (engine_->GetPostProcessManager()) {
+        engine_->GetPostProcessManager()->Reset();
+    }
 
     SceneStackItem item;
     item.name = next;
@@ -140,6 +152,14 @@ void SceneManager::PopScene() {
     sceneStack_.back().scene->OnExit();
     sceneStack_.back().scene->Finalize();
     sceneStack_.pop_back();
+
+    // パーティクルの状態をクリア（Pop前のシーンから残ったパーティクルを消去）
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
+    if (engine_->GetGPUParticleManager()) {
+        engine_->GetGPUParticleManager()->ClearAllParticles();
+    }
 
     if (!sceneStack_.empty()) {
         // 次のシーンが最前面に復帰するためレジューム処理を行う
@@ -402,9 +422,17 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     }
     sceneStack_.clear();
 
-    // シーン切り替え時にポストプロセスのパラメータを自動リセット
+    // 次のシーンへ行く前にパーティクルの状態をクリア
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
+    if (engine_->GetGPUParticleManager()) {
+        engine_->GetGPUParticleManager()->ClearAllParticles();
+    }
+
+    // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
     if (engine_->GetPostProcessManager()) {
-        engine_->GetPostProcessManager()->ResetAllParams();
+        engine_->GetPostProcessManager()->Reset();
     }
     
     initFuture_ = std::async(std::launch::async, [this, factory, next]() {

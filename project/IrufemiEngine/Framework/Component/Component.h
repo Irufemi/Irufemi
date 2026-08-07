@@ -1,15 +1,16 @@
 #pragma once
 #include <nlohmann/json.hpp>
 #include <string>
+#include <unordered_map>
 
 class GameObject;
 #include "Renderer/System/Core/IRenderable.h"
 #include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
-struct Ray;
+namespace Irufemi { struct Ray; }
 
-enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator, Enum };
+enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator, Enum, GameObjectRef };
 
 struct ComponentProperty {
     std::string name;
@@ -21,8 +22,23 @@ struct ComponentProperty {
     std::string tooltip = "";
     nlohmann::json defaultValue;
 
+    /**
+     * @brief Tooltip を設定する。
+     * @param[in] text 設定する Tooltip の値
+     */
     ComponentProperty& SetTooltip(const std::string& text) {
         tooltip = text;
+        return *this;
+    }
+
+    /**
+     * @brief MinMax を設定する。
+     * @param[in] min 設定する MinMax の値
+     * @param[in] max 設定する MinMax の値
+     */
+    ComponentProperty& SetMinMax(float min, float max) {
+        minVal = min;
+        maxVal = max;
         return *this;
     }
 };
@@ -117,7 +133,7 @@ public:
      * @param[out] outDistance レイの始点から衝突点までの距離
      * @return 衝突した場合は true
      */
-    virtual bool Raycast(const Ray& ray, float& outDistance) const { return false; }
+    virtual bool Raycast(const Irufemi::Ray& ray, float& outDistance) const { return false; }
 
     /**
      * @brief 自身の持つ変数をリフレクションシステムに登録する
@@ -130,6 +146,12 @@ public:
     virtual std::string GetComponentName() const { return "Component"; }
 
     /**
+     * @brief IDが再生成された際（Clone等）に、内部で保持しているID参照を新しいIDに読み替えるためのコールバック
+     * @param idMap 古いID(Key) と 新しいID(Value) の対応表
+     */
+    virtual void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {}
+
+    /**
      * @brief 登録されたプロパティリストを取得する
      */
     const std::vector<ComponentProperty>& GetProperties() const { return properties_; }
@@ -138,22 +160,62 @@ public:
      * @brief プロパティの登録ヘルパー
      */
     ComponentProperty& RegisterProperty(const std::string& name, float* ptr) { properties_.push_back({name, ComponentPropertyType::Float, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterPropertyRange を実行する。
+     */
     ComponentProperty& RegisterPropertyRange(const std::string& name, float* ptr, float min, float max) { properties_.push_back({name, ComponentPropertyType::Float, ptr, min, max, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, int* ptr) { properties_.push_back({name, ComponentPropertyType::Int, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterPropertyRange を実行する。
+     */
     ComponentProperty& RegisterPropertyRange(const std::string& name, int* ptr, int min, int max) { properties_.push_back({name, ComponentPropertyType::Int, ptr, static_cast<float>(min), static_cast<float>(max), {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterEnum を実行する。
+     */
     ComponentProperty& RegisterEnum(const std::string& name, int* ptr, const std::vector<std::string>& enumNames) { properties_.push_back({name, ComponentPropertyType::Enum, ptr, 0.0f, 0.0f, enumNames, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, bool* ptr) { properties_.push_back({name, ComponentPropertyType::Bool, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
     ComponentProperty& RegisterProperty(const std::string& name, std::string* ptr) { properties_.push_back({name, ComponentPropertyType::String, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
-    ComponentProperty& RegisterProperty(const std::string& name, Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y}}); return properties_.back(); }
-    ComponentProperty& RegisterProperty(const std::string& name, Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z}}); return properties_.back(); }
-    ComponentProperty& RegisterProperty(const std::string& name, Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z, ptr->w}}); return properties_.back(); }
-    ComponentProperty& RegisterProperty(const std::string& name, std::vector<Vector3>* ptr) { 
+    /**
+     * @brief RegisterGameObjectRef を実行する。
+     */
+    ComponentProperty& RegisterGameObjectRef(const std::string& name, uint64_t* ptr) { properties_.push_back({name, ComponentPropertyType::GameObjectRef, ptr, 0.0f, 0.0f, {}, "", *ptr}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y}}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z}}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z, ptr->w}}); return properties_.back(); }
+    /**
+     * @brief RegisterProperty を実行する。
+     */
+    ComponentProperty& RegisterProperty(const std::string& name, std::vector<Irufemi::Vector3>* ptr) { 
         nlohmann::json jArray = nlohmann::json::array();
         for (const auto& v : *ptr) jArray.push_back({ v.x, v.y, v.z });
         properties_.push_back({name, ComponentPropertyType::Float3Array, ptr, 0.0f, 0.0f, {}, "", jArray}); 
         return properties_.back(); 
     }
+    /**
+     * @brief RegisterHeader を実行する。
+     */
     ComponentProperty& RegisterHeader(const std::string& name) { properties_.push_back({name, ComponentPropertyType::Header, nullptr, 0.0f, 0.0f, {}, "", nullptr}); return properties_.back(); }
+    /**
+     * @brief RegisterSeparator を実行する。
+     */
     ComponentProperty& RegisterSeparator() { properties_.push_back({"", ComponentPropertyType::Separator, nullptr, 0.0f, 0.0f, {}, "", nullptr}); return properties_.back(); }
 
     /**
@@ -168,23 +230,24 @@ public:
                 case ComponentPropertyType::Int: j[prop.name] = *static_cast<int*>(prop.data); break;
                 case ComponentPropertyType::Bool: j[prop.name] = *static_cast<bool*>(prop.data); break;
                 case ComponentPropertyType::String: j[prop.name] = *static_cast<std::string*>(prop.data); break;
+                case ComponentPropertyType::GameObjectRef: j[prop.name] = *static_cast<uint64_t*>(prop.data); break;
                 case ComponentPropertyType::Float2: {
-                    auto* v = static_cast<Vector2*>(prop.data);
+                    auto* v = static_cast<Irufemi::Vector2*>(prop.data);
                     j[prop.name] = { v->x, v->y };
                     break;
                 }
                 case ComponentPropertyType::Float3: {
-                    auto* v = static_cast<Vector3*>(prop.data);
+                    auto* v = static_cast<Irufemi::Vector3*>(prop.data);
                     j[prop.name] = { v->x, v->y, v->z };
                     break;
                 }
                 case ComponentPropertyType::Float4: {
-                    auto* v = static_cast<Vector4*>(prop.data);
+                    auto* v = static_cast<Irufemi::Vector4*>(prop.data);
                     j[prop.name] = { v->x, v->y, v->z, v->w };
                     break;
                 }
                 case ComponentPropertyType::Float3Array: {
-                    auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
+                    auto* arr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
                     nlohmann::json jArray = nlohmann::json::array();
                     for (const auto& v : *arr) {
                         jArray.push_back({ v.x, v.y, v.z });
@@ -212,8 +275,9 @@ public:
                 case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = j[prop.name].get<int>(); break;
                 case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = j[prop.name].get<bool>(); break;
                 case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = j[prop.name].get<std::string>(); break;
+                case ComponentPropertyType::GameObjectRef: *static_cast<uint64_t*>(prop.data) = j[prop.name].get<uint64_t>(); break;
                 case ComponentPropertyType::Float2: {
-                    auto* v = static_cast<Vector2*>(prop.data);
+                    auto* v = static_cast<Irufemi::Vector2*>(prop.data);
                     auto arr = j[prop.name];
                     if (arr.is_array() && arr.size() >= 2) {
                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>();
@@ -221,7 +285,7 @@ public:
                     break;
                 }
                 case ComponentPropertyType::Float3: {
-                    auto* v = static_cast<Vector3*>(prop.data);
+                    auto* v = static_cast<Irufemi::Vector3*>(prop.data);
                     auto arr = j[prop.name];
                     if (arr.is_array() && arr.size() >= 3) {
                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
@@ -229,7 +293,7 @@ public:
                     break;
                 }
                 case ComponentPropertyType::Float4: {
-                    auto* v = static_cast<Vector4*>(prop.data);
+                    auto* v = static_cast<Irufemi::Vector4*>(prop.data);
                     auto arr = j[prop.name];
                     if (arr.is_array() && arr.size() >= 4) {
                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
@@ -237,7 +301,7 @@ public:
                     break;
                 }
                 case ComponentPropertyType::Float3Array: {
-                    auto* vecArr = static_cast<std::vector<Vector3>*>(prop.data);
+                    auto* vecArr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
                     auto arr = j[prop.name];
                     if (arr.is_array()) {
                         vecArr->clear();
@@ -273,6 +337,12 @@ public:
      * @return GameObject* 親のポインタ
      */
     GameObject* GetGameObject() const { return gameObject_; }
+
+    /**
+     * @brief 所属するGameObjectのアタッチされた TransformComponent を取得するショートカット
+     * @return TransformComponent* 
+     */
+    class TransformComponent* GetTransform() const;
 
 protected:
     GameObject* gameObject_ = nullptr; ///< 親GameObjectへのポインタ

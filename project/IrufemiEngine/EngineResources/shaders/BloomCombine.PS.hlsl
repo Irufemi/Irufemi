@@ -1,3 +1,4 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
@@ -7,13 +8,7 @@
  * @brief オリジナル画像とボケた高輝度画像を合成するシェーダー
  */
 
-struct BloomParams {
-    float32_t2 direction;
-    float32_t threshold;
-    float32_t sigma;
-    float32_t intensity;
-    int32_t kernelSize;
-};
+
 
 ConstantBuffer<BloomParams> gBloom : register(b0);
 

@@ -13,13 +13,13 @@ class Camera {
 private: // メンバ変数
 
     //カメラの位置。ワールド座標。
-    Vector3 translate_ = { 0.0f,0.0f,-50.0f };
+    Irufemi::Vector3 translate_ = { 0.0f,0.0f,-50.0f };
 
     //カメラの回転角度
-    Vector3 rotate_ = { 0.0f,0.0f,0.0f };
+    Irufemi::Vector3 rotate_ = { 0.0f,0.0f,0.0f };
 
     //カメラの拡縮(ここはいじらない。)
-    const Vector3 scale_ = { 1.0f,1.0f,1.0f };
+    const Irufemi::Vector3 scale_ = { 1.0f,1.0f,1.0f };
 
 #pragma region 正射影行列を構成する変数(カメラで映す空間の範囲)
 
@@ -68,7 +68,7 @@ private: // メンバ変数
     float height_ = 720.0f;
 
     //ウィンドウに映す範囲の左上の座標
-    Vector2 leftTop_ = { 0.0f,0.0f };
+    Irufemi::Vector2 leftTop_ = { 0.0f,0.0f };
 
     //mindepth(最小深度値)
     float minDepth_ = 0.0f;
@@ -79,19 +79,19 @@ private: // メンバ変数
 #pragma endregion
 
     //ワールド行列
-    Matrix4x4 worldMatrix_{};
+    Irufemi::Matrix4x4 worldMatrix_{};
 
     //ビュー行列
-    Matrix4x4 viewMatrix_{};
+    Irufemi::Matrix4x4 viewMatrix_{};
 
     //正射影行列
-    Matrix4x4 orthographicMatrix_{};
+    Irufemi::Matrix4x4 orthographicMatrix_{};
 
     //透視投影行列
-    Matrix4x4 perspectiveFovMatrix_{};
+    Irufemi::Matrix4x4 perspectiveFovMatrix_{};
 
     //ビューポート行列
-    Matrix4x4 viewportMatrix_{};
+    Irufemi::Matrix4x4 viewportMatrix_{};
 
 public: // メンバ関数
     /**
@@ -132,9 +132,9 @@ public: // メンバ関数
      * @brief スクリーンのピクセル座標を、2D(UI)の論理空間座標に変換します。
      * @details ウィンドウサイズが変更された場合でも、正射影行列による描画解像度（UI空間）に対応した座標を返します。
      * @param screenPos マウスなどのスクリーンピクセル座標
-     * @return Vector2 変換後のUI空間座標
+     * @return Irufemi::Vector2 変換後のUI空間座標
      */
-    Vector2 ScreenToUIPosition(const Vector2& screenPos) const;
+    Irufemi::Vector2 ScreenToUIPosition(const Irufemi::Vector2& screenPos) const;
 
     //セッター
 
@@ -142,26 +142,42 @@ public: // メンバ関数
      * @brief カメラの座標を設定します
      * @param translate ワールド座標
      */
-    void SetTranslate(const Vector3& translate) { this->translate_ = translate; }
+    void SetTranslate(const Irufemi::Vector3& translate) { this->translate_ = translate; }
 
     /**
      * @brief カメラの回転角度を設定します
      * @param rotate オイラー角
      */
-    void SetRotate(const Vector3& rotate) { this->rotate_ = rotate; }
+    void SetRotate(const Irufemi::Vector3& rotate) { this->rotate_ = rotate; }
 
-    void SetViewMatrix(const Matrix4x4& viewMatrix) { 
+    /**
+     * @brief ViewMatrix を設定する。
+     * @param[in] viewMatrix 設定する ViewMatrix の値
+     */
+    void SetViewMatrix(const Irufemi::Matrix4x4& viewMatrix) { 
         this->viewMatrix_ = viewMatrix; 
         this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
     }
 
-    void SetPerspectiveFovMatrix(const Matrix4x4& perspectiveFovMatrix) { 
+    /**
+     * @brief PerspectiveFovMatrix を設定する。
+     * @param[in] perspectiveFovMatrix 設定する PerspectiveFovMatrix の値
+     */
+    void SetPerspectiveFovMatrix(const Irufemi::Matrix4x4& perspectiveFovMatrix) { 
         this->perspectiveFovMatrix_ = perspectiveFovMatrix; 
         this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
     }
 
+    /**
+     * @brief FarClip を設定する。
+     * @param[in] farClip 設定する FarClip の値
+     */
     void SetFarClip(const float& farClip) { this->farClip_ = farClip; }
 
+    /**
+     * @brief FovY を設定する。
+     * @param[in] fovY 設定する FovY の値
+     */
     void SetFovY(const float& fovY) { this->fovAngleY_ = fovY; }
 
 
@@ -169,58 +185,78 @@ public: // メンバ関数
 
     /**
      * @brief カメラの座標を取得します
-     * @return const Vector3& ワールド座標
+     * @return const Irufemi::Vector3& ワールド座標
      */
-    const Vector3& GetTranslate() const { return this->translate_; }
+    const Irufemi::Vector3& GetTranslate() const { return this->translate_; }
 
     /**
      * @brief カメラの回転角度を取得します
-     * @return const Vector3& オイラー角
+     * @return const Irufemi::Vector3& オイラー角
      */
-    const Vector3& GetRotate() const { return this->rotate_; }
+    const Irufemi::Vector3& GetRotate() const { return this->rotate_; }
 
     /**
      * @brief カメラ行列(ワールド行列)を取得します
-     * @return const Matrix4x4& カメラのワールド行列
+     * @return const Irufemi::Matrix4x4& カメラのワールド行列
      */
-    const Matrix4x4& GetCameraMatrix();
+    const Irufemi::Matrix4x4& GetCameraMatrix();
 
     /**
      * @brief ワールド行列を取得します
-     * @return const Matrix4x4& ワールド行列
+     * @return const Irufemi::Matrix4x4& ワールド行列
      */
-    const Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
+    const Irufemi::Matrix4x4& GetWorldMatrix() const { return worldMatrix_; }
 
     /**
      * @brief ビュー行列を取得します
-     * @return const Matrix4x4& ビュー行列
+     * @return const Irufemi::Matrix4x4& ビュー行列
      */
-    const Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
+    const Irufemi::Matrix4x4& GetViewMatrix() const { return viewMatrix_; }
 
     /**
      * @brief 透視投影行列を取得します
-     * @return const Matrix4x4& 透視投影行列
+     * @return const Irufemi::Matrix4x4& 透視投影行列
      */
-    const Matrix4x4& GetPerspectiveFovMatrix() const { return perspectiveFovMatrix_; }
+    const Irufemi::Matrix4x4& GetPerspectiveFovMatrix() const { return perspectiveFovMatrix_; }
 
     /**
      * @brief 正射影行列を取得します
-     * @return const Matrix4x4& 正射影行列
+     * @return const Irufemi::Matrix4x4& 正射影行列
      */
-    const Matrix4x4& GetOrthographicMatrix() const { return orthographicMatrix_; }
+    const Irufemi::Matrix4x4& GetOrthographicMatrix() const { return orthographicMatrix_; }
 
     /**
      * @brief ビューポート変換行列を取得します
-     * @return const Matrix4x4& ビューポート変換行列
+     * @return const Irufemi::Matrix4x4& ビューポート変換行列
      */
-    const Matrix4x4& GetViewportMatrix() const { return viewportMatrix_; }
-    const Frustum& GetFrustum() const { return frustum_; }
+    const Irufemi::Matrix4x4& GetViewportMatrix() const { return viewportMatrix_; }
+    /**
+     * @brief Frustum を取得する。
+     * @return 取得された Frustum
+     */
+    const Irufemi::Frustum& GetFrustum() const { return frustum_; }
 
-    Matrix4x4 GetViewProjectionMatrix2D();
+    /**
+     * @brief ViewProjectionMatrix2D を取得する。
+     * @return 取得された ViewProjectionMatrix2D
+     */
+    Irufemi::Matrix4x4 GetViewProjectionMatrix2D();
 
-    Matrix4x4 GetViewProjectionMatrix3D();
+    /**
+     * @brief ViewProjectionMatrix3D を取得する。
+     * @return 取得された ViewProjectionMatrix3D
+     */
+    Irufemi::Matrix4x4 GetViewProjectionMatrix3D();
 
+    /**
+     * @brief NearZ を取得する。
+     * @return 取得された NearZ
+     */
     const float& GetNearZ() const { return nearZ_; }
+    /**
+     * @brief FarZ を取得する。
+     * @return 取得された FarZ
+     */
     const float& GetFarZ() const { return farZ_; }
 
 
@@ -249,17 +285,8 @@ public: // メンバ関数
      */
     void UpdateViewportMatrix();
 
-    /**
-     * @brief カメラを揺らします
-     * @param intensity 揺れの強さ
-     * @param durationFrames 揺らすフレーム数
-     */
-    void Shake(float intensity, int durationFrames);
-
 private:
-    float shakeIntensity_ = 0.0f;
-    int shakeFrames_ = 0;
-    Frustum frustum_;
+    Irufemi::Frustum frustum_;
 
 public:
     /**
@@ -268,7 +295,15 @@ public:
     void UpdateMatrix();
 
     // 2Dで使うための現在のビューポートサイズ取得
+    /**
+     * @brief ViewportWidth を取得する。
+     * @return 取得された ViewportWidth
+     */
     const float& GetViewportWidth() const { return width_; }
+    /**
+     * @brief ViewportHeight を取得する。
+     * @return 取得された ViewportHeight
+     */
     const float& GetViewportHeight() const { return height_; }
 
 };

@@ -16,27 +16,51 @@ public:
     ButtonComponent() = default;
     ~ButtonComponent() override = default;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
     
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "ButtonComponent"; }
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
 
+    /**
+     * @brief IsHovered かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsHovered() const { return isHovered_; }
+    /**
+     * @brief IsClicked かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsClicked() const { return isClicked_; }
 
 private:
-    bool CheckBounds(const struct Vector2& mousePos);
+    /**
+     * @brief CheckBounds を実行する。
+     */
+    bool CheckBounds(const Irufemi::Vector2& mousePos);
     
-    Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
-    Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
+    Irufemi::Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+    Irufemi::Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
+    Irufemi::Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
 
     bool enableHoverPulse_ = true; // ホバー時にサイン波で明滅するかどうか
     bool enableIdlePulse_ = true;  // 待機中（ホバーしていない時）も明滅するかどうか
 
     // 当たり判定のスケール調整（画像自体の余白などを省くため）
-    Vector2 hitboxScale_{ 1.0f, 1.0f };
+    Irufemi::Vector2 hitboxScale_{ 1.0f, 1.0f };
 
     // --- 内部状態 ---
     UIAnimator animator_;
@@ -44,7 +68,5 @@ private:
     bool isHovered_ = false;
     bool isClicked_ = false; // クリックされた瞬間
     bool isPressedOnButton_ = false; // ボタン上で押下中かどうか
-
-    TransformComponent* transform_ = nullptr;
     SpriteRendererComponent* sprite_ = nullptr;
 };

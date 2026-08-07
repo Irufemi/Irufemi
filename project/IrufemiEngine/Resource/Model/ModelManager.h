@@ -153,7 +153,7 @@ public:
      * @param resolution ボクセルの分割数（解像度）
      * @return 共有される VoxelizedModel へのポインタ（失敗時は nullptr）
      */
-    std::shared_ptr<VoxelizedModel> GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution);
+    std::shared_ptr<VoxelizedModel> GetVoxelizedModel(const std::string& filename, const Irufemi::Vector3Int& resolution);
 
     /**
      * @brief 指定したフォルダ以下のモデルをすべて先行ロードする
@@ -230,7 +230,7 @@ public:
     /**
      * @brief ヴォクセル化モデルを生成する
      */
-    static VoxelizedModel VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager);
+    static VoxelizedModel VoxelizeModel(const ObjModel& model, const Irufemi::Vector3Int& resolution, TextureManager* textureManager);
 
 private:
     /**
@@ -261,7 +261,7 @@ private:
     /**
      * @brief モデルの読み込み実体（内部用）
      */
-    void LoadInternal(ManagedModel* model, const std::string& fullPath);
+    void LoadInternal(std::shared_ptr<ManagedModel> model, const std::string& fullPath);
 
     /**
      * @brief 現在のシーンが初期化中かどうかを判定する
@@ -277,7 +277,7 @@ private:
     mutable std::recursive_mutex mutex_;
     ResourceCachePool modelPool_;
     mutable std::unordered_map<std::string, ResourceHandle> nameToHandleMap_;
-    std::vector<std::unique_ptr<ManagedModel>> managedModels_;
+    std::vector<std::shared_ptr<ManagedModel>> managedModels_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     
     mutable std::vector<std::string> availableModelsCache_;
@@ -287,5 +287,8 @@ private:
     std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用（シーンを止めない）
     
     std::unique_ptr<DirectoryWatcher> directoryWatcher_;
+    /**
+     * @brief OnDirectoryChanged を実行する。
+     */
     void OnDirectoryChanged();
 };

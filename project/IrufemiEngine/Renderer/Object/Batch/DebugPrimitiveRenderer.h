@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl.h>
 #include <vector>
@@ -9,6 +9,7 @@
 #include "Engine/Core/Math/Vector3.h"
 #include "Engine/Core/Math/Vector4.h"
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include <mutex>
 
 // 前方宣言
 class DirectXCommon;
@@ -29,32 +30,62 @@ public:
 
     ~DebugPrimitiveRenderer();
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(DirectXCommon* dx, DrawManager* drawM, DescriptorPool* srvAlloc);
     
+    /**
+     * @brief Update を実行する。
+     */
     void Update();
 
-    void AddSphere(const Vector3& center, float radius, const Vector4& color);
-    void AddCube(const Matrix4x4& transform, const Vector4& color);
+    /**
+     * @brief AddSphere を実行する。
+     */
+    void AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color);
+    /**
+     * @brief AddCube を実行する。
+     */
+    void AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color);
     
+    /**
+     * @brief ClearInstances を実行する。
+     */
     void ClearInstances();
+    /**
+     * @brief BuildInstanceBuffer を実行する。
+     */
     void BuildInstanceBuffer();
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw();
 
 private:
     struct InstanceData {
-        Matrix4x4 world;
-        Vector4 color;
+        Irufemi::Matrix4x4 world;
+        Irufemi::Vector4 color;
     };
 
+    /**
+     * @brief CreateSphereResource を実行する。
+     */
     void CreateSphereResource();
+    /**
+     * @brief CreateCubeResource を実行する。
+     */
     void CreateCubeResource();
+    /**
+     * @brief EnsureInstancingSRVs を実行する。
+     */
     void EnsureInstancingSRVs();
 
     DirectXCommon* dx_ = nullptr;
     DrawManager* drawManager_ = nullptr;
     DescriptorPool* srvAllocator_ = nullptr;
 
-    // --- Sphere Data ---
+    // --- Irufemi::Sphere Data ---
     Microsoft::WRL::ComPtr<ID3D12Resource> sphereVertexResource_;
     D3D12_VERTEX_BUFFER_VIEW sphereVBV_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> sphereIndexResource_;
@@ -89,4 +120,6 @@ private:
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> cubeSrvGPU_{};
 
     uint32_t lastUpdateFrameIndex_ = 0;
+    
+    std::mutex mutex_;
 };

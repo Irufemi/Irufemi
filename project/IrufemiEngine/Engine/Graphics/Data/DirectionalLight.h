@@ -7,9 +7,9 @@
 
 struct DirectionalLight {
     //!< ライトの色
-    Vector4 color;
+    Irufemi::Vector4 color;
     //!< ライトの向き
-    Vector3 direction;
+    Irufemi::Vector3 direction;
     //!< 輝度
     float intensity;
 };

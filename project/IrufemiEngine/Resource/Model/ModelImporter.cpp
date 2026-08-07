@@ -8,6 +8,9 @@
 #include <algorithm>
 #include <limits>
 #include <cmath>
+#include "AssimpMutex.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 namespace {
     // ノードとメッシュの関連を解析するヘルパー関数
@@ -50,8 +53,8 @@ namespace {
     }
 
     void CalculateBoundingSphere(ObjModel& model) {
-        Vector3 minV = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
-        Vector3 maxV = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
+        Irufemi::Vector3 minV = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
+        Irufemi::Vector3 maxV = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
         bool hasVertices = false;
 
         for (const auto& mesh : model.meshes) {
@@ -67,21 +70,21 @@ namespace {
         }
 
         if (!hasVertices) {
-            model.boundingBox = AABB{ {0,0,0}, {0,0,0} };
+            model.boundingBox = Irufemi::AABB{ {0,0,0}, {0,0,0} };
             model.boundingSphere.center = { 0, 0, 0 };
             model.boundingSphere.radius = 0.0f;
             return;
         }
 
-        model.boundingBox = AABB{ minV, maxV };
+        model.boundingBox = Irufemi::AABB{ minV, maxV };
         model.boundingSphere.center = (minV + maxV) * 0.5f;
 
         float maxDistSq = 0.0f;
         for (const auto& mesh : model.meshes) {
             for (const auto& vertex : mesh.vertices) {
-                Vector3 pos = { vertex.position.x, vertex.position.y, vertex.position.z };
-                Vector3 diff = pos - model.boundingSphere.center;
-                float distSq = Math::Dot(diff, diff);
+                Irufemi::Vector3 pos = { vertex.position.x, vertex.position.y, vertex.position.z };
+                Irufemi::Vector3 diff = pos - model.boundingSphere.center;
+                float distSq = Irufemi::Math::Dot(diff, diff);
                 maxDistSq = (std::max)(maxDistSq, distSq);
             }
         }
@@ -92,7 +95,6 @@ namespace {
 ObjModel ModelImporter::Import(const std::string& fullPath) {
     ObjModel objModel;
 
-    Assimp::Importer importer;
     const std::string filePath = fullPath;
 
     const unsigned int flags =
@@ -101,7 +103,11 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
         aiProcess_FlipUVs |
         aiProcess_MakeLeftHanded;
 
+    std::lock_guard<std::mutex> lock(Irufemi::AssimpMutex::Get());
+    Assimp::Importer importer;
+    Log::OutPutLog(std::cout, "[ModelImporter] Assimp ReadFile START: " + filePath + "\n");
     const aiScene* scene = importer.ReadFile(filePath.c_str(), flags);
+    Log::OutPutLog(std::cout, "[ModelImporter] Assimp ReadFile FINISH: " + filePath + "\n");
     if (!scene || !scene->HasMeshes()) {
         IRUFEMI_WARNING(false, "Assimp failed to load model or no meshes found: " + std::string(importer.GetErrorString()));
         return ObjModel();
@@ -123,7 +129,7 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
         out.enableLighting = true;
         out.lightingMode = 3;
         out.environmentCoefficient = 0.0f;
-        out.uvTransform = Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Vector3{ 0,0,0 }, { 0,0,0 });
+        out.uvTransform = Irufemi::Math::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, Irufemi::Vector3{ 0,0,0 }, { 0,0,0 });
 
         if (m->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
             aiString texPath;
@@ -177,6 +183,7 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
         convertedMaterials[i] = out;
     }
 
+    uint32_t vertexOffset = 0;
     for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
         aiMesh* mesh = scene->mMeshes[meshIndex];
         ObjMesh outMesh;
@@ -214,15 +221,16 @@ ObjModel ModelImporter::Import(const std::string& fullPath) {
             aiVector3D scale, translate;
             aiQuaternion rotate;
             bindPoseMatrixAssimp.Decompose(scale, rotate, translate);
-            Matrix4x4 bindPoseMatrix = Math::MakeAffineMatrix({ scale.x, scale.y, scale.z }, { rotate.x, rotate.y, rotate.z, rotate.w }, { translate.x, translate.y, translate.z });
-            jointWeightData.inverseBindPoseMatrix = Math::Inverse(bindPoseMatrix);
+            Irufemi::Matrix4x4 bindPoseMatrix = Irufemi::Math::MakeAffineMatrix({ scale.x, scale.y, scale.z }, { rotate.x, rotate.y, rotate.z, rotate.w }, { translate.x, translate.y, translate.z });
+            jointWeightData.inverseBindPoseMatrix = Irufemi::Math::Inverse(bindPoseMatrix);
 
             for (uint32_t weightIndex = 0; weightIndex < bone->mNumWeights; ++weightIndex) {
-                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight, bone->mWeights[weightIndex].mVertexId });
+                jointWeightData.vertexWeights.push_back({ bone->mWeights[weightIndex].mWeight, bone->mWeights[weightIndex].mVertexId + vertexOffset });
             }
         }
 
         objModel.meshes.push_back(std::move(outMesh));
+        vertexOffset += mesh->mNumVertices;
     }
 
     ProcessNode(scene->mRootNode, scene, objModel.meshes);

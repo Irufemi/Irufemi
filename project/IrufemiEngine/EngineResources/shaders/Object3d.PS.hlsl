@@ -1,17 +1,15 @@
 /*テクスチャを貼ろう*/
 
-#include "./Object3d.hlsli"
-#include "./Lighting.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
+#include "Lighting.hlsli"
 
 /*三角形の色を変えよう*/
 
 ConstantBuffer<Material> gMaterial : register(b0);
 #include "Bindless.hlsli"
 
-struct PixelShaderOutput
-{
-	float32_t4 color : SV_TARGET0;
-};
+#include "BasePassPixelOutput.hlsli"
 
 /*テクスチャを貼ろう*/
 
@@ -184,5 +182,30 @@ PixelShaderOutput main(VertexShaderOutput input)
     // Linear -> sRGB はハードウェア RTV (_SRGB形式) に任せるため削除
     output.color.rgb = output.color.rgb;
 
-	return output;
+    float effectType = gMaterial.customEffectType / 255.0f;
+    float effectParam = gMaterial.customEffectParam;
+    float enableMask = gMaterial.enableEffectMask ? 1.0f : 0.0f;
+
+    if (input.customEffect.x > 0.0f || input.customEffect.z > 0.0f) {
+        effectType = input.customEffect.x / 255.0f;
+        effectParam = input.customEffect.y;
+        enableMask = input.customEffect.z;
+    }
+
+    output.mask.r = effectType;
+    output.mask.g = effectParam;
+    output.mask.b = enableMask;
+    output.mask.a = 1.0f;
+
+    // 法線と深度の出力 (法線は -1.0～1.0 のままで出力)
+    output.normal = float4(normalize(input.normal), 1.0f); // W成分等に何か入れる場合は適宜変更 (とりあえず1.0)
+    output.normal.w = 1.0f; 
+
+    // マテリアル情報の出力
+    output.material = float4(gMaterial.metallic, gMaterial.roughness, 0.0f, 1.0f);
+    
+    // ベロシティは現在計算していないのでゼロを出力
+    output.velocity = float2(0.0f, 0.0f);
+
+    return output;
 }

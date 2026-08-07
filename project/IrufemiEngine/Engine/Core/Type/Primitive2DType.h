@@ -1,5 +1,7 @@
 #pragma once
 
+
+namespace Irufemi {
 /**
  * @enum Primitive2DType
  * @brief 2Dプリミティブの形状タイプ
@@ -11,3 +13,5 @@ enum class Primitive2DType {
     Ring,       //!< ドーナツ状の円
     Line        //!< 線分
 };
+
+} // namespace Irufemi

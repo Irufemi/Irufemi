@@ -53,6 +53,11 @@ public:
      */
     static void ClearCache();
 
+    /**
+     * @brief プレハブのJSONデータを取得する（キャッシュ対応）
+     */
+    static nlohmann::json GetPrefabJson(const std::string& filepath);
+
 private:
     static std::unordered_map<std::string, nlohmann::json> prefabCache_;
 

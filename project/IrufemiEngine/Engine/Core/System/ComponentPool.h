@@ -15,6 +15,10 @@
 template<typename T, size_t ChunkSize = 1024>
 class ComponentPool {
 public:
+    /**
+     * @brief Instance を取得する。
+     * @return 取得された Instance
+     */
     static ComponentPool& GetInstance() {
         static ComponentPool instance;
         return instance;
@@ -25,7 +29,13 @@ public:
      * @return 確保されたコンポーネントの shared_ptr（カスタムデリータ付き）
      */
     template<typename... Args>
+    /**
+     * @brief Create を実行する。
+     */
     std::shared_ptr<T> Create(Args&&... args) {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(mutex_);
         
         // 既存のチャンクから空きスロットを探す
@@ -63,6 +73,9 @@ public:
      * @details メモリが連続しているため、CPUキャッシュヒット率が劇的に向上します
      */
     template<typename Func>
+    /**
+     * @brief ForEach を実行する。
+     */
     void ForEach(Func f) {
         // パフォーマンス最優先のためロックを取らずに実行します（Update専用）
         for (auto& chunk : chunks_) {
@@ -78,6 +91,9 @@ private:
     ComponentPool() = default;
     ~ComponentPool() {
         // プール破棄時の処理（念のため強制的にデストラクタを呼ぶ）
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(mutex_);
         for (auto& chunk : chunks_) {
             for (size_t i = 0; i < ChunkSize; ++i) {
@@ -95,6 +111,9 @@ private:
      * @brief shared_ptrの参照カウントが0になった時に呼ばれ、メモリを解放状態にする
      */
     void Free(size_t chunkIdx, size_t itemIdx, T* p) {
+        /**
+         * @brief lock を実行する。
+         */
         std::lock_guard<std::mutex> lock(mutex_);
         p->~T(); // デストラクタを明示的に呼び出す
         chunks_[chunkIdx]->active[itemIdx] = false;
@@ -117,3 +136,6 @@ private:
  */
 template <typename T>
 struct IsPooledComponent : std::false_type {};
+
+class TransformComponent;
+template<> struct IsPooledComponent<TransformComponent> : std::true_type {};

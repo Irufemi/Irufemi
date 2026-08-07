@@ -1,5 +1,6 @@
 #include "ParticleGPU.hlsli"
 #include "VertexData.hlsli"
+#include "CullingUtility.hlsli"
 
 StructuredBuffer<Particle> gParticles : register(t0);
 StructuredBuffer<ParticleSortData> gSortList : register(t1);
@@ -30,7 +31,7 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
     // ソート時に付与したdepthが負の場合は死んでいるパーティクルなので描画しない
     if (sortData.depth < 0.0f)
     {
-        particle.scale = float3(0.0f, 0.0f, 0.0f);
+        CullInstanceByScale(particle.scale);
     }
 	
     float4x4 worldMatrix;

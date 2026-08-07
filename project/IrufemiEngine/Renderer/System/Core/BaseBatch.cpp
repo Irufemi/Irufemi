@@ -5,8 +5,10 @@
 #include <cassert>
 #include <cstring>
 #include "Engine/Core/Math/Math.h"
-#include "Engine/IrufemiEngine.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
+#include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "Resource/Texture/TextureManager.h"
 DirectXCommon* BaseBatch::dx_ = nullptr;
 TextureManager* BaseBatch::textureManager_ = nullptr;
@@ -43,7 +45,7 @@ BaseBatch::~BaseBatch() {
     }
 }
 
-void BaseBatch::SetColor(const Vector4& color) {
+void BaseBatch::SetColor(const Irufemi::Vector4& color) {
     cpuMaterialData_.color = color;
     if (auto engine = dx_->GetEngine()) {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -61,7 +63,7 @@ void BaseBatch::SetEnvironmentCoefficient(float coefficient) {
     }
 }
 
-void BaseBatch::SetInstanceColor(uint32_t index, const Vector4& color) {
+void BaseBatch::SetInstanceColor(uint32_t index, const Irufemi::Vector4& color) {
     if (index < instanceColors_.size()) {
         instanceColors_[index] = color;
         instanceDirty_ = true;
@@ -70,7 +72,7 @@ void BaseBatch::SetInstanceColor(uint32_t index, const Vector4& color) {
     }
 }
 
-void BaseBatch::SetAllInstanceColor(const Vector4& color) {
+void BaseBatch::SetAllInstanceColor(const Irufemi::Vector4& color) {
     for (auto& c : instanceColors_) {
         c = color;
     }
@@ -80,45 +82,50 @@ void BaseBatch::SetAllInstanceColor(const Vector4& color) {
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Transform& t) {
+void BaseBatch::AddInstance(const Irufemi::Transform& t, int32_t effectType, float effectParam, bool enableMask) {
     instances_.push_back(t);
     instanceColors_.push_back({1.0f, 1.0f, 1.0f, 1.0f});
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Transform& t, const Vector4& color) {
+void BaseBatch::AddInstance(const Irufemi::Transform& t, const Irufemi::Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
     instances_.push_back(t);
     instanceColors_.push_back(color);
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate) {
-    Transform t;
+void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const Irufemi::Vector3& rotate, int32_t effectType, float effectParam, bool enableMask) {
+    Irufemi::Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
     t.rotate = rotate;
     instances_.push_back(t);
     instanceColors_.push_back({1.0f, 1.0f, 1.0f, 1.0f});
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Vector3& center, float scale, const Vector3& rotate, const Vector4& color) {
-    Transform t;
+void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const Irufemi::Vector3& rotate, const Irufemi::Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
+    Irufemi::Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
     t.rotate = rotate;
     instances_.push_back(t);
     instanceColors_.push_back(color);
+    instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstanceWorld(const Matrix4x4& world, const Vector4& color) {
+void BaseBatch::AddInstanceWorld(const Irufemi::Matrix4x4& world, const Irufemi::Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
     instanceWorlds_.push_back(world);
     instanceWorldColors_.push_back(color);
+    instanceWorldEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::UpdateInstance(uint32_t index, const Transform& t) {
+void BaseBatch::UpdateInstance(uint32_t index, const Irufemi::Transform& t) {
     if (index < instances_.size()) {
         instances_[index] = t;
         instanceDirty_ = true;
@@ -130,8 +137,10 @@ void BaseBatch::UpdateInstance(uint32_t index, const Transform& t) {
 void BaseBatch::ClearInstances() {
     instances_.clear();
     instanceColors_.clear();
+    instanceEffects_.clear();
     instanceWorlds_.clear();
     instanceWorldColors_.clear();
+    instanceWorldEffects_.clear();
     instanceDirty_ = true;
 }
 
@@ -146,7 +155,13 @@ void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
             IRUFEMI_ASSERT(srvPool_);
             uint32_t idx = srvPool_->Allocate();
-            if (idx == DescriptorPool::kInvalid) { OutputDebugStringA("BaseBatch SRV allocate failed\n"); return; }
+            if (idx == DescriptorPool::kInvalid) { 
+                /**
+                 * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+                 */
+                Log::OutPutLog(std::cerr, "BaseBatch SRV allocate failed"); 
+                return; 
+            }
             instancingSrvIndex_[frameIndex] = idx;
             instancingSrvCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
             instancingSrvGPU_[frameIndex] = srvPool_->GetGPUHandle(idx);
@@ -258,7 +273,7 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
 
     const UINT totalCount = static_cast<UINT>(instances_.size() + instanceWorlds_.size());
     
-    const Frustum* frustum = nullptr;
+    const Irufemi::Frustum* frustum = nullptr;
     
     Camera* activeCamera = nullptr;
     if (dx_ && dx_->GetEngine() && dx_->GetEngine()->GetCameraManager()) {
@@ -280,22 +295,24 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
         temp.reserve(totalCount);
         for (size_t i = 0; i < instances_.size(); ++i) {
             TransformData td{};
-            td.position = Vector4(instances_[i].translate.x, instances_[i].translate.y, instances_[i].translate.z, 0.0f);
-            td.rotation = Vector4(instances_[i].rotate.x, instances_[i].rotate.y, instances_[i].rotate.z, 0.0f);
-            td.scale = Vector4(instances_[i].scale.x, instances_[i].scale.y, instances_[i].scale.z, 0.0f);
+            td.position = Irufemi::Vector4(instances_[i].translate.x, instances_[i].translate.y, instances_[i].translate.z, 0.0f);
+            td.rotation = Irufemi::Vector4(instances_[i].rotate.x, instances_[i].rotate.y, instances_[i].rotate.z, 0.0f);
+            td.scale = Irufemi::Vector4(instances_[i].scale.x, instances_[i].scale.y, instances_[i].scale.z, 0.0f);
             td.color = instanceColors_[i];
+            td.customEffect = (i < instanceEffects_.size()) ? instanceEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(td);
         }
         for (size_t i = 0; i < instanceWorlds_.size(); ++i) {
             TransformData td{};
-            td.position = Vector4(instanceWorlds_[i].m[3][0], instanceWorlds_[i].m[3][1], instanceWorlds_[i].m[3][2], 0.0f);
-            Vector3 euler = Math::ExtractEulerFromMatrix(instanceWorlds_[i]);
-            td.rotation = Vector4(euler.x, euler.y, euler.z, 0.0f);
-            float sx = Math::Length(Vector3{instanceWorlds_[i].m[0][0], instanceWorlds_[i].m[0][1], instanceWorlds_[i].m[0][2]});
-            float sy = Math::Length(Vector3{instanceWorlds_[i].m[1][0], instanceWorlds_[i].m[1][1], instanceWorlds_[i].m[1][2]});
-            float sz = Math::Length(Vector3{instanceWorlds_[i].m[2][0], instanceWorlds_[i].m[2][1], instanceWorlds_[i].m[2][2]});
-            td.scale = Vector4(sx, sy, sz, 0.0f);
+            td.position = Irufemi::Vector4(instanceWorlds_[i].m[3][0], instanceWorlds_[i].m[3][1], instanceWorlds_[i].m[3][2], 0.0f);
+            Irufemi::Vector3 euler = Irufemi::Math::ExtractEulerFromMatrix(instanceWorlds_[i]);
+            td.rotation = Irufemi::Vector4(euler.x, euler.y, euler.z, 0.0f);
+            float sx = Irufemi::Math::Length(Irufemi::Vector3{instanceWorlds_[i].m[0][0], instanceWorlds_[i].m[0][1], instanceWorlds_[i].m[0][2]});
+            float sy = Irufemi::Math::Length(Irufemi::Vector3{instanceWorlds_[i].m[1][0], instanceWorlds_[i].m[1][1], instanceWorlds_[i].m[1][2]});
+            float sz = Irufemi::Math::Length(Irufemi::Vector3{instanceWorlds_[i].m[2][0], instanceWorlds_[i].m[2][1], instanceWorlds_[i].m[2][2]});
+            td.scale = Irufemi::Vector4(sx, sy, sz, 0.0f);
             td.color = instanceWorldColors_[i];
+            td.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(td);
         }
 
@@ -339,30 +356,32 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
             const auto& inst = instances_[i];
             if (isCullingEnabled_ && activeCamera && frustum) {
                 float maxScale = (std::max)({ inst.scale.x, inst.scale.y, inst.scale.z });
-                Sphere boundingSphere;
+                Irufemi::Sphere boundingSphere;
                 boundingSphere.center = inst.translate;
                 boundingSphere.radius = modelRadius * maxScale * 1.1f;
-                if (!Collision::IsCollision(*frustum, boundingSphere)) continue;
+                if (!Irufemi::Collision::IsCollision(*frustum, boundingSphere)) continue;
             }
 
             InstanceData data;
-            Matrix4x4 world = Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
-            Matrix4x4 worldForNormal = world;
+            Irufemi::Matrix4x4 world = Irufemi::Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
+            Irufemi::Matrix4x4 worldForNormal = world;
             worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-            data.WVP = Math::MakeIdentity4x4();
+            data.WVP = Irufemi::Math::MakeIdentity4x4();
             data.World = world;
-            data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+            data.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
             data.color = instanceColors_[i];
+            data.customEffect = (i < instanceEffects_.size()) ? instanceEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(data);
         }
         for (size_t i = 0; i < instanceWorlds_.size(); ++i) {
             InstanceData data;
-            data.WVP = Math::MakeIdentity4x4();
+            data.WVP = Irufemi::Math::MakeIdentity4x4();
             data.World = instanceWorlds_[i];
-            Matrix4x4 worldForNormal = instanceWorlds_[i];
+            Irufemi::Matrix4x4 worldForNormal = instanceWorlds_[i];
             worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-            data.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+            data.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
             data.color = instanceWorldColors_[i];
+            data.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(data);
         }
 

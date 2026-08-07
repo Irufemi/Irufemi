@@ -15,7 +15,7 @@ static void ApplyAlphaRecursive(GameObject* obj, float alpha) {
     // 自身のSpriteRendererがあればAlphaを適用
     auto sprite = obj->GetComponent<SpriteRendererComponent>();
     if (sprite && sprite->GetSprite()) {
-        Vector4 color = sprite->GetSprite()->GetColor();
+        Irufemi::Vector4 color = sprite->GetSprite()->GetColor();
         color.w = alpha; // 今回は単純な上書き（必要なら元Alphaとの乗算にする）
         sprite->GetSprite()->SetColor(color);
     }

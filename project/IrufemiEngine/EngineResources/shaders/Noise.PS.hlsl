@@ -1,17 +1,13 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "PostProcess.hlsli"
 
-struct NoiseParams {
-    float intensity;
-    float time;
-};
+
 
 ConstantBuffer<NoiseParams> gParams : register(b0);
 SamplerState gSampler : register(s0);
 
-struct PixelShaderOutput {
-    float32_t4 color : SV_TARGET0;
-};
+
 
 PixelShaderOutput main(VertexShaderOutput input) {
     PixelShaderOutput output;

@@ -1,4 +1,4 @@
-#include "Primitive2DBatch.h"
+﻿#include "Primitive2DBatch.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include <cmath>
@@ -18,7 +18,7 @@ Primitive2DBatch::~Primitive2DBatch() {
     }
 }
 
-void Primitive2DBatch::Initialize(Primitive2DType type, const std::string& textureName) {
+void Primitive2DBatch::Initialize(Irufemi::Primitive2DType type, const std::string& textureName) {
     type_ = type;
     isMeshDirty_ = true;
 
@@ -39,7 +39,7 @@ void Primitive2DBatch::SetSubdivision(uint32_t subdiv) {
 void Primitive2DBatch::SetThickness(float thickness) {
     if (thickness_ != thickness) {
         thickness_ = thickness;
-        if (type_ == Primitive2DType::Ring || type_ == Primitive2DType::Line) {
+        if (type_ == Irufemi::Primitive2DType::Ring || type_ == Irufemi::Primitive2DType::Line) {
             isMeshDirty_ = true;
         }
     }
@@ -50,19 +50,19 @@ void Primitive2DBatch::RebuildMesh() {
     indexDataList_.clear();
 
     switch (type_) {
-    case Primitive2DType::Rect:
+    case Irufemi::Primitive2DType::Rect:
         BuildRect();
         break;
-    case Primitive2DType::Triangle:
+    case Irufemi::Primitive2DType::Triangle:
         BuildTriangle();
         break;
-    case Primitive2DType::Circle:
+    case Irufemi::Primitive2DType::Circle:
         BuildCircle(subdivision_);
         break;
-    case Primitive2DType::Ring:
+    case Irufemi::Primitive2DType::Ring:
         BuildRing(subdivision_);
         break;
-    case Primitive2DType::Line:
+    case Irufemi::Primitive2DType::Line:
         BuildLine();
         break;
     }

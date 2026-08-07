@@ -15,10 +15,22 @@ class LineResource : public BaseResource {
 public:
     virtual ~LineResource();
 
+    /**
+     * @brief CreateResource を実行する。
+     */
     void CreateResource() override;
+    /**
+     * @brief Map を実行する。
+     */
     void Map() override;
+    /**
+     * @brief Unmap を実行する。
+     */
     void Unmap() override;
 
+    /**
+     * @brief UpdateTransform を実行する。
+     */
     void UpdateTransform(const Camera& camera);
 
 public:
@@ -38,14 +50,25 @@ public:
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
-    Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+    Irufemi::Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
+    /**
+     * @brief MaterialVAddress を取得する。
+     * @return 取得された MaterialVAddress
+     */
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
+    /**
+     * @brief TransformVAddress を取得する。
+     * @return 取得された TransformVAddress
+     */
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
 
 
 
+    /**
+     * @brief SyncBeforeDraw を実行する。
+     */
     void SyncBeforeDraw();
 };

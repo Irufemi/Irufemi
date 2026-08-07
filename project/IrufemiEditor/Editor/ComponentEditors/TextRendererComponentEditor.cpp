@@ -149,7 +149,7 @@ void TextRendererComponentEditor::Draw(Component* component, EditorActionManager
             });
 
             // Color
-            Vector4 color = comp->GetColor();
+            Irufemi::Vector4 color = comp->GetColor();
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Color");
             ImGui::TableSetColumnIndex(1);
@@ -158,10 +158,10 @@ void TextRendererComponentEditor::Draw(Component* component, EditorActionManager
                 comp->SetColor(color);
             }
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &color, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &color, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ comp->SetColor(v); }));
             ComponentUIHelpers::DrawPropertyResetButton("##ColorReset", color.x != 1.0f || color.y != 1.0f || color.z != 1.0f || color.w != 1.0f, [&]() {
-                Vector4 oldC = comp->GetColor();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Vector4{1,1,1,1}, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
+                Irufemi::Vector4 oldC = comp->GetColor();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Irufemi::Vector4{1,1,1,1}, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ comp->SetColor(v); }));
             });
 
             // TopMost

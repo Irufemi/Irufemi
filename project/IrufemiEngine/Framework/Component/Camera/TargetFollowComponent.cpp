@@ -7,13 +7,22 @@
 #include <cmath>
 
 void TargetFollowComponent::OnRegisterProperties() {
-    RegisterProperty("Target Name", &targetName_);
+    RegisterGameObjectRef("Target Object", &targetObjectID_);
     RegisterProperty("Offset", &offset_);
     RegisterProperty("FollowDelay", &followDelay_);
 }
 
 void TargetFollowComponent::Initialize() {
     targetTransform_ = nullptr;
+}
+
+void TargetFollowComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
+    if (targetObjectID_ != 0) {
+        auto it = idMap.find(targetObjectID_);
+        if (it != idMap.end()) {
+            targetObjectID_ = it->second;
+        }
+    }
 }
 
 void TargetFollowComponent::Update() {
@@ -25,11 +34,11 @@ void TargetFollowComponent::Update() {
         deltaTime = 1.0f / 60.0f;
     }
 
-    // ターゲットが未キャッシュの場合はシーン内から指定された名前で探索
+    // ターゲットが未キャッシュの場合はシーン内から指定されたIDで探索
     if (!targetTransform_) {
         auto scene = gameObject_->GetScene();
-        if (scene && !targetName_.empty()) {
-            auto playerObj = scene->FindGameObject(targetName_);
+        if (scene && targetObjectID_ != 0) {
+            auto playerObj = scene->FindGameObjectByID(targetObjectID_);
             if (playerObj) {
                 targetTransform_ = playerObj->GetComponent<TransformComponent>();
             }
@@ -38,15 +47,15 @@ void TargetFollowComponent::Update() {
 
     if (!targetTransform_) return;
 
-    auto myTransform = gameObject_->GetComponent<TransformComponent>();
+    auto myTransform = GetTransform();
     if (!myTransform) return;
 
     // プレイヤーの向き（回転角度）から進行方向をベースとしたローカル座標系を作成
-    float yaw = targetTransform_->GetRotation().y;
-    float pitch = targetTransform_->GetRotation().x;
+    float yaw = targetTransform_->GetWorldRotation().y;
+    float pitch = targetTransform_->GetWorldRotation().x;
 
     // プレイヤーを基準とした回転行列の方向成分を計算
-    Vector3 forward = {
+    Irufemi::Vector3 forward = {
         std::sin(yaw) * std::cos(pitch),
         std::sin(-pitch),
         std::cos(yaw) * std::cos(pitch)
@@ -61,8 +70,8 @@ void TargetFollowComponent::Update() {
     }
 
     // 右ベクトルと上ベクトルの算出 (外積)
-    Vector3 upVec = {0.0f, 1.0f, 0.0f};
-    Vector3 right = {
+    Irufemi::Vector3 upVec = {0.0f, 1.0f, 0.0f};
+    Irufemi::Vector3 right = {
         upVec.y * forward.z - upVec.z * forward.y,
         upVec.z * forward.x - upVec.x * forward.z,
         upVec.x * forward.y - upVec.y * forward.x
@@ -74,54 +83,37 @@ void TargetFollowComponent::Update() {
         right = {1.0f, 0.0f, 0.0f};
     }
 
-    Vector3 up = {
+    Irufemi::Vector3 up = {
         forward.y * right.z - forward.z * right.y,
         forward.z * right.x - forward.x * right.z,
         forward.x * right.y - forward.y * right.x
     };
 
     // プレイヤー位置に、プレイヤーの向きに基づいたローカルオフセットを足す
-    Vector3 targetCamPos = {
-        targetTransform_->GetPosition().x + right.x * offset_.x + up.x * offset_.y + forward.x * offset_.z,
-        targetTransform_->GetPosition().y + right.y * offset_.x + up.y * offset_.y + forward.y * offset_.z,
-        targetTransform_->GetPosition().z + right.z * offset_.x + up.z * offset_.y + forward.z * offset_.z
+    Irufemi::Vector3 targetCamPos = {
+        targetTransform_->GetWorldPosition().x + right.x * offset_.x + up.x * offset_.y + forward.x * offset_.z,
+        targetTransform_->GetWorldPosition().y + right.y * offset_.x + up.y * offset_.y + forward.y * offset_.z,
+        targetTransform_->GetWorldPosition().z + right.z * offset_.x + up.z * offset_.y + forward.z * offset_.z
     };
 
     // 滑らかな追従 (線形補間/Lerp) を行う (フレームレート非依存)
     float t = 1.0f - std::pow(followDelay_, deltaTime); 
-    Vector3 newPos = myTransform->GetPosition();
-    newPos.x += (targetCamPos.x - newPos.x) * t;
-    newPos.y += (targetCamPos.y - newPos.y) * t;
-    newPos.z += (targetCamPos.z - newPos.z) * t;
-    myTransform->SetPosition(newPos);
-
+    Irufemi::Vector3 currentPosWorld = myTransform->GetWorldPosition();
+    Irufemi::Vector3 newPosWorld = currentPosWorld;
+    newPosWorld.x += (targetCamPos.x - newPosWorld.x) * t;
+    newPosWorld.y += (targetCamPos.y - newPosWorld.y) * t;
+    newPosWorld.z += (targetCamPos.z - newPosWorld.z) * t;
     // カメラの向き（角度）もプレイヤーの向きに追従させる（Lerpで滑らかに旋回）
-    Vector3 newRot = myTransform->GetRotation();
-    newRot.x += (targetTransform_->GetRotation().x - newRot.x) * t;
-    newRot.y += (targetTransform_->GetRotation().y - newRot.y) * t;
-    newRot.z += (targetTransform_->GetRotation().z - newRot.z) * t;
-    myTransform->SetRotation(newRot);
-}
+    Irufemi::Vector3 currentRotWorld = myTransform->GetWorldRotation();
+    Irufemi::Vector3 newRotWorld = currentRotWorld;
+    newRotWorld.x += (targetTransform_->GetWorldRotation().x - newRotWorld.x) * t;
+    newRotWorld.y += (targetTransform_->GetWorldRotation().y - newRotWorld.y) * t;
+    newRotWorld.z += (targetTransform_->GetWorldRotation().z - newRotWorld.z) * t;
+    
+    // 計算したワールド座標・回転からワールド行列を作成し、一度に設定する
+    Irufemi::Matrix4x4 targetWorldMat = Irufemi::Math::MakeAffineMatrix({1,1,1}, newRotWorld, newPosWorld);
+    myTransform->SetWorldMatrix(targetWorldMat);
 
-nlohmann::json TargetFollowComponent::Serialize() {
-    nlohmann::json j = Component::Serialize();
-    j["targetName"] = targetName_;
-    j["offset"] = {offset_.x, offset_.y, offset_.z};
-    j["followDelay"] = followDelay_;
-    return j;
-}
-
-void TargetFollowComponent::Deserialize(const nlohmann::json& j) {
-    Component::Deserialize(j);
-    if (j.contains("targetName")) {
-        targetName_ = j["targetName"].get<std::string>();
-    }
-    if (j.contains("offset")) {
-        offset_.x = j["offset"][0].get<float>();
-        offset_.y = j["offset"][1].get<float>();
-        offset_.z = j["offset"][2].get<float>();
-    }
-    if (j.contains("followDelay")) {
-        followDelay_ = j["followDelay"].get<float>();
-    }
+    // 次のコンポーネント（CameraComponent等）のために強制更新
+    myTransform->UpdateMatrixImmediate();
 }

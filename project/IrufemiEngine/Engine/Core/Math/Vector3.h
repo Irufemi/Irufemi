@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+
+namespace Irufemi {
 /**
  * @struct Vector3
  * @brief 3次元ベクトル
@@ -46,6 +48,9 @@ struct Vector3 final {
 	/** @{ */
 	bool operator==(const Vector3& rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
 	bool operator!=(const Vector3& rhs) const { return !(*this == rhs); }
+	/**
+	 * @brief Equals を実行する。
+	 */
 	bool Equals(const Vector3& other, float epsilon = 1e-5f) const {
 		return std::abs(x - other.x) <= epsilon && std::abs(y - other.y) <= epsilon && std::abs(z - other.z) <= epsilon;
 	}
@@ -54,7 +59,17 @@ struct Vector3 final {
 	/** @name 数学関数 */
 	/** @{ */
 	inline float LengthSquared() const { return x * x + y * y + z * z; }
+	/**
+	 * @brief LengthSq を実行する。
+	 */
+	inline float LengthSq() const { return LengthSquared(); }
+	/**
+	 * @brief Length を実行する。
+	 */
 	inline float Length() const { return std::sqrt(LengthSquared()); }
+	/**
+	 * @brief Normalize を実行する。
+	 */
 	inline void Normalize() {
 		float lenSq = LengthSquared();
 		if (lenSq > 0.0f) {
@@ -64,12 +79,22 @@ struct Vector3 final {
 			z *= invLen;
 		}
 	}
+	/**
+	 * @brief Normalized を取得する。
+	 * @return 取得された Normalized
+	 */
 	inline Vector3 GetNormalized() const {
 		Vector3 v = *this;
 		v.Normalize();
 		return v;
 	}
+	/**
+	 * @brief Dot を実行する。
+	 */
 	inline float Dot(const Vector3& rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z; }
+	/**
+	 * @brief Cross を実行する。
+	 */
 	inline Vector3 Cross(const Vector3& rhs) const {
 		return {
 			y * rhs.z - z * rhs.y,
@@ -82,6 +107,9 @@ struct Vector3 final {
 	/** @name データアクセサ */
 	/** @{ */
 	const float* data() const { return &x; }
+	/**
+	 * @brief data を実行する。
+	 */
 	float* data() { return &x; }
 	/** @} */
 };
@@ -102,4 +130,6 @@ Vector3 operator*(const Vector3& lhs, const Vector3& rhs);
 Vector3 operator/(const Vector3& lhs, const Vector3& rhs);
 
 /** @} */
-
+
+
+} // namespace Irufemi

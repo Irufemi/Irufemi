@@ -1,4 +1,4 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -210,6 +210,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="..\Application\resources\shaders\Material.hlsli" />
     <None Include="..\Application\resources\shaders\PostProcess.hlsli" />
     <None Include="..\Application\resources\shaders\VertexData.hlsli" />
+    <ClCompile Include="Framework\Component\Effect\EffectMaskComponent.cpp" />
+    <ClCompile Include="Framework\Component\Component.cpp" />
+    <ClCompile Include="Framework\Component\Effect\ParticleFieldComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="..\Application\resources\shaders\ByGeometryShader.GS.hlsl">
@@ -388,13 +391,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3D.PS.hlsl">
+    <FxCompile Include="..\Application\resources\shaders\Object3d.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="..\Application\resources\shaders\Object3D.VS.hlsl">
+    <FxCompile Include="..\Application\resources\shaders\Object3d.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -594,6 +597,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <ClInclude Include="Framework\Component\Effect\EffectMaskComponent.h" />
+    <ClInclude Include="Framework\Component\Effect\ParticleFieldComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\externals\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
@@ -645,12 +650,14 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Core\System\DirectoryWatcher.cpp" />
     <ClCompile Include="Engine\Core\System\ResourceCachePool.cpp" />
     <ClCompile Include="Engine\Core\Utility\Ease.cpp" />
+    <ClCompile Include="Engine\Core\Utility\PerlinNoise.cpp" />
     <ClCompile Include="Engine\Core\Utility\ErrorUtility.cpp" />
     <ClCompile Include="Engine\Core\Utility\Log.cpp" />
+    <ClCompile Include="Engine\Core\Utility\FileSystem.cpp" />
     <ClCompile Include="Engine\Core\Utility\StringUtility.cpp" />
     <ClCompile Include="Engine\Graphics\Camera\Camera.cpp" />
     <ClCompile Include="Engine\Graphics\Camera\CameraManager.cpp" />
-    <ClCompile Include="Engine\Graphics\Camera\DebugCamera.cpp" />
+    <ClCompile Include="Engine\Graphics\Camera\OrbitCameraController.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DXCommandManager.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DXRootSignatureManager.cpp" />
     <ClCompile Include="Engine\Graphics\DirectX\DXSwapChainManager.cpp" />
@@ -674,8 +681,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.cpp" />
     <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.cpp" />
+    <ClCompile Include="Engine\Graphics\Pipeline\RenderGraph\PostUIPass.cpp" />
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessManager.cpp" />
+    <ClCompile Include="Engine\Graphics\PostProcess\PostProcessRunner.cpp" />
     <ClCompile Include="Engine\IrufemiEngine.cpp" />
+    <ClCompile Include="Engine\Profiler\TelemetrySender.cpp" />
+    <ClCompile Include="Engine\Profiler\GpuProfiler.cpp" />
     <ClCompile Include="Engine\Manager\CollisionManager.cpp" />
     <ClCompile Include="Engine\Manager\DebugUI.cpp" />
     <ClCompile Include="Engine\Manager\DrawManager.cpp" />
@@ -688,17 +699,20 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Platform\Input\Mouse.cpp" />
     <ClCompile Include="Engine\Platform\WindowsAPI\WinApp.cpp" />
     <ClCompile Include="Framework\BaseScene.cpp" />
+    <ClCompile Include="Framework\DebugScene.cpp" />
     <ClCompile Include="Framework\Component\Audio\AudioSourceComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
+    <ClCompile Include="Framework\Component\Camera\CameraShakeComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\TargetFollowComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp" />
-    <ClCompile Include="Framework\Component\Collider\ColliderComponent.cpp" /><ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp" />
+    <ClCompile Include="Framework\Component\Collider\ColliderComponent.cpp" />
+    <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
     <ClCompile Include="Framework\Component\Effect\ParticleEmitterComponent.cpp" />
     <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp" />
-
+    <ClCompile Include="Framework\Component\Effect\ScreenEffectComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ModelBatchRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
@@ -710,6 +724,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp" />
     <ClCompile Include="Framework\Component\Utility\LifetimeComponent.cpp" />
     <ClCompile Include="Framework\Component\Utility\SplineComponent.cpp" />
+    <ClCompile Include="Framework\Component\Utility\SplineNodeComponent.cpp" />
     <ClCompile Include="Framework\GameObject.cpp" />
     <ClCompile Include="Framework\IScene.cpp" />
     <ClCompile Include="Framework\SceneManager.cpp" />
@@ -722,14 +737,18 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.cpp" />
     <ClCompile Include="Renderer\Object\2D\Sprite\Sprite.cpp" />
     <ClCompile Include="Renderer\Object\2D\Text\Text.cpp" />
-    <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimationModel.cpp" />
+    <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.cpp" />
+    <ClCompile Include="Resource\Model\Animator.cpp" />
+    <ClCompile Include="Framework\Component\Logic\AnimatorComponent.cpp" />
+    <ClCompile Include="Framework\Component\Logic\BoneAttachmentComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.cpp" />
+    <ClCompile Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.cpp" />
     <ClCompile Include="Renderer\Object\3D\Primitive\Primitive3DObject.cpp" />
     <ClCompile Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.cpp" />
     <ClCompile Include="Renderer\Object\Batch\DebugPrimitiveRenderer.cpp" />
     <ClCompile Include="Renderer\Object\Batch\ModelBatch.cpp" />
     <ClCompile Include="Renderer\Object\Batch\PrimitiveBatch.cpp" />
     <ClCompile Include="Renderer\Object\Effect\Effect.cpp" />
-
     <ClCompile Include="Renderer\Object\Line\LineClass.cpp" />
     <ClCompile Include="Renderer\Object\Particle\ParticleObject.cpp" />
     <ClCompile Include="Renderer\Object\Skybox\Skybox.cpp" />
@@ -756,10 +775,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Resource\Texture\Texture.cpp" />
     <ClCompile Include="Resource\Texture\TextureManager.cpp" />
     <ClCompile Include="Resource\Texture\TextureUtility.cpp" />
-    <ClCompile Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.cpp" /></ItemGroup>
+    <ClCompile Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Engine\IrufemiEngine.h" />
+    <ClInclude Include="Engine\Profiler\TelemetrySender.h" />
+    <ClInclude Include="Engine\Profiler\GpuProfiler.h" />
     <ClInclude Include="Engine\Core\Math\Math.h" />
     <ClInclude Include="Engine\Core\Math\MathFunction.h" />
     <ClInclude Include="Engine\Core\Math\Matrix3x3.h" />
@@ -798,13 +820,15 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Core\Type\Voxel.h" />
     <ClInclude Include="Engine\Core\Utility\DXUtility.h" />
     <ClInclude Include="Engine\Core\Utility\Ease.h" />
+    <ClInclude Include="Engine\Core\Utility\PerlinNoise.h" />
     <ClInclude Include="Engine\Core\Utility\Log.h" />
+    <ClInclude Include="Engine\Core\Utility\FileSystem.h" />
     <ClInclude Include="Engine\Core\Utility\ErrorUtility.h" />
     <ClInclude Include="Engine\Core\Utility\ObjectPool.h" />
     <ClInclude Include="Engine\Core\Utility\StringUtility.h" />
     <ClInclude Include="Engine\Graphics\Camera\Camera.h" />
     <ClInclude Include="Engine\Graphics\Camera\CameraManager.h" />
-    <ClInclude Include="Engine\Graphics\Camera\DebugCamera.h" />
+    <ClInclude Include="Engine\Graphics\Camera\OrbitCameraController.h" />
     <ClInclude Include="Engine\Graphics\Compute\IComputeTask.h" />
     <ClInclude Include="Engine\Graphics\Data\AOEParams.h" />
     <ClInclude Include="Engine\Graphics\Data\AreaLight.h" />
@@ -852,7 +876,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\ShadowPass.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\TransientResourceManager.h" />
     <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\UIPass.h" />
+    <ClInclude Include="Engine\Graphics\Pipeline\RenderGraph\PostUIPass.h" />
     <ClInclude Include="Engine\Graphics\PostProcess\PostProcessManager.h" />
+    <ClInclude Include="Engine\Graphics\PostProcess\PostProcessRunner.h" />
     <ClInclude Include="Engine\Manager\CollisionManager.h" />
     <ClInclude Include="Engine\Manager\DebugUI.h" />
     <ClInclude Include="Engine\Manager\DrawManager.h" />
@@ -868,6 +894,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Platform\WindowsAPI\WinApp.h" />
     <ClInclude Include="EngineResources\FontAwesome\IconsFontAwesome6.h" />
     <ClInclude Include="Framework\BaseScene.h" />
+    <ClInclude Include="Framework\DebugScene.h" />
     <ClInclude Include="Framework\GameObject.h" />
     <ClInclude Include="Framework\IScene.h" />
     <ClInclude Include="Engine\Core\System\ILoadingScreen.h" />
@@ -881,9 +908,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\ComponentFactory.h" />
     <ClInclude Include="Framework\Component\TransformComponent.h" />
     <ClInclude Include="Framework\Component\Camera\CameraComponent.h" />
+    <ClInclude Include="Framework\Component\Camera\CameraShakeComponent.h" />
     <ClInclude Include="Framework\Component\Camera\TargetFollowComponent.h" />
     <ClInclude Include="Framework\Component\Utility\LifetimeComponent.h" />
     <ClInclude Include="Framework\Component\Utility\SplineComponent.h" />
+    <ClInclude Include="Framework\Component\Utility\SplineNodeComponent.h" />
     <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\ColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h" />
@@ -897,7 +926,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\SpriteRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h" />
     <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h" />
-
+    <ClInclude Include="Framework\Component\Effect\ScreenEffectComponent.h" />
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />
     <ClInclude Include="Renderer\Object\2D\Primitive\Primitive2DObject.h" />
@@ -906,11 +935,15 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\2D\SpriteBatch\SpriteBatch.h" />
     <ClInclude Include="Renderer\Object\2D\Sprite\Sprite.h" />
     <ClInclude Include="Renderer\Object\2D\Text\Text.h" />
-    <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimationModel.h" />
+    <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.h" />
+    <ClInclude Include="Resource\Model\Animator.h" />
+    <ClInclude Include="Framework\Component\Logic\AnimatorComponent.h" />
+    <ClInclude Include="Framework\Component\Logic\BoneAttachmentComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.h" />
+    <ClInclude Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.h" />
     <ClInclude Include="Renderer\Object\3D\Primitive\Primitive3DObject.h" />
     <ClInclude Include="Renderer\Object\3D\StaticModelObject\StaticModelObject.h" />
     <ClInclude Include="Renderer\Object\Effect\Effect.h" />
-
     <ClInclude Include="Renderer\Object\Line\LineClass.h" />
     <ClInclude Include="Renderer\Object\Line\Data\LineVertexData.h" />
     <ClInclude Include="Renderer\Object\Particle\ParticleObject.h" />
@@ -956,7 +989,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Resource\Model\Data\Node.h" />
     <ClInclude Include="Resource\Model\Data\NodeAnimation.h" />
     <ClInclude Include="Resource\Model\Data\ObjModel.h" />
-    <ClInclude Include="Resource\Model\Data\Skeleton.h" />
+    <ClInclude Include="Resource\Model\Data\SkeletonData.h" />
+    <ClInclude Include="Resource\Model\Data\SkeletonPose.h" />
     <ClInclude Include="Resource\Model\Data\SkinCluster.h" />
     <ClInclude Include="Resource\Model\Data\VertexInfluence.h" />
     <ClInclude Include="Resource\Model\Data\VertexWeightData.h" />
@@ -1002,6 +1036,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="..\externals\msdfgen\ext\import-svg.h" />
     <ClInclude Include="..\externals\msdfgen\ext\resolve-shape-geometry.h" />
     <ClInclude Include="..\externals\msdfgen\ext\save-png.h" />
-  <ClInclude Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.h" /></ItemGroup>
+    <ClInclude Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.h" />
+  </ItemGroup>
 </Project>
-

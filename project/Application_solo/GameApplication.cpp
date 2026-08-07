@@ -11,17 +11,22 @@
 #include "Framework/Component/ComponentFactory.h"
 #include "components/RailShooterPlayerComponent.h"
 #include "components/SplineFollowerComponent.h"
+#include "components/RailRelativeFollowerComponent.h"
 #include "components/RailShooterEnemyComponent.h"
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
 #include "components/PlayerTargetingComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
-#include "components/BossComponent.h"
+#include "components/Boss/BossComponent.h"
 #include "components/SceneTransitionButtonComponent.h"
 #include "components/EffectManagerComponent.h"
+#include "components/EnvironmentManagerComponent.h"
 #include "components/ReticleUIComponent.h"
 #include "components/LockonMarkerUIComponent.h"
+#include "components/DroneManagerComponent.h"
+#include "components/BossBulletManagerComponent.h"
+#include "components/GameLoopManagerComponent.h"
 
 // エンジン機能
 #include "Engine/Graphics/DirectX/ShaderManager.h"
@@ -34,12 +39,11 @@
 #include "scene/title/TitleScene.h"
 #include "scene/stageSelect/SelectScene.h"
 #include "scene/inGame/GameScene.h"
-#include "scene/Clear/ClearScene.h"
-#include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
 #include "scene/TL1/TL1Scene.h"
+
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-#include "scene/debug/DebugScene.h"
+#include "Framework/DebugScene.h"
 #endif
 
 #ifdef EditorMode
@@ -51,7 +55,7 @@ namespace {
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
     const std::wstring kTitle = L"Application_solo";
-    const Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
+    const Irufemi::Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         = "InGame";
@@ -64,10 +68,9 @@ namespace {
         sm.Register("Title", [] { return std::make_unique<TitleScene>(); });
         sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
         sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
-        sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
-        sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });
         sm.Register("Pause", [] { return std::make_unique<PauseScene>(); });
         sm.Register("TL1", [] { return std::make_unique<TL1Scene>(); });
+
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
@@ -99,7 +102,7 @@ void GameApplication::Run() {
         auto shaderManager = engine->GetDirectXCommon()->GetShaderManager();
         auto psoManager = engine->GetPSOManager();
         
-        auto vs3d = shaderManager->GetOrCompile(L"Object3D.VS.hlsl", options);
+        auto vs3d = shaderManager->GetOrCompile(L"Object3d.VS.hlsl", options);
         auto psEnergyCore = shaderManager->GetOrCompile(L"EnergyCore.PS.hlsl", options);
         psoManager->RegisterShader("EnergyCore", { { vs3d, psEnergyCore } });
 
@@ -119,9 +122,11 @@ void GameApplication::Run() {
     // 独自コンポーネントの登録
     ComponentFactory::Register("RailShooterPlayerComponent", "Game", []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("SplineFollowerComponent", "Game", []() { return std::make_shared<SplineFollowerComponent>(); });
+    ComponentFactory::Register("RailRelativeFollowerComponent", "Game", []() { return std::make_shared<RailRelativeFollowerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
+    ComponentFactory::Register("EnvironmentManagerComponent", "Game", []() { return std::make_shared<EnvironmentManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("PlayerTargetingComponent", "Game", []() { return std::make_shared<PlayerTargetingComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
@@ -130,6 +135,10 @@ void GameApplication::Run() {
     ComponentFactory::Register("EffectManagerComponent", "Game", []() { return std::make_shared<EffectManagerComponent>(); });
     ComponentFactory::Register("ReticleUIComponent", "UI", []() { return std::make_shared<ReticleUIComponent>(); });
     ComponentFactory::Register("LockonMarkerUIComponent", "UI", []() { return std::make_shared<LockonMarkerUIComponent>(); });
+    ComponentFactory::Register("DroneManagerComponent", "Game", []() { return std::make_shared<DroneManagerComponent>(); });
+    ComponentFactory::Register("BossBulletManagerComponent", "Game", []() { return std::make_shared<BossBulletManagerComponent>(); });
+
+    ComponentFactory::Register("GameLoopManagerComponent", "Game", []() { return std::make_shared<GameLoopManagerComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

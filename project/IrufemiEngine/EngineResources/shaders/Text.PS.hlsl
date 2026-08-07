@@ -7,10 +7,7 @@ SamplerState gSampler : register(s0);
 
 #include "Bindless.hlsli"
 
-struct PixelShaderOutput
-{
-    float32_t4 color : SV_TARGET0;
-};
+
 
 // 3つの値の中央値を求める関数 (MSDFの基本数式)
 float median(float r, float g, float b) {

@@ -6,6 +6,8 @@
 #include "Matrix4x4.h"
 #include "Quaternion.h"
 
+
+namespace Irufemi {
 //前方宣言
 struct Segment2D;
 struct Segment;
@@ -325,6 +327,13 @@ namespace Math {
      */
     Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix);
 
+    /**
+     * @brief 指定した前方方向と上方向からオイラー角（回転）を生成する（Unity互換）
+     * @param forward 向きたい方向のベクトル
+     * @param up 上方向のベクトル（デフォルトはY軸）
+     */
+    Vector3 LookRotation(Vector3 forward, Vector3 up = {0.0f, 1.0f, 0.0f});
+
     /** @} */
 #pragma endregion
 
@@ -387,6 +396,16 @@ namespace Math {
      */
     Vector3 ToEuler(const Quaternion& q);
 
+    /**
+     * @brief オイラー角からクォータニオンへ変換 (XYZ順)
+     */
+    Quaternion ToQuaternionFromEuler(Vector3 euler);
+
+    /**
+     * @brief 回転行列からクォータニオンへ変換
+     */
+    Quaternion ToQuaternionFromMatrix(const Matrix4x4& m);
+
     /** @} */
 #pragma endregion
 
@@ -399,6 +418,9 @@ namespace Math {
      * @brief 値を最小値と最大値の間にクランプする
      */
     template <typename T>
+    /**
+     * @brief Clamp を実行する。
+     */
     constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
         return (v < lo) ? lo : (hi < v) ? hi : v;
     }
@@ -412,3 +434,5 @@ namespace Math {
 
 }
 
+
+} // namespace Irufemi

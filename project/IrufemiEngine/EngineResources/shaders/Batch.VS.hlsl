@@ -2,8 +2,9 @@
 // RootParameter[4] (VS) に SRV テーブルをバインド(t0)
 // 出力は Object3d.hlsli の VertexShaderOutput に合わせる
 
-#include "./Object3d.hlsli"
-#include "./Lighting.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
+#include "Lighting.hlsli"
 #include "VertexData.hlsli"
 
 ConstantBuffer<LightCommonData> gLightCommonData : register(b1);
@@ -14,15 +15,12 @@ struct InstanceData
 	float32_t4x4 World;
 	float32_t4x4 WorldInverseTranspose;
 	float32_t4 color; // 未使用なら無視
+	float32_t4 customEffect;
 };
 StructuredBuffer<InstanceData> gBlocks : register(t0);
 
 // struct VertexShaderInput は VertexData.hlsli で定義
-struct Camera {
-	float32_t4x4 view;
-	float32_t4x4 projection;
-	float32_t3 worldPosition;
-};
+#include "Camera.hlsli"
 ConstantBuffer<Camera> gCamera : register(b2);
 
 VertexShaderOutput main(VertexInput input, uint32_t instanceId : SV_InstanceID)
@@ -49,7 +47,8 @@ VertexShaderOutput main(VertexInput input, uint32_t instanceId : SV_InstanceID)
 	// シャドウマッピング用の座標変換
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
 
-	output.color = input.color * inst.color; // 頂点カラーとインスタンスカラーの乗算
+	output.color = input.color * inst.color;
+	output.customEffect = inst.customEffect;
 
 	return output;
 }

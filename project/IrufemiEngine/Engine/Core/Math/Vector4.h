@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+
+namespace Irufemi {
 /**
  * @struct Vector4
  * @brief 4次元ベクトル
@@ -53,6 +55,9 @@ struct Vector4 final {
     /** @{ */
     bool operator==(const Vector4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }
     bool operator!=(const Vector4& v) const { return !(*this == v); }
+    /**
+     * @brief Equals を実行する。
+     */
     bool Equals(const Vector4& other, float epsilon = 1e-5f) const {
         return std::abs(x - other.x) <= epsilon && std::abs(y - other.y) <= epsilon && std::abs(z - other.z) <= epsilon && std::abs(w - other.w) <= epsilon;
     }
@@ -61,7 +66,13 @@ struct Vector4 final {
     /** @name 数学関数 */
     /** @{ */
     inline float LengthSquared() const { return x * x + y * y + z * z + w * w; }
+    /**
+     * @brief Length を実行する。
+     */
     inline float Length() const { return std::sqrt(LengthSquared()); }
+    /**
+     * @brief Normalize を実行する。
+     */
     inline void Normalize() {
         float lenSq = LengthSquared();
         if (lenSq > 0.0f) {
@@ -72,17 +83,27 @@ struct Vector4 final {
             w *= invLen;
         }
     }
+    /**
+     * @brief Normalized を取得する。
+     * @return 取得された Normalized
+     */
     inline Vector4 GetNormalized() const {
         Vector4 v = *this;
         v.Normalize();
         return v;
     }
+    /**
+     * @brief Dot を実行する。
+     */
     inline float Dot(const Vector4& rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w; }
     /** @} */
 
     /** @name データアクセサ */
     /** @{ */
     const float* data() const { return &x; }
+    /**
+     * @brief data を実行する。
+     */
     float* data() { return &x; }
     /** @} */
 };
@@ -101,3 +122,5 @@ Vector4 operator*(const Vector4& lhs, const Vector4& rhs);
 Vector4 operator/(const Vector4& lhs, const Vector4& rhs);
 
 /** @} */
+
+} // namespace Irufemi

@@ -1,4 +1,4 @@
-#include "StaticModelObject.h" // リネーム済み
+﻿#include "StaticModelObject.h" // リネーム済み
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include <filesystem>
 #include <algorithm>
@@ -19,12 +19,22 @@
 
 StaticModelObject::~StaticModelObject() {}
 
+void StaticModelObject::CalculateNodeTransforms(const Node& node, const Irufemi::Matrix4x4& parentMatrix) {
+    Irufemi::Matrix4x4 globalMatrix = node.localMatrix * parentMatrix;
+    nodeGlobalTransforms_[node.name] = globalMatrix;
+    
+    for (const auto& child : node.children) {
+        CalculateNodeTransforms(child, globalMatrix);
+    }
+}
+
 void StaticModelObject::Initialize(const std::string& filename) {
 
     IRUFEMI_ASSERT(engine_ && "StaticModelObject::Initialize: Engine is not set.");
     // 描画中のリソース破棄（Use-After-Free）を防ぐため、次フレームのUpdateで切り替えるフラグと変数を設定
     nextModelHandle_ = engine_->GetObjModelManager()->LoadModel(filename);
     isModelChanged_ = true;
+    isResourceInitialized_ = false;
 }
 
 void StaticModelObject::InitializeResources() {
@@ -32,6 +42,8 @@ void StaticModelObject::InitializeResources() {
     if (!m || !m->cpuModel) {
         return;
     }
+    
+    isResourceInitialized_ = true;
 
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         if (engine_) {
@@ -44,8 +56,8 @@ void StaticModelObject::InitializeResources() {
     for (size_t i = 0; i < m->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
         
-        // 外部の変換行列リソースを借用
-        res->SetExternalTransformCbIndex(&transformCbIndex_);
+        // 外部の変換行列リソースを借用（削除：各リソースに固有のTransformを持たせるため）
+        // res->SetExternalTransformCbIndex(&transformCbIndex_);
         
         // メッシュ固有の View を設定
         const auto& gpuMesh = m->gpuMeshes[i];
@@ -67,11 +79,12 @@ void StaticModelObject::InitializeResources() {
 
     // Skeleton と SkinCluster の初期化 (スキンがある場合)
     if (m && m->cpuModel && !m->cpuModel->skinClusterData.empty()) {
-        skeleton_ = AnimationManager::CreateSkeleton(m->cpuModel->rootNode);
-        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeleton_, *m->cpuModel);
+        skeletonData_ = AnimationManager::CreateSkeletonData(m->cpuModel->rootNode);
+        skeletonPose_ = AnimationManager::CreateSkeletonPose(&skeletonData_);
+        skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeletonData_, *m->cpuModel);
         
         // 静的モデルなのでバインドポーズのままスケルトンを1度更新しておく
-        AnimationManager::SkeletonUpdate(skeleton_);
+        AnimationManager::SkeletonUpdate(skeletonPose_);
     }
 
     // 初回Updateを呼んでおく
@@ -105,15 +118,16 @@ void StaticModelObject::Update() {
     if (!activeCam) return;
 
     // 非同期ロードが終わっていればメッシュを構築する (遅延初期化)
-    if (m->status.load() == ManagedModel::LoadingStatus::Loaded && meshResources_.empty()) {
+    if (m->status.load() == ManagedModel::LoadingStatus::Loaded && !isResourceInitialized_) {
         InitializeResources();
     }
 
     // まだリソースが準備できていない場合はスキップ
-    if (meshResources_.empty()) return;
+    if (!isResourceInitialized_) return;
 
     // オブジェクト全体のワールド行列を計算
-    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    Irufemi::Matrix4x4 objectWorld = transformationMatrix_.world;
 
     // rootNodeの行列を適用(モデルデータに階層情報があれば)
     if (m->cpuModel) {
@@ -121,15 +135,40 @@ void StaticModelObject::Update() {
             // スキニングモデルの場合、rootNodeの行列はSkeleton内で処理されるため
             // World行列には適用しない（二重適用を防ぐ）
         } else {
-            transformationMatrix_.world = m->cpuModel->rootNode.localMatrix * transformationMatrix_.world;
+            transformationMatrix_.world = m->cpuModel->rootNode.localMatrix * objectWorld;
         }
+        
+        // 階層全体のトランスフォームを計算
+        nodeGlobalTransforms_.clear();
+        CalculateNodeTransforms(m->cpuModel->rootNode, Irufemi::Math::MakeIdentity4x4());
     }
 
-    // 法線変換用の逆転置行列
-    Matrix4x4 worldForNormal = transformationMatrix_.world;
-    worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
-    worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-    transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+    // 各メッシュごとにノード階層を考慮したワールド行列を割り当てる
+    for (size_t i = 0; i < meshResources_.size(); ++i) {
+        auto& res = meshResources_[i];
+        Irufemi::Matrix4x4 meshWorld = objectWorld; // 基準はRootを含まないもの
+
+        if (m->cpuModel && m->cpuModel->skinClusterData.empty()) {
+            // 非スキニング時のみ、ノード階層を考慮する
+            std::string nodeName = m->cpuModel->meshes[i].nodeName;
+            if (nodeGlobalTransforms_.find(nodeName) != nodeGlobalTransforms_.end()) {
+                meshWorld = nodeGlobalTransforms_[nodeName] * objectWorld;
+            } else {
+                meshWorld = transformationMatrix_.world; // fallback
+            }
+        } else {
+            meshWorld = transformationMatrix_.world; // スキニング時は fallback
+        }
+
+        res->transformationMatrix_.world = meshWorld;
+
+        Irufemi::Matrix4x4 worldForNormal = meshWorld;
+        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+        res->transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
+
+        res->MarkAsDirty();
+    }
 
     // マテリアル情報をGPUへ転送
     UpdateMaterials();
@@ -165,7 +204,7 @@ void StaticModelObject::SyncBeforeDraw() {
     // --- SkinCluster のマルチバッファ同期 ---
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
     if (m && m->cpuModel && !m->cpuModel->skinClusterData.empty()) {
-        AnimationManager::SkinClusterUpdate(skinCluster_, skeleton_, frameIndex);
+        AnimationManager::SkinClusterUpdate(skinCluster_, skeletonPose_, frameIndex);
     }
 }
 
@@ -181,8 +220,8 @@ void StaticModelObject::Draw() {
     if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
@@ -193,18 +232,18 @@ void StaticModelObject::Draw() {
 
     // 視錐台カリング
     if (isCullingEnabled_ && m->cpuModel) {
-        const Sphere& modelSphere = m->cpuModel->boundingSphere;
+        const Irufemi::Sphere& modelSphere = m->cpuModel->boundingSphere;
 
         // ワールド空間の境界球を計算
-        Sphere worldSphere;
-        worldSphere.center = Math::Transform(modelSphere.center, transformationMatrix_.world);
+        Irufemi::Sphere worldSphere;
+        worldSphere.center = Irufemi::Math::Transform(modelSphere.center, transformationMatrix_.world);
 
         // スケールの最大値を適用して半径を変換
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
         worldSphere.radius = modelSphere.radius * maxScale * 1.1f; // 10% マージン
 
         // 判定
-        if (!Collision::IsCollision(activeCam->GetFrustum(), worldSphere)) {
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), worldSphere)) {
             return; // 描画スキップ
         }
     }
@@ -234,10 +273,10 @@ void StaticModelObject::DispatchCompute() {
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
-        Sphere boundingSphere;
+        Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
-        if (!Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return; // 視錐台カリングされている場合はComputeもスキップ
         }
     }

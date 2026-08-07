@@ -16,13 +16,12 @@ void ParticleEmitterComponent::OnRegisterProperties() {
 }
 
 void ParticleEmitterComponent::Initialize() {
-    transform_ = gameObject_->GetComponent<TransformComponent>();
     particleObj_->Initialize();
 }
 
 void ParticleEmitterComponent::Update() {
-    if (transform_) {
-        particleObj_->SetPosition(transform_->GetWorldPosition());
+    if (GetTransform()) {
+        particleObj_->SetPosition(GetTransform()->GetWorldPosition());
     }
 
 #ifdef _DEBUG

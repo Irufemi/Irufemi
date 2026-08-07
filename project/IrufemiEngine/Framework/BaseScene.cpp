@@ -4,7 +4,8 @@
 #include "Engine/Platform/Input/InputManager.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Graphics/Camera/DebugCamera.h"
+
+#include "Engine/Graphics/Camera/OrbitCameraController.h"
 #include "Engine/Graphics/Data/CameraForGPU.h"
 #include "Engine/Graphics/Data/PointLight.h"
 #include "Engine/Graphics/Data/SpotLight.h"
@@ -12,6 +13,7 @@
 #include "Engine/Graphics/Data/AreaLight.h"
 #include "GameObject.h"
 #include "Engine/Manager/CollisionManager.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 
 #include "SceneSerializer.h"
 #include "Component/TransformComponent.h"
@@ -28,7 +30,7 @@ BaseScene::BaseScene() = default;
 BaseScene::~BaseScene() = default;
 
 std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     auto it = nameIndex_.find(name);
     if (it != nameIndex_.end()) {
         auto& list = it->second;
@@ -50,7 +52,7 @@ std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::string& name) {
     std::vector<std::shared_ptr<GameObject>> result;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     auto it = nameIndex_.find(name);
     if (it != nameIndex_.end()) {
         auto& list = it->second;
@@ -71,18 +73,35 @@ std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::s
 }
 
 std::shared_ptr<GameObject> BaseScene::FindGameObjectByID(uint64_t instanceId) {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
-    for (const auto& obj : gameObjects_) {
-        if (obj->GetInstanceID() == instanceId) {
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
+    
+    // O(1)検索
+    auto it = idIndex_.find(instanceId);
+    if (it != idIndex_.end()) {
+        if (auto obj = it->second.lock()) {
+            if (!obj->IsDestroyed()) {
+                return obj;
+            } else {
+                idIndex_.erase(it);
+            }
+        } else {
+            idIndex_.erase(it);
+        }
+    }
+
+    // 遅延キュー内の検索（フレーム中に生成された直後の対応）
+    for (const auto& obj : pendingAdds_) {
+        if (obj && obj->GetInstanceID() == instanceId && !obj->IsDestroyed()) {
             return obj;
         }
     }
+    
     return nullptr;
 }
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const std::string& tag) {
     std::vector<std::shared_ptr<GameObject>> result;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     for (auto& obj : gameObjects_) {
         if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
             result.push_back(obj);
@@ -97,7 +116,7 @@ std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const
 }
 
 std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     
     auto NameExists = [&](const std::string& name) {
         auto it = nameIndex_.find(name);
@@ -139,7 +158,7 @@ std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
 
 void BaseScene::OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName) {
     if (!obj) return;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     
     // 古い名前のリストから削除
     if (!oldName.empty()) {
@@ -169,8 +188,14 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
     mainCamera->UpdateMatrix();
     engine_->GetCameraManager()->AddCamera("Main", mainCamera);
 
-    debugCamera_ = std::make_unique<DebugCamera>();
-    debugCamera_->Initialize(engine_->GetInputManager(), engine_->GetClientWidth(), engine_->GetClientHeight());
+    // --- デバッグカメラの初期化とマネージャーへの登録 ---
+    debugCamera_ = std::make_shared<Camera>();
+    debugCamera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    engine_->GetCameraManager()->AddCamera("Debug", debugCamera_);
+
+    debugCameraController_ = std::make_unique<OrbitCameraController>();
+    // 初期状態の同期
+    debugCameraController_->SyncTargetFromCamera(debugCamera_.get(), 50.0f);
 
     // --- デフォルトライティングの初期化 ---
     directionalLight_ = std::make_unique<DirectionalLight>();
@@ -184,18 +209,11 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
 void BaseScene::Update() {
     // デバッグカメラのトグル機能などをここに入れることも可能
     // 今回は各シーンが個別に実装しているケースを考慮し、Updateでのカメラ行列上書き処理を共通化
+    // デバッグカメラの更新と切り替え処理
     if (isDebugCameraMode_) {
-        debugCamera_->Update();
-        Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-        if (activeCam) {
-            const Camera& dbgCam = debugCamera_->GetCamera();
-            activeCam->SetViewMatrix(dbgCam.GetViewMatrix());
-            activeCam->SetTranslate(dbgCam.GetTranslate());
-            activeCam->SetPerspectiveFovMatrix(dbgCam.GetPerspectiveFovMatrix());
-        }
-    } else {
-        engine_->GetCameraManager()->Update();
+        debugCameraController_->UpdateCameraInput(debugCamera_.get(), engine_->GetInputManager());
     }
+    engine_->GetCameraManager()->Update();
 
     bool isPlayMode = true;
 #ifdef EditorMode
@@ -206,12 +224,13 @@ void BaseScene::Update() {
 
     // --- 遅延キューの処理 ---
     {
-        std::lock_guard<std::mutex> lock(sceneMutex_);
+        std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         for (auto& obj : pendingAdds_) {
             gameObjects_.push_back(obj);
             if (!obj->GetName().empty()) {
                 nameIndex_[obj->GetName()].push_back(obj);
             }
+            idIndex_[obj->GetInstanceID()] = obj;
         }
         pendingAdds_.clear();
 
@@ -219,8 +238,6 @@ void BaseScene::Update() {
             auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
             if (it != gameObjects_.end()) {
                 gameObjects_.erase(it);
-                // nameIndex_ のクリーンアップは Find 時に遅延評価されるため必須ではないが、
-                // 明示的に Remove が呼ばれた場合は削除しておく
                 auto nameIt = nameIndex_.find(obj->GetName());
                 if (nameIt != nameIndex_.end()) {
                     auto& list = nameIt->second;
@@ -228,6 +245,7 @@ void BaseScene::Update() {
                         return wp.lock() == obj;
                     }), list.end());
                 }
+                idIndex_.erase(obj->GetInstanceID());
             }
         }
         pendingRemoves_.clear();
@@ -239,9 +257,6 @@ void BaseScene::Update() {
             obj->Start();
         }
     }
-
-    // --- Transform の DOD一括更新 (GameObject本体の更新前に行う) ---
-    TransformComponent::UpdateAll();
 
     // --- GameObject の更新 (マルチスレッド化) ---
     std::vector<std::future<void>> updateFutures;
@@ -258,6 +273,10 @@ void BaseScene::Update() {
         future.wait();
     }
     
+    // --- Irufemi::Transform の DOD一括更新 ---
+    // (GameObjectのUpdateによって移動した最新の位置を描画・当たり判定に反映させるため、必ずUpdateの後に呼ぶ)
+    TransformComponent::UpdateAll();
+
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
     if (isPlayMode && engine_) {
         engine_->GetCollisionManager()->CheckAllCollisions();
@@ -273,6 +292,10 @@ void BaseScene::Update() {
 }
 
 void BaseScene::Draw() {
+    if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+        engine_->GetDebugPrimitiveRenderer()->ClearInstances();
+    }
+
     // --- GameObject の描画 (マルチスレッド化) ---
     std::vector<std::future<void>> drawFutures;
     for (size_t i = 0; i < gameObjects_.size(); ++i) {
@@ -306,11 +329,16 @@ void BaseScene::Draw() {
 #elif defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     engine_->GetCollisionManager()->DrawDebug();
 #endif
+
+    if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+        engine_->GetDebugPrimitiveRenderer()->Update();
+        engine_->GetDebugPrimitiveRenderer()->Draw();
+    }
 }
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
-        std::lock_guard<std::mutex> lock(sceneMutex_);
+        std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         obj->SetScene(this);
         pendingAdds_.push_back(obj);
     }
@@ -320,7 +348,7 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
     // Insert は直接 gameObjects_ を操作するため、今回はそのまま mutex で保護し直接追加（または仕様に合わせて変更）。
     // 基本的に実行時の並行 Insert は想定しないが、安全のためロック。
     if (!obj) return;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     obj->SetScene(this);
     if (index >= gameObjects_.size()) {
         gameObjects_.push_back(obj);
@@ -330,20 +358,22 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
     if (!obj->GetName().empty()) {
         nameIndex_[obj->GetName()].push_back(obj);
     }
+    idIndex_[obj->GetInstanceID()] = obj;
 }
 
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
     if (!obj) return;
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     pendingRemoves_.push_back(obj);
 }
 
 void BaseScene::ClearGameObjects() {
-    std::lock_guard<std::mutex> lock(sceneMutex_);
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     gameObjects_.clear();
     pendingAdds_.clear();
     pendingRemoves_.clear();
     nameIndex_.clear();
+    idIndex_.clear();
 }
 
 size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
@@ -384,25 +414,48 @@ void BaseScene::SubmitFrameData() {
 void BaseScene::DrawDebugTab() {
 #ifdef USE_IMGUI
     if (ImGui::BeginTabItem("Camera & Lights")) {
-        ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_);
-        if (isDebugCameraMode_ && debugCamera_) {
-            Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-            if (activeCam) {
-                if (ImGui::Button("Top-Down")) debugCamera_->SetPreset(DebugCamera::Preset::TopDown, *activeCam);
-                ImGui::SameLine();
-                if (ImGui::Button("Diagonal")) debugCamera_->SetPreset(DebugCamera::Preset::Diagonal, *activeCam);
-                ImGui::SameLine();
-                if (ImGui::Button("Front")) debugCamera_->SetPreset(DebugCamera::Preset::Front, *activeCam);
-                ImGui::SameLine();
-                if (ImGui::Button("Snap to Current")) debugCamera_->SetPreset(DebugCamera::Preset::Current, *activeCam);
+        bool prevMode = isDebugCameraMode_;
+        if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
+            if (isDebugCameraMode_ && !prevMode) {
+                // デバッグモードON時: 現在のアクティブカメラの名前を記憶し、状態をコピーする
+                previousActiveCameraName_ = engine_->GetCameraManager()->GetActiveCameraName();
+                Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+                if (activeCam && activeCam != debugCamera_.get()) {
+                    debugCamera_->SetTranslate(activeCam->GetTranslate());
+                    debugCamera_->SetRotate(activeCam->GetRotate());
+                    debugCamera_->SetViewMatrix(activeCam->GetViewMatrix());
+                    debugCamera_->SetPerspectiveFovMatrix(activeCam->GetPerspectiveFovMatrix());
+                    debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
+                }
+                engine_->GetCameraManager()->SetActiveCamera("Debug");
+            } else if (!isDebugCameraMode_ && prevMode) {
+                // デバッグモードOFF時: 記憶しておいたカメラに戻す
+                if (previousActiveCameraName_.empty() || previousActiveCameraName_ == "Debug") {
+                    previousActiveCameraName_ = "Main";
+                }
+                engine_->GetCameraManager()->SetActiveCamera(previousActiveCameraName_);
+            }
+        }
+        if (isDebugCameraMode_ && debugCameraController_ && debugCamera_) {
+            if (ImGui::Button("Top-Down")) debugCameraController_->SetPreset(OrbitCameraController::Preset::TopDown, debugCamera_.get());
+            ImGui::SameLine();
+            if (ImGui::Button("Diagonal")) debugCameraController_->SetPreset(OrbitCameraController::Preset::Diagonal, debugCamera_.get());
+            ImGui::SameLine();
+            if (ImGui::Button("Front")) debugCameraController_->SetPreset(OrbitCameraController::Preset::Front, debugCamera_.get());
+            ImGui::SameLine();
+            if (ImGui::Button("Sync to Main")) {
+                Camera* mainCam = engine_->GetCameraManager()->GetCamera("Main");
+                if (mainCam) {
+                    debugCamera_->SetTranslate(mainCam->GetTranslate());
+                    debugCamera_->SetRotate(mainCam->GetRotate());
+                    debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
+                }
             }
             ImGui::Separator();
-            ImGui::Text("Debug Camera Controls");
-            debugCamera_->GetCamera().DrawDebugContents();
-            float dist = debugCamera_->GetDistance();
-            if (ImGui::DragFloat("Orbit Distance", &dist, 0.1f, 1.0f, 1000.0f)) {
-                debugCamera_->SetDistance(dist);
-            }
+            ImGui::Text("Debug Camera Controls (Orbit/Pan/Zoom)");
+            debugCamera_->DrawDebugContents();
+            // OrbitCameraController は内部状態としての Distance を外部に公開していないため、
+            // ImGui上から無理やりDistanceをいじるのではなく、マウスのホイール操作で調整させる形にする。
         } else {
             Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
             if (activeCam) {
@@ -420,11 +473,12 @@ bool BaseScene::DownVK(uint8_t vk) const { return engine_->GetInputManager()->Is
 bool BaseScene::PressedVK(uint8_t vk) const { return engine_->GetInputManager()->IsKeyPressed(vk); }
 bool BaseScene::ReleasedVK(uint8_t vk) const { return engine_->GetInputManager()->IsKeyReleased(vk); }
 
-std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& prefabPath, const Vector3& position) {
+std::shared_ptr<GameObject> BaseScene::InstantiatePrefab(const std::string& prefabPath, const Irufemi::Vector3& position) {
     auto obj = SceneSerializer::LoadPrefab(prefabPath);
     if (obj) {
-        // プレハブから動的生成されたオブジェクトはシーンファイルに保存しない
-        obj->SetIsSerializable(false);
+        // プレハブリンク機能により、プレハブ由来でもシリアライズ可能とする
+        obj->SetIsSerializable(true);
+        obj->SetSourcePrefabPath(prefabPath);
 
         if (auto transform = obj->GetComponent<TransformComponent>()) {
             transform->SetPosition(position);

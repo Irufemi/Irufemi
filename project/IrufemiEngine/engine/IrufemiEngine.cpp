@@ -15,10 +15,13 @@
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Core/Utility/Log.h"
+#include "Core/Utility/FileSystem.h"
 #include "../Framework/SceneManager.h"
 #include "../Framework/SceneTransition.h"
 #include "Core/System/DirectoryWatcher.h"
 #include "Graphics/Font/FontManager.h"
+#include "Profiler/TelemetrySender.h"
+#include "Profiler/GpuProfiler.h"
 
 IrufemiEngine::IrufemiEngine() = default;
 
@@ -47,7 +50,7 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
 #include "Renderer/Object/2D/Text/Text.h"
-#include "Renderer/Object/3D/AnimationModel/AnimationModel.h"
+
 #include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/System/Core/Object3DResource.h"
@@ -56,6 +59,10 @@ IrufemiEngine::IrufemiEngine() = default;
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
+
+namespace {
+    static float s_gpuWaitTimeMs = 0.0f;
+}
 #include "Renderer/Object/Batch/PrimitiveBatch.h"
 #include "Renderer/System/Data/RenderData.h"
 #include "Renderer/Object/Skybox/Skybox.h"
@@ -70,6 +77,8 @@ IrufemiEngine::IrufemiEngine() = default;
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxcompiler.lib")
+#pragma comment(lib, "winmm.lib")
+#include <mmsystem.h>
 
   // デストラクタ
 IrufemiEngine::~IrufemiEngine() { Finalize(); }
@@ -78,6 +87,12 @@ IrufemiEngine::~IrufemiEngine() { Finalize(); }
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight) {
+  // パス解決機能の初期化 (一番最初に呼ぶ)
+  FileSystem::Initialize();
+
+  // OSタイマー精度を1ミリ秒に引き上げる（AAA基準のペーシング用）
+  timeBeginPeriod(1);
+
   /*CrashHandler*/
   SetUnhandledExceptionFilter(WinApp::ExportDump);
 
@@ -118,7 +133,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   screenCaptureManager_ = std::make_unique<ScreenCaptureManager>();
 
   // 乱数エンジンのシードを設定
-  Random::SeedEngine();
+  Irufemi::Random::SeedEngine();
 
   // AudioManagerの生成と初期化(Media Foundation含む)
   audioManager_ = std::make_unique<AudioManager>();
@@ -264,6 +279,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   gpuParticleManager_ = std::make_unique<GPUParticleManager>();
   gpuParticleManager_->Initialize();
   ParticleObject::SetGPUParticleManager(gpuParticleManager_.get());
+  ParticleObject::SetModelManager(modelManager_.get());
 
   // 描画
   drawManager_ = std::make_unique<DrawManager>();
@@ -328,6 +344,30 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 
+  effectMaskTexture_ = std::make_unique<RenderTexture>();
+  effectMaskTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R8G8B8A8_UNORM, // マスク用はSRGB不要
+      {0.0f, 0.0f, 0.0f, 0.0f}); // 黒（マスクなし）でクリア
+
+  normalTexture_ = std::make_unique<RenderTexture>();
+  normalTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R16G16B16A16_FLOAT, // 法線用
+      {0.0f, 0.0f, 1.0f, 1.0f}); // 初期値 (0,0,1)
+
+  materialTexture_ = std::make_unique<RenderTexture>();
+  materialTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R8G8B8A8_UNORM, // マテリアル用
+      {0.0f, 0.0f, 0.0f, 0.0f}); // 初期値
+
+  velocityTexture_ = std::make_unique<RenderTexture>();
+  velocityTexture_->Initialize(
+      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      DXGI_FORMAT_R16G16_FLOAT, // モーションベクトル用
+      {0.0f, 0.0f, 0.0f, 0.0f}); // 初期値
+
   // --- PostProcessManager の初期化 ---
   postProcessManager_ = std::make_unique<PostProcessManager>();
   postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -356,7 +396,16 @@ void IrufemiEngine::Initialize(const std::wstring &title,
       dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
 
   postProcessManager_->SetDepthSrvIndex(depthSrvIndex_);
-
+  
+  if (normalTexture_) {
+      postProcessManager_->SetNormalSrvIndex(normalTexture_->GetSrvIndex());
+  }
+  if (materialTexture_) {
+      postProcessManager_->SetMaterialSrvIndex(materialTexture_->GetSrvIndex());
+  }
+  if (velocityTexture_) {
+      postProcessManager_->SetVelocitySrvIndex(velocityTexture_->GetSrvIndex());
+  }
   // --- SceneTransition の初期化 ---
   sceneTransition_ = std::make_unique<SceneTransition>();
   sceneTransition_->Initialize(postProcessManager_.get());
@@ -388,9 +437,11 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   auto reloadCallback = [this]() {
       shouldReloadShaders_ = true;
   };
-  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>("resources/shaders", reloadCallback));
-  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>("../IrufemiEngine/EngineResources/shaders", reloadCallback));
+  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>(FileSystem::GetResourcePath("shaders"), reloadCallback));
+  shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>(FileSystem::GetEngineRoot() + "/EngineResources/shaders", reloadCallback));
 #endif
+
+  TelemetrySender::GetInstance().Initialize();
 }
 
   // クリアカラーをfloat配列で持つ初期化
@@ -413,17 +464,22 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   Initialize(title, clientWidth, clientHeight);
 }
 
-// 追加: Vector4 版 Initialize
+// 追加: Irufemi::Vector4 版 Initialize
 void IrufemiEngine::Initialize(const std::wstring &title,
                                const int32_t &clientWidth,
                                const int32_t &clientHeight,
-                               const Vector4 &clearColor) {
+                               const Irufemi::Vector4 &clearColor) {
   clearColor_ = {clearColor.x, clearColor.y, clearColor.z, clearColor.w};
   Initialize(title, clientWidth, clientHeight);
 }
 
 void IrufemiEngine::Finalize() {
   if (isFinalized_) return;
+
+  // アプリケーション終了時、シーン破棄前にGPU処理の完了を待つ
+  if (dxCommon_) {
+    dxCommon_->WaitForGPU();
+  }
 
   // 0. シーンと画面遷移・ローディング（これらがリソースの shared_ptr を保持しているため最優先）
   if (sceneManager_) {
@@ -438,11 +494,6 @@ void IrufemiEngine::Finalize() {
   }
   if (cameraManager_) {
     cameraManager_.reset();
-  }
-
-  // アプリケーション終了時、シーン破棄前にGPU処理の完了を待つ
-  if (dxCommon_) {
-    dxCommon_->WaitForGPU();
   }
 
   // 1. エディタとUI (描画マネージャ等に依存)
@@ -473,6 +524,18 @@ void IrufemiEngine::Finalize() {
   }
   if (mainRenderTexture_) {
     mainRenderTexture_.reset();
+  }
+  if (effectMaskTexture_) {
+    effectMaskTexture_.reset();
+  }
+  if (normalTexture_) {
+    normalTexture_.reset();
+  }
+  if (materialTexture_) {
+    materialTexture_.reset();
+  }
+  if (velocityTexture_) {
+    velocityTexture_.reset();
   }
 
   // 3. アニメーション・モデル・テクスチャ (リソースの実体を保持)
@@ -608,6 +671,11 @@ void IrufemiEngine::Finalize() {
     winApp_.reset();
   }
 
+  TelemetrySender::GetInstance().Finalize();
+  
+  // OSタイマー精度の引き上げを解除
+  timeEndPeriod(1);
+
   isFinalized_ = true;
 }
 
@@ -638,11 +706,9 @@ void IrufemiEngine::Execute() {
 
 // ImGui
 #ifdef USE_IMGUI
-    ui_->FPSDebug();
     ui_->BeginEngineDebugWindow();
     ui_->SceneSelectorTab(sceneManager_.get());
     ui_->PostProcessTab(this);
-    ui_->ThreadPoolTab(threadPool_.get());
     ui_->ScreenCaptureTab(screenCaptureManager_.get());
   // デバッグ機能の追加
   if (gpuParticleManager_) {
@@ -656,6 +722,7 @@ void IrufemiEngine::Execute() {
 
     // 更新
     audioManager_->Update();
+    postProcessManager_->ClearCustomEffectParams();
     sceneManager_->Update();
     // ローディング画面のアニメーション進行（Update相当）は描画時にまとめて行います
     totalTime_ += deltaTime_;
@@ -752,22 +819,41 @@ void IrufemiEngine::ProcessFrame() {
   }
 
   // ステートのリセット（前フレームの描画ステートを引き継がないようにする）
-  currentBlend_ = BlendMode::kBlendModeNormal;
+  currentBlend_ = Irufemi::BlendMode::kBlendModeNormal;
   currentDepth_ = PSOManager::DepthWrite::Enable;
   currentCull_ = PSOManager::CullMode::Back;
 
   // 描画処理に入る前にImGui_::Renderを積む
   ui_->QueueDrawCommands();
 
-  // 1. バックバッファをクリア (念のため)
+  // 1. バックバッファをクリア (GPU同期待ちが発生する可能性があるため、待機時間を計測)
+  auto beforePreDraw = std::chrono::steady_clock::now();
   drawManager_->PreDraw(clearColor_, 1.0f, 0);
+  auto afterPreDraw = std::chrono::steady_clock::now();
+  
+  s_gpuWaitTimeMs = std::chrono::duration<float>(afterPreDraw - beforePreDraw).count() * 1000.0f;
 
   // (Compute Shaderの一括実行は、RenderGraph内のComputePassに移行しました)
 
   // 2. メインの描画先を RenderTexture に切り替え、指定のクリアカラーでクリア
-  drawManager_->BeginRenderTexture(
+  // G-Buffer拡張に伴い、5つのレンダーターゲットをバインド
+  std::vector<RenderTexture*> renderTargets = {
       mainRenderTexture_.get(),
-      Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
+      effectMaskTexture_.get(),
+      normalTexture_.get(),
+      materialTexture_.get(),
+      velocityTexture_.get()
+  };
+  
+  std::vector<Irufemi::Vector4> clearColors = {
+      Irufemi::Vector4{clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]}, // Color
+      Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Mask
+      Irufemi::Vector4{0.0f, 0.0f, 1.0f, 1.0f}, // Normal
+      Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f}, // Material
+      Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f}  // Velocity
+  };
+  
+  drawManager_->BeginRenderTextures(renderTargets, clearColors);
 }
 
   // フレーム終了処理
@@ -786,6 +872,15 @@ void IrufemiEngine::EndFrame() {
 
   // 描画後処理
   ui_->QueuePostDrawCommands();
+
+  // CPU側の純粋な処理時間（GPU同期待ちを引いた純粋なロジック・コマンド構築時間）を計測
+  auto now = std::chrono::steady_clock::now();
+  float totalElapsedMs = std::chrono::duration<float>(now - lastFrameTime_).count() * 1000.0f;
+  
+  // CPU処理時間 = フレーム経過時間 - GPUフェンス待ち時間 (ただしマイナスにならないようclamp)
+  float pureCpuTimeMs = (std::max)(0.0f, totalElapsedMs - s_gpuWaitTimeMs);
+  TelemetrySender::GetInstance().SetMetric("System/CPU_Time_ms", pureCpuTimeMs);
+
   drawManager_->PostDraw();
 
   if (screenCaptureManager_) {
@@ -800,6 +895,32 @@ void IrufemiEngine::EndFrame() {
 
   // --- 追加: 中間リソースの遅延解放を実行 ---
   dxCommon_->ClearPendingResources();
+
+  // Telemetryデータの送信
+  if (threadPool_) {
+      TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Active", (int)threadPool_->GetActiveThreadCount());
+      TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Queued", (int)threadPool_->GetQueuedTaskCount());
+      // TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Completed", (int)threadPool_->PopCompletedTaskCount()); // PopCompletedTaskCount は他で使われる可能性があるのでここでは取得のみに留めるか検討ですが、一旦は呼び出さないようにします。
+  }
+
+  if (gpuParticleManager_) {
+      TelemetrySender::GetInstance().SetMetric("GPU_Particle/Active_Systems", gpuParticleManager_->GetActiveSystemCount());
+      TelemetrySender::GetInstance().SetMetric("GPU_Particle/Total_Emitters", gpuParticleManager_->GetTotalEmittersUsed());
+  }
+
+  // 指数移動平均(EMA)を用いてFPSの変動を平滑化し、ツール上での視覚的なブレを防ぐ
+  static float emaFps = 60.0f;
+  float currentFps = (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f;
+  // 初回や異常値からの復帰時はそのまま代入、それ以外は10%の重みでなだらかに変化させる
+  emaFps = (emaFps == 0.0f || currentFps < 1.0f) ? currentFps : (emaFps * 0.9f + currentFps * 0.1f);
+
+  TelemetrySender::GetInstance().SetMetric("System/FPS", emaFps);
+  TelemetrySender::GetInstance().SetMetric("System/FrameTime_ms", deltaTime_ * 1000.0f);
+
+  if (dxCommon_) {
+      TelemetrySender::GetInstance().SetMetric("System/GPU_Time_ms", GpuProfiler::GetInstance().GetLastFrameGpuTimeMs());
+  }
+  TelemetrySender::GetInstance().OnFrameEnd();
 }
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {
@@ -813,6 +934,27 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   mainRenderTexture_->Initialize(
       dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
+
+  if (effectMaskTexture_) {
+      effectMaskTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
+          {0.0f, 0.0f, 0.0f, 0.0f});
+  }
+  if (normalTexture_) {
+      normalTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R16G16B16A16_FLOAT,
+          {0.0f, 0.0f, 1.0f, 1.0f});
+  }
+  if (materialTexture_) {
+      materialTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
+          {0.0f, 0.0f, 0.0f, 0.0f});
+  }
+  if (velocityTexture_) {
+      velocityTexture_->Initialize(
+          dxCommon_.get(), width, height, DXGI_FORMAT_R16G16_FLOAT,
+          {0.0f, 0.0f, 0.0f, 0.0f});
+  }
 
   // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
   if (depthSrvIndex_ != 0xFFFFFFFF) {
@@ -830,6 +972,16 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
     postProcessManager_->SetDepthSrvIndex(depthSrvIndex_);
   }
   
+  if (normalTexture_) {
+      postProcessManager_->SetNormalSrvIndex(normalTexture_->GetSrvIndex());
+  }
+  if (materialTexture_) {
+      postProcessManager_->SetMaterialSrvIndex(materialTexture_->GetSrvIndex());
+  }
+  if (velocityTexture_) {
+      postProcessManager_->SetVelocitySrvIndex(velocityTexture_->GetSrvIndex());
+  }
+  
   // 4. カメラの解像度更新 (3D空間の歪み防止)
   if (cameraManager_) {
       cameraManager_->OnResize(width, height);
@@ -841,10 +993,10 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
       
       // 再構築された永続リソースの初期ステートをRenderGraphへ再登録する
       if (mainRenderTexture_ && mainRenderTexture_->GetResource()) {
-          drawManager_->RegisterResourceState(mainRenderTexture_->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          drawManager_->SetInitialResourceState(mainRenderTexture_->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
       }
       if (dxCommon_ && dxCommon_->GetDepthStencilResource()) {
-          drawManager_->RegisterResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+          drawManager_->SetInitialResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
       }
   }
 }
@@ -878,17 +1030,17 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
   // Shadowパスの場合は自動的にシャドウ用シェーダに切り替える(元のコードの仕様維持)
   if (drawManager_->IsShadowPass()) {
       if (shaderName == "Object3D") {
-          auto* pso = GetPSOManager()->GetPSO("Shadow", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          auto* pso = GetPSOManager()->GetPSO("Shadow", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
       else if (shaderName == "Skinning") {
-          auto* pso = GetPSOManager()->GetPSO("ShadowSkinning", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          auto* pso = GetPSOManager()->GetPSO("ShadowSkinning", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
       else if (shaderName == "Batch") {
-          auto* pso = GetPSOManager()->GetPSO("ShadowBatch", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
+          auto* pso = GetPSOManager()->GetPSO("ShadowBatch", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Enable, currentCull_);
           if (pso) drawManager_->BindPSO(pso);
           return;
       }
@@ -898,7 +1050,7 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
   
   // Skybox用の特殊対応 (元のコードでは CullMode::Front 決め打ちでブレンドと深度は不要だった)
   if (shaderName == "Skybox") {
-      auto* pso = GetPSOManager()->GetPSO("Skybox", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
+      auto* pso = GetPSOManager()->GetPSO("Skybox", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
       if (pso) drawManager_->BindPSO(pso);
       return;
   }

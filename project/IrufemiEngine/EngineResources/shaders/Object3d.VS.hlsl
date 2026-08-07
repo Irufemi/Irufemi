@@ -1,7 +1,8 @@
 
 /*テクスチャを貼ろう*/
 
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "Lighting.hlsli"
 #include "VertexData.hlsli"
 
@@ -64,7 +65,7 @@ VertexShaderOutput main(VertexInput input)
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
 
 	output.color = input.color; // 頂点カラーを渡す
+	output.customEffect = float32_t4(0, 0, 0, 0);
 
 	return output;
 }
-

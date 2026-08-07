@@ -1,20 +1,16 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
 // --- 定数バッファ ---
-struct ToneMappingParams {
-    float32_t exposure; // 露出補正
-    float32_t3 padding;
-};
+
 
 ConstantBuffer<ToneMappingParams> gParams : register(b0);
 
 SamplerState gSampler : register(s0);
 
-struct PixelShaderOutput {
-    float32_t4 color : SV_Target0;
-};
+
 
 // ACES Filmic Tone Mapping 近似式
 // Narkowicz 氏のフィッティングモデルを使用

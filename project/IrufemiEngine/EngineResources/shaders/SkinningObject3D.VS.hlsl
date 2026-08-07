@@ -71,11 +71,7 @@ Skinned Skinning(VertexShaderInput input)
 	return skinned;
 }
 
-struct Camera {
-	float32_t4x4 view;
-	float32_t4x4 projection;
-	float32_t3 worldPosition;
-};
+#include "Camera.hlsli"
 ConstantBuffer<Camera> gCamera : register(b2);
 
 VertexShaderOutput main(VertexShaderInput input)
@@ -96,6 +92,7 @@ VertexShaderOutput main(VertexShaderInput input)
 	output.shadowPos = mul(worldPos, gLightCommonData.viewProjection);
 	
 	output.color = input.color;
+	output.customEffect = float32_t4(0, 0, 0, 0);
 	
 	return output;
 }

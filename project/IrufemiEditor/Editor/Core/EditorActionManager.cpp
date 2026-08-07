@@ -67,7 +67,7 @@ void EditorActionManager::ClearHistory() {
     redoStack_.clear();
 }
 
-void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Vector3& position) {
+void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Irufemi::Vector3& position) {
     if (!editorManager_) return;
     auto* engine = editorManager_->GetEngine();
     if (!engine || !engine->GetSceneManager()) return;
@@ -84,14 +84,14 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
 
     if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".bmp") {
         newObj = std::make_shared<GameObject>("Sprite_" + stemString);
-        auto transform = newObj->AddComponent<TransformComponent>();
+        auto transform = newObj->GetTransform();
         transform->SetPosition(position);
         auto spriteRenderer = newObj->AddComponent<SpriteRendererComponent>();
         spriteRenderer->SetTexture(assetPath); 
         newObj->Initialize();
     } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
         newObj = std::make_shared<GameObject>("Model_" + stemString);
-        auto transform = newObj->AddComponent<TransformComponent>();
+        auto transform = newObj->GetTransform();
         transform->SetPosition(position);
         auto meshRenderer = newObj->AddComponent<MeshRendererComponent>();
         
@@ -133,25 +133,25 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
 
     if (typeName == "Empty") {
         obj = std::make_shared<GameObject>("Empty Object");
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         obj->Initialize();
     } else if (typeName == "Cube" || typeName == "Sphere" || typeName == "Cylinder" || typeName == "Plane") {
         obj = std::make_shared<GameObject>(typeName);
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-        if (typeName == "Cube") renderer->SetShape(PrimitiveType::Cube);
-        else if (typeName == "Sphere") renderer->SetShape(PrimitiveType::Sphere);
-        else if (typeName == "Cylinder") renderer->SetShape(PrimitiveType::Cylinder);
-        else if (typeName == "Plane") renderer->SetShape(PrimitiveType::Plane);
+        if (typeName == "Cube") renderer->SetShape(Irufemi::PrimitiveType::Cube);
+        else if (typeName == "Sphere") renderer->SetShape(Irufemi::PrimitiveType::Sphere);
+        else if (typeName == "Cylinder") renderer->SetShape(Irufemi::PrimitiveType::Cylinder);
+        else if (typeName == "Plane") renderer->SetShape(Irufemi::PrimitiveType::Plane);
         obj->Initialize();
     } else if (typeName == "Model") {
         obj = std::make_shared<GameObject>("Model");
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         obj->AddComponent<MeshRendererComponent>();
         obj->Initialize();
     } else if (typeName == "Sprite") {
         obj = std::make_shared<GameObject>("Sprite");
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         auto spriteRenderer = obj->AddComponent<SpriteRendererComponent>();
         obj->GetComponent<TransformComponent>()->SetPosition({ 640.0f, 360.0f, 0.0f });
         obj->Initialize();

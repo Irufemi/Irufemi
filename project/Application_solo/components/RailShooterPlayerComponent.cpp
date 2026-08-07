@@ -24,12 +24,12 @@ void RailShooterPlayerComponent::Update() {
         return;
     }
 
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
     // --- キー入力による上下左右の回避運動 ---
     auto* input = BaseModel::GetIrufemiEngine()->GetInputManager();
-    Vector3 moveDir = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 moveDir = {0.0f, 0.0f, 0.0f};
 
     // WASD または 矢印キーで移動方向を入力 (長押し判定のため IsKeyDownDIK を使用)
     if (input->IsKeyDownDIK(DIK_W) || input->IsKeyDownDIK(DIK_UP)) moveDir.y += 1.0f;

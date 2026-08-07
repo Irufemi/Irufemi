@@ -91,16 +91,31 @@ public:
 
     // --- デバッグ機能 ---
     // エンジン共通のデバッグウィンドウにタブを追加する
+    /**
+     * @brief DrawDebugTab を実行する。
+     */
     virtual void DrawDebugTab() {}
 
 
     // --- スタック管理機能 ---
     // このシーンが下のシーンの更新(Update)をブロックするか（デフォルトはブロックする）
+    /**
+     * @brief IsUpdateBlocking かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     virtual bool IsUpdateBlocking() const { return true; }
     
     // このシーンが下のシーンの描画(Draw)をブロックするか（デフォルトはブロックしない）
+    /**
+     * @brief IsDrawBlocking かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     virtual bool IsDrawBlocking() const { return false; }
     
     // このシーンでマウスカーソルを表示するか（デフォルトは表示する）
+    /**
+     * @brief IsCursorVisible かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     virtual bool IsCursorVisible() const { return true; }
 };

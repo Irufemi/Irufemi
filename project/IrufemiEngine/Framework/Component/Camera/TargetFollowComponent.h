@@ -14,18 +14,34 @@ public:
     TargetFollowComponent() = default;
     ~TargetFollowComponent() override = default;
 
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
 
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "TargetFollowComponent"; }
 
-    nlohmann::json Serialize() override;
-    void Deserialize(const nlohmann::json& j) override;
+
+    /**
+     * @brief OnIDRemapped を実行する。
+     */
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
 private:
-    std::string targetName_ = "Player"; ///< 追従対象の GameObject 名
-    Vector3 offset_ = {0.0f, 2.0f, -5.0f}; ///< ターゲットからの相対距離 (右, 上, 前)
+    uint64_t targetObjectID_ = 0; ///< 追従対象の GameObject ID
+    Irufemi::Vector3 offset_ = {0.0f, 2.0f, -5.0f}; ///< ターゲットからの相対距離 (右, 上, 前)
     float followDelay_ = 0.9f; ///< 追従の遅延係数（1.0 に近いほど遅れる、0.0で即座に追従）
 
     TransformComponent* targetTransform_ = nullptr; ///< キャッシュ用

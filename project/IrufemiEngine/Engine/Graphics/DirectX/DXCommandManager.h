@@ -42,26 +42,84 @@ public:
     void ExecuteUploadCommands(std::function<void(ID3D12GraphicsCommandList*)> commands);
 
 public: // ゲッター・セッター
+    /**
+     * @brief CommandQueue を取得する。
+     * @return 取得された CommandQueue
+     */
     ID3D12CommandQueue* GetCommandQueue() const { return commandQueue_.Get(); }
+    /**
+     * @brief CommandAllocator を取得する。
+     * @return 取得された CommandAllocator
+     */
     ID3D12CommandAllocator* GetCommandAllocator(uint32_t frameIndex) const;
+    /**
+     * @brief CommandList を取得する。
+     * @return 取得された CommandList
+     */
     ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
 
+    /**
+     * @brief Fence を取得する。
+     * @return 取得された Fence
+     */
     ID3D12Fence* GetFence() const { return fence_.Get(); }
+    /**
+     * @brief FenceEvent を取得する。
+     * @return 取得された FenceEvent
+     */
     HANDLE GetFenceEvent() const { return fenceEvent_; }
     
+    /**
+     * @brief FenceValue を取得する。
+     * @return 取得された FenceValue
+     */
     uint64_t& GetFenceValue(uint32_t frameIndex);
+    /**
+     * @brief FenceValue を取得する。
+     * @return 取得された FenceValue
+     */
     uint64_t GetFenceValue(uint32_t frameIndex) const;
 
     
+    /**
+     * @brief GlobalFenceValue を取得する。
+     * @return 取得された GlobalFenceValue
+     */
     uint64_t GetGlobalFenceValue() const { return globalFenceValue_; }
+    /**
+     * @brief IncrementGlobalFence を実行する。
+     */
     uint64_t IncrementGlobalFence() { return ++globalFenceValue_; }
 
+    /**
+     * @brief UploadCommandAllocator を取得する。
+     * @return 取得された UploadCommandAllocator
+     */
     ID3D12CommandAllocator* GetUploadCommandAllocator() const { return uploadCommandAllocator_.Get(); }
+    /**
+     * @brief UploadCommandList を取得する。
+     * @return 取得された UploadCommandList
+     */
     ID3D12GraphicsCommandList* GetUploadCommandList() const { return uploadCommandList_.Get(); }
+    /**
+     * @brief UploadFence を取得する。
+     * @return 取得された UploadFence
+     */
     ID3D12Fence* GetUploadFence() const { return uploadFence_.Get(); }
+    /**
+     * @brief UploadFenceValue を取得する。
+     * @return 取得された UploadFenceValue
+     */
     uint64_t GetUploadFenceValue() const { return uploadFenceValue_; }
+    /**
+     * @brief IncrementUploadFenceValue を実行する。
+     */
     void IncrementUploadFenceValue() { uploadFenceValue_++; }
 
+    /**
+     * @brief UploadMutex を取得する。
+     * @return 取得された UploadMutex
+     */
     std::mutex& GetUploadMutex() { return uploadMutex_; }
 
 private:

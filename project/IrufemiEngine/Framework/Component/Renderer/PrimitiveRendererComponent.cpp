@@ -17,19 +17,18 @@ void PrimitiveRendererComponent::Initialize() {
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive3DObject>();
         // 設定された形状（デフォルトはCube）で初期化
-        primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+        primitive_->Initialize(static_cast<Irufemi::PrimitiveType>(currentTypeIndex_));
     }
 
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
 void PrimitiveRendererComponent::Update() {
-    if (transform_ && primitive_) {
-        primitive_->SetPosition(transform_->GetWorldPosition());
-        primitive_->SetRotate(transform_->GetWorldRotation());
-        primitive_->SetScale(transform_->GetWorldScale());
+    if (GetTransform() && primitive_) {
+        primitive_->SetPosition(GetTransform()->GetWorldPosition());
+        primitive_->SetRotate(GetTransform()->GetWorldRotation());
+        primitive_->SetScale(GetTransform()->GetWorldScale());
     }
 
     if (primitive_) {
@@ -38,19 +37,20 @@ void PrimitiveRendererComponent::Update() {
 }
 
 void PrimitiveRendererComponent::Draw() {
+    if (!gameObject_ || !gameObject_->GetIsActive()) return;
     if (primitive_) {
         primitive_->Draw();
     }
 }
 
-void PrimitiveRendererComponent::SetShape(PrimitiveType type) {
+void PrimitiveRendererComponent::SetShape(Irufemi::PrimitiveType type) {
     currentTypeIndex_ = static_cast<int>(type);
     if (primitive_) {
         primitive_->SetShape(type);
     }
 }
 
-void PrimitiveRendererComponent::SetColor(const Vector4& color) {
+void PrimitiveRendererComponent::SetColor(const Irufemi::Vector4& color) {
     if (primitive_) {
         primitive_->SetColor(color);
     }
@@ -101,30 +101,30 @@ void PrimitiveRendererComponent::SetUseClampSampler(int32_t useClamp) {
 void PrimitiveRendererComponent::RebuildMesh() {
     if (!primitive_) return;
     
-    PrimitiveType type = static_cast<PrimitiveType>(currentTypeIndex_);
+    Irufemi::PrimitiveType type = static_cast<Irufemi::PrimitiveType>(currentTypeIndex_);
     PrimitiveData data;
 
     switch (type) {
-        case PrimitiveType::Sphere:
-        case PrimitiveType::IcoSphere:
+        case Irufemi::PrimitiveType::Sphere:
+        case Irufemi::PrimitiveType::IcoSphere:
             data = PrimitiveManager::CreateSphere(radius_, subdivisions_);
             break;
-        case PrimitiveType::Cylinder:
+        case Irufemi::PrimitiveType::Cylinder:
             data = PrimitiveManager::CreateCylinder(bottomRadius_, topRadius_, height_, subdivisions_, hasTop_, hasBottom_);
             break;
-        case PrimitiveType::Cone:
+        case Irufemi::PrimitiveType::Cone:
             data = PrimitiveManager::CreateCone(radius_, height_, subdivisions_);
             break;
-        case PrimitiveType::Torus:
+        case Irufemi::PrimitiveType::Torus:
             data = PrimitiveManager::CreateTorus(torusMajorRadius_, torusMinorRadius_, torusMajorSegments_, torusMinorSegments_);
             break;
-        case PrimitiveType::Circle:
+        case Irufemi::PrimitiveType::Circle:
             data = PrimitiveManager::CreateCircle(radius_, subdivisions_);
             break;
-        case PrimitiveType::Cube:
-        case PrimitiveType::Plane:
-        case PrimitiveType::Triangle:
-        case PrimitiveType::Tetra:
+        case Irufemi::PrimitiveType::Cube:
+        case Irufemi::PrimitiveType::Plane:
+        case Irufemi::PrimitiveType::Triangle:
+        case Irufemi::PrimitiveType::Tetra:
         default:
             // これらの基本図形は標準リソースに戻す
             primitive_->SetShape(type);
@@ -194,11 +194,11 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
     
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive3DObject>();
-        primitive_->Initialize(static_cast<PrimitiveType>(currentTypeIndex_));
+        primitive_->Initialize(static_cast<Irufemi::PrimitiveType>(currentTypeIndex_));
     }
 
     // 形状を再構築
-    PrimitiveType types[] = { PrimitiveType::Sphere, PrimitiveType::Plane, PrimitiveType::Cube, PrimitiveType::Cylinder, PrimitiveType::Cone, PrimitiveType::Torus };
+    Irufemi::PrimitiveType types[] = { Irufemi::PrimitiveType::Sphere, Irufemi::PrimitiveType::Plane, Irufemi::PrimitiveType::Cube, Irufemi::PrimitiveType::Cylinder, Irufemi::PrimitiveType::Cone, Irufemi::PrimitiveType::Torus };
     if (currentTypeIndex_ >= 0 && currentTypeIndex_ < 6) {
         SetShape(types[currentTypeIndex_]);
     }
@@ -229,55 +229,55 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
     }
 }
 
-Sphere PrimitiveRendererComponent::GetWorldSphere() const {
-    Sphere result = { Vector3{0,0,0}, 1.0f }; // default
-    if (transform_) {
-        result.center = transform_->GetWorldPosition();
+Irufemi::Sphere PrimitiveRendererComponent::GetWorldSphere() const {
+    Irufemi::Sphere result = { Irufemi::Vector3{0,0,0}, 1.0f }; // default
+    if (GetTransform()) {
+        result.center = GetTransform()->GetWorldPosition();
         
         // 形状に応じて大まかな半径を決定
         float baseRadius = radius_;
-        if (static_cast<PrimitiveType>(currentTypeIndex_) == PrimitiveType::Cube) {
+        if (static_cast<Irufemi::PrimitiveType>(currentTypeIndex_) == Irufemi::PrimitiveType::Cube) {
             baseRadius = 1.0f; // Cubeは1x1x1なので対角線の半分は約0.866だが余裕を持つ
         }
         
-        Vector3 worldScale = transform_->GetWorldScale();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = baseRadius * maxScale * 2.0f; // 安全マージン
     }
     return result;
 }
 
-bool PrimitiveRendererComponent::Raycast(const Ray& ray, float& outDistance) const {
-    if (!primitive_ || !transform_) return false;
+bool PrimitiveRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
+    if (!primitive_ || !GetTransform()) return false;
 
     // プリミティブ形状の基本AABB（一辺1のキューブ）
-    Vector3 localHalfSize = { 0.5f, 0.5f, 0.5f };
+    Irufemi::Vector3 localHalfSize = { 0.5f, 0.5f, 0.5f };
 
-    OBB obb;
-    obb.center = transform_->GetWorldPosition();
+    Irufemi::OBB obb;
+    obb.center = GetTransform()->GetWorldPosition();
 
-    const Matrix4x4& wmat = transform_->GetWorldMatrix();
-    Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
-    Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
-    Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
+    const Irufemi::Matrix4x4& wmat = GetTransform()->GetWorldMatrix();
+    Irufemi::Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
+    Irufemi::Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
+    Irufemi::Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
 
-    float lenX = Math::Length(xAxis);
-    float lenY = Math::Length(yAxis);
-    float lenZ = Math::Length(zAxis);
+    float lenX = Irufemi::Math::Length(xAxis);
+    float lenY = Irufemi::Math::Length(yAxis);
+    float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f) obb.orientations[0] = Math::Normalize(xAxis);
+    if (lenX > 0.0001f) obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
     else obb.orientations[0] = {1.0f, 0.0f, 0.0f};
 
-    if (lenY > 0.0001f) obb.orientations[1] = Math::Normalize(yAxis);
+    if (lenY > 0.0001f) obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
     else obb.orientations[1] = {0.0f, 1.0f, 0.0f};
 
-    if (lenZ > 0.0001f) obb.orientations[2] = Math::Normalize(zAxis);
+    if (lenZ > 0.0001f) obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
     else obb.orientations[2] = {0.0f, 0.0f, 1.0f};
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;
     obb.size.z = localHalfSize.z * lenZ;
 
-    return Collision::IsCollision(ray, obb, outDistance);
+    return Irufemi::Collision::IsCollision(ray, obb, outDistance);
 }
 

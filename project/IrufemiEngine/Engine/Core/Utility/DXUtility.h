@@ -1,5 +1,7 @@
 #pragma once
 #include "Engine/Core/Utility/ErrorUtility.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include <d3d12.h>
 #include <string>
 #include <cassert>
@@ -7,6 +9,9 @@
 #include <windows.h>
 
 namespace Irufemi {
+    /**
+     * @brief CheckHResult を実行する。
+     */
     inline void CheckHResult(HRESULT hr, const char* msg, const char* file, int line) {
         if (FAILED(hr)) {
             std::string errorMsg = std::string("DirectX Error! [") + msg + "]\n";
@@ -17,7 +22,7 @@ namespace Irufemi {
             sprintf_s(hrStr, "HRESULT: 0x%08X\n", (unsigned int)hr);
             errorMsg += hrStr;
 
-            OutputDebugStringA(errorMsg.c_str());
+            Log::OutPutLog(std::cerr, errorMsg);
             IRUFEMI_ASSERT(false && "DirectX API call failed. Check the log for details.");
             throw std::runtime_error(errorMsg);
         }

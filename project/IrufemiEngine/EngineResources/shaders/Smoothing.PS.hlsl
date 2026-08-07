@@ -1,3 +1,4 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
@@ -5,14 +6,10 @@
 SamplerState gSampler : register(s0);
 
 // SmoothingParams 定数バッファ
-struct SmoothingParams {
-    int32_t kernelSize; // 3, 5, 7, ...
-};
+
 ConstantBuffer<SmoothingParams> gParams : register(b0);
 
-struct PixelShaderOutput {
-    float32_t4 color : SV_TARGET0;
-};
+
 
 PixelShaderOutput main(VertexShaderOutput input) {
     PixelShaderOutput output;

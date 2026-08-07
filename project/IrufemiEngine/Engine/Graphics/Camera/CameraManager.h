@@ -40,6 +40,12 @@ public:
     Camera* GetActiveCamera() const;
 
     /**
+     * @brief 現在アクティブなカメラの名前を取得します
+     * @return std::string アクティブなカメラの名前
+     */
+    const std::string& GetActiveCameraName() const;
+
+    /**
      * @brief 指定した名前のカメラを取得します
      * @param name カメラの識別名
      * @return Camera* カメラ。見つからない場合は nullptr

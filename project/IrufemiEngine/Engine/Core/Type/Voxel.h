@@ -4,6 +4,8 @@
 #include "../Math/Vector4.h"
 #include "../Math/Vector2.h"
 
+
+namespace Irufemi {
 // ボクセル化された個々のキューブの情報
 struct Voxel {
     Vector3 position; // ワールド空間での中心位置
@@ -11,3 +13,4 @@ struct Voxel {
     Vector4 color;    // 元のテクスチャからサンプリングした色
     Vector2 uv;       // 元のモデルからサンプリングしたUV
 };
+} // namespace Irufemi

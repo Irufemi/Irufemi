@@ -57,9 +57,11 @@
 #endif
 
 // Construct the namespace ABI tags component
-#define NLOHMANN_JSON_ABI_TAGS_CONCAT_EX(a, b, c) json_abi ## a ## b ## c
-#define NLOHMANN_JSON_ABI_TAGS_CONCAT(a, b, c) \
-    NLOHMANN_JSON_ABI_TAGS_CONCAT_EX(a, b, c)
+#ifndef NLOHMANN_JSON_ABI_TAGS_CONCAT
+    #define NLOHMANN_JSON_ABI_TAGS_CONCAT_EX(a, b, c) json_abi ## a ## b ## c
+    #define NLOHMANN_JSON_ABI_TAGS_CONCAT(a, b, c) \
+        NLOHMANN_JSON_ABI_TAGS_CONCAT_EX(a, b, c)
+#endif
 
 #define NLOHMANN_JSON_ABI_TAGS                                       \
     NLOHMANN_JSON_ABI_TAGS_CONCAT(                                   \

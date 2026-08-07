@@ -15,10 +15,23 @@ public:
     RaycastComponent() = default;
     ~RaycastComponent() = default;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
+    /**
+     * @brief DrawDebug を実行する。
+     */
     void DrawDebug(); // ComponentにはDrawDebugがないためoverrideを外す
     
+    /**
+     * @brief CollisionManager を設定する。
+     * @param[in] manager 設定する CollisionManager の値
+     */
     static void SetCollisionManager(CollisionManager* manager) { collisionManager_ = manager; }
     
 protected:
@@ -27,7 +40,13 @@ protected:
 #ifdef EditorMode
     friend class RaycastComponentEditor;
 #endif
+    /**
+     * @brief Serialize を実行する。
+     */
     nlohmann::json Serialize() override;
+    /**
+     * @brief Deserialize を実行する。
+     */
     void Deserialize(const nlohmann::json& j) override;
 
     /// @brief 現在レイが何かに当たっているかを取得する
@@ -37,8 +56,8 @@ protected:
     const RaycastHit& GetHitInfo() const { return hitInfo_; }
 
     // 設定
-    Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
-    Vector3 localDirection_ = { 0.0f, 0.0f, 1.0f }; // ローカルZ軸方向
+    Irufemi::Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
+    Irufemi::Vector3 localDirection_ = { 0.0f, 0.0f, 1.0f }; // ローカルZ軸方向
     float maxDistance_ = 100.0f;
     uint32_t mask_ = 0xFFFFFFFF; // 全てのレイヤーと判定
 
@@ -48,7 +67,6 @@ protected:
     std::function<void(const RaycastHit&)> onHit_;
 
 private:
-    TransformComponent* transform_ = nullptr;
     RaycastHit hitInfo_;
-    Ray currentRay_;
+    Irufemi::Ray currentRay_;
 };

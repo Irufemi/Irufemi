@@ -112,7 +112,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rangeDepthMap[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
         // --- ルートパラメータの定義 (Version 1.1) ---
-        D3D12_ROOT_PARAMETER1 rootParameters[12] = {};
+        D3D12_ROOT_PARAMETER1 rootParameters[13] = {};
 
         // Slot 0: Material (b0, PS)
         rootParameters[(UINT)RootSlot::Material].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -121,7 +121,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::Material].Descriptor.RegisterSpace = 0;
         rootParameters[(UINT)RootSlot::Material].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
-        // Slot 1: Transform (b0, VS)
+        // Slot 1: Irufemi::Transform (b0, VS)
         rootParameters[(UINT)RootSlot::Transform].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Transform].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
         rootParameters[(UINT)RootSlot::Transform].Descriptor.ShaderRegister = 0;
@@ -198,6 +198,13 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::LegacyPSTexture].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[(UINT)RootSlot::LegacyPSTexture].DescriptorTable.pDescriptorRanges = rangeLegacyTex;
         rootParameters[(UINT)RootSlot::LegacyPSTexture].DescriptorTable.NumDescriptorRanges = _countof(rangeLegacyTex);
+
+        // Slot 12: CustomEffectParams (b3, PS)
+        rootParameters[(UINT)RootSlot::CustomEffectParams].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.ShaderRegister = 3;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.RegisterSpace = 0;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -282,7 +289,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         uavRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u2
         uavRanges[3] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u3
 
-        D3D12_ROOT_PARAMETER computeRootParameters[10] = {};
+        D3D12_ROOT_PARAMETER computeRootParameters[11] = {};
         computeRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[0].DescriptorTable.pDescriptorRanges = &srvRanges[0];
@@ -293,6 +300,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         computeRootParameters[1].DescriptorTable.pDescriptorRanges = &srvRanges[1];
         computeRootParameters[1].DescriptorTable.NumDescriptorRanges = 1;
 
+        // t2 (Influences / etc)
         computeRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         computeRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         computeRootParameters[2].DescriptorTable.pDescriptorRanges = &srvRanges[2];
@@ -331,6 +339,11 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         computeRootParameters[9].Constants.ShaderRegister = 2; // b2
         computeRootParameters[9].Constants.Num32BitValues = 2; // k, j
         computeRootParameters[9].Constants.RegisterSpace = 0;
+
+        computeRootParameters[10].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        computeRootParameters[10].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        computeRootParameters[10].Descriptor.ShaderRegister = 3; // t3
+        computeRootParameters[10].Descriptor.RegisterSpace = 0;
 
         D3D12_ROOT_SIGNATURE_DESC computeRSDesc{};
         computeRSDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;

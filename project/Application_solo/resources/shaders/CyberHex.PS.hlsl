@@ -29,7 +29,8 @@
  * ==============================================================================
  */
 
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "Lighting.hlsli"
 #include "PerFrame.hlsli"
 

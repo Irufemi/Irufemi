@@ -1,5 +1,6 @@
 #include "Bindless.hlsli"
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "PerFrame.hlsli"
 #include "Material.hlsli"
 

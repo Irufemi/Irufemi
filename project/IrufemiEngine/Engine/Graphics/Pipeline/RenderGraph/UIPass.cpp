@@ -4,7 +4,6 @@
 #include "RenderGraphBuilder.h"
 
 void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    // エディタ・製品版問わず、ゲーム内UI(Sprite等)は mainRenderTexture に描き込むため RENDER_TARGET を要求する
     builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 }
 
@@ -13,10 +12,17 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         scm->OnPreUIDraw(engine->GetCommandList(), engine->GetMainRenderTexture());
     }
 
+    auto cmdList = engine->GetCommandList();
+    
+    // UI の描画先を設定
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = drawManager->GetDxCommon()->GetDSVCPUDescriptorHandle(0);
+    cmdList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
+
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
         if (queue.empty()) return;
         
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         ID3D12PipelineState* currentCustomPSO = nullptr;

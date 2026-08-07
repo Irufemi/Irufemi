@@ -48,7 +48,7 @@ public:
      * @param assetPath アセットのファイルパス
      * @param position 生成するワールド座標（SceneViewなどからのドロップ時に指定）
      */
-    void CreateObjectFromAsset(const std::string& assetPath, const Vector3& position = {0.0f, 0.0f, 0.0f});
+    void CreateObjectFromAsset(const std::string& assetPath, const Irufemi::Vector3& position = {0.0f, 0.0f, 0.0f});
 
     /**
      * @brief 空のGameObject、または指定したプリミティブを生成する

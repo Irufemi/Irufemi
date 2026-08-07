@@ -5,9 +5,15 @@
 #include "Engine/Manager/CollisionManager.h"
 #include "Framework/BaseScene.h"
 #include "Resource/Model/ModelManager.h"
+#include "Resource/Model/AnimationManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
+#include "Framework/Component/Utility/SplineComponent.h"
+#include "Framework/Component/Utility/SplineNodeComponent.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include <algorithm>
+#include <functional>
 
 std::shared_ptr<Component> ComponentUIHelpers::GetSharedComponent(GameObject* go, Component* comp) {
     if (!go || !comp) return nullptr;
@@ -183,20 +189,21 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             case ComponentPropertyType::Int: isModified = (*static_cast<int*>(prop.data) != prop.defaultValue.get<int>()); break;
                             case ComponentPropertyType::Bool: isModified = (*static_cast<bool*>(prop.data) != prop.defaultValue.get<bool>()); break;
                             case ComponentPropertyType::String: isModified = (*static_cast<std::string*>(prop.data) != prop.defaultValue.get<std::string>()); break;
+                            case ComponentPropertyType::GameObjectRef: isModified = (*static_cast<uint64_t*>(prop.data) != prop.defaultValue.get<uint64_t>()); break;
                             case ComponentPropertyType::Float2: {
-                                auto* v = static_cast<Vector2*>(prop.data);
+                                auto* v = static_cast<Irufemi::Vector2*>(prop.data);
                                 auto arr = prop.defaultValue;
                                 if (arr.is_array() && arr.size() >= 2) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
                                 break;
                             }
                             case ComponentPropertyType::Float3: {
-                                auto* v = static_cast<Vector3*>(prop.data);
+                                auto* v = static_cast<Irufemi::Vector3*>(prop.data);
                                 auto arr = prop.defaultValue;
                                 if (arr.is_array() && arr.size() >= 3) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>());
                                 break;
                             }
                             case ComponentPropertyType::Float4: {
-                                auto* v = static_cast<Vector4*>(prop.data);
+                                auto* v = static_cast<Irufemi::Vector4*>(prop.data);
                                 auto arr = prop.defaultValue;
                                 if (arr.is_array() && arr.size() >= 4) isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() || v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
                                 break;
@@ -213,20 +220,21 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                     case ComponentPropertyType::Int: *static_cast<int*>(prop.data) = prop.defaultValue.get<int>(); break;
                                     case ComponentPropertyType::Bool: *static_cast<bool*>(prop.data) = prop.defaultValue.get<bool>(); break;
                                     case ComponentPropertyType::String: *static_cast<std::string*>(prop.data) = prop.defaultValue.get<std::string>(); break;
+                                    case ComponentPropertyType::GameObjectRef: *static_cast<uint64_t*>(prop.data) = prop.defaultValue.get<uint64_t>(); break;
                                     case ComponentPropertyType::Float2: {
-                                        auto* v = static_cast<Vector2*>(prop.data);
+                                        auto* v = static_cast<Irufemi::Vector2*>(prop.data);
                                         auto arr = prop.defaultValue;
                                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>();
                                         break;
                                     }
                                     case ComponentPropertyType::Float3: {
-                                        auto* v = static_cast<Vector3*>(prop.data);
+                                        auto* v = static_cast<Irufemi::Vector3*>(prop.data);
                                         auto arr = prop.defaultValue;
                                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
                                         break;
                                     }
                                     case ComponentPropertyType::Float4: {
-                                        auto* v = static_cast<Vector4*>(prop.data);
+                                        auto* v = static_cast<Irufemi::Vector4*>(prop.data);
                                         auto arr = prop.defaultValue;
                                         v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
                                         break;
@@ -261,14 +269,14 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     }
                     
                     ImGui::TableSetColumnIndex(1);
-                    auto* arr = static_cast<std::vector<Vector3>*>(prop.data);
+                    auto* arr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
                     int size = static_cast<int>(arr->size());
                     ImGui::PushItemWidth(-1);
                     if (ImGui::InputInt(("##Size" + prop.name).c_str(), &size)) {
                         if (size >= 0) {
-                            std::vector<Vector3> oldArr = *arr;
+                            std::vector<Irufemi::Vector3> oldArr = *arr;
                             arr->resize(size);
-                            std::vector<Vector3> newArr = *arr;
+                            std::vector<Irufemi::Vector3> newArr = *arr;
                             PushInstantUndo(actionManager, oldArr, newArr, arr);
                         }
                     }
@@ -291,9 +299,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             
                             ImGui::SameLine();
                             if (ImGui::Button("-", ImVec2(24, 0))) {
-                                std::vector<Vector3> oldArr = *arr;
+                                std::vector<Irufemi::Vector3> oldArr = *arr;
                                 arr->erase(arr->begin() + i);
-                                std::vector<Vector3> newArr = *arr;
+                                std::vector<Irufemi::Vector3> newArr = *arr;
                                 PushInstantUndo(actionManager, oldArr, newArr, arr);
                                 ImGui::PopID();
                                 break; 
@@ -303,9 +311,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(1);
                         if (ImGui::Button("+", ImVec2(-1, 0))) {
-                            std::vector<Vector3> oldArr = *arr;
-                            arr->push_back(Vector3{0, 0, 0});
-                            std::vector<Vector3> newArr = *arr;
+                            std::vector<Irufemi::Vector3> oldArr = *arr;
+                            arr->push_back(Irufemi::Vector3{0, 0, 0});
+                            std::vector<Irufemi::Vector3> newArr = *arr;
                             PushInstantUndo(actionManager, oldArr, newArr, arr);
                         }
                         ImGui::TreePop();
@@ -364,19 +372,19 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             break;
                         }
                         case ComponentPropertyType::Float2: {
-                            Vector2* ptr = reinterpret_cast<Vector2*>(prop.data);
+                            Irufemi::Vector2* ptr = reinterpret_cast<Irufemi::Vector2*>(prop.data);
                             ImGui::DragFloat2(hiddenName.c_str(), &ptr->x, 0.1f);
                             CheckUndoRedoDrag(actionManager, ptr);
                             break;
                         }
                         case ComponentPropertyType::Float3: {
-                            Vector3* ptr = reinterpret_cast<Vector3*>(prop.data);
+                            Irufemi::Vector3* ptr = reinterpret_cast<Irufemi::Vector3*>(prop.data);
                             ImGui::DragFloat3(hiddenName.c_str(), &ptr->x, 0.1f);
                             CheckUndoRedoDrag(actionManager, ptr);
                             break;
                         }
                         case ComponentPropertyType::Float4: {
-                            Vector4* ptr = reinterpret_cast<Vector4*>(prop.data);
+                            Irufemi::Vector4* ptr = reinterpret_cast<Irufemi::Vector4*>(prop.data);
                             if (prop.name.find("Color") != std::string::npos || prop.name.find("color") != std::string::npos) {
                                 ImGui::ColorEdit4(hiddenName.c_str(), &ptr->x);
                             } else {
@@ -392,6 +400,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             
                             bool isModel = (lowerName.find("model") != std::string::npos || lowerName.find("mesh") != std::string::npos);
                             bool isTexture = (lowerName.find("texture") != std::string::npos || lowerName.find("image") != std::string::npos);
+                            bool isAnimation = (lowerName.find("animation") != std::string::npos || lowerName.find("anim") != std::string::npos);
                             
                             std::vector<std::string> comboItems;
                             IrufemiEngine* engine = nullptr;
@@ -407,6 +416,12 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                 comboItems = mgr->GetAvailableModels();
                             } else if (engine && isTexture && engine->GetTextureManager()) {
                                 comboItems = engine->GetTextureManager()->GetTextureNamesForDebug();
+                            } else if (engine && isAnimation && engine->GetAnimationManager()) {
+                                auto* mgr = engine->GetAnimationManager();
+#ifndef NDEBUG
+                                mgr->RefreshAvailableAnimations();
+#endif
+                                comboItems = mgr->GetAvailableAnimations();
                             }
 
                             if (!comboItems.empty()) {
@@ -460,6 +475,54 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             }
                             break;
                         }
+                        case ComponentPropertyType::GameObjectRef: {
+                            uint64_t* ptr = static_cast<uint64_t*>(prop.data);
+                            std::vector<std::shared_ptr<GameObject>> allObjs;
+                            if (component->GetGameObject() && component->GetGameObject()->GetScene()) {
+                                auto rootObjs = component->GetGameObject()->GetScene()->GetGameObjects();
+                                std::function<void(const std::vector<std::shared_ptr<GameObject>>&)> addObjs = [&](const std::vector<std::shared_ptr<GameObject>>& objs) {
+                                    for (const auto& o : objs) {
+                                        if (o && !o->IsDestroyed()) {
+                                            allObjs.push_back(o);
+                                            addObjs(o->GetChildren());
+                                        }
+                                    }
+                                };
+                                addObjs(rootObjs);
+                            }
+                            
+                            std::string currentName = "None";
+                            if (*ptr != 0 && component->GetGameObject() && component->GetGameObject()->GetScene()) {
+                                auto currentObj = component->GetGameObject()->GetScene()->FindGameObjectByID(*ptr);
+                                if (currentObj) currentName = currentObj->GetName();
+                            }
+                            
+                            if (ImGui::BeginCombo(hiddenName.c_str(), currentName.c_str())) {
+                                if (ImGui::Selectable("None", *ptr == 0)) {
+                                    uint64_t oldVal = *ptr;
+                                    *ptr = 0;
+                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<uint64_t>>(
+                                        oldVal, 0, [ptr](const uint64_t& v) { *ptr = v; }));
+                                }
+                                for (const auto& obj : allObjs) {
+                                    if (!obj || obj->IsDestroyed()) continue;
+                                    bool isSelected = (*ptr == obj->GetInstanceID());
+                                    std::string displayName = obj->GetName();
+                                    if (displayName.empty()) displayName = "Unnamed Object";
+                                    
+                                    if (ImGui::Selectable(displayName.c_str(), isSelected)) {
+                                        uint64_t oldVal = *ptr;
+                                        uint64_t newVal = obj->GetInstanceID();
+                                        *ptr = newVal;
+                                        actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<uint64_t>>(
+                                            oldVal, newVal, [ptr](const uint64_t& v) { *ptr = v; }));
+                                    }
+                                    if (isSelected) ImGui::SetItemDefaultFocus();
+                                }
+                                ImGui::EndCombo();
+                            }
+                            break;
+                        }
                         default: break;
                     }
                     ImGui::PopItemWidth();
@@ -471,6 +534,66 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
             }
             ImGui::EndTable();
         } 
+
+        if (component->GetComponentName() == "SplineComponent") {
+            ImGui::Spacing();
+            if (ImGui::Button("Add Rail Node", ImVec2(-1, 0))) {
+                auto* go = component->GetGameObject();
+                if (go) {
+                    auto newChild = std::make_shared<GameObject>();
+                    newChild->SetName("RailPoint_" + std::to_string(go->GetChildren().size() + 1));
+                    newChild->SetIsSerializable(true);
+                    newChild->GetTransform();
+                    newChild->AddComponent<SplineNodeComponent>();
+                    go->AddChild(newChild);
+                    
+                    Irufemi::Vector3 newPos = {0,0,0};
+                    auto children = go->GetChildren();
+                    if (children.size() >= 2) {
+                        auto t1 = children[children.size()-2]->GetComponent<TransformComponent>();
+                        auto t2 = children[children.size()-1]->GetComponent<TransformComponent>();
+                        if (t1 && t2) {
+                            Irufemi::Vector3 p1 = t1->GetPosition();
+                            Irufemi::Vector3 p2 = t2->GetPosition();
+                            Irufemi::Vector3 dir = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+                            newPos = {p2.x + dir.x, p2.y + dir.y, p2.z + dir.z};
+                        }
+                    } else if (children.size() == 1) {
+                        if (auto t1 = children[0]->GetComponent<TransformComponent>()) {
+                            Irufemi::Vector3 p1 = t1->GetPosition();
+                            newPos = {p1.x, p1.y, p1.z + 5.0f};
+                        }
+                    } else {
+                        if (auto parentT = go->GetComponent<TransformComponent>()) {
+                            newPos = parentT->GetPosition();
+                        }
+                    }
+                    if (auto t = newChild->GetComponent<TransformComponent>()) t->SetPosition(newPos);
+                    newChild->SetScene(go->GetScene());
+                }
+            }
+            if (ImGui::Button("Convert waypoints_ to Nodes", ImVec2(-1, 0))) {
+                auto* go = component->GetGameObject();
+                if (go) {
+                    auto* spline = static_cast<SplineComponent*>(component);
+                    auto waypoints = spline->GetWaypoints();
+                    if (!waypoints.empty() && go->GetChildren().empty()) {
+                        int idx = 1;
+                        for (const auto& wp : waypoints) {
+                            auto newChild = std::make_shared<GameObject>();
+                            newChild->SetName("RailPoint_" + std::to_string(idx++));
+                            newChild->SetIsSerializable(true);
+                            auto transform = newChild->GetTransform();
+                            newChild->AddComponent<SplineNodeComponent>();
+                            transform->SetPosition(wp);
+                            newChild->SetScene(go->GetScene());
+                            go->AddChild(newChild);
+                        }
+                    }
+                }
+            }
+        }
+
     }
     ImGui::PopID();
 }

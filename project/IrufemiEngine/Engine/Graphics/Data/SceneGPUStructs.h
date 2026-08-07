@@ -15,7 +15,7 @@ struct PerFrameData {
     CameraForGPU camera;        //!< カメラ情報 (view, projection, worldPosition)
     float time;                 //!< フレーム経過時間 (秒)
     float deltaTime;            //!< フレーム差分時間 (秒)
-    Vector2 resolution;         //!< 画面解像度 (x: width, y: height)
+    Irufemi::Vector2 resolution;         //!< 画面解像度 (x: width, y: height)
     
     // [Bindless] 各種グローバルリソースのインデックス
     uint32_t envMapIndex;       //!< 環境マップ (TextureCube, space2)

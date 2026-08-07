@@ -1,4 +1,5 @@
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "Lighting.hlsli"
 #include "VertexData.hlsli"
 
@@ -22,6 +23,7 @@ VertexShaderOutput main(VertexInput input) {
     output.worldPosition = worldPos.xyz;
     output.shadowPos = output.position; // 自身がライト空間座標
     output.color = input.color;
+    output.customEffect = float32_t4(0, 0, 0, 0);
     
     return output;
 }

@@ -44,6 +44,10 @@ public:
      */
     ID3D12Resource* AcquirePlacedResource(const D3D12_RESOURCE_DESC& desc, uint64_t offset, D3D12_RESOURCE_STATES initialState, const D3D12_CLEAR_VALUE* clearValue);
 
+    /**
+     * @brief HeapSize を取得する。
+     * @return 取得された HeapSize
+     */
     uint64_t GetHeapSize() const { return heapSize_; }
     
 #ifdef USE_IMGUI

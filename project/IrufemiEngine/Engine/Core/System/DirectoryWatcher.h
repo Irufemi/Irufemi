@@ -27,6 +27,9 @@ public:
     ~DirectoryWatcher();
 
 private:
+    /**
+     * @brief WatchLoop を実行する。
+     */
     void WatchLoop();
 
     std::filesystem::path targetDirectory_;

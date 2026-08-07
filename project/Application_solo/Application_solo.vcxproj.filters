@@ -22,6 +22,7 @@
     <Filter Include="scene\InGame">
       <UniqueIdentifier>{5A3B514E-0791-5B46-B080-57593ACEB77C}</UniqueIdentifier>
     </Filter>
+
     <Filter Include="scene\Pause">
       <UniqueIdentifier>{E394E23F-0134-58A9-A8F7-981A67EB823C}</UniqueIdentifier>
     </Filter>
@@ -30,15 +31,14 @@
     </Filter>
     <Filter Include="scene\Title">
       <UniqueIdentifier>{12CA07D8-99E6-5EDC-AF99-647A260A3B9C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="scene\TL1">
       <UniqueIdentifier>{A1B2C3D4-E5F6-1234-5678-90ABCDEF1234}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameApplication.cpp" />
-    <ClCompile Include="scene\Debug\DebugScene.cpp">
-      <Filter>scene\Debug</Filter>
-    </ClCompile>
+
     <ClCompile Include="main.cpp" />
     <ClCompile Include="scene\GameOver\GameOverScene.cpp">
       <Filter>scene\GameOver</Filter>
@@ -46,6 +46,7 @@
     <ClCompile Include="scene\InGame\GameScene.cpp">
       <Filter>scene\InGame</Filter>
     </ClCompile>
+
     <ClCompile Include="scene\Pause\PauseScene.cpp">
       <Filter>scene\Pause</Filter>
     </ClCompile>
@@ -76,16 +77,40 @@
     <ClCompile Include="components\SplineFollowerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\RailRelativeFollowerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClCompile Include="components\RailShooterEnemyComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\Boss\BossComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\Boss\BossStateIdle.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\Boss\BossStateCoreExposed.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\Boss\BossStateDestroyed.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\BossBulletComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\BossBulletManagerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\DroneManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\DebrisComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\BossComponent.cpp">
+    <ClCompile Include="components\DebrisManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\DebrisManagerComponent.cpp">
+    <ClCompile Include="components\EnvironmentManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\GravityPlayerComponent.cpp">
@@ -98,6 +123,7 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\EffectManagerComponent.cpp">
+      <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\LockonMarkerUIComponent.cpp">
       <Filter>components</Filter>
@@ -109,15 +135,13 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClInclude Include="GameApplication.h" />
-    <ClInclude Include="scene\Debug\DebugScene.h">
-      <Filter>scene\Debug</Filter>
-    </ClInclude>
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>scene\GameOver</Filter>
     </ClInclude>
     <ClInclude Include="scene\InGame\GameScene.h">
       <Filter>scene\InGame</Filter>
     </ClInclude>
+
     <ClInclude Include="scene\Pause\PauseScene.h">
       <Filter>scene\Pause</Filter>
     </ClInclude>
@@ -148,16 +172,43 @@
     <ClInclude Include="components\SplineFollowerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
+    <ClInclude Include="components\RailRelativeFollowerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
     <ClInclude Include="components\RailShooterEnemyComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\BossComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\IBossState.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\BossStateIdle.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\BossStateCoreExposed.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\Boss\BossStateDestroyed.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\BossBulletComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\BossBulletManagerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\DroneManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\BossComponent.h">
+    <ClInclude Include="components\DebrisManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\DebrisManagerComponent.h">
+    <ClInclude Include="components\EnvironmentManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\GravityPlayerComponent.h">
@@ -170,6 +221,7 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\EffectManagerComponent.h">
+      <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\LockonMarkerUIComponent.h">
       <Filter>components</Filter>

@@ -1,5 +1,7 @@
 #include "Matrix4x4.h"
 
+
+namespace Irufemi {
 Matrix4x4& Matrix4x4::operator+=(const Matrix4x4& rhs) {
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
@@ -58,4 +60,6 @@ Matrix4x4 operator-(const Matrix4x4& m) {
         }
     }
     return result;
-}
+}
+
+} // namespace Irufemi

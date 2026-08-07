@@ -6,9 +6,11 @@
 #include <cassert>
 #include <vector>
 #include <comdef.h>
+#include <iostream>
 #include "../../Core/Utility/Log.h"
 #include "../../Core/Utility/ErrorUtility.h"
 #include "../../Core/Utility/StringUtility.h"
+#include "../../Core/Utility/FileSystem.h"
 #include "../../../../externals/DirectXTex/d3dx12.h"
 #include <algorithm>
 #include <dxgidebug.h>
@@ -17,6 +19,7 @@
 #include "DXCommandManager.h"
 #include "DXSwapChainManager.h"
 #include "DirectXUtils.h"
+#include "../../Profiler/GpuProfiler.h"
 
 ID3D12CommandQueue* DirectXCommon::GetCommandQueue() { return commandManager_->GetCommandQueue(); }
 ID3D12CommandAllocator* DirectXCommon::GetCommandAllocator() { return commandManager_->GetCommandAllocator(frameIndex_); }
@@ -113,9 +116,13 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     shaderManager_->Initialize();
 
     // シェーダーの検索パスとバイナリパスを登録
-    shaderManager_->AddSearchPath(L"resources/shaders/");
-    shaderManager_->AddSearchPath(L"../IrufemiEngine/EngineResources/shaders/");
-    shaderManager_->SetBinaryPath(L"resources/.cache/shaders/");
+    shaderManager_->AddSearchPath(ConvertString(FileSystem::GetResourcePath("shaders") + "/"));
+    shaderManager_->AddSearchPath(ConvertString(FileSystem::GetEngineRoot() + "/EngineResources/shaders/"));
+#ifdef NDEBUG
+    shaderManager_->SetBinaryPath(ConvertString(FileSystem::GetResourcePath("shaders/compiled") + "/"));
+#else
+    shaderManager_->SetBinaryPath(ConvertString(FileSystem::GetResourcePath(".cache/shaders") + "/"));
+#endif
 
     EnableDebugLayer();
     InitializeDXGI();
@@ -135,6 +142,9 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     CreatePSOs();
 
     CreateDepthSRV();
+    
+    // GpuProfilerの初期化
+    GpuProfiler::GetInstance().Initialize(this);
 }
 
 void DirectXCommon::CreateDepthSRV() {
@@ -149,8 +159,8 @@ void DirectXCommon::EnableDebugLayer() {
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
         debugController_->EnableDebugLayer();
-        //さらにGPU側でもチェックを行うようにする
-        debugController_->SetEnableGPUBasedValidation(TRUE);
+        //さらにGPU側でもチェックを行うようにする (Bindless環境でDescriptorTable全体を検査してしまい誤検知クラッシュするため無効化)
+        //debugController_->SetEnableGPUBasedValidation(TRUE);
     }
 #endif
 }
@@ -260,8 +270,8 @@ void DirectXCommon::RegisterAllShaders() {
 #endif
 
     // --- シェーダコンパイル ---
-    auto vs3d = shaderManager_->GetOrCompile(L"Object3D.VS.hlsl", options);
-    auto ps3d = shaderManager_->GetOrCompile(L"Object3D.PS.hlsl", options);
+    auto vs3d = shaderManager_->GetOrCompile(L"Object3d.VS.hlsl", options);
+    auto ps3d = shaderManager_->GetOrCompile(L"Object3d.PS.hlsl", options);
     auto vsParticle = shaderManager_->GetOrCompile(L"Particle.VS.hlsl", options);
     auto psParticle = shaderManager_->GetOrCompile(L"Particle.PS.hlsl", options);
     auto vsSprite = shaderManager_->GetOrCompile(L"Object2D.VS.hlsl", options);
@@ -309,23 +319,62 @@ void DirectXCommon::RegisterAllShaders() {
     auto csGpuCulling = shaderManager_->GetOrCompile(L"GPUCulling.CS.hlsl", options);
 
     // --- 各種シェーダの登録 ---
-    psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
-    psoManager_->RegisterShader("Particle", { { vsParticle, psParticle } });
+    // --- MRT共通設定 (フルG-Buffer対応) ---
+    PSOManager::PipelineStateDesc mrtDesc{};
+    mrtDesc.numRenderTargets = 5;
+    mrtDesc.rtvFormat1 = DXGI_FORMAT_R8G8B8A8_UNORM; // Mask
+    mrtDesc.rtvFormat2 = DXGI_FORMAT_R16G16B16A16_FLOAT; // Normal & Depth
+    mrtDesc.rtvFormat3 = DXGI_FORMAT_R8G8B8A8_UNORM; // Material
+    mrtDesc.rtvFormat4 = DXGI_FORMAT_R16G16_FLOAT; // Velocity
+
+    PSOManager::PipelineStateDesc obj3dDesc = mrtDesc;
+    obj3dDesc.shaders = { vs3d, ps3d };
+    psoManager_->RegisterShader("Object3D", obj3dDesc);
+
+    PSOManager::PipelineStateDesc batchDesc = mrtDesc;
+    batchDesc.shaders = { vsBatch, ps3d };
+    psoManager_->RegisterShader("Batch", batchDesc); // ps3dを共有
+
+    // 2D/UI系 (MRT非対応・1枚)
     psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
     psoManager_->RegisterShader("SpriteBatch", { { vsSpriteBatch, psSprite } });
     psoManager_->RegisterShader("Text", { { vsText, psText } });
-    psoManager_->RegisterShader("Batch", { { vsBatch, ps3d } });
-    
-    // LineとLineBatchとDebugPrimitiveはLINEトポロジ
-    psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    psoManager_->RegisterShader("LineBatch", { { vsLineBatch, psLineBatch }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    psoManager_->RegisterShader("DebugPrimitive", { { vsDebugPrimitive, psDebugPrimitive }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    
-    psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
-    psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
-    psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
 
-    psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
+    // 3Dエフェクト系 (MRT対応)
+    PSOManager::PipelineStateDesc particleDesc = mrtDesc;
+    particleDesc.shaders = { vsParticle, psParticle };
+    psoManager_->RegisterShader("Particle", particleDesc);
+
+    PSOManager::PipelineStateDesc lineDesc = mrtDesc;
+    lineDesc.shaders = { vsLine, psLine };
+    lineDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("Line", lineDesc);
+
+    PSOManager::PipelineStateDesc lineBatchDesc = mrtDesc;
+    lineBatchDesc.shaders = { vsLineBatch, psLineBatch };
+    lineBatchDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("LineBatch", lineBatchDesc);
+
+    PSOManager::PipelineStateDesc debugPrimDesc = mrtDesc;
+    debugPrimDesc.shaders = { vsDebugPrimitive, psDebugPrimitive };
+    debugPrimDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("DebugPrimitive", debugPrimDesc);
+
+    PSOManager::PipelineStateDesc skinDesc = mrtDesc;
+    skinDesc.shaders = { vsSkin, ps3d };
+    psoManager_->RegisterShader("Skinning", skinDesc);
+
+    PSOManager::PipelineStateDesc skyboxDesc = mrtDesc;
+    skyboxDesc.shaders = { vsSkybox, psSkybox };
+    psoManager_->RegisterShader("Skybox", skyboxDesc);
+
+    PSOManager::PipelineStateDesc gpuParticleDesc = mrtDesc;
+    gpuParticleDesc.shaders = { vsGpuParticle, psGpuParticle };
+    psoManager_->RegisterShader("GpuParticle", gpuParticleDesc);
+
+    PSOManager::PipelineStateDesc voxelParticleDesc = mrtDesc;
+    voxelParticleDesc.shaders = { vsVoxel, psVoxel };
+    psoManager_->RegisterShader("VoxelParticle", voxelParticleDesc);
 
     
     // シャドウマップ(通常) - 深度のみ
@@ -375,7 +424,16 @@ void DirectXCommon::RegisterAllShaders() {
     spriteBBDesc.shaders = { vsSprite, psSprite };
     spriteBBDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     spriteBBDesc.disableDepthTest = true;
+    spriteBBDesc.noDSV = true;
     psoManager_->RegisterShader("SpriteForBackBuffer", spriteBBDesc);
+
+    PSOManager::PipelineStateDesc spriteBatchBBDesc = spriteBBDesc;
+    spriteBatchBBDesc.shaders = { vsSpriteBatch, psSprite };
+    psoManager_->RegisterShader("SpriteBatchForBackBuffer", spriteBatchBBDesc);
+
+    PSOManager::PipelineStateDesc textBBDesc = spriteBBDesc;
+    textBBDesc.shaders = { vsText, psText };
+    psoManager_->RegisterShader("TextForBackBuffer", textBBDesc);
 
     // --- Compute PSO生成 ---
     auto computeRootSig = GetComputeRootSignature();
@@ -631,8 +689,11 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 
     // Win32 API を使用してファイルの存在確認を行う（std::filesystem の代用）
     if (GetFileAttributesW(filePathW.c_str()) == INVALID_FILE_ATTRIBUTES) {
-        std::wstring msg = L"[LoadTexture] File not found: " + filePathW + L"\n";
-        OutputDebugStringW(msg.c_str());
+        std::wstring msg = L"[LoadTexture] File not found: " + filePathW;
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, ConvertString(msg));
         
         // フォールバック: 1x1のマゼンタ色テクスチャを返す
         ScratchImage fallbackImage;
@@ -686,8 +747,10 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 #else
         msg += ConvertString(err.ErrorMessage());
 #endif
-        msg += L"\n";
-        OutputDebugStringW(msg.c_str());
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, ConvertString(msg));
         
         // フォールバック: 1x1のマゼンタ色テクスチャを返す
         ScratchImage fallbackImage;
@@ -709,8 +772,11 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
             filter, 0, mipImages);
         if (FAILED(hr)) {
             _com_error err(hr);
-            std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")\n";
-            OutputDebugStringW(msg.c_str());
+            std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")";
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cerr, ConvertString(msg));
             // ミップマップ生成に失敗した場合は、元の画像をそのまま返す
             return image;
         }
@@ -833,7 +899,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
 
 }
 
-Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4* clearColor) {
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Irufemi::Vector4* clearColor) {
 	// 1. metadataを基にResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Width = width; //Textureの幅

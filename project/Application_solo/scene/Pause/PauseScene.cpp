@@ -14,10 +14,6 @@ void PauseScene::Initialize(IrufemiEngine* engine) {
 void PauseScene::Update() {
     BaseScene::Update();
 
-    // BackSpaceキーで遷移テスト
-    if (IsKeyPressed(VK_F8)) {
-        engine_->GetSceneManager()->TransitionTo("Clear", SceneTransition::Type::Slide, 1.0f);
-    }
 }
 
 void PauseScene::Draw() {

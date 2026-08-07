@@ -12,6 +12,8 @@
 #include "../Shape/Triangle.h"
 
 
+
+namespace Irufemi {
 namespace Math {
 
 
@@ -29,7 +31,7 @@ namespace Math {
 
     Vector2 Normalize(Vector2 vector) {
         float len = Length(vector);
-        if (len == 0.0f) {
+        if (len < 1e-6f) {
             return { 0.0f, 0.0f };
         }
         return vector / len;
@@ -39,7 +41,10 @@ namespace Math {
         Vector2 ab = segment.end - segment.origin;
         Vector2 ap = point - segment.origin;
 
-        float t = Dot(ap, ab) / Dot(ab, ab);
+        float sq = Dot(ab, ab);
+        if (sq < 1e-6f) return segment.origin;
+
+        float t = Dot(ap, ab) / sq;
 
         if (t < 0.0f) {
             return segment.origin;
@@ -76,7 +81,7 @@ namespace Math {
 
     Vector3 Normalize(Vector3 vector) {
         float len = Length(vector);
-        if (len == 0.0f) return { 0.0f, 0.0f, 0.0f };
+        if (len < 1e-6f) return { 0.0f, 0.0f, 0.0f };
         return vector / len;
     }
 
@@ -89,8 +94,10 @@ namespace Math {
     }
 
     Vector3 ClosestPoint(Vector3 point, const Segment& segment) {
+        float diffSq = Dot(segment.diff, segment.diff);
+        if (diffSq < 1e-6f) return segment.origin;
         Vector3 a = point - segment.origin;
-        float t = Dot(a, segment.diff) / Dot(segment.diff, segment.diff);
+        float t = Dot(a, segment.diff) / diffSq;
         t = Clamp(t, 0.0f, 1.0f);
         return segment.origin + t * segment.diff;
     }
@@ -98,15 +105,19 @@ namespace Math {
 
 
     Vector3 ClosestPoint(Vector3 point, const Ray& ray) {
+        float diffSq = Dot(ray.diff, ray.diff);
+        if (diffSq < 1e-6f) return ray.origin;
         Vector3 a = point - ray.origin;
-        float t = Dot(a, ray.diff) / Dot(ray.diff, ray.diff);
+        float t = Dot(a, ray.diff) / diffSq;
         t = std::max(t, 0.0f); 
         return ray.origin + t * ray.diff;
     }
 
     Vector3 ClosestPoint(Vector3 point, const Line& line) {
+        float diffSq = Dot(line.diff, line.diff);
+        if (diffSq < 1e-6f) return line.origin;
         Vector3 a = point - line.origin;
-        float t = Dot(a, line.diff) / Dot(line.diff, line.diff);
+        float t = Dot(a, line.diff) / diffSq;
         return line.origin + t * line.diff;
     }
 
@@ -172,10 +183,10 @@ namespace Math {
     Vector4 Normalize(Vector4 v)
     {
         float len = Length(v);
-        if (len != 0.0f) {
+        if (len > 1e-6f) {
             return v / len;
         }
-        return v;
+        return { 0.0f, 0.0f, 0.0f, 0.0f };
     }
 #pragma endregion
 
@@ -426,21 +437,51 @@ namespace Math {
     }
 
     Vector3 ExtractEulerFromMatrix(const Matrix4x4& matrix) {
+        // 抽出前にスケールを除去する（各軸ベクトルを正規化）
+        Vector3 lx = Normalize(Vector3{matrix.m[0][0], matrix.m[0][1], matrix.m[0][2]});
+        Vector3 ly = Normalize(Vector3{matrix.m[1][0], matrix.m[1][1], matrix.m[1][2]});
+        Vector3 lz = Normalize(Vector3{matrix.m[2][0], matrix.m[2][1], matrix.m[2][2]});
+
         Vector3 euler{};
         // MakeRotateXYZMatrix (Rx * Ry * Rz) に対応する抽出式
-        float cy = std::sqrt(matrix.m[0][0] * matrix.m[0][0] + matrix.m[0][1] * matrix.m[0][1]);
+        float cy = std::sqrt(lx.x * lx.x + lx.y * lx.y); // 元の matrix.m[0][0], matrix.m[0][1]
         constexpr float kEpsilon = 1e-6f;
 
         if (cy > kEpsilon) {
-            euler.x = std::atan2(matrix.m[1][2], matrix.m[2][2]);
-            euler.y = std::atan2(-matrix.m[0][2], cy);
-            euler.z = std::atan2(matrix.m[0][1], matrix.m[0][0]);
+            euler.x = std::atan2(ly.z, lz.z);
+            euler.y = std::atan2(-lx.z, cy);
+            euler.z = std::atan2(lx.y, lx.x);
         } else {
-            euler.x = std::atan2(-matrix.m[2][1], matrix.m[1][1]);
-            euler.y = std::atan2(-matrix.m[0][2], cy);
+            euler.x = std::atan2(-lz.y, ly.y);
+            euler.y = std::atan2(-lx.z, cy);
             euler.z = 0.0f;
         }
         return euler;
+    }
+
+    Vector3 LookRotation(Vector3 forward, Vector3 up) {
+        if (forward.LengthSquared() < 0.0001f) {
+            return {0.0f, 0.0f, 0.0f};
+        }
+        forward.Normalize();
+        
+        Vector3 right = Cross(up, forward);
+        if (right.LengthSquared() < 0.0001f) {
+            // 前方と上が平行な場合へのフォールバック
+            right = Cross(Vector3{1.0f, 0.0f, 0.0f}, forward);
+            if (right.LengthSquared() < 0.0001f) {
+                right = Cross(Vector3{0.0f, 1.0f, 0.0f}, forward);
+            }
+        }
+        right.Normalize();
+        up = Cross(forward, right).GetNormalized();
+
+        Matrix4x4 rotMat = MakeIdentity4x4();
+        rotMat.m[0][0] = right.x; rotMat.m[0][1] = right.y; rotMat.m[0][2] = right.z;
+        rotMat.m[1][0] = up.x;    rotMat.m[1][1] = up.y;    rotMat.m[1][2] = up.z;
+        rotMat.m[2][0] = forward.x; rotMat.m[2][1] = forward.y; rotMat.m[2][2] = forward.z;
+
+        return ExtractEulerFromMatrix(rotMat);
     }
 
 
@@ -466,7 +507,7 @@ namespace Math {
 
     Quaternion Normalize(const Quaternion& q) {
         float n = Norm(q);
-        if (n < 1e-6f) return q;
+        if (n < 1e-6f) return IdentityQuaternion();
         return { q.x / n, q.y / n, q.z / n, q.w / n };
     }
 
@@ -546,6 +587,66 @@ namespace Math {
         return ExtractEulerFromMatrix(MakeRotateMatrix(q));
     }
 
+    Quaternion ToQuaternionFromEuler(Vector3 euler) {
+        float cx = std::cos(euler.x * 0.5f);
+        float sx = std::sin(euler.x * 0.5f);
+        float cy = std::cos(euler.y * 0.5f);
+        float sy = std::sin(euler.y * 0.5f);
+        float cz = std::cos(euler.z * 0.5f);
+        float sz = std::sin(euler.z * 0.5f);
+
+        Quaternion q;
+        // XYZ順 (Roll-Pitch-Yawの適用順) に合わせた直接計算
+        q.w = cx * cy * cz + sx * sy * sz;
+        q.x = sx * cy * cz - cx * sy * sz;
+        q.y = cx * sy * cz + sx * cy * sz;
+        q.z = cx * cy * sz - sx * sy * cz;
+
+        return Normalize(q);
+    }
+
+    Quaternion ToQuaternionFromMatrix(const Matrix4x4& m) {
+        // スケーリング成分を取り除き、純粋な回転行列成分を抽出する
+        Vector3 xaxis = Normalize(Vector3{m.m[0][0], m.m[0][1], m.m[0][2]});
+        Vector3 yaxis = Normalize(Vector3{m.m[1][0], m.m[1][1], m.m[1][2]});
+        Vector3 zaxis = Normalize(Vector3{m.m[2][0], m.m[2][1], m.m[2][2]});
+
+        float m00 = xaxis.x, m01 = xaxis.y, m02 = xaxis.z;
+        float m10 = yaxis.x, m11 = yaxis.y, m12 = yaxis.z;
+        float m20 = zaxis.x, m21 = zaxis.y, m22 = zaxis.z;
+
+        Quaternion q;
+        float trace = m00 + m11 + m22;
+        if (trace > 0.0f) {
+            float s = 0.5f / std::sqrt(trace + 1.0f);
+            q.w = 0.25f / s;
+            q.x = (m12 - m21) * s;
+            q.y = (m20 - m02) * s;
+            q.z = (m01 - m10) * s;
+        } else {
+            if (m00 > m11 && m00 > m22) {
+                float s = 2.0f * std::sqrt(1.0f + m00 - m11 - m22);
+                q.w = (m12 - m21) / s;
+                q.x = 0.25f * s;
+                q.y = (m01 + m10) / s;
+                q.z = (m20 + m02) / s;
+            } else if (m11 > m22) {
+                float s = 2.0f * std::sqrt(1.0f + m11 - m00 - m22);
+                q.w = (m20 - m02) / s;
+                q.x = (m01 + m10) / s;
+                q.y = 0.25f * s;
+                q.z = (m12 + m21) / s;
+            } else {
+                float s = 2.0f * std::sqrt(1.0f + m22 - m00 - m11);
+                q.w = (m01 - m10) / s;
+                q.x = (m20 + m02) / s;
+                q.y = (m12 + m21) / s;
+                q.z = 0.25f * s;
+            }
+        }
+        return Normalize(q);
+    }
+
 #pragma endregion
 
     Vector3 Perpendicular(Vector3 vector) {
@@ -562,3 +663,5 @@ namespace Math {
     }
 
 }
+
+} // namespace Irufemi

@@ -221,11 +221,11 @@ bool InputManager::IsMouseButtonReleased(Mouse::Button button) const {
     return mouse_->IsButtonReleased(button);
 }
 
-const Vector2& InputManager::GetMousePosition() const {
+const Irufemi::Vector2& InputManager::GetMousePosition() const {
     return mouse_->GetPosition();
 }
 
-const Vector2& InputManager::GetMouseDelta() const {
+const Irufemi::Vector2& InputManager::GetMouseDelta() const {
     return mouse_->GetDelta();
 }
 

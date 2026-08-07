@@ -6,10 +6,7 @@
 ConstantBuffer<Material> gMaterial : register(b0);
 #include "Bindless.hlsli"
 
-struct PixelShaderOutput
-{
-	float32_t4 color : SV_TARGET0;
-};
+#include "BasePassPixelOutput.hlsli"
 
 /*テクスチャを貼ろう*/
 
@@ -20,15 +17,7 @@ SamplerState gSamplerClamp : register(s1);
 
 /*LambertianReflectance*/
 
-struct DirectionalLight
-{
-	 //!< ライトの色
-	float32_t4 color;
-    //!< ライトの向き
-	float32_t3 direction;
-    //!< 輝度
-	float intensity;
-};
+#include "Lighting.hlsli"
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
 
 /*テクスチャを貼ろう*/
@@ -57,12 +46,24 @@ PixelShaderOutput main(VertexShaderOutput input)
 		
 	/// disxard
 		
-	// output.aolorのα値が0の時にPixelを棄却
-	if (output.color.a == 0.0)
-	{
+	// アルファテスト
+	if (output.color.a == 0.0) {
 		discard;
 	}
 	
+	output.mask.r = gMaterial.customEffectType / 255.0f;
+	output.mask.g = gMaterial.customEffectParam;
+	output.mask.b = gMaterial.enableEffectMask ? 1.0f : 0.0f;
+	output.mask.a = 1.0f;
+
+	// パーティクルの法線はビルボードなのでZ手前固定
+	output.normal = float4(0.0f, 0.0f, -1.0f, 1.0f); 
 	
+	// パーティクルのマテリアルは仮の値
+	output.material = float4(0.0f, 1.0f, 0.0f, 1.0f);
+	
+	// ベロシティは仮
+	output.velocity = float2(0.0f, 0.0f);
+
 	return output;
 }

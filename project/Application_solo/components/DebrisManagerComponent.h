@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <queue>
+#include <string>
 
 class GameObject;
 class VirtualEntityManagerComponent;
@@ -29,15 +30,26 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "DebrisManagerComponent"; }
 
-    // ガレキの実体取得と返却（Bossのシールド等、IDなしの取得用）
-    std::shared_ptr<GameObject> AcquireDebris();
+    /**
+     * @brief プールからガレキを1つ取り出す
+     */
+    std::shared_ptr<GameObject> GetDebris();
+
+    /**
+     * @brief ガレキをプールに返却する（即時）
+     */
     void ReleaseDebris(std::shared_ptr<GameObject> debris);
 
+    /**
+     * @brief ガレキをプール返却キューに積む（Update中の安全な削除用）
+     */
+    void MarkForRelease(std::shared_ptr<GameObject> debris);
+
     // プレイヤーからの引き寄せ処理用：指定座標から一番近い未昇格のがれきを実体化して返す
-    std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Vector3& pos, float radius);
+    std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Irufemi::Vector3& pos, float radius);
 
     // 破壊通知
-    void NotifyDestroyed(int virtualId);
+    void NotifyDestroyed(int virtualId, int variationIndex);
 
     // Debris パラメータのゲッター
     float GetDebrisPullSpeed() const { return debrisPullSpeed_; }
@@ -49,28 +61,30 @@ public:
     float GetDebrisPullYOffset() const { return debrisPullYOffset_; }
     float GetCameraShakeIntensity() const { return cameraShakeIntensity_; }
     int GetCameraShakeDurationFrames() const { return cameraShakeDurationFrames_; }
-    Vector4 GetPlayerAuraColor() const { return playerAuraColor_; }
-    Vector4 GetBossAuraColor() const { return bossAuraColor_; }
-    Vector4 GetIdleAuraColor() const { return idleAuraColor_; }
+    Irufemi::Vector4 GetPlayerAuraColor() const { return playerAuraColor_; }
+    Irufemi::Vector4 GetBossAuraColor() const { return bossAuraColor_; }
+    Irufemi::Vector4 GetIdleAuraColor() const { return idleAuraColor_; }
     float GetCatchDistanceSq() const { return catchDistanceSq_; }
     float GetBossShieldRadius() const { return bossShieldRadius_; }
 
-    Vector3 GetDebrisBaseScale() const { return debrisBaseScale_; }
+    Irufemi::Vector3 GetDebrisBaseScale() const { return debrisBaseScale_; }
     float GetColliderRadius() const { return colliderRadius_; }
-    Vector3 GetAuraScale() const { return auraScale_; }
+    Irufemi::Vector3 GetAuraScale() const { return auraScale_; }
+    float GetMaxThrowDistanceSq() const { return maxThrowDistance_ * maxThrowDistance_; }
 
 private:
-    int poolSize_ = 500;
-    int maxVirtualInstances_ = 20000; // 仮想インスタンスの最大予約数
-
-    // エンジンの基盤システム（Virtual Entity）
-    VirtualEntityManagerComponent* virtualManager_ = nullptr;
-
-    // がれき固有のアニメーションデータ（フラット配列によるキャッシュ最適化）
-    std::vector<DebrisAnimData> animDataList_;
-
-    // 生成順を追跡するためのキュー（最古のインスタンスをO(1)で特定するため）
-    std::queue<int> activeIds_;
+    // --- Data-Driven Variations ---
+    struct DebrisVariation {
+        std::string id;
+        std::string modelPath;
+        int maxPoolSize;
+        int spawnWeight;
+        VirtualEntityManagerComponent* virtualManager = nullptr;
+        std::vector<DebrisAnimData> animDataList;
+        std::queue<int> activeIds;
+        std::shared_ptr<GameObject> poolObject;
+    };
+    std::vector<DebrisVariation> variations_;
 
     // --- Debris Settings ---
     float debrisPullSpeed_ = 10.0f;
@@ -82,13 +96,16 @@ private:
     float debrisPullYOffset_ = 2.0f;
     float cameraShakeIntensity_ = 0.5f;
     int cameraShakeDurationFrames_ = 10;
-    Vector4 playerAuraColor_ = { 0.0f, 0.8f, 1.0f, 0.4f };
-    Vector4 bossAuraColor_ = { 0.8f, 0.0f, 0.6f, 0.4f };
-    Vector4 idleAuraColor_ = { 0.6f, 0.2f, 1.0f, 0.4f };
+    Irufemi::Vector4 playerAuraColor_ = { 0.0f, 0.8f, 1.0f, 0.4f };
+    Irufemi::Vector4 bossAuraColor_ = { 0.8f, 0.0f, 0.6f, 0.4f };
+    Irufemi::Vector4 idleAuraColor_ = { 0.6f, 0.2f, 1.0f, 0.4f };
     float catchDistanceSq_ = 2.0f;
     float bossShieldRadius_ = 8.0f;
 
-    Vector3 debrisBaseScale_ = { 0.5f, 0.5f, 0.5f };
+    Irufemi::Vector3 debrisBaseScale_ = { 0.5f, 0.5f, 0.5f };
     float colliderRadius_ = 0.5f;
-    Vector3 auraScale_ = { 2.2f, 2.2f, 2.2f };
+    Irufemi::Vector3 auraScale_ = { 2.2f, 2.2f, 2.2f };
+    float maxThrowDistance_ = 1500.0f;
+
+    std::vector<std::shared_ptr<GameObject>> pendingReleases_;
 };

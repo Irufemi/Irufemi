@@ -12,15 +12,13 @@ AABBColliderComponent::~AABBColliderComponent() {
 
 void AABBColliderComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
     // 初期化時にCollisionManagerに自身を登録する
     if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void AABBColliderComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 }
 
@@ -29,21 +27,33 @@ void AABBColliderComponent::DrawDebug() {
 
 
 
-AABB AABBColliderComponent::GetWorldAABB() const {
-    AABB aabb;
-    if (transform_) {
-        Vector3 worldPos = transform_->GetWorldPosition();
-        Vector3 worldScale = transform_->GetWorldScale();
+Irufemi::AABB AABBColliderComponent::GetWorldAABB() const {
+    Irufemi::AABB aabb;
+    if (GetTransform()) {
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         
-        Vector3 center = { worldPos.x + localOffset_.x * worldScale.x, 
-                           worldPos.y + localOffset_.y * worldScale.y, 
-                           worldPos.z + localOffset_.z * worldScale.z };
-        Vector3 scaledSize = { localSize_.x * worldScale.x, 
-                               localSize_.y * worldScale.y, 
-                               localSize_.z * worldScale.z };
+        // オブジェクトの回転とスケールを考慮したワールド空間のローカルオフセット
+        Irufemi::Vector3 worldOffset = 
+            GetTransform()->GetWorldRight() * (localOffset_.x * worldScale.x) +
+            GetTransform()->GetWorldUp() * (localOffset_.y * worldScale.y) +
+            GetTransform()->GetWorldForward() * (localOffset_.z * worldScale.z);
+            
+        Irufemi::Vector3 center = worldPos + worldOffset;
         
-        aabb.min = { center.x - scaledSize.x, center.y - scaledSize.y, center.z - scaledSize.z };
-        aabb.max = { center.x + scaledSize.x, center.y + scaledSize.y, center.z + scaledSize.z };
+        // ローカル軸ごとのサイズベクトルをワールド空間に変換
+        Irufemi::Vector3 rightSize = GetTransform()->GetWorldRight() * (localSize_.x * worldScale.x);
+        Irufemi::Vector3 upSize = GetTransform()->GetWorldUp() * (localSize_.y * worldScale.y);
+        Irufemi::Vector3 forwardSize = GetTransform()->GetWorldForward() * (localSize_.z * worldScale.z);
+        
+        // 各ワールド軸（X, Y, Z）への射影の絶対値の和がAABBのサイズ（extent）になる
+        Irufemi::Vector3 extent;
+        extent.x = std::abs(rightSize.x) + std::abs(upSize.x) + std::abs(forwardSize.x);
+        extent.y = std::abs(rightSize.y) + std::abs(upSize.y) + std::abs(forwardSize.y);
+        extent.z = std::abs(rightSize.z) + std::abs(upSize.z) + std::abs(forwardSize.z);
+        
+        aabb.min = { center.x - extent.x, center.y - extent.y, center.z - extent.z };
+        aabb.max = { center.x + extent.x, center.y + extent.y, center.z + extent.z };
     } else {
         aabb.min = { localOffset_.x - localSize_.x, localOffset_.y - localSize_.y, localOffset_.z - localSize_.z };
         aabb.max = { localOffset_.x + localSize_.x, localOffset_.y + localSize_.y, localOffset_.z + localSize_.z };

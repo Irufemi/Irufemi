@@ -1,0 +1,11 @@
+{
+    "Layers": {
+        "0": "Default",
+        "1": "Player",
+        "2": "Enemy",
+        "3": "Debris_Neutral",
+        "4": "Debris_Player",
+        "5": "Debris_Enemy",
+        "6": "Environment"
+    }
+}

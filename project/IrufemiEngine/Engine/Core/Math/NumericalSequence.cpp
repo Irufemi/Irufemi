@@ -1,6 +1,8 @@
 #include "NumericalSequence.h"
 #include <cmath>
 
+
+namespace Irufemi {
 namespace Math::Sequence {
 
     float CalculateArithmetic(float firstTerm, float difference, uint32_t index) {
@@ -29,3 +31,5 @@ namespace Math::Sequence {
         return sequence;
     }
 }
+
+} // namespace Irufemi

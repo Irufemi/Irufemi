@@ -46,9 +46,7 @@
     <ClCompile Include="Editor\Panel\ConsolePanel.cpp">
       <Filter>Editor\Panel</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Utils\EditorCameraController.cpp">
-      <Filter>Editor\Utils</Filter>
-    </ClCompile>
+
     <ClCompile Include="Editor\Core\ComponentUIHelpers.cpp">
       <Filter>Editor\Core</Filter>
     </ClCompile>
@@ -56,6 +54,9 @@
       <Filter>Editor\ComponentEditors</Filter>
     </ClCompile>
     <ClCompile Include="Editor\ComponentEditors\MeshRendererComponentEditor.cpp">
+      <Filter>Editor\ComponentEditors</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\ComponentEditors\EffectMaskComponentEditor.cpp">
       <Filter>Editor\ComponentEditors</Filter>
     </ClCompile>
     <ClCompile Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.cpp">
@@ -128,9 +129,7 @@
     <ClInclude Include="Editor\Panel\ConsolePanel.h">
       <Filter>Editor\Panel</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Utils\EditorCameraController.h">
-      <Filter>Editor\Utils</Filter>
-    </ClInclude>
+
     <ClInclude Include="Editor\Core\ComponentUIHelpers.h">
       <Filter>Editor\Core</Filter>
     </ClInclude>
@@ -138,6 +137,9 @@
       <Filter>Editor\ComponentEditors</Filter>
     </ClInclude>
     <ClInclude Include="Editor\ComponentEditors\MeshRendererComponentEditor.h">
+      <Filter>Editor\ComponentEditors</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\ComponentEditors\EffectMaskComponentEditor.h">
       <Filter>Editor\ComponentEditors</Filter>
     </ClInclude>
     <ClInclude Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.h">

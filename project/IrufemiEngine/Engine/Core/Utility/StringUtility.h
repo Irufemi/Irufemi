@@ -6,12 +6,25 @@
 
 /*ログを出そう*/
 
+/**
+ * @brief ConvertString を実行する。
+ */
 std::wstring ConvertString(const std::string& str);
 
+/**
+ * @brief ConvertString を実行する。
+ */
 std::string ConvertString(const std::wstring& str);
 
 namespace StringUtility {
+    /**
+     * @brief EndsWith を実行する。
+     */
     bool EndsWith(const std::wstring& str, const std::wstring& suffix);
+    /**
+     * @brief CacheFilePath を取得する。
+     * @return 取得された CacheFilePath
+     */
     std::string GetCacheFilePath(const std::string& fullPath, const std::string& cacheCategory, const std::string& extension);
 }
 

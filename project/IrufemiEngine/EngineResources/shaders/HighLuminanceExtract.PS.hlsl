@@ -1,3 +1,4 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
@@ -7,12 +8,7 @@
  * @brief 高輝度部を抽出するシェーダー（ブルームの第1パス用）
  */
 
-struct BloomParams {
-    float32_t threshold;    // しきい値
-    float32_t sigma;
-    float32_t intensity;
-    int32_t kernelSize;
-};
+
 
 ConstantBuffer<BloomParams> gBloom : register(b0);
 SamplerState gSampler : register(s0);

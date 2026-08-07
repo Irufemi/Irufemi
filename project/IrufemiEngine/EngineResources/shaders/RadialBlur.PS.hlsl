@@ -1,13 +1,10 @@
+#include "PostProcessParameters.hlsli"
 #include "Fullscreen.hlsli"
 #include "Bindless.hlsli"
 #include "PostProcessBindlessParams.hlsli"
 
 // ラジアルブラー用定数バッファ
-struct RadialBlurParams {
-    float32_t2 center;      // 中心点 (0.5, 0.5 等)
-    float32_t blurWidth;    // ぼかしの幅 (0.01 等)
-    int32_t numSamples;     // サンプリング数 (10 等)
-};
+
 
 ConstantBuffer<RadialBlurParams> gParams : register(b0);
 SamplerState gSampler : register(s0);

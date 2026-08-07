@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <cassert>
 
+
+namespace Irufemi {
 const Vector2 Vector2::zero = { 0.0f, 0.0f };
 const Vector2 Vector2::one = { 1.0f, 1.0f };
 const Vector2 Vector2::right = { 1.0f, 0.0f };
@@ -100,4 +102,6 @@ Vector2 operator/(const Vector2& lhs, const Vector2& rhs) {
 	assert(rhs.x != 0.0f && rhs.y != 0.0f);
 	return { lhs.x / rhs.x, lhs.y / rhs.y };
 }
-
+
+
+} // namespace Irufemi

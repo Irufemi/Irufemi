@@ -23,7 +23,7 @@
 #include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-#include "scene/debug/DebugScene.h"
+#include "Framework/DebugScene.h"
 #endif
 
 #ifdef EditorMode
@@ -35,7 +35,7 @@ namespace {
     const int32_t kClientWidth = 1280;
     const int32_t kClientHeight = 720;
     const std::wstring kTitle = L"Application_team";
-    const Vector4 kClearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
+    const Irufemi::Vector4 kClearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
         = "Debug";

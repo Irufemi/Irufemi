@@ -5,11 +5,7 @@ ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 // struct VertexShaderInput は VertexData.hlsli で定義
 
-struct Camera {
-	float32_t4x4 view;
-	float32_t4x4 projection;
-	float32_t3 worldPosition;
-};
+#include "Camera.hlsli"
 ConstantBuffer<Camera> gCamera : register(b2);
 
 VertexShaderOutput main(VertexInput input)

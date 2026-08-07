@@ -149,13 +149,13 @@ void SpriteRendererComponentEditor::Draw(Component* component, EditorActionManag
                 if (comp->GetSprite()) comp->GetSprite()->SetAnchor(comp->anchor_[0], comp->anchor_[1]);
             }
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, reinterpret_cast<Vector2*>(comp->anchor_), std::function<void(const Vector2&)>([comp](const Vector2& v){ 
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, reinterpret_cast<Irufemi::Vector2*>(comp->anchor_), std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){ 
                 comp->anchor_[0] = v.x; comp->anchor_[1] = v.y; 
                 if (comp->GetSprite()) comp->GetSprite()->SetAnchor(v.x, v.y); 
             }));
             ComponentUIHelpers::DrawPropertyResetButton("##AnchorReset", comp->anchor_[0] != 0.5f || comp->anchor_[1] != 0.5f, [&]() {
-                Vector2 oldA = Vector2(comp->anchor_[0], comp->anchor_[1]);
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldA, Vector2{0.5f, 0.5f}, std::function<void(const Vector2&)>([comp](const Vector2& v){ 
+                Irufemi::Vector2 oldA = Irufemi::Vector2(comp->anchor_[0], comp->anchor_[1]);
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldA, Irufemi::Vector2{0.5f, 0.5f}, std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){ 
                     comp->anchor_[0] = v.x; comp->anchor_[1] = v.y; 
                     if (comp->GetSprite()) comp->GetSprite()->SetAnchor(v.x, v.y); 
                 }));
@@ -167,12 +167,12 @@ void SpriteRendererComponentEditor::Draw(Component* component, EditorActionManag
             ImGui::PushItemWidth(-1);
             ImGui::DragFloat2("##Base Size", comp->size_, 1.0f, 1.0f, 8192.0f);
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, reinterpret_cast<Vector2*>(comp->size_), std::function<void(const Vector2&)>([comp](const Vector2& v){
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, reinterpret_cast<Irufemi::Vector2*>(comp->size_), std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){
                 comp->size_[0] = v.x; comp->size_[1] = v.y;
             }));
             ComponentUIHelpers::DrawPropertyResetButton("##BaseSizeReset", comp->size_[0] != 100.0f || comp->size_[1] != 100.0f, [&]() {
-                Vector2 oldS = Vector2(comp->size_[0], comp->size_[1]);
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Vector2{100, 100}, std::function<void(const Vector2&)>([comp](const Vector2& v){ 
+                Irufemi::Vector2 oldS = Irufemi::Vector2(comp->size_[0], comp->size_[1]);
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Irufemi::Vector2{100, 100}, std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){ 
                     comp->size_[0] = v.x; comp->size_[1] = v.y; 
                 }));
             });
@@ -185,13 +185,13 @@ void SpriteRendererComponentEditor::Draw(Component* component, EditorActionManag
                 if (comp->GetSprite()) comp->GetSprite()->SetColor(comp->color_);
             }
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->color_, std::function<void(const Vector4&)>([comp](const Vector4& v){
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->color_, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){
                 comp->color_ = v;
                 if (comp->GetSprite()) comp->GetSprite()->SetColor(v);
             }));
             ComponentUIHelpers::DrawPropertyResetButton("##ColorReset", comp->color_.x != 1.0f || comp->color_.y != 1.0f || comp->color_.z != 1.0f || comp->color_.w != 1.0f, [&]() {
-                Vector4 oldC = comp->color_;
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Vector4{1,1,1,1}, std::function<void(const Vector4&)>([comp](const Vector4& v){ 
+                Irufemi::Vector4 oldC = comp->color_;
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Irufemi::Vector4{1,1,1,1}, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ 
                     comp->color_ = v;
                     if (comp->GetSprite()) comp->GetSprite()->SetColor(v);
                 }));

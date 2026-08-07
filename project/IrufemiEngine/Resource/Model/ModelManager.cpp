@@ -1,5 +1,8 @@
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include "Engine/Core/Utility/StringUtility.h"
+#include "Engine/Core/Utility/Log.h"
+#include "Engine/Core/Utility/FileSystem.h"
+#include <iostream>
 #include "ModelManager.h"
 #include "Engine/Core/System/ThreadPool.h"
 #include <filesystem>
@@ -52,7 +55,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
     textureManager_ = textureManager; // 追加
     GpuMaterial::sTextureManager = textureManager; // 追加
     if (rootDir_.empty()) {
-        rootDir_ = "resources/model";
+        rootDir_ = FileSystem::GetResourcePath("model");
     }
     if (!threadPool_) {
         threadPool_ = std::make_unique<ThreadPool>(4); // 推奨された4スレッド
@@ -64,8 +67,8 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
         backgroundTaskGroup_ = std::make_shared<TaskGroup>();
     }
     
-    // メモリ予算の設定（例: 512MB）
-    modelPool_.SetMemoryBudget(512ULL * 1024ULL * 1024ULL);
+    // メモリ予算の設定（RTX 3060 (12GB/8GB) 等に合わせて設定: 1GB）
+    modelPool_.SetMemoryBudget(1024ULL * 1024ULL * 1024ULL);
 }
 
 void ModelManager::SetRootDirectory(std::string root) {
@@ -106,7 +109,7 @@ ResourceHandle ModelManager::LoadModel(const std::string& filename) {
     if (handle.index >= managedModels_.size()) {
         managedModels_.resize(handle.index + 1);
     }
-    managedModels_[handle.index] = std::make_unique<ManagedModel>();
+    managedModels_[handle.index] = std::make_shared<ManagedModel>();
     auto& managedModel = managedModels_[handle.index];
     managedModel->status.store(ManagedModel::LoadingStatus::Pending);
 
@@ -121,16 +124,16 @@ ResourceHandle ModelManager::LoadModel(const std::string& filename) {
     }
 
     if (fullPath.empty() || !std::filesystem::exists(fullPath)) {
-        OutputDebugStringA(("[ModelManager] File not found: " + filename + "\n").c_str());
+        Log::OutPutLog(std::cerr, "[ModelManager] File not found: " + filename);
         managedModel->status.store(ManagedModel::LoadingStatus::Failed);
         return handle;
     }
 
-    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Request async load: {}\n", GetCurrentThreadId(), filename).c_str());
+    Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Request async load: {}", GetCurrentThreadId(), filename));
 
-    ManagedModel* rawPtr = managedModel.get();
-    const_cast<ModelManager*>(this)->EnqueueTask([rawPtr, fullPath, handle, this]() {
-        LoadInternal(rawPtr, fullPath);
+    auto managedModelPtr = managedModel;
+    const_cast<ModelManager*>(this)->EnqueueTask([managedModelPtr, fullPath, handle, this]() {
+        LoadInternal(managedModelPtr, fullPath);
         modelPool_.SetLoaded(handle, true);
     });
 
@@ -154,10 +157,10 @@ ManagedModel* ModelManager::Resolve(ResourceHandle handle) const {
     return nullptr;
 }
 
-void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& fullPath) {
+void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, const std::string& fullPath) {
 
     std::string key = SplitDirectoryAndFile(fullPath).second;
-    OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker START: {}\n", GetCurrentThreadId(), key).c_str());
+    Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Worker START: {}", GetCurrentThreadId(), key));
 
     managedModel->status.store(ManagedModel::LoadingStatus::Loading);
 
@@ -171,7 +174,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
         managedModel->lastLoadTime = currentLwt;
         managedModel->sourceFilePath = fullPath;
 
-        std::string binPathStr = StringUtility::GetCacheFilePath(fullPath, "model", ".ibin");
+        std::string binPathStr = StringUtility::GetCacheFilePath(fullPath, "model", ".model.ibin");
         std::filesystem::path binPathFs(binPathStr);
         if (binPathFs.has_parent_path()) {
             std::filesystem::create_directories(binPathFs.parent_path());
@@ -186,7 +189,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
             if (ModelSerializer::Deserialize(binPath, *loaded, cachedLwt) && cachedLwt == currentLwt) {
                 managedModel->cpuModel = loaded;
                 shouldImport = false;
-                OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Loaded from Cache: {}\n", GetCurrentThreadId(), key).c_str());
+                Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Loaded from Cache: {}", GetCurrentThreadId(), key));
             }
         }
 
@@ -209,7 +212,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
                 const size_t vbSize = sizeof(VertexData) * cpuMesh.vertices.size();
                 gpuMesh->vertexResource = dxCommon_->CreateBufferResource(vbSize);
                 if (!gpuMesh->vertexResource) {
-                    OutputDebugStringA("[ModelManager] Failed to create vertex buffer resource!\n");
+                    Log::OutPutLog(std::cerr, "[ModelManager] Failed to create vertex buffer resource!");
                     continue; // Skip this mesh if resource creation failed
                 }
                 gpuMesh->vertexCount = static_cast<UINT>(cpuMesh.vertices.size());
@@ -248,7 +251,7 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
                     std::memcpy(ibData, cpuMesh.indices.data(), ibSize);
                     gpuMesh->indexResource->Unmap(0, nullptr);
                 } else {
-                    OutputDebugStringA("[ModelManager] Failed to create index buffer resource!\n");
+                    Log::OutPutLog(std::cerr, "[ModelManager] Failed to create index buffer resource!");
                 }
             }
             managedModel->gpuMeshes.push_back(std::move(gpuMesh));
@@ -302,10 +305,10 @@ void ModelManager::LoadInternal(ManagedModel* managedModel, const std::string& f
         }
 
         managedModel->status.store(ManagedModel::LoadingStatus::Loaded);
-        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FINISH: {}\n", GetCurrentThreadId(), key).c_str());
+        Log::OutPutLog(std::cout, std::format("[ModelManager] [Thread:{}] Worker FINISH: {}", GetCurrentThreadId(), key));
     } catch (...) {
         managedModel->status.store(ManagedModel::LoadingStatus::Failed);
-        OutputDebugStringA(std::format("[ModelManager] [Thread:{}] Worker FAILED: {}\n", GetCurrentThreadId(), key).c_str());
+        Log::OutPutLog(std::cerr, std::format("[ModelManager] [Thread:{}] Worker FAILED: {}", GetCurrentThreadId(), key));
     }
 }
 
@@ -396,7 +399,7 @@ void ModelManager::OnDirectoryChanged() {
     // 変更が複数回呼ばれることを防ぐため少し待つ
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    std::vector<ManagedModel*> modelsToReload;
+    std::vector<std::shared_ptr<ManagedModel>> modelsToReload;
     {
         std::lock_guard<std::recursive_mutex> lock(mutex_);
         for (const auto& modelPtr : managedModels_) {
@@ -410,7 +413,7 @@ void ModelManager::OnDirectoryChanged() {
                     
                     // タイムスタンプが新しければリロード対象
                     if (currentLwt > modelPtr->lastLoadTime) {
-                        modelsToReload.push_back(modelPtr.get());
+                        modelsToReload.push_back(modelPtr);
                         modelPtr->lastLoadTime = currentLwt; // 二重検知を防ぐ
                     }
                 }
@@ -418,8 +421,8 @@ void ModelManager::OnDirectoryChanged() {
         }
     }
 
-    for (auto* model : modelsToReload) {
-        OutputDebugStringA(("[ModelManager] Hot-Reloading: " + model->sourceFilePath + "\n").c_str());
+    for (auto model : modelsToReload) {
+        Log::OutPutLog(std::cout, "[ModelManager] Hot-Reloading: " + model->sourceFilePath);
         // Criticalタスクとして積むことで、Sceneの更新を止めて安全にリソースをスワップする
         EnqueueTask(true, [this, model]() {
             model->gpuMeshes.clear();
@@ -432,12 +435,20 @@ void ModelManager::OnDirectoryChanged() {
 std::string ModelManager::NormalizeAndResolve(const std::string& filename) const {
     std::string f = filename;
     std::replace(f.begin(), f.end(), '\\', '/');
-    if (StartsWith(f, rootDir_ + "/")) {
-        // OK
-    } else if (StartsWith(f, rootDir_)) {
-        f = rootDir_ + "/" + f.substr(rootDir_.size());
+    std::string f_clean = f;
+    if (f_clean.find("./") == 0) f_clean = f_clean.substr(2);
+    else if (f_clean.find("/") == 0) f_clean = f_clean.substr(1);
+
+    std::string root_clean = rootDir_;
+    if (root_clean.find("./") == 0) root_clean = root_clean.substr(2);
+    else if (root_clean.find("/") == 0) root_clean = root_clean.substr(1);
+
+    if (StartsWith(f_clean, root_clean + "/")) {
+        f = "./" + f_clean;
+    } else if (StartsWith(f_clean, root_clean)) {
+        f = "./" + root_clean + "/" + f_clean.substr(root_clean.size());
     } else {
-        f = rootDir_ + "/" + f;
+        f = "./" + root_clean + "/" + f_clean;
     }
     std::transform(f.begin(), f.end(), f.begin(),
         [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -459,7 +470,7 @@ void ModelManager::DebugLogLoad(const std::string& key, size_t meshCount) {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     std::string msg = "[ModelManager] Loaded GPU resources for: " + key +
         " meshes=" + std::to_string(meshCount) + "\n";
-    OutputDebugStringA(msg.c_str());
+    Log::OutPutLog(std::cout, msg);
 #endif
 }
 
@@ -512,44 +523,44 @@ std::string ModelManager::FindFileRecursive(const std::string& filename) const {
 
 namespace {
     // レイと三角形の交差判定
-    bool IntersectRayTriangle(const Vector3& origin, const Vector3& direction,
-        const Vector3& v0, const Vector3& v1, const Vector3& v2,
+    bool IntersectRayTriangle(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction,
+        const Irufemi::Vector3& v0, const Irufemi::Vector3& v1, const Irufemi::Vector3& v2,
         float& t) {
         const float kEpsilon = 1e-6f;
-        Vector3 edge1 = Math::Subtract(v1, v0);
-        Vector3 edge2 = Math::Subtract(v2, v0);
-        Vector3 h = Math::Cross(direction, edge2);
-        float a = Math::Dot(edge1, h);
+        Irufemi::Vector3 edge1 = Irufemi::Math::Subtract(v1, v0);
+        Irufemi::Vector3 edge2 = Irufemi::Math::Subtract(v2, v0);
+        Irufemi::Vector3 h = Irufemi::Math::Cross(direction, edge2);
+        float a = Irufemi::Math::Dot(edge1, h);
         if (a > -kEpsilon && a < kEpsilon)
             return false; // レイは三角形と平行
 
         float f = 1.0f / a;
-        Vector3 s = Math::Subtract(origin, v0);
-        float u = f * Math::Dot(s, h);
+        Irufemi::Vector3 s = Irufemi::Math::Subtract(origin, v0);
+        float u = f * Irufemi::Math::Dot(s, h);
         if (u < 0.0f || u > 1.0f)
             return false;
 
-        Vector3 q = Math::Cross(s, edge1);
-        float v = f * Math::Dot(direction, q);
+        Irufemi::Vector3 q = Irufemi::Math::Cross(s, edge1);
+        float v = f * Irufemi::Math::Dot(direction, q);
         if (v < 0.0f || u + v > 1.0f)
             return false;
 
-        t = f * Math::Dot(edge2, q);
+        t = f * Irufemi::Math::Dot(edge2, q);
         return (t > kEpsilon);
     }
 
     // 点と三角形の最近接点を求める
-    Vector3 ClosestPointOnTriangle(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
-        Vector3 ab = b - a;
-        Vector3 ac = c - a;
-        Vector3 ap = p - a;
-        float d1 = Math::Dot(ab, ap);
-        float d2 = Math::Dot(ac, ap);
+    Irufemi::Vector3 ClosestPointOnTriangle(const Irufemi::Vector3& p, const Irufemi::Vector3& a, const Irufemi::Vector3& b, const Irufemi::Vector3& c) {
+        Irufemi::Vector3 ab = b - a;
+        Irufemi::Vector3 ac = c - a;
+        Irufemi::Vector3 ap = p - a;
+        float d1 = Irufemi::Math::Dot(ab, ap);
+        float d2 = Irufemi::Math::Dot(ac, ap);
         if (d1 <= 0.0f && d2 <= 0.0f) return a;
 
-        Vector3 bp = p - b;
-        float d3 = Math::Dot(ab, bp);
-        float d4 = Math::Dot(ac, bp);
+        Irufemi::Vector3 bp = p - b;
+        float d3 = Irufemi::Math::Dot(ab, bp);
+        float d4 = Irufemi::Math::Dot(ac, bp);
         if (d3 >= 0.0f && d4 <= d3) return b;
 
         float vc = d1 * d4 - d3 * d2;
@@ -558,9 +569,9 @@ namespace {
             return a + v * ab;
         }
 
-        Vector3 cp = p - c;
-        float d5 = Math::Dot(ab, cp);
-        float d6 = Math::Dot(ac, cp);
+        Irufemi::Vector3 cp = p - c;
+        float d5 = Irufemi::Math::Dot(ab, cp);
+        float d6 = Irufemi::Math::Dot(ac, cp);
         if (d6 >= 0.0f && d5 <= d6) return c;
 
         float vb = d5 * d2 - d1 * d6;
@@ -582,13 +593,13 @@ namespace {
     }
 
     // 重心座標を計算
-    Vector3 Barycentric(const Vector3& p, const Vector3& a, const Vector3& b, const Vector3& c) {
-        Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
-        float d00 = Math::Dot(v0, v0);
-        float d01 = Math::Dot(v0, v1);
-        float d11 = Math::Dot(v1, v1);
-        float d20 = Math::Dot(v2, v0);
-        float d21 = Math::Dot(v2, v1);
+    Irufemi::Vector3 Barycentric(const Irufemi::Vector3& p, const Irufemi::Vector3& a, const Irufemi::Vector3& b, const Irufemi::Vector3& c) {
+        Irufemi::Vector3 v0 = b - a, v1 = c - a, v2 = p - a;
+        float d00 = Irufemi::Math::Dot(v0, v0);
+        float d01 = Irufemi::Math::Dot(v0, v1);
+        float d11 = Irufemi::Math::Dot(v1, v1);
+        float d20 = Irufemi::Math::Dot(v2, v0);
+        float d21 = Irufemi::Math::Dot(v2, v1);
         float denom = d00 * d11 - d01 * d01;
         float v = (d11 * d20 - d01 * d21) / denom;
         float w = (d00 * d21 - d01 * d20) / denom;
@@ -597,11 +608,11 @@ namespace {
     }
 }
 
-VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager) {
+VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Irufemi::Vector3Int& resolution, TextureManager* textureManager) {
     VoxelizedModel result;
     result.resolution = resolution;
 
-    // 1. AABB(バウンディングボックス)の計算
+    // 1. Irufemi::AABB(バウンディングボックス)の計算
     result.aabbMin = { (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)() };
     result.aabbMax = { (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)(), (std::numeric_limits<float>::lowest)() };
 
@@ -616,19 +627,19 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
         }
     }
 
-    Vector3 aabbSize = {
+    Irufemi::Vector3 aabbSize = {
         result.aabbMax.x - result.aabbMin.x,
         result.aabbMax.y - result.aabbMin.y,
         result.aabbMax.z - result.aabbMin.z
     };
-    Vector3 voxelSize = { aabbSize.x / resolution.x, aabbSize.y / resolution.y, aabbSize.z / resolution.z };
+    Irufemi::Vector3 voxelSize = { aabbSize.x / resolution.x, aabbSize.y / resolution.y, aabbSize.z / resolution.z };
 
     // 2. 全てのボクセルをループ処理
     for (int z = 0; z < resolution.z; ++z) {
         for (int y = 0; y < resolution.y; ++y) {
             for (int x = 0; x < resolution.x; ++x) {
                 // 3. 各ボクセルの中心座標を計算
-                Vector3 voxelCenter = {
+                Irufemi::Vector3 voxelCenter = {
                     result.aabbMin.x + (x + 0.5f) * voxelSize.x,
                     result.aabbMin.y + (y + 0.5f) * voxelSize.y,
                     result.aabbMin.z + (z + 0.5f) * voxelSize.z
@@ -637,7 +648,7 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                 int intersections = 0;
 
                 // 3方向にレイを飛ばして多数決で内外判定 (1方向だと法線平行のポリゴンで誤判定しやすい)
-                const Vector3 rayDirs[3] = {
+                const Irufemi::Vector3 rayDirs[3] = {
                     { 1.0f, 0.0f, 0.0f }, // X+
                     { 0.0f, 1.0f, 0.0f }, // Y+
                     { 0.0f, 0.0f, 1.0f }, // Z+
@@ -656,9 +667,9 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                         VertexData v1 = mesh.indices.empty() ? mesh.vertices[i + 1] : mesh.vertices[mesh.indices[i + 1]];
                         VertexData v2 = mesh.indices.empty() ? mesh.vertices[i + 2] : mesh.vertices[mesh.indices[i + 2]];
 
-                        Vector3 p0 = { v0.position.x, v0.position.y, v0.position.z };
-                        Vector3 p1 = { v1.position.x, v1.position.y, v1.position.z };
-                        Vector3 p2 = { v2.position.x, v2.position.y, v2.position.z };
+                        Irufemi::Vector3 p0 = { v0.position.x, v0.position.y, v0.position.z };
+                        Irufemi::Vector3 p1 = { v1.position.x, v1.position.y, v1.position.z };
+                        Irufemi::Vector3 p2 = { v2.position.x, v2.position.y, v2.position.z };
 
                         // 3方向それぞれ独立にカウント
                         for (int d = 0; d < 3; ++d) {
@@ -669,9 +680,9 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                         }
 
                         // 最も近いポリゴンを見つける
-                        Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
-                        Vector3 diff = closestPoint - voxelCenter;
-                        float distanceSq = Math::Dot(diff, diff);
+                        Irufemi::Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
+                        Irufemi::Vector3 diff = closestPoint - voxelCenter;
+                        float distanceSq = Irufemi::Math::Dot(diff, diff);
 
                         if (distanceSq < minDistance) {
                             minDistance = distanceSq;
@@ -694,41 +705,41 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                 // 内部のボクセルのみ生成（2/3方向以上が内部判定で採用）
                 if (insideVotes >= 2)
                 {
-                    Voxel newVoxel;
+                    Irufemi::Voxel newVoxel;
                     newVoxel.position = voxelCenter;
                     newVoxel.normal = { 0.0f, 1.0f, 0.0f };      // 初期法線
                     newVoxel.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 初期色
                     newVoxel.uv = { 0.0f, 0.0f };                // 初期UV
 
                     if (closestMesh != nullptr) {
-                        Vector3 p0 = { closestTri[0].position.x, closestTri[0].position.y, closestTri[0].position.z };
-                        Vector3 p1 = { closestTri[1].position.x, closestTri[1].position.y, closestTri[1].position.z };
-                        Vector3 p2 = { closestTri[2].position.x, closestTri[2].position.y, closestTri[2].position.z };
+                        Irufemi::Vector3 p0 = { closestTri[0].position.x, closestTri[0].position.y, closestTri[0].position.z };
+                        Irufemi::Vector3 p1 = { closestTri[1].position.x, closestTri[1].position.y, closestTri[1].position.z };
+                        Irufemi::Vector3 p2 = { closestTri[2].position.x, closestTri[2].position.y, closestTri[2].position.z };
 
                         // Barycentric(重心座標)の計算
-                        Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
-                        Vector3 uvw = Barycentric(closestPoint, p0, p1, p2);
+                        Irufemi::Vector3 closestPoint = ClosestPointOnTriangle(voxelCenter, p0, p1, p2);
+                        Irufemi::Vector3 uvw = Barycentric(closestPoint, p0, p1, p2);
 
                         // ==========================================
                         // 法線(Normal)の補間と設定
                         // ==========================================
-                        Vector3 n0 = closestTri[0].normal;
-                        Vector3 n1 = closestTri[1].normal;
-                        Vector3 n2 = closestTri[2].normal;
+                        Irufemi::Vector3 n0 = closestTri[0].normal;
+                        Irufemi::Vector3 n1 = closestTri[1].normal;
+                        Irufemi::Vector3 n2 = closestTri[2].normal;
 
-                        Vector3 interpolatedNormal = {
+                        Irufemi::Vector3 interpolatedNormal = {
                             n0.x * uvw.x + n1.x * uvw.y + n2.x * uvw.z,
                             n0.y * uvw.x + n1.y * uvw.y + n2.y * uvw.z,
                             n0.z * uvw.x + n1.z * uvw.y + n2.z * uvw.z
                         };
-                        newVoxel.normal = Math::Normalize(interpolatedNormal); // 正規化してボクセルに保存
+                        newVoxel.normal = Irufemi::Math::Normalize(interpolatedNormal); // 正規化してボクセルに保存
 
                         // UVの取得
-                        Vector2 uv0 = closestTri[0].texcoord;
-                        Vector2 uv1 = closestTri[1].texcoord;
-                        Vector2 uv2 = closestTri[2].texcoord;
+                        Irufemi::Vector2 uv0 = closestTri[0].texcoord;
+                        Irufemi::Vector2 uv1 = closestTri[1].texcoord;
+                        Irufemi::Vector2 uv2 = closestTri[2].texcoord;
 
-                        Vector2 interpolatedUV = {
+                        Irufemi::Vector2 interpolatedUV = {
                             uv0.x * uvw.x + uv1.x * uvw.y + uv2.x * uvw.z,
                             uv0.y * uvw.x + uv1.y * uvw.y + uv2.y * uvw.z
                         };
@@ -756,30 +767,30 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
                                     uint8_t* npixel = npixels + (ntexY * nrowPitch) + (ntexX * npixelStride);
 
                                     // 1. サンプリングしたRGB[0, 255]を[-1.0, 1.0]のベクトルに変換
-                                    Vector3 sampledNormal;
+                                    Irufemi::Vector3 sampledNormal;
                                     sampledNormal.x = (npixel[0] / 255.0f) * 2.0f - 1.0f;
                                     sampledNormal.y = (npixel[1] / 255.0f) * 2.0f - 1.0f;
                                     sampledNormal.z = (npixel[2] / 255.0f) * 2.0f - 1.0f;
 
                                     // 2. 接空間ベクトル (Tangent, Bitangent) の計算
-                                    Vector3 edge1 = p1 - p0;
-                                    Vector3 edge2 = p2 - p0;
-                                    Vector2 deltaUV1 = uv1 - uv0;
-                                    Vector2 deltaUV2 = uv2 - uv0;
+                                    Irufemi::Vector3 edge1 = p1 - p0;
+                                    Irufemi::Vector3 edge2 = p2 - p0;
+                                    Irufemi::Vector2 deltaUV1 = uv1 - uv0;
+                                    Irufemi::Vector2 deltaUV2 = uv2 - uv0;
 
                                     float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
                                     
-                                    Vector3 tangent;
+                                    Irufemi::Vector3 tangent;
                                     tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
                                     tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
                                     tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-                                    tangent = Math::Normalize(tangent);
+                                    tangent = Irufemi::Math::Normalize(tangent);
 
                                     // グラム・シュミットの直交化を用いてTangentを再直交化
-                                    tangent = Math::Normalize(tangent - newVoxel.normal * Math::Dot(tangent, newVoxel.normal));
+                                    tangent = Irufemi::Math::Normalize(tangent - newVoxel.normal * Irufemi::Math::Dot(tangent, newVoxel.normal));
 
                                     // Bitangentの計算 (NormalとTangentの外積に、UV方向による符号を掛ける)
-                                    Vector3 bitangent = Math::Cross(newVoxel.normal, tangent);
+                                    Irufemi::Vector3 bitangent = Irufemi::Math::Cross(newVoxel.normal, tangent);
                                     if (f < 0.0f) {
                                         bitangent.x *= -1.0f;
                                         bitangent.y *= -1.0f;
@@ -788,12 +799,12 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
 
                                     // 3. Tangent SpaceからLocal Spaceへの変換行列で合成
                                     // Matrix TBN( tangent, bitangent, newVoxel.normal )
-                                    Vector3 localNormal;
+                                    Irufemi::Vector3 localNormal;
                                     localNormal.x = tangent.x * sampledNormal.x + bitangent.x * sampledNormal.y + newVoxel.normal.x * sampledNormal.z;
                                     localNormal.y = tangent.y * sampledNormal.x + bitangent.y * sampledNormal.y + newVoxel.normal.y * sampledNormal.z;
                                     localNormal.z = tangent.z * sampledNormal.x + bitangent.z * sampledNormal.y + newVoxel.normal.z * sampledNormal.z;
 
-                                    newVoxel.normal = Math::Normalize(localNormal);
+                                    newVoxel.normal = Irufemi::Math::Normalize(localNormal);
                                 }
                             }
                         }
@@ -852,7 +863,7 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Vector3I
     return result;
 }
 
-std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution) {
+std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::string& filename, const Irufemi::Vector3Int& resolution) {
     ResourceHandle handle = LoadModel(filename);
     ManagedModel* managedModel = Resolve(handle);
 
@@ -886,4 +897,4 @@ std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::strin
     managedModel->cachedVoxelModels.push_back(vModel);
     
     return vModel;
-}
+}

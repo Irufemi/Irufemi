@@ -10,7 +10,7 @@ void PrimitiveTransform::UpdateTransform(Object3DResource* resource, const Camer
 
     // 行列の更新
     // 既存の Object3DResource::UpdateTransform は内部で world 行列を再計算するため、
-    // ここでは Transform の値を resource に同期させるだけで済む
+    // ここでは Irufemi::Transform の値を resource に同期させるだけで済む
     resource->transform_ = transform;
     resource->UpdateTransform(camera);
 
@@ -19,7 +19,7 @@ void PrimitiveTransform::UpdateTransform(Object3DResource* resource, const Camer
 
 // --- MeshComponent ---
 
-void MeshDesc::ChangeMesh(PrimitiveType newType) {
+void MeshDesc::ChangeMesh(Irufemi::PrimitiveType newType) {
     type = newType;
 
     // PrimitiveManager から標準リソースを取得

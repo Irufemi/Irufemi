@@ -4,6 +4,8 @@
 #include <filesystem>
 #include "imgui/imgui.h"
 #include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include "Engine/Graphics/DirectX/RenderTexture.h"
 #include "imgui/imgui_internal.h"
 #include "Framework/SceneManager.h"
@@ -103,6 +105,22 @@ void EditorManager::EnterPlayMode() {
     // 現在のシーン状態をバックアップ
     SceneSerializer::Save(scene, ".temp_playmode");
     playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
+
+    // === ここから追加: Play開始時にシーンをクリーンな状態にリロードする ===
+    ClearSelectedObject(); // 選択状態をクリア
+
+    // GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄
+    if (auto dxCommon = engine_->GetDirectXCommon()) {
+        dxCommon->WaitForGPU();
+    }
+    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+        baseScene->ClearGameObjects();
+    }
+    
+    // 保存したばかりのバックアップから復元して、完全に初期化し直す
+    SceneSerializer::Load(scene, ".temp_playmode");
+    // === ここまで追加 ===
+
     currentMode_ = EditorModeState::Playing;
     engine_->SetPlayMode(true);
     engine_->SetTimeScale(1.0f); // 再生時は等倍
@@ -127,6 +145,12 @@ void EditorManager::ExitPlayMode() {
 
     // プレイモード中の選択状態をクリア
     ClearSelectedObject();
+
+    // === 追加: GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄する ===
+    // （実行中のフレームで使われているリソースが削除されることによるクラッシュを防ぐため）
+    if (auto dxCommon = engine_->GetDirectXCommon()) {
+        dxCommon->WaitForGPU();
+    }
 
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         baseScene->ClearGameObjects();
@@ -275,11 +299,13 @@ void EditorManager::OnDrawUI() {
                         std::error_code ec;
                         std::filesystem::copy_file(presetPath, currentIni, std::filesystem::copy_options::overwrite_existing, ec);
                         if (ec) {
+                            Log::OutPutLog(std::cerr, "Failed to load preset: " + ec.message());
                             MessageBoxA(nullptr, ("Failed to load preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
                         } else {
                             // アプリ終了時にImGuiが現在の状態をファイルへ自動保存（上書き）してしまうのを防ぐ
                             ImGui::GetIO().IniFilename = nullptr;
                             
+                            Log::OutPutLog(std::cout, "Default layout has been loaded.");
                             MessageBoxA(nullptr, "Default layout has been loaded.\nThe application will now close to apply the clean layout. Please restart the app.", "Restart Required", MB_OK | MB_ICONINFORMATION);
                             PostQuitMessage(0);
                         }
@@ -294,8 +320,10 @@ void EditorManager::OnDrawUI() {
                             std::error_code ec;
                             std::filesystem::copy_file(currentIni, presetPath, std::filesystem::copy_options::overwrite_existing, ec);
                             if (ec) {
+                                Log::OutPutLog(std::cerr, "Failed to save preset: " + ec.message());
                                 MessageBoxA(nullptr, ("Failed to save preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
                             } else {
+                                Log::OutPutLog(std::cout, "Default layout preset saved successfully!");
                                 MessageBoxA(nullptr, "Default layout preset saved successfully!", "Success", MB_OK | MB_ICONINFORMATION);
                             }
                         }

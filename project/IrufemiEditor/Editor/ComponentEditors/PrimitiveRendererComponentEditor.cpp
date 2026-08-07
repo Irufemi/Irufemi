@@ -42,18 +42,18 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
             ImGui::TableSetColumnIndex(1);
             ImGui::PushItemWidth(-1);
             if (ImGui::Combo("##Shape Type", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, typeIndex, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<PrimitiveType>(v)); comp->RebuildMesh(); }));
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, typeIndex, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<Irufemi::PrimitiveType>(v)); comp->RebuildMesh(); }));
             }
             ImGui::PopItemWidth();
             ComponentUIHelpers::DrawPropertyResetButton("##ShapeReset", typeIndex != 0, [&]() {
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, 0, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<PrimitiveType>(v)); comp->RebuildMesh(); }));
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, 0, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<Irufemi::PrimitiveType>(v)); comp->RebuildMesh(); }));
             });
 
-            PrimitiveType type = static_cast<PrimitiveType>(comp->currentTypeIndex_);
+            Irufemi::PrimitiveType type = static_cast<Irufemi::PrimitiveType>(comp->currentTypeIndex_);
             switch (type) {
-                case PrimitiveType::Sphere:
-                case PrimitiveType::IcoSphere:
-                case PrimitiveType::Circle:
+                case Irufemi::PrimitiveType::Sphere:
+                case Irufemi::PrimitiveType::IcoSphere:
+                case Irufemi::PrimitiveType::Circle:
                     ImGui::TableNextRow();
                     ComponentUIHelpers::DrawPropertyLabel("Radius");
                     ImGui::TableSetColumnIndex(1);
@@ -78,7 +78,7 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                         ComponentUIHelpers::PushInstantUndo(actionManager, oldSub, 16, std::function<void(const int&)>([comp](const int& v){ comp->subdivisions_ = v; comp->RebuildMesh(); }));
                     });
                     break;
-                case PrimitiveType::Cylinder:
+                case Irufemi::PrimitiveType::Cylinder:
                     ImGui::TableNextRow();
                     ComponentUIHelpers::DrawPropertyLabel("Top Radius");
                     ImGui::TableSetColumnIndex(1);
@@ -153,7 +153,7 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                         });
                     }
                     break;
-                case PrimitiveType::Cone:
+                case Irufemi::PrimitiveType::Cone:
                     ImGui::TableNextRow();
                     ComponentUIHelpers::DrawPropertyLabel("Radius");
                     ImGui::TableSetColumnIndex(1);
@@ -190,7 +190,7 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                         ComponentUIHelpers::PushInstantUndo(actionManager, oldSub, 16, std::function<void(const int&)>([comp](const int& v){ comp->subdivisions_ = v; comp->RebuildMesh(); }));
                     });
                     break;
-                case PrimitiveType::Torus:
+                case Irufemi::PrimitiveType::Torus:
                     ImGui::TableNextRow();
                     ComponentUIHelpers::DrawPropertyLabel("Major Radius");
                     ImGui::TableSetColumnIndex(1);
@@ -333,12 +333,12 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ImGui::PushItemWidth(-1);
                 ImGui::ColorEdit4("##Base Color", &mat.color.x);
                 ImGui::PopItemWidth();
-                ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &mat.color, std::function<void(const Vector4&)>([comp](const Vector4& v){
+                ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &mat.color, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){
                     comp->SetColor(v);
                 }));
                 ComponentUIHelpers::DrawPropertyResetButton("##ColorReset", mat.color.x != 1.0f || mat.color.y != 1.0f || mat.color.z != 1.0f || mat.color.w != 1.0f, [&]() {
-                    Vector4 oldC = mat.color;
-                    ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Vector4{1,1,1,1}, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
+                    Irufemi::Vector4 oldC = mat.color;
+                    ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Irufemi::Vector4{1,1,1,1}, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ comp->SetColor(v); }));
                 });
 
                 // Lighting Mode

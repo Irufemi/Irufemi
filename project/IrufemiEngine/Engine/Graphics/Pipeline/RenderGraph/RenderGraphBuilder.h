@@ -32,6 +32,10 @@ public:
         size_t passIndex;
     };
 
+    /**
+     * @brief CurrentPassIndex を設定する。
+     * @param[in] index 設定する CurrentPassIndex の値
+     */
     void SetCurrentPassIndex(size_t index) { currentPassIndex_ = index; }
 
     /**
@@ -72,10 +76,25 @@ public:
         }
     }
 
+    /**
+     * @brief Usages を取得する。
+     * @return 取得された Usages
+     */
     const std::vector<ResourceUsage>& GetUsages() const { return usages_; }
+    /**
+     * @brief TransientDescs を取得する。
+     * @return 取得された TransientDescs
+     */
     const std::vector<TransientResourceDesc>& GetTransientDescs() const { return transientDescs_; }
+    /**
+     * @brief TransientUsages を取得する。
+     * @return 取得された TransientUsages
+     */
     const std::vector<TransientResourceUsage>& GetTransientUsages() const { return transientUsages_; }
 
+    /**
+     * @brief Clear を実行する。
+     */
     void Clear() { 
         usages_.clear(); 
         transientDescs_.clear();

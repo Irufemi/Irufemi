@@ -26,29 +26,30 @@ void SceneTransition::Start(Type type, float duration, bool isOut, EaseType ease
 
     switch (currentType_) {
     case Type::Fade:
-        ppManager_->AddActiveMode(PostProcessMode::Fade);
+        ppManager_->AddActiveMode(PostProcessMode::Fade, PostProcessManager::Layer::PostUI);
         activeTransitionModes_.push_back(PostProcessMode::Fade);
         break;
     case Type::Dissolve:
-        ppManager_->AddActiveMode(PostProcessMode::Dissolve);
+        ppManager_->AddActiveMode(PostProcessMode::Dissolve, PostProcessManager::Layer::PostUI);
         activeTransitionModes_.push_back(PostProcessMode::Dissolve);
+        ppManager_->GetDissolveParams().edgeColor = { 1.0f, 0.4f, 0.3f, 1.0f }; // 炎のようなオレンジ色
         break;
     case Type::Slide:
-        ppManager_->AddActiveMode(PostProcessMode::Slide);
+        ppManager_->AddActiveMode(PostProcessMode::Slide, PostProcessManager::Layer::PostUI);
         activeTransitionModes_.push_back(PostProcessMode::Slide);
         break;
     case Type::RadialBlur:
         // 放射状ブラーとフェードを併用
-        ppManager_->AddActiveMode(PostProcessMode::RadialBlur);
-        ppManager_->AddActiveMode(PostProcessMode::Fade);
+        ppManager_->AddActiveMode(PostProcessMode::RadialBlur, PostProcessManager::Layer::PostUI);
+        ppManager_->AddActiveMode(PostProcessMode::Fade, PostProcessManager::Layer::PostUI);
         activeTransitionModes_.push_back(PostProcessMode::RadialBlur);
         activeTransitionModes_.push_back(PostProcessMode::Fade);
         ppManager_->GetFadeParams().color = {0.0f, 0.0f, 0.0f, 1.0f}; // 黒
         break;
     case Type::RadialBlurWhite:
         // 放射状ブラーとフェード(白)を併用
-        ppManager_->AddActiveMode(PostProcessMode::RadialBlur);
-        ppManager_->AddActiveMode(PostProcessMode::Fade);
+        ppManager_->AddActiveMode(PostProcessMode::RadialBlur, PostProcessManager::Layer::PostUI);
+        ppManager_->AddActiveMode(PostProcessMode::Fade, PostProcessManager::Layer::PostUI);
         activeTransitionModes_.push_back(PostProcessMode::RadialBlur);
         activeTransitionModes_.push_back(PostProcessMode::Fade);
         ppManager_->GetFadeParams().color = {1.0f, 1.0f, 1.0f, 1.0f}; // 白

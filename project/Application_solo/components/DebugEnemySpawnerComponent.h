@@ -16,8 +16,7 @@ public:
     void OnRegisterProperties() override {}
     std::string GetComponentName() const override { return "DebugEnemySpawnerComponent"; }
 
-private:
-    void SpawnEnemy(const Vector3& position);
+    void SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation);
 
     int maxEnemies_ = 50;
     std::unique_ptr<ObjectPool<GameObject>> enemyPool_;

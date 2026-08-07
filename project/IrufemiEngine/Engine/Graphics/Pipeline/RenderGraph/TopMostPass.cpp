@@ -10,14 +10,39 @@ void TopMostPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, I
 void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto* cmdList = drawManager->GetDxCommon()->GetCommandList();
 
-    // バックバッファをレンダーターゲットに設定
-    drawManager->SetRenderTargetToBackBuffer(false);
+#ifdef EditorMode
+    // EditorModeの場合はSceneViewに表示させるためMainRenderTextureに書き込む
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
+#else
+    // 実行時はバックバッファに書き込む
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
+#endif
+
+    // 深度バッファは無効化(TopMostのため)
+    cmdList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+
+    // ビューポートとシザーの設定を明示的に行う（PostProcess等からの継承に依存しないため）
+    D3D12_VIEWPORT viewport{};
+    viewport.Width = static_cast<float>(engine->GetClientWidth());
+    viewport.Height = static_cast<float>(engine->GetClientHeight());
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    cmdList->RSSetViewports(1, &viewport);
+
+    D3D12_RECT scissor{};
+    scissor.left = 0;
+    scissor.right = engine->GetClientWidth();
+    scissor.top = 0;
+    scissor.bottom = engine->GetClientHeight();
+    cmdList->RSSetScissorRects(1, &scissor);
 
     // キューの描画関数を定義
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
         if (queue.empty()) return;
         
-        BlendMode currentBlend = BlendMode::kBlendModeNormal;
+        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         bool psoApplied = false;
@@ -46,8 +71,8 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     DrawWithPSO(drawManager->GetTopMostSpriteQueue(), [&](const auto& p) { drawManager->DrawSprite(p); }, "SpriteForBackBuffer");
 
     // 最前面スプライトバッチ
-    DrawWithPSO(drawManager->GetTopMostSpriteBatchQueue(), [&](const auto& p) { drawManager->DrawTopMostSpriteBatch(p); }, "SpriteBatch");
+    DrawWithPSO(drawManager->GetTopMostSpriteBatchQueue(), [&](const auto& p) { drawManager->DrawTopMostSpriteBatch(p); }, "SpriteBatchForBackBuffer");
 
     // 最前面テキスト
-    DrawWithPSO(drawManager->GetTopMostTextQueue(), [&](const auto& p) { drawManager->DrawText(p); }, "Text");
+    DrawWithPSO(drawManager->GetTopMostTextQueue(), [&](const auto& p) { drawManager->DrawText(p); }, "TextForBackBuffer");
 }

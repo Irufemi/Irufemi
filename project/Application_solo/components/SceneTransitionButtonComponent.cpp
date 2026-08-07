@@ -20,7 +20,6 @@ void SceneTransitionButtonComponent::OnRegisterProperties() {
 void SceneTransitionButtonComponent::Initialize() {
     if (gameObject_) {
         button_ = gameObject_->GetComponent<ButtonComponent>();
-        transform_ = gameObject_->GetComponent<TransformComponent>();
         sprite_ = gameObject_->GetComponent<SpriteRendererComponent>();
     }
 }
@@ -39,11 +38,11 @@ void SceneTransitionButtonComponent::Update() {
         float dt = 1.0f / 60.0f; // 簡易フレームレート
         transitionTimer_ -= dt;
 
-        if (transform_) {
+        if (GetTransform()) {
             float timePassed = transitionDelay_ - transitionTimer_;
             if (timePassed <= clickAnimDuration_ && clickAnimDuration_ > 0.0f) {
                 // アニメーション中は少し縮小する（0.9倍）
-                transform_->SetScale(originalScale_ * 0.9f);
+                GetTransform()->SetScale(originalScale_ * 0.9f);
 
                 // 高速フラッシュ演出
                 bool isVisible = animator_.GetFlashVisibility(40.0f);
@@ -55,7 +54,7 @@ void SceneTransitionButtonComponent::Update() {
                 }
             } else {
                 // アニメーションが終わったら元のスケールと色に戻す
-                transform_->SetScale(originalScale_);
+                GetTransform()->SetScale(originalScale_);
                 sprite_->GetSprite()->SetColor({ 0.5f, 0.5f, 0.5f, 1.0f });
             }
         }
@@ -81,8 +80,8 @@ void SceneTransitionButtonComponent::Update() {
     if (button_->IsClicked() && !onClickLoadScene_.empty()) {
         isTransitionPending_ = true;
         transitionTimer_ = transitionDelay_;
-        if (transform_) {
-            originalScale_ = transform_->GetScale();
+        if (GetTransform()) {
+            originalScale_ = GetTransform()->GetScale();
         }
     }
 }

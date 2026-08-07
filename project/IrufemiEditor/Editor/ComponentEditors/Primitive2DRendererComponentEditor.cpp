@@ -40,17 +40,17 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
             ImGui::TableSetColumnIndex(1);
             ImGui::PushItemWidth(-1);
             if (ImGui::Combo("##Shape Type", &typeIndex, typeNames, IM_ARRAYSIZE(typeNames))) {
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, typeIndex, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<Primitive2DType>(v)); }));
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, typeIndex, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<Irufemi::Primitive2DType>(v)); }));
             }
             ImGui::PopItemWidth();
             ComponentUIHelpers::DrawPropertyResetButton("##ShapeReset", typeIndex != 0, [&]() {
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, 0, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<Primitive2DType>(v)); }));
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldTypeIndex, 0, std::function<void(const int&)>([comp](const int& v) { comp->SetShape(static_cast<Irufemi::Primitive2DType>(v)); }));
             });
 
-            Primitive2DType type = static_cast<Primitive2DType>(typeIndex);
+            Irufemi::Primitive2DType type = static_cast<Irufemi::Primitive2DType>(typeIndex);
             
             // Size
-            Vector2 size = comp->GetSize();
+            Irufemi::Vector2 size = comp->GetSize();
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Size");
             ImGui::TableSetColumnIndex(1);
@@ -59,14 +59,14 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
                 comp->SetSize(size);
             }
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &size, std::function<void(const Vector2&)>([comp](const Vector2& v){ comp->SetSize(v); }));
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &size, std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){ comp->SetSize(v); }));
             ComponentUIHelpers::DrawPropertyResetButton("##SizeReset", size.x != 100.0f || size.y != 100.0f, [&]() {
-                Vector2 oldS = comp->GetSize();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Vector2{100, 100}, std::function<void(const Vector2&)>([comp](const Vector2& v){ comp->SetSize(v); }));
+                Irufemi::Vector2 oldS = comp->GetSize();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Irufemi::Vector2{100, 100}, std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){ comp->SetSize(v); }));
             });
 
             // Pivot
-            Vector2 pivot = comp->GetPivot();
+            Irufemi::Vector2 pivot = comp->GetPivot();
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Pivot");
             ImGui::TableSetColumnIndex(1);
@@ -75,15 +75,15 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
                 comp->SetPivot(pivot);
             }
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &pivot, std::function<void(const Vector2&)>([comp](const Vector2& v){ comp->SetPivot(v); }));
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &pivot, std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){ comp->SetPivot(v); }));
             ComponentUIHelpers::DrawPropertyResetButton("##PivotReset", pivot.x != 0.5f || pivot.y != 0.5f, [&]() {
-                Vector2 oldP = comp->GetPivot();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldP, Vector2{0.5f, 0.5f}, std::function<void(const Vector2&)>([comp](const Vector2& v){ comp->SetPivot(v); }));
+                Irufemi::Vector2 oldP = comp->GetPivot();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldP, Irufemi::Vector2{0.5f, 0.5f}, std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v){ comp->SetPivot(v); }));
             });
 
             switch (type) {
-                case Primitive2DType::Circle:
-                case Primitive2DType::Ring:
+                case Irufemi::Primitive2DType::Circle:
+                case Irufemi::Primitive2DType::Ring:
                     {
                         int sub = comp->GetSubdivision();
                         ImGui::TableNextRow();
@@ -106,8 +106,8 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
             }
 
             switch (type) {
-                case Primitive2DType::Ring:
-                case Primitive2DType::Line:
+                case Irufemi::Primitive2DType::Ring:
+                case Irufemi::Primitive2DType::Line:
                     {
                         float thick = comp->GetThickness();
                         ImGui::TableNextRow();
@@ -150,7 +150,7 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
             });
             
             // Color
-            Vector4 color = comp->GetColor();
+            Irufemi::Vector4 color = comp->GetColor();
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Color");
             ImGui::TableSetColumnIndex(1);
@@ -159,10 +159,10 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
                 comp->SetColor(color);
             }
             ImGui::PopItemWidth();
-            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &color, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
+            ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &color, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ comp->SetColor(v); }));
             ComponentUIHelpers::DrawPropertyResetButton("##ColorReset", color.x != 1.0f || color.y != 1.0f || color.z != 1.0f || color.w != 1.0f, [&]() {
-                Vector4 oldC = comp->GetColor();
-                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Vector4{1,1,1,1}, std::function<void(const Vector4&)>([comp](const Vector4& v){ comp->SetColor(v); }));
+                Irufemi::Vector4 oldC = comp->GetColor();
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldC, Irufemi::Vector4{1,1,1,1}, std::function<void(const Irufemi::Vector4&)>([comp](const Irufemi::Vector4& v){ comp->SetColor(v); }));
             });
 
             // Texture

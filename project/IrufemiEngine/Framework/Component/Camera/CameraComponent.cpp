@@ -17,7 +17,11 @@ void CameraComponent::OnRegisterProperties() {
 
 void CameraComponent::Initialize() {
     camera_ = std::make_shared<Camera>();
-    camera_->Initialize();
+    
+    auto* engine = BaseModel::GetIrufemiEngine();
+    int clientWidth = engine ? engine->GetClientWidth() : 1280;
+    int clientHeight = engine ? engine->GetClientHeight() : 720;
+    camera_->Initialize(clientWidth, clientHeight);
     
     // プロパティ値を適用
     camera_->SetFovY(fovAngleY_);
@@ -25,7 +29,6 @@ void CameraComponent::Initialize() {
     
     // カメラマネージャに登録
     if (gameObject_) {
-        auto* engine = BaseModel::GetIrufemiEngine();
         if (engine && engine->GetCameraManager()) {
             engine->GetCameraManager()->AddCamera(gameObject_->GetName(), camera_);
             if (makeActive_) {
@@ -38,12 +41,12 @@ void CameraComponent::Initialize() {
 void CameraComponent::Update() {
     if (!gameObject_ || !camera_) return;
 
-    auto transform = gameObject_->GetComponent<TransformComponent>();
+    auto transform = GetTransform();
     if (!transform) return;
 
-    // GameObjectのTransformとCameraの座標・角度を同期
-    camera_->SetTranslate(transform->GetPosition());
-    camera_->SetRotate(transform->GetRotation());
+    // GameObjectのTransformとCameraの座標・角度を同期（ワールド座標系）＋ 演出オフセット
+    camera_->SetTranslate(Irufemi::Math::Add(transform->GetWorldPosition(), positionOffset_));
+    camera_->SetRotate(Irufemi::Math::Add(transform->GetWorldRotation(), rotationOffset_));
     
     // パラメータの動的更新反映
     camera_->SetFovY(fovAngleY_);

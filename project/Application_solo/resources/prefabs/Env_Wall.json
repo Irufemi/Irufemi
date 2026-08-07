@@ -1,0 +1,26 @@
+{
+  "name": "Env_Wall",
+  "isFolder": false,
+  "isActive": true,
+  "components": [
+    {
+      "type": "TransformComponent"
+    },
+    {
+      "type": "MeshRendererComponent",
+      "data": {
+        "modelName": "resources/model/environment/Wall/Wall.obj"
+      }
+    },
+    {
+      "type": "OBBColliderComponent",
+      "data": {
+        "layer": 64, 
+        "mask": 4294967295,
+        "isTrigger": false,
+        "size": [ 10.0, 10.0, 2.0 ],
+        "center": [ 0.0, 5.0, 0.0 ]
+      }
+    }
+  ]
+}

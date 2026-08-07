@@ -1,7 +1,7 @@
 #include "PlayerTargetingComponent.h"
 #include "TargetableComponent.h"
 #include "RailShooterEnemyComponent.h"
-#include "BossComponent.h"
+#include "Boss/BossComponent.h"
 #include "DebrisComponent.h"
 #include "LockonMarkerUIComponent.h"
 #include "Framework/GameObject.h"
@@ -46,7 +46,7 @@ void PlayerTargetingComponent::Update() {
                 if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
                     if (!enemyComp->IsAlive()) return true;
                 } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-                    if (bossComp->GetState() != BossState::CoreExposed) return true;
+                    if (!bossComp->IsCoreExposed()) return true;
                 } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
                     if (debrisComp->GetState() != DebrisState::BossOrbiting) return true;
                 }
@@ -91,12 +91,12 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
     if (!cameraManager || !cameraManager->GetActiveCamera()) return;
     auto camera = cameraManager->GetActiveCamera();
 
-    Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
+    Irufemi::Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
     float viewWidth = camera->GetViewportWidth();
     float viewHeight = camera->GetViewportHeight();
 
     auto inputManager = engine->GetInputManager();
-    Vector2 screenCenter = inputManager ? inputManager->GetMousePosition() : Vector2{ viewWidth * 0.5f, viewHeight * 0.5f };
+    Irufemi::Vector2 screenCenter = inputManager ? inputManager->GetMousePosition() : Irufemi::Vector2{ viewWidth * 0.5f, viewHeight * 0.5f };
     float currentTime = engine->GetTotalTime();
 
     // 1. 保留中の非同期レイキャストをポーリングして視線キャッシュを更新
@@ -119,9 +119,9 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                 bool canSee = true;
                 auto transform = objPtr->GetComponent<TransformComponent>();
                 if (transform) {
-                    Vector3 targetPos = transform->GetWorldPosition();
-                    Vector3 cameraPos = camera->GetTranslate();
-                    float dist3D = Math::Length(Math::Subtract(targetPos, cameraPos));
+                    Irufemi::Vector3 targetPos = transform->GetWorldPosition();
+                    Irufemi::Vector3 cameraPos = camera->GetTranslate();
+                    float dist3D = Irufemi::Math::Length(Irufemi::Math::Subtract(targetPos, cameraPos));
                     
                     if (hit && hitInfo.hitObject != nullptr) {
                         if (hitInfo.hitObject != objPtr && hitInfo.distance < dist3D - 1.0f) {
@@ -152,7 +152,7 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
         if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
             if (enemyComp->IsAlive()) isTargetable = true;
         } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-            if (bossComp->GetState() == BossState::CoreExposed) isTargetable = true;
+            if (bossComp->IsCoreExposed()) isTargetable = true;
         } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
             if (debrisComp->GetState() == DebrisState::BossOrbiting) isTargetable = true;
         }
@@ -160,8 +160,8 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
         if (isTargetable) {
             auto transform = obj->GetComponent<TransformComponent>();
             if (transform) {
-                Vector3 worldPos = transform->GetWorldPosition();
-                Vector3 clipPos = Math::Transform(worldPos, viewProj);
+                Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+                Irufemi::Vector3 clipPos = Irufemi::Math::Transform(worldPos, viewProj);
                 
                 if (clipPos.z >= 0.0f && clipPos.z <= 1.0f) {
                     float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
@@ -172,9 +172,9 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                     float dist2DSq = dx * dx + dy * dy;
 
                     if (dist2DSq <= lockonRadius2D_ * lockonRadius2D_) {
-                        Vector3 cameraPos = camera->GetTranslate();
-                        Vector3 toTarget = Math::Subtract(worldPos, cameraPos);
-                        float dist3D = Math::Length(toTarget);
+                        Irufemi::Vector3 cameraPos = camera->GetTranslate();
+                        Irufemi::Vector3 toTarget = Irufemi::Math::Subtract(worldPos, cameraPos);
+                        float dist3D = Irufemi::Math::Length(toTarget);
 
                         float score = std::sqrt(dist2DSq) * weight2D_ + dist3D * weight3D_;
                         
@@ -184,8 +184,8 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                             // 0.1秒以上経過していれば、非同期レイキャストを発行（Amortization）
                             if (currentTime - cache.lastCheckTime > 0.1f && !cache.pendingTask) {
                                 cache.lastCheckTime = currentTime;
-                                Vector3 dir = Math::Normalize(toTarget);
-                                Ray ray;
+                                Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
+                                Irufemi::Ray ray;
                                 ray.origin = cameraPos;
                                 ray.diff = dir;
                                 

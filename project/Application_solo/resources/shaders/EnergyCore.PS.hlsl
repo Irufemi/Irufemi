@@ -37,7 +37,8 @@
  *      これにより、1つのシェーダーで「炎(赤)」「雷(黄)」「氷(青)」などの属性表現が可能になりました。
  */
 
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "PerFrame.hlsli"
 #include "Material.hlsli"
 

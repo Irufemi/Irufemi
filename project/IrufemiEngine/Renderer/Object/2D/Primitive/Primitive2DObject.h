@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "../../../System/Core/IRenderable.h"
 #include <memory>
@@ -31,7 +31,7 @@ public:
      * @param[in] type 初期形状タイプ
      * @param[in] textureName 使用するテクスチャのパス（デフォルトは白テクスチャ推奨）
      */
-    void Initialize(Primitive2DType type = Primitive2DType::Rect, const std::string& textureName = "resources/whiteTexture.png");
+    void Initialize(Irufemi::Primitive2DType type = Irufemi::Primitive2DType::Rect, const std::string& textureName = "resources/whiteTexture.png");
 
     /**
      * @brief 更新処理
@@ -55,17 +55,65 @@ public:
     void Debug(const char* label = "Primitive 2D Object");
 
     // --- アクセサ・ゲッター ---
+    /**
+     * @brief D3D12Resource を取得する。
+     * @return 取得された D3D12Resource
+     */
     Object2DResource* GetD3D12Resource() { return resource_.get(); }
-    Primitive2DType GetShape() const { return type_; }
-    const Vector2& GetSize() const { return size_; }
-    const Vector2& GetPivot() const { return pivot_; }
-    const Vector3& GetPosition() const { return resource_->transform_.translate; }
-    const Vector3& GetRotation() const { return resource_->transform_.rotate; }
-    const Vector3& GetScale() const { return resource_->transform_.scale; }
-    const Vector4& GetColor() const { return resource_->GetMaterialData()->color; }
+    /**
+     * @brief Shape を取得する。
+     * @return 取得された Shape
+     */
+    Irufemi::Primitive2DType GetShape() const { return type_; }
+    /**
+     * @brief Size を取得する。
+     * @return 取得された Size
+     */
+    const Irufemi::Vector2& GetSize() const { return size_; }
+    /**
+     * @brief Pivot を取得する。
+     * @return 取得された Pivot
+     */
+    const Irufemi::Vector2& GetPivot() const { return pivot_; }
+    /**
+     * @brief Position を取得する。
+     * @return 取得された Position
+     */
+    const Irufemi::Vector3& GetPosition() const { return resource_->transform_.translate; }
+    /**
+     * @brief Rotation を取得する。
+     * @return 取得された Rotation
+     */
+    const Irufemi::Vector3& GetRotation() const { return resource_->transform_.rotate; }
+    /**
+     * @brief Scale を取得する。
+     * @return 取得された Scale
+     */
+    const Irufemi::Vector3& GetScale() const { return resource_->transform_.scale; }
+    /**
+     * @brief Color を取得する。
+     * @return 取得された Color
+     */
+    const Irufemi::Vector4& GetColor() const { return resource_->GetMaterialData()->color; }
+    /**
+     * @brief Subdivision を取得する。
+     * @return 取得された Subdivision
+     */
     uint32_t GetSubdivision() const { return subdivision_; }
+    /**
+     * @brief Thickness を取得する。
+     * @return 取得された Thickness
+     */
     float GetThickness() const { return thickness_; }
+    /**
+     * @brief IsTopMost かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsTopMost() const { return isTopMost_; }
+    /**
+     * @brief TextureHandle を取得する。
+     * @return 取得された TextureHandle
+     */
     ResourceHandle GetTextureHandle() const { return resource_ ? resource_->textureHandle_ : ResourceHandle(); }
 
     // --- プロパティのセッター ---
@@ -73,24 +121,28 @@ public:
     /**
      * @brief 形状を変更し、必要に応じてメッシュを再構築する
      */
-    void SetShape(Primitive2DType type);
+    void SetShape(Irufemi::Primitive2DType type);
 
     /**
      * @brief 基準サイズを設定する（ピクセル単位などを想定）
      */
-    void SetSize(const Vector2& size);
+    void SetSize(const Irufemi::Vector2& size);
 
     /**
      * @brief ピボット（アンカー）を設定する（0.0～1.0）
      * @details 左上={0,0}, 中心={0.5,0.5}, 右下={1,1} など
      */
-    void SetPivot(const Vector2& pivot);
+    void SetPivot(const Irufemi::Vector2& pivot);
 
     /**
-     * @brief 位置（World Transform）を設定する
+     * @brief 位置（World Irufemi::Transform）を設定する
      */
-    void SetPosition(const Vector3& position);
-    void SetPosition(const Vector2& position) { SetPosition({position.x, position.y, 0.0f}); }
+    void SetPosition(const Irufemi::Vector3& position);
+    /**
+     * @brief Position を設定する。
+     * @param[in] position 設定する Position の値
+     */
+    void SetPosition(const Irufemi::Vector2& position) { SetPosition({position.x, position.y, 0.0f}); }
 
     /**
      * @brief 回転（Z軸のみ想定）を設定する
@@ -100,13 +152,17 @@ public:
     /**
      * @brief スケール（倍率）を設定する
      */
-    void SetScale(const Vector3& scale);
-    void SetScale(const Vector2& scale) { SetScale({scale.x, scale.y, 1.0f}); }
+    void SetScale(const Irufemi::Vector3& scale);
+    /**
+     * @brief Scale を設定する。
+     * @param[in] scale 設定する Scale の値
+     */
+    void SetScale(const Irufemi::Vector2& scale) { SetScale({scale.x, scale.y, 1.0f}); }
 
     /**
      * @brief ベースカラーを設定する
      */
-    void SetColor(const Vector4& color);
+    void SetColor(const Irufemi::Vector4& color);
 
     /**
      * @brief テクスチャを設定する
@@ -129,9 +185,25 @@ public:
     void SetSubdivision(uint32_t subdiv);
 
     // --- 各種マネージャの静的設定 ---
+    /**
+     * @brief TextureManager を設定する。
+     * @param[in] texM 設定する TextureManager の値
+     */
     static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    /**
+     * @brief DrawManager を設定する。
+     * @param[in] drawM 設定する DrawManager の値
+     */
     static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    /**
+     * @brief DebugUI を設定する。
+     * @param[in] ui 設定する DebugUI の値
+     */
     static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    /**
+     * @brief Engine を設定する。
+     * @param[in] engine 設定する Engine の値
+     */
     static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
 
 private:
@@ -143,18 +215,33 @@ private:
     void RebuildMesh();
 
     // 内部メッシュ構築用ヘルパー
+    /**
+     * @brief BuildRect を実行する。
+     */
     void BuildRect();
+    /**
+     * @brief BuildTriangle を実行する。
+     */
     void BuildTriangle();
+    /**
+     * @brief BuildCircle を実行する。
+     */
     void BuildCircle(uint32_t subdiv);
+    /**
+     * @brief BuildRing を実行する。
+     */
     void BuildRing(uint32_t subdiv);
+    /**
+     * @brief BuildLine を実行する。
+     */
     void BuildLine();
 
 private:
     std::unique_ptr<Object2DResource> resource_ = nullptr;
 
-    Primitive2DType type_ = Primitive2DType::Rect;
-    Vector2 size_ = { 100.0f, 100.0f };
-    Vector2 pivot_ = { 0.5f, 0.5f };
+    Irufemi::Primitive2DType type_ = Irufemi::Primitive2DType::Rect;
+    Irufemi::Vector2 size_ = { 100.0f, 100.0f };
+    Irufemi::Vector2 pivot_ = { 0.5f, 0.5f };
     float thickness_ = 10.0f;     //!< RingやLineでの太さ
     uint32_t subdivision_ = 64;   //!< 円系の分割数
 

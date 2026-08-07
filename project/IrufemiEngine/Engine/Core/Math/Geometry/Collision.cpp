@@ -14,6 +14,8 @@
 #include <limits>
 #include <algorithm>
 
+
+namespace Irufemi {
 namespace Collision {
 
     // Helper functions for min/max
@@ -1317,3 +1319,4 @@ namespace Collision {
     }
 
 } // namespace Collision
+} // namespace Irufemi

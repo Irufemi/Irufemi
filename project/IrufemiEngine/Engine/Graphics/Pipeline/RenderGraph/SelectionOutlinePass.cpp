@@ -41,7 +41,7 @@ void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engi
 
     // PSOをバインド (SelectionMask)
     if (!queue3D.empty()) {
-        auto pso = psoManager->GetPSO("SelectionMask", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
+        auto pso = psoManager->GetPSO("SelectionMask", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
         if (pso) {
             cmdList->SetPipelineState(pso);
             for (const auto& p : queue3D) {
@@ -52,7 +52,7 @@ void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engi
     
     // 2D Text用マスク描画
     if (!queue2D.empty()) {
-        auto psoTextMask = psoManager->GetPSO("SelectionMaskText", BlendMode::kBlendModeNone, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
+        auto psoTextMask = psoManager->GetPSO("SelectionMaskText", Irufemi::BlendMode::kBlendModeNone, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
         if (psoTextMask) {
             cmdList->SetPipelineState(psoTextMask);
             for (const auto& p : queue2D) {
@@ -69,12 +69,12 @@ void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engi
     // 2. アウトラインの合成描画
     DirectXUtils::TransitionBarrier(cmdList, maskTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     // RenderGraphに最新のステートを通知し、次フレームで正しく遷移バリアが張られるようにする
-    renderGraph->RegisterResourceState(maskTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    renderGraph->SetInitialResourceState(maskTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     D3D12_CPU_DESCRIPTOR_HANDLE mainRtv = engine->GetMainRenderTexture()->GetRtvHandle();
     cmdList->OMSetRenderTargets(1, &mainRtv, false, nullptr);
 
-    auto compPso = psoManager->GetPSO("OutlineComposite", BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
+    auto compPso = psoManager->GetPSO("OutlineComposite", Irufemi::BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
     if (compPso) {
         cmdList->SetPipelineState(compPso);
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

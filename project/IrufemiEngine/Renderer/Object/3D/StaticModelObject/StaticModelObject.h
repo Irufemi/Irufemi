@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <string>
 #include "Engine/Graphics/Camera/Camera.h"
@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <map>
 #include "../../../../Engine/Core/Math/Transform.h"
 #include "../../../../Engine/Core/Math/Vector4.h"
 #include "../../../../Engine/Core/Math/Matrix4x4.h"
@@ -15,7 +16,8 @@
 #include "../../../../Engine/Graphics/Data/Material.h"
 #include "../../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
 #include "../../../System/Core/BaseModel.h"
-#include "../../../../Resource/Model/Data/Skeleton.h"
+#include "../../../../Resource/Model/Data/SkeletonData.h"
+#include "../../../../Resource/Model/Data/SkeletonPose.h"
 #include "../../../../Resource/Model/Data/SkinCluster.h"
 #include "../../../../Engine/Graphics/Compute/IComputeTask.h"
 
@@ -42,6 +44,17 @@ class StaticModelObject : public BaseModel, public IComputeTask {
 
 
 private:
+    /**
+     * @brief モデル内の各ノードの名前と、そのノードのグローバル行列（ローカル行列の累積）をマッピングするキャッシュ
+     */
+    std::map<std::string, Irufemi::Matrix4x4> nodeGlobalTransforms_;
+
+    /**
+     * @brief ルートノードから再帰的に階層を辿り、各ノードのグローバル行列を計算・キャッシュする
+     * @param node 現在処理中のノード
+     * @param parentMatrix 親ノードのグローバル行列（初期呼び出し時は単位行列）
+     */
+    void CalculateNodeTransforms(const Node& node, const Irufemi::Matrix4x4& parentMatrix);
 
     /**
      * @brief ロード完了後にメッシュ等のリソースを構築する（遅延初期化）
@@ -71,7 +84,13 @@ public: //メンバ関数
      * @brief 描画コマンドの積み込み
      */
      void SyncBeforeDraw() override;
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw() override;
+    /**
+     * @brief DrawOutlineMask を実行する。
+     */
     void DrawOutlineMask() override;
 
     /**
@@ -90,9 +109,11 @@ public: //メンバ関数
     void DispatchCompute() override;
 
 private:
-    Skeleton skeleton_;
+    SkeletonData skeletonData_;
+    SkeletonPose skeletonPose_;
     SkinCluster skinCluster_;
     uint32_t lastSkinnedFrameIndex_ = 0;
+    bool isResourceInitialized_ = false;
 
 };
 

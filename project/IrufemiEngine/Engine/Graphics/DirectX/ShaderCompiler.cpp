@@ -1,11 +1,15 @@
 #include "Engine/Core/Utility/ErrorUtility.h"
 #include "ShaderCompiler.h"
 #include "../../Core/Utility/Log.h"
+#include "../../Core/Utility/FileSystem.h"
 #include "../../Core/Utility/StringUtility.h"
 #include <format>
 #include <cassert>
 #include <Windows.h>
-
+#include <iostream>
+#include <algorithm>
+#include <fstream>
+#include <vector>
 /**
  * @brief 初期化
  */
@@ -33,10 +37,33 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     std::string* outErrorLog
 ) {
     // 1. HLSLファイルの読み込み
+    // DirectX Shader Compiler doesn't always play nice with forward slashes
+    std::wstring osPath = filePath;
+    std::replace(osPath.begin(), osPath.end(), L'/', L'\\');
+    HRESULT hr;
+
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
-    HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-    if (FAILED(hr)) {
-        IRUFEMI_ASSERT(false && "Failed to load shader file.");
+    std::ifstream shaderFile(osPath, std::ios::binary | std::ios::ate);
+    if (!shaderFile.is_open()) {
+        std::string errStr = "Failed to load shader file: " + ConvertString(filePath);
+        std::wstring logPathW = ConvertString(FileSystem::GetLogPath() + "/CRASH.log");
+        std::ofstream crashLog(logPathW);
+        crashLog << errStr << std::endl;
+        crashLog.close();
+        IRUFEMI_ASSERT_MSG(false, errStr.c_str());
+        return nullptr;
+    }
+    std::streamsize size = shaderFile.tellg();
+    shaderFile.seekg(0, std::ios::beg);
+    std::vector<char> buffer(size);
+    if (shaderFile.read(buffer.data(), size)) {
+        hr = dxcUtils_->CreateBlob(buffer.data(), static_cast<UINT32>(size), DXC_CP_UTF8, &shaderSource);
+        if (FAILED(hr)) {
+            IRUFEMI_ASSERT_MSG(false, "Failed to create blob from shader file data.");
+            return nullptr;
+        }
+    } else {
+        IRUFEMI_ASSERT_MSG(false, "Failed to read shader file.");
         return nullptr;
     }
 
@@ -107,7 +134,10 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         std::string fileStr = ConvertString(filePath);
         std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
         
-        OutputDebugStringA(fullErr.c_str());
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, fullErr);
         
         // ログファイルにも出力
         FILE* f;

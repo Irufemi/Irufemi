@@ -12,13 +12,14 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     const auto& activeModes = ppMgr->GetActiveModes();
     auto mainRenderTex = engine->GetMainRenderTexture();
 
-    // 入力となるメインレンダリング結果のステート要求
-#ifdef EditorMode
-    // EditorModeでは自身に書き戻すため、最終的な出力先として RENDER_TARGET を要求する
+    // 自身に書き戻すため、最終的な出力先として RENDER_TARGET を要求する
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-#else
-    builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-#endif
+
+    // G-Bufferをシェーダーリソースとして要求する
+    if (auto tex = engine->GetEffectMaskTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetNormalTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetMaterialTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetVelocityTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     workTextureHandles_.clear();
     bloomExtractHandle_ = kInvalidHandle;
@@ -27,25 +28,25 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
 
     D3D12_RESOURCE_DESC desc = mainRenderTex->GetResource()->GetDesc();
 
-#ifdef EditorMode
-    // EditorMode 用の Src 退避テクスチャ (エフェクトの有無に関わらず常に必要)
-    editorSrcHandle_ = builder.CreateTransientResource("PP_EditorSrc", desc);
-    builder.RequireTransientState(editorSrcHandle_, D3D12_RESOURCE_STATE_COPY_DEST);
-#endif
+    // 入力ソース退避用テクスチャ (エフェクトの有無に関わらず常に必要)
+    preUiSrcHandle_ = builder.CreateTransientResource("PP_PreUISrc", desc);
+    builder.RequireTransientState(preUiSrcHandle_, D3D12_RESOURCE_STATE_COPY_DEST);
 
     if (!activeModes.empty()) {
-        bool hasOutline = false;
+        bool usesDepthBuffer = false;
         bool hasBloom = false;
         bool hasSeparableBlur = false;
         bool hasKawaseBlur = false;
+        bool hasLightShafts = false;
         for (auto mode : activeModes) {
             if (mode == PostProcessMode::Bloom) hasBloom = true;
-            if (mode == PostProcessMode::DepthBasedOutline) hasOutline = true;
+            if (PostProcessManager::UsesDepthBuffer(mode)) usesDepthBuffer = true;
             if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) hasSeparableBlur = true;
             if (mode == PostProcessMode::DualKawaseBlur) hasKawaseBlur = true;
+            if (mode == PostProcessMode::LightShafts) hasLightShafts = true;
         }
 
-        if (hasOutline) {
+        if (usesDepthBuffer) {
             builder.RequireState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         
@@ -61,6 +62,13 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         if (hasBloom || hasSeparableBlur) {
             bloomBlurHandle_ = builder.CreateTransientResource("BloomBlur", workDesc);
+        }
+        if (hasLightShafts) {
+            D3D12_RESOURCE_DESC lsDesc = workDesc;
+            lsDesc.Width = (std::max<UINT64>)(1, lsDesc.Width / 2);
+            lsDesc.Height = (std::max<UINT>)(1, lsDesc.Height / 2);
+            lsExtractHandle_ = builder.CreateTransientResource("LS_Extract", lsDesc);
+            lsBlurHandle_ = builder.CreateTransientResource("LS_Blur", lsDesc);
         }
 
         if (hasKawaseBlur) {
@@ -83,6 +91,10 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         }
         if (hasBloom || hasSeparableBlur) {
             builder.RequireTransientState(bloomBlurHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (hasLightShafts) {
+            builder.RequireTransientState(lsExtractHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            builder.RequireTransientState(lsBlurHandle_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (hasKawaseBlur) {
             for (int i = 0; i < PostProcessManager::kMaxKawaseIterations; ++i) {
@@ -111,6 +123,12 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     if (bloomBlurHandle_ != kInvalidHandle) {
         workspace.bloomBlur = renderGraph->GetTransientRenderTexture(bloomBlurHandle_);
     }
+    if (lsExtractHandle_ != kInvalidHandle) {
+        workspace.lsExtract = renderGraph->GetTransientRenderTexture(lsExtractHandle_);
+    }
+    if (lsBlurHandle_ != kInvalidHandle) {
+        workspace.lsBlur = renderGraph->GetTransientRenderTexture(lsBlurHandle_);
+    }
     for (int i = 0; i < PostProcessManager::kMaxKawaseIterations; ++i) {
         if (kawaseTextureHandles_[i] != kInvalidHandle) {
             workspace.kawaseTextures[i] = renderGraph->GetTransientRenderTexture(kawaseTextureHandles_[i]);
@@ -119,53 +137,44 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         }
     }
 
-    // Outline のための逆投影行列更新
+    // 深度バッファを使用するエフェクトのための逆投影行列更新
     const auto& activeModes = ppMgr->GetActiveModes();
-    bool hasOutline = false;
+    bool needsProjectionInverse = false;
     for (auto mode : activeModes) {
-        if (mode == PostProcessMode::DepthBasedOutline) hasOutline = true;
+        if (PostProcessManager::UsesDepthBuffer(mode)) {
+            needsProjectionInverse = true;
+        }
     }
-    if (hasOutline) {
+    if (needsProjectionInverse) {
         if (auto* perFrameData = drawManager->GetPerFrameData()) {
-            ppMgr->GetOutlineParams().projectionInverse = Math::Inverse(perFrameData->camera.projection);
+            ppMgr->GetOutlineParams().projectionInverse = Irufemi::Math::Inverse(perFrameData->camera.projection);
         }
     }
 
-#ifdef EditorMode
-    auto editorSrcTex = renderGraph->GetTransientRenderTexture(editorSrcHandle_);
+    // CopyResource (mainRenderTex -> ppSrcTex)
+    auto ppSrcTex = renderGraph->GetTransientRenderTexture(preUiSrcHandle_);
     
-    // CopyResource (mainRenderTex -> editorSrcTex)
-    // RenderGraph によるステート管理のため開始時に RENDER_TARGET から COPY_SOURCE に手動で遷移
+    // RenderGraph によるステート管理のため開始時に COPY_SOURCE に手動で遷移
     DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
-    cmdList->CopyResource(editorSrcTex->GetResource(), engine->GetMainRenderTexture()->GetResource());
+    cmdList->CopyResource(ppSrcTex->GetResource(), engine->GetMainRenderTexture()->GetResource());
 
     // バリア遷移
-    DirectXUtils::TransitionBarrier(cmdList, editorSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    renderGraph->RegisterResourceState(editorSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    DirectXUtils::TransitionBarrier(cmdList, ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    renderGraph->SetInitialResourceState(ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     
     DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    // mainRenderTexture は最終出力先として RENDER_TARGET に戻るので、RenderGraphの認識と一致する
 
-    // EditorMode の場合、最終出力先は mainRenderTexture になる
+    // 最終出力先は常に mainRenderTexture
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
-    ppMgr->Draw(cmdList, editorSrcTex, rtvHandle, workspace);
-    
-    // (末尾での PIXEL_SHADER_RESOURCE への手動遷移は削除。UIPass が RequireState で処理するため)
-#else
-    // 最終出力先はバックバッファ
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
-    
-    // 通常モードでは mainRenderTexture は SRV 状態で渡される必要がある (Setup で RequireState 済み)
-    ppMgr->Draw(cmdList, engine->GetMainRenderTexture(), rtvHandle, workspace);
-#endif
+    ppMgr->Draw(cmdList, ppSrcTex, rtvHandle, workspace, PostProcessManager::Layer::PreUI);
 
     // 深度バッファを元の DEPTH_WRITE に戻す
-    if (hasOutline) {
+    if (needsProjectionInverse) {
         DirectXUtils::TransitionBarrier(
             cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
         );
-        renderGraph->RegisterResourceState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        renderGraph->SetInitialResourceState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
     }
 }

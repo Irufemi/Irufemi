@@ -5,10 +5,7 @@ ConstantBuffer<Material> gMaterial : register(b0);
 
 #include "Bindless.hlsli"
 
-struct PixelShaderOutput
-{
-	float32_t4 color : SV_TARGET0;
-};
+#include "BasePassPixelOutput.hlsli"
 
 PixelShaderOutput main(VertexShaderOutput input)
 {
@@ -16,6 +13,11 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	// PS 側で material を使って最終色を決定
 	output.color = gMaterial.color * input.color;
+	output.mask = float32_t4(0.0f, 0.0f, 1.0f, 1.0f);
+	
+	output.normal = float32_t4(0.0f, 0.0f, 0.0f, 1.0f);
+	output.material = float32_t4(0.0f, 0.0f, 0.0f, 1.0f);
+	output.velocity = float32_t2(0.0f, 0.0f);
 	
 	return output;
 }

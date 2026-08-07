@@ -6,6 +6,7 @@
 #include "../Graphics/Camera/CameraManager.h"
 #include "../Graphics/Camera/Camera.h"
 #include "../Core/Utility/Log.h"
+#include <iostream>
 
 // DirectXTex
 #include "../../../externals/DirectXTex/DirectXTex.h"
@@ -122,8 +123,8 @@ void ScreenCaptureManager::RecordMetadata(IrufemiEngine* engine) {
     
     if (auto camManager = engine->GetCameraManager()) {
         if (auto cam = camManager->GetActiveCamera()) {
-            Vector3 pos = cam->GetTranslate();
-            Vector3 rot = cam->GetRotate();
+            Irufemi::Vector3 pos = cam->GetTranslate();
+            Irufemi::Vector3 rot = cam->GetRotate();
             ss << "  \"camera\": {\n";
             ss << "    \"position\": [" << pos.x << ", " << pos.y << ", " << pos.z << "],\n";
             ss << "    \"rotation\": [" << rot.x << ", " << rot.y << ", " << rot.z << "]\n";
@@ -291,7 +292,10 @@ void ScreenCaptureManager::ExecuteCopyTask(ID3D12Resource* sourceResource, D3D12
                 req.onComplete();
             }
         } else {
-            OutputDebugStringA("[ScreenCaptureManager] Failed to capture texture.\\n");
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cerr, "[ScreenCaptureManager] Failed to capture texture.");
         }
         
         isEncoding_ = false;

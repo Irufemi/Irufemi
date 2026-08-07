@@ -6,8 +6,10 @@
 #include "Engine/Core/Math/Geometry/AABB.h"
 #include "Engine/Core/Math/Geometry/Collision.h"
 
+
 class ColliderComponent;
 
+namespace Irufemi {
 /**
  * @struct BVHNode
  * @brief TLASを構成する動的AABBツリーのノード。
@@ -20,6 +22,10 @@ struct BVHNode {
     int32_t rightChildIndex = -1;
     ColliderComponent* collider = nullptr; //!< 葉ノードの場合のみ有効
 
+    /**
+     * @brief IsLeaf かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsLeaf() const {
         return leftChildIndex == -1 && rightChildIndex == -1;
     }
@@ -91,3 +97,5 @@ private:
     /// @brief AABB同士の交差判定
     bool Intersects(const AABB& a, const AABB& b) const;
 };
+
+} // namespace Irufemi

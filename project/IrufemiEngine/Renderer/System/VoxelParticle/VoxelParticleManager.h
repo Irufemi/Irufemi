@@ -5,48 +5,112 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include "Engine/Core/Math/Vector3Int.h"
 
 class IrufemiEngine;
+namespace Irufemi { struct OBB; }
 
 class VoxelParticleManager {
 public:
     VoxelParticleManager() = default;
     ~VoxelParticleManager() = default;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(IrufemiEngine* engine);
+    /**
+     * @brief Update を実行する。
+     */
     void Update(float deltaTime);
+    /**
+     * @brief Draw を実行する。
+     */
     void Draw();
+    /**
+     * @brief Clear を実行する。
+     */
+    void Clear();
 
-    // 事前に特定のモデル用プールを確保しておく
-    void ReservePool(const std::string& modelName, const Vector3Int& resolution, int poolSize);
+    struct EmitterHandle {
+        VoxelParticleSystem* system = nullptr;
+        uint32_t emitterIndex = 0xFFFFFFFF;
+        /**
+         * @brief IsValid かどうかを判定する。
+         * @return 判定結果 (true/false)
+         */
+        bool IsValid() const { return system != nullptr && emitterIndex != 0xFFFFFFFF; }
+    };
 
-    // 空いているVoxelParticleSystemを取得して爆発を実行
-    void PlayExplosion(const std::string& modelName, 
-                       const Vector3& position, 
-                       const Vector3& velocity, 
-                       const Vector3& rotate, 
-                       const Vector3& scale,
-                       const VoxelParticleSystem::VoxelEmitterParams& params = VoxelParticleSystem::VoxelEmitterParams::Default(),
-                       const Vector3Int& resolution = {32, 32, 32});
+    /**
+     * @brief 指定したモデルと解像度に対するシステムを取得し、エミッター（インスタンス）を登録する
+     */
+    EmitterHandle RegisterEmitter(const std::string& modelName, const Irufemi::Vector3Int& resolution);
 
-    // 衝突時の部分飛散
-    void PlayCollisionScatter(const std::string& modelName, 
-                              const Vector3& position, 
-                              const Vector3& velocity, 
-                              const Vector3& rotate, 
-                              const Vector3& scale, 
-                              const struct OBB& collisionArea,
-                              const VoxelParticleSystem::VoxelEmitterParams& params = VoxelParticleSystem::VoxelEmitterParams::Default(),
-                              const Vector3Int& resolution = {32, 32, 32});
+    /**
+     * @brief 登録したエミッターを解放する
+     */
+    void UnregisterEmitter(const EmitterHandle& handle);
+
+    /**
+     * @brief エミッターデータを更新する
+     */
+    void UpdateEmitterData(const EmitterHandle& handle, const VoxelEmitter& data);
+    /**
+     * @brief EmitterData を取得する。
+     * @return 取得された EmitterData
+     */
+    const VoxelEmitter& GetEmitterData(const EmitterHandle& handle) const;
+
+    /**
+     * @brief 事前に指定された数のパーティクルシステムをロード・確保する
+     */
+    void ReservePool(const std::string& modelName, const Irufemi::Vector3Int& resolution, int preAllocateCount = 1000);
+
+    /**
+     * @brief その場での爆発エフェクトを発生させる
+     */
+    void PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params, const Irufemi::Vector3Int& resolution);
 
 private:
-    struct PoolData {
-        std::vector<std::unique_ptr<VoxelParticleSystem>> systems;
-        size_t nextSearchIndex = 0;
-    };
-    std::unordered_map<std::string, PoolData> pools_;
-    size_t totalSystemCount_ = 0;
-    IrufemiEngine* engine_ = nullptr;
+    VoxelParticleManager(const VoxelParticleManager&) = delete;
+    VoxelParticleManager& operator=(const VoxelParticleManager&) = delete;
 
-    VoxelParticleSystem* AllocateSystem(const std::string& modelName, const Vector3Int& resolution);
+    struct SystemKey {
+        std::string modelName;
+        Irufemi::Vector3Int resolution;
+
+        bool operator==(const SystemKey& other) const {
+            return modelName == other.modelName && 
+                   resolution.x == other.resolution.x &&
+                   resolution.y == other.resolution.y &&
+                   resolution.z == other.resolution.z;
+        }
+    };
+
+    struct OneShotEmitter {
+        EmitterHandle handle;
+        float emitTimer;
+        float lifeTimer;
+    };
+
+    struct SystemKeyHasher {
+        std::size_t operator()(const SystemKey& k) const {
+            std::size_t h1 = std::hash<std::string>()(k.modelName);
+            std::size_t h2 = std::hash<int>()(k.resolution.x);
+            std::size_t h3 = std::hash<int>()(k.resolution.y);
+            std::size_t h4 = std::hash<int>()(k.resolution.z);
+            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+        }
+    };
+
+    struct SystemContext {
+        std::unique_ptr<VoxelParticleSystem> system;
+        std::vector<uint32_t> freeIndices;
+        uint32_t nextIndex = 0;
+    };
+
+    std::unordered_map<SystemKey, SystemContext, SystemKeyHasher> systems_;
+    std::vector<OneShotEmitter> oneShots_;
+    IrufemiEngine* engine_ = nullptr;
 };

@@ -24,6 +24,10 @@ public:
         T* debugPtr = nullptr; ///< エディタ上での視認性・デバッグ用のポインタ
 #endif
 
+        /**
+         * @brief IsValid かどうかを判定する。
+         * @return 判定結果 (true/false)
+         */
         bool IsValid() const { return index != 0xFFFFFFFF; }
         bool operator==(const Handle& other) const { return index == other.index && generation == other.generation; }
         bool operator!=(const Handle& other) const { return !(*this == other); }
@@ -64,6 +68,9 @@ public:
      */
     Handle Acquire() {
         if (headFree_ == 0xFFFFFFFF) {
+            /**
+             * @brief Handle を実行する。
+             */
             return Handle(); // 空きなし
         }
 
@@ -111,10 +118,22 @@ public:
         return slots_[handle.index].data;
     }
 
+    /**
+     * @brief FreeCount を取得する。
+     * @return 取得された FreeCount
+     */
     size_t GetFreeCount() const { return freeCount_; }
+    /**
+     * @brief Capacity を取得する。
+     * @return 取得された Capacity
+     */
     size_t GetCapacity() const { return slots_.size(); }
 
 private:
+    /**
+     * @brief IsValidHandle かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsValidHandle(Handle handle) const {
         if (handle.index >= slots_.size()) return false;
         if (!slots_[handle.index].active) return false;

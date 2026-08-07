@@ -1,5 +1,7 @@
 #pragma once
 
+
+namespace Irufemi {
 /**
  * @struct Matrix4x4
  * @brief 4x4 行列
@@ -46,3 +48,5 @@ Matrix4x4 operator-(const Matrix4x4& m);
 /** @} */
 
 
+
+} // namespace Irufemi

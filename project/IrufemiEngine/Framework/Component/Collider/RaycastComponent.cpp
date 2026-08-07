@@ -6,27 +6,25 @@
 
 void RaycastComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
 void RaycastComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 
-    if (transform_) {
+    if (GetTransform()) {
         // ワールド空間でのレイの起点と方向を計算
-        Vector3 worldPos = transform_->GetWorldPosition();
-        Matrix4x4 worldMat = transform_->GetWorldMatrix();
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Matrix4x4 worldMat = GetTransform()->GetWorldMatrix();
         
         // オフセットの適用
-        Vector3 worldOffset = Math::TransformNormal(localOffset_, worldMat);
+        Irufemi::Vector3 worldOffset = Irufemi::Math::TransformNormal(localOffset_, worldMat);
         currentRay_.origin = worldPos + worldOffset;
         
         // 方向の適用（ローカル方向ベクトルをワールドへ回転）
-        Vector3 worldDir = Math::TransformNormal(localDirection_, worldMat);
-        worldDir = Math::Normalize(worldDir);
+        Irufemi::Vector3 worldDir = Irufemi::Math::TransformNormal(localDirection_, worldMat);
+        worldDir = Irufemi::Math::Normalize(worldDir);
         currentRay_.diff = worldDir; // diffを方向として扱う
 
         // 判定実行（自分自身が持つ他のコライダーには当たらないようにgameObject_を渡す）
@@ -43,7 +41,7 @@ void RaycastComponent::Update() {
 
 void RaycastComponent::DrawDebug() {
     if (showDebugLine_) {
-        Vector4 color = hitInfo_.isHit ? Vector4{ 1.0f, 0.0f, 0.0f, 1.0f } : Vector4{ 0.0f, 1.0f, 0.0f, 1.0f };
+        Irufemi::Vector4 color = hitInfo_.isHit ? Irufemi::Vector4{ 1.0f, 0.0f, 0.0f, 1.0f } : Irufemi::Vector4{ 0.0f, 1.0f, 0.0f, 1.0f };
         float drawDist = hitInfo_.isHit ? hitInfo_.distance : maxDistance_;
         if (collisionManager_) collisionManager_->DrawDebugRay(currentRay_, drawDist, color);
     }

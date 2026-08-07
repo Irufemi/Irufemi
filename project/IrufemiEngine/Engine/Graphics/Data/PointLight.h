@@ -6,9 +6,9 @@
 
 struct PointLight {
     //!< ライトの色
-    Vector4 color;
+    Irufemi::Vector4 color;
     //!< ライトの位置
-    Vector3 position;
+    Irufemi::Vector3 position;
     //!< 輝度
     float intensity;
     //!< ライトの影響範囲

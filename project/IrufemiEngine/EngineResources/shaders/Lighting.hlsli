@@ -1,4 +1,4 @@
-#include "./Material.hlsli"
+#include "Material.hlsli"
 
 // --- 構造体定義 ---
 
