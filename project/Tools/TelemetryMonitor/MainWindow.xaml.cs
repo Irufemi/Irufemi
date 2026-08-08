@@ -9,12 +9,51 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
+using System.ComponentModel;
+using System.Windows.Data;
+
 namespace TelemetryMonitor
 {
     public class MetricItem : System.ComponentModel.INotifyPropertyChanged
     {
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
-        public string Key { get; set; } = string.Empty;
+        private string _key = string.Empty;
+        public string Key 
+        { 
+            get => _key;
+            set
+            {
+                _key = value;
+                if (!string.IsNullOrEmpty(_key))
+                {
+                    int slashIndex = _key.IndexOf('/');
+                    if (slashIndex >= 0)
+                    {
+                        Category = _key.Substring(0, slashIndex);
+                        Name = _key.Substring(slashIndex + 1);
+                    }
+                    else
+                    {
+                        Category = "Uncategorized";
+                        Name = _key;
+                    }
+                }
+            }
+        }
+        
+        public string Category { get; private set; } = "Uncategorized";
+        public string Name { get; private set; } = string.Empty;
+        
+        public int DisplayOrder 
+        { 
+            get 
+            {
+                if (Category == "System") return 0;
+                if (Category == "GPU_Particle") return 1;
+                if (Category == "Voxel_Particle") return 2;
+                return 3;
+            }
+        }
         
         private string _value = string.Empty;
         public string Value
@@ -102,7 +141,13 @@ namespace TelemetryMonitor
         public MainWindow()
         {
             InitializeComponent();
-            MetricsList.ItemsSource = _metrics;
+            
+            var view = CollectionViewSource.GetDefaultView(_metrics);
+            view.GroupDescriptions.Add(new PropertyGroupDescription("Category"));
+            view.SortDescriptions.Add(new SortDescription("DisplayOrder", ListSortDirection.Ascending));
+            view.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+            
+            MetricsList.ItemsSource = view;
             StartListening();
         }
 
