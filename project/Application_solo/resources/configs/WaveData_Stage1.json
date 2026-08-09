@@ -1,0 +1,30 @@
+{
+  "Stage1_LevelData": {
+    "SplinePoints": [
+      {"x": 0, "y": 0, "z": 0},
+      {"x": 0, "y": 10, "z": 100},
+      {"x": 50, "y": 20, "z": 200}
+    ],
+    "Events": [
+      {
+        "TriggerDistance": 10.0,
+        "Type": "PlayBGM",
+        "Track": "Stage1_Theme"
+      },
+      {
+        "TriggerDistance": 30.0,
+        "Type": "SpawnEnemy",
+        "Count": 1,
+        "Formation": "Center",
+        "OffsetFromRail": {"x": 0.0, "y": 0.0, "z": 80.0}
+      },
+      {
+        "TriggerDistance": 80.0,
+        "Type": "SpawnEnemy",
+        "Count": 3,
+        "Formation": "V_Shape",
+        "OffsetFromRail": {"x": 10.0, "y": 5.0, "z": 100.0}
+      }
+    ]
+  }
+}

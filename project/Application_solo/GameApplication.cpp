@@ -15,6 +15,7 @@
 #include "components/RailShooterEnemyComponent.h"
 #include "components/DebrisComponent.h"
 #include "components/DebrisManagerComponent.h"
+#include "components/WaveManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
 #include "components/PlayerTargetingComponent.h"
 #include "components/DebugEnemySpawnerComponent.h"
@@ -126,6 +127,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
+    ComponentFactory::Register("WaveManagerComponent", "Game", []() { return std::make_shared<WaveManagerComponent>(); });
     ComponentFactory::Register("EnvironmentManagerComponent", "Game", []() { return std::make_shared<EnvironmentManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("PlayerTargetingComponent", "Game", []() { return std::make_shared<PlayerTargetingComponent>(); });

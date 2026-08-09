@@ -269,6 +269,8 @@ exit 0</Command>
     <ClCompile Include="components\ReticleUIComponent.cpp" />
     <ClCompile Include="components\LockonMarkerUIComponent.cpp" />
     <ClCompile Include="components\PlayerTargetingComponent.cpp" />
+    <ClCompile Include="components\WaveEventHandlers.cpp" />
+    <ClCompile Include="components\WaveManagerComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -308,6 +310,9 @@ exit 0</Command>
     <ClInclude Include="components\ReticleUIComponent.h" />
     <ClInclude Include="components\LockonMarkerUIComponent.h" />
     <ClInclude Include="components\PlayerTargetingComponent.h" />
+    <ClInclude Include="components\WaveEvent.h" />
+    <ClInclude Include="components\WaveEventHandlers.h" />
+    <ClInclude Include="components\WaveManagerComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">
