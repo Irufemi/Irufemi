@@ -38,7 +38,7 @@ public:
     Microsoft::WRL::ComPtr<IDxcBlob> Compile(
         const std::wstring& filePath,
         const wchar_t* profile,
-        const ShaderCompileOptions& options,
+        const ShaderCompileOptions& options = {},
         const std::vector<std::wstring>& includeDirs = {},
         std::string* outErrorLog = nullptr
     );

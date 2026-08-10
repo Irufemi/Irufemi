@@ -75,17 +75,20 @@ public:
      * @return 判定結果 (true/false)
      */
     bool IsCursorLocked() const { return cursorLocked_; }
-    
-    // ドラッグ＆ドロップで取得したファイルパス
     /**
-     * @brief DroppedFilePath を取得する。
-     * @return 取得された DroppedFilePath
+     * @brief D&Dでドロップされたファイルパスを取得する
      */
     std::string GetDroppedFilePath() const { return droppedFilePath_; }
+
     /**
-     * @brief ClearDroppedFilePath を実行する。
+     * @brief ドロップされたファイルパスをクリアする
      */
     void ClearDroppedFilePath() { droppedFilePath_.clear(); }
+
+    /**
+     * @brief ドロップされたファイルパスを設定する（内部用）
+     */
+    void SetDroppedFilePath(const std::string& path) { droppedFilePath_ = path; }
     ///@}
 
     /**

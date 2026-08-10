@@ -34,7 +34,6 @@ public:
         std::string hlslCode;
         std::string shaderName;
     };
-
     MagicBrushClient();
     ~MagicBrushClient();
 
@@ -94,7 +93,6 @@ private:
     
     // 黒窓を出さずにコマンドを実行して標準出力を取得する
     std::string ExecuteCommandHidden(const std::string& command);
-
     // JSON用エスケープ
     std::string EscapeJSON(const std::string& input);
 

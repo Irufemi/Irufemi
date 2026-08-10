@@ -507,6 +507,7 @@ public: // ゲッター
      */
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
     
+
     // Sceneディレクトリ設定
     /**
      * @brief SceneDirectory を取得する。

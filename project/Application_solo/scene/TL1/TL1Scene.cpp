@@ -288,6 +288,7 @@ void TL1Scene::DrawDebugTab() {
                     break;
             }
 
+
             ImGui::Separator();
             if (ImGui::CollapsingHeader("Server Console", ImGuiTreeNodeFlags_DefaultOpen)) {
                 ImGui::BeginChild("LogConsole", ImVec2(0, 150), true, ImGuiWindowFlags_HorizontalScrollbar);
@@ -339,6 +340,7 @@ void TL1Scene::DrawDebugTab() {
                     }
                 }
             }
+
         }
 
         // 通知メッセージの描画とタイマー減算
@@ -349,7 +351,7 @@ void TL1Scene::DrawDebugTab() {
             ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, alpha), "[System] %s", notificationMsg.c_str());
         }
 
+        }
         ImGui::End();
-    }
 #endif
 }

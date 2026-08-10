@@ -710,18 +710,21 @@ void IrufemiEngine::Execute() {
 
 // ImGui
 #ifdef USE_IMGUI
-    ui_->BeginEngineDebugWindow();
-    ui_->SceneSelectorTab(sceneManager_.get());
-    ui_->PostProcessTab(this);
-    ui_->ScreenCaptureTab(screenCaptureManager_.get());
-  // デバッグ機能の追加
-  if (gpuParticleManager_) {
-    gpuParticleManager_->Debug();
-  }
+    if (ui_->BeginEngineDebugWindow()) {
+        ui_->SceneSelectorTab(sceneManager_.get());
+        ui_->PostProcessTab(this);
+        ui_->ScreenCaptureTab(screenCaptureManager_.get());
+      // デバッグ機能の追加
+      if (gpuParticleManager_) {
+        gpuParticleManager_->Debug();
+      }
+        ui_->EndEngineDebugWindow();
+    }
+    
+    // Scene側のデバッグUIは独立したウィンドウ(Begin)を持つため、Engineウィンドウの外で呼ぶ
     if (auto *scene = sceneManager_->GetCurrentScene()) {
       scene->DrawDebugTab();
     }
-    ui_->EndEngineDebugWindow();
 #endif // USE_IMGUI
 
     // 更新

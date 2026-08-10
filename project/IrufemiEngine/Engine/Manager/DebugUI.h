@@ -225,7 +225,7 @@ public: // メンバ関数
     /**
      * @brief 統合デバッグウィンドウの開始
      */
-    void BeginEngineDebugWindow();
+    bool BeginEngineDebugWindow();
 
     /**
      * @brief 統合デバッグウィンドウの終了

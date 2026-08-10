@@ -1,6 +1,39 @@
 <?xml version='1.0' encoding='utf-8'?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+
+    <Filter Include="camera">
+      <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{893fd543-4896-4611-99d6-e1898aade7b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Clear">
+      <UniqueIdentifier>{10005089-1114-4451-b83e-4c222dd4993b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\InGame">
+      <UniqueIdentifier>{86fe6dc3-e9e1-4808-a280-aa9dd371aaba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Pause">
+      <UniqueIdentifier>{ab12cd34-56ef-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\Debug">
+      <UniqueIdentifier>{0a6ed38f-12d1-4188-b3fa-fb3877f9047d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\TL1">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\GameOver">
+      <UniqueIdentifier>{1419eb2e-43b5-45d8-acdb-9b3b00918d5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\StageSelect">
+      <UniqueIdentifier>{60c1d2e5-fb42-4752-bbb8-9ee296a24eb8}</UniqueIdentifier>
+    </Filter>
+=======
+>>>>>>> origin/master
     <Filter Include="UI">
       <UniqueIdentifier>{EF9FFFD9-235B-575F-A2DE-098830D1DDFA}</UniqueIdentifier>
     </Filter>
@@ -70,6 +103,19 @@
     </ClCompile>
     <ClCompile Include="UI\PromptController.cpp">
       <Filter>UI</Filter>
+    </ClCompile>
+
+    <ClCompile Include="main.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="GameApplication.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\GameOver\GameOverScene.cpp">
+      <Filter>Scene\GameOver</Filter>
+    </ClCompile>
+    <ClCompile Include="components\RailPathComponent.cpp">
+      <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\RailShooterPlayerComponent.cpp">
       <Filter>components</Filter>
@@ -171,6 +217,16 @@
     </ClInclude>
     <ClInclude Include="UI\PromptController.h">
       <Filter>UI</Filter>
+    </ClInclude>
+
+    <ClInclude Include="GameApplication.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\GameOver\GameOverScene.h">
+      <Filter>Scene\GameOver</Filter>
+    </ClInclude>
+    <ClInclude Include="components\RailPathComponent.h">
+      <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\RailShooterPlayerComponent.h">
       <Filter>components</Filter>

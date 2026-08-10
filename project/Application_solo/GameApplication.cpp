@@ -46,6 +46,7 @@
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "Framework/DebugScene.h"
 #endif
+#include "scene/TL1/TL1Scene.h"
 
 #ifdef EditorMode
 #include "EditorManager.h"
@@ -59,7 +60,7 @@ namespace {
     const Irufemi::Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        = "InGame";
+        = "TL1";
 #else
         = "Title";
 #endif
@@ -75,7 +76,7 @@ namespace {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
-
+        sm.Register("TL1", [] { return std::make_unique<TL1Scene>(); });
     }
 }
 

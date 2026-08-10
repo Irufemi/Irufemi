@@ -148,7 +148,7 @@ private:
     struct KeyHash { size_t operator()(const Key& k)const { return static_cast<size_t>(k.hash); } };
 
     std::unordered_map<Key, ComPtr, KeyHash> cache_; ///< PSO キャッシュ
-    std::unordered_map<std::string, std::vector<Key>> cacheKeysByName_; ///< 名前ごとの生成済みキャッシュキー
+    std::unordered_map<std::string, std::vector<Key>> cacheKeysByName_; ///< ホットリロードのためのキートラッキング (名前ごとの生成済みキャッシュキー)
     std::unordered_map<std::string, ComPtr> computeCache_; ///< Compute PSO キャッシュ
 
     /** @name 内部生成ヘルパー */

@@ -1024,11 +1024,19 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
 #endif // USE_IMGUI
 }
 
-void DebugUI::BeginEngineDebugWindow() {
+bool DebugUI::BeginEngineDebugWindow() {
 #ifdef USE_IMGUI
-    ImGui::Begin("Engine");
-
-    ImGui::BeginTabBar("EngineTabs");
+    if (!ImGui::Begin("Engine")) {
+        ImGui::End();
+        return false;
+    }
+    if (!ImGui::BeginTabBar("EngineTabs")) {
+        ImGui::End();
+        return false;
+    }
+    return true;
+#else
+    return false;
 #endif
 }
 

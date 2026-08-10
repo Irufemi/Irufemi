@@ -148,8 +148,12 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         }
         
         // outErrorLog が要求されている場合、アプリケーション側で復帰を試みるため assert を回避する
-        if (!outErrorLog) {
+        if (outErrorLog) {
+            *outErrorLog = errStr;
+            return nullptr;
+        } else {
             IRUFEMI_ASSERT(false && "Shader Compile Error");
+
         }
     }
 

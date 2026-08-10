@@ -1,4 +1,5 @@
 #include "MagicBrushClient.h"
+#include "../../../IrufemiEngine/Engine/Graphics/DirectX/ShaderCompiler.h"
 #include "Engine/Graphics/DirectX/ShaderManager.h"
 #include "../../../IrufemiEngine/Engine/Core/Utility/StringUtility.h"
 #include <fstream>
@@ -70,7 +71,6 @@ bool MagicBrushClient::StartPythonServer() {
 
     hChildStd_OUT_Rd_ = hOutRead;
     hChildStd_OUT_Wr_ = hOutWrite;
-
     STARTUPINFOA si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
@@ -79,7 +79,6 @@ bool MagicBrushClient::StartPythonServer() {
     si.wShowWindow = SW_HIDE; // サーバーの黒窓を出さない
     si.hStdOutput = hOutWrite;
     si.hStdError = hOutWrite;
-    
     ZeroMemory(&pi, sizeof(pi));
 
     // 実行ファイル(exe)のパスを取得し、そこから相対パスでToolsディレクトリを導き出す
@@ -114,7 +113,6 @@ bool MagicBrushClient::StartPythonServer() {
     // 親プロセス側で書き込みハンドルは不要なので閉じる（閉じないと読み取りスレッドがEOFを検知できない）
     CloseHandle(hOutWrite);
     hChildStd_OUT_Wr_ = nullptr;
-
     pythonProcessHandle_ = pi.hProcess;
     pythonThreadHandle_ = pi.hThread;
     pythonProcessId_ = pi.dwProcessId;
@@ -122,7 +120,6 @@ bool MagicBrushClient::StartPythonServer() {
     // ログ読み取りスレッドを開始
     isLogThreadRunning_ = true;
     logThread_ = std::thread(&MagicBrushClient::LogReadThread, this);
-    
     // サーバーが立ち上がるのを少し待つ
     std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     return true;
@@ -142,6 +139,7 @@ void MagicBrushClient::StopPythonServer() {
         pythonThreadHandle_ = nullptr;
         pythonProcessId_ = 0;
     }
+
 
     isLogThreadRunning_ = false;
     if (hChildStd_OUT_Rd_) {
@@ -188,6 +186,7 @@ void MagicBrushClient::LogReadThread() {
             }
         }
     }
+
 }
 
 void MagicBrushClient::RestartPythonServer() {
@@ -219,6 +218,7 @@ std::string MagicBrushClient::EscapeJSON(const std::string& input) {
     }
     return out;
 }
+
 
 std::string MagicBrushClient::ExecuteCommandHidden(const std::string& command) {
     SECURITY_ATTRIBUTES saAttr;
@@ -280,6 +280,7 @@ std::string MagicBrushClient::ExecuteCommandHidden(const std::string& command) {
 
     return result;
 }
+
 
 std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const std::string& jsonPayload) {
     // テンポラリファイルにJSONを書き出す（エスケープ問題を避けるため）
@@ -345,6 +346,7 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
         return;
     }
 
+
     // 修復ループ
     int attempts = 0;
     while (attempts <= kMaxFixAttempts) {
@@ -408,6 +410,7 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
         }
     }
 }
+
 
 void MagicBrushClient::StartVisualFix(const std::string& referenceImagePath, const std::string& screenshotPath, const std::string& currentHlslCode, const std::string& shaderName, ShaderManager* shaderManager) {
     if (state_ == State::VisualEvaluating || state_ == State::Compiling || state_ == State::Generating || state_ == State::Fixing) return;
@@ -482,3 +485,4 @@ void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::stri
     errorMessage_ = "Visual fix failed. Could not resolve compile errors after " + std::to_string(kMaxFixAttempts) + " attempts.";
     state_ = State::Error;
 }
+

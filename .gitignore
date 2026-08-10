@@ -122,6 +122,7 @@ debuglog.txt
 /project/Dumps
 /logs/
 /project/Application/Dumps
+/project/Tools/ShaderGenerator/.env
 .env
 
 # ====================================================================

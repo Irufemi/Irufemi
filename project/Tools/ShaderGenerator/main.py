@@ -165,6 +165,7 @@ async def fix_error(request: FixRequest):
     except Exception as e:
         return PlainTextResponse(status_code=500, content="ERROR: " + str(e))
 
+
 class VisualEvaluateRequest(BaseModel):
     reference_image_path: str
     current_output_image_path: str
@@ -265,6 +266,7 @@ async def evaluate_visual(request: VisualEvaluateRequest):
 
     except Exception as e:
         return PlainTextResponse(status_code=500, content="ERROR: " + str(e))
+
 
 if __name__ == "__main__":
     # ローカルホストの8000番ポートでサーバーを起動

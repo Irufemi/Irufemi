@@ -47,9 +47,19 @@ void PSOManager::Initialize(
 
     shaderRegistry_.clear();
     cache_.clear();
+    cacheKeysByName_.clear();
 }
 
 void PSOManager::RegisterShader(const std::string& name, const PipelineStateDesc& desc) {
+    // 同じ名前のシェーダーが上書き登録された場合、関連するキャッシュを削除する（ホットリロード対応）
+    auto it = cacheKeysByName_.find(name);
+    if (it != cacheKeysByName_.end()) {
+        for (const auto& key : it->second) {
+            cache_.erase(key);
+        }
+        cacheKeysByName_.erase(it);
+    }
+    
     shaderRegistry_[name] = desc;
 }
 
