@@ -26,6 +26,7 @@ class SceneTransition;
 #include "Graphics/Data/Material.h"
 #include "Graphics/Data/TransformationMatrix.h"
 #include "Core/System/ResourceHandle.h"
+#include "Profiler/TelemetryGatherer.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -478,6 +479,9 @@ public: // ゲッター
      */
     void SetTimeScale(float scale) { timeScale_ = scale; }
 
+    float GetPureCpuTimeMs() const { return pureCpuTimeMs_; }
+    float GetEmaFps() const { return emaFps_; }
+
     /**
      * @brief MaterialBufferManager を取得する。
      * @return 取得された MaterialBufferManager
@@ -740,7 +744,6 @@ private: // メンバ変数
 
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
-    float timeScale_ = 1.0f;
     std::string sceneDirectory_ = "resources/scenes/";
     UINT backBufferIndex_{};
     
@@ -750,13 +753,16 @@ private: // メンバ変数
 
     // --- 時間管理 ---
     std::chrono::steady_clock::time_point startTime_{};
-    std::chrono::steady_clock::time_point lastFrameTime_{};
-    float deltaTime_ = 0.0f;
+    std::chrono::steady_clock::time_point lastFrameTime_{};    // 時間系変数
     float totalTime_ = 0.0f;
-
-    // 追加: ポーズ対応のゲーム内時間管理
     float gameTime_ = 0.0f;
+    float deltaTime_ = 0.0f;
     float gameDeltaTime_ = 0.0f;
+    float timeScale_ = 1.0f;
+    
+    // プロファイラ用
+    float pureCpuTimeMs_ = 0.0f;
+    float emaFps_ = 60.0f;
 
     // --- Dynamic Constant Buffer ---
     std::unique_ptr<DynamicConstantBuffer<Material>> materialBufferManager_ = nullptr;
@@ -770,6 +776,10 @@ private: // メンバ変数
     std::unique_ptr<RenderTexture> velocityTexture_ = nullptr;   // MRT対応: モーションベクトル用
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
+
+    // Telemetry Gatherer
+    std::unique_ptr<TelemetryGatherer> telemetryGatherer_ = nullptr;
+
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
 

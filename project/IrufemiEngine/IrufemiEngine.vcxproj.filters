@@ -663,6 +663,9 @@
     <ClCompile Include="Engine\Profiler\TelemetrySender.cpp">
       <Filter>Engine\Profiler</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Profiler\TelemetryGatherer.cpp">
+      <Filter>Engine\Profiler</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Profiler\GpuProfiler.cpp">
       <Filter>Engine\Profiler</Filter>
     </ClCompile>
@@ -940,6 +943,9 @@
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Profiler\TelemetrySender.h">
+      <Filter>Engine\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Profiler\TelemetryGatherer.h">
       <Filter>Engine\Profiler</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Profiler\GpuProfiler.h">

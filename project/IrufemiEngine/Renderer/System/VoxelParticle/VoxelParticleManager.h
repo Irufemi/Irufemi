@@ -72,6 +72,15 @@ public:
      */
     void PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params, const Irufemi::Vector3Int& resolution);
 
+    uint32_t GetActiveSystemCount() const { return static_cast<uint32_t>(systems_.size()); }
+    uint32_t GetTotalEmittersUsed() const {
+        uint32_t count = 0;
+        for (const auto& pair : systems_) {
+            count += pair.second.nextIndex - static_cast<uint32_t>(pair.second.freeIndices.size());
+        }
+        return count;
+    }
+
 private:
     VoxelParticleManager(const VoxelParticleManager&) = delete;
     VoxelParticleManager& operator=(const VoxelParticleManager&) = delete;

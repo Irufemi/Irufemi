@@ -686,6 +686,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Engine\Graphics\PostProcess\PostProcessRunner.cpp" />
     <ClCompile Include="Engine\IrufemiEngine.cpp" />
     <ClCompile Include="Engine\Profiler\TelemetrySender.cpp" />
+    <ClCompile Include="Engine\Profiler\TelemetryGatherer.cpp" />
     <ClCompile Include="Engine\Profiler\GpuProfiler.cpp" />
     <ClCompile Include="Engine\Manager\CollisionManager.cpp" />
     <ClCompile Include="Engine\Manager\DebugUI.cpp" />
@@ -781,6 +782,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Engine\IrufemiEngine.h" />
     <ClInclude Include="Engine\Profiler\TelemetrySender.h" />
+    <ClInclude Include="Engine\Profiler\TelemetryGatherer.h" />
     <ClInclude Include="Engine\Profiler\GpuProfiler.h" />
     <ClInclude Include="Engine\Core\Math\Math.h" />
     <ClInclude Include="Engine\Core\Math\MathFunction.h" />

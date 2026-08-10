@@ -442,6 +442,10 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 #endif
 
   TelemetrySender::GetInstance().Initialize();
+
+  // TelemetryGatherer の初期化 (ここでプロファイル項目をバインド)
+  telemetryGatherer_ = std::make_unique<TelemetryGatherer>();
+  telemetryGatherer_->Initialize(this);
 }
 
   // クリアカラーをfloat配列で持つ初期化
@@ -878,8 +882,7 @@ void IrufemiEngine::EndFrame() {
   float totalElapsedMs = std::chrono::duration<float>(now - lastFrameTime_).count() * 1000.0f;
   
   // CPU処理時間 = フレーム経過時間 - GPUフェンス待ち時間 (ただしマイナスにならないようclamp)
-  float pureCpuTimeMs = (std::max)(0.0f, totalElapsedMs - s_gpuWaitTimeMs);
-  TelemetrySender::GetInstance().SetMetric("System/CPU_Time_ms", pureCpuTimeMs);
+  pureCpuTimeMs_ = (std::max)(0.0f, totalElapsedMs - s_gpuWaitTimeMs);
 
   drawManager_->PostDraw();
 
@@ -896,32 +899,17 @@ void IrufemiEngine::EndFrame() {
   // --- 追加: 中間リソースの遅延解放を実行 ---
   dxCommon_->ClearPendingResources();
 
-  // Telemetryデータの送信
-  if (threadPool_) {
-      TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Active", (int)threadPool_->GetActiveThreadCount());
-      TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Queued", (int)threadPool_->GetQueuedTaskCount());
-      // TelemetrySender::GetInstance().SetMetric("System/ThreadPool_Completed", (int)threadPool_->PopCompletedTaskCount()); // PopCompletedTaskCount は他で使われる可能性があるのでここでは取得のみに留めるか検討ですが、一旦は呼び出さないようにします。
-  }
-
-  if (gpuParticleManager_) {
-      TelemetrySender::GetInstance().SetMetric("GPU_Particle/Active_Systems", gpuParticleManager_->GetActiveSystemCount());
-      TelemetrySender::GetInstance().SetMetric("GPU_Particle/Total_Emitters", gpuParticleManager_->GetTotalEmittersUsed());
-  }
-
-  // 指数移動平均(EMA)を用いてFPSの変動を平滑化し、ツール上での視覚的なブレを防ぐ
-  static float emaFps = 60.0f;
+  // 指数移動平均(EMA)を用いてFPSの変動を平滑化
   float currentFps = (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f;
-  // 初回や異常値からの復帰時はそのまま代入、それ以外は10%の重みでなだらかに変化させる
-  emaFps = (emaFps == 0.0f || currentFps < 1.0f) ? currentFps : (emaFps * 0.9f + currentFps * 0.1f);
+  emaFps_ = (emaFps_ == 0.0f || currentFps < 1.0f) ? currentFps : (emaFps_ * 0.9f + currentFps * 0.1f);
 
-  TelemetrySender::GetInstance().SetMetric("System/FPS", emaFps);
-  TelemetrySender::GetInstance().SetMetric("System/FrameTime_ms", deltaTime_ * 1000.0f);
-
-  if (dxCommon_) {
-      TelemetrySender::GetInstance().SetMetric("System/GPU_Time_ms", GpuProfiler::GetInstance().GetLastFrameGpuTimeMs());
+  // マニフェストに登録されたすべてのメトリクスを一括送信
+  if (telemetryGatherer_) {
+      telemetryGatherer_->DispatchAll();
   }
-  TelemetrySender::GetInstance().OnFrameEnd();
 }
+
+
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   if (width <= 0 || height <= 0)

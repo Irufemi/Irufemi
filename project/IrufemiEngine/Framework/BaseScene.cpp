@@ -252,9 +252,11 @@ void BaseScene::Update() {
     }
 
     // --- Start() フェーズ ---
-    for (auto& obj : gameObjects_) {
-        if (obj && !obj->GetParent() && !obj->IsDestroyed() && !obj->IsStarted()) {
-            obj->Start();
+    if (isPlayMode) {
+        for (auto& obj : gameObjects_) {
+            if (obj && !obj->GetParent() && !obj->IsDestroyed() && !obj->IsStarted()) {
+                obj->Start();
+            }
         }
     }
 

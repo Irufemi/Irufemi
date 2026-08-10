@@ -140,7 +140,8 @@ void GPUParticleManager::UpdateFieldData(const FieldHandle& handle, const Partic
 int GPUParticleManager::GetTotalEmittersUsed() const {
     int totalEmitters = 0;
     for (const auto& pair : systems_) {
-        totalEmitters += (int)(GPUParticleSystem::kMaxEmitters - pair.second.freeIndices.size());
+        // nextIndex はこれまで割り当てた最大のインデックス（サイズ）。そこから解放済みの数を引く
+        totalEmitters += (int)(pair.second.nextIndex - pair.second.freeIndices.size());
     }
     return totalEmitters;
 }
@@ -158,7 +159,7 @@ void GPUParticleManager::Debug() {
             auto& context = pair.second;
             
             if (ImGui::TreeNode(textureName.c_str())) {
-                ImGui::Text("Emitters: %d / %d", (int)(GPUParticleSystem::kMaxEmitters - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
+                ImGui::Text("Emitters: %d / %d", (int)(context.nextIndex - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
                 context.system->Debug();
                 ImGui::TreePop();
             }

@@ -4312,6 +4312,12 @@
             "Result Time Scale": 0.10000000149011612
           },
           "type": "GameLoopManagerComponent"
+        },
+        {
+          "data": {
+            "Level Data Path": "resources/configs/WaveData_Stage1.json"
+          },
+          "type": "WaveManagerComponent"
         }
       ],
       "instanceId": 8040492037901668950,
