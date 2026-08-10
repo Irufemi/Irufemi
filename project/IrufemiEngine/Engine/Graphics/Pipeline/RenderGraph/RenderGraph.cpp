@@ -123,16 +123,36 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         // このパスで最初に使われる Transient Resource に対するエイリアシングバリア
         for (size_t i = 0; i < lifetimes.size(); ++i) {
             if (lifetimes[i].firstPass == passIdx && lifetimes[i].physicalResource) {
-                D3D12_RESOURCE_BARRIER b{};
-                b.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
-                b.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                b.Aliasing.pResourceBefore = nullptr;
-                b.Aliasing.pResourceAfter = lifetimes[i].physicalResource;
-                barriers.push_back(b);
+                // 同じオフセット上でアクティブなリソースが本当に切り替わった場合のみエイリアシングバリアを発行
+                if (activeResourceByOffset_[lifetimes[i].offset] != lifetimes[i].physicalResource) {
+                    ID3D12Resource* prevResource = activeResourceByOffset_[lifetimes[i].offset];
+                    
+                    // DX12のDebug LayerとGBVの整合性を保つため、以前のアクティブリソースを
+                    // ディアクティベートする前に明示的にCOMMONへ遷移させておく
+                    if (prevResource) {
+                        auto it = resourceStates_.find(prevResource);
+                        if (it != resourceStates_.end() && it->second != D3D12_RESOURCE_STATE_COMMON) {
+                            D3D12_RESOURCE_BARRIER tb{};
+                            tb.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                            tb.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                            tb.Transition.pResource = prevResource;
+                            tb.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                            tb.Transition.StateBefore = it->second;
+                            tb.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+                            barriers.push_back(tb);
+                            resourceStates_[prevResource] = D3D12_RESOURCE_STATE_COMMON;
+                        }
+                    }
 
-                // ステート追跡の初期化（未登録の新規リソースの場合のみ COMMON とする）
-                if (resourceStates_.find(lifetimes[i].physicalResource) == resourceStates_.end()) {
-                    resourceStates_[lifetimes[i].physicalResource] = D3D12_RESOURCE_STATE_COMMON;
+                    D3D12_RESOURCE_BARRIER b{};
+                    b.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
+                    b.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                    b.Aliasing.pResourceBefore = prevResource;
+                    b.Aliasing.pResourceAfter = lifetimes[i].physicalResource;
+                    barriers.push_back(b);
+
+                    // アクティブなリソースを更新
+                    activeResourceByOffset_[lifetimes[i].offset] = lifetimes[i].physicalResource;
                 }
             }
         }
@@ -186,6 +206,30 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         // パスの実行
         pass->Execute(drawManager, engine);
     }
+
+    // 全パス実行後、要求された最終ステートへの TransitionBarrier を発行
+    std::vector<D3D12_RESOURCE_BARRIER> finalBarriers;
+    for (const auto& [resource, finalState] : finalResourceStates_) {
+        if (!resource) continue;
+        auto it = resourceStates_.find(resource);
+        D3D12_RESOURCE_STATES currentState = (it != resourceStates_.end()) ? it->second : D3D12_RESOURCE_STATE_COMMON;
+
+        if (currentState != finalState) {
+            D3D12_RESOURCE_BARRIER b{};
+            b.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            b.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            b.Transition.pResource = resource;
+            b.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            b.Transition.StateBefore = currentState;
+            b.Transition.StateAfter = finalState;
+            finalBarriers.push_back(b);
+            resourceStates_[resource] = finalState;
+        }
+    }
+
+    if (!finalBarriers.empty()) {
+        cmdList->ResourceBarrier(static_cast<UINT>(finalBarriers.size()), finalBarriers.data());
+    }
 }
 
 void RenderGraph::ClearPasses() {
@@ -194,6 +238,8 @@ void RenderGraph::ClearPasses() {
 
 void RenderGraph::ResetStates() {
     resourceStates_.clear();
+    finalResourceStates_.clear();
+    activeResourceByOffset_.clear();
 }
 
 void RenderGraph::OnResize() {
@@ -203,9 +249,15 @@ void RenderGraph::OnResize() {
     }
 }
 
-void RenderGraph::RegisterResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
+void RenderGraph::SetInitialResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
     if (resource) {
         resourceStates_[resource] = state;
+    }
+}
+
+void RenderGraph::SetFinalResourceState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
+    if (resource) {
+        finalResourceStates_[resource] = state;
     }
 }
 

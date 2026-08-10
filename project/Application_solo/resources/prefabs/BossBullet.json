@@ -1,0 +1,33 @@
+{
+  "name": "BossBullet",
+  "isFolder": false,
+  "isActive": false,
+  "components": [
+    {
+      "type": "TransformComponent",
+      "data": {
+        "scale": [ 0.5, 0.5, 0.5 ]
+      }
+    },
+    {
+      "type": "PrimitiveRendererComponent",
+      "data": {
+        "shapeType": 1, 
+        "color": [ 1.0, 0.0, 1.0, 1.0 ]
+      }
+    },
+    {
+      "type": "SphereColliderComponent",
+      "data": {
+        "layer": 3, 
+        "mask": 4294967295,
+        "isTrigger": true,
+        "radius": 0.5,
+        "center": [ 0.0, 0.0, 0.0 ]
+      }
+    },
+    {
+      "type": "BossBulletComponent"
+    }
+  ]
+}

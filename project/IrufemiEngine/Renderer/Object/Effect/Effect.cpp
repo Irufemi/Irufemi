@@ -1,4 +1,4 @@
-#include "Effect.h"
+﻿#include "Effect.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 #include "Engine/Manager/DebugUI.h"
@@ -22,16 +22,16 @@ void Effect::Initialize(EffectType type) {
         isBillboard_ = true;
         
         hitParticle_ = std::make_unique<ParticleObject>();
-        hitParticle_->texturePath_ = currentTextureName_;
-        hitParticle_->blendMode_ = blendMode_;
-        hitParticle_->billboardMode_ = 1; // Billboard
-        hitParticle_->color_ = hitConfig_.color;
-        hitParticle_->lifeTimeMin_ = hitConfig_.lifeMin;
-        hitParticle_->lifeTimeMax_ = hitConfig_.lifeMax;
-        hitParticle_->startScale_ = hitConfig_.startScaleMax;
-        hitParticle_->endScale_ = hitConfig_.endScaleMax;
-        hitParticle_->jitter_ = hitConfig_.jitter;
-        hitParticle_->emitOnAwake_ = false;
+        hitParticle_->SetTexturePath(currentTextureName_);
+        hitParticle_->SetBlendMode(blendMode_);
+        hitParticle_->SetBillboardMode(1); // Billboard mode
+        hitParticle_->SetColor(hitConfig_.color);
+        hitParticle_->SetLifeTimeMin(hitConfig_.lifeMin);
+        hitParticle_->SetLifeTimeMax(hitConfig_.lifeMax);
+        hitParticle_->SetStartScale(hitConfig_.startScaleMax);
+        hitParticle_->SetEndScale(hitConfig_.endScaleMax);
+        hitParticle_->SetJitter(hitConfig_.jitter);
+        hitParticle_->SetEmitOnAwake(false);
         hitParticle_->Initialize();
         break;
     }
@@ -41,16 +41,16 @@ void Effect::Initialize(EffectType type) {
         
         // Planeエミッター (破片) -> ParticleObject
         impactPlaneParticle_ = std::make_unique<ParticleObject>();
-        impactPlaneParticle_->texturePath_ = impactConfig_.planeTexture;
-        impactPlaneParticle_->blendMode_ = blendMode_;
-        impactPlaneParticle_->billboardMode_ = 0; // None
-        impactPlaneParticle_->color_ = impactConfig_.color;
-        impactPlaneParticle_->lifeTimeMin_ = impactConfig_.lifeMin;
-        impactPlaneParticle_->lifeTimeMax_ = impactConfig_.lifeMax;
-        impactPlaneParticle_->startScale_ = impactConfig_.planeStartScaleMax;
-        impactPlaneParticle_->endScale_ = impactConfig_.planeEndScaleMax;
-        impactPlaneParticle_->jitter_ = impactConfig_.jitter;
-        impactPlaneParticle_->emitOnAwake_ = false;
+        impactPlaneParticle_->SetTexturePath(impactConfig_.planeTexture);
+        impactPlaneParticle_->SetBlendMode(blendMode_);
+        impactPlaneParticle_->SetBillboardMode(0); // None
+        impactPlaneParticle_->SetColor(impactConfig_.color);
+        impactPlaneParticle_->SetLifeTimeMin(impactConfig_.lifeMin);
+        impactPlaneParticle_->SetLifeTimeMax(impactConfig_.lifeMax);
+        impactPlaneParticle_->SetStartScale(impactConfig_.planeStartScaleMax);
+        impactPlaneParticle_->SetEndScale(impactConfig_.planeEndScaleMax);
+        impactPlaneParticle_->SetJitter(impactConfig_.jitter);
+        impactPlaneParticle_->SetEmitOnAwake(false);
         impactPlaneParticle_->Initialize();
         
         // Ringエミッター -> Primitive3DObject
@@ -68,7 +68,7 @@ void Effect::Initialize(EffectType type) {
     {
         isBillboard_ = false;
         auraObject_ = std::make_unique<Primitive3DObject>();
-        auraObject_->Initialize(PrimitiveType::Cylinder, auraConfig_.texture);
+        auraObject_->Initialize(Irufemi::PrimitiveType::Cylinder, auraConfig_.texture);
         
         // 炎のように立ち上る形状（底面半径0.6f, 上面半径0.05f, 高さ2.5f, 底面原点）を動的生成して適用
         // 上面をほぼ尖らせることで炎の先端のシルエットを表現。セグメント24で滑らかに。
@@ -92,7 +92,7 @@ void Effect::Initialize(EffectType type) {
     {
         isBillboard_ = false;
         swingObject_ = std::make_unique<Primitive3DObject>();
-        swingObject_->Initialize(PrimitiveType::Ring, swingConfig_.texture);
+        swingObject_->Initialize(Irufemi::PrimitiveType::Ring, swingConfig_.texture);
 
         // 風切りスイングに特化したカスタム形状パラメータ（端が尖った半円）
         RingParams ringParams;
@@ -154,25 +154,25 @@ void Effect::Initialize(EffectType type) {
 
         // 3. GPUパーティクル（火花用）
         explosionSparkParticle_ = std::make_unique<ParticleObject>();
-        explosionSparkParticle_->texturePath_ = "resources/circle2.png";
-        explosionSparkParticle_->blendMode_ = BlendMode::kBlendModeAdd;
-        explosionSparkParticle_->billboardMode_ = 1; // CameraBillboard
+        explosionSparkParticle_->SetTexturePath("resources/circle2.png");
+        explosionSparkParticle_->SetBlendMode(Irufemi::BlendMode::kBlendModeAdd);
+        explosionSparkParticle_->SetBillboardMode(1); // CameraBillboard
         
         // 元の SparkBehavior（白 -> 赤 -> 透明）をシミュレート
-        explosionSparkParticle_->color_ = { 1.0f, 1.0f, 0.8f, 1.0f };
-        explosionSparkParticle_->midColor_ = { 1.0f, 0.6f, 0.0f, 1.0f };
-        explosionSparkParticle_->midPoint_ = 0.2f;
+        explosionSparkParticle_->SetColor({ 1.0f, 1.0f, 0.8f, 1.0f });
+        explosionSparkParticle_->SetMidColor({ 1.0f, 0.6f, 0.0f, 1.0f });
+        explosionSparkParticle_->SetMidPoint(0.2f);
         
-        explosionSparkParticle_->startScale_ = { 0.08f, 0.08f, 0.08f };
-        explosionSparkParticle_->midScale_ = { 0.08f, 0.08f, 0.08f };
-        explosionSparkParticle_->endScale_ = { 0.0f, 0.0f, 0.0f };
+        explosionSparkParticle_->SetStartScale({ 0.08f, 0.08f, 0.08f });
+        explosionSparkParticle_->SetMidScale({ 0.08f, 0.08f, 0.08f });
+        explosionSparkParticle_->SetEndScale({ 0.0f, 0.0f, 0.0f });
         
-        explosionSparkParticle_->lifeTimeMin_ = 0.3f;
-        explosionSparkParticle_->lifeTimeMax_ = 0.6f;
-        explosionSparkParticle_->gravity_ = 0.8f;
-        explosionSparkParticle_->damping_ = 0.05f;
-        explosionSparkParticle_->velocity_ = 0.0f; // 爆風とは別でPlay時に設定する
-        explosionSparkParticle_->emitOnAwake_ = false;
+        explosionSparkParticle_->SetLifeTimeMin(0.3f);
+        explosionSparkParticle_->SetLifeTimeMax(0.6f);
+        explosionSparkParticle_->SetGravity(0.8f);
+        explosionSparkParticle_->SetDamping(0.05f);
+        explosionSparkParticle_->SetVelocity(0.0f); // 爆風とは別でPlay時に設定する
+        explosionSparkParticle_->SetEmitOnAwake(false);
         explosionSparkParticle_->Initialize();
 
         isActive_ = false;
@@ -191,23 +191,23 @@ void Effect::Update() {
         } else {
             float t = 1.0f - (lifeTimer_ / impactConfig_.lifeMax);
             
-            Vector3 ringScale;
+            Irufemi::Vector3 ringScale;
             ringScale.x = Lerp(impactConfig_.ringStartScaleMax.x, impactConfig_.ringEndScaleMax.x, t) * baseScale_.x;
             ringScale.y = Lerp(impactConfig_.ringStartScaleMax.y, impactConfig_.ringEndScaleMax.y, t) * baseScale_.y;
             ringScale.z = Lerp(impactConfig_.ringStartScaleMax.z, impactConfig_.ringEndScaleMax.z, t) * baseScale_.z;
             impactRingObject_->SetScale(ringScale);
             
-            Vector4 ringColor = impactConfig_.color;
+            Irufemi::Vector4 ringColor = impactConfig_.color;
             ringColor.w = Lerp(impactConfig_.color.w, 0.0f, t);
             impactRingObject_->GetMaterial().color = ringColor;
             
             currentUVOffset_.x += impactConfig_.uvScrollSpeed.x * dt;
             currentUVOffset_.y += impactConfig_.uvScrollSpeed.y * dt;
             
-            Vector3 uvScale = { impactConfig_.uvScale.x, impactConfig_.uvScale.y, 1.0f };
-            Vector3 uvRot = { 0.0f, 0.0f, 0.0f };
-            Vector3 uvTrans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
-            impactRingObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(uvScale, uvRot, uvTrans);
+            Irufemi::Vector3 uvScale = { impactConfig_.uvScale.x, impactConfig_.uvScale.y, 1.0f };
+            Irufemi::Vector3 uvRot = { 0.0f, 0.0f, 0.0f };
+            Irufemi::Vector3 uvTrans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
+            impactRingObject_->GetMaterial().uvTransform = Irufemi::Math::MakeAffineMatrix(uvScale, uvRot, uvTrans);
             
             // Z-fightingを避けるためにPlay時にずらした座標を維持
             impactRingObject_->Update();
@@ -221,12 +221,12 @@ void Effect::Update() {
         float scaleY = auraConfig_.flipV ? -1.0f : 1.0f;
         float offsetY = auraConfig_.flipV ? currentUVOffset_.y + 1.0f : currentUVOffset_.y;
 
-        Vector3 scale = { 1.0f, scaleY, 1.0f };
-        Vector3 rot = { 0.0f, 0.0f, 0.0f };
-        Vector3 trans = { currentUVOffset_.x, offsetY, 0.0f };
+        Irufemi::Vector3 scale = { 1.0f, scaleY, 1.0f };
+        Irufemi::Vector3 rot = { 0.0f, 0.0f, 0.0f };
+        Irufemi::Vector3 trans = { currentUVOffset_.x, offsetY, 0.0f };
         
         // 行列を構築し、MaterialComponentのuvTransformに流し込む
-        auraObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(scale, rot, trans);
+        auraObject_->GetMaterial().uvTransform = Irufemi::Math::MakeAffineMatrix(scale, rot, trans);
         auraObject_->GetMaterial().color = auraConfig_.color;
         auraObject_->GetMaterial().useClampSampler = auraConfig_.useClamp ? 3 : 0; // 3 = U:Wrap, V:Clamp
         if (auraObject_->GetMaterial().texturePath != auraConfig_.texture) {
@@ -243,14 +243,14 @@ void Effect::Update() {
             float t = 1.0f - (lifeTimer_ / swingConfig_.lifeTime);
             
             // スケールを startScale から endScale へ線形補間
-            Vector3 currentScale;
+            Irufemi::Vector3 currentScale;
             currentScale.x = Lerp(swingConfig_.startScale.x, swingConfig_.endScale.x, t) * baseScale_.x;
             currentScale.y = Lerp(swingConfig_.startScale.y, swingConfig_.endScale.y, t) * baseScale_.y;
             currentScale.z = Lerp(swingConfig_.startScale.z, swingConfig_.endScale.z, t) * baseScale_.z;
             swingObject_->SetScale(currentScale);
             
             // アルファ値（透明度）をフェードアウト
-            Vector4 currentColor = swingConfig_.color;
+            Irufemi::Vector4 currentColor = swingConfig_.color;
             currentColor.w = Lerp(swingConfig_.color.w, 0.0f, t);
             swingObject_->GetMaterial().color = currentColor;
             
@@ -303,10 +303,10 @@ void Effect::Update() {
             currentUVOffset_.x += swingConfig_.uvScrollSpeed.x * dt;
             currentUVOffset_.y += swingConfig_.uvScrollSpeed.y * dt;
             
-            Vector3 uvScale = { swingConfig_.uvScale.x, swingConfig_.uvScale.y, 1.0f };
-            Vector3 uvRot = { 0.0f, 0.0f, 0.0f };
-            Vector3 uvTrans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
-            swingObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(uvScale, uvRot, uvTrans);
+            Irufemi::Vector3 uvScale = { swingConfig_.uvScale.x, swingConfig_.uvScale.y, 1.0f };
+            Irufemi::Vector3 uvRot = { 0.0f, 0.0f, 0.0f };
+            Irufemi::Vector3 uvTrans = { currentUVOffset_.x, currentUVOffset_.y, 0.0f };
+            swingObject_->GetMaterial().uvTransform = Irufemi::Math::MakeAffineMatrix(uvScale, uvRot, uvTrans);
             swingObject_->GetMaterial().useClampSampler = swingConfig_.useClamp ? 3 : 0;
             
             if (swingObject_->GetMaterial().texturePath != swingConfig_.texture) {
@@ -314,7 +314,7 @@ void Effect::Update() {
             }
             
             // 最新の位置と回転を反映
-            Vector3 currentRotation = baseRotation_;
+            Irufemi::Vector3 currentRotation = baseRotation_;
             currentRotation.y -= swingConfig_.swingRotationAngle * t;
             
             swingObject_->SetPosition(basePosition_);
@@ -333,21 +333,21 @@ void Effect::Update() {
             float easeOut = 1.0f - std::pow(1.0f - t, 3.0f); // Cubic Ease Out
             
             // 1. 3Dコア球体の更新
-            Vector3 coreScale;
+            Irufemi::Vector3 coreScale;
             coreScale.x = Lerp(explosionConfig_.coreStartScale.x, explosionConfig_.coreEndScale.x, easeOut) * baseScale_.x;
             coreScale.y = Lerp(explosionConfig_.coreStartScale.y, explosionConfig_.coreEndScale.y, easeOut) * baseScale_.y;
             coreScale.z = Lerp(explosionConfig_.coreStartScale.z, explosionConfig_.coreEndScale.z, easeOut) * baseScale_.z;
             explosionObject_->SetScale(coreScale);
             
-            Vector4 coreColor = explosionConfig_.color;
+            Irufemi::Vector4 coreColor = explosionConfig_.color;
             coreColor.w = Lerp(explosionConfig_.color.w, 0.0f, t); // 徐々に透明に
             explosionObject_->GetMaterial().color = coreColor;
             
             // コアのUVスクロールで炎のうねりを表現
             currentUVOffset_.x += explosionConfig_.uvScrollSpeed.x * dt;
             currentUVOffset_.y += explosionConfig_.uvScrollSpeed.y * dt;
-            explosionObject_->GetMaterial().uvTransform = Math::MakeAffineMatrix(
-                Vector3{ 1.0f, 1.0f, 1.0f }, Vector3{ 0.0f, 0.0f, 0.0f }, Vector3{ currentUVOffset_.x, currentUVOffset_.y, 0.0f }
+            explosionObject_->GetMaterial().uvTransform = Irufemi::Math::MakeAffineMatrix(
+                Irufemi::Vector3{ 1.0f, 1.0f, 1.0f }, Irufemi::Vector3{ 0.0f, 0.0f, 0.0f }, Irufemi::Vector3{ currentUVOffset_.x, currentUVOffset_.y, 0.0f }
             );
             
             explosionObject_->SetPosition(basePosition_);
@@ -356,13 +356,13 @@ void Effect::Update() {
             // 2. 衝撃波リングの更新 (スケールが極端に小さい場合は更新を最小限に)
             if (explosionWaveObject_) {
                 bool isSmallExplosion = (baseScale_.x < 0.5f);
-                Vector3 waveScale;
+                Irufemi::Vector3 waveScale;
                 waveScale.x = Lerp(explosionConfig_.waveStartScale.x, explosionConfig_.waveEndScale.x, easeOut) * baseScale_.x;
                 waveScale.y = Lerp(explosionConfig_.waveStartScale.y, explosionConfig_.waveEndScale.y, easeOut) * baseScale_.y;
                 waveScale.z = Lerp(explosionConfig_.waveStartScale.z, explosionConfig_.waveEndScale.z, easeOut) * baseScale_.z;
                 explosionWaveObject_->SetScale(waveScale);
                 
-                Vector4 waveColor = explosionConfig_.color;
+                Irufemi::Vector4 waveColor = explosionConfig_.color;
                 waveColor.w = Lerp(explosionConfig_.color.w, 0.0f, t);
                 explosionWaveObject_->GetMaterial().color = waveColor;
                 
@@ -409,7 +409,7 @@ void Effect::SyncBeforeDraw() {
 void Effect::Draw() {
     if (type_ == EffectType::kImpact && impactRingObject_ && isActive_) {
         auto* engine = GPUParticleSystem::GetEngine();
-        BlendMode prevBlend = engine->currentBlend_;
+        Irufemi::BlendMode prevBlend = engine->currentBlend_;
         PSOManager::DepthWrite prevDepth = engine->currentDepth_;
         PSOManager::CullMode prevCull = engine->currentCull_;
 
@@ -427,7 +427,7 @@ void Effect::Draw() {
         auto* engine = GPUParticleSystem::GetEngine();
         
         // 現在のステートを退避
-        BlendMode prevBlend = engine->currentBlend_;
+        Irufemi::BlendMode prevBlend = engine->currentBlend_;
         PSOManager::DepthWrite prevDepth = engine->currentDepth_;
         PSOManager::CullMode prevCull = engine->currentCull_;
 
@@ -448,7 +448,7 @@ void Effect::Draw() {
         auto* engine = GPUParticleSystem::GetEngine();
         
         // 現在のステートを退避
-        BlendMode prevBlend = engine->currentBlend_;
+        Irufemi::BlendMode prevBlend = engine->currentBlend_;
         PSOManager::DepthWrite prevDepth = engine->currentDepth_;
         PSOManager::CullMode prevCull = engine->currentCull_;
 
@@ -458,10 +458,10 @@ void Effect::Draw() {
         engine->SetCull(cullMode_);
 
         // 平面メッシュに「縦軸の厚み」を持たせるため、Y座標を少しずつズラして3枚（ミルフィーユ状）描画する
-        Vector3 originalPos = basePosition_;
+        Irufemi::Vector3 originalPos = basePosition_;
         
         // 1枚目（上端）
-        Vector3 topPos = originalPos;
+        Irufemi::Vector3 topPos = originalPos;
         topPos.y += 0.6f;
         swingObject_->SetPosition(topPos);
         swingObject_->Update();
@@ -475,7 +475,7 @@ void Effect::Draw() {
         swingObject_->Draw();
 
         // 3枚目（下端）
-        Vector3 bottomPos = originalPos;
+        Irufemi::Vector3 bottomPos = originalPos;
         bottomPos.y -= 0.6f;
         swingObject_->SetPosition(bottomPos);
         swingObject_->Update();
@@ -494,12 +494,12 @@ void Effect::Draw() {
         auto* engine = GPUParticleSystem::GetEngine();
         
         // 現在のステートを退避
-        BlendMode prevBlend = engine->currentBlend_;
+        Irufemi::BlendMode prevBlend = engine->currentBlend_;
         PSOManager::DepthWrite prevDepth = engine->currentDepth_;
         PSOManager::CullMode prevCull = engine->currentCull_;
 
         // エフェクト用のステートを設定（加算、デプス書き込み無効、カリングなし）
-        engine->SetBlend(BlendMode::kBlendModeAdd);
+        engine->SetBlend(Irufemi::BlendMode::kBlendModeAdd);
         engine->SetDepthWrite(PSOManager::DepthWrite::Disable);
         engine->SetCull(PSOManager::CullMode::None);
 
@@ -560,7 +560,7 @@ void Effect::Debug(const char* name) {
                 
                 ImGui::Separator();
                 bool pipelineChanged = false;
-                BlendMode prevBlend = blendMode_;
+                Irufemi::BlendMode prevBlend = blendMode_;
                 PSOManager::DepthWrite prevDepth = depthWrite_;
                 PSOManager::CullMode prevCull = cullMode_;
                 DebugUI::DebugPsoSettings(&blendMode_, &depthWrite_, &cullMode_, "##EffectPso");
@@ -586,7 +586,7 @@ void Effect::Debug(const char* name) {
                     const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox" };
                     int currentShape = static_cast<int>(currentShape_);
                     if (ImGui::Combo("Primitive Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                        currentShape_ = static_cast<PrimitiveType>(currentShape);
+                        currentShape_ = static_cast<Irufemi::PrimitiveType>(currentShape);
                         changed = true;
                     }
 
@@ -633,7 +633,7 @@ void Effect::Debug(const char* name) {
                     const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox" };
                     int currentPlaneShape = static_cast<int>(impactConfig_.planeShape);
                     if (ImGui::Combo("Plane Shape", &currentPlaneShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                        impactConfig_.planeShape = static_cast<PrimitiveType>(currentPlaneShape);
+                        impactConfig_.planeShape = static_cast<Irufemi::PrimitiveType>(currentPlaneShape);
                         changed = true;
                     }
                     if (auto* tm = engine_->GetTextureManager()) {
@@ -658,7 +658,7 @@ void Effect::Debug(const char* name) {
                     ImGui::Text("--- Ring Emitter ---");
                     int currentRingShape = static_cast<int>(impactConfig_.ringShape);
                     if (ImGui::Combo("Ring Shape", &currentRingShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                        impactConfig_.ringShape = static_cast<PrimitiveType>(currentRingShape);
+                        impactConfig_.ringShape = static_cast<Irufemi::PrimitiveType>(currentRingShape);
                         changed = true;
                     }
                     if (auto* tm = engine_->GetTextureManager()) {
@@ -740,7 +740,7 @@ void Effect::Debug(const char* name) {
                     const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox" };
                     int currentShape = static_cast<int>(swingConfig_.shape);
                     if (ImGui::Combo("Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                        swingConfig_.shape = static_cast<PrimitiveType>(currentShape);
+                        swingConfig_.shape = static_cast<Irufemi::PrimitiveType>(currentShape);
                         changed = true;
                     }
                     
@@ -790,7 +790,7 @@ void Effect::Debug(const char* name) {
                     const char* primitiveShapeNames[] = { "Triangle", "Plane", "Cube", "Cylinder", "Sphere", "Tetra", "Circle", "Ring", "Skybox", "CylinderCap", "IcoSphere" };
                     int currentShape = static_cast<int>(explosionConfig_.coreShape);
                     if (ImGui::Combo("Core Shape", &currentShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                        explosionConfig_.coreShape = static_cast<PrimitiveType>(currentShape);
+                        explosionConfig_.coreShape = static_cast<Irufemi::PrimitiveType>(currentShape);
                         changed = true;
                     }
                     
@@ -813,7 +813,7 @@ void Effect::Debug(const char* name) {
                     ImGui::Text("--- Explosion Wave Settings ---");
                     int currentWaveShape = static_cast<int>(explosionConfig_.waveShape);
                     if (ImGui::Combo("Wave Shape", &currentWaveShape, primitiveShapeNames, IM_ARRAYSIZE(primitiveShapeNames))) {
-                        explosionConfig_.waveShape = static_cast<PrimitiveType>(currentWaveShape);
+                        explosionConfig_.waveShape = static_cast<Irufemi::PrimitiveType>(currentWaveShape);
                         changed = true;
                     }
                     
@@ -861,11 +861,11 @@ void Effect::Debug(const char* name) {
 #endif
 }
 
-void Effect::Play(const Vector3& position) {
+void Effect::Play(const Irufemi::Vector3& position) {
     Play(position, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f });
 }
 
-void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector3& scale) {
+void Effect::Play(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation, const Irufemi::Vector3& scale) {
     basePosition_ = position;
     baseRotation_ = rotation;
     baseScale_ = scale;
@@ -873,18 +873,18 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
     switch (type_) {
     case EffectType::kHit:
         if (hitParticle_) {
-            hitParticle_->position_ = position;
-            hitParticle_->velocity_ = 0.0f;
-            hitParticle_->radius_ = 0.0f;
+            hitParticle_->SetPosition(position);
+            hitParticle_->SetVelocity(0.0f);
+            hitParticle_->SetRadius(0.0f);
             hitParticle_->MarkDirty();
             hitParticle_->EmitBurst(hitConfig_.emitCount);
         }
         break;
     case EffectType::kImpact:
         if (impactPlaneParticle_) {
-            impactPlaneParticle_->position_ = position;
-            impactPlaneParticle_->velocity_ = 0.0f;
-            impactPlaneParticle_->radius_ = 0.0f;
+            impactPlaneParticle_->SetPosition(position);
+            impactPlaneParticle_->SetVelocity(0.0f);
+            impactPlaneParticle_->SetRadius(0.0f);
             impactPlaneParticle_->MarkDirty();
             impactPlaneParticle_->EmitBurst(impactConfig_.planeEmitCount);
         }
@@ -892,7 +892,7 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
             isActive_ = true;
             lifeTimer_ = impactConfig_.lifeMax;
             currentUVOffset_ = { 0.0f, 0.0f };
-            Vector3 ringPos = position;
+            Irufemi::Vector3 ringPos = position;
             ringPos.y += 0.001f;
             impactRingObject_->SetPosition(ringPos);
             impactRingObject_->SetScale(impactConfig_.ringStartScaleMax);
@@ -933,17 +933,17 @@ void Effect::Play(const Vector3& position, const Vector3& rotation, const Vector
         if (explosionSparkParticle_) {
             int sparkCount = (scale.x < 0.5f) ? 15 : 60;
             
-            Vector3 startScale = { 0.05f * scale.x, 0.05f * scale.y, 0.05f * scale.z };
-            Vector3 midScale = { 0.08f * scale.x, 0.08f * scale.y, 0.08f * scale.z };
+            Irufemi::Vector3 startScale = { 0.05f * scale.x, 0.05f * scale.y, 0.05f * scale.z };
+            Irufemi::Vector3 midScale = { 0.08f * scale.x, 0.08f * scale.y, 0.08f * scale.z };
             
-            explosionSparkParticle_->startScale_ = startScale;
-            explosionSparkParticle_->midScale_ = midScale;
-            explosionSparkParticle_->endScale_ = { 0.0f, 0.0f, 0.0f };
+            explosionSparkParticle_->SetStartScale(startScale);
+            explosionSparkParticle_->SetMidScale(midScale);
+            explosionSparkParticle_->SetEndScale({ 0.0f, 0.0f, 0.0f });
             
-            explosionSparkParticle_->position_ = position;
-            explosionSparkParticle_->radius_ = 0.1f;
-            explosionSparkParticle_->velocity_ = 8.0f;
-            explosionSparkParticle_->spread_ = 1.0f;
+            explosionSparkParticle_->SetPosition(position);
+            explosionSparkParticle_->SetRadius(0.1f);
+            explosionSparkParticle_->SetVelocity(8.0f);
+            explosionSparkParticle_->SetSpread(1.0f);
             
             explosionSparkParticle_->MarkDirty();
             explosionSparkParticle_->EmitBurst(sparkCount);

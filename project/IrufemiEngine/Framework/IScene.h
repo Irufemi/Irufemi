@@ -7,6 +7,7 @@ class IrufemiEngine;
 class GameObject;
 #include <memory>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 /// <summary>
 /// Scene系クラスに継承する基底クラス
@@ -46,6 +47,18 @@ public:
      */
     virtual IrufemiEngine* GetEngine() const { return nullptr; }
 
+    // --- シリアライズ機能 ---
+
+    /**
+     * @brief シーンの情報をJSONとしてシリアライズする
+     */
+    virtual nlohmann::json Serialize() const { return nlohmann::json::object(); }
+
+    /**
+     * @brief JSONからシーンの情報をデシリアライズする
+     */
+    virtual void Deserialize(const nlohmann::json& j) {}
+
     // --- ライフサイクル管理機能 ---
 
     /**
@@ -78,16 +91,31 @@ public:
 
     // --- デバッグ機能 ---
     // エンジン共通のデバッグウィンドウにタブを追加する
+    /**
+     * @brief DrawDebugTab を実行する。
+     */
     virtual void DrawDebugTab() {}
 
 
     // --- スタック管理機能 ---
     // このシーンが下のシーンの更新(Update)をブロックするか（デフォルトはブロックする）
+    /**
+     * @brief IsUpdateBlocking かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     virtual bool IsUpdateBlocking() const { return true; }
     
     // このシーンが下のシーンの描画(Draw)をブロックするか（デフォルトはブロックしない）
+    /**
+     * @brief IsDrawBlocking かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     virtual bool IsDrawBlocking() const { return false; }
     
     // このシーンでマウスカーソルを表示するか（デフォルトは表示する）
+    /**
+     * @brief IsCursorVisible かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     virtual bool IsCursorVisible() const { return true; }
 };

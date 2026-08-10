@@ -4,7 +4,7 @@
 #include "Engine/Core/Math/Quaternion.h"
 
 struct AnimationTrasform {
-    Vector3 scale;
-    Quaternion rotate;
-    Vector3 translate;
+    Irufemi::Vector3 scale;
+    Irufemi::Quaternion rotate;
+    Irufemi::Vector3 translate;
 };

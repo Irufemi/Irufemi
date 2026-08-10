@@ -55,11 +55,26 @@ public:
     /** @name ゲッター */
     ///@{
     HWND GetHwnd() const { return hwnd_; }
+    /**
+     * @brief HInstance を取得する。
+     * @return 取得された HInstance
+     */
     HINSTANCE GetHInstance() const { return hInstance_; }
+    /**
+     * @brief ClientWidth を取得する。
+     * @return 取得された ClientWidth
+     */
     int GetClientWidth() const { return clientWidth_; }
+    /**
+     * @brief ClientHeight を取得する。
+     * @return 取得された ClientHeight
+     */
     int GetClientHeight() const { return clientHeight_; }
+    /**
+     * @brief IsCursorLocked かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsCursorLocked() const { return cursorLocked_; }
-
     /**
      * @brief D&Dでドロップされたファイルパスを取得する
      */
@@ -124,6 +139,7 @@ private:
     bool didRegisterClass_ = false;
     InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
     IrufemiEngine* engine_ = nullptr;      // IrufemiEngineへのポインタ
+    
+    std::string droppedFilePath_ = ""; // 最後にドロップされたファイルのパス
     bool cursorLocked_ = true; // カーソル固定状態デフォルト真
-    std::string droppedFilePath_ = ""; // ドロップされたファイルパス
 };

@@ -67,7 +67,7 @@ void EditorActionManager::ClearHistory() {
     redoStack_.clear();
 }
 
-void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
+void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Irufemi::Vector3& position) {
     if (!editorManager_) return;
     auto* engine = editorManager_->GetEngine();
     if (!engine || !engine->GetSceneManager()) return;
@@ -84,13 +84,15 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
 
     if (ext == ".png" || ext == ".jpg" || ext == ".dds" || ext == ".bmp") {
         newObj = std::make_shared<GameObject>("Sprite_" + stemString);
-        newObj->AddComponent<TransformComponent>();
+        auto transform = newObj->GetTransform();
+        transform->SetPosition(position);
         auto spriteRenderer = newObj->AddComponent<SpriteRendererComponent>();
         spriteRenderer->SetTexture(assetPath); 
         newObj->Initialize();
     } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
         newObj = std::make_shared<GameObject>("Model_" + stemString);
-        newObj->AddComponent<TransformComponent>();
+        auto transform = newObj->GetTransform();
+        transform->SetPosition(position);
         auto meshRenderer = newObj->AddComponent<MeshRendererComponent>();
         
         // 同名ファイルに対応するため、ファイル名だけでなく相対パスを渡す
@@ -105,9 +107,15 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath) {
         newObj->Initialize();
     } else if (ext == ".json" || ext == ".prefab") {
         newObj = SceneSerializer::LoadPrefab(assetPath);
+        if (newObj) {
+            if (auto transform = newObj->GetComponent<TransformComponent>()) {
+                transform->SetPosition(position);
+            }
+        }
     }
 
     if (newObj) {
+        newObj->SetIsSerializable(true); // エディタから生成されたものは保存対象
         PushAndExecute(std::make_unique<CreateObjectCommand>(baseScene, newObj));
         editorManager_->SetSelectedObject(newObj);
     }
@@ -125,31 +133,32 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
 
     if (typeName == "Empty") {
         obj = std::make_shared<GameObject>("Empty Object");
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         obj->Initialize();
     } else if (typeName == "Cube" || typeName == "Sphere" || typeName == "Cylinder" || typeName == "Plane") {
         obj = std::make_shared<GameObject>(typeName);
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-        if (typeName == "Cube") renderer->SetShape(PrimitiveType::Cube);
-        else if (typeName == "Sphere") renderer->SetShape(PrimitiveType::Sphere);
-        else if (typeName == "Cylinder") renderer->SetShape(PrimitiveType::Cylinder);
-        else if (typeName == "Plane") renderer->SetShape(PrimitiveType::Plane);
+        if (typeName == "Cube") renderer->SetShape(Irufemi::PrimitiveType::Cube);
+        else if (typeName == "Sphere") renderer->SetShape(Irufemi::PrimitiveType::Sphere);
+        else if (typeName == "Cylinder") renderer->SetShape(Irufemi::PrimitiveType::Cylinder);
+        else if (typeName == "Plane") renderer->SetShape(Irufemi::PrimitiveType::Plane);
         obj->Initialize();
     } else if (typeName == "Model") {
         obj = std::make_shared<GameObject>("Model");
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         obj->AddComponent<MeshRendererComponent>();
         obj->Initialize();
     } else if (typeName == "Sprite") {
         obj = std::make_shared<GameObject>("Sprite");
-        obj->AddComponent<TransformComponent>();
+        obj->GetTransform();
         auto spriteRenderer = obj->AddComponent<SpriteRendererComponent>();
-        obj->GetComponent<TransformComponent>()->position_ = { 640.0f, 360.0f, 0.0f };
+        obj->GetComponent<TransformComponent>()->SetPosition({ 640.0f, 360.0f, 0.0f });
         obj->Initialize();
     }
 
     if (obj) {
+        obj->SetIsSerializable(true); // エディタから生成されたものは保存対象
         PushAndExecute(std::make_unique<CreateObjectCommand>(baseScene, obj));
         editorManager_->SetSelectedObject(obj);
     }

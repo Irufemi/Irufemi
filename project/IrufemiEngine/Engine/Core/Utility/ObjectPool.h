@@ -1,68 +1,154 @@
 #pragma once
 #include <vector>
-#include <memory>
+#include <cstdint>
+#include <cassert>
 #include <functional>
+#include <memory>
 
 /**
  * @class ObjectPool
- * @brief ゲームループ中の動的メモリ確保(new/delete)を回避するための汎用オブジェクトプール
+ * @brief AAA基準の完全なゼロ・アロケーションを実現する Handle ベースのオブジェクトプール
+ *
+ * キャッシュラインに最適化された連続メモリ配置と、Generation(世代)管理による安全な不正アクセス防止機能を持ちます。
  * @tparam T プールで管理するオブジェクトの型
  */
 template <typename T>
 class ObjectPool {
 public:
+    /// @brief プール内のオブジェクトを安全に指し示すためのハンドル
+    struct Handle {
+        uint32_t index      = 0xFFFFFFFF; ///< スロットのインデックス
+        uint32_t generation = 0;          ///< 世代（古いハンドルでのアクセスを防ぐ）
+
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+        T* debugPtr = nullptr; ///< エディタ上での視認性・デバッグ用のポインタ
+#endif
+
+        /**
+         * @brief IsValid かどうかを判定する。
+         * @return 判定結果 (true/false)
+         */
+        bool IsValid() const { return index != 0xFFFFFFFF; }
+        bool operator==(const Handle& other) const { return index == other.index && generation == other.generation; }
+        bool operator!=(const Handle& other) const { return !(*this == other); }
+    };
+
     /**
-     * @brief コンストラクタ。指定された数のオブジェクトを事前に生成しプールに格納する。
-     * @param initialSize プールに事前確保するオブジェクトの数
-     * @param factory オブジェクトを生成するためのファクトリ関数（オプション。Prefab生成などに使用）
+     * @brief プールの初期化
+     * @param capacity 最大保持可能数
+     * @param factory 初期化時に各要素を構築するためのファクトリ関数（GameObjectのPrefab生成用）
      */
-    explicit ObjectPool(size_t initialSize, std::function<std::shared_ptr<T>()> factory = nullptr) {
-        pool_.reserve(initialSize);
-        for (size_t i = 0; i < initialSize; ++i) {
+    explicit ObjectPool(size_t capacity, std::function<std::shared_ptr<T>()> factory = nullptr) {
+        slots_.resize(capacity);
+        for (size_t i = 0; i < capacity; ++i) {
+            slots_[i].nextFree = static_cast<uint32_t>(i + 1);
+            slots_[i].generation = 1;
+            slots_[i].active = false;
+            
             if (factory) {
-                pool_.push_back(factory());
+                // ファクトリが指定されている場合はPrefabなどを事前生成して格納
+                slots_[i].data = factory(); 
             } else {
-                pool_.push_back(std::make_shared<T>());
+                slots_[i].data = std::make_shared<T>();
             }
         }
-    }
-
-    ~ObjectPool() {
-        pool_.clear();
-    }
-
-    /**
-     * @brief プールから利用可能なオブジェクトを取得する。
-     * @return 取得したオブジェクトのshared_ptr。プールが枯渇している場合は nullptr を返す。
-     */
-    std::shared_ptr<T> Acquire() {
-        if (pool_.empty()) {
-            // メモリの厳格化要件に従い、実行中の自動拡張(動的確保)は行わず nullptr を返す。
-            return nullptr;
+        // 最後の要素の nextFree は無効値
+        if (capacity > 0) {
+            slots_[capacity - 1].nextFree = 0xFFFFFFFF;
         }
-        std::shared_ptr<T> obj = pool_.back();
-        pool_.pop_back();
-        return obj;
+        headFree_ = 0;
+        freeCount_ = capacity;
     }
 
+    ~ObjectPool() = default;
+
     /**
-     * @brief 使用済みのオブジェクトをプールに返却する。
-     * @param obj 返却するオブジェクトのshared_ptr
+     * @brief オブジェクトを O(1) で取得する
+     * @return 取得したオブジェクトの Handle。空きがない場合は無効な Handle を返す。
      */
-    void Release(std::shared_ptr<T> obj) {
-        if (obj) {
-            pool_.push_back(obj);
+    Handle Acquire() {
+        if (headFree_ == 0xFFFFFFFF) {
+            /**
+             * @brief Handle を実行する。
+             */
+            return Handle(); // 空きなし
         }
+
+        uint32_t index = headFree_;
+        headFree_ = slots_[index].nextFree;
+        
+        slots_[index].active = true;
+        --freeCount_;
+
+        Handle h;
+        h.index = index;
+        h.generation = slots_[index].generation;
+        
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+        h.debugPtr = slots_[index].data.get();
+#endif
+        return h;
     }
 
     /**
-     * @brief 現在プールで待機している（未使用の）オブジェクトの数を取得する。
-     * @return 待機中のオブジェクト数
+     * @brief オブジェクトを O(1) で返却し、世代を進行させる
+     * @param handle 返却するオブジェクトのハンドル
      */
-    size_t GetAvailableCount() const {
-        return pool_.size();
+    void Release(Handle handle) {
+        if (!IsValidHandle(handle)) return;
+
+        uint32_t index = handle.index;
+        slots_[index].active = false;
+        slots_[index].generation++; // 次の利用者のために世代を進める
+
+        // フリーリストの先頭に追加
+        slots_[index].nextFree = headFree_;
+        headFree_ = index;
+        ++freeCount_;
     }
+
+    /**
+     * @brief ハンドルから実体を取得する
+     * @param handle アクセスするハンドル
+     * @return 正常なハンドルであれば実体、不正なら初期値またはnullptr
+     */
+    const std::shared_ptr<T>& Resolve(Handle handle) const {
+        static const std::shared_ptr<T> nullPtr = nullptr;
+        if (!IsValidHandle(handle)) return nullPtr;
+        return slots_[handle.index].data;
+    }
+
+    /**
+     * @brief FreeCount を取得する。
+     * @return 取得された FreeCount
+     */
+    size_t GetFreeCount() const { return freeCount_; }
+    /**
+     * @brief Capacity を取得する。
+     * @return 取得された Capacity
+     */
+    size_t GetCapacity() const { return slots_.size(); }
 
 private:
-    std::vector<std::shared_ptr<T>> pool_; ///< 未使用オブジェクトを格納するコンテナ
+    /**
+     * @brief IsValidHandle かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
+    bool IsValidHandle(Handle handle) const {
+        if (handle.index >= slots_.size()) return false;
+        if (!slots_[handle.index].active) return false;
+        if (slots_[handle.index].generation != handle.generation) return false; // 世代アンマッチ（古いハンドル）
+        return true;
+    }
+
+    struct Slot {
+        std::shared_ptr<T> data; ///< オブジェクトの実体（既存のFactoryと互換性を持たせるためshared_ptrを採用。アロケーションは起動時のみ）
+        uint32_t nextFree;       ///< 次の空きスロットインデックス（Intrusive Free List用）
+        uint32_t generation;     ///< 現在の世代
+        bool active;             ///< 使用中フラグ
+    };
+
+    std::vector<Slot> slots_;
+    uint32_t headFree_ = 0xFFFFFFFF;       ///< フリーリストの先頭インデックス
+    size_t freeCount_ = 0;        ///< 空きスロット数
 };

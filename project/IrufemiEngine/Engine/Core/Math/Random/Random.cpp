@@ -1,5 +1,7 @@
 #include "Random.h"
 
+
+namespace Irufemi {
 //静的メンバの実体と初期化
 std::random_device Random::seedGenerator_;
 std::mt19937_64 Random::randomEngine_;
@@ -12,3 +14,9 @@ float Random::GeneratorFloat(float min, float max) {
 	//乱数を返す
 	return distribution(randomEngine_);
 }
+
+uint64_t Random::GeneratorUint64(uint64_t min, uint64_t max) {
+	std::uniform_int_distribution<uint64_t> distribution(min, max);
+	return distribution(randomEngine_);
+}
+} // namespace Irufemi

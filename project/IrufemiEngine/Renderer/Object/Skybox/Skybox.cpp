@@ -1,4 +1,4 @@
-#include "Skybox.h"
+﻿#include "Skybox.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 
 #include "Engine/IrufemiEngine.h"
@@ -20,13 +20,16 @@ Skybox::Skybox() {}
 // デストラクタ
 Skybox::~Skybox() {
     UnMapResource();
+    if (engine_ && engine_->GetTextureManager() && textureHandle_.IsValid()) {
+        engine_->GetTextureManager()->ReleaseTexture(textureHandle_);
+    }
 }
 
 void Skybox::Initialize(const std::string& textureName) {
 
     // PrimitiveManager からスカイボックス用の形状（Cube）を取得
     PrimitiveManager* primitiveManager = engine_->GetPrimitiveManager();
-    const PrimitiveData& primitiveData = primitiveManager->GetPrimitiveData(PrimitiveType::Skybox);
+    const PrimitiveData& primitiveData = primitiveManager->GetPrimitiveData(Irufemi::PrimitiveType::Skybox);
 
     vertexDataList_ = primitiveData.vertices;
     indexDataList_ = primitiveData.indices;
@@ -59,12 +62,15 @@ void Skybox::Initialize(const std::string& textureName) {
 
     TextureManager* textureManager = engine_->GetTextureManager();
 
-    if (textureName == "whiteCubeMap") {
-        textureHandle_ = textureManager->GetWhiteCubeMapHandle();
-    } else {
+    if (textureHandle_.IsValid()) {
+        textureManager->ReleaseTexture(textureHandle_);
+        textureHandle_ = ResourceHandle();
+    }
+
+    if (textureName != "whiteCubeMap" && !textureName.empty()) {
         auto textureNames = textureManager->GetCubeMapNamesForDebug();
         if (!textureNames.empty()) {
-            textureHandle_ = textureManager->GetTextureHandle(textureName);
+            textureHandle_ = textureManager->LoadTexture(textureName);
 
             // コンボボックス用に selectedIndex を初期化
             auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
@@ -73,19 +79,15 @@ void Skybox::Initialize(const std::string& textureName) {
             } else {
                 selectedTextureIndex_ = 0;
             }
-        } else {
-            // テクスチャが見つからない、またはリストが空の場合は白キューブマップを使用
-            textureHandle_ = textureManager->GetWhiteCubeMapHandle();
-            selectedTextureIndex_ = 0;
         }
     }
 }
 
 void Skybox::Update() {
 
-    Matrix4x4 worldMatrix = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    Irufemi::Matrix4x4 worldMatrix = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // シェーダー側でgCameraを使用するようになったためWVPの計算を省略
-    transformationMatrix_.WVP = Math::MakeIdentity4x4();
+    transformationMatrix_.WVP = Irufemi::Math::MakeIdentity4x4();
     transformationMatrix_.World = worldMatrix;
     // フラグ更新
     isDirty_ = false;
@@ -98,6 +100,17 @@ void Skybox::Update() {
 
 void Skybox::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
+    
+    // [Bindless] テクスチャインデックスの反映
+    if (materialBuffer_[frameIndex]) {
+        TextureManager* tm = engine_->GetTextureManager();
+        if (textureHandle_.IsValid()) {
+            materialBuffer_[frameIndex]->textureIndex = tm->GetSrvIndex(textureHandle_);
+        } else {
+            materialBuffer_[frameIndex]->textureIndex = tm->GetWhiteCubeMapSrvIndex();
+        }
+    }
+    
     if (CheckAndClearDirty(frameIndex)) {
         transformationBuffer_.Update(transformationMatrix_, frameIndex);
     }
@@ -109,8 +122,8 @@ void Skybox::Draw() {
     if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
@@ -123,7 +136,8 @@ void Skybox::Draw() {
     engine_->ApplyPSO("Skybox");
 
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), textureHandle_, static_cast<UINT>(indexDataList_.size()));
+    // [Bindless] gpuHandle を渡さない
+    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), static_cast<UINT>(indexDataList_.size()));
 
 }
 
@@ -141,12 +155,12 @@ void Skybox::Debug() {
             }, &textureNames, static_cast<int>(textureNames.size()))) {
                 // 選択が変更された
                 std::string selectedName = textureNames[selectedTextureIndex_];
-                if (selectedName == "whiteCubeMap") {
-                    textureHandle_ = textureManager->GetWhiteCubeMapHandle();
-                } else if (selectedName == "white") {
-                    textureHandle_ = textureManager->GetWhiteTextureHandle();
-                } else {
-                    textureHandle_ = textureManager->GetTextureHandle(selectedName);
+                if (textureHandle_.IsValid()) {
+                    textureManager->ReleaseTexture(textureHandle_);
+                    textureHandle_ = ResourceHandle();
+                }
+                if (selectedName != "whiteCubeMap" && selectedName != "white") {
+                    textureHandle_ = textureManager->LoadTexture(selectedName);
                 }
             }
             uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
@@ -202,9 +216,9 @@ void Skybox::MapResource() {
         }
         if (transformationBuffer_[i]) {
             // 初期行列
-            transformationBuffer_[i]->WVP = Math::MakeIdentity4x4();
-            transformationBuffer_[i]->World = Math::MakeIdentity4x4();
-            transformationBuffer_[i]->WorldInverseTranspose = Math::MakeIdentity4x4();
+            transformationBuffer_[i]->WVP = Irufemi::Math::MakeIdentity4x4();
+            transformationBuffer_[i]->World = Irufemi::Math::MakeIdentity4x4();
+            transformationBuffer_[i]->WorldInverseTranspose = Irufemi::Math::MakeIdentity4x4();
         }
     }
 }

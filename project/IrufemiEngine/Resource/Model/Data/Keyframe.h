@@ -8,5 +8,5 @@ struct Keyframe {
     float time;
     tValue value;
 };
-using KeyframeVector3 = Keyframe<Vector3>;
-using KeyframeQuaternion = Keyframe<Quaternion>;
+using KeyframeVector3 = Keyframe<Irufemi::Vector3>;
+using KeyframeQuaternion = Keyframe<Irufemi::Quaternion>;

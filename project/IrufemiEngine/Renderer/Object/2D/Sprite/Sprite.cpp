@@ -1,4 +1,4 @@
-#define NOMINMAX
+﻿#define NOMINMAX
 #include "Sprite.h"
 
 #include "Engine/Manager/DebugUI.h"
@@ -68,12 +68,15 @@ void Sprite::Initialize(const std::string& textureName) {
         resource_->GetMaterialData()->enableLighting = false;
         resource_->GetMaterialData()->hasTexture = true;
         resource_->GetMaterialData()->lightingMode = 2;
-        resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+        resource_->GetMaterialData()->uvTransform = Irufemi::Math::MakeIdentity4x4();
     }
 
     // テクスチャ設定
     if (textureManager_) {
-        resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+        if (resource_->textureHandle_.IsValid()) {
+            textureManager_->ReleaseTexture(resource_->textureHandle_);
+        }
+        resource_->textureHandle_ = textureManager_->LoadTexture(textureName);
 
         // テクスチャサイズを直接取得して描画サイズに反映
         uint32_t tw = 0, th = 0;
@@ -110,25 +113,25 @@ void Sprite::Update() {
     // UV 変換(flip → crop → userUV)
     if (resource_->GetMaterialData()) {
         // userUV: 既存の uvTransform(回転/スクロール)
-        Matrix4x4 userUV = Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+        Irufemi::Matrix4x4 userUV = Irufemi::Math::MakeAffineMatrix(resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
 
         // crop: px指定 → 正規化UVに変換
-        Matrix4x4 cropUV = Math::MakeIdentity4x4();
+        Irufemi::Matrix4x4 cropUV = Irufemi::Math::MakeIdentity4x4();
         if (useTexRect_ && textureSize_.x > 0.0f && textureSize_.y > 0.0f) {
             float u0 = texRectLeftTop_.x / textureSize_.x;
             float v0 = texRectLeftTop_.y / textureSize_.y;
             float du = texRectSize_.x / textureSize_.x;
             float dv = texRectSize_.y / textureSize_.y;
-            cropUV = Math::MakeAffineMatrix(Vector3{ du, dv, 1.0f }, Vector3{ 0.0f,0.0f,0.0f }, Vector3{ u0, v0, 0.0f });
+            cropUV = Irufemi::Math::MakeAffineMatrix(Irufemi::Vector3{ du, dv, 1.0f }, Irufemi::Vector3{ 0.0f,0.0f,0.0f }, Irufemi::Vector3{ u0, v0, 0.0f });
         }
 
         // flip を最初に、次に crop、最後に userUV を適用
-        Vector3 flipScale{ isFlipX_ ? -1.0f : 1.0f, isFlipY_ ? -1.0f : 1.0f, 1.0f };
-        Vector3 flipTrans{ isFlipX_ ? 1.0f : 0.0f, isFlipY_ ? 1.0f : 0.0f, 0.0f };
-        Matrix4x4 flipUV = Math::MakeAffineMatrix(flipScale, Vector3{ 0.0f,0.0f,0.0f }, flipTrans);
+        Irufemi::Vector3 flipScale{ isFlipX_ ? -1.0f : 1.0f, isFlipY_ ? -1.0f : 1.0f, 1.0f };
+        Irufemi::Vector3 flipTrans{ isFlipX_ ? 1.0f : 0.0f, isFlipY_ ? 1.0f : 0.0f, 0.0f };
+        Irufemi::Matrix4x4 flipUV = Irufemi::Math::MakeAffineMatrix(flipScale, Irufemi::Vector3{ 0.0f,0.0f,0.0f }, flipTrans);
 
-        Matrix4x4 base = Math::Multiply(cropUV, userUV);
-        resource_->GetMaterialData()->uvTransform = Math::Multiply(flipUV, base);
+        Irufemi::Matrix4x4 base = Irufemi::Math::Multiply(cropUV, userUV);
+        resource_->GetMaterialData()->uvTransform = Irufemi::Math::Multiply(flipUV, base);
     }
 
     // フラグ更新
@@ -147,8 +150,8 @@ void Sprite::Draw() {
     if (!activeCam) return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetOrthographicMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetOrthographicMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();
@@ -174,7 +177,7 @@ void Sprite::SetSize(const float& width, const float& height) {
     isDirty_ = true;
 }
 
-const Vector2 Sprite::GetPosition2D() const {
+const Irufemi::Vector2 Sprite::GetPosition2D() const {
     if (!resource_) return { 0.0f, 0.0f };
     return { resource_->transform_.translate.x, resource_->transform_.translate.y };
 }
@@ -229,7 +232,10 @@ void Sprite::ClearTextureRect() {
 void Sprite::SetTexture(const std::string& textureName) {
     if (!resource_ || !textureManager_) return;
     
-    resource_->textureHandle_ = textureManager_->GetTextureHandle(textureName);
+    if (resource_->textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(resource_->textureHandle_);
+    }
+    resource_->textureHandle_ = textureManager_->LoadTexture(textureName);
 
     // テクスチャサイズを直接取得して描画サイズに反映
     uint32_t tw = 0, th = 0;

@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
 #include "../../../externals/DirectXTex/d3dx12.h"
@@ -34,7 +35,7 @@ Texture::Texture() {
 Texture::~Texture() {
     if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
         // GPU が参照し終わるまで遅延解放
-        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = UINT32_MAX;
     }
 }
@@ -94,7 +95,7 @@ void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixe
     try {
         // sRGB フォーマットで初期化
         HRESULT hr = mipImages_.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
 
         // ピクセルデータのコピー
         memcpy(mipImages_.GetImage(0, 0, 0)->pixels, pixels, width * height * sizeof(uint32_t));
@@ -133,7 +134,7 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
     try {
         // CubeMap として初期化
         HRESULT hr = mipImages_.InitializeCube(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, width, height, 1, 1);
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
 
         // 6面分のピクセルデータのコピー
         for (size_t i = 0; i < 6; ++i) {
@@ -167,4 +168,27 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
     catch (...) {
         status_.store(LoadingStatus::Failed);
     }
+}
+
+void Texture::InitializeFromExternalResource(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle) {
+    this->filePath_ = name;
+    this->textureResource_ = resource;
+
+    // Textureコンストラクタで確保済みの古いsrvIndexを解放する
+    if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
+        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+    }
+
+    // 新しいインデックスとハンドルを保持
+    this->srvIndex_ = srvIndex;
+    this->textureSrvHandleGPU_ = srvHandle;
+    this->textureSrvHandleCPU_.ptr = 0;
+
+    if (resource) {
+        auto desc = resource->GetDesc();
+        this->width_ = static_cast<uint32_t>(desc.Width);
+        this->height_ = static_cast<uint32_t>(desc.Height);
+    }
+
+    status_.store(LoadingStatus::Loaded);
 }

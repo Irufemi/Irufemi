@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - TD3_01
+      - IBS
       - AL4
       - CG
       - GE
@@ -35,6 +35,12 @@ jobs:
       - name: Restore NuGet Packages
         run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
 
-      - name: Build
+      - name: Build for IBS Branch (Application_team only)
+        if: github.ref_name == 'IBS'
+        run: |
+          msbuild ${{ env.SOLUTION_FILE_PATH }} /t:Application_team /p:Platform=x64,Configuration=${{ env.CONFIGURATION }},PlatformToolset=v143
+
+      - name: Build for Other Branches (Whole Solution)
+        if: github.ref_name != 'IBS'
         run: |
           msbuild ${{ env.SOLUTION_FILE_PATH }} /p:Platform=x64,Configuration=${{ env.CONFIGURATION }},PlatformToolset=v143

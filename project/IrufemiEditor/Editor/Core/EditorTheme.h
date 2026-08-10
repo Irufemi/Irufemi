@@ -9,6 +9,11 @@
 class EditorTheme {
 public:
     /**
+     * @brief UE5/Unityライクなモダン・ダークテーマをImGuiに適用する
+     */
+    static void ApplyDarkTheme();
+
+    /**
      * @brief 危険な操作（削除など）のボタンスタイルを適用する
      */
     static void PushDangerButtonStyle();

@@ -16,45 +16,57 @@ public:
     ButtonComponent() = default;
     ~ButtonComponent() override = default;
 
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize() override;
+    /**
+     * @brief Update を実行する。
+     */
     void Update() override;
     
+    /**
+     * @brief ComponentName を取得する。
+     * @return 取得された ComponentName
+     */
     std::string GetComponentName() const override { return "ButtonComponent"; }
+    /**
+     * @brief OnRegisterProperties を実行する。
+     */
     void OnRegisterProperties() override;
 
+    /**
+     * @brief IsHovered かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsHovered() const { return isHovered_; }
+    /**
+     * @brief IsClicked かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsClicked() const { return isClicked_; }
 
 private:
-    bool CheckBounds(const struct Vector2& mousePos);
-
-    std::string onClickLoadScene_ = ""; // クリック時に自動で遷移するシーン名
-    int transitionType_ = 0;            // 0:Fade, 1:Dissolve, 2:Slide, 3:RadialBlur
-    float transitionDuration_ = 1.0f;   // トランジションにかける時間
+    /**
+     * @brief CheckBounds を実行する。
+     */
+    bool CheckBounds(const Irufemi::Vector2& mousePos);
     
-    Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
-    Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
+    Irufemi::Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+    Irufemi::Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
+    Irufemi::Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
 
     bool enableHoverPulse_ = true; // ホバー時にサイン波で明滅するかどうか
     bool enableIdlePulse_ = true;  // 待機中（ホバーしていない時）も明滅するかどうか
 
     // 当たり判定のスケール調整（画像自体の余白などを省くため）
-    Vector2 hitboxScale_{ 1.0f, 1.0f };
-
-    float clickAnimDuration_ = 0.8f;    // クリックアニメーションの長さ（フラッシュなど）
-    float transitionDelay_ = 0.8f;      // シーン遷移開始までの待機時間（デフォルトはアニメと同じ）
+    Irufemi::Vector2 hitboxScale_{ 1.0f, 1.0f };
 
     // --- 内部状態 ---
     UIAnimator animator_;
 
     bool isHovered_ = false;
-    bool isClicked_ = false;
-    bool isPressedOnButton_ = false;
-    bool isTransitionPending_ = false;
-    float transitionTimer_ = 0.0f;
-    Vector3 originalScale_ = {1.0f, 1.0f, 1.0f};
-
-    TransformComponent* transform_ = nullptr;
+    bool isClicked_ = false; // クリックされた瞬間
+    bool isPressedOnButton_ = false; // ボタン上で押下中かどうか
     SpriteRendererComponent* sprite_ = nullptr;
 };

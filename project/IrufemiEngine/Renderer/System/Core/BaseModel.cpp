@@ -20,44 +20,69 @@ D3D12_GPU_VIRTUAL_ADDRESS BaseModel::GetTransformationGpuAddress() const {
 }
 
 std::shared_ptr<ObjModel> BaseModel::GetCpuModel() const {
-    if (managedModel_) return managedModel_->cpuModel;
+    if (engine_ && engine_->GetObjModelManager()) {
+        if (auto m = engine_->GetObjModelManager()->Resolve(modelHandle_)) {
+            return m->cpuModel;
+        }
+    }
     return nullptr;
 }
 
 size_t BaseModel::GetMeshCount() const {
-    if (managedModel_ && managedModel_->cpuModel) {
-        return managedModel_->cpuModel->meshes.size();
+    if (engine_ && engine_->GetObjModelManager()) {
+        if (auto m = engine_->GetObjModelManager()->Resolve(modelHandle_)) {
+            if (m->cpuModel) {
+                return m->cpuModel->meshes.size();
+            }
+        }
     }
     return 0;
 }
 
 const ObjMaterial* BaseModel::GetMaterial(size_t meshIndex) const {
-    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
-        return &managedModel_->cpuModel->meshes[meshIndex].material;
+    if (engine_ && engine_->GetObjModelManager()) {
+        if (auto m = engine_->GetObjModelManager()->Resolve(modelHandle_)) {
+            if (m->cpuModel && meshIndex < m->cpuModel->meshes.size()) {
+                return &m->cpuModel->meshes[meshIndex].material;
+            }
+        }
     }
     return nullptr;
 }
 
 ObjMaterial* BaseModel::GetMaterial(size_t meshIndex) {
-    if (managedModel_ && managedModel_->cpuModel && meshIndex < managedModel_->cpuModel->meshes.size()) {
-        return &managedModel_->cpuModel->meshes[meshIndex].material;
+    if (engine_ && engine_->GetObjModelManager()) {
+        if (auto m = engine_->GetObjModelManager()->Resolve(modelHandle_)) {
+            if (m->cpuModel && meshIndex < m->cpuModel->meshes.size()) {
+                return &m->cpuModel->meshes[meshIndex].material;
+            }
+        }
     }
     return nullptr;
 }
 
 void BaseModel::UpdateMaterials() {
-    if (!managedModel_ || !managedModel_->cpuModel || meshResources_.empty()) {
+    if (!engine_ || !engine_->GetObjModelManager()) return;
+    auto m = engine_->GetObjModelManager()->Resolve(modelHandle_);
+    if (!m || !m->cpuModel || meshResources_.empty()) {
         return;
     }
 
     // 全メッシュのマテリアルを更新
-    for (size_t i = 0; i < managedModel_->cpuModel->meshes.size(); ++i) {
+    for (size_t i = 0; i < m->cpuModel->meshes.size(); ++i) {
         if (i >= meshResources_.size()) break;
 
         auto& res = meshResources_[i];
         if (!res->GetMaterialData()) continue;
 
-        const ObjMaterial& cpuMat = managedModel_->cpuModel->meshes[i].material;
+        const ObjMaterial* cpuMatPtr = &m->cpuModel->meshes[i].material;
+        if (materialOverrides_) {
+            auto it = materialOverrides_->find(i);
+            if (it != materialOverrides_->end()) {
+                cpuMatPtr = &it->second;
+            }
+        }
+        const ObjMaterial& cpuMat = *cpuMatPtr;
         Material* mappedData = res->GetMaterialData();
 
         // インスタンスカラーとマテリアルカラーを乗算
@@ -91,6 +116,11 @@ void BaseModel::UpdateMaterials() {
         
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
+        
+        // エフェクトマスクとカスタムエフェクトの設定
+        mappedData->enableEffectMask = enableEffectMask_ ? 1 : cpuMat.enableEffectMask;
+        mappedData->customEffectType = customEffectType_ != 0 ? customEffectType_ : cpuMat.customEffectType;
+        mappedData->customEffectParam = customEffectParam_ != 0.0f ? customEffectParam_ : cpuMat.customEffectParam;
         
         // (マテリアルバッファへの転送は SyncBeforeDraw() で行われるため、ここでは SyncMaterialData は呼ばない)
     }

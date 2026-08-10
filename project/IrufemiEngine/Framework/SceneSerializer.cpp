@@ -3,37 +3,35 @@
 #include "BaseScene.h"
 #include "Engine/IrufemiEngine.h"
 #include "GameObject.h"
+#include "Engine/Core/Utility/Log.h"
+#include "Engine/Core/Utility/FileSystem.h"
 #include <fstream>
+#include <iostream>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 
 namespace fs = std::filesystem;
 
+std::unordered_map<std::string, nlohmann::json> SceneSerializer::prefabCache_;
+
 bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
     if (!scene) return false;
 
-    nlohmann::json rootArray = nlohmann::json::array();
-    const auto& gameObjects = scene->GetGameObjects();
+    // シーン自身にシリアライズを委譲する
+    nlohmann::json root = scene->Serialize();
 
-    for (const auto& obj : gameObjects) {
-        // 親がいない（ルートの）オブジェクトのみをシリアライズ（子は再帰的に処理される想定）
-        if (obj && !obj->GetParent()) {
-            rootArray.push_back(obj->Serialize());
-        }
-    }
-
-    // TODO: Use the scene's engine scene directory
-    std::string path = GetSceneFilePath(scene, sceneName);
+    std::string pathStr = GetSceneFilePath(scene, sceneName);
+    fs::path path(pathStr);
 
     // ディレクトリが存在しない場合は作成する
-    fs::path dir = fs::path(path).parent_path();
+    fs::path dir = path.parent_path();
     if (!fs::exists(dir)) {
         fs::create_directories(dir);
     }
 
     std::ofstream file(path);
     if (file.is_open()) {
-        file << rootArray.dump(4);
+        file << root.dump(2); // 4から2に減らして軽量化
         file.close();
         return true;
     }
@@ -44,37 +42,26 @@ bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
 bool SceneSerializer::Load(IScene* scene, const std::string& sceneName) {
     if (!scene) return false;
 
-    std::string path = GetSceneFilePath(scene, sceneName);
+    std::string pathStr = GetSceneFilePath(scene, sceneName);
+    fs::path path(pathStr);
     if (!fs::exists(path)) return false;
 
     std::ifstream file(path);
     if (!file.is_open()) return false;
 
-    nlohmann::json rootArray;
+    nlohmann::json root;
     try {
-        file >> rootArray;
-    } catch (...) {
+        file >> root;
+    } catch (const nlohmann::json::parse_error& e) {
+        Log::OutPutLog(std::cerr, "JSON Parse Error in " + pathStr + ": " + std::string(e.what()) + "\n");
         return false;
     }
     file.close();
 
-    // BaseScene の場合は既存のオブジェクトをクリア（オプション）
-    // 現状は AddGameObject を通じて追加していく
-    if (rootArray.is_array()) {
-        for (const auto& j : rootArray) {
-            auto obj = std::make_shared<GameObject>();
-            obj->Deserialize(j);
-            obj->Initialize();
-            
-            // BaseScene にキャストして追加を試みる
-            if (auto* baseScene = dynamic_cast<BaseScene*>(scene)) {
-                baseScene->AddGameObject(obj);
-            }
-        }
-        return true;
-    }
+    // デシリアライズをシーンに委譲
+    scene->Deserialize(root);
 
-    return false;
+    return true;
 }
 
 bool SceneSerializer::Exists(IScene* scene, const std::string& sceneName) {
@@ -87,14 +74,15 @@ bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::str
     // 単一のオブジェクトをシリアライズ
     nlohmann::json root = obj->Serialize();
 
-    fs::path dir = fs::path(filepath).parent_path();
-    if (!fs::exists(dir)) {
+    fs::path path(filepath);
+    fs::path dir = path.parent_path();
+    if (!dir.empty() && !fs::exists(dir)) {
         fs::create_directories(dir);
     }
 
-    std::ofstream file(filepath);
+    std::ofstream file(path);
     if (file.is_open()) {
-        file << root.dump(4);
+        file << root.dump(2);
         file.close();
         return true;
     }
@@ -102,32 +90,61 @@ bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::str
     return false;
 }
 
-std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
-    if (!fs::exists(filepath)) return nullptr;
+nlohmann::json SceneSerializer::GetPrefabJson(const std::string& filepath) {
+    auto it = prefabCache_.find(filepath);
+    if (it != prefabCache_.end()) {
+        return it->second;
+    }
 
-    std::ifstream file(filepath);
-    if (!file.is_open()) return nullptr;
+    fs::path path(filepath);
+    if (!fs::exists(path)) return nlohmann::json::object();
+
+    std::ifstream file(path);
+    if (!file.is_open()) return nlohmann::json::object();
 
     nlohmann::json root;
     try {
         file >> root;
-    } catch (...) {
-        return nullptr;
+    } catch (const nlohmann::json::parse_error& e) {
+        Log::OutPutLog(std::cerr, "JSON Parse Error in Prefab " + filepath + ": " + std::string(e.what()) + "\n");
+        return nlohmann::json::object();
     }
     file.close();
+
+    prefabCache_[filepath] = root;
+    return root;
+}
+
+std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
+    nlohmann::json root = GetPrefabJson(filepath);
+    if (root.empty()) return nullptr;
+
+    // プレハブ展開時に全UUIDを新しく生成し、新旧対応表を作成する
+    std::unordered_map<uint64_t, uint64_t> idMap;
+    GameObject::RemapJSONInstanceIDs(root, idMap);
 
     auto obj = std::make_shared<GameObject>();
     obj->Deserialize(root);
     obj->Initialize();
 
+    // デシリアライズ・初期化完了後にコンポーネントへIDの読み替えを通知する
+    obj->OnIDRemapped(idMap);
+
     return obj;
 }
 
+void SceneSerializer::ClearCache() {
+    prefabCache_.clear();
+}
+
 std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& sceneName) {
+    fs::path dir = FileSystem::GetResourcePath("scenes");
     if (scene && scene->GetEngine()) {
-        std::string dir = scene->GetEngine()->GetSceneDirectory();
-        return dir + sceneName + ".json";
+        dir = scene->GetEngine()->GetSceneDirectory();
     }
-    // フォールバック
-    return "resources/scenes/" + sceneName + ".json";
+    fs::path filePath = dir / (sceneName + ".json");
+    // Windows環境でもスラッシュ区切りにするための工夫（必要に応じて）
+    std::string pathStr = filePath.string();
+    std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
+    return pathStr;
 }

@@ -40,6 +40,7 @@ public:
      * @param[in] engine IrufemiEngine へのポインタ（非所有）
      */
     explicit SceneManager(IrufemiEngine* engine);
+    ~SceneManager();
 
     /** @name シーン登録・遷移 */
     ///@{

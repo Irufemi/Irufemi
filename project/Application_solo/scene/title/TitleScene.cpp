@@ -20,9 +20,8 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 void TitleScene::Update() {
     BaseScene::Update();
 
-    // BackSpaceキーで遷移テスト
-    if (IsKeyPressed(VK_F8)) {
-        engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Slide, 1.0f);
+    if (IsKeyPressed(VK_SPACE) || IsButtonPressed(XINPUT_GAMEPAD_A)) {
+        engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Fade, 1.0f);
     }
 }
 

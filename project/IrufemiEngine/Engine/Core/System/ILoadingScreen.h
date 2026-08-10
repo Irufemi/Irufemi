@@ -18,4 +18,9 @@ public:
      * @param deltaTime フレーム経過時間
      */
     virtual void OnDrawLoadingScreen(IrufemiEngine* engine, float deltaTime) = 0;
+
+    /**
+     * @brief ローディング画面の明示的な終了・破棄処理
+     */
+    virtual void Finalize() {}
 };

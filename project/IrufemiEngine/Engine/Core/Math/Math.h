@@ -12,3 +12,7 @@
 #include "Matrix4x4.h"
 #include "Quaternion.h"
 #include "MathFunction.h"
+
+namespace Irufemi {
+
+} // namespace Irufemi

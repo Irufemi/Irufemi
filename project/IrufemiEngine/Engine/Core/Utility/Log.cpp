@@ -1,5 +1,6 @@
 #include "Log.h"
 #include <Windows.h>
+#include <iostream>
 
 /*ログを出そう*/
 
@@ -14,12 +15,14 @@
 //時間を扱うライブラリ
 #include <chrono>
 
+#include "FileSystem.h"
+
 void Log::Initialize() {
 
     /*ログを出そう*/
 
     //ログのディレクトリを用意
-    std::filesystem::create_directories("../../logs/app");
+    std::filesystem::create_directories(FileSystem::GetLogPath());
 
     //現在時刻を取得
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -30,12 +33,12 @@ void Log::Initialize() {
     //formatを使って毎月日_時分秒の文字列に変換
     std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
     //時刻を使ってファイル名を決定
-    std::string logFilePath = std::string("../../logs/app/") + dateString + ".log";
+    std::string logFilePath = FileSystem::GetLogPath() + "/" + dateString + ".log";
     //ファイルを使って書き込み準備
     logStream.open(logFilePath, std::ios::out | std::ios::trunc);
 
     //出力ウィンドウへの文字出力
-    OutputDebugStringA("Hello,DirectX!\n");
+    OutPutLog(std::cout, "Hello,DirectX!\n");
 }
 
 
@@ -45,4 +48,12 @@ void Log::Initialize() {
 void Log::OutPutLog(std::ostream& os, const std::string& message) {
     os << message << std::endl;
     OutputDebugStringA(message.c_str());
+
+    bool isError = (&os == &std::cerr);
+    
+    std::lock_guard<std::mutex> lock(logMutex_);
+    logHistory_.push_back({ message, isError });
+    if (logHistory_.size() > MAX_LOG_LINES) {
+        logHistory_.erase(logHistory_.begin());
+    }
 }

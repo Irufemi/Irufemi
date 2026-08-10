@@ -9,14 +9,16 @@ SpriteRendererComponent::SpriteRendererComponent() {}
 SpriteRendererComponent::~SpriteRendererComponent() {}
 
 void SpriteRendererComponent::Initialize() {
-    sprite_ = std::make_unique<Sprite>();
-    sprite_->Initialize(texturePath_);
-    
-    // 初期設定
-    sprite_->SetAnchor(anchor_[0], anchor_[1]);
-    sprite_->SetFlip(isFlipX_, isFlipY_);
-    sprite_->SetTopMost(isTopMost_);
-    sprite_->SetColor(color_);
+    if (!sprite_) {
+        sprite_ = std::make_unique<Sprite>();
+        sprite_->Initialize(texturePath_);
+        
+        // 初期設定
+        sprite_->SetAnchor(anchor_[0], anchor_[1]);
+        sprite_->SetFlip(isFlipX_, isFlipY_);
+        sprite_->SetTopMost(isTopMost_);
+        sprite_->SetColor(color_);
+    }
     
     // テクスチャサイズを取得して初期サイズに設定（Deserializeで既にサイズが設定されていない場合のみ）
     if (size_[0] == 640.0f && size_[1] == 360.0f) { // デフォルト値の場合は上書き
@@ -28,19 +30,18 @@ void SpriteRendererComponent::Initialize() {
     }
 
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
 void SpriteRendererComponent::Update() {
-    if (transform_ && sprite_) {
+    if (GetTransform() && sprite_) {
         // SpriteはZ位置も保持できるが基本は2D
-        sprite_->SetPosition(transform_->worldPosition_.x, transform_->worldPosition_.y, transform_->worldPosition_.z);
+        sprite_->SetPosition(GetTransform()->GetWorldPosition().x, GetTransform()->GetWorldPosition().y, GetTransform()->GetWorldPosition().z);
         // Spriteの回転はZ軸のみ
-        sprite_->SetRotation(transform_->worldRotation_.z);
+        sprite_->SetRotation(GetTransform()->GetWorldRotation().z);
         
         // TransformのScaleは、SpriteのBaseサイズに対するスケーリングとして扱う
-        sprite_->SetSize(size_[0] * transform_->worldScale_.x, size_[1] * transform_->worldScale_.y);
+        sprite_->SetSize(size_[0] * GetTransform()->GetWorldScale().x, size_[1] * GetTransform()->GetWorldScale().y);
     }
 
     if (sprite_) {
@@ -72,9 +73,9 @@ nlohmann::json SpriteRendererComponent::Serialize() {
     j["isTopMost"] = isTopMost_;
     j["isFlipX"] = isFlipX_;
     j["isFlipY"] = isFlipY_;
-    j["anchor"] = { anchor_[0], anchor_[1] };
-    j["size"] = { size_[0], size_[1] };
-    j["color"] = { color_.x, color_.y, color_.z, color_.w };
+    j["anchor"] = nlohmann::json::array({ anchor_[0], anchor_[1] });
+    j["size"] = nlohmann::json::array({ size_[0], size_[1] });
+    j["color"] = nlohmann::json::array({ color_.x, color_.y, color_.z, color_.w });
     return j;
 }
 

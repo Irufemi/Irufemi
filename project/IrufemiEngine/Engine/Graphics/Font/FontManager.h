@@ -6,6 +6,7 @@
 #include <d3d12.h>
 #include "Engine/Core/Math/Vector2.h"
 #include "Engine/Core/System/TaskGroup.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 class IrufemiEngine;
 
@@ -15,8 +16,8 @@ class IrufemiEngine;
  */
 struct GlyphInfo {
     char32_t character;
-    Vector2 uvTopLeft;
-    Vector2 uvBottomRight;
+    Irufemi::Vector2 uvTopLeft;
+    Irufemi::Vector2 uvBottomRight;
     float width;
     float height;
     float offsetX;    // 描画基準点からのXズレ (Bearing X)
@@ -34,28 +35,59 @@ public:
     ~FontManager();
 
     // 初期化 (FreeTypeなどの初期化、アトラステクスチャの作成)
+    /**
+     * @brief Initialize を実行する。
+     */
     void Initialize(IrufemiEngine* engine);
+    /**
+     * @brief Finalize を実行する。
+     */
     void Finalize();
 
     // TTFフォントをロードし、管理対象として登録する
+    /**
+     * @brief LoadFont を実行する。
+     */
     bool LoadFont(const std::string& fontId, const std::string& ttfPath);
 
     // 指定フォルダ配下を再帰的に走査し、.ttf / .otf を一括ロードする
+    /**
+     * @brief LoadAllFromFolder を実行する。
+     */
     void LoadAllFromFolder(const std::string& folderPath);
 
     // ロード済みのフォントIDリストを取得する
+    /**
+     * @brief LoadedFontIds を取得する。
+     * @return 取得された LoadedFontIds
+     */
     std::vector<std::string> GetLoadedFontIds() const;
 
     // 文字列を受け取り、まだ生成されていない文字があればMSDFを生成してアトラスに追加する
+    /**
+     * @brief PrecacheText を実行する。
+     */
     void PrecacheText(const std::string& fontId, const std::wstring& text);
 
     // 文字のグリフ情報を取得する (キャッシュにない場合は非同期または即座に生成する)
+    /**
+     * @brief Glyph を取得する。
+     * @return 取得された Glyph
+     */
     const GlyphInfo* GetGlyph(const std::string& fontId, char32_t character);
 
-    // シェーダに渡すための動的アトラスSRV(テクスチャ)を取得
-    D3D12_GPU_DESCRIPTOR_HANDLE GetAtlasSRV() const;
+    // シェーダに渡すための動的アトラスのテクスチャハンドルを取得
+    /**
+     * @brief AtlasHandle を取得する。
+     * @return 取得された AtlasHandle
+     */
+    ResourceHandle GetAtlasHandle() const;
 
     // 非同期生成タスクがすべて完了しているかを取得
+    /**
+     * @brief IsAllLoaded かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsAllLoaded() const;
 
 private:

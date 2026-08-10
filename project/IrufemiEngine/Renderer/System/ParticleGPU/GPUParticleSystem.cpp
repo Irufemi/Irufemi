@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "GPUParticleSystem.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 #include "Engine/Core/Shape/Sphere.h"
@@ -46,16 +47,20 @@ GPUParticleSystem::~GPUParticleSystem() {
     dxCommon_->ReleaseAfterFence(freeListIndexResource_);
     dxCommon_->ReleaseAfterFence(freeListResource_);
     dxCommon_->ReleaseAfterFence(sortResource_);
+    
+    if (textureManager_ && textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
+    }
   }
 }
 
 // 初期化
 void GPUParticleSystem::Initialize(const std::string &textureName) {
 
-  assert(dxCommon_);
-  assert(drawManager_);
-  assert(textureManager_);
-  assert(engine_);
+  IRUFEMI_ASSERT(dxCommon_);
+  IRUFEMI_ASSERT(drawManager_);
+  IRUFEMI_ASSERT(textureManager_);
+  IRUFEMI_ASSERT(engine_);
 
   CreateBuffersAndViews();
 
@@ -63,8 +68,8 @@ void GPUParticleSystem::Initialize(const std::string &textureName) {
   static uint32_t s_uniqueSeed = 0;
   emittersData_[0].randomSeed = ++s_uniqueSeed;
 
-  // 形状の初期設定 (デフォルトは Quad/Plane)
-  SetPrimitive(PrimitiveType::Plane);
+  // 形状の初期設定 (デフォルトは Quad/Irufemi::Plane)
+  SetPrimitive(Irufemi::PrimitiveType::Plane);
 
   if (textureManager_) {
     auto textureNames = textureManager_->GetTextureNamesForDebug();
@@ -73,11 +78,14 @@ void GPUParticleSystem::Initialize(const std::string &textureName) {
       selectedTextureIndex_ =
           static_cast<int>(std::distance(textureNames.begin(), it));
     }
+    if (textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
+    }
+    textureHandle_ = textureManager_->LoadTexture(textureName);
   }
-  textureHandle_ = textureManager_->GetTextureHandle(textureName);
 
   // デフォルトでスフィアエミッターを設定
-  SetSphereEmitter(Vector3(0, 0, 0), 2.0f, 30.0f);
+  SetSphereEmitter(Irufemi::Vector3(0, 0, 0), 2.0f, 30.0f);
 
   // Milestone 1: 初期調整 (レガシー演出の復元)
   auto &em = emittersData_[0];
@@ -195,7 +203,7 @@ void GPUParticleSystem::Update() {
   }
 
   // タイムスケールに応じた時間取得
-  float dt = isUnscaledTime_ ? engine_->GetDeltaTime() : engine_->GetGameDeltaTime();
+  float dt = isUnscaledTime_ ? engine_->GetRealDeltaTime() : engine_->GetGameDeltaTime();
   float currentTime = isUnscaledTime_ ? engine_->GetTotalTime() : engine_->GetGameTime();
 
   // 持続時間制御
@@ -217,7 +225,7 @@ void GPUParticleSystem::Update() {
   if (isCullingEnabled_) {
     bool anyVisible = false;
     for (auto &em : emittersData_) {
-      Sphere boundingSphere;
+      Irufemi::Sphere boundingSphere;
       boundingSphere.center = {em.translateX, em.translateY, em.translateZ};
       // Boundingを計算。Sphereなら半径*3、Beamなら広めに設定
       if (em.type == 0) {
@@ -226,7 +234,7 @@ void GPUParticleSystem::Update() {
         boundingSphere.radius = 50.0f; // ビームは長いので広めに
       }
 
-      if (Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
+      if (Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
         anyVisible = true;
         break;
       }
@@ -272,7 +280,7 @@ void GPUParticleSystem::Update() {
 
   // パーティクルが生存している可能性がある、または単発放出（バースト）が要求された場合のみCSの更新フラグを立てる
   if (anyEmitting || timeSinceStop_ <= maxLifeOverall + 0.1f ||
-      totalBurstCount > 0) {
+      totalBurstCount > 0 || !isInitializedCS_) {
     needsUpdateCS_ = true;
     // バーストが要求された場合は、休眠から復帰するため停止タイマーをリセット
     if (totalBurstCount > 0) {
@@ -296,14 +304,16 @@ void GPUParticleSystem::SyncBeforeDraw() {
     if (Camera *activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
       perViewBuffer_[frameIndex]->viewProjection =
           activeCam->GetViewProjectionMatrix3D();
-      Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-      Matrix4x4 billboardMatrix_ =
-          Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
+      Irufemi::Matrix4x4 backToFrontMatrix_ = Irufemi::Math::MakeRotateYMatrix(0.0f);
+      Irufemi::Matrix4x4 billboardMatrix_ =
+          Irufemi::Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
       billboardMatrix_.m[3][0] = 0.0f;
       billboardMatrix_.m[3][1] = 0.0f;
       billboardMatrix_.m[3][2] = 0.0f;
       perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
       perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+      perViewBuffer_[frameIndex]->cameraNear = activeCam->GetNearZ();
+      perViewBuffer_[frameIndex]->cameraFar = activeCam->GetFarZ();
     }
   }
 
@@ -320,7 +330,19 @@ void GPUParticleSystem::SyncBeforeDraw() {
   memcpy(emittersMappedData_[frameIndex], emittersData_.data(),
          sizeof(GPUParticleEmitter) * emittersData_.size());
 
-  // 転送処理完了。burstCountのクリアはDispatchComputeShaders実行後に行う。
+  // 今回のburstCountをクリアする前に、DispatchComputeShadersを実行する。
+
+  if (fieldsData_.empty()) {
+    fieldsData_.emplace_back();
+  }
+  memcpy(fieldsMappedData_[frameIndex], fieldsData_.data(), sizeof(ParticleField) * fieldsData_.size());
+
+  // [Bindless] テクスチャインデックスの反映
+  if (engine_ && engine_->GetTextureManager()) {
+    cpuMaterialData_.textureIndex = engine_->GetTextureManager()->GetSrvIndex(textureHandle_);
+  } else {
+    cpuMaterialData_.textureIndex = 0;
+  }
 
   perFrameBuffer_.Update(*perFrameData_, frameIndex);
   materialBuffer_.Update(cpuMaterialData_, frameIndex);
@@ -361,21 +383,23 @@ void GPUParticleSystem::Draw() {
     if (Camera *activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
       perViewBuffer_[frameIndex]->viewProjection =
           activeCam->GetViewProjectionMatrix3D();
-      Matrix4x4 backToFrontMatrix_ = Math::MakeRotateYMatrix(0.0f);
-      Matrix4x4 billboardMatrix_ =
-          Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
+      Irufemi::Matrix4x4 backToFrontMatrix_ = Irufemi::Math::MakeRotateYMatrix(0.0f);
+      Irufemi::Matrix4x4 billboardMatrix_ =
+          Irufemi::Math::Multiply(backToFrontMatrix_, activeCam->GetCameraMatrix());
       billboardMatrix_.m[3][0] = 0.0f;
       billboardMatrix_.m[3][1] = 0.0f;
       billboardMatrix_.m[3][2] = 0.0f;
       perViewBuffer_[frameIndex]->billboardMatrix = billboardMatrix_;
       perViewBuffer_[frameIndex]->worldPosition = activeCam->GetTranslate();
+      perViewBuffer_[frameIndex]->cameraNear = activeCam->GetNearZ();
+      perViewBuffer_[frameIndex]->cameraFar = activeCam->GetFarZ();
     }
   }
 
   ID3D12GraphicsCommandList *commandList = dxCommon_->GetCommandList();
 
   // 現在のステートを退避
-  BlendMode oldBlend = engine_->currentBlend_;
+  Irufemi::BlendMode oldBlend = engine_->currentBlend_;
   PSOManager::DepthWrite oldDepth = engine_->currentDepth_;
   PSOManager::CullMode oldCull = engine_->currentCull_;
 
@@ -392,7 +416,6 @@ void GPUParticleSystem::Draw() {
   packet.perViewAddress = perViewBuffer_.GetGPUVirtualAddress(frameIndex);
   packet.particleSrvHandle = particleSrvHandleGPU_;
   packet.sortListSrvHandle = sortSrvHandleGPU_;
-  packet.textureHandle = textureHandle_;
   packet.instanceCount = kMaxParticles;
   packet.particleResource = particleResource_.Get();
   packet.blendMode = selectedBlend_;
@@ -427,11 +450,12 @@ void GPUParticleSystem::UpdateDebugLines() {
 
   if (showEmitterArea_) {
     for (const auto& em : emittersData_) {
+      if (em.showDebugArea == 0) continue;
       if (em.emit == 0 && em.burstCount == 0) continue;
-      Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f};
-      Vector3 translate = {em.translateX, em.translateY, em.translateZ};
-      Vector3 direction = {em.directionX, em.directionY, em.directionZ};
-      Vector3 areaSize = {em.areaSizeX, em.areaSizeY, em.areaSizeZ};
+      Irufemi::Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f};
+      Irufemi::Vector3 translate = {em.translateX, em.translateY, em.translateZ};
+      Irufemi::Vector3 direction = {em.directionX, em.directionY, em.directionZ};
+      Irufemi::Vector3 areaSize = {em.areaSizeX, em.areaSizeY, em.areaSizeZ};
 
       if (em.type == 0) {
         DrawSphereWireframe(translate, em.radius, color);
@@ -443,8 +467,8 @@ void GPUParticleSystem::UpdateDebugLines() {
       } else if (em.type == 3) {
         DrawCylinderWireframe(translate, direction, em.radius, em.velocity, color);
       } else if (em.type == 4) {
-        Vector3 minP = translate - areaSize * 0.5f;
-        Vector3 maxP = translate + areaSize * 0.5f;
+        Irufemi::Vector3 minP = translate - areaSize * 0.5f;
+        Irufemi::Vector3 maxP = translate + areaSize * 0.5f;
         DrawAABB(minP, maxP, color);
       }
     }
@@ -463,7 +487,7 @@ void GPUParticleSystem::Debug() {
   const char* blendNames[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen", "Premultiplied" };
   int currentBlend = (int)selectedBlend_;
   if (ImGui::Combo("Blend Mode", &currentBlend, blendNames, 7)) {
-    SetBlendMode((BlendMode)currentBlend);
+    SetBlendMode((Irufemi::BlendMode)currentBlend);
   }
 
   // Primitive
@@ -471,7 +495,7 @@ void GPUParticleSystem::Debug() {
                                   "Sphere",   "Tetra", "Circle", "Ring"};
   int currentPrim = (int)primitiveType_;
   if (ImGui::Combo("Particle Mesh", &currentPrim, primitiveNames, 8)) {
-    SetPrimitive((PrimitiveType)currentPrim);
+    SetPrimitive((Irufemi::PrimitiveType)currentPrim);
   }
 
   // Texture
@@ -507,7 +531,7 @@ void GPUParticleSystem::Emit(uint32_t count, uint32_t emitterIndex) {
   }
 }
 
-void GPUParticleSystem::SetSphereEmitter(const Vector3 &pos, float radius,
+void GPUParticleSystem::SetSphereEmitter(const Irufemi::Vector3 &pos, float radius,
                                          float emissionRate,
                                          uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
@@ -521,7 +545,7 @@ void GPUParticleSystem::SetSphereEmitter(const Vector3 &pos, float radius,
   emitter_->emissionRate = emissionRate;
 }
 
-void GPUParticleSystem::SetHemisphereEmitter(const Vector3 &pos, float radius,
+void GPUParticleSystem::SetHemisphereEmitter(const Irufemi::Vector3 &pos, float radius,
                                              float emissionRate,
                                              uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
@@ -535,8 +559,8 @@ void GPUParticleSystem::SetHemisphereEmitter(const Vector3 &pos, float radius,
   emitter_->emissionRate = emissionRate;
 }
 
-void GPUParticleSystem::SetBeamEmitter(const Vector3 &pos,
-                                       const Vector3 &direction, float radius,
+void GPUParticleSystem::SetBeamEmitter(const Irufemi::Vector3 &pos,
+                                       const Irufemi::Vector3 &direction, float radius,
                                        float velocity, float spread,
                                        float emissionRate,
                                        uint32_t emitterIndex) {
@@ -561,10 +585,10 @@ void GPUParticleSystem::SetEmit(bool emit, uint32_t emitterIndex) {
     emittersData_[emitterIndex].emit = emit ? 1 : 0;
 }
 
-void GPUParticleSystem::SetParticleScale(const Vector3 &startMin,
-                                         const Vector3 &startMax,
-                                         const Vector3 &endMin,
-                                         const Vector3 &endMax,
+void GPUParticleSystem::SetParticleScale(const Irufemi::Vector3 &startMin,
+                                         const Irufemi::Vector3 &startMax,
+                                         const Irufemi::Vector3 &endMin,
+                                         const Irufemi::Vector3 &endMax,
                                          uint32_t emitterIndex) {
   if (emitterIndex < emittersData_.size()) {
     auto *emitter_ = &emittersData_[emitterIndex];
@@ -583,8 +607,8 @@ void GPUParticleSystem::SetParticleScale(const Vector3 &startMin,
   }
 }
 
-void GPUParticleSystem::SetMidScale(const Vector3 &midMin,
-                                    const Vector3 &midMax, float midPoint,
+void GPUParticleSystem::SetMidScale(const Irufemi::Vector3 &midMin,
+                                    const Irufemi::Vector3 &midMax, float midPoint,
                                     uint32_t emitterIndex) {
   if (emitterIndex < emittersData_.size()) {
     auto *emitter_ = &emittersData_[emitterIndex];
@@ -598,10 +622,10 @@ void GPUParticleSystem::SetMidScale(const Vector3 &midMin,
   }
 }
 
-void GPUParticleSystem::SetParticleColor(const Vector4 &startMin,
-                                         const Vector4 &startMax,
-                                         const Vector4 &endMin,
-                                         const Vector4 &endMax,
+void GPUParticleSystem::SetParticleColor(const Irufemi::Vector4 &startMin,
+                                         const Irufemi::Vector4 &startMax,
+                                         const Irufemi::Vector4 &endMin,
+                                         const Irufemi::Vector4 &endMax,
                                          uint32_t emitterIndex) {
   if (emitterIndex < emittersData_.size()) {
     auto *emitter_ = &emittersData_[emitterIndex];
@@ -624,8 +648,8 @@ void GPUParticleSystem::SetParticleColor(const Vector4 &startMin,
   }
 }
 
-void GPUParticleSystem::SetMidColor(const Vector4 &midMin,
-                                    const Vector4 &midMax, float midPoint,
+void GPUParticleSystem::SetMidColor(const Irufemi::Vector4 &midMin,
+                                    const Irufemi::Vector4 &midMax, float midPoint,
                                     uint32_t emitterIndex) {
   if (emitterIndex < emittersData_.size()) {
     auto *emitter_ = &emittersData_[emitterIndex];
@@ -650,7 +674,7 @@ void GPUParticleSystem::SetParticleLife(float minLife, float maxLife,
   }
 }
 
-void GPUParticleSystem::SetPrimitive(PrimitiveType type) {
+void GPUParticleSystem::SetPrimitive(Irufemi::PrimitiveType type) {
   primitiveType_ = type;
   const auto &res = engine_->GetPrimitiveManager()->GetStandardResource(type);
   vertexBufferView_ = res.vertexBufferView;
@@ -673,8 +697,10 @@ void GPUParticleSystem::SetTexture(const std::string &textureFilePath) {
   if (!textureManager_)
     return;
 
-  // 無条件に GetTextureHandle を呼び出し、確実に読み込み＆ハンドル取得を行う
-  textureHandle_ = textureManager_->GetTextureHandle(textureFilePath);
+  if (textureHandle_.IsValid()) {
+    textureManager_->ReleaseTexture(textureHandle_);
+  }
+  textureHandle_ = textureManager_->LoadTexture(textureFilePath);
 
   // UIコンボボックス用のインデックス同期
   auto textureNames = textureManager_->GetTextureNamesForDebug();
@@ -686,7 +712,7 @@ void GPUParticleSystem::SetTexture(const std::string &textureFilePath) {
   }
 }
 
-void GPUParticleSystem::SetRingEmitter(const Vector3 &pos, float radius,
+void GPUParticleSystem::SetRingEmitter(const Irufemi::Vector3 &pos, float radius,
                                        float thickness, float emissionRate,
                                        uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
@@ -701,8 +727,8 @@ void GPUParticleSystem::SetRingEmitter(const Vector3 &pos, float radius,
   emitter_->emissionRate = emissionRate;
 }
 
-void GPUParticleSystem::SetCylinderEmitter(const Vector3 &pos,
-                                           const Vector3 &direction,
+void GPUParticleSystem::SetCylinderEmitter(const Irufemi::Vector3 &pos,
+                                           const Irufemi::Vector3 &direction,
                                            float radius, float height,
                                            float emissionRate,
                                            uint32_t emitterIndex) {
@@ -721,7 +747,7 @@ void GPUParticleSystem::SetCylinderEmitter(const Vector3 &pos,
   emitter_->emissionRate = emissionRate;
 }
 
-void GPUParticleSystem::SetBoxEmitter(const Vector3 &pos, const Vector3 &size,
+void GPUParticleSystem::SetBoxEmitter(const Irufemi::Vector3 &pos, const Irufemi::Vector3 &size,
                                       float emissionRate,
                                       uint32_t emitterIndex) {
   if (emitterIndex >= emittersData_.size())
@@ -735,6 +761,26 @@ void GPUParticleSystem::SetBoxEmitter(const Vector3 &pos, const Vector3 &size,
   emitter_->areaSizeY = size.y;
   emitter_->areaSizeZ = size.z;
   emitter_->emissionRate = emissionRate;
+}
+
+void GPUParticleSystem::SetMeshEmitter(const Irufemi::Vector3 &pos, D3D12_GPU_VIRTUAL_ADDRESS vbAddress, uint32_t vertexCount,
+                                      float emissionRate, uint32_t emitterIndex) {
+  if (emitterIndex >= emittersData_.size())
+    return;
+  auto *emitter_ = &emittersData_[emitterIndex];
+  emitter_->type = 6;
+  emitter_->translateX = pos.x;
+  emitter_->translateY = pos.y;
+  emitter_->translateZ = pos.z;
+  emitter_->emissionRate = emissionRate;
+  
+  // Use padFreqTime for vertex count to pass to shader
+  emitter_->padFreqTime = static_cast<float>(vertexCount);
+
+  if (meshVertexBuffers_.size() <= emitterIndex) {
+    meshVertexBuffers_.resize(emitterIndex + 1, 0);
+  }
+  meshVertexBuffers_[emitterIndex] = vbAddress;
 }
 
 void GPUParticleSystem::SetTextureAtlas(uint32_t rows, uint32_t cols,
@@ -755,7 +801,7 @@ void GPUParticleSystem::SetGroundCollision(float height, float bounce,
   }
 }
 
-void GPUParticleSystem::SetAttractor(const Vector3 &pos, float strength,
+void GPUParticleSystem::SetAttractor(const Irufemi::Vector3 &pos, float strength,
                                      uint32_t emitterIndex) {
   if (emitterIndex < emittersData_.size()) {
     auto *emitter_ = &emittersData_[emitterIndex];
@@ -766,12 +812,12 @@ void GPUParticleSystem::SetAttractor(const Vector3 &pos, float strength,
   }
 }
 
-void GPUParticleSystem::DrawAABB(const Vector3 &min, const Vector3 &max,
-                                 const Vector4 &color) {
+void GPUParticleSystem::DrawAABB(const Irufemi::Vector3 &min, const Irufemi::Vector3 &max,
+                                 const Irufemi::Vector4 &color) {
   if (!debugLineRegion_)
     return;
 
-  Vector3 v[8] = {{min.x, min.y, min.z}, {max.x, min.y, min.z},
+  Irufemi::Vector3 v[8] = {{min.x, min.y, min.z}, {max.x, min.y, min.z},
                   {min.x, max.y, min.z}, {max.x, max.y, min.z},
                   {min.x, min.y, max.z}, {max.x, min.y, max.z},
                   {min.x, max.y, max.z}, {max.x, max.y, max.z}};
@@ -790,54 +836,54 @@ void GPUParticleSystem::DrawAABB(const Vector3 &min, const Vector3 &max,
   debugLineRegion_->AddInstance(v[3], v[7], color);
 }
 
-void GPUParticleSystem::DrawCircle(const Vector3 &center, float radius,
-                                   const Vector3 &axis, const Vector4 &color) {
+void GPUParticleSystem::DrawCircle(const Irufemi::Vector3 &center, float radius,
+                                   const Irufemi::Vector3 &axis, const Irufemi::Vector4 &color) {
   if (!debugLineRegion_)
     return;
-  Vector3 up = Math::Normalize(axis);
-  Vector3 right =
-      Math::Normalize(std::abs(up.y) > 0.9f ? Math::Cross({1, 0, 0}, up)
-                                            : Math::Cross({0, 1, 0}, up));
-  Vector3 forward = Math::Cross(right, up);
+  Irufemi::Vector3 up = Irufemi::Math::Normalize(axis);
+  Irufemi::Vector3 right =
+      Irufemi::Math::Normalize(std::abs(up.y) > 0.9f ? Irufemi::Math::Cross({1, 0, 0}, up)
+                                            : Irufemi::Math::Cross({0, 1, 0}, up));
+  Irufemi::Vector3 forward = Irufemi::Math::Cross(right, up);
 
   const int segments = 32;
-  Vector3 prevPos = center + right * radius;
+  Irufemi::Vector3 prevPos = center + right * radius;
   for (int i = 1; i <= segments; ++i) {
     float angle = (float)i / segments * 3.141592f * 2.0f;
-    Vector3 pos =
+    Irufemi::Vector3 pos =
         center + (right * std::cos(angle) + forward * std::sin(angle)) * radius;
     debugLineRegion_->AddInstance(prevPos, pos, color);
     prevPos = pos;
   }
 }
 
-void GPUParticleSystem::DrawSphereWireframe(const Vector3 &center, float radius,
-                                            const Vector4 &color) {
+void GPUParticleSystem::DrawSphereWireframe(const Irufemi::Vector3 &center, float radius,
+                                            const Irufemi::Vector4 &color) {
   DrawCircle(center, radius, {1, 0, 0}, color);
   DrawCircle(center, radius, {0, 1, 0}, color);
   DrawCircle(center, radius, {0, 0, 1}, color);
 }
 
-void GPUParticleSystem::DrawCylinderWireframe(const Vector3 &center,
-                                              const Vector3 &direction,
+void GPUParticleSystem::DrawCylinderWireframe(const Irufemi::Vector3 &center,
+                                              const Irufemi::Vector3 &direction,
                                               float radius, float height,
-                                              const Vector4 &color) {
+                                              const Irufemi::Vector4 &color) {
   if (!debugLineRegion_)
     return;
-  Vector3 dir = Math::Normalize(direction);
-  Vector3 top = center + dir * height;
+  Irufemi::Vector3 dir = Irufemi::Math::Normalize(direction);
+  Irufemi::Vector3 top = center + dir * height;
 
   DrawCircle(center, radius, dir, color);
   DrawCircle(top, radius, dir, color);
 
-  Vector3 right =
-      Math::Normalize(std::abs(dir.y) > 0.9f ? Math::Cross({1, 0, 0}, dir)
-                                             : Math::Cross({0, 1, 0}, dir));
-  Vector3 forward = Math::Cross(right, dir);
+  Irufemi::Vector3 right =
+      Irufemi::Math::Normalize(std::abs(dir.y) > 0.9f ? Irufemi::Math::Cross({1, 0, 0}, dir)
+                                             : Irufemi::Math::Cross({0, 1, 0}, dir));
+  Irufemi::Vector3 forward = Irufemi::Math::Cross(right, dir);
 
   for (int i = 0; i < 4; ++i) {
     float angle = (float)i / 4.0f * 3.141592f * 2.0f;
-    Vector3 offset =
+    Irufemi::Vector3 offset =
         (right * std::cos(angle) + forward * std::sin(angle)) * radius;
     debugLineRegion_->AddInstance(center + offset, top + offset, color);
   }
@@ -852,6 +898,21 @@ void GPUParticleSystem::DispatchComputeShaders(
 
   uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
+  if (!isInitializedCS_) {
+      commandList->SetPipelineState(
+          dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleInitialize"));
+      commandList->SetComputeRootDescriptorTable(3, particleUavHandleGPU_);
+      commandList->SetComputeRootDescriptorTable(6, freeListIndexUavHandleGPU_);
+      commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
+
+      commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
+
+      DirectXUtils::UAVBarriers(commandList, {particleResource_.Get(),
+                                              freeListIndexResource_.Get(),
+                                              freeListResource_.Get()});
+      isInitializedCS_ = true;
+  }
+
   // Emit
   commandList->SetPipelineState(
       dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleEmit"));
@@ -860,6 +921,8 @@ void GPUParticleSystem::DispatchComputeShaders(
   commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
   commandList->SetComputeRootDescriptorTable(
       0, emittersSrvHandleGPU_[frameIndex]); // t0
+  commandList->SetComputeRootDescriptorTable(
+      1, fieldsSrvHandleGPU_[frameIndex]); // t1: Fields
   commandList->SetComputeRootConstantBufferView(
       5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex)); // b1
 
@@ -868,6 +931,12 @@ void GPUParticleSystem::DispatchComputeShaders(
     if (emitCount > 0) {
       commandList->SetComputeRoot32BitConstant(9, (uint32_t)i,
                                                0); // b2: gEmitterIndex
+      
+      // Bind mesh vertex buffer if mesh emitter
+      if (emittersData_[i].type == 6 && i < meshVertexBuffers_.size() && meshVertexBuffers_[i] != 0) {
+        commandList->SetComputeRootShaderResourceView(10, meshVertexBuffers_[i]);
+      }
+
       commandList->Dispatch((emitCount + 1023) / 1024, 1, 1);
     }
   }
@@ -885,6 +954,8 @@ void GPUParticleSystem::DispatchComputeShaders(
   commandList->SetComputeRootDescriptorTable(7, freeListUavHandleGPU_);
   commandList->SetComputeRootDescriptorTable(
       0, emittersSrvHandleGPU_[frameIndex]); // t0
+  commandList->SetComputeRootDescriptorTable(
+      1, fieldsSrvHandleGPU_[frameIndex]); // t1: Fields
   commandList->SetComputeRootConstantBufferView(
       5, perFrameBuffer_.GetGPUVirtualAddress(frameIndex)); // b1
   commandList->Dispatch((kMaxParticles + 1023) / 1024, 1, 1);
@@ -917,7 +988,7 @@ void GPUParticleSystem::DispatchComputeShaders(
   commandList->SetComputeRootDescriptorTable(0, particleSrvHandleGPU_);
   // u0: SortList (Slot 8 in our RootSig setup)
   commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_);
-  // b0: PerView (Slot 4 in RootSig)
+  // b0: Irufemi::PerView (Slot 4 in RootSig)
   commandList->SetComputeRootConstantBufferView(
       4, perViewBuffer_.GetGPUVirtualAddress(frameIndex));
 
@@ -926,19 +997,21 @@ void GPUParticleSystem::DispatchComputeShaders(
   // Wait for Init
   DirectXUtils::UAVBarriers(commandList, {sortResource_.Get()});
 
-  // 2. Execute Bitonic Sort
-  commandList->SetPipelineState(
-      dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleBitonicSort"));
-  commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_); // u0
+  // 2. Execute Bitonic Sort (AAA Approach: ソート不要なブレンドモードはスキップ)
+  if (selectedBlend_ == Irufemi::BlendMode::kBlendModeNormal) {
+    commandList->SetPipelineState(
+        dxCommon_->GetPSOManager()->GetComputePSO("GpuParticleBitonicSort"));
+    commandList->SetComputeRootDescriptorTable(8, sortUavHandleGPU_); // u0
 
-  for (uint32_t k = 2; k <= kMaxParticles; k <<= 1) {
-    for (uint32_t j = k >> 1; j > 0; j >>= 1) {
-      commandList->SetComputeRoot32BitConstant(9, k, 0); // b2, uint k
-      commandList->SetComputeRoot32BitConstant(9, j, 1); // b2, uint j
+    for (uint32_t k = 2; k <= kMaxParticles; k <<= 1) {
+      for (uint32_t j = k >> 1; j > 0; j >>= 1) {
+        commandList->SetComputeRoot32BitConstant(9, k, 0); // b2, uint k
+        commandList->SetComputeRoot32BitConstant(9, j, 1); // b2, uint j
 
-      commandList->Dispatch(kMaxParticles / 1024, 1, 1);
+        commandList->Dispatch(kMaxParticles / 1024, 1, 1);
 
-      DirectXUtils::UAVBarriers(commandList, {sortResource_.Get()});
+        DirectXUtils::UAVBarriers(commandList, {sortResource_.Get()});
+      }
     }
   }
 
@@ -956,7 +1029,7 @@ void GPUParticleSystem::DispatchComputeShaders(
 void GPUParticleSystem::CreateBuffersAndViews() {
   auto *srvPool = dxCommon_->GetSrvPool();
 
-  /*Emitter と PerFrame の定数バッファ初期化*/
+  /*Emitter と Irufemi::PerFrame の定数バッファ初期化*/
   for (uint32_t i = 0; i < 3; ++i) { // 3 = kMaxFramesInFlight
     emittersResource_[i] = dxCommon_->CreateBufferResource(
         sizeof(GPUParticleEmitter) * kMaxEmitters);
@@ -977,6 +1050,27 @@ void GPUParticleSystem::CreateBuffersAndViews() {
         emittersResource_[i].Get(), &srvDesc,
         srvPool->GetCPUHandle(emittersSrvIndex_[i]));
     emittersSrvHandleGPU_[i] = srvPool->GetGPUHandle(emittersSrvIndex_[i]);
+
+    // Field Resource Initialization
+    fieldsResource_[i] = dxCommon_->CreateBufferResource(
+        sizeof(ParticleField) * 64); // max 64 fields
+    fieldsResource_[i]->Map(
+        0, nullptr, reinterpret_cast<void **>(&fieldsMappedData_[i]));
+
+    fieldsSrvIndex_[i] = srvPool->Allocate();
+    D3D12_SHADER_RESOURCE_VIEW_DESC fieldSrvDesc{};
+    fieldSrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    fieldSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    fieldSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    fieldSrvDesc.Buffer.FirstElement = 0;
+    fieldSrvDesc.Buffer.NumElements = 64;
+    fieldSrvDesc.Buffer.StructureByteStride = sizeof(ParticleField);
+    fieldSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+    engine_->GetDevice()->CreateShaderResourceView(
+        fieldsResource_[i].Get(), &fieldSrvDesc,
+        srvPool->GetCPUHandle(fieldsSrvIndex_[i]));
+    fieldsSrvHandleGPU_[i] = srvPool->GetGPUHandle(fieldsSrvIndex_[i]);
   }
 
   perFrameBuffer_.Initialize(dxCommon_);
@@ -1090,7 +1184,7 @@ void GPUParticleSystem::CreateBuffersAndViews() {
   materialBuffer_.Initialize(dxCommon_);
   for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
     materialBuffer_[i]->color = {1.0f, 1.0f, 1.0f, 1.0f};
-    materialBuffer_[i]->uvTransform = Math::MakeIdentity4x4();
+    materialBuffer_[i]->uvTransform = Irufemi::Math::MakeIdentity4x4();
     materialBuffer_[i]->useClampSampler = 0;
   }
 }

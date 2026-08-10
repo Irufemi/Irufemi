@@ -1,10 +1,8 @@
-/**
- * @file PostProcessManager.cpp
- * @brief ポストプロセス（マルチパス描画）の管理実装クラス
- */
 #include "PostProcessManager.h"
+#include "PostProcessRunner.h"
 #include "../DirectX/DirectXCommon.h"
 #include "../DirectX/DirectXUtils.h"
+#include "../../IrufemiEngine.h"
 #include <algorithm>
 #include <cassert>
 #include <d3d12.h>
@@ -38,6 +36,18 @@ void PostProcessManager::ResetAllParams() {
     slideParams_ = SlideParams();
     bloomParams_ = BloomParams();
     glitchParams_ = GlitchParams();
+    dualKawaseParams_ = DualKawaseBlurParams();
+    luminanceOutlineParams_ = LuminanceOutlineParams();
+    pixelationParams_ = PixelationParams();
+    pointillismParams_ = PointillismParams();
+    posterizationParams_ = PosterizationParams();
+    nightVisionParams_ = NightVisionParams();
+    kaleidoscopeParams_ = KaleidoscopeParams();
+    chromaticAberrationParams_ = ChromaticAberrationParams();
+    displacementMapParams_ = DisplacementMapParams();
+    directionalBlurParams_ = DirectionalBlurParams();
+    halftoneParams_ = HalftoneParams();
+    dofParams_ = DepthOfFieldParams();
 }
 
 
@@ -46,6 +56,7 @@ void PostProcessManager::Update(float totalTime) {
   CommitPendingModes();
 
   noiseParams_.time = totalTime;
+  nightVisionParams_.time = totalTime;
   if (mappedNoise_) {
     *mappedNoise_ = noiseParams_;
   }
@@ -62,9 +73,12 @@ void PostProcessManager::Update(float totalTime) {
   if (mappedFade_) *mappedFade_ = fadeParams_;
   if (mappedSlide_) *mappedSlide_ = slideParams_;
   if (mappedBloom_) *mappedBloom_ = bloomParams_;
+  if (mappedLightShafts_) *mappedLightShafts_ = lightShaftsParams_;
 
   glitchParams_.time = totalTime;
   if (mappedGlitch_) *mappedGlitch_ = glitchParams_;
+
+  if (mappedDualKawase_) *mappedDualKawase_ = dualKawaseParams_;
 
   // 統合パラメータの同期
   combinedParams_.vignetteColor = vignetteParams_.color;
@@ -91,192 +105,75 @@ void PostProcessManager::Update(float totalTime) {
   combinedParams_.radialBlurSamples = radialBlurParams_.numSamples;
   combinedParams_.glitchIntensity = glitchParams_.intensity;
   combinedParams_.glitchTime = glitchParams_.time;
+  combinedParams_.glitchEdgeMaskStrength = glitchParams_.edgeMaskStrength;
+  combinedParams_.glitchProbability = glitchParams_.probability;
+  combinedParams_.glitchBlockSizeX = glitchParams_.blockSizeX;
+  combinedParams_.glitchBlockSizeY = glitchParams_.blockSizeY;
+  combinedParams_.glitchOffsetBase = glitchParams_.offsetBase;
+  combinedParams_.glitchOffsetMax = glitchParams_.offsetMax;
+  combinedParams_.glitchRgbShiftBase = glitchParams_.rgbShiftBase;
+  combinedParams_.glitchRgbShiftMax = glitchParams_.rgbShiftMax;
+  combinedParams_.glitchScanlineFreq = glitchParams_.scanlineFreq;
+  combinedParams_.glitchScanlineIntensity = glitchParams_.scanlineIntensity;
+  combinedParams_.glitchColor = glitchParams_.color;
+  
+  combinedParams_.luminanceOutlineThreshold = luminanceOutlineParams_.threshold;
+  combinedParams_.luminanceOutlineColor = luminanceOutlineParams_.outlineColor;
 
-  if (mappedCombined_) {
-    *mappedCombined_ = combinedParams_;
-  }
+  combinedParams_.pixelationSize = pixelationParams_.pixelSize;
+
+  combinedParams_.pointillismStrokeSize = pointillismParams_.strokeSize;
+  combinedParams_.pointillismColorSteps = pointillismParams_.colorSteps;
+
+  combinedParams_.posterizationSteps = posterizationParams_.colorSteps;
+  
+  combinedParams_.nightVisionIntensity = nightVisionParams_.intensity;
+  combinedParams_.nightVisionTime = nightVisionParams_.time;
+  
+  combinedParams_.kaleidoscopeSegments = kaleidoscopeParams_.segments;
+  
+  combinedParams_.chromaticAberrationIntensity = chromaticAberrationParams_.intensity;
+  
+  displacementMapParams_.time = totalTime * displacementMapParams_.timeScale;
+  combinedParams_.displacementMapIntensity = displacementMapParams_.intensity;
+  combinedParams_.displacementMapTime = displacementMapParams_.time;
+  combinedParams_.displacementMapTimeScale = displacementMapParams_.timeScale;
+
+  combinedParams_.directionalBlurDirection = directionalBlurParams_.direction;
+  combinedParams_.directionalBlurStrength = directionalBlurParams_.strength;
+  combinedParams_.directionalBlurSamples = directionalBlurParams_.samples;
+
+  combinedParams_.halftoneScale = halftoneParams_.scale;
+  combinedParams_.halftoneAngle = halftoneParams_.angle;
+  combinedParams_.halftoneBlend = halftoneParams_.blend;
+
+  combinedParams_.dofFocusDistance = dofParams_.focusDistance;
+  combinedParams_.dofFocusRange = dofParams_.focusRange;
+  combinedParams_.dofBlurSize = dofParams_.blurSize;
+  combinedParams_.dofSamples = dofParams_.samples;
 }
 
 void PostProcessManager::Draw(ID3D12GraphicsCommandList *commandList,
                                RenderTexture *srcTexture,
                                D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
-                               const PostProcessWorkspace& workspace) {
-  RenderTexture *currentSource = srcTexture;
-
-  if (!activeModes_.empty()) {
-    size_t modeIdx = 0;
-    int pingPongIdx = 0;
-
-    while (modeIdx < activeModes_.size()) {
-      Mode mode = activeModes_[modeIdx];
-      bool isLastBatch = false;
-
-      // 1) 非統合エフェクト (Bloom) の処理
-      if (mode == Mode::Bloom) {
-        isLastBatch = (modeIdx == activeModes_.size() - 1);
-        RenderTexture* nextTarget = isLastBatch ? nullptr : workspace.workTextures[pingPongIdx % 2];
-        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = isLastBatch ? rtvHandle : nextTarget->GetRtvHandle();
-
-        if (!isLastBatch) {
-            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-
-        RenderTexture* bloomExtract = workspace.bloomExtract;
-        RenderTexture* blurH = workspace.bloomBlur;
-        RenderTexture* blurV = workspace.bloomExtract;
-
-        DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::Bloom, currentSource, bloomExtract->GetRtvHandle(), false, bloomExtractPSO_.Get());
-        DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        
-        bloomParams_.direction = { 1.0f, 0.0f };
-        if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
-        DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::Bloom, bloomExtract, blurH->GetRtvHandle(), false, bloomBlurHPSO_.Get());
-        DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        
-        bloomParams_.direction = { 0.0f, 1.0f };
-        if (mappedBloom_) { *mappedBloom_ = bloomParams_; }
-        DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        DrawSinglePass(commandList, Mode::Bloom, blurH, blurV->GetRtvHandle(), false, bloomBlurVPSO_.Get());
-        DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-        
-        commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-        float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
-        commandList->SetPipelineState(isLastBatch ? finalBloomCombinePSO_.Get() : bloomCombinePSO_.Get());
-        commandList->SetGraphicsRootSignature(rootSig_);
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
-        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, blurV->GetSrvHandleGPU());
-        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, bloomCB_->GetGPUVirtualAddress());
-        commandList->DrawInstanced(3, 1, 0, 0);
-
-        if (!isLastBatch) {
-          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-          pingPongIdx++;
-        }
-        currentSource = nextTarget;
-        modeIdx++;
+                               const PostProcessWorkspace& workspace,
+                               Layer layer) {
+  // bindlessBufferOffset_ と combinedBufferOffset_ は PreUI (最初のパス) のみリセットする
+  if (layer == Layer::PreUI) {
+      bindlessBufferOffset_ = 0;
+      combinedBufferOffset_ = 0;
+      
+      std::lock_guard<std::mutex> lock(customParamsMutex_);
+      size_t count = std::min<size_t>(customEffectParamsList_.size(), kMaxCustomEffectParams - 1);
+      if (count > 0 && mappedCustomEffectParams_) {
+          std::memcpy(mappedCustomEffectParams_ + 1, customEffectParamsList_.data(), count * sizeof(CustomEffectParams));
       }
-      // 1-B) 分離可能フィルタ (Smoothing / GaussianFilter) の処理
-      else if (mode == Mode::Smoothing || mode == Mode::GaussianFilter) {
-        isLastBatch = (modeIdx == activeModes_.size() - 1);
-        RenderTexture* nextTarget = isLastBatch ? nullptr : workspace.workTextures[pingPongIdx % 2];
-        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = isLastBatch ? rtvHandle : nextTarget->GetRtvHandle();
-
-        // 横方向パス用の中間バッファ（BloomのBlurバッファを一時的に借用）
-        RenderTexture* blurH = workspace.bloomBlur;
-        
-        DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-        ID3D12PipelineState* psoH = (mode == Mode::Smoothing) ? smoothingBlurPSO_.Get() : gaussianBlurPSO_.Get();
-        ID3D12PipelineState* psoV = nullptr;
-        if (mode == Mode::Smoothing) {
-            psoV = isLastBatch ? finalSmoothingBlurPSO_.Get() : smoothingBlurPSO_.Get();
-        } else {
-            psoV = isLastBatch ? finalGaussianBlurPSO_.Get() : gaussianBlurPSO_.Get();
-        }
-
-        // H Pass
-        if (mode == Mode::Smoothing) {
-            smoothingParams_.direction = { 1.0f, 0.0f };
-            if (mappedSmoothing_) { *mappedSmoothing_ = smoothingParams_; }
-        } else {
-            gaussianParams_.direction = { 1.0f, 0.0f };
-            if (mappedGaussian_) { *mappedGaussian_ = gaussianParams_; }
-        }
-        DrawSinglePass(commandList, mode, currentSource, blurH->GetRtvHandle(), false, psoH);
-        
-        DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-        // V Pass
-        if (!isLastBatch) {
-            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-
-        if (mode == Mode::Smoothing) {
-            smoothingParams_.direction = { 0.0f, 1.0f };
-            if (mappedSmoothing_) { *mappedSmoothing_ = smoothingParams_; }
-        } else {
-            gaussianParams_.direction = { 0.0f, 1.0f };
-            if (mappedGaussian_) { *mappedGaussian_ = gaussianParams_; }
-        }
-        
-        commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-        float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
-        DrawSinglePass(commandList, mode, blurH, targetHandle, isLastBatch, psoV);
-
-        if (!isLastBatch) {
-          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-          pingPongIdx++;
-        }
-        currentSource = nextTarget;
-        modeIdx++;
-      }
-      // 2) 統合バッチ
-      else {
-        std::vector<Mode> batch;
-        size_t lookAhead = modeIdx;
-        while (lookAhead < activeModes_.size() && 
-               activeModes_[lookAhead] != Mode::Bloom && 
-               activeModes_[lookAhead] != Mode::Smoothing && 
-               activeModes_[lookAhead] != Mode::GaussianFilter && 
-               batch.size() < 16) {
-          batch.push_back(activeModes_[lookAhead]);
-          lookAhead++;
-        }
-
-        isLastBatch = (lookAhead == activeModes_.size());
-        RenderTexture* nextTarget = isLastBatch ? nullptr : workspace.workTextures[pingPongIdx % 2];
-        D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = isLastBatch ? rtvHandle : nextTarget->GetRtvHandle();
-
-        if (!isLastBatch) {
-            DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        }
-
-        combinedParams_.effectCount = (int32_t)batch.size();
-        D3D12_GPU_DESCRIPTOR_HANDLE extraSrv = { 0 };
-        for (int i = 0; i < (int)batch.size(); ++i) {
-          combinedParams_.effects[i] = (int32_t)batch[i];
-          if (batch[i] == Mode::DepthBasedOutline) {
-              extraSrv = depthSrvHandle_;
-          } else if (batch[i] == Mode::Dissolve) {
-              int noiseIdx = (dissolveParams_.noiseType <= 0) ? 0 : 1;
-              extraSrv = dissolveNoiseHandle_[noiseIdx];
-          }
-        }
-        if (mappedCombined_) { *mappedCombined_ = combinedParams_; }
-
-        commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-        float clearColor[] = { 0, 0, 0, 1 };
-        commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
-
-        commandList->SetPipelineState(isLastBatch ? finalCombinedPSO_.Get() : combinedPSO_.Get());
-        commandList->SetGraphicsRootSignature(rootSig_);
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, currentSource->GetSrvHandleGPU());
-        if (extraSrv.ptr != 0) {
-          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, extraSrv);
-        } else {
-          commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, currentSource->GetSrvHandleGPU());
-        }
-        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, combinedCB_->GetGPUVirtualAddress());
-        commandList->DrawInstanced(3, 1, 0, 0);
-
-        if (!isLastBatch) {
-          DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-          pingPongIdx++;
-        }
-        currentSource = nextTarget;
-        modeIdx = lookAhead;
-      }
-    }
-  } else {
-    Mode singleMode = activeModes_.empty() ? Mode::None : activeModes_[0];
-    DrawSinglePass(commandList, singleMode, srcTexture, rtvHandle, true);
   }
+
+  const std::vector<Mode>& modesToDraw = (layer == Layer::PreUI) ? activePreUI_ : activePostUI_;
+
+  PostProcessRunner runner;
+  runner.Run(this, commandList, modesToDraw, srcTexture, rtvHandle, workspace, true);
 }
 
 void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
@@ -313,7 +210,31 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   // ソーステクスチャのバインド (Root2 -> t0)
-  commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::Texture, srcTexture->GetSrvHandleGPU());
+
+  
+  // -------------------------------------------------------------
+  // Bindless パラメータの更新
+  mappedBindless_[bindlessBufferOffset_].mainTextureIndex = srcTexture ? srcTexture->GetSrvIndex() : 0;
+  
+  uint32_t extraIdx = 0;
+  if (mode == Mode::DepthBasedOutline) {
+      extraIdx = depthSrvIndex_;
+  } else if (mode == Mode::Dissolve) {
+      int noiseIdx = (dissolveParams_.noiseType <= 0) ? 0 : 1;
+      extraIdx = dissolveNoiseIndex_[noiseIdx];
+  }
+  mappedBindless_[bindlessBufferOffset_].extraTextureIndex = extraIdx;
+  
+  // マスク等のG-Bufferテクスチャのインデックスを渡す
+  auto* engine = dxCommon_->GetEngine();
+  mappedBindless_[bindlessBufferOffset_].maskTextureIndex = engine->GetEffectMaskTexture() ? engine->GetEffectMaskTexture()->GetSrvIndex() : 0;
+  mappedBindless_[bindlessBufferOffset_].normalTextureIndex = engine->GetNormalTexture() ? engine->GetNormalTexture()->GetSrvIndex() : 0;
+  mappedBindless_[bindlessBufferOffset_].materialTextureIndex = engine->GetMaterialTexture() ? engine->GetMaterialTexture()->GetSrvIndex() : 0;
+  mappedBindless_[bindlessBufferOffset_].velocityTextureIndex = engine->GetVelocityTexture() ? engine->GetVelocityTexture()->GetSrvIndex() : 0;
+  
+  commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, bindlessCB_->GetGPUVirtualAddress() + bindlessBufferOffset_ * sizeof(BindlessParams));
+  bindlessBufferOffset_++;
+  // -------------------------------------------------------------
 
   // 定数バッファのバインド (Root0 -> b0)
   D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0;
@@ -357,6 +278,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
   case Mode::Glitch:
     cbvAddress = glitchCB_->GetGPUVirtualAddress();
     break;
+  case Mode::DualKawaseBlur:
+    cbvAddress = dualKawaseCB_->GetGPUVirtualAddress();
+    break;
   default:
     break;
   }
@@ -366,10 +290,8 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList *commandList,
 
   // 追加のリソース（深度、ノイズテクスチャ）のバインド (Root12 -> t1)
   if (mode == Mode::DepthBasedOutline) {
-    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, depthSrvHandle_);
   } else if (mode == Mode::Dissolve) {
     int32_t noiseIdx = (std::max)(int32_t(0), (std::min)(int32_t(1), dissolveParams_.noiseType));
-    commandList->SetGraphicsRootDescriptorTable((UINT)RootSlot::EnvMap, dissolveNoiseHandle_[noiseIdx]);
   }
 
   // 描画実行 (3頂点インデックスなし)
@@ -385,29 +307,29 @@ void PostProcessManager::CreatePSOs() {
   options.isDebug = true;
 #endif
 
-  auto vsBlob = shaderManager->GetOrCompile(L"resources/shaders/Fullscreen.VS.hlsl", options);
+  auto vsBlob = shaderManager->GetOrCompile(L"Fullscreen.VS.hlsl", options);
 
   struct ShaderPath {
     Mode mode;
     std::wstring path;
   };
   std::vector<ShaderPath> shaders = {
-      {Mode::None, L"resources/shaders/CopyImage.PS.hlsl"},
-      {Mode::Grayscale, L"resources/shaders/Grayscale.PS.hlsl"},
-      {Mode::Sepia, L"resources/shaders/Sepia.PS.hlsl"},
-      {Mode::Vignette, L"resources/shaders/Vignette.PS.hlsl"},
-      {Mode::Smoothing, L"resources/shaders/Smoothing.PS.hlsl"},
-      {Mode::GaussianFilter, L"resources/shaders/GaussianFilter.PS.hlsl"},
-      {Mode::DepthBasedOutline, L"resources/shaders/DepthBasedOutline.PS.hlsl"},
-      {Mode::RadialBlur, L"resources/shaders/RadialBlur.PS.hlsl"},
-      {Mode::Dissolve, L"resources/shaders/Dissolve.PS.hlsl"},
-      {Mode::Noise, L"resources/shaders/Noise.PS.hlsl"},
-      {Mode::HSV, L"resources/shaders/HSV.PS.hlsl"},
-      {Mode::ToneMapping, L"resources/shaders/ToneMapping.PS.hlsl"},
-      {Mode::Fade, L"resources/shaders/Fade.PS.hlsl"},
-      {Mode::Slide, L"resources/shaders/Slide.PS.hlsl"},
-      {Mode::Bloom, L"resources/shaders/CopyImage.PS.hlsl"},
-      {Mode::Glitch, L"resources/shaders/Glitch.PS.hlsl"},
+      {Mode::None, L"CopyImage.PS.hlsl"},
+      {Mode::Grayscale, L"Grayscale.PS.hlsl"},
+      {Mode::Sepia, L"Sepia.PS.hlsl"},
+      {Mode::Vignette, L"Vignette.PS.hlsl"},
+      {Mode::Smoothing, L"Smoothing.PS.hlsl"},
+      {Mode::GaussianFilter, L"GaussianFilter.PS.hlsl"},
+      {Mode::DepthBasedOutline, L"DepthBasedOutline.PS.hlsl"},
+      {Mode::RadialBlur, L"RadialBlur.PS.hlsl"},
+      {Mode::Dissolve, L"Dissolve.PS.hlsl"},
+      {Mode::Noise, L"Noise.PS.hlsl"},
+      {Mode::HSV, L"HSV.PS.hlsl"},
+      {Mode::ToneMapping, L"ToneMapping.PS.hlsl"},
+      {Mode::Fade, L"Fade.PS.hlsl"},
+      {Mode::Slide, L"Slide.PS.hlsl"},
+      {Mode::Bloom, L"CopyImage.PS.hlsl"},
+      {Mode::Glitch, L"Glitch.PS.hlsl"},
   };
 
   for (const auto &s : shaders) {
@@ -444,72 +366,174 @@ void PostProcessManager::CreatePSOs() {
   }
 
   // --- ブルーム用個別 PSO ---
-  auto extractPS = shaderManager->GetOrCompile(L"resources/shaders/HighLuminanceExtract.PS.hlsl", options);
-  auto blurPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianBlur.PS.hlsl", options);
-  auto combinePS = shaderManager->GetOrCompile(L"resources/shaders/BloomCombine.PS.hlsl", options);
+    auto extractPS = shaderManager->GetOrCompile(L"HighLuminanceExtract.PS.hlsl", options);
+    auto blurPS = shaderManager->GetOrCompile(L"GaussianBlur.PS.hlsl", options);
+    auto combinePS = shaderManager->GetOrCompile(L"BloomCombine.PS.hlsl", options);
 
-  D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
-  bloomDesc.pRootSignature = rootSig_;
-  bloomDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
-  bloomDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-  bloomDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-  bloomDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-  bloomDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-  bloomDesc.DepthStencilState.DepthEnable = FALSE;
-  bloomDesc.DepthStencilState.StencilEnable = FALSE;
-  bloomDesc.InputLayout = {nullptr, 0};
-  bloomDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-  bloomDesc.NumRenderTargets = 1;
-  bloomDesc.RTVFormats[0] = rtvFormat_;
-  bloomDesc.SampleDesc.Count = 1;
+    if (extractPS && blurPS && combinePS) {
+      D3D12_GRAPHICS_PIPELINE_STATE_DESC bloomDesc{};
+      bloomDesc.pRootSignature = rootSig_;
+      bloomDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+      bloomDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+      bloomDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+      bloomDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+      bloomDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+      bloomDesc.DepthStencilState.DepthEnable = FALSE;
+      bloomDesc.DepthStencilState.StencilEnable = FALSE;
+      bloomDesc.InputLayout = {nullptr, 0};
+      bloomDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      bloomDesc.NumRenderTargets = 1;
+      bloomDesc.RTVFormats[0] = rtvFormat_;
+      bloomDesc.SampleDesc.Count = 1;
 
-  bloomDesc.PS = {extractPS->GetBufferPointer(), extractPS->GetBufferSize()};
-  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomExtractPSO_));
+      bloomDesc.PS = {extractPS->GetBufferPointer(), extractPS->GetBufferSize()};
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomExtractPSO_));
 
-  bloomDesc.PS = {blurPS->GetBufferPointer(), blurPS->GetBufferSize()};
-  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurHPSO_));
-  device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurVPSO_));
+      bloomDesc.PS = {blurPS->GetBufferPointer(), blurPS->GetBufferSize()};
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurHPSO_));
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomBlurVPSO_));
 
-    bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
-    bloomDesc.RTVFormats[0] = rtvFormat_; // 中間パス用 (_UNORM)
-    device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
+      bloomDesc.PS = {combinePS->GetBufferPointer(), combinePS->GetBufferSize()};
+      bloomDesc.RTVFormats[0] = rtvFormat_; // 中間パス用 (_UNORM)
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&bloomCombinePSO_));
 
-    bloomDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // 最終パス用 (_SRGB)
-    device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&finalBloomCombinePSO_));
+      bloomDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // 最終パス用 (_SRGB)
+      device_->CreateGraphicsPipelineState(&bloomDesc, IID_PPV_ARGS(&finalBloomCombinePSO_));
+    }
 
     // --- 統合ポストプロセス用 PSO ---
-    auto combinedPS = shaderManager->GetOrCompile(L"resources/shaders/PostProcess.PS.hlsl", options);
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC combinedDesc = bloomDesc; // ベースを流用
-    combinedDesc.PS = {combinedPS->GetBufferPointer(), combinedPS->GetBufferSize()};
-    
-    // 中間パス用
-    combinedDesc.RTVFormats[0] = rtvFormat_;
-    device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&combinedPSO_));
-    // 最終パス用
-    combinedDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&finalCombinedPSO_));
+    auto combinedPS = shaderManager->GetOrCompile(L"PostProcess.PS.hlsl", options);
+    if (combinedPS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC combinedDesc{}; // ベースを流用
+        combinedDesc.pRootSignature = rootSig_;
+        combinedDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        combinedDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        combinedDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        combinedDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        combinedDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        combinedDesc.DepthStencilState.DepthEnable = FALSE;
+        combinedDesc.DepthStencilState.StencilEnable = FALSE;
+        combinedDesc.InputLayout = {nullptr, 0};
+        combinedDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        combinedDesc.NumRenderTargets = 1;
+        combinedDesc.SampleDesc.Count = 1;
+        combinedDesc.PS = {combinedPS->GetBufferPointer(), combinedPS->GetBufferSize()};
+        
+        // 中間パス用
+        combinedDesc.RTVFormats[0] = rtvFormat_;
+        device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&combinedPSO_));
+        // 最終パス用
+        combinedDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&combinedDesc, IID_PPV_ARGS(&finalCombinedPSO_));
+    }
 
     // --- 分離可能フィルタ用 PSO ---
-    auto boxBlurPS = shaderManager->GetOrCompile(L"resources/shaders/BoxBlur.PS.hlsl", options);
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC sepDesc = bloomDesc;
-    sepDesc.RTVFormats[0] = rtvFormat_;
+    auto boxBlurPS = shaderManager->GetOrCompile(L"BoxBlur.PS.hlsl", options);
+    auto gaussianPS = shaderManager->GetOrCompile(L"GaussianFilter.PS.hlsl", options);
     
-    sepDesc.PS = {boxBlurPS->GetBufferPointer(), boxBlurPS->GetBufferSize()};
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&smoothingBlurPSO_));
-    sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalSmoothingBlurPSO_));
+    if (boxBlurPS && gaussianPS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC sepDesc{};
+        sepDesc.pRootSignature = rootSig_;
+        sepDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        sepDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        sepDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        sepDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        sepDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        sepDesc.DepthStencilState.DepthEnable = FALSE;
+        sepDesc.DepthStencilState.StencilEnable = FALSE;
+        sepDesc.InputLayout = {nullptr, 0};
+        sepDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        sepDesc.NumRenderTargets = 1;
+        sepDesc.SampleDesc.Count = 1;
 
-    sepDesc.RTVFormats[0] = rtvFormat_;
-    auto gaussianPS = shaderManager->GetOrCompile(L"resources/shaders/GaussianFilter.PS.hlsl", options);
-    sepDesc.PS = {gaussianPS->GetBufferPointer(), gaussianPS->GetBufferSize()};
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&gaussianBlurPSO_));
-    sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalGaussianBlurPSO_));
+        // BoxBlur PSO
+        sepDesc.RTVFormats[0] = rtvFormat_;
+        sepDesc.PS = {boxBlurPS->GetBufferPointer(), boxBlurPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&smoothingBlurPSO_));
+        sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalSmoothingBlurPSO_));
+
+        // GaussianFilter PSO
+        sepDesc.RTVFormats[0] = rtvFormat_;
+        sepDesc.PS = {gaussianPS->GetBufferPointer(), gaussianPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&gaussianBlurPSO_));
+        sepDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&sepDesc, IID_PPV_ARGS(&finalGaussianBlurPSO_));
+    }
+
+    // --- Dual Kawase Blur 用 PSO ---
+    auto kawaseDownPS = shaderManager->GetOrCompile(L"DualKawaseDownsample.PS.hlsl", options);
+    auto kawaseUpPS = shaderManager->GetOrCompile(L"DualKawaseUpsample.PS.hlsl", options);
+    if (kawaseDownPS && kawaseUpPS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC kwDesc{};
+        kwDesc.pRootSignature = rootSig_;
+        kwDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        kwDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        kwDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        kwDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        kwDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        kwDesc.DepthStencilState.DepthEnable = FALSE;
+        kwDesc.DepthStencilState.StencilEnable = FALSE;
+        kwDesc.InputLayout = {nullptr, 0};
+        kwDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        kwDesc.NumRenderTargets = 1;
+        kwDesc.SampleDesc.Count = 1;
+
+        kwDesc.RTVFormats[0] = rtvFormat_;
+        kwDesc.PS = {kawaseDownPS->GetBufferPointer(), kawaseDownPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&kwDesc, IID_PPV_ARGS(&dualKawaseDownsamplePSO_));
+
+        kwDesc.PS = {kawaseUpPS->GetBufferPointer(), kawaseUpPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&kwDesc, IID_PPV_ARGS(&dualKawaseUpsamplePSO_));
+
+        kwDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&kwDesc, IID_PPV_ARGS(&finalDualKawaseUpsamplePSO_));
+    }
+
+    // --- Light Shafts 用 PSO ---
+    auto lsExtractPS = shaderManager->GetOrCompile(L"LightShaftsExtract.PS.hlsl", options);
+    auto lsRadialBlurPS = shaderManager->GetOrCompile(L"LightShaftsRadialBlur.PS.hlsl", options);
+    auto lsCombinePS = shaderManager->GetOrCompile(L"LightShaftsCombine.PS.hlsl", options);
+
+    if (lsExtractPS && lsRadialBlurPS && lsCombinePS) {
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC lsDesc{};
+        lsDesc.pRootSignature = rootSig_;
+        lsDesc.VS = {vsBlob->GetBufferPointer(), vsBlob->GetBufferSize()};
+        lsDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+        lsDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+        lsDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+        lsDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+        lsDesc.DepthStencilState.DepthEnable = FALSE;
+        lsDesc.DepthStencilState.StencilEnable = FALSE;
+        lsDesc.InputLayout = {nullptr, 0};
+        lsDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        lsDesc.NumRenderTargets = 1;
+        lsDesc.RTVFormats[0] = rtvFormat_;
+        lsDesc.SampleDesc.Count = 1;
+
+        lsDesc.PS = {lsExtractPS->GetBufferPointer(), lsExtractPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&lsExtractPSO_));
+
+        lsDesc.PS = {lsRadialBlurPS->GetBufferPointer(), lsRadialBlurPS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&lsRadialBlurPSO_));
+
+        lsDesc.PS = {lsCombinePS->GetBufferPointer(), lsCombinePS->GetBufferSize()};
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&lsCombinePSO_));
+
+        lsDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        device_->CreateGraphicsPipelineState(&lsDesc, IID_PPV_ARGS(&finalLsCombinePSO_));
+    }
 }
 
 void PostProcessManager::CreateConstantBuffers() {
-    combinedCB_ = CreateBuffer(sizeof(CombinedParams));
-    combinedCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCombined_));
+  combinedCB_ = CreateBuffer(sizeof(CombinedParams) * 256);
+  bindlessCB_ = CreateBuffer(sizeof(BindlessParams) * 256);
+  customEffectParamsCB_ = CreateBuffer(sizeof(CustomEffectParams) * kMaxCustomEffectParams);
+
+  bindlessCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBindless_));
+  combinedCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCombined_));
+  customEffectParamsCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedCustomEffectParams_));
+
   noiseCB_ = CreateBuffer(sizeof(NoiseParams));
   noiseCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedNoise_));
 
@@ -548,6 +572,12 @@ void PostProcessManager::CreateConstantBuffers() {
 
   glitchCB_ = CreateBuffer(sizeof(GlitchParams));
   glitchCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedGlitch_));
+
+  dualKawaseCB_ = CreateBuffer(sizeof(DualKawaseBlurParams));
+  dualKawaseCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedDualKawase_));
+
+  lightShaftsCB_ = CreateBuffer(sizeof(LightShaftsParams));
+  lightShaftsCB_->Map(0, nullptr, reinterpret_cast<void **>(&mappedLightShafts_));
 }
 
 Microsoft::WRL::ComPtr<ID3D12Resource>

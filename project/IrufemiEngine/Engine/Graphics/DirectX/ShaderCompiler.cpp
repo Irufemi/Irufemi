@@ -1,20 +1,25 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "ShaderCompiler.h"
 #include "../../Core/Utility/Log.h"
+#include "../../Core/Utility/FileSystem.h"
 #include "../../Core/Utility/StringUtility.h"
 #include <format>
 #include <cassert>
 #include <Windows.h>
-
+#include <iostream>
+#include <algorithm>
+#include <fstream>
+#include <vector>
 /**
  * @brief 初期化
  */
 void ShaderCompiler::Initialize() {
     HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(dxcUtils_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(dxcCompiler_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     hr = dxcUtils_->CreateDefaultIncludeHandler(includeHandler_.GetAddressOf());
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 /**
@@ -28,13 +33,37 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     const std::wstring& filePath,
     const wchar_t* profile,
     const ShaderCompileOptions& options,
+    const std::vector<std::wstring>& includeDirs,
     std::string* outErrorLog
 ) {
     // 1. HLSLファイルの読み込み
+    // DirectX Shader Compiler doesn't always play nice with forward slashes
+    std::wstring osPath = filePath;
+    std::replace(osPath.begin(), osPath.end(), L'/', L'\\');
+    HRESULT hr;
+
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource;
-    HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-    if (FAILED(hr)) {
-        assert(false && "Failed to load shader file.");
+    std::ifstream shaderFile(osPath, std::ios::binary | std::ios::ate);
+    if (!shaderFile.is_open()) {
+        std::string errStr = "Failed to load shader file: " + ConvertString(filePath);
+        std::wstring logPathW = ConvertString(FileSystem::GetLogPath() + "/CRASH.log");
+        std::ofstream crashLog(logPathW);
+        crashLog << errStr << std::endl;
+        crashLog.close();
+        IRUFEMI_ASSERT_MSG(false, errStr.c_str());
+        return nullptr;
+    }
+    std::streamsize size = shaderFile.tellg();
+    shaderFile.seekg(0, std::ios::beg);
+    std::vector<char> buffer(size);
+    if (shaderFile.read(buffer.data(), size)) {
+        hr = dxcUtils_->CreateBlob(buffer.data(), static_cast<UINT32>(size), DXC_CP_UTF8, &shaderSource);
+        if (FAILED(hr)) {
+            IRUFEMI_ASSERT_MSG(false, "Failed to create blob from shader file data.");
+            return nullptr;
+        }
+    } else {
+        IRUFEMI_ASSERT_MSG(false, "Failed to read shader file.");
         return nullptr;
     }
 
@@ -72,6 +101,12 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         arguments.push_back(macroStorage.back().c_str());
     }
 
+    // インクルードディレクトリの追加
+    for (const auto& dir : includeDirs) {
+        arguments.push_back(L"-I");
+        arguments.push_back(dir.c_str());
+    }
+
     // 3. コンパイル実行
     Microsoft::WRL::ComPtr<IDxcResult> shaderResult;
     hr = dxcCompiler_->Compile(
@@ -81,7 +116,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         includeHandler_.Get(),
         IID_PPV_ARGS(&shaderResult)
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // 4. エラー・警告の確認
     Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError;
@@ -90,11 +125,19 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
         // デバッグ出力
         std::string errStr = shaderError->GetStringPointer();
         
+        // 呼び出し元でエラーを処理するために返す
+        if (outErrorLog) {
+            *outErrorLog = errStr;
+        }
+        
         // どのファイルか分かるようにする
         std::string fileStr = ConvertString(filePath);
         std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
         
-        OutputDebugStringA(fullErr.c_str());
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, fullErr);
         
         // ログファイルにも出力
         FILE* f;
@@ -104,18 +147,20 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
             fclose(f);
         }
         
+        // outErrorLog が要求されている場合、アプリケーション側で復帰を試みるため assert を回避する
         if (outErrorLog) {
             *outErrorLog = errStr;
             return nullptr;
         } else {
-            assert(false && "Shader Compile Error");
+            IRUFEMI_ASSERT(false && "Shader Compile Error");
+
         }
     }
 
     // 5. コンパイル済みバイナリの取得
     Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob;
     hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return shaderBlob;
 }

@@ -3,6 +3,7 @@
 #include "Engine/Graphics/DirectX/DirectXCommon.h"
 #include "Engine/Core/System/ThreadPool.h"
 #include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 // --- 外部ライブラリ群 ---
 #include <ft2build.h>
@@ -19,6 +20,7 @@
 #include <DirectXTex/DirectXTex.h>
 #include "Engine/Graphics/DirectX/DirectXUtils.h"
 #include "Engine/Graphics/DirectX/DescriptorPool.h"
+#include "Resource/Texture/TextureManager.h"
 
 #include <unordered_map>
 #include <vector>
@@ -43,7 +45,7 @@ struct FontManager::Impl {
     
     // DirectX12 用の動的テクスチャリソース
     Microsoft::WRL::ComPtr<ID3D12Resource> atlasTexture;
-    D3D12_GPU_DESCRIPTOR_HANDLE atlasSrv{};
+    ResourceHandle atlasHandle{};
 
     static const int ATLAS_WIDTH = 2048;
     static const int ATLAS_HEIGHT = 2048;
@@ -91,7 +93,10 @@ void FontManager::Initialize(IrufemiEngine* engine) {
     DescriptorPool* pool = engine_->GetDirectXCommon()->GetSrvPool();
     uint32_t srvIndex = pool->Allocate();
     pool->CreateSRVForTexture2D(srvIndex, impl_->atlasTexture.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, 1);
-    impl_->atlasSrv = pool->GetGPUHandle(srvIndex);
+    D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = pool->GetGPUHandle(srvIndex);
+
+    // TextureManagerに登録してResourceHandleを受け取る
+    impl_->atlasHandle = engine_->GetTextureManager()->RegisterExternalTexture("FontAtlas", impl_->atlasTexture, srvIndex, srvHandle);
 
     // テクスチャ作成直後は COPY_DEST なので、後続の更新処理（GENERIC_READ -> COPY_DEST）に
     // 合わせるために一度 GENERIC_READ に遷移しておく
@@ -242,8 +247,8 @@ void FontManager::PrecacheText(const std::string& fontId, const std::wstring& te
                         // GlyphInfo作成
                         GlyphInfo info{};
                         info.character = char32;
-                        info.uvTopLeft = Vector2(static_cast<float>(rect.x) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y) / Impl::ATLAS_HEIGHT);
-                        info.uvBottomRight = Vector2(static_cast<float>(rect.x + rect.w) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y + rect.h) / Impl::ATLAS_HEIGHT);
+                        info.uvTopLeft = Irufemi::Vector2(static_cast<float>(rect.x) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y) / Impl::ATLAS_HEIGHT);
+                        info.uvBottomRight = Irufemi::Vector2(static_cast<float>(rect.x + rect.w) / Impl::ATLAS_WIDTH, static_cast<float>(rect.y + rect.h) / Impl::ATLAS_HEIGHT);
                         info.width = static_cast<float>(rect.w);
                         info.height = static_cast<float>(rect.h);
                         info.offsetX = static_cast<float>(bounds.l * scale) - Impl::PADDING;
@@ -303,7 +308,10 @@ void FontManager::PrecacheText(const std::string& fontId, const std::wstring& te
                         }
                     } else {
                         // アトラスがいっぱいの場合は、毎フレーム再生成を試みるのを防ぐため、仮の文字として登録
-                        OutputDebugStringA("Font atlas is full! Could not pack glyph for character.\n");
+                        /**
+                         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+                         */
+                        Log::OutPutLog(std::cerr, "Font atlas is full! Could not pack glyph for character.");
                         GlyphInfo info{};
                         info.character = char32;
                         info.width = 0.0f; // 描画されない
@@ -354,6 +362,6 @@ const GlyphInfo* FontManager::GetGlyph(const std::string& fontId, char32_t chara
     return &impl_->glyphCache[fontId][character];
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FontManager::GetAtlasSRV() const {
-    return impl_->atlasSrv;
+ResourceHandle FontManager::GetAtlasHandle() const {
+    return impl_->atlasHandle;
 }

@@ -18,10 +18,13 @@ void Camera::Initialize(const int& windowWidth,const int& windowHeight) {
     width_ = static_cast<float>(windowWidth);
     height_ = static_cast<float>(windowHeight);
 
-    // ウィンドウサイズに基づいてアスペクト比と正射影境界を更新
+    // ウィンドウサイズに基づいてアスペクト比を更新(3D用)
     aspectRatio_ = (height_ != 0.0f) ? (width_ / height_) : 1.0f;
-    right_ = width_;
-    bottom_ = height_;
+    
+    // 2D正射影境界は、ウィンドウサイズが変わってもUIレイアウトが自動拡縮されるよう
+    // 論理解像度(1280x720)に固定する
+    right_ = 1280.0f;
+    bottom_ = 720.0f;
 
     UpdateMatrix();
 }
@@ -50,61 +53,44 @@ void Camera::DrawDebugContents() {
 }
 
 
-Matrix4x4 Camera::GetViewProjectionMatrix2D() {
+Irufemi::Matrix4x4 Camera::GetViewProjectionMatrix2D() {
     return viewMatrix_ * orthographicMatrix_;
 }
 
-Matrix4x4 Camera::GetViewProjectionMatrix3D() {
+Irufemi::Matrix4x4 Camera::GetViewProjectionMatrix3D() {
     return viewMatrix_ * perspectiveFovMatrix_;
 }
 
 //ワールド行列の作成
 void Camera::MakeWorldMatrix() {
 
-    worldMatrix_ = Math::MakeAffineMatrix(scale_, rotate_, translate_);
+    worldMatrix_ = Irufemi::Math::MakeAffineMatrix(scale_, rotate_, translate_);
 
 }
 
 //ビュー行列の作成
 void Camera::MakeViewMatrix() {
-    Vector3 shakeOffset = {0.0f, 0.0f, 0.0f};
-    if (shakeFrames_ > 0) {
-        shakeFrames_--;
-        float rx = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
-        float ry = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
-        float rz = ((float)std::rand() / RAND_MAX) * 2.0f - 1.0f;
-        shakeOffset = {rx * shakeIntensity_, ry * shakeIntensity_, rz * shakeIntensity_};
-    }
-
-    Vector3 t = {translate_.x + shakeOffset.x, translate_.y + shakeOffset.y, translate_.z + shakeOffset.z};
-    Matrix4x4 tempWorldForView = Math::MakeAffineMatrix(scale_, rotate_, t);
-
-    viewMatrix_ = Math::Inverse(tempWorldForView);
-}
-
-void Camera::Shake(float intensity, int durationFrames) {
-    shakeIntensity_ = intensity;
-    shakeFrames_ = shakeFrames_ > durationFrames ? shakeFrames_ : durationFrames;
+    viewMatrix_ = Irufemi::Math::Inverse(worldMatrix_); // カメラのワールド行列の逆行列がビュー行列
 }
 
 //透視投影行列の更新
 void Camera::UpdatePerspectiveFovMatrix() {
 
-    perspectiveFovMatrix_ = Math::MakePerspectiveFovMatrix(fovAngleY_, aspectRatio_, nearZ_, farZ_);
+    perspectiveFovMatrix_ = Irufemi::Math::MakePerspectiveFovMatrix(fovAngleY_, aspectRatio_, nearZ_, farZ_);
 
 }
 
 //正射行列の更新
 void Camera::UpdateOrthographicMatrix() {
 
-    orthographicMatrix_ = Math::MakeOrthographicMatrix(left_, top_, right_, bottom_, nearClip_, farClip_);
+    orthographicMatrix_ = Irufemi::Math::MakeOrthographicMatrix(left_, top_, right_, bottom_, nearClip_, farClip_);
 
 }
 
 //ビューポート行列の更新
 void Camera::UpdateViewportMatrix() {
   
-    viewportMatrix_ = Math::MakeViewportMatrix(leftTop_.x, leftTop_.y, width_, height_, minDepth_, maxDepth_);
+    viewportMatrix_ = Irufemi::Math::MakeViewportMatrix(leftTop_.x, leftTop_.y, width_, height_, minDepth_, maxDepth_);
 
 }
 
@@ -120,8 +106,18 @@ void Camera::UpdateMatrix() {
     frustum_.SetFromViewProjection(viewMatrix_ * perspectiveFovMatrix_);
 }
 
+Irufemi::Vector2 Camera::ScreenToUIPosition(const Irufemi::Vector2& screenPos) const {
+    if (width_ <= 0.0f || height_ <= 0.0f) return screenPos;
+
+    return {
+        screenPos.x * (right_ / width_),
+        screenPos.y * (bottom_ / height_)
+    };
+}
+
+
 // カメラ行列を取得する
-const Matrix4x4& Camera::GetCameraMatrix() { 
-    worldMatrix_ = Math::MakeAffineMatrix(scale_, rotate_, translate_);
+const Irufemi::Matrix4x4& Camera::GetCameraMatrix() { 
+    worldMatrix_ = Irufemi::Math::MakeAffineMatrix(scale_, rotate_, translate_);
     return worldMatrix_;
 }

@@ -1,7 +1,12 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "PSOManager.h"
 #include <cstring>
 #include <cassert>
+#include <filesystem>
+#include <fstream>
+#include <vector>
 
+static const std::string kCacheDirectory = "resources/.cache/pso/";
 
 // 軽量ハッシュ(キャッシュキー用)
 static uint64_t FNV1a(const void* p, size_t n, uint64_t h = 1469598103934665603ull) {
@@ -59,7 +64,7 @@ void PSOManager::RegisterShader(const std::string& name, const PipelineStateDesc
 }
 
 
-ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend, DepthWrite depth, CullMode cull)
+ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, Irufemi::BlendMode blend, DepthWrite depth, CullMode cull)
 {
     auto it = shaderRegistry_.find(name);
     if (it == shaderRegistry_.end()) return nullptr;
@@ -116,23 +121,64 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, BlendMode blend
         desc.DepthStencilState = MakeDepth(depth);
     }
     
-    desc.DSVFormat = psoDesc.dsvFormat != DXGI_FORMAT_UNKNOWN ? psoDesc.dsvFormat : dsvFormat_;
+    if (psoDesc.noDSV) {
+        desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+    } else {
+        desc.DSVFormat = psoDesc.dsvFormat != DXGI_FORMAT_UNKNOWN ? psoDesc.dsvFormat : dsvFormat_;
+    }
     
     if (psoDesc.isDepthOnly) {
         desc.NumRenderTargets = 0;
     } else {
-        desc.NumRenderTargets = 1;
+        desc.NumRenderTargets = psoDesc.numRenderTargets;
         desc.RTVFormats[0] = psoDesc.rtvFormat != DXGI_FORMAT_UNKNOWN ? psoDesc.rtvFormat : rtvFormat_;
+        if (psoDesc.numRenderTargets > 1) {
+            desc.RTVFormats[1] = psoDesc.rtvFormat1;
+        }
+        if (psoDesc.numRenderTargets > 2) {
+            desc.RTVFormats[2] = psoDesc.rtvFormat2;
+        }
+        if (psoDesc.numRenderTargets > 3) {
+            desc.RTVFormats[3] = psoDesc.rtvFormat3;
+        }
+        if (psoDesc.numRenderTargets > 4) {
+            desc.RTVFormats[4] = psoDesc.rtvFormat4;
+        }
     }
 
     desc.PrimitiveTopologyType = psoDesc.topology;
     desc.SampleDesc.Count = 1;
     desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
+    std::string cacheFileName = std::to_string(key.hash) + ".pso";
+    std::vector<uint8_t> cachedData = LoadCachedBlob(cacheFileName);
+    if (!cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = cachedData.data();
+        desc.CachedPSO.CachedBlobSizeInBytes = cachedData.size();
+    } else {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+    }
+
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
-    assert(SUCCEEDED(hr));
+    
+    // キャッシュが古くて生成に失敗した場合は、キャッシュ無しで再試行
+    bool usedFallback = false;
+    if (FAILED(hr) && !cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+        hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+        usedFallback = true;
+    }
+
+    ASSERT_IF_FAILED(hr);
     if (FAILED(hr)) return nullptr;
+
+    // 新規コンパイルした場合はキャッシュを保存
+    if (cachedData.empty() || usedFallback) {
+        SaveCachedBlob(cacheFileName, pso.Get());
+    }
 
     cache_[key] = pso;
     cacheKeysByName_[name].push_back(key);
@@ -144,7 +190,7 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
 
     // キャッシュキー
     constexpr uint64_t kCopyTag = 0x434F5059494D47ull; 
-    Key key{ static_cast<uint64_t>(Hash("CopyImage", BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kCopyTag) };
+    Key key{ static_cast<uint64_t>(Hash("CopyImage", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kCopyTag) };
 
     if (auto it = cache_.find(key); it != cache_.end()) {
         return it->second.Get();
@@ -156,7 +202,7 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     desc.InputLayout = { nullptr, 0 }; // 頂点バッファなし(SV_VertexID)
     desc.VS = { copyImageShaders_.vsBlob->GetBufferPointer(), copyImageShaders_.vsBlob->GetBufferSize() };
     desc.PS = { copyImageShaders_.psBlob->GetBufferPointer(), copyImageShaders_.psBlob->GetBufferSize() };
-    desc.BlendState = MakeBlend(BlendMode::kBlendModeNone);
+    desc.BlendState = MakeBlend(Irufemi::BlendMode::kBlendModeNone);
     desc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
     desc.DepthStencilState = MakeDepth(DepthWrite::Off);
@@ -167,11 +213,31 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     desc.SampleDesc.Count = 1;
     desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
+    std::string cacheFileName = std::to_string(key.hash) + "_copy.pso";
+    std::vector<uint8_t> cachedData = LoadCachedBlob(cacheFileName);
+    if (!cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = cachedData.data();
+        desc.CachedPSO.CachedBlobSizeInBytes = cachedData.size();
+    } else {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+    }
+
     Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
     HRESULT hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
-    assert(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
+    
+    bool usedFallback = false;
+    if (FAILED(hr) && !cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+        hr = device_->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&pso));
+        usedFallback = true;
+    }
+    
+    IRUFEMI_ASSERT(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
     
     if (SUCCEEDED(hr)) {
+        if (cachedData.empty() || usedFallback) SaveCachedBlob(cacheFileName, pso.Get());
         cache_[key] = pso;
         return pso.Get();
     }
@@ -183,10 +249,34 @@ void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft:
     D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = computeRootSig;
     desc.CS = { csBlob->GetBufferPointer(), csBlob->GetBufferSize() };
+
+    uint64_t hash = FNV1a(name.c_str(), name.length(), 0);
+    std::string cacheFileName = std::to_string(hash) + "_cs.pso";
+    std::vector<uint8_t> cachedData = LoadCachedBlob(cacheFileName);
+    if (!cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = cachedData.data();
+        desc.CachedPSO.CachedBlobSizeInBytes = cachedData.size();
+    } else {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+    }
+
     ComPtr pso;
     HRESULT hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    
+    bool usedFallback = false;
+    if (FAILED(hr) && !cachedData.empty()) {
+        desc.CachedPSO.pCachedBlob = nullptr;
+        desc.CachedPSO.CachedBlobSizeInBytes = 0;
+        hr = device_->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso.GetAddressOf()));
+        usedFallback = true;
+    }
+
+    ASSERT_IF_FAILED(hr);
     if (SUCCEEDED(hr)) {
+        if (cachedData.empty() || usedFallback) {
+            SaveCachedBlob(cacheFileName, pso.Get());
+        }
         computeCache_[name] = pso;
     }
 }
@@ -199,17 +289,28 @@ ID3D12PipelineState* PSOManager::GetComputePSO(const std::string& name) {
 void PSOManager::ClearCache() { 
     cache_.clear(); 
     computeCache_.clear();
+
+    // ホットリロード等で強制クリアされた場合、古いディスクキャッシュも破棄する
+    std::filesystem::path cacheDir = kCacheDirectory;
+    if (std::filesystem::exists(cacheDir)) {
+        for (const auto& entry : std::filesystem::directory_iterator(cacheDir)) {
+            if (entry.path().extension() == ".pso") {
+                std::error_code ec;
+                std::filesystem::remove(entry.path(), ec);
+            }
+        }
+    }
 }
 
 void PSOManager::PreWarmCommonPSOs() {
     // 1. 一般的な3Dオブジェクト (Opaque / 標準描画)
     for (CullMode cull : {CullMode::Back, CullMode::None}) {
-        GetPSO("Object3D", BlendMode::kBlendModeNormal, DepthWrite::Enable, cull);
-        GetPSO("Skinning", BlendMode::kBlendModeNormal, DepthWrite::Enable, cull);
+        GetPSO("Object3D", Irufemi::BlendMode::kBlendModeNormal, DepthWrite::Enable, cull);
+        GetPSO("Skinning", Irufemi::BlendMode::kBlendModeNormal, DepthWrite::Enable, cull);
     }
     
     // 2. エフェクト・パーティクル・HUD系 (Translucent, Additive等)
-    for (BlendMode blend : {BlendMode::kBlendModeNormal, BlendMode::kBlendModeAdd, BlendMode::kBlendModeSubtract, BlendMode::kBlendModePremultiplied}) {
+    for (Irufemi::BlendMode blend : {Irufemi::BlendMode::kBlendModeNormal, Irufemi::BlendMode::kBlendModeAdd, Irufemi::BlendMode::kBlendModeSubtract, Irufemi::BlendMode::kBlendModePremultiplied}) {
         GetPSO("Particle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("GpuParticle", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("VoxelParticle", blend, DepthWrite::Disable, CullMode::None);
@@ -223,27 +324,28 @@ void PSOManager::PreWarmCommonPSOs() {
         GetPSO("StompExplosion", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("AOEWarning", blend, DepthWrite::Disable, CullMode::None);
         GetPSO("Line", blend, DepthWrite::Disable, CullMode::None);
-        GetPSO("LineInstanced", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("LineBatch", blend, DepthWrite::Disable, CullMode::None);
+        GetPSO("DebugPrimitive", blend, DepthWrite::Disable, CullMode::None);
     }
 
     // 3. シャドウマップ出力用
-    GetPSO("Shadow", BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Back);
-    GetPSO("Shadow", BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Front);
-    GetPSO("ShadowSkinning", BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Back);
-    GetPSO("ShadowSkinning", BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Front);
+    GetPSO("Shadow", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Back);
+    GetPSO("Shadow", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Front);
+    GetPSO("ShadowSkinning", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Back);
+    GetPSO("ShadowSkinning", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Enable, CullMode::Front);
 
     // 4. スカイボックス
-    GetPSO("Skybox", BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::Front);
+    GetPSO("Skybox", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Disable, CullMode::Front);
 
     // 5. デバッグ及びその他
-    GetPSO("Batch", BlendMode::kBlendModeNormal, DepthWrite::Disable, CullMode::None);
+    GetPSO("Batch", Irufemi::BlendMode::kBlendModeNormal, DepthWrite::Disable, CullMode::None);
     GetCopyImage();
     
     // 6. エディタ専用パス
 #ifdef EditorMode
-    GetPSO("SelectionMask", BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None);
-    GetPSO("SelectionMaskText", BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None);
-    GetPSO("OutlineComposite", BlendMode::kBlendModeNormal, DepthWrite::Off, CullMode::None);
+    GetPSO("SelectionMask", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None);
+    GetPSO("SelectionMaskText", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None);
+    GetPSO("OutlineComposite", Irufemi::BlendMode::kBlendModeNormal, DepthWrite::Off, CullMode::None);
 #endif
 }
 
@@ -251,19 +353,22 @@ void PSOManager::PreWarmCommonPSOs() {
 
 // Multiply : out = src * dst
 // Screen : out = src * (1 - dst) + dst * 1
-D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
+D3D12_BLEND_DESC PSOManager::MakeBlend(Irufemi::BlendMode m)
 {
-    D3D12_BLEND_DESC d{}; auto& rt = d.RenderTarget[0];
-    rt.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // すべての色要素を書き込む(既存コメント踏襲)
+    D3D12_BLEND_DESC d{}; 
+    for (int i = 0; i < 8; ++i) {
+        d.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // すべての色要素を書き込む
+    }
+    auto& rt = d.RenderTarget[0];
 
 
     switch (m) {
-    case BlendMode::kBlendModeNone:
+    case Irufemi::BlendMode::kBlendModeNone:
         // BlendEnable = FALSE(ブレンドなし)
         break;
 
 
-    case BlendMode::kBlendModeNormal: // Normal
+    case Irufemi::BlendMode::kBlendModeNormal: // Normal
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_SRC_ALPHA;
         rt.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
@@ -274,7 +379,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         break;
 
 
-    case BlendMode::kBlendModeAdd: // Add
+    case Irufemi::BlendMode::kBlendModeAdd: // Add
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_SRC_ALPHA;
         rt.DestBlend = D3D12_BLEND_ONE;
@@ -285,7 +390,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         break;
 
 
-    case BlendMode::kBlendModeSubtract: // Subtract(RGBは REV_SUBTRACT)
+    case Irufemi::BlendMode::kBlendModeSubtract: // Subtract(RGBは REV_SUBTRACT)
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_ONE; // RGB: 1 - 1 の係数で REV_SUBTRACT
         rt.DestBlend = D3D12_BLEND_ONE;
@@ -296,7 +401,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         break;
 
 
-    case BlendMode::kBlendModeMultiply: // Multiply(src * dst)
+    case Irufemi::BlendMode::kBlendModeMultiply: // Multiply(src * dst)
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_DEST_COLOR;
         rt.DestBlend = D3D12_BLEND_ZERO;
@@ -307,7 +412,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         break;
 
 
-    case BlendMode::kBlendModeScreen: // Screen(src*(1-dst)+dst)
+    case Irufemi::BlendMode::kBlendModeScreen: // Screen(src*(1-dst)+dst)
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
         rt.DestBlend = D3D12_BLEND_ONE;
@@ -316,7 +421,7 @@ D3D12_BLEND_DESC PSOManager::MakeBlend(BlendMode m)
         rt.DestBlendAlpha = D3D12_BLEND_ONE;
         rt.BlendOpAlpha = D3D12_BLEND_OP_ADD;
         break;
-    case BlendMode::kBlendModePremultiplied: // Premultiplied Alpha (src*1 + dst*(1-srcA))
+    case Irufemi::BlendMode::kBlendModePremultiplied: // Premultiplied Alpha (src*1 + dst*(1-srcA))
         rt.BlendEnable = TRUE;
         rt.SrcBlend = D3D12_BLEND_ONE;
         rt.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
@@ -346,7 +451,7 @@ D3D12_DEPTH_STENCIL_DESC PSOManager::MakeDepth(DepthWrite w)
     return d;
 }
 
-uint64_t PSOManager::Hash(const std::string& name, BlendMode b, DepthWrite d, CullMode c)
+uint64_t PSOManager::Hash(const std::string& name, Irufemi::BlendMode b, DepthWrite d, CullMode c)
 {
     uint64_t h = 0;
     h = FNV1a(name.c_str(), name.length(), h);
@@ -354,5 +459,47 @@ uint64_t PSOManager::Hash(const std::string& name, BlendMode b, DepthWrite d, Cu
     h = FNV1a(&d, sizeof(d), h);
     h = FNV1a(&c, sizeof(c), h);
     return h;
+}
+
+std::vector<uint8_t> PSOManager::LoadCachedBlob(const std::string& cacheFileName) const {
+    std::string path = kCacheDirectory + cacheFileName;
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) return {};
+
+    size_t size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::vector<uint8_t> buffer(size);
+    if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+        return buffer;
+    }
+    return {};
+}
+
+void PSOManager::SaveCachedBlob(const std::string& cacheFileName, ID3D12PipelineState* pso) const {
+    if (!pso) return;
+
+    Microsoft::WRL::ComPtr<ID3DBlob> blob;
+    if (FAILED(pso->GetCachedBlob(&blob)) || !blob) {
+        return;
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directories(kCacheDirectory, ec);
+
+    std::string path = kCacheDirectory + cacheFileName;
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (file.is_open()) {
+        file.write(reinterpret_cast<const char*>(blob->GetBufferPointer()), blob->GetBufferSize());
+    }
+}
+
+void PSOManager::ClearCacheByName(const std::string& name) {
+    auto it = cacheKeysByName_.find(name);
+    if (it != cacheKeysByName_.end()) {
+        for (const auto& key : it->second) {
+            cache_.erase(key);
+        }
+        it->second.clear(); // ベクターをクリア
+    }
 }
 

@@ -1,7 +1,10 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "Quaternion.h"
 #include <stdexcept>
 #include <cassert>
 
+
+namespace Irufemi {
 float& Quaternion::operator[](int index) {
 	switch (index) {
 	case 0: return x;
@@ -22,7 +25,7 @@ float Quaternion::operator[](int index) const {
 	}
 }
 
-Quaternion& Quaternion::operator+=(Quaternion rhs) {
+Quaternion& Quaternion::operator+=( const Quaternion& rhs) {
 	x += rhs.x;
 	y += rhs.y;
 	z += rhs.z;
@@ -30,7 +33,7 @@ Quaternion& Quaternion::operator+=(Quaternion rhs) {
 	return *this;
 }
 
-Quaternion& Quaternion::operator-=(Quaternion rhs) {
+Quaternion& Quaternion::operator-=( const Quaternion& rhs) {
 	x -= rhs.x;
 	y -= rhs.y;
 	z -= rhs.z;
@@ -47,7 +50,10 @@ Quaternion& Quaternion::operator*=(float s) {
 }
 
 Quaternion& Quaternion::operator/=(float s) {
-	assert(s != 0.0f && "Division by zero");
+	if (s == 0.0f) {
+		IRUFEMI_WARNING(false, "Quaternion: Division by zero");
+		return *this;
+	}
 	const float inv = 1.0f / s;
 	x *= inv;
 	y *= inv;
@@ -56,32 +62,35 @@ Quaternion& Quaternion::operator/=(float s) {
 	return *this;
 }
 
-Quaternion operator+(Quaternion lhs, Quaternion rhs) {
+Quaternion operator+( const Quaternion& lhs, Quaternion rhs) {
 	return { lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w };
 }
 
-Quaternion operator-(Quaternion lhs, Quaternion rhs) {
+Quaternion operator-( const Quaternion& lhs, Quaternion rhs) {
 	return { lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w };
 }
 
-Quaternion operator+(Quaternion q) {
+Quaternion operator+( const Quaternion& q) {
 	return q;
 }
 
-Quaternion operator-(Quaternion q) {
+Quaternion operator-( const Quaternion& q) {
 	return { -q.x, -q.y, -q.z, -q.w };
 }
 
-Quaternion operator*(Quaternion q, float s) {
+Quaternion operator*( const Quaternion& q, float s) {
 	return { q.x * s, q.y * s, q.z * s, q.w * s };
 }
 
-Quaternion operator*(float s, Quaternion q) {
+Quaternion operator*(float s, const Quaternion& q) {
 	return q * s;
 }
 
-Quaternion operator/(Quaternion q, float s) {
-	assert(s != 0.0f && "Division by zero");
+Quaternion operator/( const Quaternion& q, float s) {
+	if (s == 0.0f) {
+		IRUFEMI_WARNING(false, "Quaternion: Division by zero");
+		return q;
+	}
 	const float inv = 1.0f / s;
 	return { q.x * inv, q.y * inv, q.z * inv, q.w * inv };
 }
@@ -94,4 +103,6 @@ Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs) {
         lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z
     };
 }
-
+
+
+} // namespace Irufemi

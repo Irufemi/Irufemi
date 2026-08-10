@@ -4,11 +4,11 @@ name: CheckUnwantedFiles
 on:
   # GithubのActionsタブから手動で実行できるようにする
   workflow_dispatch:
-  # masterブランチへのプッシュでも実行する
+  # masterとIBSブランチへのプッシュでも実行する
   push:
     branches:
       - master
-      - TD3_01
+      - IBS
       - AL4
       - CG
       - GE

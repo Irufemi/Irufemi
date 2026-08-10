@@ -1,12 +1,19 @@
 #include "LoadingScreen.h"
 #include "../Engine/IrufemiEngine.h"
 #include "../Renderer/Object/2D/Sprite/Sprite.h"
-#include "../Renderer/Object/2D/Primitive/Circle2D.h"
+#include "../Renderer/Object/2D/Primitive/Primitive2DObject.h"
 #include "Engine/Graphics/Camera/Camera.h"
 #include "../Engine/Graphics/Pipeline/PSOManager.h"
 
 LoadingScreen::LoadingScreen() = default;
 LoadingScreen::~LoadingScreen() = default;
+
+void LoadingScreen::Finalize() {
+    dots_.clear();
+    nowLoadingText_.reset();
+    bgSprite_.reset();
+    camera_.reset();
+}
 
 void LoadingScreen::Initialize(IrufemiEngine* engine) {
     if (!engine) return;
@@ -43,17 +50,16 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     
     // "..." のドットを3つ作る
     for (int i = 0; i < 3; ++i) {
-        auto dot = std::make_unique<Circle2D>();
-        // Circle2Dは白テクスチャを内部的に使って丸を描く
-        dot->Initialize("resources/whiteTexture.png", 16); 
-        dot->SetUseTexture(false); 
+        auto dot = std::make_unique<Primitive2DObject>();
+        dot->Initialize(Irufemi::Primitive2DType::Circle, "resources/whiteTexture.png"); 
         dot->SetColor({1.0f, 1.0f, 1.0f, 1.0f}); // 文字のNeon Cyanに合わせた色にする
+        dot->SetPivot({0.5f, 0.5f});
         
         // 中心座標をセット: nowLoadingText_ のさらに右側に等間隔で配置
         float baseX = screenW - 65.0f; 
         float baseY = screenH - 45.0f; 
-        dot->SetCenter({baseX + i * 20.0f, baseY, 0.0f});
-        dot->SetRadius(4.0f);
+        dot->SetPosition(Irufemi::Vector3{baseX + i * 20.0f, baseY, 0.0f});
+        dot->SetSize({8.0f, 8.0f}); // radius 4.0f -> size 8.0f
         
         // 最前面UIとして登録
         dot->SetTopMost(true);
@@ -89,20 +95,20 @@ void LoadingScreen::Update(float deltaTime) {
 void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
-    // ウィンドウのリサイズに対応するため、描画時に画面サイズに合わせて位置とサイズを動的に更新する
+    // ウィンドウのサイズに対応するため、描画時に画面サイズに合わせて位置やサイズを動的に更新する
     float screenW = static_cast<float>(engine->GetClientWidth());
     float screenH = static_cast<float>(engine->GetClientHeight());
     float uiScale = screenH / 720.0f;
 
     if (bgSprite_) {
         // 背景は必ず加算ではなく通常のブレンド（不透明）で上書き描画する
-        engine->SetBlend(BlendMode::kBlendModeNormal);
+        engine->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
         bgSprite_->SetSize(screenW, screenH);
         bgSprite_->Draw();
     }
     
     // 文字とドットは加算合成（黒背景を透過）
-    engine->SetBlend(BlendMode::kBlendModeAdd);
+    engine->SetBlend(Irufemi::BlendMode::kBlendModeAdd);
     if (nowLoadingText_) {
         nowLoadingText_->SetUIScale(uiScale);
         nowLoadingText_->SetPosition(screenW - 80.0f * uiScale, screenH - 45.0f * uiScale);
@@ -112,8 +118,8 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     float baseX = screenW - 65.0f * uiScale; 
     float baseY = screenH - 45.0f * uiScale; 
     for (int i = 0; i < dots_.size(); ++i) {
-        dots_[i]->SetRadius(4.0f * uiScale);
-        dots_[i]->SetCenter({baseX + i * 20.0f * uiScale, baseY, 0.0f});
+        dots_[i]->SetSize({8.0f * uiScale, 8.0f * uiScale});
+        dots_[i]->SetPosition(Irufemi::Vector3{baseX + i * 20.0f * uiScale, baseY, 0.0f});
     }
 
     for (int i = 0; i < dotCount_; ++i) {
@@ -123,5 +129,5 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     }
     
     // 描画後、安全のために元の通常ブレンドに戻す
-    engine->SetBlend(BlendMode::kBlendModeNormal);
+    engine->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
 }

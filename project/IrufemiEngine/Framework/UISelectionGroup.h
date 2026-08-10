@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <vector>
 #include <variant>
 #include "UIAnimator.h"
@@ -34,13 +34,13 @@ public:
      * @brief 選択中項目の基本色を設定する
      * @param color 色（RGBA）
      */
-    void SetActiveBaseColor(const Vector4& color) { activeBaseColor_ = color; }
+    void SetActiveBaseColor(const Irufemi::Vector4& color) { activeBaseColor_ = color; }
 
     /**
      * @brief 非選択中項目の色を設定する
      * @param color 色（RGBA）
      */
-    void SetInactiveColor(const Vector4& color) { inactiveColor_ = color; }
+    void SetInactiveColor(const Irufemi::Vector4& color) { inactiveColor_ = color; }
 
     /**
      * @brief 状態をリセットする（ポーズ再開時などに呼ぶ）
@@ -85,8 +85,8 @@ private:
     
     UIAnimator animator_;
     
-    Vector4 activeBaseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    Vector4 inactiveColor_ = {0.3f, 0.3f, 0.3f, 0.9f};
+    Irufemi::Vector4 activeBaseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+    Irufemi::Vector4 inactiveColor_ = {0.3f, 0.3f, 0.3f, 0.9f};
     
     bool isDecided_ = false;
     bool isHorizontal_ = false; // 横並び操作モード

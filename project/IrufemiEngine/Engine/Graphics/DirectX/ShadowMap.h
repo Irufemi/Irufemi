@@ -50,14 +50,31 @@ public:
      * @param targetPos 追従対象の座標（デフォルトは原点）
      * @param orthoSize 表示範囲のサイズ（デフォルト値: 128.0f）
      */
-    void UpdateMatrix(const Vector3& lightDir, const Vector3& targetPos = { 0, 0, 0 }, float orthoSize = 128.0f);
+    void UpdateMatrix(const Irufemi::Vector3& lightDir, const Irufemi::Vector3& targetPos = { 0, 0, 0 }, float orthoSize = 128.0f);
 
     /** @name ゲッター */
     ///@{
     D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandle() const { return srvHandleGPU_; }
+    /**
+     * @brief SrvIndex を取得する。
+     * @return 取得された SrvIndex
+     */
+    uint32_t GetSrvIndex() const { return srvIndex_; }
+    /**
+     * @brief DsvHandle を取得する。
+     * @return 取得された DsvHandle
+     */
     D3D12_CPU_DESCRIPTOR_HANDLE GetDsvHandle() const { return dsvHandleCPU_; }
+    /**
+     * @brief Resource を取得する。
+     * @return 取得された Resource
+     */
     ID3D12Resource* GetResource() const { return resource_.Get(); }
-    const Matrix4x4& GetViewProjection() const { return viewProjection_; }
+    /**
+     * @brief ViewProjection を取得する。
+     * @return 取得された ViewProjection
+     */
+    const Irufemi::Matrix4x4& GetViewProjection() const { return viewProjection_; }
     ///@}
 
 private:
@@ -78,5 +95,5 @@ private:
     D3D12_RECT scissorRect_{};
 
     // 行列
-    Matrix4x4 viewProjection_{};
+    Irufemi::Matrix4x4 viewProjection_{};
 };

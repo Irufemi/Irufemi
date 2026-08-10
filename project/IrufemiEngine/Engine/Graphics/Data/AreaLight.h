@@ -7,17 +7,17 @@
 
 struct AreaLight {
     //!< ライトの色
-    Vector4 color;
+    Irufemi::Vector4 color;
     //!< ライトの位置
-    Vector3 position;
+    Irufemi::Vector3 position;
     //!< 輝度
     float intensity;
     //!< ライトの向き
-    Vector3 direction;
+    Irufemi::Vector3 direction;
     //!< ライトの届く最大距離
     float range;
     //!< 矩形のサイズ(幅、高さ)
-    Vector2 size;
+    Irufemi::Vector2 size;
     //!< 有効フラグ
     int32_t isActive;
 private:

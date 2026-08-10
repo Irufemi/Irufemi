@@ -5,6 +5,6 @@
 #include <vector>
 
 struct JointWeightData {
-    Matrix4x4 inverseBindPoseMatrix;
+    Irufemi::Matrix4x4 inverseBindPoseMatrix;
     std::vector<VertexWeightData> vertexWeights;
 };

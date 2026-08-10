@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <unordered_map>
+#include <nlohmann/json.hpp>
 
 class IScene;
 class GameObject;
@@ -46,7 +48,19 @@ public:
      */
     static std::shared_ptr<GameObject> LoadPrefab(const std::string& filepath);
 
+    /**
+     * @brief キャッシュされているプレハブのJSONデータをクリアする
+     */
+    static void ClearCache();
+
+    /**
+     * @brief プレハブのJSONデータを取得する（キャッシュ対応）
+     */
+    static nlohmann::json GetPrefabJson(const std::string& filepath);
+
 private:
+    static std::unordered_map<std::string, nlohmann::json> prefabCache_;
+
     /**
      * @brief シーン名からファイルパスを生成する(設定されたパス/[Name].json)
      */

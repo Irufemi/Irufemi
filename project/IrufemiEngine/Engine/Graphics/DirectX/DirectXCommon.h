@@ -74,6 +74,11 @@ public: // メンバ関数
 	void ResizeSwapChain(int32_t width, int32_t height);
 
 	/**
+	 * @brief シェーダーをすべて再コンパイル・再登録する（ホットリロード用）
+	 */
+	void RegisterAllShaders();
+
+	/**
 	 * @brief ロガーの設定
 	 */
 	void SetLog(Log* log) { log_ = log; }
@@ -132,7 +137,7 @@ public: // メンバ関数
 	/**
 	 * @brief レンダーターゲットテクスチャリソースの生成
 	 */
-	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4* clearColor);
+	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Irufemi::Vector4* clearColor);
 
 	/**
 	 * @brief FPS固定のための初期化
@@ -192,60 +197,188 @@ public: // ゲッター
 	/** @name D3D12 コアオブジェクトの取得 */
 	///@{
 	ID3D12Device* GetDevice() { return device_.Get(); }
+	/**
+	 * @brief CommandQueue を取得する。
+	 * @return 取得された CommandQueue
+	 */
 	ID3D12CommandQueue* GetCommandQueue();
+	/**
+	 * @brief CommandAllocator を取得する。
+	 * @return 取得された CommandAllocator
+	 */
 	ID3D12CommandAllocator* GetCommandAllocator();
+	/**
+	 * @brief CommandList を取得する。
+	 * @return 取得された CommandList
+	 */
 	ID3D12GraphicsCommandList* GetCommandList();
 	///@}
 
 	/** @name スワップチェーン関連の取得 */
 	///@{
 	IDXGISwapChain4* GetSwapChain();
+	/**
+	 * @brief SwapChainResources を取得する。
+	 * @return 取得された SwapChainResources
+	 */
 	ID3D12Resource* GetSwapChainResources(UINT index);
+	/**
+	 * @brief CurrentBackBufferIndex を取得する。
+	 * @return 取得された CurrentBackBufferIndex
+	 */
 	UINT GetCurrentBackBufferIndex() const;
+	/**
+	 * @brief RtvDesc を取得する。
+	 * @return 取得された RtvDesc
+	 */
 	D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc();
 	///@}
 
 	/** @name 同期・フェンス関連の取得 */
 	///@{
 	ID3D12Fence* GetFence();
+	/**
+	 * @brief FenceEvent を取得する。
+	 * @return 取得された FenceEvent
+	 */
 	HANDLE GetFenceEvent();
+	/**
+	 * @brief FenceValue を取得する。
+	 * @return 取得された FenceValue
+	 */
 	uint64_t& GetFenceValue();
+	/**
+	 * @brief FenceValue を取得する。
+	 * @return 取得された FenceValue
+	 */
 	uint64_t GetFenceValue(uint32_t index) const;
+	/**
+	 * @brief GlobalFenceValue を取得する。
+	 * @return 取得された GlobalFenceValue
+	 */
 	uint64_t GetGlobalFenceValue() const;
+	/**
+	 * @brief IncrementGlobalFence を実行する。
+	 */
 	uint64_t IncrementGlobalFence();
+	/**
+	 * @brief CurrentFrameFenceValue を取得する。
+	 * @return 取得された CurrentFrameFenceValue
+	 */
 	uint64_t GetCurrentFrameFenceValue() const;
 	///@}
 
 	/** @name デスクリプタヒープ・ハンドルの取得 */
 	///@{
 	ID3D12DescriptorHeap* GetSrvDescriptorHeap() { return srvPool_->GetHeap(); }
+	/**
+	 * @brief DsvDescriptorHeap を取得する。
+	 * @return 取得された DsvDescriptorHeap
+	 */
 	ID3D12DescriptorHeap* GetDsvDescriptorHeap();
+	/**
+	 * @brief SrvPool を取得する。
+	 * @return 取得された SrvPool
+	 */
 	DescriptorPool* GetSrvPool() const { return srvPool_.get(); }
+	/**
+	 * @brief RtvHandles を取得する。
+	 * @return 取得された RtvHandles
+	 */
 	D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index);
+	/**
+	 * @brief RTVCPUDescriptorHandle を取得する。
+	 * @return 取得された RTVCPUDescriptorHandle
+	 */
 	D3D12_CPU_DESCRIPTOR_HANDLE GetRTVCPUDescriptorHandle(uint32_t index);
+	/**
+	 * @brief RTVGPUDescriptorHandle を取得する。
+	 * @return 取得された RTVGPUDescriptorHandle
+	 */
 	D3D12_GPU_DESCRIPTOR_HANDLE GetRTVGPUDescriptorHandle(uint32_t index);
+	/**
+	 * @brief DSVCPUDescriptorHandle を取得する。
+	 * @return 取得された DSVCPUDescriptorHandle
+	 */
 	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVCPUDescriptorHandle(uint32_t index);
+	/**
+	 * @brief DSVGPUDescriptorHandle を取得する。
+	 * @return 取得された DSVGPUDescriptorHandle
+	 */
 	D3D12_GPU_DESCRIPTOR_HANDLE GetDSVGPUDescriptorHandle(uint32_t index);
+	/**
+	 * @brief ReadOnlyDSVCPUDescriptorHandle を取得する。
+	 * @return 取得された ReadOnlyDSVCPUDescriptorHandle
+	 */
+	D3D12_CPU_DESCRIPTOR_HANDLE GetReadOnlyDSVCPUDescriptorHandle();
+	/**
+	 * @brief DepthSRVGPUHandle を取得する。
+	 * @return 取得された DepthSRVGPUHandle
+	 */
+	D3D12_GPU_DESCRIPTOR_HANDLE GetDepthSRVGPUHandle() const { return srvPool_->GetGPUHandle(depthSRVIndex_); }
 	///@}
 
 	/** @name ビューポート・矩形情報の取得 */
 	///@{
 	D3D12_VIEWPORT& GetViewport() { return viewport_; }
+	/**
+	 * @brief ScissorRect を取得する。
+	 * @return 取得された ScissorRect
+	 */
 	D3D12_RECT& GetScissorRect() { return scissorRect_; }
 	///@}
 
 	/** @name その他情報の取得 */
 	///@{
 	HWND GetHwnd() { return hwnd_; }
+	/**
+	 * @brief SwapChainDesc を取得する。
+	 * @return 取得された SwapChainDesc
+	 */
 	DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc();
+	/**
+	 * @brief RootSignature を取得する。
+	 * @return 取得された RootSignature
+	 */
 	ID3D12RootSignature* GetRootSignature() { return rootSignatureManager_->GetGraphicsRootSignature(); }
+	/**
+	 * @brief ClientWidth を取得する。
+	 * @return 取得された ClientWidth
+	 */
 	int32_t& GetClientWidth() { return clientWidth_; }
+	/**
+	 * @brief ClientHeight を取得する。
+	 * @return 取得された ClientHeight
+	 */
 	int32_t& GetClientHeight() { return clientHeight_; }
+	/**
+	 * @brief PSOManager を取得する。
+	 * @return 取得された PSOManager
+	 */
 	PSOManager* GetPSOManager() { return psoManager_.get(); }
+	/**
+	 * @brief DepthStencilResource を取得する。
+	 * @return 取得された DepthStencilResource
+	 */
 	ID3D12Resource* GetDepthStencilResource() const;
+	/**
+	 * @brief ShaderManager を取得する。
+	 * @return 取得された ShaderManager
+	 */
 	ShaderManager* GetShaderManager() const { return shaderManager_.get(); }
+	/**
+	 * @brief FPSController を取得する。
+	 * @return 取得された FPSController
+	 */
 	FrameRateController* GetFPSController() const { return fpsController_.get(); }
+	/**
+	 * @brief FrameIndex を取得する。
+	 * @return 取得された FrameIndex
+	 */
 	uint32_t GetFrameIndex() const { return frameIndex_; }
+	/**
+	 * @brief AdvanceFrameIndex を実行する。
+	 */
 	void AdvanceFrameIndex() { frameIndex_ = (frameIndex_ + 1) % kMaxFramesInFlight; }
 	///@}
 
@@ -298,10 +431,26 @@ private: // 初期化用プライベートメソッド
 	/** @name 初期化工程の分割 */
 	///@{
 	void EnableDebugLayer();
+	/**
+	 * @brief InitializeDXGI を実行する。
+	 */
 	void InitializeDXGI();
+	/**
+	 * @brief CreateDevice を実行する。
+	 */
 	void CreateDevice();
+	/**
+	 * @brief InfoQueue を設定する。
+	 */
 	void SetInfoQueue();
+	/**
+	 * @brief CreatePSOs を実行する。
+	 */
 	void CreatePSOs();
+	/**
+	 * @brief CreateDepthSRV を実行する。
+	 */
+	void CreateDepthSRV();
 	///@}
 
 private: // メンバ変数
@@ -331,6 +480,8 @@ private: // メンバ変数
 	// --- SRV Descriptor Pool ---
 
 	std::unique_ptr<DescriptorPool> srvPool_ = nullptr;
+	uint32_t depthSRVIndex_ = DescriptorPool::kInvalid;
+
 	std::unique_ptr<DXRootSignatureManager> rootSignatureManager_ = nullptr;
 
 	// --- Synchronization --

@@ -37,7 +37,8 @@
  *      これにより、1つのシェーダーで「炎(赤)」「雷(黄)」「氷(青)」などの属性表現が可能になりました。
  */
 
-#include "Object3d.hlsli"
+#include "Transform.hlsli"
+#include "BasePassVertexOutput.hlsli"
 #include "PerFrame.hlsli"
 #include "Material.hlsli"
 
@@ -88,7 +89,7 @@ float fbm6(float2 p)
     return f / 0.96875;
 }
 
-float3 lava(float2 q, float d, float time)
+float3 lava(float2 q, float d, float time, float3 baseColor)
 {
     q *= 2.0;
     q.y -= time * 0.2; // Add continuous scrolling flow to the magma
@@ -125,10 +126,14 @@ float3 lava(float2 q, float d, float time)
     f *= 1.0 - 0.5 * pow(abs(g), 8.0);
 
     // HLSL min < max was already true, no need to invert
-    float3 col = lerp(float3(f, f, 0), float3(1.0 - f * 0.3, 1.0 - f * 0.3, 1.0 - f * 0.3), smoothstep(-0.4, -0.01, d));
-    col += lerp(float3(0,0,0), float3(pow(abs(f), 5.0), pow(abs(f), 5.0), pow(abs(f), 5.0)) * 0.4, smoothstep(-0.5, -0.01, d));
-    col = lerp(col, float3(1.0, 1.0, 0.0), n.x * 0.5);
-    col -= float3(0.0, 1.0, 1.0) * dot(o, o) * (d + 0.5);
+    float3 col = lerp(baseColor * f, float3(1.0 - f * 0.3, 1.0 - f * 0.3, 1.0 - f * 0.3), smoothstep(-0.4, -0.01, d));
+    col += lerp(float3(0,0,0), baseColor * pow(abs(f), 5.0) * 0.8, smoothstep(-0.5, -0.01, d));
+    
+    float3 hotColor = saturate(baseColor * 1.5 + float3(0.2, 0.2, 0.2));
+    col = lerp(col, hotColor, n.x * 0.5);
+    
+    float3 shadowColor = saturate(float3(1.0, 1.0, 1.0) - baseColor);
+    col -= shadowColor * dot(o, o) * (d + 0.5);
     
     return col;
 }
@@ -145,6 +150,8 @@ float flare(float2 U, float time)
     U = mul(m2, U);
     return 0.2 / max(max(U.x, U.y), 0.001);
 }
+
+#include "Bindless.hlsli"
 
 struct PixelShaderOutput {
     float32_t4 color : SV_TARGET0;
@@ -176,18 +183,20 @@ PixelShaderOutput main(VertexShaderOutput input)
     // ==========================================
     float3 baseColor = gMaterial.color.rgb;
     float3 magmaCol = baseColor * 0.2; // ベースの暗い色
-    magmaCol = lerp(magmaCol, lava(xy, d, time), 1.0 - smoothstep(-0.015, -0.01, d)); // マグマ
+    magmaCol = lerp(magmaCol, lava(xy, d, time, baseColor), 1.0 - smoothstep(-0.015, -0.01, d)); // マグマ
     magmaCol = lerp(magmaCol, float3(1.0, 1.0, 1.0), 1.0 - smoothstep(-0.8, -0.5, d)); // 中心コア（白）
     magmaCol = lerp(magmaCol, baseColor * 1.5, smoothstep(-0.01, 0.0, d) * (1.0 - smoothstep(0.0, 0.01, d))); // エッジ内側
     magmaCol = lerp(magmaCol, baseColor * 0.8, smoothstep(0.005, 0.011, d) * (1.0 - smoothstep(0.011, 0.012, d))); // エッジ外側
     
     // マグマ本体の不透明度（d=0付近で滑らかに透明になる）
-    float magmaAlpha = 1.0 - smoothstep(-0.01, 0.01, d);
+    // gMaterial.color.a を乗算して、中心コアの透明度を外部から制御可能にする
+    float magmaAlpha = (1.0 - smoothstep(-0.01, 0.01, d)) * gMaterial.color.a;
 
     // ==========================================
     // 2. Additive Glow (加算発光するオーラとフレア)
     // ==========================================
-    float3 flareColor = float3(c, c, c); // フレアの光
+    // フレアの色を白だけでなく属性色（baseColor）に寄せることで、白飛びを防ぐ
+    float3 flareColor = lerp(baseColor, float3(1.0, 1.0, 1.0), 0.3) * c * 1.5; 
     float auraWeight = (1.0 - smoothstep(0.001, 0.15, d)) * 0.8; // オーラの強さ（少し広げて強調）
     float3 auraColor = baseColor * auraWeight;
     

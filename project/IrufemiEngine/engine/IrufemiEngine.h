@@ -5,6 +5,7 @@
 class InputManager;
 class WinApp;
 class DrawManager;
+class DebugPrimitiveRenderer;
 class DebugUI;
 class IEngineExtension;
 class TextureManager;
@@ -24,6 +25,8 @@ class SceneTransition;
 #include "Graphics/DirectX/DynamicConstantBuffer.h"
 #include "Graphics/Data/Material.h"
 #include "Graphics/Data/TransformationMatrix.h"
+#include "Core/System/ResourceHandle.h"
+#include "Profiler/TelemetryGatherer.h"
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -46,6 +49,8 @@ class CameraManager;
 class CollisionManager;
 class GPUParticleManager;
 class PrimitiveManager;
+#include "Core/System/ThreadPool.h"
+#include "Manager/ScreenCaptureManager.h"
 
 /**
  * @class IrufemiEngine
@@ -113,7 +118,7 @@ public: // メンバ関数
      * @brief エンジンの初期化（クリアカラー指定付き - Vector4版）
      */
     void Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
-                    const Vector4& clearColor);
+                    const Irufemi::Vector4& clearColor);
 
     /**
      * @brief ウィンドウリサイズ時の処理
@@ -176,44 +181,227 @@ public: // メンバ関数
      */
     void EndFrame();
 
+public: // スクリーンショットAPI
+
+    /** @name スクリーンショット機能 */
+    ///@{
+    bool SaveScreenShot(const std::wstring& filePath);
+    /**
+     * @brief UIを含めた現在の画面のスクリーンショットを保存する。
+     * @param[in] filePath 保存先のファイルパス
+     * @return 保存に成功した場合はtrue
+     */
+    bool SaveScreenShotWithUI(const std::wstring& filePath);
+    /**
+     * @brief メタデータを含めたスクリーンショットを保存する。
+     * @param[in] filePath 保存先のファイルパス
+     * @return 保存に成功した場合はtrue
+     */
+    bool SaveScreenShotWithMetadata(const std::wstring& filePath);
+    /**
+     * @brief アルファチャンネル（透過情報）を含めたスクリーンショットを保存する。
+     * @param[in] filePath 保存先のファイルパス
+     * @return 保存に成功した場合はtrue
+     */
+    bool SaveScreenShotWithAlpha(const std::wstring& filePath);
+    /**
+     * @brief 深度バッファの内容をスクリーンショットとして保存する。
+     * @param[in] filePath 保存先のファイルパス
+     * @return 保存に成功した場合はtrue
+     */
+    bool SaveScreenShotDepth(const std::wstring& filePath);
+    ///@}
+
 public: // ゲッター
 
     /** @name グラフィックス関連の取得 */
     ///@{
     ID3D12GraphicsCommandList* GetCommandList() { return dxCommon_->GetCommandList(); }
+    /**
+     * @brief Device を取得する。
+     * @return 取得された Device
+     */
     ID3D12Device* GetDevice() { return dxCommon_->GetDevice(); }
+    /**
+     * @brief Hwnd を取得する。
+     * @return 取得された Hwnd
+     */
     HWND GetHwnd() { return dxCommon_->GetHwnd(); }
+    /**
+     * @brief SwapChainDesc を取得する。
+     * @return 取得された SwapChainDesc
+     */
     DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return dxCommon_->GetSwapChainDesc(); }
+    /**
+     * @brief RtvDesc を取得する。
+     * @return 取得された RtvDesc
+     */
     D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return dxCommon_->GetRtvDesc(); }
+    /**
+     * @brief SrvDescriptorHeap を取得する。
+     * @return 取得された SrvDescriptorHeap
+     */
     ID3D12DescriptorHeap* GetSrvDescriptorHeap() { return dxCommon_->GetSrvDescriptorHeap(); }
+    /**
+     * @brief CommandQueue を取得する。
+     * @return 取得された CommandQueue
+     */
     ID3D12CommandQueue* GetCommandQueue() { return dxCommon_->GetCommandQueue(); }
+    /**
+     * @brief SwapChain を取得する。
+     * @return 取得された SwapChain
+     */
     IDXGISwapChain4* GetSwapChain() { return dxCommon_->GetSwapChain(); }
+    /**
+     * @brief Fence を取得する。
+     * @return 取得された Fence
+     */
     ID3D12Fence* GetFence() { return dxCommon_->GetFence(); }
+    /**
+     * @brief FenceEvent を取得する。
+     * @return 取得された FenceEvent
+     */
     HANDLE GetFenceEvent() { return dxCommon_->GetFenceEvent(); }
+    /**
+     * @brief CommandAllocator を取得する。
+     * @return 取得された CommandAllocator
+     */
     ID3D12CommandAllocator* GetCommandAllocator() { return dxCommon_->GetCommandAllocator(); }
+    /**
+     * @brief RootSignature を取得する。
+     * @return 取得された RootSignature
+     */
     ID3D12RootSignature* GetRootSignature() { return dxCommon_->GetRootSignature(); }
+    /**
+     * @brief DsvDescriptorHeap を取得する。
+     * @return 取得された DsvDescriptorHeap
+     */
     ID3D12DescriptorHeap* GetDsvDescriptorHeap() { return dxCommon_->GetDsvDescriptorHeap(); }
+    /**
+     * @brief SwapChainResources を取得する。
+     * @return 取得された SwapChainResources
+     */
     ID3D12Resource* GetSwapChainResources(UINT index) { return dxCommon_->GetSwapChainResources(index); }
+    /**
+     * @brief RtvHandles を取得する。
+     * @return 取得された RtvHandles
+     */
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return dxCommon_->GetRtvHandles(index); }
+    /**
+     * @brief FenceValue を取得する。
+     * @return 取得された FenceValue
+     */
     uint64_t& GetFenceValue() { return dxCommon_->GetFenceValue(); }
+    /**
+     * @brief MainRenderTexture を取得する。
+     * @return 取得された MainRenderTexture
+     */
     RenderTexture* GetMainRenderTexture() const { return mainRenderTexture_.get(); }
+    /**
+     * @brief EffectMaskTexture を取得する。
+     * @return 取得された EffectMaskTexture
+     */
+    RenderTexture* GetEffectMaskTexture() const { return effectMaskTexture_.get(); }
+    /**
+     * @brief NormalTexture を取得する。
+     * @return 取得された NormalTexture
+     */
+    RenderTexture* GetNormalTexture() const { return normalTexture_.get(); }
+    /**
+     * @brief MaterialTexture を取得する。
+     * @return 取得された MaterialTexture
+     */
+    RenderTexture* GetMaterialTexture() const { return materialTexture_.get(); }
+    /**
+     * @brief VelocityTexture を取得する。
+     * @return 取得された VelocityTexture
+     */
+    RenderTexture* GetVelocityTexture() const { return velocityTexture_.get(); }
     ///@}
 
     /** @name マネージャ類の取得 */
     ///@{
     DirectXCommon* GetDirectXCommon() { return this->dxCommon_.get(); }
+    /**
+     * @brief InputManager を取得する。
+     * @return 取得された InputManager
+     */
     InputManager* GetInputManager() { return this->inputManager_.get(); }
+    /**
+     * @brief DrawManager を取得する。
+     * @return 取得された DrawManager
+     */
     DrawManager* GetDrawManager() { return this->drawManager_.get(); }
+    /**
+     * @brief DebugPrimitiveRenderer を取得する。
+     * @return 取得された DebugPrimitiveRenderer
+     */
+    DebugPrimitiveRenderer* GetDebugPrimitiveRenderer() const { return this->debugPrimitiveRenderer_.get(); }
+    /**
+     * @brief DebugUI を取得する。
+     * @return 取得された DebugUI
+     */
     DebugUI* GetDebugUI() { return this->ui_.get(); }
+    /**
+     * @brief AudioManager を取得する。
+     * @return 取得された AudioManager
+     */
     AudioManager* GetAudioManager() { return this->audioManager_.get(); }
+    /**
+     * @brief FontManager を取得する。
+     * @return 取得された FontManager
+     */
     FontManager* GetFontManager() { return this->fontManager_.get(); }
+    /**
+     * @brief TextureManager を取得する。
+     * @return 取得された TextureManager
+     */
     TextureManager* GetTextureManager() { return this->textureManager_.get(); }
+    /**
+     * @brief ObjModelManager を取得する。
+     * @return 取得された ObjModelManager
+     */
     ModelManager* GetObjModelManager() { return modelManager_.get(); }
+    /**
+     * @brief AnimationManager を取得する。
+     * @return 取得された AnimationManager
+     */
     AnimationManager* GetAnimationManager() { return animationManager_.get(); }
-    CameraManager* GetCameraManager() { return cameraManager_.get(); }
-    CollisionManager* GetCollisionManager() { return collisionManager_.get(); }
+    /**
+     * @brief CameraManager を取得する。
+     * @return 取得された CameraManager
+     */
+    CameraManager* GetCameraManager() const { return cameraManager_.get(); }
+    /**
+     * @brief CollisionManager を取得する。
+     * @return 取得された CollisionManager
+     */
+    CollisionManager* GetCollisionManager() const { return collisionManager_.get(); }
+    /**
+     * @brief VoxelParticleManager を取得する。
+     * @return 取得された VoxelParticleManager
+     */
+    VoxelParticleManager* GetVoxelParticleManager() const { return voxelParticleManager_.get(); }
+    /**
+     * @brief ThreadPool を取得する。
+     * @return 取得された ThreadPool
+     */
+    ThreadPool* GetThreadPool() const { return threadPool_.get(); }
+    /**
+     * @brief GPUParticleManager を取得する。
+     * @return 取得された GPUParticleManager
+     */
     GPUParticleManager* GetGPUParticleManager() { return gpuParticleManager_.get(); }
+    /**
+     * @brief PrimitiveManager を取得する。
+     * @return 取得された PrimitiveManager
+     */
     PrimitiveManager* GetPrimitiveManager() { return primitiveManager_.get(); }
+    /**
+     * @brief ScreenCaptureManager を取得する。
+     * @return 取得された ScreenCaptureManager
+     */
+    ScreenCaptureManager* GetScreenCaptureManager() const { return screenCaptureManager_.get(); }
     /** 
      * @brief ポストプロセス管理者を取得
      * @details シーンから pp->AddActiveMode() や pp->GetNoiseParams() のように使用します。
@@ -222,78 +410,244 @@ public: // ゲッター
 
     /** @brief 画面遷移管理者を取得 */
     SceneTransition* GetSceneTransition() { return sceneTransition_.get(); }
+    
+    /** @brief WinApp を取得 */
+    WinApp* GetWinApp() const { return winApp_.get(); }
     ///@}
 
     /** @name 画面情報の取得 */
     ///@{
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
+    /**
+     * @brief ClientHeight を取得する。
+     * @return 取得された ClientHeight
+     */
     int32_t& GetClientHeight() { return dxCommon_->GetClientHeight(); }
+    /**
+     * @brief Viewport を取得する。
+     * @return 取得された Viewport
+     */
     D3D12_VIEWPORT& GetViewport() { return dxCommon_->GetViewport(); }
+    /**
+     * @brief ScissorRect を取得する。
+     * @return 取得された ScissorRect
+     */
     D3D12_RECT& GetScissorRect() { return dxCommon_->GetScissorRect(); }
+    /**
+     * @brief PSOManager を取得する。
+     * @return 取得された PSOManager
+     */
     PSOManager* GetPSOManager() { return dxCommon_->GetPSOManager(); }
     ///@}
 
     // 時間関連のゲッター
-    float GetDeltaTime() const { return deltaTime_; }
+    /**
+     * @brief DeltaTime を取得する。
+     * @return 取得された DeltaTime
+     */
+    float GetDeltaTime() const { return gameDeltaTime_; } // タイムスケール適用済みの時間を返す
+    /**
+     * @brief RealDeltaTime を取得する。
+     * @return 取得された RealDeltaTime
+     */
+    float GetRealDeltaTime() const { return deltaTime_; } // 実時間を返す
+    /**
+     * @brief TotalTime を取得する。
+     * @return 取得された TotalTime
+     */
     float GetTotalTime() const { return totalTime_; }
     
     // 追加: ポーズ対応のゲーム内時間関連
+    /**
+     * @brief GameTime を取得する。
+     * @return 取得された GameTime
+     */
     float GetGameTime() const { return gameTime_; }
+    /**
+     * @brief GameDeltaTime を取得する。
+     * @return 取得された GameDeltaTime
+     */
     float GetGameDeltaTime() const { return gameDeltaTime_; }
+    /**
+     * @brief TimeScale を取得する。
+     * @return 取得された TimeScale
+     */
     float GetTimeScale() const { return timeScale_; }
+    /**
+     * @brief TimeScale を設定する。
+     * @param[in] scale 設定する TimeScale の値
+     */
     void SetTimeScale(float scale) { timeScale_ = scale; }
 
+    float GetPureCpuTimeMs() const { return pureCpuTimeMs_; }
+    float GetEmaFps() const { return emaFps_; }
+
+    /**
+     * @brief MaterialBufferManager を取得する。
+     * @return 取得された MaterialBufferManager
+     */
     DynamicConstantBuffer<Material>* GetMaterialBufferManager() { return materialBufferManager_.get(); }
+    /**
+     * @brief TransformBufferManager を取得する。
+     * @return 取得された TransformBufferManager
+     */
     DynamicConstantBuffer<TransformationMatrix>* GetTransformBufferManager() { return transformBufferManager_.get(); }
 
     // オプション: 取得用
+    /**
+     * @brief SrvPool を取得する。
+     * @return 取得された SrvPool
+     */
     DescriptorPool* GetSrvPool() const { return dxCommon_->GetSrvPool(); }
     
     // SceneManager参照
+    /**
+     * @brief SceneManager を取得する。
+     * @return 取得された SceneManager
+     */
     SceneManager* GetSceneManager() const { return sceneManager_.get(); }
-    WinApp* GetWinApp() const { return winApp_.get(); }
     
+
     // Sceneディレクトリ設定
+    /**
+     * @brief SceneDirectory を取得する。
+     * @return 取得された SceneDirectory
+     */
     const std::string& GetSceneDirectory() const { return sceneDirectory_; }
+    /**
+     * @brief SceneDirectory を設定する。
+     * @param[in] dir 設定する SceneDirectory の値
+     */
     void SetSceneDirectory(const std::string& dir) { sceneDirectory_ = dir; }
     
     // 追加: アセットがロード中かどうかを判定する
+    /**
+     * @brief IsAssetLoading かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsAssetLoading() const;
 
     // --- エディタ・プレイスタイル関連の状態 ---
+    /**
+     * @brief IsPlayMode かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsPlayMode() const { return isPlayMode_; }
+    /**
+     * @brief PlayMode を設定する。
+     * @param[in] play 設定する PlayMode の値
+     */
     void SetPlayMode(bool play);
 
+    /**
+     * @brief SelectedObject を取得する。
+     * @return 取得された SelectedObject
+     */
     std::shared_ptr<GameObject> GetSelectedObject() const { return selectedObject_.lock(); }
+    /**
+     * @brief SelectedObject を設定する。
+     * @param[in] obj 設定する SelectedObject の値
+     */
     void SetSelectedObject(std::shared_ptr<GameObject> obj) { selectedObject_ = obj; }
 
 public: // セッター
+    /**
+     * @brief AddFenceValue を実行する。
+     */
     void AddFenceValue(uint32_t index) { dxCommon_->GetFenceValue() += index; }
     
     // セッター(引数なし描画のためのプリセット切替)
-    void SetBlend(BlendMode m) { currentBlend_ = m; }
+    /**
+     * @brief Blend を設定する。
+     * @param[in] m 設定する Blend の値
+     */
+    void SetBlend(Irufemi::BlendMode m) { currentBlend_ = m; }
+    /**
+     * @brief DepthWrite を設定する。
+     * @param[in] w 設定する DepthWrite の値
+     */
     void SetDepthWrite(PSOManager::DepthWrite w) { currentDepth_ = w; }
     // 追加: Cull の切替
+    /**
+     * @brief Cull を設定する。
+     * @param[in] c 設定する Cull の値
+     */
     void SetCull(PSOManager::CullMode c) { currentCull_ = c; }
 
     // 追加: クリアカラーのセッター(いつでも変更可能)
+    /**
+     * @brief 画面のクリアカラー（背景色）を設定する。
+     * @param[in] color クリアカラー(RGBA)
+     */
     void SetClearColor(float r, float g, float b, float a = 1.0f) { clearColor_ = { r, g, b, a }; }
+    /**
+     * @brief 画面のクリアカラー（背景色）を設定する。
+     * @param[in] color クリアカラー(RGBA)
+     */
     void SetClearColor(const std::array<float, 4>& c) { clearColor_ = c; }
-    // 追加: Vector4 版
-    void SetClearColor(const Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
+    // 追加: Irufemi::Vector4 版
+    /**
+     * @brief 画面のクリアカラー（背景色）を設定する。
+     * @param[in] color クリアカラー(RGBA)
+     */
+    void SetClearColor(const Irufemi::Vector4& c) { clearColor_ = { c.x, c.y, c.z, c.w }; }
 
+    /**
+     * @brief PostProcessMode を取得する。
+     * @return 取得された PostProcessMode
+     */
     PostProcessMode GetPostProcessMode() const { return postProcessManager_->GetMode(); }
+    /**
+     * @brief PostProcessMode を設定する。
+     * @param[in] mode 設定する PostProcessMode の値
+     */
     void SetPostProcessMode(PostProcessMode mode) { postProcessManager_->SetMode(mode); }
+    /**
+     * @brief VignetteParams を取得する。
+     * @return 取得された VignetteParams
+     */
     VignetteParams& GetVignetteParams() { return postProcessManager_->GetVignetteParams(); }
+    /**
+     * @brief OutlineParams を取得する。
+     * @return 取得された OutlineParams
+     */
     OutlineParams& GetOutlineParams() { return postProcessManager_->GetOutlineParams(); }
+    /**
+     * @brief DissolveParams を取得する。
+     * @return 取得された DissolveParams
+     */
     DissolveParams& GetDissolveParams() { return postProcessManager_->GetDissolveParams(); }
+    /**
+     * @brief SmoothingParams を取得する。
+     * @return 取得された SmoothingParams
+     */
     SmoothingParams& GetSmoothingParams() { return postProcessManager_->GetSmoothingParams(); }
+    /**
+     * @brief GaussianParams を取得する。
+     * @return 取得された GaussianParams
+     */
     GaussianParams& GetGaussianParams() { return postProcessManager_->GetGaussianParams(); }
+    /**
+     * @brief RadialBlurParams を取得する。
+     * @return 取得された RadialBlurParams
+     */
     RadialBlurParams& GetRadialBlurParams() { return postProcessManager_->GetRadialBlurParams(); }
+    /**
+     * @brief NoiseParams を取得する。
+     * @return 取得された NoiseParams
+     */
     NoiseParams& GetNoiseParams() { return postProcessManager_->GetNoiseParams(); }
 
 
+    /**
+     * @brief CursorLocked を設定する。
+     * @param[in] lock 設定する CursorLocked の値
+     */
     void SetCursorLocked(bool lock);
+    /**
+     * @brief IsCursorLocked かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsCursorLocked() const;
 
     /**
@@ -310,7 +664,7 @@ public: // セッター
 
 public:
     // 状態(現在のブレンドと深度書き込み)
-    BlendMode currentBlend_ = BlendMode::kBlendModeNormal;
+    Irufemi::BlendMode currentBlend_ = Irufemi::BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable;
     PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; // 追加: デフォルトは Back
 
@@ -337,6 +691,9 @@ private: // メンバ変数
     
     // DrawManager
     std::unique_ptr<DrawManager> drawManager_ = nullptr;
+    
+    // DebugPrimitiveRenderer
+    std::unique_ptr<DebugPrimitiveRenderer> debugPrimitiveRenderer_ = nullptr;
     
     // DebugUI
     std::unique_ptr<DebugUI> ui_ = nullptr;
@@ -380,9 +737,14 @@ private: // メンバ変数
     // PrimitiveManager
     std::unique_ptr<PrimitiveManager> primitiveManager_ = nullptr;
 
+    // ScreenCaptureManager
+    std::unique_ptr<ScreenCaptureManager> screenCaptureManager_ = nullptr;
+
+    // ThreadPool
+    std::unique_ptr<ThreadPool> threadPool_ = nullptr;
+
     // 画面の色
     std::array<float, 4> clearColor_{ 0.1f, 0.25f, 0.5f, 1.0f };
-    float timeScale_ = 1.0f;
     std::string sceneDirectory_ = "resources/scenes/";
     UINT backBufferIndex_{};
     
@@ -392,13 +754,16 @@ private: // メンバ変数
 
     // --- 時間管理 ---
     std::chrono::steady_clock::time_point startTime_{};
-    std::chrono::steady_clock::time_point lastFrameTime_{};
-    float deltaTime_ = 0.0f;
+    std::chrono::steady_clock::time_point lastFrameTime_{};    // 時間系変数
     float totalTime_ = 0.0f;
-
-    // 追加: ポーズ対応のゲーム内時間管理
     float gameTime_ = 0.0f;
+    float deltaTime_ = 0.0f;
     float gameDeltaTime_ = 0.0f;
+    float timeScale_ = 1.0f;
+    
+    // プロファイラ用
+    float pureCpuTimeMs_ = 0.0f;
+    float emaFps_ = 60.0f;
 
     // --- Dynamic Constant Buffer ---
     std::unique_ptr<DynamicConstantBuffer<Material>> materialBufferManager_ = nullptr;
@@ -406,12 +771,27 @@ private: // メンバ変数
 
     // --- 全画面用 RenderTexture ---
     std::unique_ptr<RenderTexture> mainRenderTexture_ = nullptr;
+    std::unique_ptr<RenderTexture> effectMaskTexture_ = nullptr; // ★ MRT対応: マスク用
+    std::unique_ptr<RenderTexture> normalTexture_ = nullptr;     // MRT対応: 法線/深度用
+    std::unique_ptr<RenderTexture> materialTexture_ = nullptr;   // MRT対応: マテリアル用
+    std::unique_ptr<RenderTexture> velocityTexture_ = nullptr;   // MRT対応: モーションベクトル用
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
+
+    // Telemetry Gatherer
+    std::unique_ptr<TelemetryGatherer> telemetryGatherer_ = nullptr;
+
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
 
+    ResourceHandle noise0Handle_;
+    ResourceHandle noise1Handle_;
+
+    bool sceneRequestedCursorLock_ = false;
     bool isPlayMode_ = true;
     std::weak_ptr<GameObject> selectedObject_;
-    bool sceneRequestedCursorLock_ = false;
+#if defined(_DEBUG) || defined(EditorMode)
+    std::vector<std::unique_ptr<class DirectoryWatcher>> shaderWatchers_;
+    std::atomic<bool> shouldReloadShaders_{false};
+#endif
 };

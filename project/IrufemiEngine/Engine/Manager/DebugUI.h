@@ -15,17 +15,18 @@ class TextureManager;
 class SceneManager;
 class IrufemiEngine;
 class DirectXCommon;
+class ThreadPool;
 class Object3DResource;
 class Object2DResource;
 struct Material;
 struct ObjMaterial;
-struct Transform;
-struct Matrix4x4;
+namespace Irufemi { struct Transform; }
+namespace Irufemi { struct Matrix4x4; }
 struct DirectionalLight;
 struct PointLight;
 struct SpotLight;
 struct AreaLight;
-struct Sphere;
+namespace Irufemi { struct Sphere; }
 struct Animation;
 struct LightningParams;
 
@@ -52,22 +53,6 @@ private: // メンバ変数
     DirectXCommon* dxCommon_ = nullptr;
 
     TextureManager* textureManager_ = nullptr;
-
-    // ★追加: パフォーマンス履歴
-    static constexpr size_t kPerfHistoryCount_ = 240;          // 約4秒分
-    std::array<float, kPerfHistoryCount_> frameTimeHistory_{}; // ms
-    size_t historyIndex_ = 0;
-    bool historyFilled_ = false;
-
-    // ★内部計算キャッシュ
-    float cachedAvgMs_ = 0.0f;
-    float cachedMinMs_ = 0.0f;
-    float cachedMaxMs_ = 0.0f;
-    float cachedP99Ms_ = 0.0f;   // 99th percentile frame time (≒ 1% worst)
-    float cachedFps_ = 0.0f;
-    void UpdatePerfStats_(float newFrameMs); // ★集計用内部関数
-
-    bool showPerformance_ = true; // ★パフォーマンス情報の表示フラグ
 
     // --- ImGui用ライト編集テンプレート ---
     static std::unique_ptr<PointLight> templatePointLight_;
@@ -97,6 +82,9 @@ public: // メンバ関数
     ///@}
 
 #ifdef USE_IMGUI
+    /**
+     * @brief WndProcHandler を実行する。
+     */
     static LRESULT WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
 
@@ -133,41 +121,62 @@ public: // メンバ関数
     /**
      * @brief 3Dトランスフォームの編集
      */
-    static void DebugTransform(Transform& transform);
+    static void DebugTransform(Irufemi::Transform& transform);
 
     /**
      * @brief 2Dトランスフォーム（スプライト用）の編集
      */
-    static void DebugTransform2D(Transform& transform);
+    static void DebugTransform2D(Irufemi::Transform& transform);
 
     /**
      * @brief トランスフォーム情報のテキスト表示
      */
-    static void TextTransform(Transform& transform, const char* name = "");
+    static void TextTransform(Irufemi::Transform& transform, const char* name = "");
     ///@}
 
     /** @name マテリアル・テクスチャのデバッグ */
     ///@{
     static void DebugMaterialBy3D(Material* material);
     
+    /**
+     * @brief DebugMaterialBy2D を実行する。
+     */
     static void DebugMaterialBy2D(Material* material);
 
+    /**
+     * @brief DebugObjMaterial を実行する。
+     */
     static void DebugObjMaterial(ObjMaterial* material, const char* unique_id = "");
 
+    /**
+     * @brief DebugMaterialByParticle を実行する。
+     */
     static void DebugMaterialByParticle(Material* material);
 
     /**
      * @brief テクスチャの選択・変更UI
      */
     void DebugTexture(Object3DResource* resource, int& selectedTextureIndex);
+    /**
+     * @brief DebugTexture を実行する。
+     */
     void DebugTexture(Object2DResource* resource, int& selectedTextureIndex);
 
 
+    /**
+     * @brief DebugDirectionalLight を実行する。
+     */
     static void DebugDirectionalLight(DirectionalLight* directionalLightData);
 
-    static void DebugUvTransform(Transform& uvTransform);
+    /**
+     * @brief DebugUvTransform を実行する。
+     */
+    static void DebugUvTransform(Irufemi::Transform& uvTransform);
 
-    static void DebugUvTransform(Matrix4x4& uvTransform);
+    /**
+     * @brief DebugUvTransform を実行する。
+     */
+    static void DebugUvTransform(Irufemi::Matrix4x4& uvTransform);
 
     /**
      * @brief マテリアルの個別オーバーライド設定を編集するUI
@@ -196,12 +205,7 @@ public: // メンバ関数
     /**
      * @brief 形状情報の表示（球体等）
      */
-    static void DebugSphereInfo(Sphere& sphere);
-
-    /**
-     * @brief パフォーマンスオーバーレイの表示（FPS/ms表示）
-     */
-    void FPSDebug();
+    static void DebugSphereInfo(Irufemi::Sphere& sphere);
 
     /**
      * @brief シーン切り替えタブの表示
@@ -214,9 +218,14 @@ public: // メンバ関数
     void PostProcessTab(IrufemiEngine* engine);
 
     /**
+     * @brief ScreenCaptureManager 用のデバッグタブ
+     */
+    void ScreenCaptureTab(class ScreenCaptureManager* captureManager);
+
+    /**
      * @brief 統合デバッグウィンドウの開始
      */
-    void BeginEngineDebugWindow();
+    bool BeginEngineDebugWindow();
 
     /**
      * @brief 統合デバッグウィンドウの終了
@@ -228,7 +237,7 @@ public: // メンバ関数
      * @brief PSO設定（描画ステート）の編集UI
      */
     static void DebugPsoSettings(
-        BlendMode* blendMode,
+        Irufemi::BlendMode* blendMode,
         PSOManager::DepthWrite* depthWrite,
         PSOManager::CullMode* cullMode,
         const char* unique_id = "##PsoSettings"

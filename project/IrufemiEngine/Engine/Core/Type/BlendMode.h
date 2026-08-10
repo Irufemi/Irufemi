@@ -1,5 +1,7 @@
 #pragma once
 
+
+namespace Irufemi {
 enum class BlendMode {
     kBlendModeNone,
     kBlendModeNormal,
@@ -10,3 +12,4 @@ enum class BlendMode {
     kBlendModePremultiplied,
     kCountOfBlendMode,
 };
+} // namespace Irufemi

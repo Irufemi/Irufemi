@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <utility>
 
-const PrimitiveData& PrimitiveManager::GetPrimitiveData(PrimitiveType type) {
+const PrimitiveData& PrimitiveManager::GetPrimitiveData(Irufemi::PrimitiveType type) {
     auto it = cpuCache_.find(type);
     if (it != cpuCache_.end()) {
         return it->second;
@@ -16,19 +16,20 @@ const PrimitiveData& PrimitiveManager::GetPrimitiveData(PrimitiveType type) {
 
     PrimitiveData data;
     switch (type) {
-    case PrimitiveType::Triangle: data = CreateTriangle(); break;
-    case PrimitiveType::Plane:    data = CreatePlane(); break;
-    case PrimitiveType::Cube:     data = CreateCube(1.0f, 1.0f, 1.0f); break;
-    case PrimitiveType::Sphere:   data = CreateSphere(0.5f, 32); break;
-    case PrimitiveType::Cylinder: data = CreateCylinder(0.5f, 1.0f, 32); break;
-    case PrimitiveType::Tetra:    data = CreateTetra(); break;
-    case PrimitiveType::Circle:   data = CreateCircle(0.5f, 32); break;
-    case PrimitiveType::Ring:     data = CreateRing(0.2f, 0.5f, 0.0f, 360.0f, 32, false); break;
-    case PrimitiveType::Skybox:   data = CreateCube(1.0f, 1.0f, 1.0f); break;
-    case PrimitiveType::Cone:     data = CreateCone(0.5f, 1.0f, 32); break;
-    case PrimitiveType::Torus:    data = CreateTorus(0.4f, 0.1f, 32, 16); break;
-    case PrimitiveType::IcoSphere: data = CreateIcoSphere(0.5f, 2); break;
-    case PrimitiveType::Grid:     data = CreateGrid(1.0f, 1.0f, 10, 10); break;
+    case Irufemi::PrimitiveType::Triangle: data = CreateTriangle(); break;
+    case Irufemi::PrimitiveType::Plane:    data = CreatePlane(); break;
+    case Irufemi::PrimitiveType::Cube:     data = CreateCube(1.0f, 1.0f, 1.0f); break;
+    case Irufemi::PrimitiveType::Sphere:   data = CreateSphere(0.5f, 32); break;
+    case Irufemi::PrimitiveType::Cylinder: data = CreateCylinder(0.5f, 1.0f, 32); break;
+    case Irufemi::PrimitiveType::Tetra:    data = CreateTetra(); break;
+    case Irufemi::PrimitiveType::Circle:   data = CreateCircle(0.5f, 32); break;
+    case Irufemi::PrimitiveType::Ring:     data = CreateRing(0.2f, 0.5f, 0.0f, 360.0f, 32, false); break;
+    case Irufemi::PrimitiveType::Skybox:   data = CreateCube(1.0f, 1.0f, 1.0f); break;
+    case Irufemi::PrimitiveType::Cone:     data = CreateCone(0.5f, 1.0f, 32); break;
+    case Irufemi::PrimitiveType::Torus:    data = CreateTorus(0.4f, 0.1f, 32, 16); break;
+    case Irufemi::PrimitiveType::IcoSphere: data = CreateIcoSphere(0.5f, 2); break;
+    case Irufemi::PrimitiveType::Grid:     data = CreateGrid(1.0f, 1.0f, 10, 10); break;
+    case Irufemi::PrimitiveType::Octahedron: data = CreateOctahedron(); break;
     default: break;
     }
 
@@ -36,11 +37,11 @@ const PrimitiveData& PrimitiveManager::GetPrimitiveData(PrimitiveType type) {
     return cpuCache_[type];
 }
 
-const std::vector<VertexData>& PrimitiveManager::GetVertices(PrimitiveType type) {
+const std::vector<VertexData>& PrimitiveManager::GetVertices(Irufemi::PrimitiveType type) {
     return GetPrimitiveData(type).vertices;
 }
 
-const PrimitiveResource& PrimitiveManager::GetStandardResource(PrimitiveType type) {
+const PrimitiveResource& PrimitiveManager::GetStandardResource(Irufemi::PrimitiveType type) {
     auto it = gpuCache_.find(type);
     if (it != gpuCache_.end()) {
         return it->second;
@@ -432,20 +433,20 @@ PrimitiveData PrimitiveManager::CreateTetra() {
     const float b = baseToApex / 4.0f;
     const float a = 3.0f * b;
 
-    Vector3 apex = { 0.0f, a * s, 0.0f };
-    Vector3 v0 = { 0.0f, -b * s, R * s };
-    Vector3 v1 = { -0.5f * s, -b * s, -R * 0.5f * s };
-    Vector3 v2 = { 0.5f * s, -b * s, -R * 0.5f * s };
+    Irufemi::Vector3 apex = { 0.0f, a * s, 0.0f };
+    Irufemi::Vector3 v0 = { 0.0f, -b * s, R * s };
+    Irufemi::Vector3 v1 = { -0.5f * s, -b * s, -R * 0.5f * s };
+    Irufemi::Vector3 v2 = { 0.5f * s, -b * s, -R * 0.5f * s };
 
-    std::vector<std::vector<Vector3>> faces = { { v0, v1, v2 }, { apex, v0, v1 }, { apex, v1, v2 }, { apex, v2, v0 } };
+    std::vector<std::vector<Irufemi::Vector3>> faces = { { v0, v1, v2 }, { apex, v0, v1 }, { apex, v1, v2 }, { apex, v2, v0 } };
 
     for (const auto& face : faces) {
         uint32_t base = static_cast<uint32_t>(data.vertices.size());
-        Vector3 p0 = face[0], p1 = face[1], p2 = face[2];
-        Vector3 e0 = { p1.x - p0.x, p1.y - p0.y, p1.z - p0.z };
-        Vector3 e1 = { p2.x - p0.x, p2.y - p0.y, p2.z - p0.z };
+        Irufemi::Vector3 p0 = face[0], p1 = face[1], p2 = face[2];
+        Irufemi::Vector3 e0 = { p1.x - p0.x, p1.y - p0.y, p1.z - p0.z };
+        Irufemi::Vector3 e1 = { p2.x - p0.x, p2.y - p0.y, p2.z - p0.z };
         // Simplified Cross and Normalize
-        Vector3 n = { e0.y * e1.z - e0.z * e1.y, e0.z * e1.x - e0.x * e1.z, e0.x * e1.y - e0.y * e1.x };
+        Irufemi::Vector3 n = { e0.y * e1.z - e0.z * e1.y, e0.z * e1.x - e0.x * e1.z, e0.x * e1.y - e0.y * e1.x };
         float len = std::sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
         n = { n.x / len, n.y / len, n.z / len };
 
@@ -453,7 +454,7 @@ PrimitiveData PrimitiveManager::CreateTetra() {
         data.vertices.push_back({ { p1.x, p1.y, p1.z, 1.0f }, { 0.0f, 1.0f }, n });
         data.vertices.push_back({ { p2.x, p2.y, p2.z, 1.0f }, { 1.0f, 1.0f }, n });
 
-        Vector3 centroid = { (p0.x + p1.x + p2.x) / 3.0f, (p0.y + p1.y + p2.y) / 3.0f, (p0.z + p1.z + p2.z) / 3.0f };
+        Irufemi::Vector3 centroid = { (p0.x + p1.x + p2.x) / 3.0f, (p0.y + p1.y + p2.y) / 3.0f, (p0.z + p1.z + p2.z) / 3.0f };
         if (n.x * centroid.x + n.y * centroid.y + n.z * centroid.z >= 0.0f) {
             data.indices.push_back(base); data.indices.push_back(base + 1); data.indices.push_back(base + 2);
         } else {
@@ -540,24 +541,24 @@ void PrimitiveManager::GenerateTorusIndices(PrimitiveData& data, uint32_t majorS
 PrimitiveData PrimitiveManager::CreateIcoSphere(float radius, uint32_t subdivision) {
     PrimitiveData data;
     const float t = (1.0f + std::sqrt(5.0f)) / 2.0f;
-    std::vector<Vector3> verts = {{-1,t,0}, {1,t,0}, {-1,-t,0}, {1,-t,0}, {0,-1,t}, {0,1,t}, {0,-1,-t}, {0,1,-t}, {t,0,-1}, {t,0,1}, {-t,0,-1}, {-t,0,1}};
+    std::vector<Irufemi::Vector3> verts = {{-1,t,0}, {1,t,0}, {-1,-t,0}, {1,-t,0}, {0,-1,t}, {0,1,t}, {0,-1,-t}, {0,1,-t}, {t,0,-1}, {t,0,1}, {-t,0,-1}, {-t,0,1}};
     for (auto& v : verts) {
         float len = std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
         v = {v.x/len*radius, v.y/len*radius, v.z/len*radius};
     }
-    struct Triangle { uint32_t v1, v2, v3; };
-    std::vector<Triangle> triangles = {{0,11,5},{0,5,1},{0,1,7},{0,7,10},{0,10,11},{1,5,9},{5,11,4},{11,10,2},{10,7,6},{7,1,8},{3,9,4},{3,4,2},{3,2,6},{3,6,8},{3,8,9},{4,9,5},{2,4,11},{6,2,10},{8,6,7},{9,8,1}};
+    struct IcoTriangle { uint32_t v1, v2, v3; };
+    std::vector<IcoTriangle> triangles = {{0,11,5},{0,5,1},{0,1,7},{0,7,10},{0,10,11},{1,5,9},{5,11,4},{11,10,2},{10,7,6},{7,1,8},{3,9,4},{3,4,2},{3,2,6},{3,6,8},{3,8,9},{4,9,5},{2,4,11},{6,2,10},{8,6,7},{9,8,1}};
     auto getMiddle = [&](uint32_t p1, uint32_t p2, std::map<uint64_t, uint32_t>& cache) {
         uint64_t key = (static_cast<uint64_t>((std::min)(p1, p2)) << 32) | (std::max)(p1, p2);
         if (cache.count(key)) return cache[key];
-        Vector3 v1 = verts[p1], v2 = verts[p2];
-        Vector3 m = {(v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2};
+        Irufemi::Vector3 v1 = verts[p1], v2 = verts[p2];
+        Irufemi::Vector3 m = {(v1.x+v2.x)/2,(v1.y+v2.y)/2,(v1.z+v2.z)/2};
         float l = std::sqrt(m.x*m.x+m.y*m.y+m.z*m.z);
         verts.push_back({m.x/l*radius, m.y/l*radius, m.z/l*radius});
         return cache[key] = (uint32_t)verts.size()-1;
     };
     for (uint32_t i=0; i<subdivision; ++i) {
-        std::vector<Triangle> next; std::map<uint64_t, uint32_t> cache;
+        std::vector<IcoTriangle> next; std::map<uint64_t, uint32_t> cache;
         for (auto& tri : triangles) {
             uint32_t a = getMiddle(tri.v1, tri.v2, cache), b = getMiddle(tri.v2, tri.v3, cache), c = getMiddle(tri.v3, tri.v1, cache);
             next.push_back({tri.v1,a,c}); next.push_back({tri.v2,b,a}); next.push_back({tri.v3,c,b}); next.push_back({a,b,c});
@@ -592,5 +593,60 @@ PrimitiveData PrimitiveManager::CreateGrid(float width, float height, uint32_t x
             data.indices.push_back(base); data.indices.push_back(base+xSegments+1); data.indices.push_back(base+xSegments+2);
         }
     }
+    return data;
+}
+
+PrimitiveData PrimitiveManager::CreateOctahedron() {
+    PrimitiveData data;
+    float w = 0.1f;
+    float h = 0.1f;
+
+    Irufemi::Vector3 root = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 tip = {0.0f, 1.0f, 0.0f};
+    Irufemi::Vector3 fl = {-w, h, -w};
+    Irufemi::Vector3 fr = { w, h, -w};
+    Irufemi::Vector3 br = { w, h,  w};
+    Irufemi::Vector3 bl = {-w, h,  w};
+
+    // ヘルパー：面を構成し、法線を計算して追加する
+    auto addFace = [&](const Irufemi::Vector3& p1, const Irufemi::Vector3& p2, const Irufemi::Vector3& p3) {
+        Irufemi::Vector3 v1 = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+        Irufemi::Vector3 v2 = {p3.x - p1.x, p3.y - p1.y, p3.z - p1.z};
+        Irufemi::Vector3 normal = {
+            v1.y * v2.z - v1.z * v2.y,
+            v1.z * v2.x - v1.x * v2.z,
+            v1.x * v2.y - v1.y * v2.x
+        };
+        float len = std::sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+        if (len > 0.0f) {
+            normal = {normal.x / len, normal.y / len, normal.z / len};
+        }
+
+        uint32_t baseIndex = static_cast<uint32_t>(data.vertices.size());
+        VertexData vd1; vd1.position = {p1.x, p1.y, p1.z, 1.0f}; vd1.normal = normal; vd1.texcoord = {0.5f, 0.0f};
+        VertexData vd2; vd2.position = {p2.x, p2.y, p2.z, 1.0f}; vd2.normal = normal; vd2.texcoord = {1.0f, 1.0f};
+        VertexData vd3; vd3.position = {p3.x, p3.y, p3.z, 1.0f}; vd3.normal = normal; vd3.texcoord = {0.0f, 1.0f};
+
+        data.vertices.push_back(vd1);
+        data.vertices.push_back(vd2);
+        data.vertices.push_back(vd3);
+
+        data.indices.push_back(baseIndex);
+        data.indices.push_back(baseIndex + 1);
+        data.indices.push_back(baseIndex + 2);
+    };
+
+    // Bottom faces (Root to middle)
+    addFace(root, fl, fr);
+    addFace(root, fr, br);
+    addFace(root, br, bl);
+    addFace(root, bl, fl);
+
+    // Top faces (Middle to Tip)
+    addFace(tip, fr, fl);
+    addFace(tip, br, fr);
+    addFace(tip, bl, br);
+    addFace(tip, fl, bl);
+
     return data;
 }

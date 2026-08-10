@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="UI">
+      <UniqueIdentifier>{EF9FFFD9-235B-575F-A2DE-098830D1DDFA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="components">
+      <UniqueIdentifier>{77F1005C-D670-5B3D-8C55-B8231C7C86B0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene">
+      <UniqueIdentifier>{4F25D072-F25C-5444-B5AA-1638023BD11A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\Clear">
+      <UniqueIdentifier>{51F1855D-26D6-563D-938E-6F3DB1B619C6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\Debug">
+      <UniqueIdentifier>{62929F92-3CF2-5C73-8D17-E558D0220D62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\GameOver">
+      <UniqueIdentifier>{5F8308A1-DD85-5996-B7D2-B2DF22D70F6D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\InGame">
+      <UniqueIdentifier>{5A3B514E-0791-5B46-B080-57593ACEB77C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\Pause">
+      <UniqueIdentifier>{E394E23F-0134-58A9-A8F7-981A67EB823C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\StageSelect">
+      <UniqueIdentifier>{48E15DB8-C4FD-58EB-90A3-943185063706}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene\Title">
+      <UniqueIdentifier>{12CA07D8-99E6-5EDC-AF99-647A260A3B9C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GameApplication.cpp" />
+
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="scene\GameOver\GameOverScene.cpp">
+      <Filter>scene\GameOver</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\InGame\GameScene.cpp">
+      <Filter>scene\InGame</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\Pause\PauseScene.cpp">
+      <Filter>scene\Pause</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\Clear\ClearScene.cpp">
+      <Filter>scene\Clear</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\StageSelect\SelectScene.cpp">
+      <Filter>scene\StageSelect</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\Title\TitleScene.cpp">
+      <Filter>scene\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\LoadingScreen.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\PromptController.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+
+    <ClCompile Include="components\SceneTransitionButtonComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClInclude Include="GameApplication.h" />
+
+    <ClInclude Include="scene\GameOver\GameOverScene.h">
+      <Filter>scene\GameOver</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\InGame\GameScene.h">
+      <Filter>scene\InGame</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\Pause\PauseScene.h">
+      <Filter>scene\Pause</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\Clear\ClearScene.h">
+      <Filter>scene\Clear</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\StageSelect\SelectScene.h">
+      <Filter>scene\StageSelect</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\Title\TitleScene.h">
+      <Filter>scene\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\LoadingScreen.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\PromptController.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+
+    <ClInclude Include="components\SceneTransitionButtonComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>

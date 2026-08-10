@@ -21,9 +21,11 @@ void ModelBatchRendererComponent::Initialize() {
     if (!modelName_.empty()) {
         batch_->Initialize(modelName_);
     }
+    
+    // キャッシュされたGPUカリング設定を反映
+    batch_->SetUseGPUCulling(useGPUCulling_);
 
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
 }
 
@@ -34,6 +36,7 @@ void ModelBatchRendererComponent::Update() {
 }
 
 void ModelBatchRendererComponent::Draw() {
+    if (!gameObject_ || !gameObject_->GetIsActive()) return;
     if (batch_) {
         batch_->Draw();
     }
@@ -43,49 +46,50 @@ IRenderable* ModelBatchRendererComponent::GetRenderable() {
     return reinterpret_cast<IRenderable*>(batch_.get());
 }
 
-Sphere ModelBatchRendererComponent::GetWorldSphere() const {
-    Sphere result = { Vector3{0,0,0}, 1.0f }; // default
-    if (transform_) {
-        result.center = transform_->worldPosition_;
-        float maxScale = std::fmax(transform_->worldScale_.x, std::fmax(transform_->worldScale_.y, transform_->worldScale_.z));
+Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {
+    Irufemi::Sphere result = { Irufemi::Vector3{0,0,0}, 1.0f }; // default
+    if (GetTransform()) {
+        result.center = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
+        float maxScale = std::fmax(worldScale.x, std::fmax(worldScale.y, worldScale.z));
         result.radius = maxScale;
     }
     return result;
 }
 
-bool ModelBatchRendererComponent::Raycast(const Ray& ray, float& outDistance) const {
-    if (!batch_ || !transform_) return false;
+bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
+    if (!batch_ || !GetTransform()) return false;
 
     // バッチ全体のAABBや個々のインスタンスとのRaycastは重いため、
     // エディタ等での簡易選択用として親のTransformにのみ当たり判定を付ける
-    Vector3 localHalfSize = {0.5f, 0.5f, 0.5f};
+    Irufemi::Vector3 localHalfSize = {0.5f, 0.5f, 0.5f};
 
-    OBB obb;
-    const Matrix4x4& wmat = transform_->GetWorldMatrix();
-    obb.center = transform_->worldPosition_;
+    Irufemi::OBB obb;
+    const Irufemi::Matrix4x4& wmat = GetTransform()->GetWorldMatrix();
+    obb.center = GetTransform()->GetWorldPosition();
 
-    Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
-    Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
-    Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
+    Irufemi::Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
+    Irufemi::Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
+    Irufemi::Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
 
-    float lenX = Math::Length(xAxis);
-    float lenY = Math::Length(yAxis);
-    float lenZ = Math::Length(zAxis);
+    float lenX = Irufemi::Math::Length(xAxis);
+    float lenY = Irufemi::Math::Length(yAxis);
+    float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f) obb.orientations[0] = Math::Normalize(xAxis);
+    if (lenX > 0.0001f) obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
     else obb.orientations[0] = {1.0f, 0.0f, 0.0f};
 
-    if (lenY > 0.0001f) obb.orientations[1] = Math::Normalize(yAxis);
+    if (lenY > 0.0001f) obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
     else obb.orientations[1] = {0.0f, 1.0f, 0.0f};
 
-    if (lenZ > 0.0001f) obb.orientations[2] = Math::Normalize(zAxis);
+    if (lenZ > 0.0001f) obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
     else obb.orientations[2] = {0.0f, 0.0f, 1.0f};
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;
     obb.size.z = localHalfSize.z * lenZ;
 
-    return Collision::IsCollision(ray, obb, outDistance);
+    return Irufemi::Collision::IsCollision(ray, obb, outDistance);
 }
 
 nlohmann::json ModelBatchRendererComponent::Serialize() {
@@ -101,20 +105,27 @@ void ModelBatchRendererComponent::Deserialize(const nlohmann::json& j) {
     }
 }
 
-void ModelBatchRendererComponent::AddInstance(const Transform& t) {
+void ModelBatchRendererComponent::AddInstance(const Irufemi::Transform& t, int32_t effectType, float effectParam, bool enableMask) {
     if (batch_) {
-        batch_->AddInstance(t);
+        batch_->AddInstance(t, effectType, effectParam, enableMask);
     }
 }
 
-void ModelBatchRendererComponent::AddInstanceWorld(const Matrix4x4& world) {
+void ModelBatchRendererComponent::AddInstanceWorld(const Irufemi::Matrix4x4& world, int32_t effectType, float effectParam, bool enableMask) {
     if (batch_) {
-        batch_->AddInstanceWorld(world);
+        batch_->AddInstanceWorld(world, {1,1,1,1}, effectType, effectParam, enableMask);
     }
 }
 
 void ModelBatchRendererComponent::ClearInstances() {
     if (batch_) {
         batch_->ClearInstances();
+    }
+}
+
+void ModelBatchRendererComponent::SetUseGPUCulling(bool use) {
+    useGPUCulling_ = use;
+    if (batch_) {
+        batch_->SetUseGPUCulling(use);
     }
 }

@@ -1,4 +1,4 @@
-#include "Primitive3DObject.h"
+﻿#include "Primitive3DObject.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 
 #include <algorithm>
@@ -27,7 +27,7 @@ IrufemiEngine* Primitive3DObject::engine_ = nullptr;
 
 // --- Primitive3DObject ---
 
-void Primitive3DObject::Initialize(PrimitiveType type, const std::string& texturePath) {
+void Primitive3DObject::Initialize(Irufemi::PrimitiveType type, const std::string& texturePath) {
     
     // 形状の初期化
     mesh_.ChangeMesh(type);
@@ -97,12 +97,12 @@ void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
         // 形状に応じた基本半径（ユニットサイズ1.0想定）
         float baseRadius = 0.5f;
         switch (mesh_.type) {
-        case PrimitiveType::Cube:      baseRadius = 0.866f; break; // 1/2 * sqrt(3)
-        case PrimitiveType::Cylinder:
-        case PrimitiveType::Cone:
-        case PrimitiveType::Plane:
-        case PrimitiveType::Triangle:
-        case PrimitiveType::Tetra:     baseRadius = 0.707f; break; // 1/2 * sqrt(2)
+        case Irufemi::PrimitiveType::Cube:      baseRadius = 0.866f; break; // 1/2 * sqrt(3)
+        case Irufemi::PrimitiveType::Cylinder:
+        case Irufemi::PrimitiveType::Cone:
+        case Irufemi::PrimitiveType::Plane:
+        case Irufemi::PrimitiveType::Triangle:
+        case Irufemi::PrimitiveType::Tetra:     baseRadius = 0.707f; break; // 1/2 * sqrt(2)
         default:                       baseRadius = 0.500f; break;
         }
 
@@ -110,11 +110,11 @@ void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
         float maxScale = (std::max)({ transform_.transform.scale.x, transform_.transform.scale.y, transform_.transform.scale.z });
         float finalRadius = baseRadius * maxScale;
 
-        Sphere boundingSphere;
+        Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.transform.translate;
         boundingSphere.radius = finalRadius * 1.1f; // 10%のマージン
 
-        if (!Collision::IsCollision(camera.GetFrustum(), boundingSphere)) {
+        if (!Irufemi::Collision::IsCollision(camera.GetFrustum(), boundingSphere)) {
             return; // 描画スキップ
         }
     }
@@ -125,6 +125,8 @@ void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
     // 描画実行
     if (isUI) {
         drawManager_->SubmitUI3D(mesh_.resource.get(), nullptr);
+    } else if (isTransparent_) {
+        drawManager_->SubmitTransparent3D(mesh_.resource.get(), nullptr, castShadows_);
     } else {
         drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
     }
@@ -150,11 +152,11 @@ void Primitive3DObject::Debug(const char* label) {
         };
         int currentType = static_cast<int>(mesh_.type);
         if (ImGui::Combo("Shape", &currentType, shapeNames, IM_ARRAYSIZE(shapeNames))) {
-            SetShape(static_cast<PrimitiveType>(currentType));
+            SetShape(static_cast<Irufemi::PrimitiveType>(currentType));
         }
     }
 
-    // --- Transform Component ---
+    // --- Irufemi::Transform Component ---
     if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::DragFloat3("Position", &transform_.transform.translate.x, 0.01f)) transform_.isDirty = true;
         if (ImGui::DragFloat3("Rotation", &transform_.transform.rotate.x, 0.01f)) transform_.isDirty = true;
@@ -201,17 +203,17 @@ void Primitive3DObject::SyncBeforeDraw() {
     }
 }
 
-Vector3 Primitive3DObject::GetRight() const {
-    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+Irufemi::Vector3 Primitive3DObject::GetRight() const {
+    Irufemi::Matrix4x4 mat = Irufemi::Math::MakeRotateXYZMatrix(transform_.transform.rotate);
     return { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
 }
 
-Vector3 Primitive3DObject::GetUp() const {
-    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+Irufemi::Vector3 Primitive3DObject::GetUp() const {
+    Irufemi::Matrix4x4 mat = Irufemi::Math::MakeRotateXYZMatrix(transform_.transform.rotate);
     return { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
 }
 
-Vector3 Primitive3DObject::GetDirection() const {
-    Matrix4x4 mat = Math::MakeRotateXYZMatrix(transform_.transform.rotate);
+Irufemi::Vector3 Primitive3DObject::GetDirection() const {
+    Irufemi::Matrix4x4 mat = Irufemi::Math::MakeRotateXYZMatrix(transform_.transform.rotate);
     return { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
 }

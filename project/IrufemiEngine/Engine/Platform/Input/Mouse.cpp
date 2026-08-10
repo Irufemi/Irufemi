@@ -1,4 +1,7 @@
 #include "Mouse.h"
+#include "Engine/Core/Math/Math.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 #include <algorithm>
 #include <string>
 
@@ -69,13 +72,6 @@ void Mouse::Update() {
         // 通常時もRaw Inputの移動量は蓄積され続けるためクリアしておく
         rawDelta_ = { 0.0f, 0.0f };
     }
-
-    // --- デバッグコード追加 ---
-    if (wheelDelta_ != 0.0f) {
-        std::string dbgMsg = "[Mouse::Update] wheelDelta_ before reset: " + std::to_string(wheelDelta_) + "\n";
-        OutputDebugStringA(dbgMsg.c_str());
-    }
-    // -------------------------
 
     // ホイールの差分をリセット
     wheelDelta_ = 0.0f;

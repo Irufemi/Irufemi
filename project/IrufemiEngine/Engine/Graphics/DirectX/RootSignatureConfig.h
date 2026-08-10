@@ -11,13 +11,16 @@
 enum class RootSlot : UINT {
     Material = 0,         ///< マテリアル (register b0) - PS
     Transform = 1,        ///< 座標変換行列 (register b0) - VS
-    Texture = 2,          ///< メインテクスチャ (register t0) - PS
+    BindlessSRV = 2,      ///< フル Bindless用 SRVテーブル (register t0, space1-6) - ALL
     LightCommon = 3,      ///< ライト共通データ (register b1) - VS/PS
-    Instancing = 4,       ///< インスタンシング用 SRV (register t0) - VS
-    Camera = 5,           ///< カメラ (register b2) - VS/PS
-    Lights = 6,           ///< ライトSRVテーブル (register t2, t3, t4) - PS
-    Special = 7,          ///< 特殊用 (GSなど) (register b6) - ALL
-    EnvMap = 8,           ///< 環境マップ/深度 (register t1) - PS
-    LineInstancing = 9,   ///< ライン用インスタンシング (register t1) - VS
-    ShadowMap = 10,        ///< シャドウマップ (register t5) - PS
+    // Instancing (t0, space0) や Special (b6) はバインド方法を維持するか定数に回すか、とりあえずそのままの枠は残す
+    Instancing = 4,       ///< インスタンシング用 SRV (register t0, space0) - VS
+    Camera = 5,           ///< カメラ/PerFrameData (register b2) - VS/PS
+    Special = 6,          ///< 特殊用 (GSなど) (register b6) - ALL
+    LineInstancing = 7,   ///< ライン用インスタンシング (register t1, space0) - VS
+    Lights = 8,           ///< レガシーライトSRVテーブル (register t2, t3, t4) - PS
+    ShadowMap = 9,        ///< レガシーシャドウマップ (register t5) - PS
+    DepthMap = 10,        ///< レガシーメイン深度マップ (register t6) - PS
+    LegacyPSTexture = 11, ///< レガシーテクスチャ (register t0) - PS
+    CustomEffectParams = 12, ///< 個別エフェクト用パラメータ配列 (register b3) - PS
 };

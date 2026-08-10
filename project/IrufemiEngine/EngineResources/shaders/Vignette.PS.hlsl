@@ -1,0 +1,25 @@
+#include "PostProcessParameters.hlsli"
+#include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
+
+
+
+ConstantBuffer<VignetteParams> gVignette : register(b0);
+SamplerState gSampler : register(s0);
+
+
+
+PixelShaderOutput main(VertexShaderOutput input) {
+    PixelShaderOutput output;
+    output.color = gTexture.Sample(gSampler, input.texcoord);
+
+    // 中心からの距離で計算
+    float dist = distance(input.texcoord, float2(0.5f, 0.5f));
+    // smoothstepによる自然な減衰
+    float vignette = smoothstep(gVignette.radius, gVignette.radius - gVignette.softness, dist);
+    // 係数として補間
+    output.color.rgb = lerp(gVignette.color.rgb, output.color.rgb, vignette);
+
+    return output;
+}

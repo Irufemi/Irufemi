@@ -152,4 +152,4 @@ public:
      * @return ロード済みならtrue
      */
     bool HasSound(const std::string& key) const;
-};
+};

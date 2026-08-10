@@ -8,6 +8,8 @@
 #include "Engine/Platform/Input/Mouse.h"
 #include "Engine/Manager/DebugUI.h"
 #include "Engine/IrufemiEngine.h"
+#include "Engine/Core/Utility/FileSystem.h"
+#include "Engine/Core/Utility/StringUtility.h"
 
 #include <Windows.h>
 #include <DbgHelp.h>
@@ -201,6 +203,7 @@ LRESULT CALLBACK WinApp::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+
     case WM_INPUT: {
         UINT dwSize = 0;
         GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
@@ -309,8 +312,9 @@ LONG WINAPI WinApp::ExportDump(EXCEPTION_POINTERS* exception) {
     SYSTEMTIME time;
     GetLocalTime(&time);
     wchar_t filePath[MAX_PATH] = { 0 };
-    CreateDirectoryW(L"./Dumps", nullptr);
-    StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp", time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
+    std::wstring dumpDir = ConvertString(FileSystem::GetDumpPath());
+    CreateDirectoryW(dumpDir.c_str(), nullptr);
+    StringCchPrintfW(filePath, MAX_PATH, L"%ls/%04d-%02d%02d-%02d%02d.dmp", dumpDir.c_str(), time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
     HANDLE dumpFileHandle = CreateFileW(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
     //processId(このexeのId)とクラッシュ(例外)の発生したthreadIdを取得
     DWORD processId = GetCurrentProcessId();

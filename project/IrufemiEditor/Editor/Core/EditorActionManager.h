@@ -5,6 +5,7 @@
 #include <string>
 #include <deque>
 #include "ICommand.h"
+#include "Engine/Core/Math/Vector3.h"
 
 class GameObject;
 class EditorManager;
@@ -44,8 +45,10 @@ public:
     ///@{
     /**
      * @brief アセット（モデルや画像）のパスから適切なGameObjectを生成してシーンに追加する
+     * @param assetPath アセットのファイルパス
+     * @param position 生成するワールド座標（SceneViewなどからのドロップ時に指定）
      */
-    void CreateObjectFromAsset(const std::string& assetPath);
+    void CreateObjectFromAsset(const std::string& assetPath, const Irufemi::Vector3& position = {0.0f, 0.0f, 0.0f});
 
     /**
      * @brief 空のGameObject、または指定したプリミティブを生成する

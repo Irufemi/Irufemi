@@ -8,6 +8,8 @@
 #include "../Engine/Platform/Input/InputManager.h"
 #include "../Engine/Platform/Input/Mouse.h"
 #include "SceneSerializer.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 
 namespace {
     /**
@@ -30,6 +32,12 @@ namespace {
 }
 
 SceneManager::SceneManager(IrufemiEngine* engine) : engine_(engine) {
+}
+
+SceneManager::~SceneManager() {
+    if (initFuture_.valid()) {
+        initFuture_.wait();
+    }
 }
 
 // 登録順を保持しつつ登録
@@ -60,6 +68,16 @@ bool SceneManager::ChangeTo(const Key& next) {
         it->scene->Finalize();
     }
     sceneStack_.clear();
+
+    // 次のシーンへ行く前にパーティクルの状態をクリア
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
+
+    // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
+    if (engine_->GetPostProcessManager()) {
+        engine_->GetPostProcessManager()->Reset();
+    }
 
     SceneStackItem item;
     item.name = next;
@@ -135,6 +153,14 @@ void SceneManager::PopScene() {
     sceneStack_.back().scene->Finalize();
     sceneStack_.pop_back();
 
+    // パーティクルの状態をクリア（Pop前のシーンから残ったパーティクルを消去）
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
+    if (engine_->GetGPUParticleManager()) {
+        engine_->GetGPUParticleManager()->ClearAllParticles();
+    }
+
     if (!sceneStack_.empty()) {
         // 次のシーンが最前面に復帰するためレジューム処理を行う
         sceneStack_.back().scene->OnResume();
@@ -175,7 +201,8 @@ bool SceneManager::UpdateLoadStatus() {
     bool isLoading = IsLoading();
 
     if (isLoading) {
-        loadingTimer_ += engine_->GetDeltaTime();
+        // ロード画面のアニメーションなどのための時間加算は実時間で行う
+        loadingTimer_ += engine_->GetRealDeltaTime();
     } else {
         loadingTimer_ = 0.0f;
     }
@@ -301,6 +328,17 @@ void SceneManager::Update() {
     // 1. ロード状況の確認とカーソル制御
     bool isLoading = UpdateLoadStatus();
 
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+    // デバッグ用の即時リロード機能 (一線級エンジンのConsole Command / CheatManagerに相当)
+    if (engine_->GetInputManager()->IsKeyPressed('R')) {
+        const Key& currentScene = GetCurrent();
+        // ロード中や遷移中でなければリロード要求を発行
+        if (!currentScene.empty() && !isLoading && pending_.empty() && transitionPhase_ == TransitionPhase::None) {
+            Request(currentScene); 
+        }
+    }
+#endif
+
     // 2. 即時シーン切り替え要求の処理
     ProcessImmediateTransition();
 
@@ -384,9 +422,17 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     }
     sceneStack_.clear();
 
-    // シーン切り替え時にポストプロセスのパラメータを自動リセット
+    // 次のシーンへ行く前にパーティクルの状態をクリア
+    if (engine_->GetVoxelParticleManager()) {
+        engine_->GetVoxelParticleManager()->Clear();
+    }
+    if (engine_->GetGPUParticleManager()) {
+        engine_->GetGPUParticleManager()->ClearAllParticles();
+    }
+
+    // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
     if (engine_->GetPostProcessManager()) {
-        engine_->GetPostProcessManager()->ResetAllParams();
+        engine_->GetPostProcessManager()->Reset();
     }
     
     initFuture_ = std::async(std::launch::async, [this, factory, next]() {

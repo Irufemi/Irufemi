@@ -13,15 +13,13 @@ OBBColliderComponent::~OBBColliderComponent() {
 
 void OBBColliderComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
     // 初期化時にCollisionManagerに自身を登録する
     if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void OBBColliderComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 }
 
@@ -30,31 +28,23 @@ void OBBColliderComponent::DrawDebug() {
 
 
 
-OBB OBBColliderComponent::GetWorldOBB() const {
-    OBB obb;
-    if (transform_) {
-        // ワールド行列の各軸ベクトルからスケールと回転を抽出
-        Vector3 right = { transform_->GetWorldMatrix().m[0][0], transform_->GetWorldMatrix().m[0][1], transform_->GetWorldMatrix().m[0][2] };
-        Vector3 up    = { transform_->GetWorldMatrix().m[1][0], transform_->GetWorldMatrix().m[1][1], transform_->GetWorldMatrix().m[1][2] };
-        Vector3 forward = { transform_->GetWorldMatrix().m[2][0], transform_->GetWorldMatrix().m[2][1], transform_->GetWorldMatrix().m[2][2] };
-        
-        float scaleX = Math::Length(right);
-        float scaleY = Math::Length(up);
-        float scaleZ = Math::Length(forward);
-        
-        obb.orientations[0] = Math::Normalize(right);
-        obb.orientations[1] = Math::Normalize(up);
-        obb.orientations[2] = Math::Normalize(forward);
-        
-        Vector3 worldPos = { transform_->GetWorldMatrix().m[3][0], transform_->GetWorldMatrix().m[3][1], transform_->GetWorldMatrix().m[3][2] };
+Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
+    Irufemi::OBB obb;
+    if (GetTransform()) {
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
+
+        obb.orientations[0] = GetTransform()->GetWorldRight();
+        obb.orientations[1] = GetTransform()->GetWorldUp();
+        obb.orientations[2] = GetTransform()->GetWorldForward();
         
         // Offsetも回転・スケールを考慮
         obb.center = worldPos 
-                   + obb.orientations[0] * (localOffset_.x * scaleX)
-                   + obb.orientations[1] * (localOffset_.y * scaleY)
-                   + obb.orientations[2] * (localOffset_.z * scaleZ);
+                   + obb.orientations[0] * (localOffset_.x * worldScale.x)
+                   + obb.orientations[1] * (localOffset_.y * worldScale.y)
+                   + obb.orientations[2] * (localOffset_.z * worldScale.z);
                    
-        obb.size = { localSize_.x * scaleX, localSize_.y * scaleY, localSize_.z * scaleZ };
+        obb.size = { localSize_.x * worldScale.x, localSize_.y * worldScale.y, localSize_.z * worldScale.z };
     } else {
         obb.center = localOffset_;
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};
@@ -63,6 +53,20 @@ OBB OBBColliderComponent::GetWorldOBB() const {
         obb.size = localSize_;
     }
     return obb;
+}
+
+Irufemi::AABB OBBColliderComponent::GetBoundingBox() const {
+    Irufemi::OBB obb = GetWorldOBB();
+    Irufemi::AABB aabb;
+    // OBBを包含するAABBの半径(各軸ごとの最大投影長)を計算
+    Irufemi::Vector3 extents;
+    extents.x = std::abs(obb.orientations[0].x * obb.size.x) + std::abs(obb.orientations[1].x * obb.size.y) + std::abs(obb.orientations[2].x * obb.size.z);
+    extents.y = std::abs(obb.orientations[0].y * obb.size.x) + std::abs(obb.orientations[1].y * obb.size.y) + std::abs(obb.orientations[2].y * obb.size.z);
+    extents.z = std::abs(obb.orientations[0].z * obb.size.x) + std::abs(obb.orientations[1].z * obb.size.y) + std::abs(obb.orientations[2].z * obb.size.z);
+
+    aabb.min = { obb.center.x - extents.x, obb.center.y - extents.y, obb.center.z - extents.z };
+    aabb.max = { obb.center.x + extents.x, obb.center.y + extents.y, obb.center.z + extents.z };
+    return aabb;
 }
 
 nlohmann::json OBBColliderComponent::Serialize() {
@@ -79,11 +83,20 @@ void OBBColliderComponent::Deserialize(const nlohmann::json& j) {
         localOffset_.x = j["localOffset"][0];
         localOffset_.y = j["localOffset"][1];
         localOffset_.z = j["localOffset"][2];
+    } else if (j.contains("center")) {
+        localOffset_.x = j["center"][0];
+        localOffset_.y = j["center"][1];
+        localOffset_.z = j["center"][2];
     }
+
     if (j.contains("localSize")) {
         localSize_.x = j["localSize"][0];
         localSize_.y = j["localSize"][1];
         localSize_.z = j["localSize"][2];
+    } else if (j.contains("size")) {
+        localSize_.x = j["size"][0];
+        localSize_.y = j["size"][1];
+        localSize_.z = j["size"][2];
     }
     if (j.contains("layer")) layer_ = j["layer"];
     if (j.contains("mask")) mask_ = j["mask"];

@@ -1,6 +1,8 @@
 #pragma once
 #include "../Math.h"
 
+
+namespace Irufemi {
 // 前方宣言
 struct Sphere;
 struct Plane;
@@ -24,11 +26,35 @@ namespace Collision {
     };
 
     // --- 押し出し対応の判定関数群 ---
+    /**
+     * @brief CollisionResult を取得する。
+     * @return 取得された CollisionResult
+     */
     CollisionResult GetCollisionResult(const Sphere& a, const Sphere& b);
+    /**
+     * @brief CollisionResult を取得する。
+     * @return 取得された CollisionResult
+     */
     CollisionResult GetCollisionResult(const AABB& a, const AABB& b);
+    /**
+     * @brief CollisionResult を取得する。
+     * @return 取得された CollisionResult
+     */
     CollisionResult GetCollisionResult(const AABB& aabb, const Sphere& sphere);
+    /**
+     * @brief CollisionResult を取得する。
+     * @return 取得された CollisionResult
+     */
     CollisionResult GetCollisionResult(const OBB& a, const OBB& b);
+    /**
+     * @brief CollisionResult を取得する。
+     * @return 取得された CollisionResult
+     */
     CollisionResult GetCollisionResult(const OBB& obb, const Sphere& sphere);
+    /**
+     * @brief CollisionResult を取得する。
+     * @return 取得された CollisionResult
+     */
     CollisionResult GetCollisionResult(const OBB& obb, const AABB& aabb);
 
 
@@ -257,11 +283,19 @@ namespace Collision {
     /// </summary>
     /// OBBとRay(半直線)の判定
     /// </summary>
+    /**
+     * @brief IsOBBRayCollision かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsOBBRayCollision(const OBB& obb, const Ray& ray);
 
     /// </summary>
     /// OBBとLine(直線)の判定
     /// </summary>
+    /**
+     * @brief IsOBBLineCollision かどうかを判定する。
+     * @return 判定結果 (true/false)
+     */
     bool IsOBBLineCollision(const OBB& obb, const Line& line);
 
     /// <summary>
@@ -290,3 +324,4 @@ namespace Collision {
     bool GetOBBSegmentIntersection(const OBB& obb, const Segment& segment, Vector3& outIntersection);
 
 } // namespace Collision
+} // namespace Irufemi

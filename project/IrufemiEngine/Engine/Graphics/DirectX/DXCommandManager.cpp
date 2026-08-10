@@ -1,15 +1,16 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DXCommandManager.h"
 #include "DirectXCommon.h" // kMaxFramesInFlight を使用するため
 #include <cassert>
 
 void DXCommandManager::Initialize(ID3D12Device* device) {
-    assert(device != nullptr);
+    IRUFEMI_ASSERT(device != nullptr);
     device_ = device;
 
     // --- コマンドキューの生成 ---
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
     HRESULT hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(commandQueue_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     // --- メインのコマンドアロケータ生成 ---
     commandAllocators_.resize(kMaxFramesInFlight);
@@ -17,31 +18,31 @@ void DXCommandManager::Initialize(ID3D12Device* device) {
 
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocators_[i].GetAddressOf()));
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
     }
 
     // --- メインのコマンドリスト生成 ---
     hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators_[0].Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     commandList_->Close();
 
     // --- 同期用フェンスとイベントの生成 ---
     hr = device_->CreateFence(fenceValues_[0], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     fenceEvent_ = CreateEvent(NULL, FALSE, FALSE, NULL);
-    assert(fenceEvent_ != nullptr);
+    IRUFEMI_ASSERT(fenceEvent_ != nullptr);
 
     // --- 転送専用(Upload)コマンド系の生成 ---
     hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(uploadCommandAllocator_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     
     hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, uploadCommandAllocator_.Get(), nullptr, IID_PPV_ARGS(uploadCommandList_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     uploadCommandList_->Close();
 
     hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(uploadFence_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 void DXCommandManager::Finalize() {

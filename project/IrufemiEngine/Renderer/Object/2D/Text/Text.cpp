@@ -1,4 +1,4 @@
-#include "Text.h"
+﻿#include "Text.h"
 #include "Engine/Graphics/Font/FontManager.h"
 #include "Engine/Manager/DrawManager.h"
 #include "Engine/Graphics/Camera/Camera.h"
@@ -25,7 +25,7 @@ void Text::Initialize(const std::string& fontId) {
         resource_->GetMaterialData()->enableLighting = false;
         resource_->GetMaterialData()->hasTexture = true;
         resource_->GetMaterialData()->lightingMode = 2; // Unlit相当
-        resource_->GetMaterialData()->uvTransform = Math::MakeIdentity4x4();
+        resource_->GetMaterialData()->uvTransform = Irufemi::Math::MakeIdentity4x4();
     }
 }
 
@@ -170,7 +170,7 @@ void Text::GenerateVertices() {
     }
 
     // SRVを設定
-    resource_->textureHandle_ = fontManager_->GetAtlasSRV();
+    resource_->textureHandle_ = fontManager_->GetAtlasHandle();
 
     // 頂点がなければ終了
     if (resource_->vertexDataList_.empty()) return;
@@ -190,10 +190,10 @@ void Text::Update() {
     if (!resource_ || !cameraManager_ || !fontManager_) return;
     
     // AtlasのSRVが変わったか(リビルドされた等)、テキストに変更があった場合は再生成
-    D3D12_GPU_DESCRIPTOR_HANDLE currentAtlas = fontManager_->GetAtlasSRV();
-    if (lastAtlasSrv_.ptr != currentAtlas.ptr) {
+    ResourceHandle currentAtlas = fontManager_->GetAtlasHandle();
+    if (lastAtlasHandle_ != currentAtlas) {
         isTextDirty_ = true;
-        lastAtlasSrv_ = currentAtlas;
+        lastAtlasHandle_ = currentAtlas;
     }
 
     if (isTextDirty_) {
@@ -225,8 +225,8 @@ void Text::Draw() {
     Camera* activeCam = cameraManager_->GetActiveCamera();
     if (!activeCam) return;
 
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetOrthographicMatrix(), sizeof(Matrix4x4)) != 0);
+    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetOrthographicMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged || isTextDirty_) {
         Update();

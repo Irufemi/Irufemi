@@ -1,8 +1,9 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DescriptorPool.h"
 #include <cassert>
 
 void DescriptorPool::Initialize(ID3D12Device* device) {
-    assert(device);
+    IRUFEMI_ASSERT(device);
     device_ = device;
 
     D3D12_DESCRIPTOR_HEAP_DESC desc{};
@@ -10,7 +11,7 @@ void DescriptorPool::Initialize(ID3D12Device* device) {
     desc.NumDescriptors = kMaxSRVCount;
     desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     HRESULT hr = device_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&heap_));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     descriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     baseIndex_ = 0;
@@ -30,7 +31,7 @@ uint32_t DescriptorPool::Allocate(uint32_t count) {
     // 複数確保、またはフリーリストが空の場合は nextIndex_ から末尾を切り出す
     // (nextIndex_ から確保することで確実に連続性が保証される)
     if (nextIndex_ + count > kMaxSRVCount) {
-        assert(false && "DescriptorPool is full.");
+        IRUFEMI_ASSERT(false && "DescriptorPool is full.");
         return kInvalid;
     }
 
@@ -80,28 +81,36 @@ void DescriptorPool::RebuildFreeListExcept(const std::vector<uint32_t>& usedSort
 }
 
 void DescriptorPool::ReservePrefix(uint32_t count) {
-    assert(nextIndex_ == 0 && freeList_.empty()); // 最初に呼ぶこと
+    IRUFEMI_ASSERT(nextIndex_ == 0 && freeList_.empty()); // 最初に呼ぶこと
     baseIndex_ = count;
     nextIndex_ = count;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorPool::GetCPUHandle(uint32_t index) const {
-    assert(index < kMaxSRVCount);
+    IRUFEMI_ASSERT(index < kMaxSRVCount);
     D3D12_CPU_DESCRIPTOR_HANDLE handle = heap_->GetCPUDescriptorHandleForHeapStart();
     handle.ptr += static_cast<SIZE_T>(index) * descriptorSize_;
     return handle;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DescriptorPool::GetGPUHandle(uint32_t index) const {
-    assert(index < kMaxSRVCount);
+    IRUFEMI_ASSERT(index < kMaxSRVCount);
     D3D12_GPU_DESCRIPTOR_HANDLE handle = heap_->GetGPUDescriptorHandleForHeapStart();
     handle.ptr += static_cast<UINT64>(index) * descriptorSize_;
     return handle;
 }
 
+uint32_t DescriptorPool::GetIndexFromGPUHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle) const {
+    if (gpuHandle.ptr == 0) return kInvalid;
+    uint64_t basePtr = heap_->GetGPUDescriptorHandleForHeapStart().ptr;
+    if (gpuHandle.ptr < basePtr) return kInvalid;
+    uint32_t offset = static_cast<uint32_t>(gpuHandle.ptr - basePtr);
+    return offset / descriptorSize_;
+}
+
 void DescriptorPool::CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels) {
-    assert(pResource);
-    assert(srvIndex < kMaxSRVCount);
+    IRUFEMI_ASSERT(pResource);
+    IRUFEMI_ASSERT(srvIndex < kMaxSRVCount);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
     srvDesc.Format = format;
@@ -113,8 +122,8 @@ void DescriptorPool::CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pR
 }
 
 void DescriptorPool::CreateSRVForStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride) {
-    assert(pResource);
-    assert(srvIndex < kMaxSRVCount);
+    IRUFEMI_ASSERT(pResource);
+    IRUFEMI_ASSERT(srvIndex < kMaxSRVCount);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;

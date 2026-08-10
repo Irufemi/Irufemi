@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "ModelBatch.h"
 #include <cassert>
 #include "Engine/IrufemiEngine.h"
@@ -8,21 +9,23 @@
 ModelManager* ModelBatch::modelManager_ = nullptr;
 
 void ModelBatch::Initialize(const std::string& objFilename) {
-    assert(modelManager_ && "ModelBatch::Initialize: ModelManager is not set.");
-    managedModel_ = modelManager_->GetModelAsync(objFilename);
+    IRUFEMI_ASSERT(modelManager_ && "ModelBatch::Initialize: ModelManager is not set.");
+    modelHandle_ = modelManager_->LoadModel(objFilename);
     isResourcesInitialized_ = false;
 
-    auto status = managedModel_->status.load();
-    if (status == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
-        InitializeResources();
+    if (auto m = modelManager_->Resolve(modelHandle_)) {
+        if (m->status.load() == ManagedModel::LoadingStatus::Loaded && m->cpuModel) {
+            InitializeResources();
+        }
     }
 }
 
 void ModelBatch::InitializeResources() {
-    if (!managedModel_ || !managedModel_->cpuModel || managedModel_->cpuModel->meshes.empty()) {
+    auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+    if (!m || !m->cpuModel || m->cpuModel->meshes.empty()) {
         return;
     }
-    const auto& mesh = managedModel_->cpuModel->meshes.front();
+    const auto& mesh = m->cpuModel->meshes.front();
 
     CreateMaterialResources(mesh);
     EnsureSharedTexture(mesh);
@@ -31,8 +34,9 @@ void ModelBatch::InitializeResources() {
 }
 
 const GpuMesh* ModelBatch::GetGpuMesh() const {
-    if (managedModel_ && !managedModel_->gpuMeshes.empty()) {
-        return managedModel_->gpuMeshes.front().get();
+    auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+    if (m && !m->gpuMeshes.empty()) {
+        return m->gpuMeshes.front().get();
     }
     return nullptr;
 }
@@ -61,38 +65,75 @@ void ModelBatch::CreateMaterialResources(const ObjMesh& mesh) {
 }
 
 void ModelBatch::EnsureSharedTexture(const ObjMesh& mesh) {
-    if (!mesh.material.textureFilePath.empty()) {
-        textureHandle_ = textureManager_->GetTextureHandle(mesh.material.textureFilePath);
-    } else {
-        textureHandle_ = textureManager_->GetWhiteTextureHandle();
+    if (textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
     }
-    assert(textureHandle_.ptr != 0 && "Texture SRV handle is invalid");
+    if (!mesh.material.textureFilePath.empty()) {
+        textureHandle_ = textureManager_->LoadTexture(mesh.material.textureFilePath);
+    } else {
+        textureHandle_ = ResourceHandle();
+    }
 }
 
 float ModelBatch::GetBoundingSphereRadius() const {
-    return managedModel_ && managedModel_->cpuModel ? managedModel_->cpuModel->boundingSphere.radius : 0.0f;
+    auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+    return m && m->cpuModel ? m->cpuModel->boundingSphere.radius : 0.0f;
 }
 
 void ModelBatch::Draw() {
     // If not initialized, attempt to init
     if (!isResourcesInitialized_) {
-        if (managedModel_ && managedModel_->status.load() == ManagedModel::LoadingStatus::Loaded && managedModel_->cpuModel) {
+        auto m = modelManager_ ? modelManager_->Resolve(modelHandle_) : nullptr;
+        if (m && m->status.load() == ManagedModel::LoadingStatus::Loaded && m->cpuModel) {
             InitializeResources();
         } else {
             return; // Not loaded yet
         }
     }
 
-    if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || (instances_.empty() && instanceWorlds_.empty())) { return; }
+    if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || (instances_.empty() && instanceWorlds_.empty())) { 
+        return; 
+    }
 
     SyncBeforeDraw();
 
     RenderPackets::ModelBatchPacket p{};
     p.gpuMesh = GetGpuMesh();
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = GetTextureHandle();
-    p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
-    p.instanceCount = GetInstanceCount();
+
+    if (useGPUCulling_) {
+        p.useGPUCulling = true;
+        p.instancingSrvHandleGPU = GetOutputInstancesSrvHandleGPU();
+        p.indirectCommandBuffer = GetIndirectCommandBuffer();
+        p.indirectCommandUploadBuffer = GetIndirectCommandUploadBuffer();
+        p.indirectCommandUav = GetIndirectCommandUavHandleGPU();
+        p.cullingDataAddress = GetCullingDataAddress();
+        p.inputInstancesSrv = GetInstancingSrvHandleGPU();
+        p.outputInstancesUav = GetOutputInstancesUavHandleGPU();
+        p.outputInstancesBuffer = GetOutputInstanceBuffer();
+        p.maxInstanceCount = GetMaxInstanceCount();
+        p.instanceCount = GetMaxInstanceCount(); // CPU側での最大数をセットしておく(描画には使用されない)
+
+        // UploadBufferへ描画引数の初期値を書き込む
+        if (ID3D12Resource* uploadBuffer = GetIndirectCommandUploadBuffer()) {
+            D3D12_DRAW_INDEXED_ARGUMENTS args{};
+            args.IndexCountPerInstance = GetGpuMesh()->indexCount > 0 ? GetGpuMesh()->indexCount : GetGpuMesh()->vertexCount;
+            args.InstanceCount = 0; // 初期値は0
+            args.StartIndexLocation = 0;
+            args.BaseVertexLocation = 0;
+            args.StartInstanceLocation = 0;
+
+            uint8_t* dst = nullptr;
+            if (SUCCEEDED(uploadBuffer->Map(0, nullptr, reinterpret_cast<void**>(&dst)))) {
+                std::memcpy(dst, &args, sizeof(args));
+                uploadBuffer->Unmap(0, nullptr);
+            }
+        }
+    } else {
+        p.useGPUCulling = false;
+        p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
+        p.instanceCount = GetInstanceCount();
+    }
     p.blendMode = GetBlendMode();
     p.depthWrite = GetDepthWrite();
     p.cullMode = GetCullMode();

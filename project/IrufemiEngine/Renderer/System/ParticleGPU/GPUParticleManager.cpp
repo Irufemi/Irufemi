@@ -10,6 +10,7 @@ void GPUParticleManager::Initialize() {
 
 void GPUParticleManager::Update() {
     for (auto& pair : systems_) {
+        pair.second.system->fieldsData_ = globalFields_; // Push global fields to all systems
         pair.second.system->Update();
     }
 }
@@ -24,16 +25,23 @@ void GPUParticleManager::Finalize() {
     systems_.clear();
 }
 
-GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, BlendMode blendMode, bool isUnscaledTime) {
-    SystemKey key{ texturePath, blendMode, isUnscaledTime };
+void GPUParticleManager::ClearAllParticles() {
+    for (auto& pair : systems_) {
+        pair.second.system->Clear();
+    }
+}
+
+GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting) {
+    SystemKey key{ texturePath, blendMode, isUnscaledTime, enableLighting };
     auto& ctx = systems_[key];
 
     // 新規テクスチャの場合はシステムを初期化
     if (!ctx.system) {
         ctx.system = std::make_unique<GPUParticleSystem>();
         ctx.system->Initialize(texturePath);
-        ctx.system->SetBlendMode(blendMode);         // TODO: GPUParticleSystem に SetBlendMode を追加予定
-        ctx.system->SetUnscaledTime(isUnscaledTime); // TODO: GPUParticleSystem に SetUnscaledTime を追加予定
+        ctx.system->SetBlendMode(blendMode);
+        ctx.system->SetUnscaledTime(isUnscaledTime);
+        ctx.system->SetEnableLighting(enableLighting);
     }
     
     uint32_t assignedIndex = 0;
@@ -75,33 +83,73 @@ void GPUParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
 
 void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GPUParticleEmitter& data) {
     if (handle.IsValid() && handle.emitterIndex < handle.system->emittersData_.size()) {
-        // burstCount is additive in our system, so we accumulate it from the incoming data and clear the incoming data's burstCount?
-        // Actually, ParticleEmitterComponent might send burstCount. We add it and reset component's.
         uint32_t burst = handle.system->emittersData_[handle.emitterIndex].burstCount + data.burstCount;
-        
         handle.system->emittersData_[handle.emitterIndex] = data;
-        
         handle.system->emittersData_[handle.emitterIndex].burstCount = burst;
+    }
+}
+
+void GPUParticleManager::SetMeshEmitterBuffer(EmitterHandle handle, D3D12_GPU_VIRTUAL_ADDRESS vbAddress) {
+    if (handle.IsValid() && handle.emitterIndex < handle.system->emittersData_.size()) {
+        if (handle.system->meshVertexBuffers_.size() <= handle.emitterIndex) {
+            handle.system->meshVertexBuffers_.resize(handle.emitterIndex + 1, 0);
+        }
+        handle.system->meshVertexBuffers_[handle.emitterIndex] = vbAddress;
+    }
+}
+
+GPUParticleManager::FieldHandle GPUParticleManager::RegisterField() {
+    uint32_t assignedIndex = 0;
+    if (!freeFieldIndices_.empty()) {
+        assignedIndex = freeFieldIndices_.back();
+        freeFieldIndices_.pop_back();
+    } else {
+        assignedIndex = nextFieldIndex_++;
+        if (assignedIndex >= globalFields_.size()) {
+            globalFields_.resize(assignedIndex + 1);
+        }
+    }
+    
+    // Initialize slot with disabled field (strength = 0)
+    globalFields_[assignedIndex] = ParticleField();
+    
+    FieldHandle handle;
+    handle.index = assignedIndex;
+    return handle;
+}
+
+void GPUParticleManager::UnregisterField(const FieldHandle& handle) {
+    if (!handle.IsValid()) return;
+    
+    if (handle.index < globalFields_.size()) {
+        globalFields_[handle.index].strength = 0.0f; // Disable
+        freeFieldIndices_.push_back(handle.index);
+    }
+}
+
+void GPUParticleManager::UpdateFieldData(const FieldHandle& handle, const ParticleField& data) {
+    if (handle.IsValid() && handle.index < globalFields_.size()) {
+        globalFields_[handle.index] = data;
     }
 }
 
 #if defined(USE_IMGUI)
 #include <imgui.h>
 #endif
+
+int GPUParticleManager::GetTotalEmittersUsed() const {
+    int totalEmitters = 0;
+    for (const auto& pair : systems_) {
+        // nextIndex はこれまで割り当てた最大のインデックス（サイズ）。そこから解放済みの数を引く
+        totalEmitters += (int)(pair.second.nextIndex - pair.second.freeIndices.size());
+    }
+    return totalEmitters;
+}
+
 void GPUParticleManager::Debug() {
 #if defined(USE_IMGUI)
     if (ImGui::BeginTabItem("GPU Particle Manager")) {
-        ImGui::Text("System Statistics");
-        ImGui::Separator();
-        ImGui::Text("Active Particle Systems (Textures): %d", (int)systems_.size());
-        
-        int totalEmitters = 0;
-        int maxEmitters = static_cast<int>(systems_.size()) * GPUParticleSystem::kMaxEmitters;
-        for (const auto& pair : systems_) {
-            totalEmitters += (int)(GPUParticleSystem::kMaxEmitters - pair.second.freeIndices.size());
-        }
-        
-        ImGui::Text("Total Emitters Used: %d / %d", totalEmitters, maxEmitters);
+        ImGui::TextDisabled("(Global system stats moved to TelemetryMonitor)");
         ImGui::Separator();
         
         ImGui::Spacing();
@@ -111,7 +159,7 @@ void GPUParticleManager::Debug() {
             auto& context = pair.second;
             
             if (ImGui::TreeNode(textureName.c_str())) {
-                ImGui::Text("Emitters: %d / %d", (int)(GPUParticleSystem::kMaxEmitters - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
+                ImGui::Text("Emitters: %d / %d", (int)(context.nextIndex - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
                 context.system->Debug();
                 ImGui::TreePop();
             }

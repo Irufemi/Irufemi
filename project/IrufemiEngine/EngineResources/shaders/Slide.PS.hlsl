@@ -1,0 +1,31 @@
+#include "PostProcessParameters.hlsli"
+#include "Fullscreen.hlsli"
+#include "Bindless.hlsli"
+#include "PostProcessBindlessParams.hlsli"
+
+SamplerState gSampler : register(s0);
+
+
+
+ConstantBuffer<SlideParams> gParams : register(b0);
+
+
+
+PixelShaderOutput main(VertexShaderOutput input) {
+    PixelShaderOutput output;
+    
+    // 元のテクスチャカラーを取得
+    float32_t4 texColor = gTexture.Sample(gSampler, input.texcoord);
+    
+    // 境界を少しぼかすための幅
+    float32_t edgeWidth = 0.02f;
+    
+    // UV.x が threshold 以下ならスライド色、以上なら元の色
+    // smoothstep を使って境界を滑らかにする
+    float32_t factor = smoothstep(gParams.threshold - edgeWidth, gParams.threshold, input.texcoord.x);
+    
+    output.color.rgb = lerp(gParams.color.rgb, texColor.rgb, factor);
+    output.color.a = texColor.a;
+    
+    return output;
+}

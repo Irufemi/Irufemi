@@ -6,126 +6,148 @@ void VoxelParticleManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 }
 
-void VoxelParticleManager::ReservePool(const std::string& modelName, const Vector3Int& resolution, int poolSize) {
-    auto& poolData = pools_[modelName];
-    int currentCount = static_cast<int>(poolData.systems.size());
-    int addCount = poolSize - currentCount;
+VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const std::string& modelName, const Irufemi::Vector3Int& resolution) {
+    SystemKey key{ modelName, resolution };
+    auto& context = systems_[key];
 
-    for (int i = 0; i < addCount; ++i) {
-        auto voxel = std::make_unique<VoxelParticleSystem>();
-        voxel->Initialize(modelName, resolution);
-        // バックグラウンドロードを行いつつプールに追加
-        poolData.systems.push_back(std::move(voxel));
-        totalSystemCount_++;
+    if (!context.system) {
+        context.system = std::make_unique<VoxelParticleSystem>();
+        VoxelParticleSystem::SetEngine(engine_);
+        context.system->Initialize(modelName, resolution);
+        context.nextIndex = 0;
+    }
+
+    uint32_t index = 0;
+    if (!context.freeIndices.empty()) {
+        index = context.freeIndices.back();
+        context.freeIndices.pop_back();
+    } else {
+        if (context.nextIndex >= context.system->GetMaxInstances()) {
+            return EmitterHandle{}; // 上限に達した場合は無効なハンドルを返す
+        }
+        index = context.nextIndex++;
+    }
+
+    EmitterHandle handle;
+    handle.system = context.system.get();
+    handle.emitterIndex = index;
+    return handle;
+}
+
+void VoxelParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
+    if (!handle.IsValid()) return;
+    
+    // システムを検索してfreeIndicesに戻す
+    for (auto& pair : systems_) {
+        if (pair.second.system.get() == handle.system) {
+            pair.second.freeIndices.push_back(handle.emitterIndex);
+            
+            // 無効化用のダミーデータを送る
+            VoxelEmitter emptyData;
+            emptyData.emit = 0;
+            emptyData.lifeTime = 0.0f; // 即座に非表示判定にする
+            handle.system->UpdateEmitterData(handle.emitterIndex, emptyData);
+            break;
+        }
     }
 }
 
-VoxelParticleSystem* VoxelParticleManager::AllocateSystem(const std::string& modelName) {
-    auto& poolData = pools_[modelName];
-    size_t size = poolData.systems.size();
+void VoxelParticleManager::Clear() {
+    // 実行中のワンショットエミッターをすべて即座に解放
+    for (auto& shot : oneShots_) {
+        UnregisterEmitter(shot.handle);
+    }
+    oneShots_.clear();
 
-    if (size > 0) {
-        // 1. 最優先：ラウンドロビン方式でロード完了かつ非アクティブなシステムを探す
-        size_t startIdx = poolData.nextSearchIndex;
-        for (size_t i = 0; i < size; ++i) {
-            size_t idx = (startIdx + i) % size;
-            auto& sys = poolData.systems[idx];
-            if (sys->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded && !sys->IsActive()) {
-                poolData.nextSearchIndex = (idx + 1) % size; // 次回はこの次のインデックスから探す
-                return sys.get();
+    // 登録済みの全システムの状態をリセット
+    for (auto& pair : systems_) {
+        if (pair.second.system) {
+            uint32_t maxInstances = pair.second.system->GetMaxInstances();
+            for (uint32_t i = 0; i < maxInstances; ++i) {
+                VoxelEmitter emptyData;
+                emptyData.emit = 0;
+                emptyData.lifeTime = 0.0f;
+                pair.second.system->UpdateEmitterData(i, emptyData);
             }
-        }
-
-        // 2. 準優先：すべて使用中の場合、一番古いものを上書き再利用する
-        VoxelParticleSystem* oldestSystem = nullptr;
-        float maxTime = -1.0f;
-        size_t oldestIdx = 0;
-        for (size_t i = 0; i < size; ++i) {
-            auto& sys = poolData.systems[i];
-            if (sys->GetStatus() == VoxelParticleSystem::LoadingStatus::Loaded) {
-                float t = sys->GetEmitterTime();
-                if (t > maxTime) {
-                    maxTime = t;
-                    oldestSystem = sys.get();
-                    oldestIdx = i;
-                }
-            }
-        }
-        if (oldestSystem) {
-            poolData.nextSearchIndex = (oldestIdx + 1) % size;
-            return oldestSystem;
+            
+            // インデックスの割り当て状態を完全に初期化する
+            pair.second.freeIndices.clear();
+            pair.second.nextIndex = 0;
         }
     }
+}
 
-    // 3. フォールバック：ロード完了しているものが1つも存在しない場合のみ、安全上限（60）を越えない範囲で新規生成を許可
-    if (totalSystemCount_ < 60) {
-        auto voxel = std::make_unique<VoxelParticleSystem>();
-        voxel->Initialize(modelName, {32, 32, 32}); 
-        poolData.systems.push_back(std::move(voxel));
-        totalSystemCount_++;
-        return poolData.systems.back().get();
+void VoxelParticleManager::UpdateEmitterData(const EmitterHandle& handle, const VoxelEmitter& data) {
+    if (!handle.IsValid()) return;
+    handle.system->UpdateEmitterData(handle.emitterIndex, data);
+}
+
+const VoxelEmitter& VoxelParticleManager::GetEmitterData(const EmitterHandle& handle) const {
+    if (!handle.IsValid()) {
+        static VoxelEmitter dummy;
+        return dummy;
     }
-    
-    // 安全上限に達しており、かつロード完了したものがない場合は nullptr を返して発生を諦める
-    return nullptr;
+    return handle.system->GetEmitterData(handle.emitterIndex);
 }
 
 void VoxelParticleManager::Update(float deltaTime) {
-    for (auto& pair : pools_) {
-        for (auto& sys : pair.second.systems) {
-            auto status = sys->GetStatus();
-            if (sys->IsActive() || 
-                status == VoxelParticleSystem::LoadingStatus::Pending ||
-                status == VoxelParticleSystem::LoadingStatus::Loading ||
-                status == VoxelParticleSystem::LoadingStatus::ReadyToCreateResources) {
-                sys->Update(deltaTime);
+    for (auto& pair : systems_) {
+        if (pair.second.system) {
+            pair.second.system->Update(deltaTime);
+        }
+    }
+
+    for (auto it = oneShots_.begin(); it != oneShots_.end(); ) {
+        if (it->emitTimer > 0.0f) {
+            it->emitTimer -= deltaTime;
+            if (it->emitTimer <= 0.0f) {
+                VoxelEmitter data = GetEmitterData(it->handle);
+                data.emit = 0;
+                UpdateEmitterData(it->handle, data);
             }
+        }
+        
+        it->lifeTimer -= deltaTime;
+        if (it->lifeTimer <= 0.0f) {
+            UnregisterEmitter(it->handle);
+            it = oneShots_.erase(it);
+        } else {
+            ++it;
         }
     }
 }
 
 void VoxelParticleManager::Draw() {
-    for (auto& pair : pools_) {
-        for (auto& sys : pair.second.systems) {
-            if (sys->IsActive()) {
-                engine_->SetBlend(BlendMode::kBlendModeNormal);
-                engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
-                engine_->SetCull(PSOManager::CullMode::Back);
-                sys->Draw();
-            }
+    for (auto& pair : systems_) {
+        if (pair.second.system) {
+            engine_->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
+            engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
+            engine_->SetCull(PSOManager::CullMode::Back);
+            pair.second.system->Draw();
         }
     }
 }
 
-void VoxelParticleManager::PlayExplosion(const std::string& modelName, 
-                                         const Vector3& position, 
-                                         const Vector3& velocity, 
-                                         const Vector3& rotate, 
-                                         const Vector3& scale,
-                                         VoxelParticleSystem::ParticleType type) {
-    auto system = AllocateSystem(modelName);
-    if (system) {
-        system->SetParticleType(type);
-        if (type == VoxelParticleSystem::ParticleType::Building) {
-            system->SetGravity(40.0f);
-        }
-        system->Explode(position, velocity, rotate, scale);
-    }
+void VoxelParticleManager::ReservePool(const std::string& modelName, const Irufemi::Vector3Int& resolution, int preAllocateCount) {
+    auto handle = RegisterEmitter(modelName, resolution);
+    UnregisterEmitter(handle);
 }
 
-void VoxelParticleManager::PlayCollisionScatter(const std::string& modelName, 
-                                                const Vector3& position, 
-                                                const Vector3& velocity, 
-                                                const Vector3& rotate, 
-                                                const Vector3& scale, 
-                                                const struct OBB& collisionArea,
-                                                VoxelParticleSystem::ParticleType type) {
-    auto system = AllocateSystem(modelName);
-    if (system) {
-        system->SetParticleType(type);
-        if (type == VoxelParticleSystem::ParticleType::Building) {
-            system->SetGravity(40.0f);
-        }
-        system->CollisionScatter(position, velocity, rotate, scale, collisionArea);
-    }
+void VoxelParticleManager::PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params, const Irufemi::Vector3Int& resolution) {
+    auto handle = RegisterEmitter(modelName, resolution);
+    if (!handle.IsValid()) return; // 制限オーバーで取得できなかった場合は処理しない
+
+    VoxelEmitter explosion = params;
+    explosion.emit = 1;
+    explosion.emitPosition = worldPos;
+    explosion.baseVelocity = velocity;
+    explosion.rotate = rotate;
+    explosion.scale = scale;
+    UpdateEmitterData(handle, explosion);
+
+    OneShotEmitter shot{};
+    shot.handle = handle;
+    shot.emitTimer = 0.1f;
+    shot.lifeTimer = params.lifeTime + 0.5f;
+    oneShots_.push_back(shot);
 }

@@ -7,17 +7,20 @@
 RenderTexture::~RenderTexture() {
     if (dxCommon_) {
         if (dxCommon_->GetSrvPool() && srvIndex_ != 0xFFFFFFFF) {
-            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         }
         if (rtvIndex_ != 0xFFFFFFFF) {
             dxCommon_->FreeRTVIndex(rtvIndex_);
         }
+        if (dxCommon_->GetSrvPool() && imGuiSrvIndex_ != 0xFFFFFFFF) {
+            dxCommon_->GetSrvPool()->FreeAfterFence(imGuiSrvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+        }
     }
 }
 
-void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor) {
+void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height, DXGI_FORMAT format, const Irufemi::Vector4& clearColor, DXGI_FORMAT srvFormat) {
     if (dxCommon_ && srvIndex_ != 0xFFFFFFFF) {
-        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = 0xFFFFFFFF;
     }
 
@@ -49,21 +52,37 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
     srvHandleGPU_ = dxCommon->GetSrvPool()->GetGPUHandle(srvIndex_);
     
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = format;
+    srvDesc.Format = (srvFormat == DXGI_FORMAT_UNKNOWN) ? format : srvFormat;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
     dxCommon->GetDevice()->CreateShaderResourceView(resource_.Get(), &srvDesc, dxCommon->GetSrvPool()->GetCPUHandle(srvIndex_));
 
+    // ImGui用のUNORM SRVの作成
+    if (imGuiSrvIndex_ == 0xFFFFFFFF) {
+        imGuiSrvIndex_ = dxCommon->GetSrvPool()->Allocate();
+    }
+    imGuiSrvHandleGPU_ = dxCommon->GetSrvPool()->GetGPUHandle(imGuiSrvIndex_);
+    
+    D3D12_SHADER_RESOURCE_VIEW_DESC imGuiSrvDesc = srvDesc;
+    if (format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
+        imGuiSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    }
+    dxCommon->GetDevice()->CreateShaderResourceView(resource_.Get(), &imGuiSrvDesc, dxCommon->GetSrvPool()->GetCPUHandle(imGuiSrvIndex_));
+
     // 初期状態はレンダーターゲットだが、念のため SRV 状態へ即座に遷移させるなどの考慮は DrawManager 側で行う
     // (最初の BeginRenderTexture で StateBefore = PIXEL_SHADER_RESOURCE と矛盾しないようにするため)
 }
 
-void RenderTexture::InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resource* resource, DXGI_FORMAT format) {
+void RenderTexture::InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resource* resource, DXGI_FORMAT format, DXGI_FORMAT srvFormat) {
     if (dxCommon_ && srvIndex_ != 0xFFFFFFFF) {
         // 以前のフレームでGPUが参照している可能性があるため、フェンス解放キューに入れる
-        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetFenceValue());
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = 0xFFFFFFFF;
+    }
+    if (dxCommon_ && imGuiSrvIndex_ != 0xFFFFFFFF) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(imGuiSrvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+        imGuiSrvIndex_ = 0xFFFFFFFF;
     }
 
     dxCommon_ = dxCommon;
@@ -92,11 +111,22 @@ void RenderTexture::InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resour
     srvHandleGPU_ = dxCommon->GetSrvPool()->GetGPUHandle(srvIndex_);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-    srvDesc.Format = format;
+    srvDesc.Format = (srvFormat == DXGI_FORMAT_UNKNOWN) ? format : srvFormat;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = 1;
     dxCommon->GetDevice()->CreateShaderResourceView(resource_.Get(), &srvDesc, dxCommon->GetSrvPool()->GetCPUHandle(srvIndex_));
+    // ImGui用のUNORM SRVの作成
+    if (imGuiSrvIndex_ == 0xFFFFFFFF) {
+        imGuiSrvIndex_ = dxCommon->GetSrvPool()->Allocate();
+    }
+    imGuiSrvHandleGPU_ = dxCommon->GetSrvPool()->GetGPUHandle(imGuiSrvIndex_);
+    
+    D3D12_SHADER_RESOURCE_VIEW_DESC imGuiSrvDesc = srvDesc;
+    if (format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
+        imGuiSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    }
+    dxCommon->GetDevice()->CreateShaderResourceView(resource_.Get(), &imGuiSrvDesc, dxCommon->GetSrvPool()->GetCPUHandle(imGuiSrvIndex_));
 }
 
 // Draw メソッドは DrawManager を使用するように変更済み

@@ -6,6 +6,7 @@
 #include "Engine/Core/Math/Transform.h"
 #include "Renderer/System/Core/Object3DResource.h"
 #include "Engine/Core/Math/Math.h"
+#include "Engine/Core/System/ResourceHandle.h"
 
 class Camera;
 class PrimitiveManager;
@@ -17,7 +18,7 @@ struct PrimitiveData;
  * @brief 座標変換（位置・回転・スケール）を管理するコンポーネント
  */
 struct PrimitiveTransform {
-    Transform transform; //!< トランスフォーム情報
+    Irufemi::Transform transform; //!< トランスフォーム情報
     bool isDirty = true; //!< 行列再計算が必要な場合のフラグ
 
     /**
@@ -33,14 +34,14 @@ struct PrimitiveTransform {
  * @brief メッシュ形状（頂点・インデックス情報）を管理するデータ
  */
 struct MeshDesc {
-    PrimitiveType type;                          //!< 現在のプリミティブ形状タイプ
+    Irufemi::PrimitiveType type;                          //!< 現在のプリミティブ形状タイプ
     std::unique_ptr<Object3DResource> resource; //!< D3D12リソース
 
     /**
      * @brief 指定した形状タイプにメッシュを切り替える
      * @param[in] newType 新しい形状タイプ
      */
-    void ChangeMesh(PrimitiveType newType);
+    void ChangeMesh(Irufemi::PrimitiveType newType);
 
     /**
      * @brief カスタムの PrimitiveData を用いて独自にメッシュリソースを再生成する
@@ -48,6 +49,10 @@ struct MeshDesc {
      */
     void ChangeMesh(const PrimitiveData& data);
 
+    /**
+     * @brief PrimitiveManager を設定する。
+     * @param[in] pm 設定する PrimitiveManager の値
+     */
     static void SetPrimitiveManager(PrimitiveManager* pm) { primitiveManager_ = pm; }
 
 private:
@@ -60,14 +65,16 @@ private:
  */
 struct MaterialDesc {
     std::string texturePath;      //!< テクスチャパス
+    std::string loadedTexturePath; //!< 前回ロードしたパス（変更検知用）
+    ResourceHandle textureHandle; //!< AAA: キャッシュ用ハンドル
     int selectedTextureIndex = 0; //!< ImGui選択用インデックス
-    Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; //!< ベースカラー
+    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; //!< ベースカラー
     bool enableLighting = true;   //!< ライティングの有無
     int lightingMode = 3;         //!< ライティングモード (0:None, 1:Lambert, 2:Half-Lambert, 3:PBR)
     float metallic = 0.0f;        //!< 金属度
     float roughness = 0.5f;       //!< 粗さ
     
-    Matrix4x4 uvTransform = {
+    Irufemi::Matrix4x4 uvTransform = {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
@@ -82,4 +89,9 @@ struct MaterialDesc {
      * @param[in] textureManager テクスチャハンドル取得用
      */
     void UpdateMaterial(Object3DResource* resource, TextureManager* textureManager);
+
+    /**
+     * @brief 保持しているハンドルを解放する（破棄時に呼ぶ）
+     */
+    void Release(TextureManager* textureManager);
 };

@@ -14,14 +14,35 @@ struct SkinningInformation {
     uint32_t numVertices;
 };
 
+/**
+ * @class SkinCluster
+ * @brief 頂点ごとのボーンウェイトと行列を管理するスキンクラスターデータ
+ * @details GPUスキニングのために必要な行列パレットやウェイト情報を保持し、頂点を適切に変形させます。
+ */
 struct SkinCluster {
-    std::vector<Matrix4x4> inverseBindPoseMatrices;
+    /** @brief 各ボーンの初期姿勢の逆行列（Inverse Bind Pose） */
+    std::vector<Irufemi::Matrix4x4> inverseBindPoseMatrices;
+
+    /** @brief 頂点ごとの影響ボーンインデックスとウェイトを保持するGPUリソース */
     Microsoft::WRL::ComPtr<ID3D12Resource> influenceResource;
+    
+    /** @brief 上記リソースの頂点バッファビュー */
     D3D12_VERTEX_BUFFER_VIEW influenceBufferView;
+    
+    /** @brief GPUと同期するためのマップされた頂点影響データのスパン */
     std::span<VertexInfluence> mappedInfluence;
+    
+    /** @brief スキニング行列パレット用のバッファリソース（フレームバッファごとの配列） */
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> paletteResource;
+    
+    /** @brief マップされた行列パレットデータのスパン */
     std::array<std::span<WellForGPU>, kMaxFramesInFlight> mappedPalette;
+    
+    /** @brief 行列パレットのシェーダーリソースビュー（SRV）のCPU/GPUディスクリプタハンドル */
     std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> paletteSrvHandle;
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> inputVertexResource;
+    std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> inputVertexSrvHandle;
 
     // コンピュートシェーダー用リソース
     Microsoft::WRL::ComPtr<ID3D12Resource> skinningInformationResource;

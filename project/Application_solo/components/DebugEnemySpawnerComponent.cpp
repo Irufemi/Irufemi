@@ -8,8 +8,41 @@
 #include "Renderer/System/Core/BaseModel.h"
 #include "RailShooterEnemyComponent.h"
 #include "Engine/Core/Math/Random/Random.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "TargetableComponent.h"
 
 void DebugEnemySpawnerComponent::Initialize() {
+}
+
+void DebugEnemySpawnerComponent::Start() {
+    auto scene = gameObject_->GetScene();
+    if (!scene) return;
+
+    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
+        auto enemy = std::make_shared<GameObject>("DebugEnemy");
+        // scene->AddGameObject(enemy);
+        
+        auto transform = enemy->GetTransform();
+        transform->SetScale({1.2f, 1.2f, 1.2f});
+
+        enemy->AddComponent<PrimitiveRendererComponent>();
+        auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
+        // プール運用のため、エネミー死亡時は Destroy ではなくプールへ返却する
+        enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
+            deadObj->SetIsActive(false);
+            if (enemyPool_) {
+                auto it = activeEnemyHandles_.find(deadObj);
+                if (it != activeEnemyHandles_.end()) {
+                    enemyPool_->Release(it->second);
+                    activeEnemyHandles_.erase(it);
+                    if (scene) scene->RemoveGameObject(deadObj->shared_from_this());
+                }
+            }
+        });
+
+        enemy->SetIsActive(false);
+        return enemy;
+    });
 }
 
 void DebugEnemySpawnerComponent::Update() {
@@ -18,44 +51,68 @@ void DebugEnemySpawnerComponent::Update() {
 
     // '2'キーで敵をスポーン
     if (input->IsKeyPressed('2')) {
-        Vector3 spawnPos = {0.0f, 0.0f, 50.0f};
+        Irufemi::Vector3 spawnPos = {0.0f, 0.0f, 50.0f};
+        Irufemi::Vector3 spawnRot = {0.0f, 3.14159f, 0.0f};
 
         auto scene = gameObject_->GetScene();
         if (scene) {
-            for (auto& obj : scene->GetGameObjects()) {
-                if (obj && obj->GetName() == "Player") {
-                    if (auto transform = obj->GetComponent<TransformComponent>()) {
-                        // プレイヤーの現在位置から Z軸前方に 50m、XYはランダムに散らす
-                        spawnPos = transform->position_;
-                        spawnPos.z += 50.0f;
-                        spawnPos.x += Random::GeneratorFloat(-10.0f, 10.0f);
-                        spawnPos.y += Random::GeneratorFloat(-5.0f, 5.0f);
-                    }
-                    break;
+            auto playerObj = scene->FindGameObject("Player");
+            if (playerObj) {
+                if (auto transform = playerObj->GetComponent<TransformComponent>()) {
+                    // プレイヤーのワールド前方へ50m
+                    spawnPos = transform->GetWorldPosition();
+                    auto forward = transform->GetWorldForward();
+                    spawnPos.x += forward.x * 50.0f;
+                    spawnPos.y += forward.y * 50.0f;
+                    spawnPos.z += forward.z * 50.0f;
+                    
+                    // プレイヤーの右方向と上方向に少し散らす
+                    auto right = transform->GetWorldRight();
+                    auto up = transform->GetWorldUp();
+                    
+                    float randX = Irufemi::Random::GeneratorFloat(-10.0f, 10.0f);
+                    float randY = Irufemi::Random::GeneratorFloat(-5.0f, 5.0f);
+                    
+                    spawnPos.x += right.x * randX + up.x * randY;
+                    spawnPos.y += right.y * randX + up.y * randY;
+                    spawnPos.z += right.z * randX + up.z * randY;
+
+                    // プレイヤーと向かい合うように回転を設定（180度反転）
+                    spawnRot = transform->GetWorldRotation();
+                    spawnRot.y += 3.14159f;
                 }
             }
         }
 
-        SpawnEnemy(spawnPos);
+        SpawnEnemy(spawnPos, spawnRot);
     }
 }
 
-void DebugEnemySpawnerComponent::SpawnEnemy(const Vector3& position) {
-    auto scene = gameObject_->GetScene();
-    if (!scene) return;
+void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
+    if (!enemyPool_) return;
 
-    auto enemy = std::make_shared<GameObject>("DebugEnemy");
-    scene->AddGameObject(enemy);
+    auto handle = enemyPool_->Acquire();
+    if (!handle.IsValid()) return;
     
-    auto transform = enemy->AddComponent<TransformComponent>();
-    transform->position_ = position;
-    // プレイヤー側(Z負方向)を向くように回転
-    transform->rotation_ = {0.0f, 3.14159f, 0.0f};
-    transform->scale_ = {1.2f, 1.2f, 1.2f};
+    auto enemy = enemyPool_->Resolve(handle);
+    if (enemy) {
+        // マップに登録
+        activeEnemyHandles_[enemy.get()] = handle;
+        
+        if (auto scene = gameObject_->GetScene()) {
+            scene->AddGameObject(enemy);
+        }
 
-    auto renderer = enemy->AddComponent<PrimitiveRendererComponent>();
-    // PrimitiveRendererの設定はデフォルトで一旦OK（表示されれば良い）
+        if (auto transform = enemy->GetComponent<TransformComponent>()) {
+            transform->SetWorldPosition(position);
+            transform->SetWorldRotation(rotation);
+        }
+        
+        if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
+            // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ想定
+            enemyComp->Initialize(); 
+        }
 
-    auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-    enemyComp->Initialize(); // isAliveなど初期化
+        enemy->SetIsActive(true);
+    }
 }

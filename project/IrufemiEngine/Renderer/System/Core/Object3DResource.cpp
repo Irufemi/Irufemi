@@ -3,11 +3,21 @@
 #include "Engine/Graphics/Camera/Camera.h"
 #include "Engine/Core/Math/Math.h"
 #include "Engine/IrufemiEngine.h"
+#include "Resource/Texture/TextureManager.h"
+
+TextureManager* Object3DResource::sTextureManager = nullptr;
 
 Object3DResource::~Object3DResource() {
     Unmap();
     
     if (auto dxCommon = BaseResource::GetDirectXCommon()) {
+        if (vertexResource_) {
+            dxCommon->ReleaseAfterFence(std::move(vertexResource_));
+        }
+        if (indexResource_) {
+            dxCommon->ReleaseAfterFence(std::move(indexResource_));
+        }
+
         if (auto engine = dxCommon->GetEngine()) {
             if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetMaterialBufferManager()->Free(materialCbIndex_);
@@ -17,12 +27,18 @@ Object3DResource::~Object3DResource() {
             }
         }
     }
+    if (sTextureManager && textureHandle_.IsValid()) {
+        sTextureManager->ReleaseTexture(textureHandle_);
+    }
 }
 
 void Object3DResource::CreateResource() {
     if (!s_dxCommon_) return;
 
     if (!vertexDataList_.empty()) {
+        if (vertexResource_) {
+            s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+        }
         vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
         vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexDataList_.size());
@@ -30,6 +46,9 @@ void Object3DResource::CreateResource() {
     }
 
     if (!indexDataList_.empty()) {
+        if (indexResource_) {
+            s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+        }
         indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexDataList_.size());
         indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
         indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexDataList_.size());
@@ -42,7 +61,7 @@ void Object3DResource::CreateResource() {
         
         cpuMaterialData_.color = {1,1,1,1};
         cpuMaterialData_.enableLighting = true;
-        cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+        cpuMaterialData_.uvTransform = Irufemi::Math::MakeIdentity4x4();
         cpuMaterialData_.metallic = 0.0f;
         cpuMaterialData_.roughness = 0.5f;
         cpuMaterialData_.environmentCoefficient = 0.0f;
@@ -78,21 +97,21 @@ void Object3DResource::Unmap() {
 void Object3DResource::UpdateTransform(const Camera& camera) {
 
 
-    transformationMatrix_.world = Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // CPU側のマテリアルキャッシュにのみ反映させる
 
     // 法線変換用：平行移動を除いた World を使う
-    Matrix4x4 worldForNormal = transformationMatrix_.world;
+    Irufemi::Matrix4x4 worldForNormal = transformationMatrix_.world;
     worldForNormal.m[3][0] = 0.0f;
     worldForNormal.m[3][1] = 0.0f;
     worldForNormal.m[3][2] = 0.0f;
     worldForNormal.m[3][3] = 1.0f;
     
     // 逆転置行列を計算
-    transformationMatrix_.WorldInverseTranspose = Math::Transpose(Math::Inverse(worldForNormal));
+    transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
 
     // マテリアルの CPUキャッシュ更新 (描画直前の SyncBeforeDraw で GPUへ送られる)
-    cpuMaterialData_.uvTransform = Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
+    cpuMaterialData_.uvTransform = Irufemi::Math::MakeAffineMatrix(uvTransform_.scale, uvTransform_.rotate, uvTransform_.translate);
     
     MarkAsDirty();
 }
@@ -118,6 +137,15 @@ void Object3DResource::SyncBeforeDraw() {
             // 外部バッファがなければ自身を更新
             if (!externalTransformCbIndex_ && transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
+            }
+            
+            // テクスチャのインデックスを解決して反映
+            if (sTextureManager) {
+                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+                cpuMaterialData_.envMapIndex = sTextureManager->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
+            } else {
+                cpuMaterialData_.textureIndex = 0;
+                cpuMaterialData_.envMapIndex = 0;
             }
             
             // マテリアルデータを更新

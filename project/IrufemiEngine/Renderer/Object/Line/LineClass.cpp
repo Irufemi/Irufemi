@@ -1,4 +1,4 @@
-#include "LineClass.h"
+﻿#include "LineClass.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
 
 #include "Engine/Graphics/Camera/Camera.h"
@@ -17,7 +17,7 @@ Line3DBatch::~Line3DBatch() {
     if (s_srvAllocator_ && dx_) {
         for (uint32_t& idx : instancingSrvIndex_) {
             if (idx != UINT32_MAX) {
-                s_srvAllocator_->FreeAfterFence(idx, dx_->GetFenceValue());
+                s_srvAllocator_->FreeAfterFence(idx, dx_->GetCurrentFrameFenceValue());
                 idx = UINT32_MAX;
             }
         }
@@ -52,7 +52,7 @@ void Line3DBatch::Update() {
     }
 }
 
-void Line3DBatch::AddInstance(const Vector3& start, const Vector3& end, const Vector4& color, float life) {
+void Line3DBatch::AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color, float life) {
     if (activeCount_ < maxInstances_) {
         auto& instance = instances_[activeCount_];
         instance.start = start;
@@ -80,31 +80,10 @@ void Line3DBatch::BuildInstanceBuffer(bool force) {
     lastUpdateFrameIndex_ = frameIndex;
     if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex] || !engine_) return;
 
-    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
-
-    const Matrix4x4& viewProjection = Math::Multiply(activeCam->GetViewMatrix(), activeCam->GetPerspectiveFovMatrix());
-
     for (size_t i = 0; i < activeCount_; ++i) {
         const auto& inst = instances_[i];
-        Vector3 vec = inst.end - inst.start;
-        float length = Math::Length(vec);
-        if (length < 1e-6f) { // ゼロ除算を避ける
-            length = 1e-6f;
-        }
-        Matrix4x4 scale = Math::MakeScaleMatrix({ length, 1.0f, 1.0f });
-
-        Vector3 up = { 0.0f, 1.0f, 0.0f };
-        Vector3 dir = Math::Normalize(vec);
-        if (abs(Math::Dot(dir, up)) > 0.999f) {
-            up = { 1.0f, 0.0f, 0.0f };
-        }
-        Matrix4x4 rotate = Math::DirectionToDirection({ 1.0f, 0.0f, 0.0f }, dir);
-
-        Matrix4x4 translate = Math::MakeTranslateMatrix(inst.start);
-        Matrix4x4 world = scale * rotate * translate;
-
-        instanceData_[frameIndex][i].WVP = world * viewProjection;
+        instanceData_[frameIndex][i].start = { inst.start.x, inst.start.y, inst.start.z, 1.0f };
+        instanceData_[frameIndex][i].end = { inst.end.x, inst.end.y, inst.end.z, 1.0f };
         instanceData_[frameIndex][i].color = inst.color;
     }
 }
@@ -119,7 +98,7 @@ void Line3DBatch::Draw() {
     if (activeCount_ == 0) return;
     BuildInstanceBuffer();
     baseLineResource_->SyncBeforeDraw();
-    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32());
+    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32(), depthWrite_);
 }
 
 void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {

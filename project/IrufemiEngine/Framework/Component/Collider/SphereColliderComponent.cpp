@@ -12,16 +12,20 @@ SphereColliderComponent::~SphereColliderComponent() {
     if (collisionManager_) collisionManager_->UnregisterCollider(this);
 }
 
+void SphereColliderComponent::OnRegisterProperties() {
+    RegisterProperty("Local Offset", &localOffset_);
+    RegisterProperty("Local Radius", &localRadius_);
+    // ToDo: Layer や Mask も必要に応じて追加する
+}
+
 void SphereColliderComponent::Initialize() {
     if (gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
     }
     if (collisionManager_) collisionManager_->RegisterCollider(this);
 }
 
 void SphereColliderComponent::Update() {
-    if (!transform_ && gameObject_) {
-        transform_ = gameObject_->GetComponent<TransformComponent>();
+    if (!GetTransform() && gameObject_) {
     }
 }
 
@@ -30,28 +34,41 @@ void SphereColliderComponent::DrawDebug() {
 
 
 
-Sphere SphereColliderComponent::GetWorldSphere() const {
-    Sphere sphere;
-    if (transform_) {
-        Vector3 worldPos = { transform_->GetWorldMatrix().m[3][0], transform_->GetWorldMatrix().m[3][1], transform_->GetWorldMatrix().m[3][2] };
+Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
+    Irufemi::Sphere sphere;
+    if (GetTransform()) {
+        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
+        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
         
         // スケールの最大成分を半径に掛ける
-        float scaleX = std::sqrt(std::pow(transform_->GetWorldMatrix().m[0][0], 2.0f) + std::pow(transform_->GetWorldMatrix().m[0][1], 2.0f) + std::pow(transform_->GetWorldMatrix().m[0][2], 2.0f));
-        float scaleY = std::sqrt(std::pow(transform_->GetWorldMatrix().m[1][0], 2.0f) + std::pow(transform_->GetWorldMatrix().m[1][1], 2.0f) + std::pow(transform_->GetWorldMatrix().m[1][2], 2.0f));
-        float scaleZ = std::sqrt(std::pow(transform_->GetWorldMatrix().m[2][0], 2.0f) + std::pow(transform_->GetWorldMatrix().m[2][1], 2.0f) + std::pow(transform_->GetWorldMatrix().m[2][2], 2.0f));
+        float scaleX = std::abs(worldScale.x);
+        float scaleY = std::abs(worldScale.y);
+        float scaleZ = std::abs(worldScale.z);
         
+        // オブジェクトの回転とスケールを考慮したワールド空間のローカルオフセット
+        Irufemi::Vector3 worldOffset = 
+            GetTransform()->GetWorldRight() * (localOffset_.x * scaleX) +
+            GetTransform()->GetWorldUp() * (localOffset_.y * scaleY) +
+            GetTransform()->GetWorldForward() * (localOffset_.z * scaleZ);
+            
         float maxXY = scaleX > scaleY ? scaleX : scaleY;
         float maxScale = maxXY > scaleZ ? maxXY : scaleZ;
         
-        sphere.center = { worldPos.x + localOffset_.x * scaleX, 
-                          worldPos.y + localOffset_.y * scaleY, 
-                          worldPos.z + localOffset_.z * scaleZ };
+        sphere.center = worldPos + worldOffset;
         sphere.radius = localRadius_ * maxScale;
     } else {
         sphere.center = localOffset_;
         sphere.radius = localRadius_;
     }
     return sphere;
+}
+
+Irufemi::AABB SphereColliderComponent::GetBoundingBox() const {
+    Irufemi::Sphere sphere = GetWorldSphere();
+    Irufemi::AABB aabb;
+    aabb.min = { sphere.center.x - sphere.radius, sphere.center.y - sphere.radius, sphere.center.z - sphere.radius };
+    aabb.max = { sphere.center.x + sphere.radius, sphere.center.y + sphere.radius, sphere.center.z + sphere.radius };
+    return aabb;
 }
 
 nlohmann::json SphereColliderComponent::Serialize() {

@@ -17,12 +17,13 @@ generated/
 
 # Exceptions for scene debug folders
 !project/Application/scene/debug/
-!project/Application_solo/scene/debug/
 project/logs/
 *.pdb
 *.ilk
 *.aps
+*.ibin
 *.ncb
+*.cso
 *.opendb
 *.opensdf
 *.sdf
@@ -37,6 +38,10 @@ Generated\ Files/
 # ====================================================================
 # Project-specific additions
 # ====================================================================
+
+# Cache directories and files
+resources/.cache/
+*.pso
 
 # Ignore NuGet packages
 /project/packages/
@@ -76,6 +81,13 @@ DirectXGame/imgui.ini
 /project/Application_solo/imgui_editor.ini
 /project/Application_solo/Dumps/
 
+# Application_team specific
+/project/Application_team/asset_src/
+/project/Application_team/logs/
+/project/Application_team/imgui.ini
+/project/Application_team/imgui_editor.ini
+/project/Application_team/Dumps/
+
 # ====================================================================
 # AntiGravity / AI tools
 # ====================================================================
@@ -111,3 +123,38 @@ debuglog.txt
 /logs/
 /project/Application/Dumps
 /project/Tools/ShaderGenerator/.env
+.env
+
+# ====================================================================
+# Cache files (PSO etc)
+# ====================================================================
+**/resources/cache/
+*.temp_playmode.json
+
+# ====================================================================
+# Repository Cleanup (Build Outputs & Temp Files)
+# ====================================================================
+*.exp
+*.lib
+!project/externals/assimp/lib/**/*.lib
+shader_error.txt
+~AutoRecover*
+
+# Ignore PSO cache files
+*.pso
+
+# ====================================================================
+# Python & AI Tools temporary files
+# ====================================================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Magic Brush temporary files
+magic_brush_temp_req.json
+resources/shaders/generated/
+
+# Screenshots
+**/resources/screenshots/

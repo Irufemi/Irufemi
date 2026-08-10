@@ -1,3 +1,4 @@
+#include "Engine/Core/Utility/ErrorUtility.h"
 #include "DirectXCommon.h"
 
 #include "Resource/Texture/TextureUtility.h"
@@ -5,9 +6,11 @@
 #include <cassert>
 #include <vector>
 #include <comdef.h>
-
+#include <iostream>
 #include "../../Core/Utility/Log.h"
+#include "../../Core/Utility/ErrorUtility.h"
 #include "../../Core/Utility/StringUtility.h"
+#include "../../Core/Utility/FileSystem.h"
 #include "../../../../externals/DirectXTex/d3dx12.h"
 #include <algorithm>
 #include <dxgidebug.h>
@@ -16,6 +19,7 @@
 #include "DXCommandManager.h"
 #include "DXSwapChainManager.h"
 #include "DirectXUtils.h"
+#include "../../Profiler/GpuProfiler.h"
 
 ID3D12CommandQueue* DirectXCommon::GetCommandQueue() { return commandManager_->GetCommandQueue(); }
 ID3D12CommandAllocator* DirectXCommon::GetCommandAllocator() { return commandManager_->GetCommandAllocator(frameIndex_); }
@@ -111,6 +115,15 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     InitializeFixFPS();
     shaderManager_->Initialize();
 
+    // シェーダーの検索パスとバイナリパスを登録
+    shaderManager_->AddSearchPath(ConvertString(FileSystem::GetResourcePath("shaders") + "/"));
+    shaderManager_->AddSearchPath(ConvertString(FileSystem::GetEngineRoot() + "/EngineResources/shaders/"));
+#ifdef NDEBUG
+    shaderManager_->SetBinaryPath(ConvertString(FileSystem::GetResourcePath("shaders/compiled") + "/"));
+#else
+    shaderManager_->SetBinaryPath(ConvertString(FileSystem::GetResourcePath(".cache/shaders") + "/"));
+#endif
+
     EnableDebugLayer();
     InitializeDXGI();
     CreateDevice();
@@ -127,6 +140,18 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     rootSignatureManager_ = std::make_unique<DXRootSignatureManager>();
     rootSignatureManager_->Initialize(device_.Get(), log_);
     CreatePSOs();
+
+    CreateDepthSRV();
+    
+    // GpuProfilerの初期化
+    GpuProfiler::GetInstance().Initialize(this);
+}
+
+void DirectXCommon::CreateDepthSRV() {
+    if (depthSRVIndex_ == DescriptorPool::kInvalid) {
+        depthSRVIndex_ = srvPool_->Allocate();
+    }
+    srvPool_->CreateSRVForTexture2D(depthSRVIndex_, swapChainManager_->GetDepthStencilResource(), DXGI_FORMAT_R24_UNORM_X8_TYPELESS, 1);
 }
 
 void DirectXCommon::EnableDebugLayer() {
@@ -134,8 +159,8 @@ void DirectXCommon::EnableDebugLayer() {
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debugController_.GetAddressOf())))) {
         //デバッグレイヤーを有効化する
         debugController_->EnableDebugLayer();
-        //さらにGPU側でもチェックを行うようにする
-        debugController_->SetEnableGPUBasedValidation(TRUE);
+        //さらにGPU側でもチェックを行うようにする (Bindless環境でDescriptorTable全体を検査してしまい誤検知クラッシュするため無効化)
+        //debugController_->SetEnableGPUBasedValidation(TRUE);
     }
 #endif
 }
@@ -143,7 +168,7 @@ void DirectXCommon::EnableDebugLayer() {
 void DirectXCommon::InitializeDXGI() {
     //DXGIFactoryの生成
     HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(dxgiFactory_.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 }
 
 void DirectXCommon::CreateDevice() {
@@ -152,7 +177,7 @@ void DirectXCommon::CreateDevice() {
     for (UINT i = 0; dxgiFactory_->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(useAdapter.GetAddressOf())) != DXGI_ERROR_NOT_FOUND; i++) {
         DXGI_ADAPTER_DESC3 adapterDesc{};
         HRESULT hr = useAdapter->GetDesc3(&adapterDesc);
-        assert(SUCCEEDED(hr));
+        ASSERT_IF_FAILED(hr);
         if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE)) {
             // std::format が環境によって不安定な可能性があるため、wstringstream等で代用するか、ワイド文字版が正しく動作することを確認
             std::wstring adapterName = adapterDesc.Description;
@@ -161,7 +186,7 @@ void DirectXCommon::CreateDevice() {
         }
         useAdapter = nullptr;
     }
-    assert(useAdapter != nullptr);
+    IRUFEMI_ASSERT(useAdapter != nullptr);
 
     ///D3D12Deviceの生成
     D3D_FEATURE_LEVEL featureLevels[] = {
@@ -175,7 +200,7 @@ void DirectXCommon::CreateDevice() {
             break;
         }
     }
-    assert(device_ != nullptr);
+    IRUFEMI_ASSERT(device_ != nullptr);
     Log::OutPutLog(log_->GetLogStream(), "Complete create D3D12Device!!!\n");
 
     if (useAdapter) { useAdapter.Reset(); }
@@ -192,7 +217,9 @@ void DirectXCommon::SetInfoQueue() {
 
         D3D12_MESSAGE_ID denyIds[] = {
             D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
-            D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE
+            D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+            D3D12_MESSAGE_ID_CREATEPIPELINESTATE_CACHEDBLOBDRIVERVERSIONMISMATCH,
+            D3D12_MESSAGE_ID_CREATEPIPELINESTATE_CACHEDBLOBDESCMISMATCH
         };
         D3D12_MESSAGE_SEVERITY severties[] = { D3D12_MESSAGE_SEVERITY_INFO };
         D3D12_INFO_QUEUE_FILTER filter{};
@@ -210,57 +237,6 @@ void DirectXCommon::SetInfoQueue() {
 
 
 void DirectXCommon::CreatePSOs() {
-    // --- シェーダコンパイル設定 ---
-    ShaderCompileOptions options;
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-    options.isDebug = true;
-#endif
-
-    // --- シェーダコンパイル ---
-    auto vs3d = shaderManager_->GetOrCompile(L"resources/shaders/Object3D.VS.hlsl", options);
-    auto ps3d = shaderManager_->GetOrCompile(L"resources/shaders/Object3D.PS.hlsl", options);
-    auto vsParticle = shaderManager_->GetOrCompile(L"resources/shaders/Particle.VS.hlsl", options);
-    auto psParticle = shaderManager_->GetOrCompile(L"resources/shaders/Particle.PS.hlsl", options);
-    auto vsSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.VS.hlsl", options);
-    auto vsSpriteBatch = shaderManager_->GetOrCompile(L"resources/shaders/SpriteBatch.VS.hlsl", options);
-    auto psSprite = shaderManager_->GetOrCompile(L"resources/shaders/Object2D.PS.hlsl", options);
-    auto vsText = shaderManager_->GetOrCompile(L"resources/shaders/Text.VS.hlsl", options);
-    auto psText = shaderManager_->GetOrCompile(L"resources/shaders/Text.PS.hlsl", options);
-    auto vsBatch = shaderManager_->GetOrCompile(L"resources/shaders/Batch.VS.hlsl", options);
-    auto vsLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.VS.hlsl", options);
-    auto psLine = shaderManager_->GetOrCompile(L"resources/shaders/Line.PS.hlsl", options);
-    auto vsLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.VS.hlsl", options);
-    auto psLineInst = shaderManager_->GetOrCompile(L"resources/shaders/LineInstanced.PS.hlsl", options);
-    auto vsSkin = shaderManager_->GetOrCompile(L"resources/shaders/SkinningObject3D.VS.hlsl", options);
-    auto vsSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.VS.hlsl", options);
-    auto psSkybox = shaderManager_->GetOrCompile(L"resources/shaders/Skybox.PS.hlsl", options);
-    auto vsGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.VS.hlsl", options);
-    auto psGpuParticle = shaderManager_->GetOrCompile(L"resources/shaders/ParticleGPU.PS.hlsl", options);
-
-    auto vsVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.VS.hlsl", options);
-    auto psVoxel = shaderManager_->GetOrCompile(L"resources/shaders/VoxelParticle.PS.hlsl", options);
-    auto vsShadow = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMap.VS.hlsl", options);
-    auto vsShadowSkin = shaderManager_->GetOrCompile(L"resources/shaders/ShadowMapSkinning.VS.hlsl", options);
-
-
-#ifdef EditorMode
-    auto vsSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.VS.hlsl", options);
-    auto psSelection = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMask.PS.hlsl", options);
-    auto psSelectionText = shaderManager_->GetOrCompile(L"resources/shaders/SelectionMaskText.PS.hlsl", options);
-    auto vsFullscreen = shaderManager_->GetOrCompile(L"resources/shaders/Fullscreen.VS.hlsl", options);
-    auto psOutlineComp = shaderManager_->GetOrCompile(L"resources/shaders/OutlineComposite.PS.hlsl", options);
-#endif
-
-    auto csSkin = shaderManager_->GetOrCompile(L"resources/shaders/Skinning.CS.hlsl", options);
-    auto csGpuInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeParticle.CS.hlsl", options);
-    auto csGpuEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitParticle.CS.hlsl", options);
-    auto csGpuUpdate = shaderManager_->GetOrCompile(L"resources/shaders/UpdateParticle.CS.hlsl", options);
-    auto csGpuInitSort = shaderManager_->GetOrCompile(L"resources/shaders/InitParticleSort.CS.hlsl", options);
-    auto csGpuBitonicSort = shaderManager_->GetOrCompile(L"resources/shaders/BitonicSort.CS.hlsl", options);
-    auto csVoxelInit = shaderManager_->GetOrCompile(L"resources/shaders/InitializeVoxel.CS.hlsl", options);
-    auto csVoxelEmit = shaderManager_->GetOrCompile(L"resources/shaders/EmitVoxel.CS.hlsl", options);
-    auto csVoxelUpdate = shaderManager_->GetOrCompile(L"resources/shaders/UpdateVoxel.CS.hlsl", options);
-
     // --- 入力レイアウト定義 ---
     D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -282,23 +258,124 @@ void DirectXCommon::CreatePSOs() {
         D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
     );
 
+    // --- シェーダコンパイルと登録 ---
+    RegisterAllShaders();
+}
+
+void DirectXCommon::RegisterAllShaders() {
+    // --- シェーダコンパイル設定 ---
+    ShaderCompileOptions options;
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+    options.isDebug = true;
+#endif
+
+    // --- シェーダコンパイル ---
+    auto vs3d = shaderManager_->GetOrCompile(L"Object3d.VS.hlsl", options);
+    auto ps3d = shaderManager_->GetOrCompile(L"Object3d.PS.hlsl", options);
+    auto vsParticle = shaderManager_->GetOrCompile(L"Particle.VS.hlsl", options);
+    auto psParticle = shaderManager_->GetOrCompile(L"Particle.PS.hlsl", options);
+    auto vsSprite = shaderManager_->GetOrCompile(L"Object2D.VS.hlsl", options);
+    auto vsSpriteBatch = shaderManager_->GetOrCompile(L"SpriteBatch.VS.hlsl", options);
+    auto psSprite = shaderManager_->GetOrCompile(L"Object2D.PS.hlsl", options);
+    auto vsText = shaderManager_->GetOrCompile(L"Text.VS.hlsl", options);
+    auto psText = shaderManager_->GetOrCompile(L"Text.PS.hlsl", options);
+    auto vsBatch = shaderManager_->GetOrCompile(L"Batch.VS.hlsl", options);
+    auto vsLine = shaderManager_->GetOrCompile(L"Line.VS.hlsl", options);
+    auto psLine = shaderManager_->GetOrCompile(L"Line.PS.hlsl", options);
+    auto vsLineBatch = shaderManager_->GetOrCompile(L"LineBatch.VS.hlsl", options);
+    auto psLineBatch = shaderManager_->GetOrCompile(L"LineBatch.PS.hlsl", options);
+    auto vsDebugPrimitive = shaderManager_->GetOrCompile(L"DebugPrimitive.VS.hlsl", options);
+    auto psDebugPrimitive = shaderManager_->GetOrCompile(L"DebugPrimitive.PS.hlsl", options);
+    auto vsSkin = shaderManager_->GetOrCompile(L"SkinningObject3D.VS.hlsl", options);
+    auto vsSkybox = shaderManager_->GetOrCompile(L"Skybox.VS.hlsl", options);
+    auto psSkybox = shaderManager_->GetOrCompile(L"Skybox.PS.hlsl", options);
+    auto vsGpuParticle = shaderManager_->GetOrCompile(L"ParticleGPU.VS.hlsl", options);
+    auto psGpuParticle = shaderManager_->GetOrCompile(L"ParticleGPU.PS.hlsl", options);
+
+    auto vsVoxel = shaderManager_->GetOrCompile(L"VoxelParticle.VS.hlsl", options);
+    auto psVoxel = shaderManager_->GetOrCompile(L"VoxelParticle.PS.hlsl", options);
+    auto vsShadow = shaderManager_->GetOrCompile(L"ShadowMap.VS.hlsl", options);
+    auto vsShadowSkin = shaderManager_->GetOrCompile(L"ShadowMapSkinning.VS.hlsl", options);
+    auto vsShadowBatch = shaderManager_->GetOrCompile(L"ShadowMapBatch.VS.hlsl", options);
+
+
+#ifdef EditorMode
+    auto vsSelection = shaderManager_->GetOrCompile(L"SelectionMask.VS.hlsl", options);
+    auto psSelection = shaderManager_->GetOrCompile(L"SelectionMask.PS.hlsl", options);
+    auto psSelectionText = shaderManager_->GetOrCompile(L"SelectionMaskText.PS.hlsl", options);
+    auto vsFullscreen = shaderManager_->GetOrCompile(L"Fullscreen.VS.hlsl", options);
+    auto psOutlineComp = shaderManager_->GetOrCompile(L"OutlineComposite.PS.hlsl", options);
+#endif
+
+    auto csSkin = shaderManager_->GetOrCompile(L"Skinning.CS.hlsl", options);
+    auto csGpuInit = shaderManager_->GetOrCompile(L"InitializeParticle.CS.hlsl", options);
+    auto csGpuEmit = shaderManager_->GetOrCompile(L"EmitParticle.CS.hlsl", options);
+    auto csGpuUpdate = shaderManager_->GetOrCompile(L"UpdateParticle.CS.hlsl", options);
+    auto csGpuInitSort = shaderManager_->GetOrCompile(L"InitParticleSort.CS.hlsl", options);
+    auto csGpuBitonicSort = shaderManager_->GetOrCompile(L"BitonicSort.CS.hlsl", options);
+    auto csVoxelInit = shaderManager_->GetOrCompile(L"InitializeVoxel.CS.hlsl", options);
+    auto csVoxelEmit = shaderManager_->GetOrCompile(L"EmitVoxel.CS.hlsl", options);
+    auto csVoxelUpdate = shaderManager_->GetOrCompile(L"UpdateVoxel.CS.hlsl", options);
+    auto csGpuCulling = shaderManager_->GetOrCompile(L"GPUCulling.CS.hlsl", options);
+
     // --- 各種シェーダの登録 ---
-    psoManager_->RegisterShader("Object3D", { { vs3d, ps3d } });
-    psoManager_->RegisterShader("Particle", { { vsParticle, psParticle } });
+    // --- MRT共通設定 (フルG-Buffer対応) ---
+    PSOManager::PipelineStateDesc mrtDesc{};
+    mrtDesc.numRenderTargets = 5;
+    mrtDesc.rtvFormat1 = DXGI_FORMAT_R8G8B8A8_UNORM; // Mask
+    mrtDesc.rtvFormat2 = DXGI_FORMAT_R16G16B16A16_FLOAT; // Normal & Depth
+    mrtDesc.rtvFormat3 = DXGI_FORMAT_R8G8B8A8_UNORM; // Material
+    mrtDesc.rtvFormat4 = DXGI_FORMAT_R16G16_FLOAT; // Velocity
+
+    PSOManager::PipelineStateDesc obj3dDesc = mrtDesc;
+    obj3dDesc.shaders = { vs3d, ps3d };
+    psoManager_->RegisterShader("Object3D", obj3dDesc);
+
+    PSOManager::PipelineStateDesc batchDesc = mrtDesc;
+    batchDesc.shaders = { vsBatch, ps3d };
+    psoManager_->RegisterShader("Batch", batchDesc); // ps3dを共有
+
+    // 2D/UI系 (MRT非対応・1枚)
     psoManager_->RegisterShader("Sprite", { { vsSprite, psSprite } });
     psoManager_->RegisterShader("SpriteBatch", { { vsSpriteBatch, psSprite } });
     psoManager_->RegisterShader("Text", { { vsText, psText } });
-    psoManager_->RegisterShader("Batch", { { vsBatch, ps3d } });
-    
-    // LineとLineInstancedはLINEトポロジ
-    psoManager_->RegisterShader("Line", { { vsLine, psLine }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    psoManager_->RegisterShader("LineInstanced", { { vsLineInst, psLineInst }, D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE });
-    
-    psoManager_->RegisterShader("Skinning", { { vsSkin, ps3d } });
-    psoManager_->RegisterShader("Skybox", { { vsSkybox, psSkybox } });
-    psoManager_->RegisterShader("GpuParticle", { { vsGpuParticle, psGpuParticle } });
 
-    psoManager_->RegisterShader("VoxelParticle", { { vsVoxel, psVoxel } });
+    // 3Dエフェクト系 (MRT対応)
+    PSOManager::PipelineStateDesc particleDesc = mrtDesc;
+    particleDesc.shaders = { vsParticle, psParticle };
+    psoManager_->RegisterShader("Particle", particleDesc);
+
+    PSOManager::PipelineStateDesc lineDesc = mrtDesc;
+    lineDesc.shaders = { vsLine, psLine };
+    lineDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("Line", lineDesc);
+
+    PSOManager::PipelineStateDesc lineBatchDesc = mrtDesc;
+    lineBatchDesc.shaders = { vsLineBatch, psLineBatch };
+    lineBatchDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("LineBatch", lineBatchDesc);
+
+    PSOManager::PipelineStateDesc debugPrimDesc = mrtDesc;
+    debugPrimDesc.shaders = { vsDebugPrimitive, psDebugPrimitive };
+    debugPrimDesc.topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    psoManager_->RegisterShader("DebugPrimitive", debugPrimDesc);
+
+    PSOManager::PipelineStateDesc skinDesc = mrtDesc;
+    skinDesc.shaders = { vsSkin, ps3d };
+    psoManager_->RegisterShader("Skinning", skinDesc);
+
+    PSOManager::PipelineStateDesc skyboxDesc = mrtDesc;
+    skyboxDesc.shaders = { vsSkybox, psSkybox };
+    psoManager_->RegisterShader("Skybox", skyboxDesc);
+
+    PSOManager::PipelineStateDesc gpuParticleDesc = mrtDesc;
+    gpuParticleDesc.shaders = { vsGpuParticle, psGpuParticle };
+    psoManager_->RegisterShader("GpuParticle", gpuParticleDesc);
+
+    PSOManager::PipelineStateDesc voxelParticleDesc = mrtDesc;
+    voxelParticleDesc.shaders = { vsVoxel, psVoxel };
+    psoManager_->RegisterShader("VoxelParticle", voxelParticleDesc);
+
     
     // シャドウマップ(通常) - 深度のみ
     PSOManager::PipelineStateDesc shadowDesc{};
@@ -311,6 +388,12 @@ void DirectXCommon::CreatePSOs() {
     shadowSkinDesc.shaders = { vsShadowSkin, nullptr };
     shadowSkinDesc.isDepthOnly = true;
     psoManager_->RegisterShader("ShadowSkinning", shadowSkinDesc);
+
+    // シャドウマップ(バッチ) - 深度のみ
+    PSOManager::PipelineStateDesc shadowBatchDesc{};
+    shadowBatchDesc.shaders = { vsShadowBatch, nullptr };
+    shadowBatchDesc.isDepthOnly = true;
+    psoManager_->RegisterShader("ShadowBatch", shadowBatchDesc);
 
 
 
@@ -341,7 +424,16 @@ void DirectXCommon::CreatePSOs() {
     spriteBBDesc.shaders = { vsSprite, psSprite };
     spriteBBDesc.rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     spriteBBDesc.disableDepthTest = true;
+    spriteBBDesc.noDSV = true;
     psoManager_->RegisterShader("SpriteForBackBuffer", spriteBBDesc);
+
+    PSOManager::PipelineStateDesc spriteBatchBBDesc = spriteBBDesc;
+    spriteBatchBBDesc.shaders = { vsSpriteBatch, psSprite };
+    psoManager_->RegisterShader("SpriteBatchForBackBuffer", spriteBatchBBDesc);
+
+    PSOManager::PipelineStateDesc textBBDesc = spriteBBDesc;
+    textBBDesc.shaders = { vsText, psText };
+    psoManager_->RegisterShader("TextForBackBuffer", textBBDesc);
 
     // --- Compute PSO生成 ---
     auto computeRootSig = GetComputeRootSignature();
@@ -354,6 +446,7 @@ void DirectXCommon::CreatePSOs() {
     psoManager_->RegisterComputeShader("VoxelParticleInitialize", csVoxelInit, computeRootSig);
     psoManager_->RegisterComputeShader("VoxelParticleEmit", csVoxelEmit, computeRootSig);
     psoManager_->RegisterComputeShader("VoxelParticleUpdate", csVoxelUpdate, computeRootSig);
+    psoManager_->RegisterComputeShader("GPUCulling", csGpuCulling, computeRootSig);
 
     // --- ビューポート・シザー矩形設定 ---
     viewport_.Width = static_cast<FLOAT>(clientWidth_);
@@ -380,7 +473,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     descriptorHeapDesc.NumDescriptors = numDescriptors;
     descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     HRESULT hr = device_->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(descriptorHeap.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return descriptorHeap;
 
 }
@@ -410,6 +503,10 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetDSVGPUDescriptorHandle(uint32_t in
     return swapChainManager_->GetDSVGPUDescriptorHandle(index);
 }
 
+D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetReadOnlyDSVCPUDescriptorHandle() {
+    return swapChainManager_->GetDSVCPUDescriptorHandle(1);
+}
+
 uint32_t DirectXCommon::AllocateRTVIndex() {
     return swapChainManager_->AllocateRTVIndex();
 }
@@ -419,11 +516,11 @@ uint32_t DirectXCommon::AllocateDSVIndex() {
 }
 
 void DirectXCommon::FreeRTVIndex(uint32_t index) {
-    swapChainManager_->FreeRTVIndex(index, commandManager_->GetGlobalFenceValue());
+    swapChainManager_->FreeRTVIndex(index, GetCurrentFrameFenceValue());
 }
 
 void DirectXCommon::FreeDSVIndex(uint32_t index) {
-    swapChainManager_->FreeDSVIndex(index, commandManager_->GetGlobalFenceValue());
+    swapChainManager_->FreeDSVIndex(index, GetCurrentFrameFenceValue());
 }
 
 /*三角形の色を変えよう*/
@@ -450,7 +547,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_
     //実際に頂点リソースを作る
     Microsoft::WRL::ComPtr<ID3D12Resource> bufferResource = nullptr;
     HRESULT hr = device_->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(bufferResource.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return bufferResource;
 
@@ -478,7 +575,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(si
         D3D12_RESOURCE_STATE_COMMON,
         nullptr,
         IID_PPV_ARGS(bufferResource.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return bufferResource;
 }
@@ -576,7 +673,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(cons
         nullptr, //Clear最適値。使わないのでnullptr
         IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return resource;
 }
 
@@ -592,9 +689,20 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 
     // Win32 API を使用してファイルの存在確認を行う（std::filesystem の代用）
     if (GetFileAttributesW(filePathW.c_str()) == INVALID_FILE_ATTRIBUTES) {
-        std::wstring msg = L"[LoadTexture] File not found: " + filePathW + L"\n";
-        OutputDebugStringW(msg.c_str());
-        assert(false && "Texture file not found");
+        std::wstring msg = L"[LoadTexture] File not found: " + filePathW;
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, ConvertString(msg));
+        
+        // フォールバック: 1x1のマゼンタ色テクスチャを返す
+        ScratchImage fallbackImage;
+        fallbackImage.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+        uint8_t* pixels = fallbackImage.GetPixels();
+        if (pixels) {
+            pixels[0] = 255; pixels[1] = 0; pixels[2] = 255; pixels[3] = 255;
+        }
+        return fallbackImage;
     }
 
     // --- sRGB 判定ロジック ---
@@ -639,9 +747,19 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
 #else
         msg += ConvertString(err.ErrorMessage());
 #endif
-        msg += L"\n";
-        OutputDebugStringW(msg.c_str());
-        assert(false && "LoadTexture failed");
+        /**
+         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+         */
+        Log::OutPutLog(std::cerr, ConvertString(msg));
+        
+        // フォールバック: 1x1のマゼンタ色テクスチャを返す
+        ScratchImage fallbackImage;
+        fallbackImage.Initialize2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+        uint8_t* pixels = fallbackImage.GetPixels();
+        if (pixels) {
+            pixels[0] = 255; pixels[1] = 0; pixels[2] = 255; pixels[3] = 255;
+        }
+        return fallbackImage;
     }
 
     ScratchImage mipImages{};
@@ -654,9 +772,13 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
             filter, 0, mipImages);
         if (FAILED(hr)) {
             _com_error err(hr);
-            std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")\n";
-            OutputDebugStringW(msg.c_str());
-            assert(false && "GenerateMipMaps failed");
+            std::wstring msg = L"[LoadTexture] GenerateMipMaps failed (" + std::to_wstring(static_cast<unsigned long>(hr)) + L")";
+            /**
+             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+             */
+            Log::OutPutLog(std::cerr, ConvertString(msg));
+            // ミップマップ生成に失敗した場合は、元の画像をそのまま返す
+            return image;
         }
     }
 
@@ -716,13 +838,13 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateDepthStencilTextureR
         &depthClearValue, //Clear最適値
         IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
     );
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
 
     return resource;
 }
 
 UINT DirectXCommon::GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapChain4>& swapChain) {
-    assert(swapChain != nullptr);
+    IRUFEMI_ASSERT(swapChain != nullptr);
     return swapChain->GetCurrentBackBufferIndex();
 }
 
@@ -772,12 +894,12 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> DirectXCommon::CreateDescriptorHeap
     descriptorHeapDesc.NumDescriptors = numDescriptors;
     descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(descriptorHeap.GetAddressOf()));
-    assert(SUCCEEDED(hr));
+    ASSERT_IF_FAILED(hr);
     return descriptorHeap;
 
 }
 
-Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4* clearColor) {
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Irufemi::Vector4* clearColor) {
 	// 1. metadataを基にResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Width = width; //Textureの幅
@@ -815,7 +937,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 		pClearValue, // Clear最適値。指定がなければnullptr
 		IID_PPV_ARGS(resource.GetAddressOf()) //作成するResourceポインタへのポインタ
 	);
-	assert(SUCCEEDED(hr));
+	ASSERT_IF_FAILED(hr);
 	return resource;
 }
 
@@ -832,6 +954,7 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
 
     // DXSwapChainManager 側でバッファ再構築
     swapChainManager_->ResizeSwapChain(device_.Get(), width, height);
+    CreateDepthSRV(); // 追加: リサイズ後にSRVを作り直す
 
     // ビューポートとシザーレクトの更新
     viewport_.Width = static_cast<float>(width);

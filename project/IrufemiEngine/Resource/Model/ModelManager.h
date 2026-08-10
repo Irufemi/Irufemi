@@ -13,10 +13,10 @@
 #include <future>
 #include <type_traits>
 #include "../../Engine/Core/System/ThreadPool.h"
-#include "../../Engine/Core/System/TaskGroup.h"
 #include <d3d12.h>
+#include "../../Engine/Core/System/ResourceHandle.h"
+#include "../../Engine/Core/System/ResourceCachePool.h"
 #include "Data/ObjModel.h"
-#include "Data/ModelData.h"
 #include "Data/MaterialData.h"
 #include "Data/VoxelizedModel.h"
 #include "../../Engine/Core/Math/Vector3Int.h"
@@ -26,13 +26,8 @@
 #include "../../Engine/Core/Math/Vector2.h"
 #include "../../Engine/Core/Math/Math.h"
 #include <atomic>
+#include "../../Engine/Core/System/DirectoryWatcher.h"
 
-// 前方宣言
-struct aiNode;
-namespace Assimp { class Importer; }
-struct aiScene;
-struct aiMesh;
-struct aiMaterial;
 struct Node;
 class DirectXCommon;
 class TextureManager;
@@ -61,8 +56,12 @@ struct GpuMesh {
  * @brief GPU上で使用されるマテリアルリソースを保持する構造体
  */
 struct GpuMaterial {
+    GpuMaterial() = default;
+    ~GpuMaterial();
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
-    D3D12_GPU_DESCRIPTOR_HANDLE textureHandle{};
+    ResourceHandle textureHandle;
+    
+    static TextureManager* sTextureManager;
 };
 
 /**
@@ -91,6 +90,8 @@ struct ManagedModel {
     std::mutex voxelMutex;
     
     std::atomic<LoadingStatus> status = LoadingStatus::Pending;
+    uint64_t lastLoadTime = 0; // ホットリロード用のタイムスタンプ
+    std::string sourceFilePath; // ロード元のファイルパス
 };
 
 /**
@@ -128,16 +129,22 @@ public:
     /**
      * @brief モデルを取得する。キャッシュにあればそれを返し、なければロードする。
      * @param filename ファイル名（または相対パス）。拡張子を含む。
-     * @return 取得した ManagedModel への共有ポインタ。失敗時は nullptr。
+     * @return 取得した ResourceHandle
      */
-    std::shared_ptr<ManagedModel> GetModel(const std::string& filename);
+    ResourceHandle LoadModel(const std::string& filename);
 
     /**
-     * @brief モデルを非同期でロードする。即座に ManagedModel を返すが、 status を確認する必要がある。
-     * @param filename ファイル名
-     * @return 準備中の ManagedModel への共有ポインタ
+     * @brief モデルのリソースハンドルを解放する（参照カウントを減らす）
+     * @param handle リソースハンドル
      */
-    std::shared_ptr<ManagedModel> GetModelAsync(const std::string& filename);
+    void ReleaseModel(ResourceHandle handle);
+
+    /**
+     * @brief リソースハンドルからモデルオブジェクト本体を取得する
+     * @param handle リソースハンドル
+     * @return ManagedModelオブジェクトのポインタ（無効な場合はnullptr）
+     */
+    ManagedModel* Resolve(ResourceHandle handle) const;
 
     /**
      * @brief 指定したモデルと解像度のボクセル化データを取得する（キャッシュ対応）
@@ -146,7 +153,7 @@ public:
      * @param resolution ボクセルの分割数（解像度）
      * @return 共有される VoxelizedModel へのポインタ（失敗時は nullptr）
      */
-    std::shared_ptr<VoxelizedModel> GetVoxelizedModel(const std::string& filename, const Vector3Int& resolution);
+    std::shared_ptr<VoxelizedModel> GetVoxelizedModel(const std::string& filename, const Irufemi::Vector3Int& resolution);
 
     /**
      * @brief 指定したフォルダ以下のモデルをすべて先行ロードする
@@ -210,31 +217,20 @@ public:
     }
 
     /**
-     * @brief 参照されなくなったキャッシュエントリーを削除する
-     */
-    void CollectGarbage();
-
-    /**
      * @brief すべてのキャッシュを破棄する
      */
     void ClearAll();
 
     // --- ロード関数群 (内部的または特殊用途で使用) ---
 
-    /**
-     * @brief 個別のOBJファイルをロードする (複数メッシュ・マテリアル対応)
-     */
-    static ObjModel LoadObjFileM(const std::string& directoryPath, const std::string& filename);
 
-    /**
-     * @brief 汎用モデルファイルをロードする (Assimp使用)
-     */
-    static ObjModel LoadModelFromFile(const std::string& directoryPath, const std::string& filename);
+
+
 
     /**
      * @brief ヴォクセル化モデルを生成する
      */
-    static VoxelizedModel VoxelizeModel(const ObjModel& model, const Vector3Int& resolution, TextureManager* textureManager);
+    static VoxelizedModel VoxelizeModel(const ObjModel& model, const Irufemi::Vector3Int& resolution, TextureManager* textureManager);
 
 private:
     /**
@@ -272,22 +268,16 @@ private:
      */
     bool IsCurrentSceneInitializing() const;
 
-    // --- 旧形式との互換性用もしくは内部ユーティリティ ---
-    static bool ParseObjFaceToken(const std::string& token, int& posIdx, int& uvIdx, int& normIdx);
-    static MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string filename);
-    static Node ReadNode(aiNode* node);
-    static void CalculateBoundingSphere(ObjModel& model);
-
-    // 以下の古い形式は非推奨または内部管理用に限定
-    static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
-    static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
+    // --- 内部ユーティリティ ---
 
 private:
     DirectXCommon* dxCommon_ = nullptr;
     TextureManager* textureManager_ = nullptr;
     std::string rootDir_;
-    mutable std::mutex mutex_;
-    std::unordered_map<std::string, std::weak_ptr<ManagedModel>> cache_;
+    mutable std::recursive_mutex mutex_;
+    ResourceCachePool modelPool_;
+    mutable std::unordered_map<std::string, ResourceHandle> nameToHandleMap_;
+    std::vector<std::shared_ptr<ManagedModel>> managedModels_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     
     mutable std::vector<std::string> availableModelsCache_;
@@ -295,4 +285,10 @@ private:
     std::unique_ptr<ThreadPool> threadPool_;
     std::shared_ptr<TaskGroup> taskGroup_;           ///< 重要タスク用（シーンを止める）
     std::shared_ptr<TaskGroup> backgroundTaskGroup_; ///< バックグラウンド用（シーンを止めない）
+    
+    std::unique_ptr<DirectoryWatcher> directoryWatcher_;
+    /**
+     * @brief OnDirectoryChanged を実行する。
+     */
+    void OnDirectoryChanged();
 };

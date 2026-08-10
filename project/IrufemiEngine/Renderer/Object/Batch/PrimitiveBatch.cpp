@@ -1,10 +1,11 @@
+﻿#include "Engine/Core/Utility/ErrorUtility.h"
 #include "PrimitiveBatch.h"
 #include <cassert>
 #include "Engine/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Engine/Manager/DrawManager.h"
 
-void PrimitiveBatch::Initialize(PrimitiveType type, const std::string& textureName) {
+void PrimitiveBatch::Initialize(Irufemi::PrimitiveType type, const std::string& textureName) {
     type_ = type;
     isCustomPrimitive_ = false;
 
@@ -13,7 +14,7 @@ void PrimitiveBatch::Initialize(PrimitiveType type, const std::string& textureNa
 }
 
 void PrimitiveBatch::InitializeRing(const RingParams& params, const std::string& textureName) {
-    type_ = PrimitiveType::Ring;
+    type_ = Irufemi::PrimitiveType::Ring;
     isCustomPrimitive_ = true;
 
     PrimitiveData ringData = PrimitiveManager::CreateRing(params);
@@ -31,7 +32,7 @@ void PrimitiveBatch::EnsureMaterialResources() {
     }
     cpuMaterialData_.color = {1.0f, 1.0f, 1.0f, 1.0f};
     cpuMaterialData_.enableLighting = 1;
-    cpuMaterialData_.uvTransform = Math::MakeIdentity4x4();
+    cpuMaterialData_.uvTransform = Irufemi::Math::MakeIdentity4x4();
     cpuMaterialData_.metallic = 0.0f;
     cpuMaterialData_.roughness = 0.5f;
     cpuMaterialData_.environmentCoefficient = 0.0f;
@@ -46,12 +47,14 @@ void PrimitiveBatch::EnsureMaterialResources() {
 }
 
 void PrimitiveBatch::EnsureSharedTexture(const std::string& textureName) {
-    if (!textureName.empty()) {
-        textureHandle_ = textureManager_->GetTextureHandle(textureName);
-    } else {
-        textureHandle_ = textureManager_->GetWhiteTextureHandle();
+    if (textureHandle_.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle_);
     }
-    assert(textureHandle_.ptr != 0 && "PrimitiveBatch Texture SRV handle is invalid");
+    if (!textureName.empty()) {
+        textureHandle_ = textureManager_->LoadTexture(textureName);
+    } else {
+        textureHandle_ = ResourceHandle();
+    }
 }
 
 float PrimitiveBatch::GetBoundingSphereRadius() const {
@@ -81,7 +84,6 @@ void PrimitiveBatch::Draw() {
     p.indexCount = res->indexCount;
     
     p.materialAddress = GetMaterialVAddress();
-    p.textureHandle = GetTextureHandle();
     p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
     p.instanceCount = GetInstanceCount();
     

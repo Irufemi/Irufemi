@@ -90,7 +90,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;USE_IMGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;EditorMode;USE_IMGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -115,13 +115,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;EditorMode;USE_IMGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)IrufemiEngine;$(SolutionDir)externals;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals\curl\include;$(SolutionDir)externals\nlohmann\include;$(SolutionDir)packages\freetype2.2.6.0.1\build\native\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir);$(SolutionDir)IrufemiEngine;$(SolutionDir)externals;$(SolutionDir)externals\assimp\include;$(SolutionDir)externals\curl\include;$(SolutionDir)externals\imgui;$(SolutionDir)externals\nlohmann\include;$(SolutionDir)packages\freetype2.2.6.0.1\build\native\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -138,7 +138,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_WINDOWS;DEVELOPMENT;USE_IMGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;DEVELOPMENT;EditorMode;USE_IMGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -205,7 +205,22 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Editor\Panel\InspectorPanel.cpp" />
     <ClCompile Include="Editor\Panel\ProjectBrowserPanel.cpp" />
     <ClCompile Include="Editor\Panel\SceneViewPanel.cpp" />
-    <ClCompile Include="Editor\Utils\EditorCameraController.cpp" />
+    <ClCompile Include="Editor\Panel\ConsolePanel.cpp" />
+
+    <ClCompile Include="Editor\Core\ComponentUIHelpers.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\SkinnedMeshRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\TransformComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\MeshRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\EffectMaskComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\SpriteRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\TextRendererComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\ColliderComponentEditors.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\ParticleEmitterComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\RaycastComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\VoxelParticleComponentEditor.cpp" />
+    <ClCompile Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EditorManager.h" />
@@ -222,6 +237,21 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Editor\Panel\InspectorPanel.h" />
     <ClInclude Include="Editor\Panel\ProjectBrowserPanel.h" />
     <ClInclude Include="Editor\Panel\SceneViewPanel.h" />
-    <ClInclude Include="Editor\Utils\EditorCameraController.h" />
+    <ClInclude Include="Editor\Panel\ConsolePanel.h" />
+
+    <ClInclude Include="Editor\Core\ComponentUIHelpers.h" />
+    <ClInclude Include="Editor\ComponentEditors\SkinnedMeshRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\TransformComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\MeshRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\EffectMaskComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\SpriteRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\TextRendererComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\ColliderComponentEditors.h" />
+    <ClInclude Include="Editor\ComponentEditors\ParticleEmitterComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\RaycastComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\VoxelParticleComponentEditor.h" />
+    <ClInclude Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.h" />
   </ItemGroup>
 </Project>
