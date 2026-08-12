@@ -228,6 +228,7 @@ exit 0</Command>
     <ClCompile Include="GameApplication.cpp" />
 
     <ClCompile Include="scene\TL1\TL1Scene.cpp" />
+    <ClCompile Include="scene\TL1\TL1LevelLoader.cpp" />
     <ClCompile Include="scene\TL1\MagicBrushClient.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -277,6 +278,7 @@ exit 0</Command>
     <ClInclude Include="GameApplication.h" />
 
     <ClInclude Include="scene\TL1\TL1Scene.h" />
+    <ClInclude Include="scene\TL1\TL1LevelLoader.h" />
     <ClInclude Include="scene\TL1\MagicBrushClient.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="scene\InGame\GameScene.h" />

@@ -86,6 +86,9 @@
     <ClCompile Include="scene\TL1\TL1Scene.cpp">
       <Filter>scene\TL1</Filter>
     </ClCompile>
+    <ClCompile Include="scene\TL1\TL1LevelLoader.cpp">
+      <Filter>scene\TL1</Filter>
+    </ClCompile>
     <ClCompile Include="scene\TL1\MagicBrushClient.cpp">
       <Filter>scene\TL1</Filter>
     </ClCompile>
@@ -198,6 +201,9 @@
       <Filter>scene\Pause</Filter>
     </ClInclude>
     <ClInclude Include="scene\TL1\TL1Scene.h">
+      <Filter>scene\TL1</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\TL1\TL1LevelLoader.h">
       <Filter>scene\TL1</Filter>
     </ClInclude>
     <ClInclude Include="scene\TL1\MagicBrushClient.h">

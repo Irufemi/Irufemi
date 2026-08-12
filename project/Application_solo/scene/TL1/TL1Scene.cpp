@@ -16,6 +16,7 @@
 #include <ctime>
 #include <filesystem>
 #include "Engine/Core/Utility/StringUtility.h"
+#include "TL1LevelLoader.h"
 
 #ifdef USE_IMGUI
 #include "imgui.h"
@@ -27,7 +28,7 @@ TL1Scene::~TL1Scene() = default;
  * @brief 初期化
  */
 void TL1Scene::Initialize(IrufemiEngine* engine) {
-    engine_ = engine;
+    BaseScene::Initialize(engine);
     magicBrushClient_ = std::make_unique<MagicBrushClient>();
     
     std::string errorLog;
@@ -37,12 +38,17 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
 
     // Pythonサーバーの自動起動
     magicBrushClient_->StartPythonServer();
+
+    // Blenderレベルデータの読み込み
+    TL1LevelLoader::Load("resources/configs/TL1.json", this);
 }
 
 /**
  * @brief 更新
  */
 void TL1Scene::Update() {
+    BaseScene::Update();
+
     // 成功したシェーダーをPSOに登録する
     if (magicBrushClient_ && !isShaderRegistered_ && vsBlob_) {
         if (magicBrushClient_->GetState() == MagicBrushClient::State::Success) {
@@ -59,6 +65,8 @@ void TL1Scene::Update() {
  * @brief 描画
  */
 void TL1Scene::Draw() {
+    BaseScene::Draw();
+
     // プレビュー描画
     if (isShaderRegistered_) {
         engine_->ApplyPSO(shaderName_);
