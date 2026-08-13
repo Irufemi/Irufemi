@@ -34,6 +34,12 @@ void TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
     }
 
     for (const auto& blenderNode : rootJson["objects"]) {
+        if (blenderNode.contains("disabled")) {
+            bool disabled = blenderNode["disabled"].get<bool>();
+            if (disabled) {
+                continue;
+            }
+        }
         json engineJson = ConvertBlenderJsonToEngineJson(blenderNode);
         
         auto obj = std::make_shared<GameObject>();
@@ -127,6 +133,12 @@ nlohmann::json TL1LevelLoader::ConvertBlenderJsonToEngineJson(const nlohmann::js
     if (blenderNode.contains("children") && blenderNode["children"].is_array()) {
         engineJson["children"] = json::array();
         for (const auto& childNode : blenderNode["children"]) {
+            if (childNode.contains("disabled")) {
+                bool disabled = childNode["disabled"].get<bool>();
+                if (disabled) {
+                    continue;
+                }
+            }
             engineJson["children"].push_back(ConvertBlenderJsonToEngineJson(childNode));
         }
     }

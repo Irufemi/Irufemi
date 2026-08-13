@@ -23,6 +23,9 @@ from .collider import OBJECT_PT_collider
 from .export_scene import MYADDON_OT_export_scene
 from .my_menu import TOPBAR_MT_my_menu
 from .draw_collider import DrawCollider
+from .disabled import MYADDON_OT_add_disabled, OBJECT_PT_disabled
+from .import_scene import MYADDON_OT_import_scene
+from .clear_scene import MYADDON_OT_clear_scene
 
 # Blenderに登録するクラスリスト
 classes = (
@@ -34,6 +37,10 @@ classes = (
     OBJECT_PT_file_name,
     MYADDON_OT_add_collider,
     OBJECT_PT_collider,
+    MYADDON_OT_add_disabled,
+    OBJECT_PT_disabled,
+    MYADDON_OT_import_scene,
+    MYADDON_OT_clear_scene,
 )
 
 #Add-On有効化時コールバック
