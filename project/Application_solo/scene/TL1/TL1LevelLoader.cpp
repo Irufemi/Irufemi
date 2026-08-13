@@ -8,30 +8,36 @@
 
 using json = nlohmann::json;
 
-void TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
+LevelData TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
+    LevelData levelData;
+    
     if (!scene) {
         Log::OutPutLog(std::cerr, "[TL1LevelLoader] Scene is null.\n");
-        return;
+        return levelData;
     }
+
 
     std::ifstream file(filepath);
     if (!file.is_open()) {
         Log::OutPutLog(std::cerr, "[TL1LevelLoader] Failed to open file: " + filepath + "\n");
-        return;
+        return levelData;
     }
+
 
     json rootJson;
     try {
         file >> rootJson;
     } catch (json::parse_error& e) {
         Log::OutPutLog(std::cerr, "[TL1LevelLoader] JSON Parse Error: " + std::string(e.what()) + "\n");
-        return;
+        return levelData;
     }
+
 
     if (!rootJson.contains("objects") || !rootJson["objects"].is_array()) {
         Log::OutPutLog(std::cerr, "[TL1LevelLoader] JSON does not contain 'objects' array.\n");
-        return;
+        return levelData;
     }
+
 
     for (const auto& blenderNode : rootJson["objects"]) {
         if (blenderNode.contains("disabled")) {
@@ -40,7 +46,36 @@ void TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
                 continue;
             }
         }
+        
+        // "PlayerSpawn"の判定
+        std::string type = blenderNode.value("type", "");
+        if (type == "PlayerSpawn") {
+            PlayerSpawnData spawnData;
+            // 座標と回転の読み取り
+            if (blenderNode.contains("transform")) {
+                const auto& t = blenderNode["transform"];
+                if (t.contains("translation") && t["translation"].size() == 3) {
+                    spawnData.translation = {
+                        t["translation"][0].get<float>(),
+                        t["translation"][2].get<float>(), // Y <- Z
+                        t["translation"][1].get<float>()  // Z <- Y
+                    };
+                }
+                if (t.contains("rotation") && t["rotation"].size() == 3) {
+                    float degToRad = Irufemi::Math::PI / 180.0f;
+                    spawnData.rotation = {
+                        t["rotation"][0].get<float>() * degToRad,
+                        t["rotation"][2].get<float>() * degToRad, // Y <- Z
+                        t["rotation"][1].get<float>() * degToRad  // Z <- Y
+                    };
+                }
+            }
+            levelData.players.push_back(spawnData);
+            continue; // 背景オブジェクトとしてはシーンに追加しない
+        }
+
         json engineJson = ConvertBlenderJsonToEngineJson(blenderNode);
+
         
         auto obj = std::make_shared<GameObject>();
         obj->SetScene(scene);
@@ -51,7 +86,10 @@ void TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
             Log::OutPutLog(std::cerr, "[TL1LevelLoader] Error deserializing object: " + std::string(e.what()) + "\n");
         }
     }
+    
+    return levelData;
 }
+
 
 nlohmann::json TL1LevelLoader::ConvertBlenderJsonToEngineJson(const nlohmann::json& blenderNode) {
     json engineJson;

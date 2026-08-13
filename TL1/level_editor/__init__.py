@@ -26,8 +26,10 @@ from .draw_collider import DrawCollider
 from .disabled import MYADDON_OT_add_disabled, OBJECT_PT_disabled
 from .import_scene import MYADDON_OT_import_scene
 from .clear_scene import MYADDON_OT_clear_scene
+from .spawn import MYADDON_OT_spawn_import_symbol, MYADDON_OT_spawn_create_symbol
 
 # Blenderに登録するクラスリスト
+
 classes = (
     MYADDON_OT_stretch_vertex,
     MYADDON_OT_create_ico_sphere,
@@ -41,7 +43,10 @@ classes = (
     OBJECT_PT_disabled,
     MYADDON_OT_import_scene,
     MYADDON_OT_clear_scene,
+    MYADDON_OT_spawn_import_symbol,
+    MYADDON_OT_spawn_create_symbol,
 )
+
 
 #Add-On有効化時コールバック
 def register():

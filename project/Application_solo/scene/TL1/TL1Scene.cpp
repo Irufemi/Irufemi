@@ -17,8 +17,13 @@
 #include <filesystem>
 #include "Engine/Core/Utility/StringUtility.h"
 #include "TL1LevelLoader.h"
+#include "Framework/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 #ifdef USE_IMGUI
+
 #include "imgui.h"
 #endif
 
@@ -40,8 +45,29 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
     magicBrushClient_->StartPythonServer();
 
     // Blenderレベルデータの読み込み
-    TL1LevelLoader::Load("resources/configs/TL1.json", this);
+    LevelData levelData = TL1LevelLoader::Load("resources/configs/TL1.json", this);
+
+    // プレイヤー配置データからテスト用ダミープレイヤーを配置
+    if (!levelData.players.empty()) {
+        auto& playerData = levelData.players[0];
+        auto dummyPlayer = std::make_shared<GameObject>();
+        dummyPlayer->SetName("Player");
+        dummyPlayer->SetScene(this);
+        
+        auto transform = dummyPlayer->GetComponent<TransformComponent>();
+        transform->SetPosition(playerData.translation);
+        transform->SetRotation(playerData.rotation);
+
+        
+        this->AddGameObject(dummyPlayer);
+        
+        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Player spawned at (" + 
+            std::to_string(playerData.translation.x) + ", " + 
+            std::to_string(playerData.translation.y) + ", " + 
+            std::to_string(playerData.translation.z) + ")\n");
+    }
 }
+
 
 /**
  * @brief 更新
