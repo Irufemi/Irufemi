@@ -415,7 +415,9 @@ void BaseScene::SubmitFrameData() {
 
 void BaseScene::DrawDebugTab() {
 #ifdef USE_IMGUI
-    if (ImGui::BeginTabItem("Camera & Lights")) {
+    if (ImGui::Begin("Scene Debug")) {
+        if (ImGui::BeginTabBar("SceneTabs")) {
+            if (ImGui::BeginTabItem("Camera & Lights")) {
         bool prevMode = isDebugCameraMode_;
         if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
             if (isDebugCameraMode_ && !prevMode) {
@@ -465,8 +467,12 @@ void BaseScene::DrawDebugTab() {
             }
         }
         ImGui::EndTabItem();
+            }
+            DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+            ImGui::EndTabBar();
+        }
+        ImGui::End();
     }
-    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif
 }
 
