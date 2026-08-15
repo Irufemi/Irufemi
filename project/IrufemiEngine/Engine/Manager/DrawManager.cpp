@@ -83,7 +83,8 @@ namespace {
 DrawManager::DrawManager() {}
 DrawManager::~DrawManager() {}
 
-void DrawManager::Initialize(DirectXCommon* dx) {
+void DrawManager::Initialize(IrufemiEngine* engine, DirectXCommon* dx) {
+    engine_ = engine;
     dxCommon_ = dx;
     commandList_ = dx->GetCommandList();
 
@@ -297,9 +298,23 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     //指定した深度で画面全体をクリアする
     commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, clearDepth, clearStencil, 0, nullptr);
 
-    // フレーム共通のビューポート/シザーを一度だけ設定
-    commandList_->RSSetViewports(1, &dxCommon_->GetViewport());
-    commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
+    // フレーム共通のビューポート/シザーを一度だけ設定（GameResolution基準）
+    D3D12_VIEWPORT viewport{};
+    viewport.Width = static_cast<float>(engine_->GetGameResolutionWidth());
+    viewport.Height = static_cast<float>(engine_->GetGameResolutionHeight());
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    
+    D3D12_RECT scissor{};
+    scissor.left = 0;
+    scissor.right = engine_->GetGameResolutionWidth();
+    scissor.top = 0;
+    scissor.bottom = engine_->GetGameResolutionHeight();
+    
+    commandList_->RSSetViewports(1, &viewport);
+    commandList_->RSSetScissorRects(1, &scissor);
 
     // フレームで利用するSRVヒープを設定(全描画共通)
     ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
@@ -1169,7 +1184,14 @@ void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
     }
 
     // ビューポートとシザーを元に戻す
-    commandList_->RSSetViewports(1, &dxCommon_->GetViewport());
+    D3D12_VIEWPORT viewport{};
+    viewport.Width = static_cast<float>(engine_->GetGameResolutionWidth());
+    viewport.Height = static_cast<float>(engine_->GetGameResolutionHeight());
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    commandList_->RSSetViewports(1, &viewport);
     commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
 
     // レンダーターゲット追跡のリセット

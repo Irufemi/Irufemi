@@ -11,9 +11,9 @@
 #include <string>
 #include <wrl/client.h>
 
-void PostProcessManager::Initialize(DirectXCommon* dxCommon,
-                                    DXGI_FORMAT rtvFormat) {
-  dxCommon_ = dxCommon;
+void PostProcessManager::Initialize(IrufemiEngine* engine, DirectXCommon* dxCommon, DXGI_FORMAT rtvFormat) {
+    engine_ = engine;
+    dxCommon_ = dxCommon;
   device_ = dxCommon->GetDevice();
   rootSig_ = dxCommon->GetRootSignature();
   rtvFormat_ = rtvFormat;

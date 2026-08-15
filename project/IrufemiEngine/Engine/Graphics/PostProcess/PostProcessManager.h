@@ -54,7 +54,7 @@ enum class PostProcessMode {
 };
 
 class DirectXCommon;
-
+class IrufemiEngine;
 class PostProcessRunner;
 
 /**
@@ -94,6 +94,8 @@ class PostProcessManager {
 public:
     using Mode = PostProcessMode;
     using Layer = EffectLayer;
+
+    IrufemiEngine* engine_ = nullptr;
 
     static constexpr int32_t kMaxKawaseIterations = 8; // 最大ダウンサンプル回数
 
@@ -557,10 +559,11 @@ public:
 public:
     /**
      * @brief ポストプロセスの初期化
+     * @param engine エンジンポインタ
      * @param dxCommon DirectX基盤クラス
      * @param rtvFormat 最終的な出力先のRTVフォーマット
      */
-    void Initialize(DirectXCommon* dxCommon, DXGI_FORMAT rtvFormat);
+    void Initialize(IrufemiEngine* engine, DirectXCommon* dxCommon, DXGI_FORMAT rtvFormat);
 
 
 

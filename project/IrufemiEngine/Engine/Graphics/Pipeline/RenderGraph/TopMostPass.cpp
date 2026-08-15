@@ -17,25 +17,53 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // 実行時はバックバッファに書き込む
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
 #endif
-
     // 深度バッファは無効化(TopMostのため)
     cmdList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
 
-    // ビューポートとシザーの設定を明示的に行う（PostProcess等からの継承に依存しないため）
+    // ビューポートとシザーの設定を明示的に行う
     D3D12_VIEWPORT viewport{};
-    viewport.Width = static_cast<float>(engine->GetClientWidth());
-    viewport.Height = static_cast<float>(engine->GetClientHeight());
+    D3D12_RECT scissor{};
+
+#ifdef EditorMode
+    viewport.Width = static_cast<float>(engine->GetGameResolutionWidth());
+    viewport.Height = static_cast<float>(engine->GetGameResolutionHeight());
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
+    
+    scissor.left = 0;
+    scissor.right = engine->GetGameResolutionWidth();
+    scissor.top = 0;
+    scissor.bottom = engine->GetGameResolutionHeight();
+#else
+    float clientW = static_cast<float>(engine->GetClientWidth());
+    float clientH = static_cast<float>(engine->GetClientHeight());
+    float gameW = static_cast<float>(engine->GetGameResolutionWidth());
+    float gameH = static_cast<float>(engine->GetGameResolutionHeight());
+
+    float aspectGame = gameW / gameH;
+    float aspectClient = clientW / clientH;
+
+    if (aspectClient > aspectGame) {
+        viewport.Height = clientH;
+        viewport.Width = clientH * aspectGame;
+        viewport.TopLeftX = (clientW - viewport.Width) * 0.5f;
+        viewport.TopLeftY = 0.0f;
+    } else {
+        viewport.Width = clientW;
+        viewport.Height = clientW / aspectGame;
+        viewport.TopLeftX = 0.0f;
+        viewport.TopLeftY = (clientH - viewport.Height) * 0.5f;
+    }
+    
+    scissor.left = static_cast<LONG>(viewport.TopLeftX);
+    scissor.right = static_cast<LONG>(viewport.TopLeftX + viewport.Width);
+    scissor.top = static_cast<LONG>(viewport.TopLeftY);
+    scissor.bottom = static_cast<LONG>(viewport.TopLeftY + viewport.Height);
+#endif
+
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
     cmdList->RSSetViewports(1, &viewport);
-
-    D3D12_RECT scissor{};
-    scissor.left = 0;
-    scissor.right = engine->GetClientWidth();
-    scissor.top = 0;
-    scissor.bottom = engine->GetClientHeight();
     cmdList->RSSetScissorRects(1, &scissor);
 
     // キューの描画関数を定義

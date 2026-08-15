@@ -283,7 +283,7 @@ void IrufemiEngine::Initialize(const std::wstring &title,
 
   // 描画
   drawManager_ = std::make_unique<DrawManager>();
-  drawManager_->Initialize(dxCommon_.get());
+  drawManager_->Initialize(this, dxCommon_.get());
   
   debugPrimitiveRenderer_ = std::make_unique<DebugPrimitiveRenderer>();
   debugPrimitiveRenderer_->Initialize(dxCommon_.get(), drawManager_.get(), dxCommon_->GetSrvPool());
@@ -340,37 +340,37 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   // --- 全画面用 RenderTexture の初期化 ---
   mainRenderTexture_ = std::make_unique<RenderTexture>();
   mainRenderTexture_->Initialize(
-      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      dxCommon_.get(), GetGameResolutionWidth(), GetGameResolutionHeight(),
       DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
       {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
 
   effectMaskTexture_ = std::make_unique<RenderTexture>();
   effectMaskTexture_->Initialize(
-      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      dxCommon_.get(), GetGameResolutionWidth(), GetGameResolutionHeight(),
       DXGI_FORMAT_R8G8B8A8_UNORM, // マスク用はSRGB不要
       {0.0f, 0.0f, 0.0f, 0.0f}); // 黒（マスクなし）でクリア
 
   normalTexture_ = std::make_unique<RenderTexture>();
   normalTexture_->Initialize(
-      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
+      dxCommon_.get(), GetGameResolutionWidth(), GetGameResolutionHeight(),
       DXGI_FORMAT_R16G16B16A16_FLOAT, // 法線用
       {0.0f, 0.0f, 1.0f, 1.0f}); // 初期値 (0,0,1)
 
   materialTexture_ = std::make_unique<RenderTexture>();
   materialTexture_->Initialize(
-      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
-      DXGI_FORMAT_R8G8B8A8_UNORM, // マテリアル用
+      dxCommon_.get(), GetGameResolutionWidth(), GetGameResolutionHeight(),
+      DXGI_FORMAT_R8G8B8A8_UNORM, // マテリアル用 (RGB: 色, A: Roughness or Metallic)
       {0.0f, 0.0f, 0.0f, 0.0f}); // 初期値
 
   velocityTexture_ = std::make_unique<RenderTexture>();
   velocityTexture_->Initialize(
-      dxCommon_.get(), GetClientWidth(), GetClientHeight(),
-      DXGI_FORMAT_R16G16_FLOAT, // モーションベクトル用
+      dxCommon_.get(), GetGameResolutionWidth(), GetGameResolutionHeight(),
+      DXGI_FORMAT_R16G16_FLOAT, // 速度ベクトル用 (X, Y)
       {0.0f, 0.0f, 0.0f, 0.0f}); // 初期値
 
   // --- PostProcessManager の初期化 ---
   postProcessManager_ = std::make_unique<PostProcessManager>();
-  postProcessManager_->Initialize(dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
+  postProcessManager_->Initialize(this, dxCommon_.get(), DXGI_FORMAT_R8G8B8A8_UNORM);
 
   // ノイズテクスチャのロードとハンドル設定
   noise0Handle_ = textureManager_->LoadTexture("resources/noise0.png");
@@ -921,33 +921,13 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   // 1. スワップチェーン、深度バッファのリサイズ
   dxCommon_->ResizeSwapChain(width, height);
 
-  // 2. メインレンダーテクスチャの再生成
-  mainRenderTexture_->Initialize(
-      dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-      {clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]});
-
-  if (effectMaskTexture_) {
-      effectMaskTexture_->Initialize(
-          dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
-          {0.0f, 0.0f, 0.0f, 0.0f});
-  }
-  if (normalTexture_) {
-      normalTexture_->Initialize(
-          dxCommon_.get(), width, height, DXGI_FORMAT_R16G16B16A16_FLOAT,
-          {0.0f, 0.0f, 1.0f, 1.0f});
-  }
-  if (materialTexture_) {
-      materialTexture_->Initialize(
-          dxCommon_.get(), width, height, DXGI_FORMAT_R8G8B8A8_UNORM,
-          {0.0f, 0.0f, 0.0f, 0.0f});
-  }
-  if (velocityTexture_) {
-      velocityTexture_->Initialize(
-          dxCommon_.get(), width, height, DXGI_FORMAT_R16G16_FLOAT,
-          {0.0f, 0.0f, 0.0f, 0.0f});
-  }
-
-  // 3. 深度バッファの SRV 再作成 (既存のインデックスを再利用)
+  // --- 警告 ---
+  // mainRenderTexture_ などの内部テクスチャは GameResolution (1280x720) に固定されているため、
+  // ウィンドウサイズが変更されてもここで Initialize() を呼び出してリサイズしてはいけません。
+  // リサイズすると、ImGuiの表示領域やPostProcessのUVマッピングがずれて表示がおかしくなります。
+  
+  // 深度バッファ(DSV)の再生成はDXSwapChainManager側で行われているが、
+  // Viewport/Scissorの解像度とは独立しているため問題ない。
   if (depthSrvIndex_ != 0xFFFFFFFF) {
     D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
     depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
@@ -975,7 +955,15 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   
   // 4. カメラの解像度更新 (3D空間の歪み防止)
   if (cameraManager_) {
-      cameraManager_->OnResize(width, height);
+#ifdef EditorMode
+      // EditorMode時は描画先が1280x720固定のため、ウィンドウサイズに関わらずゲーム解像度をアスペクト比計算に使用する
+      cameraManager_->OnResize(gameResWidth_, gameResHeight_);
+#else
+      // Standaloneでもレターボックスが有効ならゲーム解像度を維持すべきだが、
+      // 万が一の仕様変更に備え一旦従来通りとするか、もしくは常に固定するか。
+      // 現状はPostProcessでレターボックス処理をしているのでゲーム解像度を使用するのが正しい。
+      cameraManager_->OnResize(gameResWidth_, gameResHeight_);
+#endif
   }
 
   // 5. 描画マネージャーへの通知 (RenderGraph等のキャッシュクリア)
