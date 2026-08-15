@@ -15,10 +15,22 @@ struct PlayerSpawnData {
     Irufemi::Vector3 rotation;
 };
 
+// 敵キャラの生成データ
+struct EnemySpawnData {
+    // ファイル名
+    std::string fileName;
+    // 平行移動
+    Irufemi::Vector3 translation;
+    // 回転角
+    Irufemi::Vector3 rotation;
+};
+
 // レベルデータ
 struct LevelData {
     // 自キャラ配列
     std::vector<PlayerSpawnData> players;
+    // 敵キャラ配列
+    std::vector<EnemySpawnData> enemies;
 };
 
 /**

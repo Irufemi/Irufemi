@@ -66,6 +66,24 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
             std::to_string(playerData.translation.y) + ", " + 
             std::to_string(playerData.translation.z) + ")\n");
     }
+
+    // 敵配置データから敵を配置
+    for (const auto& enemyData : levelData.enemies) {
+        auto dummyEnemy = std::make_shared<GameObject>();
+        dummyEnemy->SetName("Enemy");
+        dummyEnemy->SetScene(this);
+        
+        auto transform = dummyEnemy->GetComponent<TransformComponent>();
+        transform->SetPosition(enemyData.translation);
+        transform->SetRotation(enemyData.rotation);
+
+        this->AddGameObject(dummyEnemy);
+        
+        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Enemy spawned at (" + 
+            std::to_string(enemyData.translation.x) + ", " + 
+            std::to_string(enemyData.translation.y) + ", " + 
+            std::to_string(enemyData.translation.z) + ")\n");
+    }
 }
 
 

@@ -72,6 +72,32 @@ LevelData TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
             }
             levelData.players.push_back(spawnData);
             continue; // 背景オブジェクトとしてはシーンに追加しない
+        } else if (type == "EnemySpawn") {
+            EnemySpawnData spawnData;
+            // 座標と回転の読み取り
+            if (blenderNode.contains("transform")) {
+                const auto& t = blenderNode["transform"];
+                if (t.contains("translation") && t["translation"].size() == 3) {
+                    spawnData.translation = {
+                        t["translation"][0].get<float>(),
+                        t["translation"][2].get<float>(), // Y <- Z
+                        t["translation"][1].get<float>()  // Z <- Y
+                    };
+                }
+                if (t.contains("rotation") && t["rotation"].size() == 3) {
+                    float degToRad = Irufemi::Math::PI / 180.0f;
+                    spawnData.rotation = {
+                        t["rotation"][0].get<float>() * degToRad,
+                        t["rotation"][2].get<float>() * degToRad, // Y <- Z
+                        t["rotation"][1].get<float>() * degToRad  // Z <- Y
+                    };
+                }
+            }
+            if (blenderNode.contains("file_name")) {
+                spawnData.fileName = blenderNode["file_name"].get<std::string>();
+            }
+            levelData.enemies.push_back(spawnData);
+            continue;
         }
 
         json engineJson = ConvertBlenderJsonToEngineJson(blenderNode);
