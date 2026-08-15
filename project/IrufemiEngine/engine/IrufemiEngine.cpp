@@ -926,22 +926,8 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
   // ウィンドウサイズが変更されてもここで Initialize() を呼び出してリサイズしてはいけません。
   // リサイズすると、ImGuiの表示領域やPostProcessのUVマッピングがずれて表示がおかしくなります。
   
-  // 深度バッファ(DSV)の再生成はDXSwapChainManager側で行われているが、
-  // Viewport/Scissorの解像度とは独立しているため問題ない。
-  if (depthSrvIndex_ != 0xFFFFFFFF) {
-    D3D12_SHADER_RESOURCE_VIEW_DESC depthSrvDesc{};
-    depthSrvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-    depthSrvDesc.Shader4ComponentMapping =
-        D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    depthSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-    depthSrvDesc.Texture2D.MipLevels = 1;
-    dxCommon_->GetDevice()->CreateShaderResourceView(
-        dxCommon_->GetDepthStencilResource(), &depthSrvDesc,
-        dxCommon_->GetSrvPool()->GetCPUHandle(depthSrvIndex_));
-
-    // ポストプロセスマネージャーに新しいSRVハンドルを設定
-    postProcessManager_->SetDepthSrvIndex(depthSrvIndex_);
-  }
+  // 深度バッファ(DSV)はGameResolution固定であるため、ウィンドウサイズ変更時にはリサイズされない。
+  // したがって、SRVの再生成も不要。
   
   if (normalTexture_) {
       postProcessManager_->SetNormalSrvIndex(normalTexture_->GetSrvIndex());
