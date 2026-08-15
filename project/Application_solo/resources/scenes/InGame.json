@@ -3905,9 +3905,9 @@
             "Beam Offset Y": -2.0,
             "Beam Offset Z": 25.0,
             "Beam Range": 1000.0,
-            "HP": 1.0,
-            "Max HP": 1.0,
-            "Max Shield Count": 1,
+            "HP": 50.0,
+            "Max HP": 50.0,
+            "Max Shield Count": 20,
             "Shield Radius": 8.0
           },
           "type": "BossComponent"
@@ -4315,7 +4315,7 @@
         },
         {
           "data": {
-            "Level Data Path": "resources/configs/WaveData_Stage1.json"
+            "Level Data Path": "resources/GameData/WaveData_Stage1.json"
           },
           "type": "WaveManagerComponent"
         }

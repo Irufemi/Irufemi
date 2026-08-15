@@ -35,5 +35,5 @@ private:
     std::unordered_map<std::string, std::shared_ptr<IWaveEventHandler>> handlers_;
     
     SplineFollowerComponent* playerFollower_ = nullptr;
-    std::string levelDataPath_ = "resources/configs/WaveData_Stage1.json";
+    std::string levelDataPath_ = "resources/GameData/WaveData_Stage1.json";
 };

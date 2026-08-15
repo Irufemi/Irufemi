@@ -48,7 +48,7 @@ void DebrisManagerComponent::OnRegisterProperties() {
 }
 
 void DebrisManagerComponent::Initialize() {
-    std::string configPath = "resources/configs/DebrisPalette.json";
+    std::string configPath = "resources/GameData/DebrisPalette.json";
     std::ifstream file(configPath);
     if (!file.is_open()) {
         Log::OutPutLog(std::cout, "Failed to load DebrisPalette.json\n");

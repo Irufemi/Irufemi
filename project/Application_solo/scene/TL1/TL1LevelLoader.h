@@ -42,7 +42,7 @@ class TL1LevelLoader {
 public:
     /**
      * @brief レベルデータを読み込み、シーンに配置する
-     * @param filepath JSONファイルのパス (例: "resources/configs/TL1.json")
+     * @param filepath JSONファイルのパス (例: "resources/Levels/TL1.json")
      * @param scene 配置先のシーン
      * @return 抽出されたレベルデータ（自キャラの座標など）
      */

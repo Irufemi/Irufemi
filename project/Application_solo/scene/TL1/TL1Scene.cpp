@@ -45,7 +45,7 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
     magicBrushClient_->StartPythonServer();
 
     // Blenderレベルデータの読み込み
-    LevelData levelData = TL1LevelLoader::Load("resources/configs/TL1.json", this);
+    LevelData levelData = TL1LevelLoader::Load("resources/Levels/TL1.json", this);
 
     // プレイヤー配置データからテスト用ダミープレイヤーを配置
     if (!levelData.players.empty()) {

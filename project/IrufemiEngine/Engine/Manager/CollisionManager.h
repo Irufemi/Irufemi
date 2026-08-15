@@ -126,7 +126,7 @@ private:
     
     // レイヤー名（最大32個）
     std::vector<std::string> layerNames_;
-    std::string layerConfigFilePath_ = "resources/config/layers.json";
+    std::string layerConfigFilePath_ = "resources/Config/layers.json";
 
     bool isDrawDebugLine_ = true;
 
