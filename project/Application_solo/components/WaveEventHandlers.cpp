@@ -7,39 +7,69 @@
 #include "Framework/SceneManager.h"
 #include "Resource/Audio/AudioManager.h"
 #include "Engine/Core/Utility/Log.h"
+#include "WaveManagerComponent.h"
+#include "Framework/Component/Logic/SpawnPointComponent.h"
+#include "Framework/Component/TransformComponent.h"
 #include <iostream>
 
-void SpawnEnemyHandler::Execute(const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
-    // パラメータからオフセットを取得
-    float offsetX = 0.0f;
-    float offsetY = 0.0f;
-    float offsetZ = 0.0f;
-    
-    if (data.parameters.contains("OffsetFromRail")) {
-        auto offset = data.parameters["OffsetFromRail"];
-        if (offset.contains("x")) offsetX = offset["x"].get<float>();
-        if (offset.contains("y")) offsetY = offset["y"].get<float>();
-        if (offset.contains("z")) offsetZ = offset["z"].get<float>();
+std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
+    std::vector<Irufemi::Vector3> positions;
+
+    // 1. GroupId / WaveId から SpawnPoint を取得
+    std::string waveId = "Unknown";
+    if (data.parameters.contains("WaveId")) {
+        waveId = data.parameters["WaveId"].get<std::string>();
+    } else if (data.parameters.contains("GroupId")) {
+        waveId = data.parameters["GroupId"].get<std::string>();
     }
 
-    // レール座標を基準にオフセットをワールド座標へ変換
-    // Zはレール進行方向、Xはレール右方向、Yは上方向（ここでは簡易的にYを絶対上方向とする）
     Irufemi::Vector3 spawnPos = railPos;
-    spawnPos.x += railRight.x * offsetX + railForward.x * offsetZ;
-    spawnPos.y += offsetY; // 簡易的に絶対Y
-    spawnPos.z += railRight.z * offsetX + railForward.z * offsetZ;
 
-    Irufemi::Vector3 spawnRot = {0.0f, std::atan2(-railForward.x, -railForward.z), 0.0f}; // プレイヤー方向を向く
+    if (manager) {
+        const auto& spawnPoints = manager->GetSpawnPoints(waveId);
+        if (!spawnPoints.empty()) {
+            // 見つかった最初のSpawnPointを基準座標として使用する
+            if (auto t = spawnPoints[0]->GetGameObject()->GetComponent<TransformComponent>()) {
+                spawnPos = t->GetPosition();
+            }
+        } else if (waveId != "Unknown") {
+            Log::OutPutLog(std::cout, "[WaveManager] Warning: SpawnPoint with WaveId '" + waveId + "' not found in preview/execute.\n");
+        }
+    }
 
-    // DebugEnemySpawner を探してスポーンを依頼する
     int count = 1;
     std::string formation = "Center";
-    if (data.parameters.contains("Count")) {
-        count = data.parameters["Count"].get<int>();
+    if (data.parameters.contains("Count")) count = data.parameters["Count"].get<int>();
+    if (data.parameters.contains("Formation")) formation = data.parameters["Formation"].get<std::string>();
+
+    for (int i = 0; i < count; ++i) {
+        Irufemi::Vector3 currentSpawnPos = spawnPos;
+        // 簡単なフォーメーションの計算
+        if (formation == "V_Shape" && count > 1) {
+            if (i > 0) {
+                float sideSign = (i % 2 == 0) ? 1.0f : -1.0f;
+                float distanceBack = 5.0f * ((i + 1) / 2);
+                float distanceSide = 5.0f * ((i + 1) / 2) * sideSign;
+                currentSpawnPos.x += railRight.x * distanceSide - railForward.x * distanceBack;
+                currentSpawnPos.y += railRight.y * distanceSide - railForward.y * distanceBack;
+                currentSpawnPos.z += railRight.z * distanceSide - railForward.z * distanceBack;
+            }
+        } else if (formation == "Line" && count > 1) {
+            float sideSign = (i % 2 == 0) ? 1.0f : -1.0f;
+            float distanceSide = 5.0f * ((i + 1) / 2) * sideSign;
+            currentSpawnPos.x += railRight.x * distanceSide;
+            currentSpawnPos.y += railRight.y * distanceSide;
+            currentSpawnPos.z += railRight.z * distanceSide;
+        }
+        positions.push_back(currentSpawnPos);
     }
-    if (data.parameters.contains("Formation")) {
-        formation = data.parameters["Formation"].get<std::string>();
-    }
+
+    return positions;
+}
+
+void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
+    auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
+    Irufemi::Vector3 spawnRot = {0.0f, std::atan2(-railForward.x, -railForward.z), 0.0f};
 
     auto engine = BaseModel::GetIrufemiEngine();
     auto scene = engine ? engine->GetSceneManager()->GetCurrentScene() : nullptr;
@@ -47,30 +77,10 @@ void SpawnEnemyHandler::Execute(const WaveEventData& data, const Irufemi::Vector
         auto spawnerObj = baseScene->FindGameObject("EnemySpawner"); 
         if (spawnerObj) {
             if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
-                for (int i = 0; i < count; ++i) {
-                    Irufemi::Vector3 currentSpawnPos = spawnPos;
-                    // 簡単なフォーメーションの計算
-                    if (formation == "V_Shape" && count > 1) {
-                        // 先頭を0番目とし、以降を左右に広げる
-                        if (i > 0) {
-                            float sideSign = (i % 2 == 0) ? 1.0f : -1.0f;
-                            float distanceBack = 5.0f * ((i + 1) / 2);
-                            float distanceSide = 5.0f * ((i + 1) / 2) * sideSign;
-                            currentSpawnPos.x += railRight.x * distanceSide - railForward.x * distanceBack;
-                            currentSpawnPos.y += railRight.y * distanceSide - railForward.y * distanceBack;
-                            currentSpawnPos.z += railRight.z * distanceSide - railForward.z * distanceBack;
-                        }
-                    } else if (formation == "Line" && count > 1) {
-                        // 横一列
-                        float sideSign = (i % 2 == 0) ? 1.0f : -1.0f;
-                        float distanceSide = 5.0f * ((i + 1) / 2) * sideSign;
-                        currentSpawnPos.x += railRight.x * distanceSide;
-                        currentSpawnPos.y += railRight.y * distanceSide;
-                        currentSpawnPos.z += railRight.z * distanceSide;
-                    }
-                    spawner->SpawnEnemy(currentSpawnPos, spawnRot);
+                for (const auto& pos : positions) {
+                    spawner->SpawnEnemy(pos, spawnRot);
                 }
-                Log::OutPutLog(std::cout, "[WaveManager] Spawned " + std::to_string(count) + " enemies (Formation: " + formation + ") at distance: " + std::to_string(data.triggerDistance) + "\n");
+                Log::OutPutLog(std::cout, "[WaveManager] Spawned " + std::to_string(positions.size()) + " enemies at distance: " + std::to_string(data.triggerDistance) + "\n");
                 return;
             }
         }
@@ -79,7 +89,31 @@ void SpawnEnemyHandler::Execute(const WaveEventData& data, const Irufemi::Vector
     Log::OutPutLog(std::cout, "[WaveManager] Warning: DebugEnemySpawner not found.\n");
 }
 
-void PlayBGMHandler::Execute(const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+
+void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
+    auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
+    
+    auto engine = BaseModel::GetIrufemiEngine();
+    if (engine && engine->GetDebugPrimitiveRenderer()) {
+        Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
+        
+        for (const auto& pos : positions) {
+            float scale = 2.0f;
+            Irufemi::Matrix4x4 transform = {
+                scale, 0, 0, 0,
+                0, scale, 0, 0,
+                0, 0, scale, 0,
+                pos.x, pos.y + (scale * 0.5f), pos.z, 1.0f // 地面にめり込まないように少し上げる
+            };
+            engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
+        }
+    }
+}
+#endif
+
+void PlayBGMHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
     std::string track = "Unknown";
     if (data.parameters.contains("Track")) {
         track = data.parameters["Track"].get<std::string>();

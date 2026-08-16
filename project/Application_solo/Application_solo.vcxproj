@@ -273,6 +273,7 @@ exit 0</Command>
     <ClCompile Include="components\PlayerTargetingComponent.cpp" />
     <ClCompile Include="components\WaveEventHandlers.cpp" />
     <ClCompile Include="components\WaveManagerComponent.cpp" />
+    <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -318,6 +319,7 @@ exit 0</Command>
     <ClInclude Include="components\WaveEvent.h" />
     <ClInclude Include="components\WaveEventHandlers.h" />
     <ClInclude Include="components\WaveManagerComponent.h" />
+    <ClInclude Include="components\editor\WaveManagerComponentEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

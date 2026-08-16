@@ -10,6 +10,7 @@
 #include "Renderer/SkeletonDebugRendererComponent.h"
 #include "Logic/AnimatorComponent.h"
 #include "Logic/BoneAttachmentComponent.h"
+#include "Logic/SpawnPointComponent.h"
 #include "Effect/VoxelParticleComponent.h"
 #include "Effect/EffectMaskComponent.h"
 #include "Effect/ScreenEffectComponent.h"
@@ -70,6 +71,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("SkeletonDebugRendererComponent", "Debug", []() { return std::make_shared<SkeletonDebugRendererComponent>(); });
     Register("AnimatorComponent", "Logic", []() { return std::make_shared<AnimatorComponent>(); });
     Register("BoneAttachmentComponent", "Logic", []() { return std::make_shared<BoneAttachmentComponent>(); });
+    Register("SpawnPointComponent", "Logic", []() { return std::make_shared<SpawnPointComponent>(); });
     Register("VoxelParticleComponent", "Effect", []() { return std::make_shared<VoxelParticleComponent>(); });
     Register("EffectMaskComponent", "Effect", []() { return std::make_shared<EffectMaskComponent>(); });
     Register("ScreenEffectComponent", "Effect", []() { return std::make_shared<ScreenEffectComponent>(); });

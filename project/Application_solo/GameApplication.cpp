@@ -50,6 +50,8 @@
 
 #ifdef EditorMode
 #include "EditorManager.h"
+#include "Editor/Core/ComponentEditorRegistry.h"
+#include "components/editor/WaveManagerComponentEditor.h"
 #endif
 
 namespace {
@@ -60,7 +62,7 @@ namespace {
     const Irufemi::Vector4 kClearColor = { 0.08f, 0.03f, 0.02f, 1.0f }; // 退廃的な荒野（ダーク・ラスト）
     const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        = "TL1";
+        = "InGame";
 #else
         = "Title";
 #endif
@@ -89,11 +91,19 @@ void GameApplication::Run() {
 
 #ifdef EditorMode
     // エディタマネージャを拡張として事前登録（Initialize時に初期化される）
-    engine->AddExtension(std::make_shared<EditorManager>());
+    auto editorManager = std::make_shared<EditorManager>();
+    engine->AddExtension(editorManager);
 #endif
 
     // エンジンの初期化
     engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
+
+#ifdef EditorMode
+    // エンジン初期化後にエディタへ登録（OnInitialize内でレジストリが生成されるため）
+    if (auto registry = editorManager->GetComponentEditorRegistry()) {
+        registry->RegisterEditor<WaveManagerComponent, WaveManagerComponentEditor>();
+    }
+#endif
 
     // アプリ固有のシェーダー登録
     {
