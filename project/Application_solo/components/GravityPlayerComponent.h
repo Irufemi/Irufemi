@@ -22,6 +22,11 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "GravityPlayerComponent"; }
 
+    void LoadStatusFromJson();
+    
+    std::string GetStatusDataPath() const { return statusDataPath_; }
+    void SetStatusDataPath(const std::string& path) { statusDataPath_ = path; }
+
     void TakeDamage(int damage);
     bool IsInvincible() const { return invincibilityTimer_ > 0.0f; }
     void SetGodMode(bool godMode) { isGodMode_ = godMode; }
@@ -69,6 +74,7 @@ private:
     float noLockThrowDistance_ = 1000.0f; 
 
     // --- 体力・デバッグ関連 ---
+    std::string statusDataPath_ = "resources/GameData/PlayerStatus.json";
     int hp_ = 100;
     int maxHp_ = 100;
     bool isDead_ = false;

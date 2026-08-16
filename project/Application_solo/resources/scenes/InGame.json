@@ -1535,15 +1535,9 @@
             {
               "data": {
                 "God Mode": false,
-                "HP": 100,
-                "Max HP": 100,
-                "Max Orbit Count": 10,
                 "No Lock Throw Dist": 1000.0,
                 "Orbit Angle Max": 6.28000020980835,
-                "Orbit Radius Max": 4.0,
-                "Orbit Radius Min": 2.0,
-                "Pull Radius": 50.0,
-                "Throw Interval": 0.15000000596046448
+                "Status Data Path": "resources/GameData/PlayerStatus.json"
               },
               "type": "GravityPlayerComponent"
             },
@@ -3901,14 +3895,9 @@
         },
         {
           "data": {
-            "Beam Interval": 10.0,
             "Beam Offset Y": -2.0,
             "Beam Offset Z": 25.0,
-            "Beam Range": 1000.0,
-            "HP": 50.0,
-            "Max HP": 50.0,
-            "Max Shield Count": 20,
-            "Shield Radius": 8.0
+            "Status Data Path": "resources/GameData/BossStatus.json"
           },
           "type": "BossComponent"
         },

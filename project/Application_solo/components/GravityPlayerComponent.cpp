@@ -22,22 +22,44 @@
 #include "Engine/Core/Utility/Log.h"
 #include <iostream>
 #include "Framework/Component/Effect/ScreenEffectComponent.h"
+#include <nlohmann/json.hpp>
+#include <fstream>
+
+void GravityPlayerComponent::LoadStatusFromJson() {
+    if (statusDataPath_.empty()) return;
+
+    std::ifstream file(statusDataPath_);
+    if (!file.is_open()) {
+        Log::OutPutLog(std::cout, "[GravityPlayer] Failed to load status: " + statusDataPath_ + "\n");
+        return;
+    }
+
+    try {
+        nlohmann::json j;
+        file >> j;
+        
+        if (j.contains("maxHp")) { maxHp_ = j["maxHp"].get<int>(); hp_ = maxHp_; }
+        if (j.contains("maxOrbitCount")) { maxOrbitCount_ = j["maxOrbitCount"].get<int>(); }
+        if (j.contains("pullRadius")) { pullRadius_ = j["pullRadius"].get<float>(); }
+        if (j.contains("throwInterval")) { throwInterval_ = j["throwInterval"].get<float>(); }
+        if (j.contains("orbitRadiusMin")) { orbitRadiusMin_ = j["orbitRadiusMin"].get<float>(); }
+        if (j.contains("orbitRadiusMax")) { orbitRadiusMax_ = j["orbitRadiusMax"].get<float>(); }
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cout, std::string("[GravityPlayer] JSON Parse Error: ") + e.what() + "\n");
+    }
+}
 
 void GravityPlayerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
-    RegisterProperty("Max Orbit Count", &maxOrbitCount_);
-    RegisterProperty("Pull Radius", &pullRadius_);
+    RegisterProperty("Status Data Path", &statusDataPath_);
     RegisterProperty("No Lock Throw Dist", &noLockThrowDistance_);
-    RegisterProperty("HP", &hp_);
-    RegisterProperty("Max HP", &maxHp_);
     RegisterProperty("God Mode", &isGodMode_);
-    RegisterProperty("Throw Interval", &throwInterval_);
-    RegisterProperty("Orbit Radius Min", &orbitRadiusMin_);
-    RegisterProperty("Orbit Radius Max", &orbitRadiusMax_);
     RegisterProperty("Orbit Angle Max", &orbitAngleRandomMax_);
 }
 
 void GravityPlayerComponent::Initialize() {
+    LoadStatusFromJson();
+    
     orbitingDebris_.clear();
     isThrowing_ = false;
     throwTimer_ = 0.0f;

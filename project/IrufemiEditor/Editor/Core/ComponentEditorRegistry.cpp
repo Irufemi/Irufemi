@@ -40,6 +40,10 @@
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Framework/Component/Effect/EffectMaskComponent.h"
 #include "Framework/Component/Camera/CameraComponent.h"
+#include "../../Application_solo/components/GravityPlayerComponent.h"
+#include "../../Application_solo/components/editor/GravityPlayerComponentEditor.h"
+#include "../../Application_solo/components/Boss/BossComponent.h"
+#include "../../Application_solo/components/editor/BossComponentEditor.h"
 
 // =======================================================================
 // ComponentEditorRegistry
@@ -65,6 +69,8 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<VoxelParticleComponent, VoxelParticleComponentEditor>();
     RegisterEditor<EffectMaskComponent, EffectMaskComponentEditor>();
     RegisterEditor<CameraComponent, CameraComponentEditor>();
+    RegisterEditor<GravityPlayerComponent, GravityPlayerComponentEditor>();
+    RegisterEditor<BossComponent, BossComponentEditor>();
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {

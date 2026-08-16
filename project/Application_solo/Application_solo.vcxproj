@@ -274,6 +274,8 @@ exit 0</Command>
     <ClCompile Include="components\WaveEventHandlers.cpp" />
     <ClCompile Include="components\WaveManagerComponent.cpp" />
     <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp" />
+    <ClCompile Include="components\editor\GravityPlayerComponentEditor.cpp" />
+    <ClCompile Include="components\editor\BossComponentEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
@@ -320,6 +322,8 @@ exit 0</Command>
     <ClInclude Include="components\WaveEventHandlers.h" />
     <ClInclude Include="components\WaveManagerComponent.h" />
     <ClInclude Include="components\editor\WaveManagerComponentEditor.h" />
+    <ClInclude Include="components\editor\GravityPlayerComponentEditor.h" />
+    <ClInclude Include="components\editor\BossComponentEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

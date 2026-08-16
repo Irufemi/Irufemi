@@ -192,6 +192,12 @@
     <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\editor\GravityPlayerComponentEditor.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\editor\BossComponentEditor.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>scene\GameOver</Filter>
@@ -313,6 +319,12 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\editor\WaveManagerComponentEditor.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\editor\GravityPlayerComponentEditor.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\editor\BossComponentEditor.h">
       <Filter>components</Filter>
     </ClInclude>
     <None Include="packages.config" />

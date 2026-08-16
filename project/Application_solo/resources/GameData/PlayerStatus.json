@@ -1,0 +1,8 @@
+{
+    "maxHp": 100,
+    "maxOrbitCount": 5,
+    "pullRadius": 100.0,
+    "throwInterval": 0.15,
+    "orbitRadiusMin": 2.0,
+    "orbitRadiusMax": 4.0
+}

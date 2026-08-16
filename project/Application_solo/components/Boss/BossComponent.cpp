@@ -12,6 +12,32 @@
 #include "../TargetableComponent.h"
 #include <algorithm>
 #include <iostream>
+#include <nlohmann/json.hpp>
+#include <fstream>
+#include "Engine/Core/Utility/Log.h"
+
+void BossComponent::LoadStatusFromJson() {
+    if (statusDataPath_.empty()) return;
+
+    std::ifstream file(statusDataPath_);
+    if (!file.is_open()) {
+        Log::OutPutLog(std::cout, "[BossComponent] Failed to load status: " + statusDataPath_ + "\n");
+        return;
+    }
+
+    try {
+        nlohmann::json j;
+        file >> j;
+        
+        if (j.contains("maxHp")) { maxHp_ = j["maxHp"].get<float>(); hp_ = maxHp_; }
+        if (j.contains("maxShieldCount")) { maxShieldCount_ = j["maxShieldCount"].get<int>(); }
+        if (j.contains("shieldRadius")) { shieldRadius_ = j["shieldRadius"].get<float>(); }
+        if (j.contains("beamInterval")) { beamInterval_ = j["beamInterval"].get<float>(); }
+        if (j.contains("beamRange")) { beamRange_ = j["beamRange"].get<float>(); }
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cout, std::string("[BossComponent] JSON Parse Error: ") + e.what() + "\n");
+    }
+}
 
 BossComponent::BossComponent() {
 }
@@ -20,6 +46,8 @@ void BossComponent::Initialize() {
     if (!gameObject_->GetComponent<TargetableComponent>()) {
         gameObject_->AddComponent<TargetableComponent>();
     }
+    
+    LoadStatusFromJson();
     hp_ = maxHp_;
     isShieldsInitialized_ = false;
 
@@ -99,14 +127,9 @@ void BossComponent::Update() {
 }
 
 void BossComponent::OnRegisterProperties() {
-    RegisterProperty("HP", &hp_);
-    RegisterProperty("Max HP", &maxHp_);
-    RegisterProperty("Max Shield Count", &maxShieldCount_);
-    RegisterProperty("Shield Radius", &shieldRadius_);
-    RegisterProperty("Beam Interval", &beamInterval_);
+    RegisterProperty("Status Data Path", &statusDataPath_);
     RegisterProperty("Beam Offset Z", &beamOffsetZ_);
     RegisterProperty("Beam Offset Y", &beamOffsetY_);
-    RegisterProperty("Beam Range", &beamRange_);
 }
 
 std::shared_ptr<GameObject> BossComponent::ExtractDebris() {

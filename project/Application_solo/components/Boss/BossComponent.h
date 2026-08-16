@@ -25,6 +25,11 @@ public:
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "BossComponent"; }
 
+    void LoadStatusFromJson();
+    
+    std::string GetStatusDataPath() const { return statusDataPath_; }
+    void SetStatusDataPath(const std::string& path) { statusDataPath_ = path; }
+
     /**
      * @brief シールド（ガレキ）を1つ剥がし、本物のガレキとしてスポーンさせる
      */
@@ -63,6 +68,7 @@ private:
     friend class BossStateCoreExposed;
     friend class BossStateDestroyed;
 
+    std::string statusDataPath_ = "resources/GameData/BossStatus.json";
     float maxHp_ = 1000.0f;
     float hp_ = 0.0f;
 
