@@ -21,6 +21,7 @@
 #include "../ComponentEditors/RaycastComponentEditor.h"
 #include "../ComponentEditors/VoxelParticleComponentEditor.h"
 #include "../ComponentEditors/EffectMaskComponentEditor.h"
+#include "../ComponentEditors/CameraComponentEditor.h"
 
 // Engine Components
 #include "Framework/Component/TransformComponent.h"
@@ -38,6 +39,7 @@
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Framework/Component/Effect/EffectMaskComponent.h"
+#include "Framework/Component/Camera/CameraComponent.h"
 
 // =======================================================================
 // ComponentEditorRegistry
@@ -62,6 +64,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<ParticleEmitterComponent, ParticleEmitterComponentEditor>();
     RegisterEditor<VoxelParticleComponent, VoxelParticleComponentEditor>();
     RegisterEditor<EffectMaskComponent, EffectMaskComponentEditor>();
+    RegisterEditor<CameraComponent, CameraComponentEditor>();
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {

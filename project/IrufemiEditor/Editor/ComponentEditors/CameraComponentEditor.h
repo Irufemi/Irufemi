@@ -1,0 +1,25 @@
+#pragma once
+
+#ifdef EditorMode
+#include "Editor/Core/IComponentEditor.h"
+#include <memory>
+
+class Line3DBatch;
+
+/**
+ * @class CameraComponentEditor
+ * @brief CameraComponent用のカスタムインスペクター拡張
+ * @details FOVの度数法での編集や、シーンビュー上での視錐台（Frustum）デバッグ描画を行います。
+ */
+class CameraComponentEditor : public IComponentEditor {
+public:
+    CameraComponentEditor();
+    ~CameraComponentEditor() override;
+
+    void Draw(Component* component, EditorActionManager* actionManager) override;
+
+private:
+    std::unique_ptr<Line3DBatch> debugLineBatch_;
+};
+
+#endif // EditorMode
