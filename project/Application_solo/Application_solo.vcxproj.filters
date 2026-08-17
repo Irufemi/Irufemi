@@ -42,6 +42,12 @@
     <Filter Include="scene\TL1">
       <UniqueIdentifier>{A1B2C3D4-E5F6-1234-5678-90ABCDEF1234}</UniqueIdentifier>
     </Filter>
+    <Filter Include="components\Boss">
+      <UniqueIdentifier>{12345678-ABCD-E123-4567-89ABCDEF0123}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="components\editor">
+      <UniqueIdentifier>{FEDCBA98-7654-3210-FEDC-BA9876543210}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
 
@@ -103,16 +109,16 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\Boss\BossComponent.cpp">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClCompile>
     <ClCompile Include="components\Boss\BossStateIdle.cpp">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClCompile>
     <ClCompile Include="components\Boss\BossStateCoreExposed.cpp">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClCompile>
     <ClCompile Include="components\Boss\BossStateDestroyed.cpp">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClCompile>
     <ClCompile Include="components\BossBulletComponent.cpp">
       <Filter>components</Filter>
@@ -125,6 +131,12 @@
     </ClCompile>
     <ClCompile Include="components\DebrisComponent.cpp">
       <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\TargetableComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\ReticleUIComponent.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="components\DebrisManagerComponent.cpp">
       <Filter>components</Filter>
@@ -150,8 +162,8 @@
     <ClCompile Include="components\EffectManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
-    <ClCompile Include="components\LockonMarkerUIComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="UI\LockonMarkerUIComponent.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="components\EnemyBeamComponent.cpp">
       <Filter>components</Filter>
@@ -166,13 +178,13 @@
       <Filter>components</Filter>
     </ClCompile>
     <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp">
-      <Filter>components</Filter>
+      <Filter>components\editor</Filter>
     </ClCompile>
     <ClCompile Include="components\editor\GravityPlayerComponentEditor.cpp">
-      <Filter>components</Filter>
+      <Filter>components\editor</Filter>
     </ClCompile>
     <ClCompile Include="components\editor\BossComponentEditor.cpp">
-      <Filter>components</Filter>
+      <Filter>components\editor</Filter>
     </ClCompile>
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>scene\GameOver</Filter>
@@ -213,6 +225,9 @@
       <Filter>Application</Filter>
     </ClInclude>
 
+    <ClInclude Include="UI\ReticleUIComponent.h">
+      <Filter>UI</Filter>
+    </ClInclude>
     <ClInclude Include="components\RailPathComponent.h">
       <Filter>components</Filter>
     </ClInclude>
@@ -229,19 +244,19 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\Boss\BossComponent.h">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClInclude>
     <ClInclude Include="components\Boss\IBossState.h">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClInclude>
     <ClInclude Include="components\Boss\BossStateIdle.h">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClInclude>
     <ClInclude Include="components\Boss\BossStateCoreExposed.h">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClInclude>
     <ClInclude Include="components\Boss\BossStateDestroyed.h">
-      <Filter>components</Filter>
+      <Filter>components\Boss</Filter>
     </ClInclude>
     <ClInclude Include="components\BossBulletComponent.h">
       <Filter>components</Filter>
@@ -253,6 +268,9 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\TargetableComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\DebrisManagerComponent.h">
@@ -279,8 +297,8 @@
     <ClInclude Include="components\EffectManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
-    <ClInclude Include="components\LockonMarkerUIComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="UI\LockonMarkerUIComponent.h">
+      <Filter>UI</Filter>
     </ClInclude>
     <ClInclude Include="components\EnemyBeamComponent.h">
       <Filter>components</Filter>
@@ -298,13 +316,13 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\editor\WaveManagerComponentEditor.h">
-      <Filter>components</Filter>
+      <Filter>components\editor</Filter>
     </ClInclude>
     <ClInclude Include="components\editor\GravityPlayerComponentEditor.h">
-      <Filter>components</Filter>
+      <Filter>components\editor</Filter>
     </ClInclude>
     <ClInclude Include="components\editor\BossComponentEditor.h">
-      <Filter>components</Filter>
+      <Filter>components\editor</Filter>
     </ClInclude>
     <None Include="packages.config" />
   </ItemGroup>

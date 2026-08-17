@@ -3,7 +3,7 @@
 #include "RailShooterEnemyComponent.h"
 #include "Boss/BossComponent.h"
 #include "DebrisComponent.h"
-#include "LockonMarkerUIComponent.h"
+#include "UI/LockonMarkerUIComponent.h"
 #include "Framework/GameObject.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"

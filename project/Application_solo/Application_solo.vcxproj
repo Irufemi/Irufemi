@@ -269,8 +269,8 @@ exit 0</Command>
     <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
     <ClCompile Include="components\EffectManagerComponent.cpp" />
     <ClCompile Include="components\EnemyBeamComponent.cpp" />
-    <ClCompile Include="components\ReticleUIComponent.cpp" />
-    <ClCompile Include="components\LockonMarkerUIComponent.cpp" />
+    <ClCompile Include="UI\ReticleUIComponent.cpp" />
+    <ClCompile Include="UI\LockonMarkerUIComponent.cpp" />
     <ClCompile Include="components\PlayerTargetingComponent.cpp" />
     <ClCompile Include="components\WaveEventHandlers.cpp" />
     <ClCompile Include="components\WaveManagerComponent.cpp" />
@@ -317,8 +317,8 @@ exit 0</Command>
     <ClInclude Include="components\SceneTransitionButtonComponent.h" />
     <ClInclude Include="components\EffectManagerComponent.h" />
     <ClInclude Include="components\EnemyBeamComponent.h" />
-    <ClInclude Include="components\ReticleUIComponent.h" />
-    <ClInclude Include="components\LockonMarkerUIComponent.h" />
+    <ClInclude Include="UI\ReticleUIComponent.h" />
+    <ClInclude Include="UI\LockonMarkerUIComponent.h" />
     <ClInclude Include="components\PlayerTargetingComponent.h" />
     <ClInclude Include="components\WaveEvent.h" />
     <ClInclude Include="components\WaveEventHandlers.h" />

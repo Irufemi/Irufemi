@@ -14,6 +14,7 @@
 #include "components/RailRelativeFollowerComponent.h"
 #include "components/RailShooterEnemyComponent.h"
 #include "components/DebrisComponent.h"
+#include "components/TargetableComponent.h"
 #include "components/DebrisManagerComponent.h"
 #include "components/WaveManagerComponent.h"
 #include "components/GravityPlayerComponent.h"
@@ -23,8 +24,8 @@
 #include "components/SceneTransitionButtonComponent.h"
 #include "components/EffectManagerComponent.h"
 #include "components/EnvironmentManagerComponent.h"
-#include "components/ReticleUIComponent.h"
-#include "components/LockonMarkerUIComponent.h"
+#include "UI/ReticleUIComponent.h"
+#include "UI/LockonMarkerUIComponent.h"
 #include "components/DroneManagerComponent.h"
 #include "components/BossBulletManagerComponent.h"
 #include "components/GameLoopManagerComponent.h"
@@ -52,6 +53,8 @@
 #include "EditorManager.h"
 #include "Editor/Core/ComponentEditorRegistry.h"
 #include "components/editor/WaveManagerComponentEditor.h"
+#include "components/editor/GravityPlayerComponentEditor.h"
+#include "components/editor/BossComponentEditor.h"
 #endif
 
 namespace {
@@ -102,6 +105,8 @@ void GameApplication::Run() {
     // エンジン初期化後にエディタへ登録（OnInitialize内でレジストリが生成されるため）
     if (auto registry = editorManager->GetComponentEditorRegistry()) {
         registry->RegisterEditor<WaveManagerComponent, WaveManagerComponentEditor>();
+        registry->RegisterEditor<GravityPlayerComponent, GravityPlayerComponentEditor>();
+        registry->RegisterEditor<BossComponent, BossComponentEditor>();
     }
 #endif
 
@@ -137,6 +142,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("RailRelativeFollowerComponent", "Game", []() { return std::make_shared<RailRelativeFollowerComponent>(); });
     ComponentFactory::Register("RailShooterEnemyComponent", "Game", []() { return std::make_shared<RailShooterEnemyComponent>(); });
     ComponentFactory::Register("DebrisComponent", "Game", []() { return std::make_shared<DebrisComponent>(); });
+    ComponentFactory::Register("TargetableComponent", "Game", []() { return std::make_shared<TargetableComponent>(); });
     ComponentFactory::Register("DebrisManagerComponent", "Game", []() { return std::make_shared<DebrisManagerComponent>(); });
     ComponentFactory::Register("WaveManagerComponent", "Game", []() { return std::make_shared<WaveManagerComponent>(); });
     ComponentFactory::Register("EnvironmentManagerComponent", "Game", []() { return std::make_shared<EnvironmentManagerComponent>(); });
