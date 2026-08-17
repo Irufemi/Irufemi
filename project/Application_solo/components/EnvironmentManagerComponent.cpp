@@ -9,6 +9,8 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Effect/EffectMaskComponent.h"
+#include "DestructibleEnvironmentComponent.h"
+#include "TargetableComponent.h"
 
 #include <sstream>
 
@@ -47,7 +49,8 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
                 name, 
                 Irufemi::Vector3(-1.0f, -1.0f, -1.0f), Irufemi::Vector3(-1.0f, -1.0f, -1.0f),
                 Irufemi::Vector3(0.0f, 0.0f, 0.0f), Irufemi::Vector3(0.0f, 0.0f, 0.0f),
-                0, 0
+                0, 0,
+                false, 3
             });
         }
     }
@@ -60,6 +63,9 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
         RegisterProperty("ColOffset_" + name, &setting.collisionOffset);
         // Type_ is kept for serialization compatibility, but no longer modifies Y position.
         RegisterEnum("Type_" + name, &setting.placementType, {"Building", "Floating"});
+        
+        RegisterProperty("IsDestructible_" + name, &setting.isDestructible);
+        RegisterProperty("SpawnCount_" + name, &setting.debrisSpawnCount);
     }
 }
 
@@ -92,6 +98,17 @@ void EnvironmentManagerComponent::Start() {
                     origRot = transform->GetRotation();
                     origScale = transform->GetScale();
                 }
+                
+                if (setting.isDestructible) {
+                    if (!child->GetComponent<TargetableComponent>()) {
+                        child->AddComponent<TargetableComponent>();
+                    }
+                    if (!child->GetComponent<DestructibleEnvironmentComponent>()) {
+                        auto destructible = child->AddComponent<DestructibleEnvironmentComponent>();
+                        destructible->SetDebrisSpawnCount(setting.debrisSpawnCount);
+                    }
+                }
+                
                 spawnedObjects_.push_back({child, setting.prefabPath, origPos, origRot, origScale});
                 break;
             }
@@ -157,6 +174,7 @@ void EnvironmentManagerComponent::Draw() {
     // 2. 管理下のオブジェクトから Irufemi::Transform を取得し、バッチに登録
     for (const auto& info : spawnedObjects_) {
         if (auto obj = info.obj.lock()) {
+            if (!obj->GetIsActive()) continue; // 破壊された環境物は描画しない
             if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
                 // 個別の描画をストップ（Raycast判定などは生きたまま）
                 meshRenderer->SetVisible(false);

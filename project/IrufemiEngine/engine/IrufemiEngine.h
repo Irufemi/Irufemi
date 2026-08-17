@@ -418,6 +418,22 @@ public: // ゲッター
     /** @name 画面情報の取得 */
     ///@{
     int32_t& GetClientWidth() { return dxCommon_->GetClientWidth(); }
+    
+    /**
+     * @brief 内部レンダリング解像度の幅を取得する
+     */
+    uint32_t GetGameResolutionWidth() const { return gameResWidth_; }
+    
+    /**
+     * @brief 内部レンダリング解像度の高さを取得する
+     */
+    uint32_t GetGameResolutionHeight() const { return gameResHeight_; }
+    
+    /**
+     * @brief 内部レンダリング解像度を設定する
+     */
+    void SetGameResolution(uint32_t width, uint32_t height) { gameResWidth_ = width; gameResHeight_ = height; }
+
     /**
      * @brief ClientHeight を取得する。
      * @return 取得された ClientHeight
@@ -783,6 +799,10 @@ private: // メンバ変数
 
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false; // 終了処理済みフラグ
+
+    // --- ゲーム内部レンダリング解像度 ---
+    uint32_t gameResWidth_ = 1280;
+    uint32_t gameResHeight_ = 720;
 
     ResourceHandle noise0Handle_;
     ResourceHandle noise1Handle_;

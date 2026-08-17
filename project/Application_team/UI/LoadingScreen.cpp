@@ -19,7 +19,7 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     if (!engine) return;
 
     camera_ = std::make_unique<Camera>();
-    camera_->Initialize(engine->GetClientWidth(), engine->GetClientHeight());
+    camera_->Initialize(engine->GetGameResolutionWidth(), engine->GetGameResolutionHeight());
     camera_->UpdateMatrix();
 
     nowLoadingText_ = std::make_unique<Sprite>();
@@ -30,8 +30,8 @@ void LoadingScreen::Initialize(IrufemiEngine* engine) {
     // 描画時に加算合成(Add)を使うことで、黒を透過させる
     nowLoadingText_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 
-    float screenW = static_cast<float>(engine->GetClientWidth());
-    float screenH = static_cast<float>(engine->GetClientHeight());
+    float screenW = static_cast<float>(engine->GetGameResolutionWidth());
+    float screenH = static_cast<float>(engine->GetGameResolutionHeight());
     
     // 背景を真っ黒に塗りつぶすスプライト
     bgSprite_ = std::make_unique<Sprite>();
@@ -96,8 +96,8 @@ void LoadingScreen::Draw(IrufemiEngine* engine) {
     if (!engine) return;
 
     // ウィンドウのリサイズに対応するため、描画時に画面サイズに合わせて位置とサイズを動的に更新する
-    float screenW = static_cast<float>(engine->GetClientWidth());
-    float screenH = static_cast<float>(engine->GetClientHeight());
+    float screenW = static_cast<float>(engine->GetGameResolutionWidth());
+    float screenH = static_cast<float>(engine->GetGameResolutionHeight());
     float uiScale = screenH / 720.0f;
 
     if (bgSprite_) {

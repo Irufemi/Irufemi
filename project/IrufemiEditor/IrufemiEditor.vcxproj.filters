@@ -86,6 +86,9 @@
     <ClCompile Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.cpp">
       <Filter>Editor\ComponentEditors</Filter>
     </ClCompile>
+    <ClCompile Include="Editor\ComponentEditors\CameraComponentEditor.cpp">
+      <Filter>Editor\ComponentEditors</Filter>
+    </ClCompile>
     <ClInclude Include="EditorManager.h" />
     <ClInclude Include="Editor\Core\ComponentEditorRegistry.h">
       <Filter>Editor\Core</Filter>
@@ -167,6 +170,9 @@
       <Filter>Editor\ComponentEditors</Filter>
     </ClInclude>
     <ClInclude Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.h">
+      <Filter>Editor\ComponentEditors</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\ComponentEditors\CameraComponentEditor.h">
       <Filter>Editor\ComponentEditors</Filter>
     </ClInclude>
   </ItemGroup>

@@ -228,6 +228,7 @@ exit 0</Command>
     <ClCompile Include="GameApplication.cpp" />
 
     <ClCompile Include="scene\TL1\TL1Scene.cpp" />
+    <ClCompile Include="scene\TL1\TL1LevelLoader.cpp" />
     <ClCompile Include="scene\TL1\MagicBrushClient.cpp" />
     <ClCompile Include="main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
@@ -261,6 +262,7 @@ exit 0</Command>
     <ClCompile Include="components\DroneManagerComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
     <ClCompile Include="components\EnvironmentManagerComponent.cpp" />
+    <ClCompile Include="components\DestructibleEnvironmentComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
     <ClCompile Include="components\GameLoopManagerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
@@ -272,11 +274,15 @@ exit 0</Command>
     <ClCompile Include="components\PlayerTargetingComponent.cpp" />
     <ClCompile Include="components\WaveEventHandlers.cpp" />
     <ClCompile Include="components\WaveManagerComponent.cpp" />
+    <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp" />
+    <ClCompile Include="components\editor\GravityPlayerComponentEditor.cpp" />
+    <ClCompile Include="components\editor\BossComponentEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameApplication.h" />
 
     <ClInclude Include="scene\TL1\TL1Scene.h" />
+    <ClInclude Include="scene\TL1\TL1LevelLoader.h" />
     <ClInclude Include="scene\TL1\MagicBrushClient.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="scene\InGame\GameScene.h" />
@@ -304,6 +310,7 @@ exit 0</Command>
     <ClInclude Include="components\DroneManagerComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />
     <ClInclude Include="components\EnvironmentManagerComponent.h" />
+    <ClInclude Include="components\DestructibleEnvironmentComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
     <ClInclude Include="components\GameLoopManagerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
@@ -316,6 +323,9 @@ exit 0</Command>
     <ClInclude Include="components\WaveEvent.h" />
     <ClInclude Include="components\WaveEventHandlers.h" />
     <ClInclude Include="components\WaveManagerComponent.h" />
+    <ClInclude Include="components\editor\WaveManagerComponentEditor.h" />
+    <ClInclude Include="components\editor\GravityPlayerComponentEditor.h" />
+    <ClInclude Include="components\editor\BossComponentEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

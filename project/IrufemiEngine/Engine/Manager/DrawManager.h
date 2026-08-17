@@ -203,6 +203,7 @@ public:
         computeTasks_.clear();
     }
 
+    class IrufemiEngine* engine_ = nullptr;
     DirectXCommon* dxCommon_ = nullptr;
     ID3D12GraphicsCommandList* commandList_ = nullptr; // コマンドリストをキャッシュ
 
@@ -247,7 +248,7 @@ public: //メンバ関数
     /**
      * @brief Initialize を実行する。
      */
-    void Initialize(DirectXCommon* dx);
+    void Initialize(class IrufemiEngine* engine, DirectXCommon* dx);
     /**
      * @brief Finalize を実行する。
      */

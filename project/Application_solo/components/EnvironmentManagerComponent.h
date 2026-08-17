@@ -48,6 +48,8 @@ private:
         Irufemi::Vector3 previousOffset;
         int placementType; // 0: Building (スナップ), 1: Floating (そのまま)
         int previousPlacementType;
+        bool isDestructible;
+        int debrisSpawnCount;
     };
 
     std::string targetPrefabNames_ = "Env_Pillar,Env_Arch,Env_Wall";

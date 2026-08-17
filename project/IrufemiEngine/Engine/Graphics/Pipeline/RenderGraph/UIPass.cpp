@@ -19,6 +19,46 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = drawManager->GetDxCommon()->GetDSVCPUDescriptorHandle(0);
     cmdList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 
+    // Viewport と Scissor を明示的に設定 (PreUIパスなどから引き継いだ意図しないViewportで描画されるのを防ぐため)
+    D3D12_VIEWPORT viewport{};
+    D3D12_RECT scissor{};
+#ifdef EditorMode
+    viewport.Width = static_cast<float>(engine->GetGameResolutionWidth());
+    viewport.Height = static_cast<float>(engine->GetGameResolutionHeight());
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    scissor.left = 0;
+    scissor.right = engine->GetGameResolutionWidth();
+    scissor.top = 0;
+    scissor.bottom = engine->GetGameResolutionHeight();
+#else
+    float clientW = static_cast<float>(engine->GetClientWidth());
+    float clientH = static_cast<float>(engine->GetClientHeight());
+    float gameW = static_cast<float>(engine->GetGameResolutionWidth());
+    float gameH = static_cast<float>(engine->GetGameResolutionHeight());
+    float aspectGame = gameW / gameH;
+    float aspectClient = clientW / clientH;
+    if (aspectClient > aspectGame) {
+        viewport.Height = clientH;
+        viewport.Width = clientH * aspectGame;
+        viewport.TopLeftX = (clientW - viewport.Width) * 0.5f;
+        viewport.TopLeftY = 0.0f;
+    } else {
+        viewport.Width = clientW;
+        viewport.Height = clientW / aspectGame;
+        viewport.TopLeftX = 0.0f;
+        viewport.TopLeftY = (clientH - viewport.Height) * 0.5f;
+    }
+    scissor.left = static_cast<LONG>(viewport.TopLeftX);
+    scissor.right = static_cast<LONG>(viewport.TopLeftX + viewport.Width);
+    scissor.top = static_cast<LONG>(viewport.TopLeftY);
+    scissor.bottom = static_cast<LONG>(viewport.TopLeftY + viewport.Height);
+#endif
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    cmdList->RSSetViewports(1, &viewport);
+    cmdList->RSSetScissorRects(1, &scissor);
+
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
         if (queue.empty()) return;
         

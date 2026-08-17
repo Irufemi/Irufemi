@@ -138,7 +138,7 @@ void DXSwapChainManager::ReleaseSwapChainResources() {
     for (auto& res : swapChainResources_) {
         res.Reset();
     }
-    depthStencilResource_.Reset();
+    // depthStencilResource_.Reset(); // 内部解像度（1280x720）に固定するため解放しない
 }
 
 void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, int32_t height) {
@@ -163,17 +163,9 @@ void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, in
         device->CreateRenderTargetView(swapChainResources_[i].Get(), &imGuiRtvDesc, rtvHandles_[i + 2]);
     }
 
-    depthStencilResource_ = CreateDepthStencilTextureResource(device, width, height);
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
-
-    // Read-Only DSV
-    dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
-    D3D12_CPU_DESCRIPTOR_HANDLE readOnlyHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
-    readOnlyHandle.ptr += descriptorSizeDSV_;
-    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, readOnlyHandle);
+    // --- 警告 ---
+    // 深度バッファ(DSV)は mainRenderTexture_ と同じ GameResolution に固定されるべきであるため、
+    // ウィンドウサイズ変更時にリサイズしてはいけない。リサイズすると描画領域外エラーが発生する。
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DXSwapChainManager::GetRTVCPUDescriptorHandle(uint32_t index) const {

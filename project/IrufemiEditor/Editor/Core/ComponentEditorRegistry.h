@@ -30,11 +30,12 @@ public:
      */
     void DrawComponent(Component* component, EditorActionManager* actionManager);
 
-private:
     template<typename TComponent, typename TEditor>
     void RegisterEditor() {
         editors_[typeid(TComponent)] = std::make_unique<TEditor>();
     }
+
+private:
 
     std::unordered_map<std::type_index, std::unique_ptr<IComponentEditor>> editors_;
 };

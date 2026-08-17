@@ -828,6 +828,9 @@
     <ClCompile Include="Framework\Component\Logic\AnimatorComponent.cpp">
       <Filter>Framework\Component\Logic</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Logic\SpawnPointComponent.cpp">
+      <Filter>Framework\Component\Logic</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Component\Logic\BoneAttachmentComponent.cpp">
       <Filter>Framework\Component\Logic</Filter>
     </ClCompile>
@@ -1417,6 +1420,9 @@
       <Filter>Resource\Model</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Logic\AnimatorComponent.h">
+      <Filter>Framework\Component\Logic</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Logic\SpawnPointComponent.h">
       <Filter>Framework\Component\Logic</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Logic\BoneAttachmentComponent.h">

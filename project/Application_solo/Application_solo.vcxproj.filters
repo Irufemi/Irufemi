@@ -86,6 +86,9 @@
     <ClCompile Include="scene\TL1\TL1Scene.cpp">
       <Filter>scene\TL1</Filter>
     </ClCompile>
+    <ClCompile Include="scene\TL1\TL1LevelLoader.cpp">
+      <Filter>scene\TL1</Filter>
+    </ClCompile>
     <ClCompile Include="scene\TL1\MagicBrushClient.cpp">
       <Filter>scene\TL1</Filter>
     </ClCompile>
@@ -159,6 +162,12 @@
     <ClCompile Include="components\EnvironmentManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\DestructibleEnvironmentComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\GameLoopManagerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClCompile Include="components\GravityPlayerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
@@ -186,6 +195,15 @@
     <ClCompile Include="components\WaveManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\editor\GravityPlayerComponentEditor.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\editor\BossComponentEditor.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClInclude Include="GameApplication.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>scene\GameOver</Filter>
@@ -198,6 +216,9 @@
       <Filter>scene\Pause</Filter>
     </ClInclude>
     <ClInclude Include="scene\TL1\TL1Scene.h">
+      <Filter>scene\TL1</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\TL1\TL1LevelLoader.h">
       <Filter>scene\TL1</Filter>
     </ClInclude>
     <ClInclude Include="scene\TL1\MagicBrushClient.h">
@@ -273,6 +294,12 @@
     <ClInclude Include="components\EnvironmentManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
+    <ClInclude Include="components\DestructibleEnvironmentComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\GameLoopManagerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
     <ClInclude Include="components\GravityPlayerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
@@ -301,6 +328,15 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\WaveManagerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\editor\WaveManagerComponentEditor.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\editor\GravityPlayerComponentEditor.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\editor\BossComponentEditor.h">
       <Filter>components</Filter>
     </ClInclude>
     <None Include="packages.config" />

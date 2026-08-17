@@ -45,12 +45,8 @@ void SceneViewPanel::Draw() {
         
         float targetWidth = 1280.0f;
         float targetHeight = 720.0f;
-        if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
-            targetWidth = camera->GetViewportWidth();
-            targetHeight = camera->GetViewportHeight();
-        }
-
-        // パネルの大きさを取得して画像をフィットさせる（アスペクト比を維持する）
+        
+        // パネルの大きさを取得して画像をフィットさせる（16:9を維持する）
         ImVec2 avail = ImGui::GetContentRegionAvail();
         float aspect = targetWidth / targetHeight;
         ImVec2 size;

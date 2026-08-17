@@ -16,8 +16,14 @@
 #include <ctime>
 #include <filesystem>
 #include "Engine/Core/Utility/StringUtility.h"
+#include "TL1LevelLoader.h"
+#include "Framework/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Engine/Core/Utility/Log.h"
+#include <iostream>
 
 #ifdef USE_IMGUI
+
 #include "imgui.h"
 #endif
 
@@ -27,7 +33,7 @@ TL1Scene::~TL1Scene() = default;
  * @brief 初期化
  */
 void TL1Scene::Initialize(IrufemiEngine* engine) {
-    engine_ = engine;
+    BaseScene::Initialize(engine);
     magicBrushClient_ = std::make_unique<MagicBrushClient>();
     
     std::string errorLog;
@@ -37,12 +43,56 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
 
     // Pythonサーバーの自動起動
     magicBrushClient_->StartPythonServer();
+
+    // Blenderレベルデータの読み込み
+    LevelData levelData = TL1LevelLoader::Load("resources/Levels/TL1.json", this);
+
+    // プレイヤー配置データからテスト用ダミープレイヤーを配置
+    if (!levelData.players.empty()) {
+        auto& playerData = levelData.players[0];
+        auto dummyPlayer = std::make_shared<GameObject>();
+        dummyPlayer->SetName("Player");
+        dummyPlayer->SetScene(this);
+        
+        auto transform = dummyPlayer->GetComponent<TransformComponent>();
+        transform->SetPosition(playerData.translation);
+        transform->SetRotation(playerData.rotation);
+
+        
+        this->AddGameObject(dummyPlayer);
+        
+        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Player spawned at (" + 
+            std::to_string(playerData.translation.x) + ", " + 
+            std::to_string(playerData.translation.y) + ", " + 
+            std::to_string(playerData.translation.z) + ")\n");
+    }
+
+    // 敵配置データから敵を配置
+    for (const auto& enemyData : levelData.enemies) {
+        auto dummyEnemy = std::make_shared<GameObject>();
+        dummyEnemy->SetName("Enemy");
+        dummyEnemy->SetScene(this);
+        
+        auto transform = dummyEnemy->GetComponent<TransformComponent>();
+        transform->SetPosition(enemyData.translation);
+        transform->SetRotation(enemyData.rotation);
+
+        this->AddGameObject(dummyEnemy);
+        
+        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Enemy spawned at (" + 
+            std::to_string(enemyData.translation.x) + ", " + 
+            std::to_string(enemyData.translation.y) + ", " + 
+            std::to_string(enemyData.translation.z) + ")\n");
+    }
 }
+
 
 /**
  * @brief 更新
  */
 void TL1Scene::Update() {
+    BaseScene::Update();
+
     // 成功したシェーダーをPSOに登録する
     if (magicBrushClient_ && !isShaderRegistered_ && vsBlob_) {
         if (magicBrushClient_->GetState() == MagicBrushClient::State::Success) {
@@ -59,6 +109,8 @@ void TL1Scene::Update() {
  * @brief 描画
  */
 void TL1Scene::Draw() {
+    BaseScene::Draw();
+
     // プレビュー描画
     if (isShaderRegistered_) {
         engine_->ApplyPSO(shaderName_);

@@ -183,14 +183,14 @@ void BaseScene::Initialize(IrufemiEngine* engine) {
 
     // --- カメラマネージャーの初期化はエンジン側で行われるため、ここではメインカメラの登録のみ行う ---
     auto mainCamera = std::make_shared<Camera>();
-    mainCamera->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    mainCamera->Initialize(engine_->GetGameResolutionWidth(), engine_->GetGameResolutionHeight());
     mainCamera->SetTranslate({ 0.0f, 0.0f, -50.0f });
     mainCamera->UpdateMatrix();
     engine_->GetCameraManager()->AddCamera("Main", mainCamera);
 
     // --- デバッグカメラの初期化とマネージャーへの登録 ---
     debugCamera_ = std::make_shared<Camera>();
-    debugCamera_->Initialize(engine_->GetClientWidth(), engine_->GetClientHeight());
+    debugCamera_->Initialize(engine_->GetGameResolutionWidth(), engine_->GetGameResolutionHeight());
     engine_->GetCameraManager()->AddCamera("Debug", debugCamera_);
 
     debugCameraController_ = std::make_unique<OrbitCameraController>();
@@ -415,7 +415,9 @@ void BaseScene::SubmitFrameData() {
 
 void BaseScene::DrawDebugTab() {
 #ifdef USE_IMGUI
-    if (ImGui::BeginTabItem("Camera & Lights")) {
+    if (ImGui::Begin("Scene Debug")) {
+        if (ImGui::BeginTabBar("SceneTabs")) {
+            if (ImGui::BeginTabItem("Camera & Lights")) {
         bool prevMode = isDebugCameraMode_;
         if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
             if (isDebugCameraMode_ && !prevMode) {
@@ -465,8 +467,12 @@ void BaseScene::DrawDebugTab() {
             }
         }
         ImGui::EndTabItem();
+            }
+            DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+            ImGui::EndTabBar();
+        }
+        ImGui::End();
     }
-    DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
 #endif
 }
 

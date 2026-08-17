@@ -19,8 +19,8 @@ void CameraComponent::Initialize() {
     camera_ = std::make_shared<Camera>();
     
     auto* engine = BaseModel::GetIrufemiEngine();
-    int clientWidth = engine ? engine->GetClientWidth() : 1280;
-    int clientHeight = engine ? engine->GetClientHeight() : 720;
+    int clientWidth = engine ? engine->GetGameResolutionWidth() : 1280;
+    int clientHeight = engine ? engine->GetGameResolutionHeight() : 720;
     camera_->Initialize(clientWidth, clientHeight);
     
     // プロパティ値を適用

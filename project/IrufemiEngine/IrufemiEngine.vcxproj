@@ -741,6 +741,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.cpp" />
     <ClCompile Include="Resource\Model\Animator.cpp" />
     <ClCompile Include="Framework\Component\Logic\AnimatorComponent.cpp" />
+    <ClCompile Include="Framework\Component\Logic\SpawnPointComponent.cpp" />
     <ClCompile Include="Framework\Component\Logic\BoneAttachmentComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.cpp" />
@@ -940,6 +941,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Object\3D\AnimationModel\AnimatedMeshObject.h" />
     <ClInclude Include="Resource\Model\Animator.h" />
     <ClInclude Include="Framework\Component\Logic\AnimatorComponent.h" />
+    <ClInclude Include="Framework\Component\Logic\SpawnPointComponent.h" />
     <ClInclude Include="Framework\Component\Logic\BoneAttachmentComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\SkinnedMeshRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\SkeletonDebugRendererComponent.h" />

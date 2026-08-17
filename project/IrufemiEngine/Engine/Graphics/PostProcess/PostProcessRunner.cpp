@@ -257,8 +257,8 @@ RenderTexture* PostProcessRunner::Run(
                 bool isFinalUp = (i == 0);
                 D3D12_CPU_DESCRIPTOR_HANDLE upHandle = isFinalUp ? targetHandle : kwTex->GetRtvHandle();
                 
-                uint32_t tw = isFinalUp ? manager->dxCommon_->GetClientWidth() : kwTex->GetWidth();
-                uint32_t th = isFinalUp ? manager->dxCommon_->GetClientHeight() : kwTex->GetHeight();
+                uint32_t tw = isFinalUp ? manager->engine_->GetGameResolutionWidth() : kwTex->GetWidth();
+                uint32_t th = isFinalUp ? manager->engine_->GetGameResolutionHeight() : kwTex->GetHeight();
 
                 D3D12_VIEWPORT viewport{};
                 viewport.Width = (FLOAT)tw;
@@ -301,15 +301,60 @@ RenderTexture* PostProcessRunner::Run(
             }
 
             D3D12_VIEWPORT fullViewport{};
-            fullViewport.Width = (FLOAT)manager->dxCommon_->GetClientWidth();
-            fullViewport.Height = (FLOAT)manager->dxCommon_->GetClientHeight();
+            D3D12_RECT fullScissorRect{};
+            
+            if (writeToScreen) {
+                // 画面に出力する場合はレターボックス（黒帯）処理を行う
+#ifdef EditorMode
+                // EditorMode時は最終出力先が mainRenderTexture_ (1280x720) なので、そのままの解像度を使用する
+                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
+                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
+                fullViewport.TopLeftX = 0;
+                fullViewport.TopLeftY = 0;
+                fullScissorRect.left = 0;
+                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
+                fullScissorRect.top = 0;
+                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
+#else
+                float clientW = static_cast<float>(manager->dxCommon_->GetClientWidth());
+                float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
+                float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
+                float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
+                
+                float aspectGame = gameW / gameH;
+                float aspectClient = clientW / clientH;
+                
+                if (aspectClient > aspectGame) {
+                    fullViewport.Height = clientH;
+                    fullViewport.Width = clientH * aspectGame;
+                    fullViewport.TopLeftX = (clientW - fullViewport.Width) * 0.5f;
+                    fullViewport.TopLeftY = 0.0f;
+                } else {
+                    fullViewport.Width = clientW;
+                    fullViewport.Height = clientW / aspectGame;
+                    fullViewport.TopLeftX = 0.0f;
+                    fullViewport.TopLeftY = (clientH - fullViewport.Height) * 0.5f;
+                }
+                fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
+                fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
+                fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
+                fullScissorRect.bottom = static_cast<LONG>(fullViewport.TopLeftY + fullViewport.Height);
+#endif
+            } else {
+                // 中間テクスチャに出力する場合はゲーム解像度をそのまま使う
+                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
+                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
+                fullViewport.TopLeftX = 0;
+                fullViewport.TopLeftY = 0;
+                fullScissorRect.left = 0;
+                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
+                fullScissorRect.top = 0;
+                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
+            }
+            
             fullViewport.MinDepth = 0.0f;
             fullViewport.MaxDepth = 1.0f;
             commandList->RSSetViewports(1, &fullViewport);
-
-            D3D12_RECT fullScissorRect{};
-            fullScissorRect.right = manager->dxCommon_->GetClientWidth();
-            fullScissorRect.bottom = manager->dxCommon_->GetClientHeight();
             commandList->RSSetScissorRects(1, &fullScissorRect);
 
             currentSource = nextTarget;
@@ -369,6 +414,58 @@ RenderTexture* PostProcessRunner::Run(
             commandList->SetGraphicsRootSignature(manager->rootSig_);
             commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+            // Viewport と Scissor の設定
+            D3D12_VIEWPORT fullViewport{};
+            D3D12_RECT fullScissorRect{};
+            if (writeToScreen) {
+#ifdef EditorMode
+                // EditorMode時は最終出力先が mainRenderTexture_ なので、そのままの解像度を使用する
+                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
+                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
+                fullViewport.TopLeftX = 0;
+                fullViewport.TopLeftY = 0;
+                fullScissorRect.left = 0;
+                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
+                fullScissorRect.top = 0;
+                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
+#else
+                float clientW = static_cast<float>(manager->dxCommon_->GetClientWidth());
+                float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
+                float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
+                float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
+                float aspectGame = gameW / gameH;
+                float aspectClient = clientW / clientH;
+                if (aspectClient > aspectGame) {
+                    fullViewport.Height = clientH;
+                    fullViewport.Width = clientH * aspectGame;
+                    fullViewport.TopLeftX = (clientW - fullViewport.Width) * 0.5f;
+                    fullViewport.TopLeftY = 0.0f;
+                } else {
+                    fullViewport.Width = clientW;
+                    fullViewport.Height = clientW / aspectGame;
+                    fullViewport.TopLeftX = 0.0f;
+                    fullViewport.TopLeftY = (clientH - fullViewport.Height) * 0.5f;
+                }
+                fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
+                fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
+                fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
+                fullScissorRect.bottom = static_cast<LONG>(fullViewport.TopLeftY + fullViewport.Height);
+#endif
+            } else {
+                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
+                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
+                fullViewport.TopLeftX = 0;
+                fullViewport.TopLeftY = 0;
+                fullScissorRect.left = 0;
+                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
+                fullScissorRect.top = 0;
+                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
+            }
+            fullViewport.MinDepth = 0.0f;
+            fullViewport.MaxDepth = 1.0f;
+            commandList->RSSetViewports(1, &fullViewport);
+            commandList->RSSetScissorRects(1, &fullScissorRect);
+
             manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
             
             uint32_t extraIdx = manager->depthSrvIndex_;
@@ -417,6 +514,47 @@ RenderTexture* PostProcessRunner::Run(
         commandList->SetPipelineState(manager->finalCombinedPSO_.Get());
         commandList->SetGraphicsRootSignature(manager->rootSig_);
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        // Viewport と Scissor の設定 (needsFinalPass は必ず writeToScreen なのでレターボックス設定)
+        D3D12_VIEWPORT fullViewport{};
+        D3D12_RECT fullScissorRect{};
+#ifdef EditorMode
+        // EditorMode時は最終出力先が mainRenderTexture_ なので、そのままの解像度を使用する
+        fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
+        fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
+        fullViewport.TopLeftX = 0;
+        fullViewport.TopLeftY = 0;
+        fullScissorRect.left = 0;
+        fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
+        fullScissorRect.top = 0;
+        fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
+#else
+        float clientW = static_cast<float>(manager->dxCommon_->GetClientWidth());
+        float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
+        float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
+        float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
+        float aspectGame = gameW / gameH;
+        float aspectClient = clientW / clientH;
+        if (aspectClient > aspectGame) {
+            fullViewport.Height = clientH;
+            fullViewport.Width = clientH * aspectGame;
+            fullViewport.TopLeftX = (clientW - fullViewport.Width) * 0.5f;
+            fullViewport.TopLeftY = 0.0f;
+        } else {
+            fullViewport.Width = clientW;
+            fullViewport.Height = clientW / aspectGame;
+            fullViewport.TopLeftX = 0.0f;
+            fullViewport.TopLeftY = (clientH - fullViewport.Height) * 0.5f;
+        }
+        fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
+        fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
+        fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
+        fullScissorRect.bottom = static_cast<LONG>(fullViewport.TopLeftY + fullViewport.Height);
+#endif
+        fullViewport.MinDepth = 0.0f;
+        fullViewport.MaxDepth = 1.0f;
+        commandList->RSSetViewports(1, &fullViewport);
+        commandList->RSSetScissorRects(1, &fullScissorRect);
 
         manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
         manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex = manager->depthSrvIndex_;

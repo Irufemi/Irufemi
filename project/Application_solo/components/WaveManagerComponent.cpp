@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include "Framework/Component/Utility/SplineComponent.h"
+#include "Framework/Component/Logic/SpawnPointComponent.h"
 
 WaveManagerComponent::WaveManagerComponent() {}
 
@@ -21,6 +22,14 @@ void WaveManagerComponent::Initialize() {
     // デフォルトハンドラの登録
     RegisterHandler("SpawnEnemy", std::make_shared<SpawnEnemyHandler>());
     RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
+    
+    ReloadLevelData();
+}
+
+void WaveManagerComponent::ReloadLevelData() {
+    std::priority_queue<WaveEventData, std::vector<WaveEventData>, std::greater<WaveEventData>> emptyQueue;
+    std::swap(eventQueue_, emptyQueue);
+    allEvents_.clear();
     
     LoadLevelData(levelDataPath_);
 }
@@ -42,10 +51,10 @@ void WaveManagerComponent::LoadLevelData(const std::string& filePath) {
                 data.triggerDistance = eventJson.value("TriggerDistance", 0.0f);
                 data.eventType = eventJson.value("Type", "Unknown");
                 
-                // パラメータとしてイベント全体を保持しておく（ハンドラ側で必要なキーを取り出す）
                 data.parameters = eventJson;
 
                 eventQueue_.push(data);
+                allEvents_.push_back(data);
             }
         }
         Log::OutPutLog(std::cout, "[WaveManager] Loaded " + std::to_string(eventQueue_.size()) + " events from " + filePath + "\n");
@@ -59,6 +68,45 @@ void WaveManagerComponent::RegisterHandler(const std::string& eventType, std::sh
 }
 
 void WaveManagerComponent::Update() {
+    if (!hasCachedSpawnPoints_) {
+        CacheSpawnPoints();
+        hasCachedSpawnPoints_ = true;
+    }
+
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+    // エディタモード中、自身が選択されている時のみプレビューを描画する
+    auto engine = BaseModel::GetIrufemiEngine();
+    if (engine && engine->GetSelectedObject().get() == gameObject_) {
+        // キャッシュの再構築（SpawnPointがエディタ上で移動・追加されている可能性を考慮して毎フレーム更新）
+        CacheSpawnPoints();
+
+        auto scene = gameObject_->GetScene();
+        auto cartObj = scene ? scene->FindGameObject("PlayerCart") : nullptr;
+        if (!cartObj && scene) cartObj = scene->FindGameObject("Player");
+        
+        auto follower = cartObj ? cartObj->GetComponent<SplineFollowerComponent>() : nullptr;
+        auto spline = follower ? follower->GetCachedPath() : nullptr;
+
+        if (spline) {
+            for (const auto& ev : allEvents_) {
+                auto it = handlers_.find(ev.eventType);
+                if (it != handlers_.end() && it->second) {
+                    Irufemi::Vector3 pos = spline->GetPointAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 fwd = spline->GetTangentAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 up = {0.0f, 1.0f, 0.0f};
+                    Irufemi::Vector3 right = { up.y * fwd.z - up.z * fwd.y, 
+                                               up.z * fwd.x - up.x * fwd.z, 
+                                               up.x * fwd.y - up.y * fwd.x };
+                    float len = std::sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
+                    if (len > 0.0001f) { right.x /= len; right.y /= len; right.z /= len; }
+                    
+                    it->second->DrawEditorPreview(this, ev, pos, fwd, right);
+                }
+            }
+        }
+    }
+#endif
+
     if (!playerFollower_) {
         // PlayerCart または Player にアタッチされている SplineFollowerComponent を探す
         auto scene = gameObject_->GetScene();
@@ -106,7 +154,7 @@ void WaveManagerComponent::Update() {
                     }
                 }
                 
-                it->second->Execute(nextEvent, pos, fwd, right);
+                it->second->Execute(this, nextEvent, pos, fwd, right);
             } else {
                 Log::OutPutLog(std::cout, "[WaveManager] Warning: No handler registered for event type: " + nextEvent.eventType + "\n");
             }
@@ -117,4 +165,28 @@ void WaveManagerComponent::Update() {
             break;
         }
     }
+}
+
+void WaveManagerComponent::CacheSpawnPoints() {
+    auto scene = gameObject_->GetScene();
+    if (!scene) return;
+
+    spawnPointsMap_.clear();
+    const auto& objs = scene->GetGameObjects();
+    for (const auto& obj : objs) {
+        if (!obj->GetIsActive()) continue;
+        auto sp = obj->GetComponent<SpawnPointComponent>();
+        if (sp) {
+            spawnPointsMap_[sp->GetWaveId()].push_back(sp);
+        }
+    }
+}
+
+const std::vector<SpawnPointComponent*>& WaveManagerComponent::GetSpawnPoints(const std::string& waveId) const {
+    static const std::vector<SpawnPointComponent*> emptyList;
+    auto it = spawnPointsMap_.find(waveId);
+    if (it != spawnPointsMap_.end()) {
+        return it->second;
+    }
+    return emptyList;
 }
