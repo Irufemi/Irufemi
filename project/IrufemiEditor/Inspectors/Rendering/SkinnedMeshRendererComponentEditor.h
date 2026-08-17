@@ -1,9 +1,8 @@
 #pragma once
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
 #include "Core/IComponentEditor.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 
-class BossComponentEditor : public IComponentEditor {
+class SkinnedMeshRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override;
 };
-#endif

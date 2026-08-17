@@ -27,7 +27,7 @@
 #endif
 
 #ifdef EditorMode
-#include "EditorManager.h"
+#include "Core/EditorManager.h"
 #endif
 
 namespace {

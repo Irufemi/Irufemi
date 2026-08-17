@@ -1,9 +1,10 @@
 #pragma once
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+#ifdef EditorMode
 #include "Core/IComponentEditor.h"
+#include <memory>
 
-class BossComponentEditor : public IComponentEditor {
+class VoxelParticleComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override;
 };
-#endif
+#endif // EditorMode

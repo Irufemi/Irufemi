@@ -1,6 +1,6 @@
 #pragma once
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
-#include "Editor/Core/IComponentEditor.h"
+#include "Core/IComponentEditor.h"
 
 class GravityPlayerComponentEditor : public IComponentEditor {
 public:

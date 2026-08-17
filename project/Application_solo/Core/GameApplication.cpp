@@ -50,8 +50,8 @@
 #include "Scenes/TL1/TL1Scene.h"
 
 #ifdef EditorMode
-#include "EditorManager.h"
-#include "Editor/Core/ComponentEditorRegistry.h"
+#include "Core/EditorManager.h"
+#include "Inspectors/ComponentEditorRegistry.h"
 #include "Editor/WaveManagerComponentEditor.h"
 #include "Editor/GravityPlayerComponentEditor.h"
 #include "Editor/BossComponentEditor.h"

@@ -1,179 +1,204 @@
 <?xml version='1.0' encoding='utf-8'?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Editor">
-      <UniqueIdentifier>{2140D244-4241-5BEF-BE49-A810639E2A36}</UniqueIdentifier>
+    <Filter Include="Commands">
+      <UniqueIdentifier>{c441ee50-c88f-6e5e-3a7c-69fc69dad8b8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Editor\ComponentEditors">
-      <UniqueIdentifier>{10D4353C-0DDC-5E58-B525-F4CD97CEE025}</UniqueIdentifier>
+    <Filter Include="Core">
+      <UniqueIdentifier>{83168e6c-b289-d732-cc78-427b51f93153}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Editor\Core">
-      <UniqueIdentifier>{34CE44E3-4C0E-5309-AF2F-2319F32A1538}</UniqueIdentifier>
+    <Filter Include="Inspectors">
+      <UniqueIdentifier>{75936899-04c0-8bec-5e59-1b9dae3c6ceb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Editor\Panel">
-      <UniqueIdentifier>{A9FF6CB5-6534-5A87-B973-D1E1B2F7E79B}</UniqueIdentifier>
+    <Filter Include="Inspectors\Camera">
+      <UniqueIdentifier>{bea61966-4bc2-7850-20dd-f158d81391bc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Editor\Utils">
-      <UniqueIdentifier>{A93CA0BF-0318-5052-B78D-2F5AE974EA06}</UniqueIdentifier>
+    <Filter Include="Inspectors\Effects">
+      <UniqueIdentifier>{728079c7-be83-d929-c728-56fe89dc0142}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inspectors\Physics">
+      <UniqueIdentifier>{57d77982-36f8-18ea-fe44-b8f40a5a7b1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inspectors\Rendering">
+      <UniqueIdentifier>{491dfa94-d444-7967-b8a8-d8151b50b216}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inspectors\Transform">
+      <UniqueIdentifier>{4079f3a1-3cee-bbe6-b7bb-7c79db2f2658}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Panels">
+      <UniqueIdentifier>{56797cef-b1ef-c913-0f7c-48a7d1db0f0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{71ff7152-6d15-db86-eb50-fcac245d183b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EditorManager.cpp" />
-    <ClCompile Include="Editor\Core\ComponentEditorRegistry.cpp">
-      <Filter>Editor\Core</Filter>
+    <ClCompile Include="Core\EditorManager.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Core\EditorActionManager.cpp">
-      <Filter>Editor\Core</Filter>
+    <ClCompile Include="Inspectors\ComponentEditorRegistry.cpp">
+      <Filter>Inspectors</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Core\EditorShortcutManager.cpp">
-      <Filter>Editor\Core</Filter>
+    <ClCompile Include="Commands\EditorActionManager.cpp">
+      <Filter>Commands</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Core\EditorTheme.cpp">
-      <Filter>Editor\Core</Filter>
+    <ClCompile Include="Commands\EditorShortcutManager.cpp">
+      <Filter>Commands</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Panel\HierarchyPanel.cpp">
-      <Filter>Editor\Panel</Filter>
+    <ClCompile Include="Core\EditorTheme.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Panel\InspectorPanel.cpp">
-      <Filter>Editor\Panel</Filter>
+    <ClCompile Include="Panels\HierarchyPanel.cpp">
+      <Filter>Panels</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Panel\ProjectBrowserPanel.cpp">
-      <Filter>Editor\Panel</Filter>
+    <ClCompile Include="Panels\InspectorPanel.cpp">
+      <Filter>Panels</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Panel\SceneViewPanel.cpp">
-      <Filter>Editor\Panel</Filter>
+    <ClCompile Include="Panels\ProjectBrowserPanel.cpp">
+      <Filter>Panels</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Panel\ConsolePanel.cpp">
-      <Filter>Editor\Panel</Filter>
+    <ClCompile Include="Panels\SceneViewPanel.cpp">
+      <Filter>Panels</Filter>
     </ClCompile>
-
-    <ClCompile Include="Editor\Core\ComponentUIHelpers.cpp">
-      <Filter>Editor\Core</Filter>
+    <ClCompile Include="Panels\ConsolePanel.cpp">
+      <Filter>Panels</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\TransformComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="UI\ComponentUIHelpers.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\MeshRendererComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Rendering\SkinnedMeshRendererComponentEditor.cpp">
+      <Filter>Inspectors\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\EffectMaskComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Transform\TransformComponentEditor.cpp">
+      <Filter>Inspectors\Transform</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Rendering\MeshRendererComponentEditor.cpp">
+      <Filter>Inspectors\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Effects\EffectMaskComponentEditor.cpp">
+      <Filter>Inspectors\Effects</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\SpriteRendererComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Rendering\PrimitiveRendererComponentEditor.cpp">
+      <Filter>Inspectors\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\TextRendererComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Rendering\Primitive2DRendererComponentEditor.cpp">
+      <Filter>Inspectors\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\ColliderComponentEditors.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Rendering\SpriteRendererComponentEditor.cpp">
+      <Filter>Inspectors\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\ParticleEmitterComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Rendering\TextRendererComponentEditor.cpp">
+      <Filter>Inspectors\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\RaycastComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Physics\ColliderComponentEditors.cpp">
+      <Filter>Inspectors\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\VoxelParticleComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Effects\ParticleEmitterComponentEditor.cpp">
+      <Filter>Inspectors\Effects</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Physics\RaycastComponentEditor.cpp">
+      <Filter>Inspectors\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\ComponentEditors\CameraComponentEditor.cpp">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClCompile Include="Inspectors\Effects\VoxelParticleComponentEditor.cpp">
+      <Filter>Inspectors\Effects</Filter>
     </ClCompile>
-    <ClInclude Include="EditorManager.h" />
-    <ClInclude Include="Editor\Core\ComponentEditorRegistry.h">
-      <Filter>Editor\Core</Filter>
+    <ClCompile Include="Inspectors\Rendering\ModelBatchRendererComponentEditor.cpp">
+      <Filter>Inspectors\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Inspectors\Camera\CameraComponentEditor.cpp">
+      <Filter>Inspectors\Camera</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\EditorManager.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Core\EditorActionManager.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="Inspectors\ComponentEditorRegistry.h">
+      <Filter>Inspectors</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Core\EditorCommands.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="Commands\EditorActionManager.h">
+      <Filter>Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Core\EditorDragDrop.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="Commands\EditorCommands.h">
+      <Filter>Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Core\EditorShortcutManager.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="UI\EditorDragDrop.h">
+      <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Core\EditorTheme.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="Commands\EditorShortcutManager.h">
+      <Filter>Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Core\ICommand.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="Core\EditorTheme.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Core\IComponentEditor.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="Core\ICommand.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\IEditorPanel.h">
-      <Filter>Editor</Filter>
+    <ClInclude Include="Core\IComponentEditor.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Panel\HierarchyPanel.h">
-      <Filter>Editor\Panel</Filter>
+    <ClInclude Include="Core\IEditorPanel.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Panel\InspectorPanel.h">
-      <Filter>Editor\Panel</Filter>
+    <ClInclude Include="Panels\HierarchyPanel.h">
+      <Filter>Panels</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Panel\ProjectBrowserPanel.h">
-      <Filter>Editor\Panel</Filter>
+    <ClInclude Include="Panels\InspectorPanel.h">
+      <Filter>Panels</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Panel\SceneViewPanel.h">
-      <Filter>Editor\Panel</Filter>
+    <ClInclude Include="Panels\ProjectBrowserPanel.h">
+      <Filter>Panels</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Panel\ConsolePanel.h">
-      <Filter>Editor\Panel</Filter>
+    <ClInclude Include="Panels\SceneViewPanel.h">
+      <Filter>Panels</Filter>
     </ClInclude>
-
-    <ClInclude Include="Editor\Core\ComponentUIHelpers.h">
-      <Filter>Editor\Core</Filter>
+    <ClInclude Include="Panels\ConsolePanel.h">
+      <Filter>Panels</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\TransformComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="UI\ComponentUIHelpers.h">
+      <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\MeshRendererComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Rendering\SkinnedMeshRendererComponentEditor.h">
+      <Filter>Inspectors\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\EffectMaskComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Transform\TransformComponentEditor.h">
+      <Filter>Inspectors\Transform</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\PrimitiveRendererComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Rendering\MeshRendererComponentEditor.h">
+      <Filter>Inspectors\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\Primitive2DRendererComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Effects\EffectMaskComponentEditor.h">
+      <Filter>Inspectors\Effects</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\SpriteRendererComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Rendering\PrimitiveRendererComponentEditor.h">
+      <Filter>Inspectors\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\TextRendererComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Rendering\Primitive2DRendererComponentEditor.h">
+      <Filter>Inspectors\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\ColliderComponentEditors.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Rendering\SpriteRendererComponentEditor.h">
+      <Filter>Inspectors\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\ParticleEmitterComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Rendering\TextRendererComponentEditor.h">
+      <Filter>Inspectors\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\RaycastComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Physics\ColliderComponentEditors.h">
+      <Filter>Inspectors\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\VoxelParticleComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Effects\ParticleEmitterComponentEditor.h">
+      <Filter>Inspectors\Effects</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\ModelBatchRendererComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Physics\RaycastComponentEditor.h">
+      <Filter>Inspectors\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\ComponentEditors\CameraComponentEditor.h">
-      <Filter>Editor\ComponentEditors</Filter>
+    <ClInclude Include="Inspectors\Effects\VoxelParticleComponentEditor.h">
+      <Filter>Inspectors\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Inspectors\Rendering\ModelBatchRendererComponentEditor.h">
+      <Filter>Inspectors\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Inspectors\Camera\CameraComponentEditor.h">
+      <Filter>Inspectors\Camera</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

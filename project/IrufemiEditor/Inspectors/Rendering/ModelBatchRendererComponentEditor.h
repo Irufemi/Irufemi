@@ -1,9 +1,10 @@
 #pragma once
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+
+#ifdef EditorMode
 #include "Core/IComponentEditor.h"
 
-class BossComponentEditor : public IComponentEditor {
+class ModelBatchRendererComponentEditor : public IComponentEditor {
 public:
     void Draw(Component* component, EditorActionManager* actionManager) override;
 };
-#endif
+#endif // EditorMode
