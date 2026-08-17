@@ -1,4 +1,4 @@
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+#ifdef EditorMode
 #include "Editor/GravityPlayerComponentEditor.h"
 #include "Player/GravityPlayerComponent.h"
 #include <imgui/imgui.h>

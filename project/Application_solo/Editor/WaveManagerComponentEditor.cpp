@@ -1,4 +1,4 @@
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+#ifdef EditorMode
 #include "Editor/WaveManagerComponentEditor.h"
 #include "Level/WaveManagerComponent.h"
 #include <imgui/imgui.h>

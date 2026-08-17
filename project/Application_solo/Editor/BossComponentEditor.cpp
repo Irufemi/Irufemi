@@ -1,4 +1,4 @@
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+#ifdef EditorMode
 #include "Editor/BossComponentEditor.h"
 #include "Combat/Boss/BossComponent.h"
 #include <imgui/imgui.h>

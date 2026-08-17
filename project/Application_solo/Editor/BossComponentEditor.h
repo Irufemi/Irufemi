@@ -1,6 +1,6 @@
 #pragma once
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
-#include "Core/IComponentEditor.h"
+#ifdef EditorMode
+#include "IrufemiEditor/Core/IComponentEditor.h"
 
 class BossComponentEditor : public IComponentEditor {
 public:
