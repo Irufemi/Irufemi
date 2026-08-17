@@ -1,83 +1,85 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-
-    <Filter Include="camera">
-      <UniqueIdentifier>{b2d20bfd-f14e-4085-86ad-27fd4e530cb4}</UniqueIdentifier>
+    <Filter Include="Combat">
+      <UniqueIdentifier>{30ad1054-cf7a-d763-6a26-844a6f782e1f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Application">
-      <UniqueIdentifier>{cd90af25-36a8-4226-8516-4e1e3092ade3}</UniqueIdentifier>
+    <Filter Include="Combat\Boss">
+      <UniqueIdentifier>{44ed52e9-01ff-35f8-12d7-471c9e360355}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{83168e6c-b289-d732-cc78-427b51f93153}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor">
+      <UniqueIdentifier>{344a7f42-7fb7-6561-0ef9-6eb7bce95257}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effects">
+      <UniqueIdentifier>{527e4752-a2ee-cd45-e2d5-4bad52433916}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Environment">
+      <UniqueIdentifier>{0ba29c6a-1afa-cf58-6b03-a26162c72274}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Level">
+      <UniqueIdentifier>{a0db49ba-470c-1c9a-e212-8c3470339153}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Player">
+      <UniqueIdentifier>{636da1d3-5e80-5b00-eae0-fcd8333f9234}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RailMechanics">
+      <UniqueIdentifier>{3eb36c12-5f0e-3982-1dc9-e4288e66a8e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scenes">
+      <UniqueIdentifier>{bb34f602-e45a-9fbc-b2cd-fee7a48673fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scenes\Pause">
+      <UniqueIdentifier>{5bf28cbd-a79b-681a-d83c-963ce39875bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scenes\TL1">
+      <UniqueIdentifier>{d4a2628a-108d-e1f7-1822-77ddb8f42530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scenes\inGame">
+      <UniqueIdentifier>{70cf6b71-bc0b-24a1-7757-108f03c67d4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scenes\stageSelect">
+      <UniqueIdentifier>{d6907c24-b812-888c-2cbe-d574891193a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scenes\title">
+      <UniqueIdentifier>{f64a4eda-87c3-415f-e7ee-463d72828382}</UniqueIdentifier>
     </Filter>
     <Filter Include="UI">
-      <UniqueIdentifier>{EF9FFFD9-235B-575F-A2DE-098830D1DDFA}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="components">
-      <UniqueIdentifier>{77F1005C-D670-5B3D-8C55-B8231C7C86B0}</UniqueIdentifier>
+      <UniqueIdentifier>{71ff7152-6d15-db86-eb50-fcac245d183b}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene">
-      <UniqueIdentifier>{4F25D072-F25C-5444-B5AA-1638023BD11A}</UniqueIdentifier>
+      <UniqueIdentifier>{1e7f604b-8641-5ade-94e1-5fef8627609b}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene\Clear">
-      <UniqueIdentifier>{51F1855D-26D6-563D-938E-6F3DB1B619C6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\Debug">
-      <UniqueIdentifier>{62929F92-3CF2-5C73-8D17-E558D0220D62}</UniqueIdentifier>
+      <UniqueIdentifier>{a34a0a36-5ab8-6d07-5797-82e411d1f4b5}</UniqueIdentifier>
     </Filter>
     <Filter Include="scene\GameOver">
-      <UniqueIdentifier>{5F8308A1-DD85-5996-B7D2-B2DF22D70F6D}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\InGame">
-      <UniqueIdentifier>{5A3B514E-0791-5B46-B080-57593ACEB77C}</UniqueIdentifier>
-    </Filter>
-
-    <Filter Include="scene\Pause">
-      <UniqueIdentifier>{E394E23F-0134-58A9-A8F7-981A67EB823C}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\StageSelect">
-      <UniqueIdentifier>{48E15DB8-C4FD-58EB-90A3-943185063706}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\Title">
-      <UniqueIdentifier>{12CA07D8-99E6-5EDC-AF99-647A260A3B9C}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="scene\TL1">
-      <UniqueIdentifier>{A1B2C3D4-E5F6-1234-5678-90ABCDEF1234}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="components\Boss">
-      <UniqueIdentifier>{12345678-ABCD-E123-4567-89ABCDEF0123}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="components\editor">
-      <UniqueIdentifier>{FEDCBA98-7654-3210-FEDC-BA9876543210}</UniqueIdentifier>
+      <UniqueIdentifier>{15410a32-151c-37b6-bfa1-fb8e200bebc4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-
-    <ClCompile Include="scene\GameOver\GameOverScene.cpp">
-      <Filter>scene\GameOver</Filter>
+    <ClCompile Include="Scenes\inGame\GameScene.cpp">
+      <Filter>Scenes\inGame</Filter>
     </ClCompile>
-    <ClCompile Include="scene\InGame\GameScene.cpp">
-      <Filter>scene\InGame</Filter>
+    <ClCompile Include="Scenes\Pause\PauseScene.cpp">
+      <Filter>Scenes\Pause</Filter>
     </ClCompile>
-
-    <ClCompile Include="scene\Pause\PauseScene.cpp">
-      <Filter>scene\Pause</Filter>
+    <ClCompile Include="Scenes\TL1\TL1Scene.cpp">
+      <Filter>Scenes\TL1</Filter>
     </ClCompile>
-    <ClCompile Include="scene\TL1\TL1Scene.cpp">
-      <Filter>scene\TL1</Filter>
+    <ClCompile Include="Scenes\TL1\TL1LevelLoader.cpp">
+      <Filter>Scenes\TL1</Filter>
     </ClCompile>
-    <ClCompile Include="scene\TL1\TL1LevelLoader.cpp">
-      <Filter>scene\TL1</Filter>
+    <ClCompile Include="Scenes\TL1\MagicBrushClient.cpp">
+      <Filter>Scenes\TL1</Filter>
     </ClCompile>
-    <ClCompile Include="scene\TL1\MagicBrushClient.cpp">
-      <Filter>scene\TL1</Filter>
+    <ClCompile Include="Scenes\stageSelect\SelectScene.cpp">
+      <Filter>Scenes\stageSelect</Filter>
     </ClCompile>
-    <ClCompile Include="scene\Clear\ClearScene.cpp">
-      <Filter>scene\Clear</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\StageSelect\SelectScene.cpp">
-      <Filter>scene\StageSelect</Filter>
-    </ClCompile>
-    <ClCompile Include="scene\Title\TitleScene.cpp">
-      <Filter>scene\Title</Filter>
+    <ClCompile Include="Scenes\title\TitleScene.cpp">
+      <Filter>Scenes\title</Filter>
     </ClCompile>
     <ClCompile Include="UI\LoadingScreen.cpp">
       <Filter>UI</Filter>
@@ -85,134 +87,125 @@
     <ClCompile Include="UI\PromptController.cpp">
       <Filter>UI</Filter>
     </ClCompile>
-
-    <ClCompile Include="main.cpp">
-      <Filter>Application</Filter>
+    <ClCompile Include="Core\main.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="GameApplication.cpp">
-      <Filter>Application</Filter>
+    <ClCompile Include="Core\GameApplication.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
-
-    <ClCompile Include="components\RailPathComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="RailMechanics\RailShooterPlayerComponent.cpp">
+      <Filter>RailMechanics</Filter>
     </ClCompile>
-    <ClCompile Include="components\RailShooterPlayerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="RailMechanics\SplineFollowerComponent.cpp">
+      <Filter>RailMechanics</Filter>
     </ClCompile>
-    <ClCompile Include="components\SplineFollowerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="RailMechanics\RailRelativeFollowerComponent.cpp">
+      <Filter>RailMechanics</Filter>
     </ClCompile>
-    <ClCompile Include="components\RailRelativeFollowerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="RailMechanics\RailShooterEnemyComponent.cpp">
+      <Filter>RailMechanics</Filter>
     </ClCompile>
-    <ClCompile Include="components\RailShooterEnemyComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Combat\Boss\BossComponent.cpp">
+      <Filter>Combat\Boss</Filter>
     </ClCompile>
-    <ClCompile Include="components\Boss\BossComponent.cpp">
-      <Filter>components\Boss</Filter>
+    <ClCompile Include="Combat\Boss\BossStateIdle.cpp">
+      <Filter>Combat\Boss</Filter>
     </ClCompile>
-    <ClCompile Include="components\Boss\BossStateIdle.cpp">
-      <Filter>components\Boss</Filter>
+    <ClCompile Include="Combat\Boss\BossStateCoreExposed.cpp">
+      <Filter>Combat\Boss</Filter>
     </ClCompile>
-    <ClCompile Include="components\Boss\BossStateCoreExposed.cpp">
-      <Filter>components\Boss</Filter>
+    <ClCompile Include="Combat\Boss\BossStateDestroyed.cpp">
+      <Filter>Combat\Boss</Filter>
     </ClCompile>
-    <ClCompile Include="components\Boss\BossStateDestroyed.cpp">
-      <Filter>components\Boss</Filter>
+    <ClCompile Include="Combat\BossBulletComponent.cpp">
+      <Filter>Combat</Filter>
     </ClCompile>
-    <ClCompile Include="components\BossBulletComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Combat\BossBulletManagerComponent.cpp">
+      <Filter>Combat</Filter>
     </ClCompile>
-    <ClCompile Include="components\BossBulletManagerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Combat\DroneManagerComponent.cpp">
+      <Filter>Combat</Filter>
     </ClCompile>
-    <ClCompile Include="components\DroneManagerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Environment\DebrisComponent.cpp">
+      <Filter>Environment</Filter>
     </ClCompile>
-    <ClCompile Include="components\DebrisComponent.cpp">
-      <Filter>components</Filter>
-    </ClCompile>
-    <ClCompile Include="components\TargetableComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Player\TargetableComponent.cpp">
+      <Filter>Player</Filter>
     </ClCompile>
     <ClCompile Include="UI\ReticleUIComponent.cpp">
       <Filter>UI</Filter>
     </ClCompile>
-    <ClCompile Include="components\DebrisManagerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Environment\DebrisManagerComponent.cpp">
+      <Filter>Environment</Filter>
     </ClCompile>
-    <ClCompile Include="components\EnvironmentManagerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Environment\EnvironmentManagerComponent.cpp">
+      <Filter>Environment</Filter>
     </ClCompile>
-    <ClCompile Include="components\DestructibleEnvironmentComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Environment\DestructibleEnvironmentComponent.cpp">
+      <Filter>Environment</Filter>
     </ClCompile>
-    <ClCompile Include="components\GameLoopManagerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Core\GameLoopManagerComponent.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="components\GravityPlayerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Player\GravityPlayerComponent.cpp">
+      <Filter>Player</Filter>
     </ClCompile>
-    <ClCompile Include="components\DebugEnemySpawnerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp">
+      <Filter>Combat</Filter>
     </ClCompile>
-    <ClCompile Include="components\SceneTransitionButtonComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Core\SceneTransitionButtonComponent.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="components\EffectManagerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Effects\EffectManagerComponent.cpp">
+      <Filter>Effects</Filter>
     </ClCompile>
     <ClCompile Include="UI\LockonMarkerUIComponent.cpp">
       <Filter>UI</Filter>
     </ClCompile>
-    <ClCompile Include="components\EnemyBeamComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Combat\EnemyBeamComponent.cpp">
+      <Filter>Combat</Filter>
     </ClCompile>
-    <ClCompile Include="components\PlayerTargetingComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Player\PlayerTargetingComponent.cpp">
+      <Filter>Player</Filter>
     </ClCompile>
-    <ClCompile Include="components\WaveEventHandlers.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Level\WaveEventHandlers.cpp">
+      <Filter>Level</Filter>
     </ClCompile>
-    <ClCompile Include="components\WaveManagerComponent.cpp">
-      <Filter>components</Filter>
+    <ClCompile Include="Level\WaveManagerComponent.cpp">
+      <Filter>Level</Filter>
     </ClCompile>
-    <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp">
-      <Filter>components\editor</Filter>
+    <ClCompile Include="Editor\WaveManagerComponentEditor.cpp">
+      <Filter>Editor</Filter>
     </ClCompile>
-    <ClCompile Include="components\editor\GravityPlayerComponentEditor.cpp">
-      <Filter>components\editor</Filter>
+    <ClCompile Include="Editor\GravityPlayerComponentEditor.cpp">
+      <Filter>Editor</Filter>
     </ClCompile>
-    <ClCompile Include="components\editor\BossComponentEditor.cpp">
-      <Filter>components\editor</Filter>
+    <ClCompile Include="Editor\BossComponentEditor.cpp">
+      <Filter>Editor</Filter>
     </ClCompile>
     <ClInclude Include="scene\GameOver\GameOverScene.h">
       <Filter>scene\GameOver</Filter>
     </ClInclude>
-    <ClInclude Include="scene\InGame\GameScene.h">
-      <Filter>scene\InGame</Filter>
+    <ClInclude Include="Scenes\inGame\GameScene.h">
+      <Filter>Scenes\inGame</Filter>
     </ClInclude>
-
-    <ClInclude Include="scene\Pause\PauseScene.h">
-      <Filter>scene\Pause</Filter>
+    <ClInclude Include="Scenes\Pause\PauseScene.h">
+      <Filter>Scenes\Pause</Filter>
     </ClInclude>
-    <ClInclude Include="scene\TL1\TL1Scene.h">
-      <Filter>scene\TL1</Filter>
+    <ClInclude Include="Scenes\TL1\TL1Scene.h">
+      <Filter>Scenes\TL1</Filter>
     </ClInclude>
-    <ClInclude Include="scene\TL1\TL1LevelLoader.h">
-      <Filter>scene\TL1</Filter>
+    <ClInclude Include="Scenes\TL1\TL1LevelLoader.h">
+      <Filter>Scenes\TL1</Filter>
     </ClInclude>
-    <ClInclude Include="scene\TL1\MagicBrushClient.h">
-      <Filter>scene\TL1</Filter>
+    <ClInclude Include="Scenes\TL1\MagicBrushClient.h">
+      <Filter>Scenes\TL1</Filter>
     </ClInclude>
-    <ClInclude Include="scene\Clear\ClearScene.h">
-      <Filter>scene\Clear</Filter>
+    <ClInclude Include="Scenes\stageSelect\SelectScene.h">
+      <Filter>Scenes\stageSelect</Filter>
     </ClInclude>
-    <ClInclude Include="scene\StageSelect\SelectScene.h">
-      <Filter>scene\StageSelect</Filter>
-    </ClInclude>
-    <ClInclude Include="scene\Title\TitleScene.h">
-      <Filter>scene\Title</Filter>
+    <ClInclude Include="Scenes\title\TitleScene.h">
+      <Filter>Scenes\title</Filter>
     </ClInclude>
     <ClInclude Include="UI\LoadingScreen.h">
       <Filter>UI</Filter>
@@ -220,109 +213,104 @@
     <ClInclude Include="UI\PromptController.h">
       <Filter>UI</Filter>
     </ClInclude>
-
-    <ClInclude Include="GameApplication.h">
-      <Filter>Application</Filter>
+    <ClInclude Include="Core\GameApplication.h">
+      <Filter>Core</Filter>
     </ClInclude>
-
     <ClInclude Include="UI\ReticleUIComponent.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="components\RailPathComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="RailMechanics\RailShooterPlayerComponent.h">
+      <Filter>RailMechanics</Filter>
     </ClInclude>
-    <ClInclude Include="components\RailShooterPlayerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="RailMechanics\SplineFollowerComponent.h">
+      <Filter>RailMechanics</Filter>
     </ClInclude>
-    <ClInclude Include="components\SplineFollowerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="RailMechanics\RailRelativeFollowerComponent.h">
+      <Filter>RailMechanics</Filter>
     </ClInclude>
-    <ClInclude Include="components\RailRelativeFollowerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="RailMechanics\RailShooterEnemyComponent.h">
+      <Filter>RailMechanics</Filter>
     </ClInclude>
-    <ClInclude Include="components\RailShooterEnemyComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Combat\Boss\BossComponent.h">
+      <Filter>Combat\Boss</Filter>
     </ClInclude>
-    <ClInclude Include="components\Boss\BossComponent.h">
-      <Filter>components\Boss</Filter>
+    <ClInclude Include="Combat\Boss\IBossState.h">
+      <Filter>Combat\Boss</Filter>
     </ClInclude>
-    <ClInclude Include="components\Boss\IBossState.h">
-      <Filter>components\Boss</Filter>
+    <ClInclude Include="Combat\Boss\BossStateIdle.h">
+      <Filter>Combat\Boss</Filter>
     </ClInclude>
-    <ClInclude Include="components\Boss\BossStateIdle.h">
-      <Filter>components\Boss</Filter>
+    <ClInclude Include="Combat\Boss\BossStateCoreExposed.h">
+      <Filter>Combat\Boss</Filter>
     </ClInclude>
-    <ClInclude Include="components\Boss\BossStateCoreExposed.h">
-      <Filter>components\Boss</Filter>
+    <ClInclude Include="Combat\Boss\BossStateDestroyed.h">
+      <Filter>Combat\Boss</Filter>
     </ClInclude>
-    <ClInclude Include="components\Boss\BossStateDestroyed.h">
-      <Filter>components\Boss</Filter>
+    <ClInclude Include="Combat\BossBulletComponent.h">
+      <Filter>Combat</Filter>
     </ClInclude>
-    <ClInclude Include="components\BossBulletComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Combat\BossBulletManagerComponent.h">
+      <Filter>Combat</Filter>
     </ClInclude>
-    <ClInclude Include="components\BossBulletManagerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Combat\DroneManagerComponent.h">
+      <Filter>Combat</Filter>
     </ClInclude>
-    <ClInclude Include="components\DroneManagerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Environment\DebrisComponent.h">
+      <Filter>Environment</Filter>
     </ClInclude>
-    <ClInclude Include="components\DebrisComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Player\TargetableComponent.h">
+      <Filter>Player</Filter>
     </ClInclude>
-    <ClInclude Include="components\TargetableComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Environment\DebrisManagerComponent.h">
+      <Filter>Environment</Filter>
     </ClInclude>
-    <ClInclude Include="components\DebrisManagerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Environment\EnvironmentManagerComponent.h">
+      <Filter>Environment</Filter>
     </ClInclude>
-    <ClInclude Include="components\EnvironmentManagerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Environment\DestructibleEnvironmentComponent.h">
+      <Filter>Environment</Filter>
     </ClInclude>
-    <ClInclude Include="components\DestructibleEnvironmentComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Core\GameLoopManagerComponent.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="components\GameLoopManagerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Player\GravityPlayerComponent.h">
+      <Filter>Player</Filter>
     </ClInclude>
-    <ClInclude Include="components\GravityPlayerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Combat\DebugEnemySpawnerComponent.h">
+      <Filter>Combat</Filter>
     </ClInclude>
-    <ClInclude Include="components\DebugEnemySpawnerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Core\SceneTransitionButtonComponent.h">
+      <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="components\SceneTransitionButtonComponent.h">
-      <Filter>components</Filter>
-    </ClInclude>
-    <ClInclude Include="components\EffectManagerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Effects\EffectManagerComponent.h">
+      <Filter>Effects</Filter>
     </ClInclude>
     <ClInclude Include="UI\LockonMarkerUIComponent.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="components\EnemyBeamComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Combat\EnemyBeamComponent.h">
+      <Filter>Combat</Filter>
     </ClInclude>
-    <ClInclude Include="components\PlayerTargetingComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Player\PlayerTargetingComponent.h">
+      <Filter>Player</Filter>
     </ClInclude>
-    <ClInclude Include="components\WaveEvent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Level\WaveEvent.h">
+      <Filter>Level</Filter>
     </ClInclude>
-    <ClInclude Include="components\WaveEventHandlers.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Level\WaveEventHandlers.h">
+      <Filter>Level</Filter>
     </ClInclude>
-    <ClInclude Include="components\WaveManagerComponent.h">
-      <Filter>components</Filter>
+    <ClInclude Include="Level\WaveManagerComponent.h">
+      <Filter>Level</Filter>
     </ClInclude>
-    <ClInclude Include="components\editor\WaveManagerComponentEditor.h">
-      <Filter>components\editor</Filter>
+    <ClInclude Include="Editor\WaveManagerComponentEditor.h">
+      <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="components\editor\GravityPlayerComponentEditor.h">
-      <Filter>components\editor</Filter>
+    <ClInclude Include="Editor\GravityPlayerComponentEditor.h">
+      <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="components\editor\BossComponentEditor.h">
-      <Filter>components\editor</Filter>
+    <ClInclude Include="Editor\BossComponentEditor.h">
+      <Filter>Editor</Filter>
     </ClInclude>
     <None Include="packages.config" />
   </ItemGroup>

@@ -225,12 +225,12 @@ exit 0</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="GameApplication.cpp" />
+    <ClCompile Include="Core\GameApplication.cpp" />
 
-    <ClCompile Include="scene\TL1\TL1Scene.cpp" />
-    <ClCompile Include="scene\TL1\TL1LevelLoader.cpp" />
-    <ClCompile Include="scene\TL1\MagicBrushClient.cpp" />
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="Scenes\TL1\TL1Scene.cpp" />
+    <ClCompile Include="Scenes\TL1\TL1LevelLoader.cpp" />
+    <ClCompile Include="Scenes\TL1\MagicBrushClient.cpp" />
+    <ClCompile Include="Core\main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Editor|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
@@ -238,94 +238,94 @@ exit 0</Command>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</WholeProgramOptimization>
     </ClCompile>
-    <ClCompile Include="scene\InGame\GameScene.cpp" />
+    <ClCompile Include="Scenes\inGame\GameScene.cpp" />
 
-    <ClCompile Include="scene\Pause\PauseScene.cpp" />
+    <ClCompile Include="Scenes\Pause\PauseScene.cpp" />
 
-    <ClCompile Include="scene\StageSelect\SelectScene.cpp" />
-    <ClCompile Include="scene\Title\TitleScene.cpp" />
+    <ClCompile Include="Scenes\stageSelect\SelectScene.cpp" />
+    <ClCompile Include="Scenes\title\TitleScene.cpp" />
     <ClCompile Include="UI\LoadingScreen.cpp" />
     <ClCompile Include="UI\PromptController.cpp" />
-    <ClCompile Include="components\RailShooterPlayerComponent.cpp" />
-    <ClCompile Include="components\SplineFollowerComponent.cpp" />
-    <ClCompile Include="components\RailRelativeFollowerComponent.cpp" />
-    <ClCompile Include="components\RailShooterEnemyComponent.cpp" />
-    <ClCompile Include="components\DebrisComponent.cpp" />
-    <ClCompile Include="components\TargetableComponent.cpp" />
-    <ClCompile Include="components\Boss\BossComponent.cpp" />
-    <ClCompile Include="components\Boss\BossStateIdle.cpp" />
-    <ClCompile Include="components\Boss\BossStateCoreExposed.cpp" />
-    <ClCompile Include="components\Boss\BossStateDestroyed.cpp" />
-    <ClCompile Include="components\BossBulletComponent.cpp" />
-    <ClCompile Include="components\BossBulletManagerComponent.cpp" />
+    <ClCompile Include="RailMechanics\RailShooterPlayerComponent.cpp" />
+    <ClCompile Include="RailMechanics\SplineFollowerComponent.cpp" />
+    <ClCompile Include="RailMechanics\RailRelativeFollowerComponent.cpp" />
+    <ClCompile Include="RailMechanics\RailShooterEnemyComponent.cpp" />
+    <ClCompile Include="Environment\DebrisComponent.cpp" />
+    <ClCompile Include="Player\TargetableComponent.cpp" />
+    <ClCompile Include="Combat\Boss\BossComponent.cpp" />
+    <ClCompile Include="Combat\Boss\BossStateIdle.cpp" />
+    <ClCompile Include="Combat\Boss\BossStateCoreExposed.cpp" />
+    <ClCompile Include="Combat\Boss\BossStateDestroyed.cpp" />
+    <ClCompile Include="Combat\BossBulletComponent.cpp" />
+    <ClCompile Include="Combat\BossBulletManagerComponent.cpp" />
 
-    <ClCompile Include="components\DroneManagerComponent.cpp" />
-    <ClCompile Include="components\DebrisManagerComponent.cpp" />
-    <ClCompile Include="components\EnvironmentManagerComponent.cpp" />
-    <ClCompile Include="components\DestructibleEnvironmentComponent.cpp" />
-    <ClCompile Include="components\GravityPlayerComponent.cpp" />
-    <ClCompile Include="components\GameLoopManagerComponent.cpp" />
-    <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
-    <ClCompile Include="components\SceneTransitionButtonComponent.cpp" />
-    <ClCompile Include="components\EffectManagerComponent.cpp" />
-    <ClCompile Include="components\EnemyBeamComponent.cpp" />
+    <ClCompile Include="Combat\DroneManagerComponent.cpp" />
+    <ClCompile Include="Environment\DebrisManagerComponent.cpp" />
+    <ClCompile Include="Environment\EnvironmentManagerComponent.cpp" />
+    <ClCompile Include="Environment\DestructibleEnvironmentComponent.cpp" />
+    <ClCompile Include="Player\GravityPlayerComponent.cpp" />
+    <ClCompile Include="Core\GameLoopManagerComponent.cpp" />
+    <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp" />
+    <ClCompile Include="Core\SceneTransitionButtonComponent.cpp" />
+    <ClCompile Include="Effects\EffectManagerComponent.cpp" />
+    <ClCompile Include="Combat\EnemyBeamComponent.cpp" />
     <ClCompile Include="UI\ReticleUIComponent.cpp" />
     <ClCompile Include="UI\LockonMarkerUIComponent.cpp" />
-    <ClCompile Include="components\PlayerTargetingComponent.cpp" />
-    <ClCompile Include="components\WaveEventHandlers.cpp" />
-    <ClCompile Include="components\WaveManagerComponent.cpp" />
-    <ClCompile Include="components\editor\WaveManagerComponentEditor.cpp" />
-    <ClCompile Include="components\editor\GravityPlayerComponentEditor.cpp" />
-    <ClCompile Include="components\editor\BossComponentEditor.cpp" />
+    <ClCompile Include="Player\PlayerTargetingComponent.cpp" />
+    <ClCompile Include="Level\WaveEventHandlers.cpp" />
+    <ClCompile Include="Level\WaveManagerComponent.cpp" />
+    <ClCompile Include="Editor\WaveManagerComponentEditor.cpp" />
+    <ClCompile Include="Editor\GravityPlayerComponentEditor.cpp" />
+    <ClCompile Include="Editor\BossComponentEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GameApplication.h" />
+    <ClInclude Include="Core\GameApplication.h" />
 
-    <ClInclude Include="scene\TL1\TL1Scene.h" />
-    <ClInclude Include="scene\TL1\TL1LevelLoader.h" />
-    <ClInclude Include="scene\TL1\MagicBrushClient.h" />
+    <ClInclude Include="Scenes\TL1\TL1Scene.h" />
+    <ClInclude Include="Scenes\TL1\TL1LevelLoader.h" />
+    <ClInclude Include="Scenes\TL1\MagicBrushClient.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
-    <ClInclude Include="scene\InGame\GameScene.h" />
+    <ClInclude Include="Scenes\inGame\GameScene.h" />
 
-    <ClInclude Include="scene\Pause\PauseScene.h" />
+    <ClInclude Include="Scenes\Pause\PauseScene.h" />
 
-    <ClInclude Include="scene\StageSelect\SelectScene.h" />
-    <ClInclude Include="scene\Title\TitleScene.h" />
+    <ClInclude Include="Scenes\stageSelect\SelectScene.h" />
+    <ClInclude Include="Scenes\title\TitleScene.h" />
     <ClInclude Include="UI\LoadingScreen.h" />
     <ClInclude Include="UI\PromptController.h" />
-    <ClInclude Include="components\RailShooterPlayerComponent.h" />
-    <ClInclude Include="components\SplineFollowerComponent.h" />
-    <ClInclude Include="components\RailRelativeFollowerComponent.h" />
-    <ClInclude Include="components\RailShooterEnemyComponent.h" />
-    <ClInclude Include="components\DebrisComponent.h" />
-    <ClInclude Include="components\TargetableComponent.h" />
-    <ClInclude Include="components\Boss\BossComponent.h" />
-    <ClInclude Include="components\Boss\IBossState.h" />
-    <ClInclude Include="components\Boss\BossStateIdle.h" />
-    <ClInclude Include="components\Boss\BossStateCoreExposed.h" />
-    <ClInclude Include="components\Boss\BossStateDestroyed.h" />
-    <ClInclude Include="components\BossBulletComponent.h" />
-    <ClInclude Include="components\BossBulletManagerComponent.h" />
+    <ClInclude Include="RailMechanics\RailShooterPlayerComponent.h" />
+    <ClInclude Include="RailMechanics\SplineFollowerComponent.h" />
+    <ClInclude Include="RailMechanics\RailRelativeFollowerComponent.h" />
+    <ClInclude Include="RailMechanics\RailShooterEnemyComponent.h" />
+    <ClInclude Include="Environment\DebrisComponent.h" />
+    <ClInclude Include="Player\TargetableComponent.h" />
+    <ClInclude Include="Combat\Boss\BossComponent.h" />
+    <ClInclude Include="Combat\Boss\IBossState.h" />
+    <ClInclude Include="Combat\Boss\BossStateIdle.h" />
+    <ClInclude Include="Combat\Boss\BossStateCoreExposed.h" />
+    <ClInclude Include="Combat\Boss\BossStateDestroyed.h" />
+    <ClInclude Include="Combat\BossBulletComponent.h" />
+    <ClInclude Include="Combat\BossBulletManagerComponent.h" />
 
-    <ClInclude Include="components\DroneManagerComponent.h" />
-    <ClInclude Include="components\DebrisManagerComponent.h" />
-    <ClInclude Include="components\EnvironmentManagerComponent.h" />
-    <ClInclude Include="components\DestructibleEnvironmentComponent.h" />
-    <ClInclude Include="components\GravityPlayerComponent.h" />
-    <ClInclude Include="components\GameLoopManagerComponent.h" />
-    <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
-    <ClInclude Include="components\SceneTransitionButtonComponent.h" />
-    <ClInclude Include="components\EffectManagerComponent.h" />
-    <ClInclude Include="components\EnemyBeamComponent.h" />
+    <ClInclude Include="Combat\DroneManagerComponent.h" />
+    <ClInclude Include="Environment\DebrisManagerComponent.h" />
+    <ClInclude Include="Environment\EnvironmentManagerComponent.h" />
+    <ClInclude Include="Environment\DestructibleEnvironmentComponent.h" />
+    <ClInclude Include="Player\GravityPlayerComponent.h" />
+    <ClInclude Include="Core\GameLoopManagerComponent.h" />
+    <ClInclude Include="Combat\DebugEnemySpawnerComponent.h" />
+    <ClInclude Include="Core\SceneTransitionButtonComponent.h" />
+    <ClInclude Include="Effects\EffectManagerComponent.h" />
+    <ClInclude Include="Combat\EnemyBeamComponent.h" />
     <ClInclude Include="UI\ReticleUIComponent.h" />
     <ClInclude Include="UI\LockonMarkerUIComponent.h" />
-    <ClInclude Include="components\PlayerTargetingComponent.h" />
-    <ClInclude Include="components\WaveEvent.h" />
-    <ClInclude Include="components\WaveEventHandlers.h" />
-    <ClInclude Include="components\WaveManagerComponent.h" />
-    <ClInclude Include="components\editor\WaveManagerComponentEditor.h" />
-    <ClInclude Include="components\editor\GravityPlayerComponentEditor.h" />
-    <ClInclude Include="components\editor\BossComponentEditor.h" />
+    <ClInclude Include="Player\PlayerTargetingComponent.h" />
+    <ClInclude Include="Level\WaveEvent.h" />
+    <ClInclude Include="Level\WaveEventHandlers.h" />
+    <ClInclude Include="Level\WaveManagerComponent.h" />
+    <ClInclude Include="Editor\WaveManagerComponentEditor.h" />
+    <ClInclude Include="Editor\GravityPlayerComponentEditor.h" />
+    <ClInclude Include="Editor\BossComponentEditor.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\IrufemiEngine\IrufemiEngine.vcxproj">

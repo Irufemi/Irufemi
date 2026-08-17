@@ -1,0 +1,87 @@
+#include "Core/SceneTransitionButtonComponent.h"
+#include "Framework/GameObject.h"
+#include "Framework/BaseScene.h"
+#include "Framework/SceneManager.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/UI/ButtonComponent.h"
+#include "Engine/IrufemiEngine.h"
+#include "Framework/SceneTransition.h"
+
+void SceneTransitionButtonComponent::OnRegisterProperties() {
+    RegisterProperty("Load Scene Name", &onClickLoadScene_);
+    // 0:Fade, 1:Dissolve, 2:Slide, 3:RadialBlur
+    RegisterProperty("Transition Type(0-3)", &transitionType_);
+    RegisterProperty("Transition Duration", &transitionDuration_);
+    RegisterProperty("Transition Delay", &transitionDelay_);
+    RegisterProperty("Click Anim Duration", &clickAnimDuration_);
+}
+
+void SceneTransitionButtonComponent::Initialize() {
+    if (gameObject_) {
+        button_ = gameObject_->GetComponent<ButtonComponent>();
+        sprite_ = gameObject_->GetComponent<SpriteRendererComponent>();
+    }
+}
+
+void SceneTransitionButtonComponent::Update() {
+    if (!button_ || !gameObject_ || !sprite_) return;
+
+    auto scene = gameObject_->GetScene();
+    if (!scene) return;
+    auto engine = scene->GetEngine();
+    if (!engine) return;
+
+    animator_.Update(1.0f / 60.0f);
+
+    if (isTransitionPending_) {
+        float dt = 1.0f / 60.0f; // 簡易フレームレート
+        transitionTimer_ -= dt;
+
+        if (GetTransform()) {
+            float timePassed = transitionDelay_ - transitionTimer_;
+            if (timePassed <= clickAnimDuration_ && clickAnimDuration_ > 0.0f) {
+                // アニメーション中は少し縮小する（0.9倍）
+                GetTransform()->SetScale(originalScale_ * 0.9f);
+
+                // 高速フラッシュ演出
+                bool isVisible = animator_.GetFlashVisibility(40.0f);
+                if (isVisible) {
+                    sprite_->GetSprite()->SetColor({ 0.5f, 0.5f, 0.5f, 1.0f }); // clickColor (fallback)
+                } else {
+                    // 非表示状態（アルファ0）
+                    sprite_->GetSprite()->SetColor({ 0.5f, 0.5f, 0.5f, 0.0f });
+                }
+            } else {
+                // アニメーションが終わったら元のスケールと色に戻す
+                GetTransform()->SetScale(originalScale_);
+                sprite_->GetSprite()->SetColor({ 0.5f, 0.5f, 0.5f, 1.0f });
+            }
+        }
+
+        // 待機時間が終了したらシーン遷移を実行
+        if (transitionTimer_ <= 0.0f) {
+            isTransitionPending_ = false;
+
+            if (!onClickLoadScene_.empty()) {
+                SceneTransition::Type type = SceneTransition::Type::Fade;
+                switch (transitionType_) {
+                case 0: type = SceneTransition::Type::Fade; break;
+                case 1: type = SceneTransition::Type::Dissolve; break;
+                case 2: type = SceneTransition::Type::Slide; break;
+                case 3: type = SceneTransition::Type::RadialBlur; break;
+                }
+                engine->GetSceneManager()->LoadScene(onClickLoadScene_, type, transitionDuration_);
+            }
+        }
+        return;
+    }
+
+    if (button_->IsClicked() && !onClickLoadScene_.empty()) {
+        isTransitionPending_ = true;
+        transitionTimer_ = transitionDelay_;
+        if (GetTransform()) {
+            originalScale_ = GetTransform()->GetScale();
+        }
+    }
+}
