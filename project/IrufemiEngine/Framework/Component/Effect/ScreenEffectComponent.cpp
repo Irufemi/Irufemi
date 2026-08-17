@@ -1,6 +1,6 @@
-#include "ScreenEffectComponent.h"
-#include "../../../Engine/IrufemiEngine.h"
-#include "../../../Renderer/System/Core/BaseModel.h"
+#include "Framework/Component/Effect/ScreenEffectComponent.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Renderer/System/Core/BaseModel.h"
 #include <algorithm>
 
 ScreenEffectComponent::ScreenEffectComponent() {}

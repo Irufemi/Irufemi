@@ -1,9 +1,9 @@
-#include "CameraShakeComponent.h"
-#include "CameraComponent.h"
-#include "Framework/GameObject.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Core/Utility/PerlinNoise.h"
-#include "Engine/Core/Utility/Ease.h"
+#include "Framework/Component/Camera/CameraShakeComponent.h"
+#include "Framework/Component/Camera/CameraComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Core/Utility/PerlinNoise.h"
+#include "Core/Utility/Ease.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include <algorithm>
 #include <cstdlib>

@@ -1,7 +1,7 @@
-#include "TransformComponent.h"
-#include "../GameObject.h"
-#include "Engine/Core/Math/MathFunction.h"
-#include "Engine/Core/System/ComponentPool.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Core/Math/MathFunction.h"
+#include "Core/System/ComponentPool.h"
 #include <cmath>
 
 // Setters

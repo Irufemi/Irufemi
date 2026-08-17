@@ -1,16 +1,16 @@
-﻿#include "Skybox.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
+﻿#include "Renderer/Object/Skybox/Skybox.h"
+#include "Renderer/Camera/CameraManager.h"
 
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Manager/DrawManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Core/Math/Math.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
+#include "Renderer/Camera/Camera.h"
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
 #endif
-#include "../../../Engine/Manager/PrimitiveManager.h"
+#include "Renderer/Object/PrimitiveManager.h"
 
 IrufemiEngine* Skybox::engine_ = nullptr;
 

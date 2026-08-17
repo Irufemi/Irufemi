@@ -4,7 +4,7 @@
 #include "Resource/Model/Data/SkeletonData.h"
 #include "Resource/Model/Data/SkeletonPose.h"
 #include "Resource/Model/Data/SkinCluster.h"
-#include "Engine/Graphics/Compute/IComputeTask.h"
+#include "Renderer/Compute/IComputeTask.h"
 #include <string>
 #include <cstdint>
 #include <memory>

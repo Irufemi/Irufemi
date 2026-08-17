@@ -16,7 +16,7 @@
 #include "Core/Math/Geometry/AABB.h"
 #include "Core/Math/Geometry/OBB.h"
 #include "Core/Math/Math.h"
-#include "Core/Math/Geometry/Collision.h"
+#include "Physics/Collision/Collision.h"
 #include "Core/Math/Random/Random.h"
 #include "Core/Utility/Ease.h"
 
@@ -58,24 +58,24 @@
 #include "Renderer/Object/Effect/Effect.h"
 
 // 音関連
-#include "Resource/Audio/AudioManager.h"
-#include "Resource/Audio/AudioPlayer.h"
-#include "Resource/Audio/Sound.h"
+#include "Audio/AudioManager.h"
+#include "Audio/AudioPlayer.h"
+#include "Audio/Sound.h"
 
 // --- Resource (素材管理) ---
 #include "Resource/Texture/TextureManager.h"
 #include "Resource/Model/ModelManager.h"
-#include "Resource/Audio/AudioManager.h"
+#include "Audio/AudioManager.h"
 
 // --- Framework (シーン) ---
-//#include "Framework/SceneManager.h"
-//#include "Framework/IScene.h"
+//#include "Framework/Scene/SceneManager.h"
+//#include "Framework/Scene/IScene.h"
 
 // --- Debug (デバッグ) ---
-#include "Manager/DebugUI.h"
+#include "Framework/UI/DebugUI.h"
 
 // 描画
-#include "Manager/DrawManager.h"
+#include "Renderer/DrawManager.h"
 
 // エンジン
-#include "IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"

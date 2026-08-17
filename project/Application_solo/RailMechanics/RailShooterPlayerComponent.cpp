@@ -1,8 +1,8 @@
 #include "RailMechanics/RailShooterPlayerComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Platform/Input/InputManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>

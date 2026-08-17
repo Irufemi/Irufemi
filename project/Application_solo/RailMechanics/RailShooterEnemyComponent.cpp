@@ -1,14 +1,14 @@
 #include "RailMechanics/RailShooterEnemyComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h" // 描画オンオフ用
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Player/TargetableComponent.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Physics/CollisionManager.h"
 
 void RailShooterEnemyComponent::OnRegisterProperties() {
     RegisterProperty("SpawnProgress", &spawnProgress_);

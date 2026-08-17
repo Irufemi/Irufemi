@@ -2,7 +2,7 @@
 
 #include <map>
 #include <string>
-#include "NodeAnimation.h"
+#include "Resource/Model/Data/NodeAnimation.h"
 
 struct Animation {
     float duration; // アニメーション全体の尺(単位は秒)

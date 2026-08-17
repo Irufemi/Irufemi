@@ -4,7 +4,7 @@
 #include <imgui/imgui.h>
 #include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
 

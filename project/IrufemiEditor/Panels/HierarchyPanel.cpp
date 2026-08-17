@@ -3,13 +3,13 @@
 #ifdef EditorMode
 #include "imgui/imgui.h"
 #include "Core/EditorManager.h"
-#include "Engine/IrufemiEngine.h"
-#include "Framework/SceneManager.h"
-#include "Framework/BaseScene.h"
-#include "Framework/GameObject.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "UI/EditorDragDrop.h"
-#include "Framework/SceneSerializer.h"
+#include "Framework/Scene/SceneSerializer.h"
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 
 #include <functional>

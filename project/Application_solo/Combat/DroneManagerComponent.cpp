@@ -1,16 +1,16 @@
 #include "Combat/DroneManagerComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/Core/Math/MathFunction.h"
-#include "Engine/Core/Math/Random/Random.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/Math/MathFunction.h"
+#include "Core/Math/Random/Random.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Combat/Boss/BossComponent.h"
 #include "Combat/BossBulletManagerComponent.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Scene/BaseScene.h"
 
 DroneManagerComponent::DroneManagerComponent() {}
 

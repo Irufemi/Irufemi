@@ -1,12 +1,12 @@
 ﻿#pragma once
 
-#include "../../../System/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #include <memory>
 #include <string>
 #include <vector>
 #include <functional>
 
-#include "Engine/Core/Type/PrimitiveType.h"
+#include "Core/Type/PrimitiveType.h"
 #include "Renderer/System/Data/RenderData.h"
 
 // 前方宣言

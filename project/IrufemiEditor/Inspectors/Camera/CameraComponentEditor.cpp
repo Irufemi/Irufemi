@@ -4,9 +4,9 @@
 #include <imgui/imgui.h>
 #include "Framework/Component/Camera/CameraComponent.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Core/Math/MathFunction.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/Object/Line/LineClass.h"
 #include <cmath>
 

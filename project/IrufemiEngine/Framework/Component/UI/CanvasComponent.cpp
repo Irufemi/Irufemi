@@ -1,6 +1,6 @@
-#include "CanvasComponent.h"
-#include "../../GameObject.h"
-#include "../Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/UI/CanvasComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
 
 void CanvasComponent::OnRegisterProperties() {
     RegisterProperty("Group Alpha", &groupAlpha_);

@@ -1,6 +1,6 @@
-#include "Primitive2DRendererComponent.h"
-#include "../../GameObject.h"
-#include "../TransformComponent.h"
+#include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"
 
 Primitive2DRendererComponent::Primitive2DRendererComponent() {}

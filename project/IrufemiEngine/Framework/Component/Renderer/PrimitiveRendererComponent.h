@@ -1,9 +1,9 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include <memory>
 #include <string>
-#include "Engine/Core/Type/PrimitiveType.h"
-#include "Engine/Core/Shape/Sphere.h"
+#include "Core/Type/PrimitiveType.h"
+#include "Core/Shape/Sphere.h"
 
 // 前方宣言
 class Primitive3DObject;

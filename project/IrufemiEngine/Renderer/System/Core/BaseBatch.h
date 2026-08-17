@@ -7,14 +7,14 @@
 #include <wrl.h>
 #include <d3d12.h>
 #include <array>
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "Engine/Graphics/Data/Material.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Core/Math/Transform.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Core/System/ResourceHandle.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/DescriptorPool.h"
+#include "Renderer/Data/Material.h"
+#include "Core/Math/Math.h"
+#include "Core/Math/Transform.h"
+#include "Renderer/Pipeline/PSOManager.h"
+#include "Renderer/Camera/Camera.h"
+#include "Core/System/ResourceHandle.h"
 
 class Camera;
 class TextureManager;

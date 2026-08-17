@@ -1,10 +1,10 @@
 #pragma once
-#include "GPUParticleSystem.h"
+#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 #include <unordered_map>
 #include <memory>
 #include <string>
 #include <vector>
-#include "../../../Engine/Core/Type/BlendMode.h"
+#include "Core/Type/BlendMode.h"
 
 class GPUParticleManager {
 public:

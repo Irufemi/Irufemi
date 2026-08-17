@@ -2,9 +2,9 @@
 #include "RailMechanics/SplineFollowerComponent.h"
 #include "Framework/Component/Utility/SplineComponent.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Core/Math/MathFunction.h"
 #include <cmath>
 
 void RailRelativeFollowerComponent::OnRegisterProperties() {

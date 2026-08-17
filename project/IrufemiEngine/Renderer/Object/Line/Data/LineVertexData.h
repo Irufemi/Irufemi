@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "../../../../Engine/Core/Math/Vector4.h"
+#include "Core/Math/Vector4.h"
 
 struct LineVertexData {
     Irufemi::Vector4 position;

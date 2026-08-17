@@ -6,13 +6,13 @@
 #include <thread>
 #include <format>
 
-#include "TextureManager.h"
-#include "../../Engine/Graphics/DirectX/DescriptorPool.h"
-#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Resource/Texture/TextureManager.h"
+#include "RHI/DirectX12/DescriptorPool.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
 #include "../../../externals/DirectXTex/d3dx12.h"
-#include "../../Engine/IrufemiEngine.h"
-#include "../../Framework/SceneManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Scene/SceneManager.h"
 
 static bool IsImageExtImpl(const std::string& extLower) {
     static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };

@@ -1,8 +1,8 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include <string>
-#include "Engine/Core/Math/Vector4.h"
-#include "../../UIAnimator.h"
+#include "Core/Math/Vector4.h"
+#include "Framework/UI/UIAnimator.h"
 
 class TransformComponent;
 class SpriteRendererComponent;

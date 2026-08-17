@@ -1,10 +1,10 @@
-#include "SkinnedMeshRendererComponent.h"
-#include "../../GameObject.h"
-#include "../TransformComponent.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Core/Math/MathFunction.h"
-#include "Engine/Core/Math/Geometry/Collision.h"
-#include "Engine/Core/Math/Geometry/OBB.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Core/Math/MathFunction.h"
+#include "Physics/Collision/Collision.h"
+#include "Core/Math/Geometry/OBB.h"
 #include <cmath>
 
 SkinnedMeshRendererComponent::SkinnedMeshRendererComponent() {

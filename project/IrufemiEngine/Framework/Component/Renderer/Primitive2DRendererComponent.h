@@ -1,11 +1,11 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
-#include "Engine/Core/Type/Primitive2DType.h"
+#include "Core/Type/Primitive2DType.h"
 #include <memory>
 #include <string>
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Vector2.h"
+#include "Core/Math/Vector4.h"
+#include "Core/Math/Vector2.h"
 
 class TransformComponent;
 

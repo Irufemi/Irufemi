@@ -1,9 +1,9 @@
 #include "RailMechanics/SplineFollowerComponent.h"
 #include "Framework/Component/Utility/SplineComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/BaseScene.h"
-#include "Engine/IrufemiEngine.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Object/Line/LineClass.h"
 #include <algorithm>

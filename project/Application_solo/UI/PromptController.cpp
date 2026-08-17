@@ -1,5 +1,5 @@
 #include "UI/PromptController.h"
-#include "Engine/Platform/Input/InputManager.h"
+#include "Platform/Input/InputManager.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 

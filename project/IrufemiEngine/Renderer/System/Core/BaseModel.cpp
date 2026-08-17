@@ -1,6 +1,6 @@
-#include "BaseModel.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include "Core/System/IrufemiEngine.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Renderer/System/Core/BaseResource.h"
 #include "Resource/Model/ModelManager.h"
 

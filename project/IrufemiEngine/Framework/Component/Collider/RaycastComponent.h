@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Core/Math/Vector3.h"
+#include "Physics/CollisionManager.h"
 #include <functional>
 
 class TransformComponent;

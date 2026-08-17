@@ -1,17 +1,17 @@
-﻿#include "Primitive3DObject.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
+﻿#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Camera/CameraManager.h"
 
 #include <algorithm>
 
-#include "Engine/Manager/PrimitiveManager.h"
+#include "Renderer/Object/PrimitiveManager.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/Manager/DrawManager.h"
-#include "Engine/Manager/DebugUI.h"
-#include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Core/Math/Geometry/Collision.h"
-#include "Engine/Core/Math/Geometry/Frustum.h"
-#include "Engine/Core/Shape/Sphere.h"
+#include "Renderer/DrawManager.h"
+#include "Framework/UI/DebugUI.h"
+#include "Renderer/Camera/Camera.h"
+#include "Core/Math/Math.h"
+#include "Physics/Collision/Collision.h"
+#include "Core/Math/Geometry/Frustum.h"
+#include "Core/Shape/Sphere.h"
 
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
@@ -23,7 +23,7 @@ DrawManager* Primitive3DObject::drawManager_ = nullptr;
 DebugUI* Primitive3DObject::ui_ = nullptr;
 IrufemiEngine* Primitive3DObject::engine_ = nullptr;
 
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 
 // --- Primitive3DObject ---
 

@@ -1,9 +1,9 @@
-#include "AnimatorComponent.h"
-#include "../../GameObject.h"
-#include "../Renderer/SkinnedMeshRendererComponent.h"
-#include "../TransformComponent.h"
-#include "Engine/IrufemiEngine.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Component/Logic/AnimatorComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Scene/BaseScene.h"
 
 AnimatorComponent::AnimatorComponent() {
     animator_ = std::make_unique<Animator>();

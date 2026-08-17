@@ -1,9 +1,9 @@
-#include "ModelBatchRendererComponent.h"
-#include "../../GameObject.h"
-#include "../TransformComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
-#include "Engine/Core/Math/Geometry/Collision.h"
-#include "Engine/Core/Math/Geometry/OBB.h"
+#include "Physics/Collision/Collision.h"
+#include "Core/Math/Geometry/OBB.h"
 #include <cmath>
 
 ModelBatchRendererComponent::ModelBatchRendererComponent() {}

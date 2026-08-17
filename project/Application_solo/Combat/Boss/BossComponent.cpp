@@ -1,7 +1,7 @@
 #include "Combat/Boss/BossComponent.h"
 #include "Combat/Boss/BossStateIdle.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Environment/DebrisManagerComponent.h"
@@ -14,7 +14,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <fstream>
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 
 void BossComponent::LoadStatusFromJson() {
     if (statusDataPath_.empty()) return;

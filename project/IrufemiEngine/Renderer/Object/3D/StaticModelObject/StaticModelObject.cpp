@@ -1,18 +1,18 @@
-﻿#include "StaticModelObject.h" // リネーム済み
-#include "Engine/Core/Utility/ErrorUtility.h"
+﻿#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h" // リネーム済み
+#include "Core/Utility/ErrorUtility.h"
 #include <filesystem>
 #include <algorithm>
 #include <Windows.h>
-#include "Engine/Core/Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/Manager/DrawManager.h"
-#include "Engine/Manager/DebugUI.h"
+#include "Renderer/DrawManager.h"
+#include "Framework/UI/DebugUI.h"
 #include "Resource/Model/ModelManager.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Renderer/Camera/CameraManager.h"
 #include "Resource/Model/AnimationManager.h"
-#include "Engine/Graphics/Compute/IComputeTask.h"
+#include "Renderer/Compute/IComputeTask.h"
 
 // 静的メンバ定義
 
@@ -208,8 +208,8 @@ void StaticModelObject::SyncBeforeDraw() {
     }
 }
 
-#include "../../../../Engine/Core/Math/Geometry/Collision.h"
-#include "../../../../Engine/Core/Shape/Sphere.h"
+#include "Physics/Collision/Collision.h"
+#include "Core/Shape/Sphere.h"
 
 void StaticModelObject::Draw() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;

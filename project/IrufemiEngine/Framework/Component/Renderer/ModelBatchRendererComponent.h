@@ -1,10 +1,10 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include <memory>
 #include <string>
-#include "Engine/Core/Shape/Sphere.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Core/Math/Transform.h"
+#include "Core/Shape/Sphere.h"
+#include "Core/Math/Math.h"
+#include "Core/Math/Transform.h"
 
 // 前方宣言
 class ModelBatch;

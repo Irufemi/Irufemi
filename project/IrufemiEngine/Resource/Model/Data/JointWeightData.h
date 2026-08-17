@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../Engine/Core/Math/Matrix4x4.h"
-#include "VertexWeightData.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Resource/Model/Data/VertexWeightData.h"
 #include <vector>
 
 struct JointWeightData {

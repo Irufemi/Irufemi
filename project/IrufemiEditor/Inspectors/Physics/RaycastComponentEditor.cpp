@@ -4,11 +4,11 @@
 #include <imgui/imgui.h>
 #include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/Collider/RaycastComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Physics/CollisionManager.h"
 
 void RaycastComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* comp = static_cast<RaycastComponent*>(component);

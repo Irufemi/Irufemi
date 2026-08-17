@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
-#include "Engine/Core/Math/Vector2.h"
+#include "Core/Math/Vector2.h"
 #include <memory>
 #include <vector>
 #include <string>

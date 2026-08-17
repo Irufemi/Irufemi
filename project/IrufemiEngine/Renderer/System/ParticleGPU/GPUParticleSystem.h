@@ -1,21 +1,21 @@
-#include "../Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #pragma once
 
-#include "../../../Engine/Core/Math/Vector3.h"
-#include "../../../Engine/Core/Math/Vector4.h"
-#include "../../../Engine/Core/Math/Matrix4x4.h"
-#include "../../../Engine/Core/Type/PerFrame.h"
-#include "../../../Engine/Core/Type/PerView.h"
-#include "../../../Engine/Core/Type/PrimitiveType.h"
-#include "../../../Engine/Core/Type/BlendMode.h"
-#include "../../../Engine/Graphics/Pipeline/PSOManager.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector4.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Type/PerFrame.h"
+#include "Core/Type/PerView.h"
+#include "Core/Type/PrimitiveType.h"
+#include "Core/Type/BlendMode.h"
+#include "Renderer/Pipeline/PSOManager.h"
 #include <wrl.h>
 #include <d3d12.h>
 #include <string>
-#include "../../../Engine/Graphics/Compute/IComputeTask.h"
+#include "Renderer/Compute/IComputeTask.h"
 #include <random>
-#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
-#include "Engine/Core/System/ResourceHandle.h"
+#include "RHI/DirectX12/ConstantBuffer.h"
+#include "Core/System/ResourceHandle.h"
 
 // 前方宣言
 class DrawManager;
@@ -24,7 +24,7 @@ class Camera;
 class IrufemiEngine;
 class Line3DBatch;
 
-#include "../../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 
 
 /**
@@ -56,7 +56,7 @@ struct ParticleCS {
     float midPoint;       ///< 中間タイミング (0.0~1.0)
 };
 
-#include "Engine/Graphics/Data/Material.h"
+#include "Renderer/Data/Material.h"
 
 /**
  * @struct GPUParticleEmitter

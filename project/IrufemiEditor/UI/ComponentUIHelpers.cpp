@@ -1,9 +1,9 @@
 #include "UI/ComponentUIHelpers.h"
 
 #ifdef EditorMode
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Manager/CollisionManager.h"
-#include "Framework/BaseScene.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Physics/CollisionManager.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Model/AnimationManager.h"
 #include "Resource/Texture/TextureManager.h"

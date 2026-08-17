@@ -5,9 +5,9 @@
 
 class GameObject;
 #include "Renderer/System/Core/IRenderable.h"
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector4.h"
 namespace Irufemi { struct Ray; }
 
 enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator, Enum, GameObjectRef };

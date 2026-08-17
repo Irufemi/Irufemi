@@ -1,5 +1,5 @@
-#include "SplineComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/Component/Utility/SplineComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Renderer/Object/Line/LineClass.h"
 #include <algorithm>

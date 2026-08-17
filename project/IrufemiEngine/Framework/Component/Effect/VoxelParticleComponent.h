@@ -1,7 +1,7 @@
 #pragma once
-#include "../Component.h"
-#include "../../../Renderer/System/VoxelParticle/VoxelParticleSystem.h"
-#include "Engine/Core/Math/Vector3Int.h"
+#include "Framework/Component/Component.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
+#include "Core/Math/Vector3Int.h"
 #include <string>
 
 /**

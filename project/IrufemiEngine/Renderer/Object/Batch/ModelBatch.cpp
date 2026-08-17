@@ -1,10 +1,10 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
-#include "ModelBatch.h"
+#include "Core/Utility/ErrorUtility.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
 #include <cassert>
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/Manager/DrawManager.h"
+#include "Renderer/DrawManager.h"
 
 ModelManager* ModelBatch::modelManager_ = nullptr;
 

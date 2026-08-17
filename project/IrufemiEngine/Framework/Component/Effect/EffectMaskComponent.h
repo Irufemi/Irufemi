@@ -1,7 +1,7 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include <string>
-#include "../../../Engine/Graphics/PostProcess/PostProcessManager.h"
+#include "Renderer/PostProcess/PostProcessManager.h"
 
 class MeshRendererComponent;
 

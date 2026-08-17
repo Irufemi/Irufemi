@@ -1,5 +1,5 @@
 #include "ClearScene.h"
-#include "Framework/SceneManager.h"
+#include "Framework/Scene/SceneManager.h"
 #include "Irufemi.h"
 
 // デストラクタ

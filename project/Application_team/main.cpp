@@ -12,7 +12,7 @@
  */
 #include <stdexcept>
 #include <string>
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {

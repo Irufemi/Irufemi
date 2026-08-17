@@ -1,8 +1,8 @@
-#include "Object2DResource.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/IrufemiEngine.h"
+#include "Renderer/System/Core/Object2DResource.h"
+#include "Core/Math/Math.h"
+#include "Renderer/Camera/Camera.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 
 

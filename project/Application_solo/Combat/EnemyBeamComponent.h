@@ -1,8 +1,8 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Engine/Core/Math/Transform.h"
+#include "Core/Math/Transform.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
-#include "Engine/Graphics/Data/LightningParams.h"
+#include "Renderer/Data/LightningParams.h"
 #include <memory>
 #include <wrl.h>
 

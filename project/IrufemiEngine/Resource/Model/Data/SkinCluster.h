@@ -1,14 +1,14 @@
 #pragma once
 
 #include <vector>
-#include "Engine/Core/Math/Matrix4x4.h"
+#include "Core/Math/Matrix4x4.h"
 #include <wrl.h>
 #include <d3d12.h>
 #include <span>
 #include <array>
-#include "VertexInfluence.h"
-#include "WellForGPU.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Resource/Model/Data/VertexInfluence.h"
+#include "Resource/Model/Data/WellForGPU.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 
 struct SkinningInformation {
     uint32_t numVertices;

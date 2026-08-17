@@ -5,23 +5,23 @@
 #include <wrl.h>
 #include <cstdint>
 #include <string>
-#include "Engine/Graphics/Data/Material.h"
-#include "../../../Engine/Graphics/Data/VertexData.h"
-#include "../../System/Core/MultiBufferSyncState.h"
-#include "Engine/Core/Math/Transform.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Vector4.h"
+#include "Renderer/Data/Material.h"
+#include "Renderer/Data/VertexData.h"
+#include "Renderer/System/Core/MultiBufferSyncState.h"
+#include "Core/Math/Transform.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Vector4.h"
 #include <vector>
 #include <array>
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
-#include "Engine/Core/System/ResourceHandle.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/ConstantBuffer.h"
+#include "Core/System/ResourceHandle.h"
 
 // 前方宣言
 class Camera;
 class IrufemiEngine;
 
-#include "../../System/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 
 /**
  * @class Skybox

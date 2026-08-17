@@ -1,15 +1,15 @@
 #pragma once
-#include "IRenderable.h"
-#include "MultiBufferSyncState.h"
+#include "Renderer/System/Core/IRenderable.h"
+#include "Renderer/System/Core/MultiBufferSyncState.h"
 
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Transform.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "../../../Engine/Graphics/Data/TransformationMatrix.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Transform.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector4.h"
+#include "Renderer/Data/TransformationMatrix.h"
 #include "Resource/Model/Data/ObjModel.h"
 #include "Renderer/System/Core/Object3DResource.h"
-#include "Engine/Graphics/Data/Material.h"
+#include "Renderer/Data/Material.h"
 #include <d3d12.h>
 #include <string>
 #include <cstdint>

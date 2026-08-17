@@ -1,10 +1,10 @@
-#include "TextRendererComponent.h"
-#include "../../GameObject.h"
-#include "../TransformComponent.h"
-#include "Engine/Core/Utility/StringUtility.h"
-#include "Engine/Core/Math/Geometry/Collision.h"
-#include "Engine/Core/Shape/Sphere.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Framework/Component/Renderer/TextRendererComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Core/Utility/StringUtility.h"
+#include "Physics/Collision/Collision.h"
+#include "Core/Shape/Sphere.h"
+#include "Core/Utility/Log.h"
 #include <algorithm>
 #include <iostream>
 

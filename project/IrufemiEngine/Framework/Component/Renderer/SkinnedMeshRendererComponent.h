@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Component.h"
-#include "../../../Renderer/Object/3D/AnimationModel/AnimatedMeshObject.h"
+#include "Framework/Component/Component.h"
+#include "Renderer/Object/3D/AnimationModel/AnimatedMeshObject.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "../../../Resource/Model/Data/ObjModel.h"
+#include "Resource/Model/Data/ObjModel.h"
 
 /**
  * @class SkinnedMeshRendererComponent

@@ -1,11 +1,11 @@
-﻿#include "DebugPrimitiveRenderer.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Manager/DrawManager.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/IrufemiEngine.h"
+﻿#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Renderer/Camera/Camera.h"
+#include "Renderer/DrawManager.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/DescriptorPool.h"
+#include "Core/Math/Math.h"
+#include "Core/System/IrufemiEngine.h"
 
 DebugPrimitiveRenderer::~DebugPrimitiveRenderer() {
     if (srvAllocator_ && dx_) {

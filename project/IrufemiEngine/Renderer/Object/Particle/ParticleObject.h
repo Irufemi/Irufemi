@@ -1,11 +1,11 @@
 ﻿#pragma once
 #include <string>
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector4.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Resource/Model/ModelManager.h"
 
-#include "Engine/Core/Type/BlendMode.h"
+#include "Core/Type/BlendMode.h"
 #include <nlohmann/json.hpp>
 
 class TextureManager;

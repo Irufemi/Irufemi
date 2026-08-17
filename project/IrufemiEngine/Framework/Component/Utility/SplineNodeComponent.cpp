@@ -1,10 +1,10 @@
-#include "SplineNodeComponent.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Component/Utility/SplineNodeComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
-#include "Engine/Core/Shape/LinePrimitive.h"
+#include "Core/Shape/LinePrimitive.h"
 #include <cmath>
 
 void SplineNodeComponent::OnRegisterProperties() {

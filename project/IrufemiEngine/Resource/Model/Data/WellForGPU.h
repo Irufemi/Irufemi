@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Core/Math/Matrix4x4.h"
+#include "Core/Math/Matrix4x4.h"
 
 struct WellForGPU {
     Irufemi::Matrix4x4 skeletonSpaceMatrix; //位置用

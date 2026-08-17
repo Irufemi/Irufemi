@@ -1,6 +1,6 @@
-#include "SpawnPointComponent.h"
-#include "Framework/GameObject.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Framework/Component/Logic/SpawnPointComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Core/Utility/Log.h"
 
 void SpawnPointComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();

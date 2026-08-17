@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Framework/UIAnimator.h"
+#include "Framework/UI/UIAnimator.h"
 
 // 前方宣言
 class StaticModelObject;

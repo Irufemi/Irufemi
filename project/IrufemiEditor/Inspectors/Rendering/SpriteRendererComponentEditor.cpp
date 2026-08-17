@@ -6,12 +6,12 @@
 #include <algorithm>
 #include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
 #include "UI/EditorDragDrop.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 
 void SpriteRendererComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* comp = static_cast<SpriteRendererComponent*>(component);

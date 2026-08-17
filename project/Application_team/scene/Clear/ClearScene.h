@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Framework/BaseScene.h"
+#include "Framework/Scene/BaseScene.h"
 
 class IrufemiEngine;
 

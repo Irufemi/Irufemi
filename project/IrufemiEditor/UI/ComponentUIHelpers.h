@@ -7,7 +7,7 @@
 #include <type_traits>
 #include "imgui/imgui.h"
 #include "Framework/Component/Component.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"

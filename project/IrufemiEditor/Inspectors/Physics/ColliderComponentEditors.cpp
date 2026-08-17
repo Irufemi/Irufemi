@@ -6,7 +6,7 @@
 #include "Framework/Component/Collider/AABBColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
 

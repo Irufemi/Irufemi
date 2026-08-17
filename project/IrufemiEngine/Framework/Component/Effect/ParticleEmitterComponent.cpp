@@ -1,6 +1,6 @@
-#include "ParticleEmitterComponent.h"
-#include "Framework/GameObject.h"
-#include "../TransformComponent.h"
+#include "Framework/Component/Effect/ParticleEmitterComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 
 ParticleEmitterComponent::ParticleEmitterComponent() {
     particleObj_ = std::make_unique<ParticleObject>();

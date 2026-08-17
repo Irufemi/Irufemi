@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../System/Core/BaseBatch.h"
+#include "Renderer/System/Core/BaseBatch.h"
 #include "Resource/Model/Data/ObjModel.h"
 
 struct ManagedModel;

@@ -5,8 +5,8 @@
 #include <map>
 #include <cstdint>
 #include <optional>
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/QuaternionTransform.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/QuaternionTransform.h"
 
 /**
  * @struct JointData

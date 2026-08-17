@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 
-#include "../../IrufemiEngine/Engine/Core/System/ILoadingScreen.h"
+#include "Core/System/ILoadingScreen.h"
 class IrufemiEngine;
 class Sprite;
 class Primitive2DObject;

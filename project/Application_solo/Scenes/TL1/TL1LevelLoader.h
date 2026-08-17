@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
-#include "Engine/Core/Math/Vector3.h"
+#include "Core/Math/Vector3.h"
 
 class BaseScene;
 

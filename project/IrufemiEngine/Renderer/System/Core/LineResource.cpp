@@ -1,8 +1,8 @@
-#include "LineResource.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/IrufemiEngine.h"
+#include "Renderer/System/Core/LineResource.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/Camera/Camera.h"
+#include "Core/Math/Math.h"
+#include "Core/System/IrufemiEngine.h"
 
 LineResource::~LineResource() {
     Unmap();

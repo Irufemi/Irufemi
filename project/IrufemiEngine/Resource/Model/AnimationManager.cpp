@@ -1,20 +1,20 @@
-#include "AnimationManager.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Resource/Model/AnimationManager.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
-#include "Data/Animation.h"
-#include "Engine/Core/Utility/Ease.h"
-#include "Engine/Core/Math/Math.h"
-#include "Data/ObjModel.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "../../Engine/Graphics/Data/VertexData.h"
+#include "Resource/Model/Data/Animation.h"
+#include "Core/Utility/Ease.h"
+#include "Core/Math/Math.h"
+#include "Resource/Model/Data/ObjModel.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/DescriptorPool.h"
+#include "Renderer/Data/VertexData.h"
 
-#include "Engine/Core/Utility/ErrorUtility.h"
-#include "Engine/Core/Utility/StringUtility.h"
-#include "Engine/Core/Utility/FileSystem.h"
+#include "Core/Utility/ErrorUtility.h"
+#include "Core/Utility/StringUtility.h"
+#include "Core/Utility/FileSystem.h"
 #include <filesystem>
-#include "AnimationImporter.h"
-#include "AnimationSerializer.h"
+#include "Resource/Model/AnimationImporter.h"
+#include "Resource/Model/AnimationSerializer.h"
 
 void AnimationManager::Initialize(DirectXCommon* dxCommon) {
     dxCommon_ = dxCommon;

@@ -1,12 +1,12 @@
 #include "GameScene.h"
-#include "Framework/SceneManager.h"
+#include "Framework/Scene/SceneManager.h"
 #include "Irufemi.h"
 
 // ECSコンポーネントのインクルード
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
-#include "Framework/SceneSerializer.h"
+#include "Framework/Scene/SceneSerializer.h"
 
 // デストラクタ
 GameScene::~GameScene() = default;

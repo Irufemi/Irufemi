@@ -2,8 +2,8 @@
 
 #ifdef EditorMode
 #include "Core/ICommand.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Core/EditorManager.h"
 #include <functional>
 #include <memory>

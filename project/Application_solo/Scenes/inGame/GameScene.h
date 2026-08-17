@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Framework/BaseScene.h"
-#include "Framework/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
 #include <memory>
 
 class IrufemiEngine;

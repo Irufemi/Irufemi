@@ -1,6 +1,6 @@
-#include "GPUParticleManager.h"
-#include "../../../Engine/Manager/DrawManager.h"
-#include "../../../Engine/IrufemiEngine.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/DrawManager.h"
+#include "Core/System/IrufemiEngine.h"
 
 
 

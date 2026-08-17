@@ -2,15 +2,15 @@
 
 #ifdef EditorMode
 #include "Core/EditorManager.h"
-#include "Engine/IrufemiEngine.h"
-#include "Framework/SceneManager.h"
-#include "Framework/BaseScene.h"
-#include "Framework/GameObject.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Framework/SceneSerializer.h"
+#include "Framework/Scene/SceneSerializer.h"
 
 #include "Commands/EditorCommands.h"
 #include <filesystem>

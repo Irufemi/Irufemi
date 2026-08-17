@@ -1,10 +1,10 @@
-﻿#include "Text.h"
-#include "Engine/Graphics/Font/FontManager.h"
-#include "Engine/Manager/DrawManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Manager/DebugUI.h"
+﻿#include "Renderer/Object/2D/Text/Text.h"
+#include "Renderer/Font/FontManager.h"
+#include "Renderer/DrawManager.h"
+#include "Renderer/Camera/Camera.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Core/Math/Math.h"
+#include "Framework/UI/DebugUI.h"
 #include <algorithm>
 
 FontManager* Text::fontManager_ = nullptr;

@@ -7,7 +7,7 @@
 #include "UI/ComponentUIHelpers.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 
 void ParticleEmitterComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {

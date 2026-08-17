@@ -2,11 +2,11 @@
 
 #include <memory>
 #include <string>
-#include "Engine/Core/Type/PrimitiveType.h"
-#include "Engine/Core/Math/Transform.h"
+#include "Core/Type/PrimitiveType.h"
+#include "Core/Math/Transform.h"
 #include "Renderer/System/Core/Object3DResource.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Core/System/ResourceHandle.h"
+#include "Core/Math/Math.h"
+#include "Core/System/ResourceHandle.h"
 
 class Camera;
 class PrimitiveManager;

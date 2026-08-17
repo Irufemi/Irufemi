@@ -1,10 +1,10 @@
-#include "AnimationImporter.h"
+#include "Resource/Model/AnimationImporter.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Core/Utility/ErrorUtility.h"
 #include <filesystem>
-#include "AssimpMutex.h"
+#include "Resource/Model/AssimpMutex.h"
 
 Animation AnimationImporter::Import(const std::string& fullPath) {
     Animation animation;

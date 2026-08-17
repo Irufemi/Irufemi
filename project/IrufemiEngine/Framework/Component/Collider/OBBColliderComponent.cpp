@@ -1,8 +1,8 @@
-#include "OBBColliderComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/Component/Collider/OBBColliderComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/Manager/CollisionManager.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Physics/CollisionManager.h"
+#include "Core/Math/MathFunction.h"
 
 
 OBBColliderComponent::OBBColliderComponent() {}

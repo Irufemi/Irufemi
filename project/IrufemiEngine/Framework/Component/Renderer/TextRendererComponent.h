@@ -1,9 +1,9 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include "Renderer/Object/2D/Text/Text.h"
 #include <memory>
 #include <string>
-#include "Engine/Core/Math/Vector4.h"
+#include "Core/Math/Vector4.h"
 
 class TransformComponent;
 

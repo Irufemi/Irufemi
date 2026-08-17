@@ -4,7 +4,7 @@
 #include <string>
 
 #include "Engine/Irufemi.h"
-#include "Framework/SceneManager.h"
+#include "Framework/Scene/SceneManager.h"
 
 // memoryでの未定義
 
@@ -23,7 +23,7 @@
 #include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-#include "Framework/DebugScene.h"
+#include "Framework/Scene/DebugScene.h"
 #endif
 
 #ifdef EditorMode

@@ -1,4 +1,4 @@
-﻿#include "../../System/Core/IRenderable.h"
+﻿#include "Renderer/System/Core/IRenderable.h"
 #pragma once
 
 #include <d3d12.h>
@@ -6,12 +6,12 @@
 #include <cstdint>
 #include <random>
 #include <array>
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Transform.h"
-#include "../../../Engine/Graphics/Data/TransformationMatrix.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector4.h"
+#include "Core/Math/Transform.h"
+#include "Renderer/Data/TransformationMatrix.h"
 #include "Renderer/System/Core/LineResource.h"
 
 // 前方宣言

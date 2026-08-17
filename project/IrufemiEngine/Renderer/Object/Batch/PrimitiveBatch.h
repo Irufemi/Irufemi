@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include "../../System/Core/BaseBatch.h"
-#include "Engine/Manager/PrimitiveManager.h"
+#include "Renderer/System/Core/BaseBatch.h"
+#include "Renderer/Object/PrimitiveManager.h"
 
 /**
  * @class PrimitiveBatch

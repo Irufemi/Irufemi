@@ -1,15 +1,15 @@
 #pragma once
-#include "../Core/BaseResource.h"
+#include "Renderer/System/Core/BaseResource.h"
 #include <vector>
-#include "../../../Engine/Graphics/DirectX/DirectXCommon.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include <wrl.h>
 #include <d3d12.h>
-#include "../../../Engine/Graphics/Data/VertexData.h"
-#include "../../../Engine/Graphics/Data/Material.h"
-#include "../../../Engine/Graphics/Data/TransformationMatrix.h"
-#include "../../../Engine/Graphics/DirectX/DynamicConstantBuffer.h"
-#include "Engine/Core/System/ResourceHandle.h"
-#include "Engine/Core/Math/Transform.h"
+#include "Renderer/Data/VertexData.h"
+#include "Renderer/Data/Material.h"
+#include "Renderer/Data/TransformationMatrix.h"
+#include "RHI/DirectX12/DynamicConstantBuffer.h"
+#include "Core/System/ResourceHandle.h"
+#include "Core/Math/Transform.h"
 
 class Camera;
 

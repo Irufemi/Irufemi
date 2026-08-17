@@ -1,11 +1,11 @@
-#include "BoneAttachmentComponent.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Component/Logic/BoneAttachmentComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 #include "Resource/Model/Data/SkeletonPose.h"
 #include "Resource/Model/Data/SkeletonData.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Core/Math/MathFunction.h"
 
 BoneAttachmentComponent::BoneAttachmentComponent() = default;
 BoneAttachmentComponent::~BoneAttachmentComponent() = default;

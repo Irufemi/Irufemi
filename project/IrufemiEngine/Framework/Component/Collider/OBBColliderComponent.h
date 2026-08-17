@@ -1,7 +1,7 @@
 #pragma once
-#include "ColliderComponent.h"
-#include "Engine/Core/Math/Geometry/OBB.h"
-#include "Engine/Core/Math/Vector3.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
+#include "Core/Math/Geometry/OBB.h"
+#include "Core/Math/Vector3.h"
 #include <string>
 
 class TransformComponent;

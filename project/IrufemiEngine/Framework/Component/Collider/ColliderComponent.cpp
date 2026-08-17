@@ -1,5 +1,5 @@
-#include "ColliderComponent.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
+#include "Physics/CollisionManager.h"
 
 ColliderComponent::~ColliderComponent() {
     if (collisionManager_) {

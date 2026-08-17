@@ -1,15 +1,15 @@
 ﻿#pragma once
 
-#include "../../../System/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #include <memory>
 #include <string>
 #include <vector>
 #include <functional>
 
-#include "Engine/Core/Type/Primitive2DType.h"
+#include "Core/Type/Primitive2DType.h"
 #include "Renderer/System/Core/Object2DResource.h"
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Vector3.h"
 
 // 前方宣言
 class TextureManager;

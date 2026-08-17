@@ -1,11 +1,11 @@
 #include "UI/ReticleUIComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Platform/Input/InputManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Renderer/Camera/Camera.h"
 
 void ReticleUIComponent::Initialize() {
     // 初期化処理が必要であればここに記述

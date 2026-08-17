@@ -1,11 +1,11 @@
 #include "Combat/EnemyBeamComponent.h"
-#include "Framework/GameObject.h"
-#include "Engine/IrufemiEngine.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Engine/Core/Math/MathFunction.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Core/Math/MathFunction.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/Pipeline/PSOManager.h"
+#include "Renderer/Camera/CameraManager.h"
 #include <cmath>
 #include <algorithm>
 #include <Windows.h>

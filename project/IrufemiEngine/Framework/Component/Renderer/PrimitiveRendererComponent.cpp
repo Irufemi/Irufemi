@@ -1,12 +1,12 @@
-#include "PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 
-#include "../../GameObject.h"
-#include "../TransformComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
-#include "Engine/Manager/PrimitiveManager.h"
-#include "Engine/Core/Type/PrimitiveType.h"
-#include "Engine/Core/Math/Geometry/Collision.h"
-#include "Engine/Core/Math/Geometry/OBB.h"
+#include "Renderer/Object/PrimitiveManager.h"
+#include "Core/Type/PrimitiveType.h"
+#include "Physics/Collision/Collision.h"
+#include "Core/Math/Geometry/OBB.h"
 #include <cmath>
 
 PrimitiveRendererComponent::PrimitiveRendererComponent() {}

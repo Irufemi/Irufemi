@@ -3,10 +3,10 @@
 #include "Combat/Boss/BossComponent.h"
 #include "Combat/EnemyBeamComponent.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 #include <memory>
 

@@ -6,12 +6,12 @@
 #include <algorithm>
 #include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
 #include "UI/EditorDragDrop.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h" // TextureManager取得用（共通）
 
 void Primitive2DRendererComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {

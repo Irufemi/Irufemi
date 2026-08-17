@@ -2,7 +2,7 @@
 
 #ifdef EditorMode
 #include <imgui/imgui.h>
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 
 void ConsolePanel::Initialize(EditorManager* editorManager) {
     editorManager_ = editorManager;

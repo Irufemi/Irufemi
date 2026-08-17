@@ -1,5 +1,5 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 
 class TransformComponent;

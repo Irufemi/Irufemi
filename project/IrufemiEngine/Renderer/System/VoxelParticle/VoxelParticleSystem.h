@@ -1,12 +1,12 @@
 #pragma once
-#include "../Core/IRenderable.h"
-#include "../../../Engine/Core/Math/Matrix4x4.h"
-#include "../../../Engine/Core/Math/Vector3.h"
-#include "../../../Engine/Core/Math/Vector3Int.h"
-#include "../../../Engine/Core/Math/Vector4.h"
-#include "../../../Resource/Model/Data/VoxelizedModel.h"
-#include "../../../Engine/Core/Type/PerView.h"
-#include "../../../Engine/Graphics/Compute/IComputeTask.h"
+#include "Renderer/System/Core/IRenderable.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector3Int.h"
+#include "Core/Math/Vector4.h"
+#include "Resource/Model/Data/VoxelizedModel.h"
+#include "Core/Type/PerView.h"
+#include "Renderer/Compute/IComputeTask.h"
 #include <d3d12.h>
 #include <memory>
 #include <string>
@@ -15,8 +15,8 @@
 #include <mutex>
 #include <future>
 #include <vector>
-#include "../../../Engine/Graphics/DirectX/DirectXCommon.h"
-#include "../../../Engine/Graphics/DirectX/ConstantBuffer.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/ConstantBuffer.h"
 
 class IrufemiEngine;
 class Camera;

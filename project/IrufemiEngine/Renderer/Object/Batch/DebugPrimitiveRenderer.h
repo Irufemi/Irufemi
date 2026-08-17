@@ -4,11 +4,11 @@
 #include <vector>
 #include <array>
 #include <memory>
-#include "Engine/Graphics/Data/VertexData.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
+#include "Renderer/Data/VertexData.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector4.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include <mutex>
 
 // 前方宣言

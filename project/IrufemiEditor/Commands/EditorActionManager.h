@@ -5,7 +5,7 @@
 #include <string>
 #include <deque>
 #include "Core/ICommand.h"
-#include "Engine/Core/Math/Vector3.h"
+#include "Core/Math/Vector3.h"
 
 class GameObject;
 class EditorManager;

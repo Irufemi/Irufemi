@@ -1,19 +1,19 @@
 ﻿#pragma once
 
-#include "../../../System/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #include <d3d12.h>
 #include <vector>
 #include <string>
 #include <memory>
 #include <array>
 #include <wrl.h>
-#include "Engine/Core/Math/Vector2.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Vector4.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Transform.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/Data/RenderPackets.h"
+#include "Core/Math/Vector2.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Vector4.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Transform.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/Data/RenderPackets.h"
 
 // 前方宣言
 class TextureManager;

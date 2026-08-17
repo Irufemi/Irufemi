@@ -1,13 +1,13 @@
 #include "Scenes/TL1/TL1Scene.h"
 #include "Scenes/TL1/MagicBrushClient.h"
 #include "Engine/Irufemi.h"
-#include "Engine/Graphics/DirectX/ShaderCompiler.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/ShaderManager.h"
-#include "Engine/Graphics/DirectX/RootSignatureConfig.h"
+#include "RHI/DirectX12/ShaderCompiler.h"
+#include "Renderer/Pipeline/PSOManager.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/ShaderManager.h"
+#include "RHI/DirectX12/RootSignatureConfig.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/Platform/WindowsAPI/WinApp.h"
+#include "Platform/WindowsAPI/WinApp.h"
 #include <commdlg.h>
 #include <shlobj.h>
 #include <shobjidl.h>
@@ -15,11 +15,11 @@
 #include <sstream>
 #include <ctime>
 #include <filesystem>
-#include "Engine/Core/Utility/StringUtility.h"
+#include "Core/Utility/StringUtility.h"
 #include "Scenes/TL1/TL1LevelLoader.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 
 #ifdef USE_IMGUI

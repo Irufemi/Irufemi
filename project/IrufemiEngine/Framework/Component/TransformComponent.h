@@ -1,10 +1,10 @@
 #pragma once
-#include "Component.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Matrix4x4.h"
-#include "Engine/Core/Math/Quaternion.h"
-#include "Engine/Core/Math/MathFunction.h"
-#include "Engine/Core/System/ComponentPool.h"
+#include "Framework/Component/Component.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Quaternion.h"
+#include "Core/Math/MathFunction.h"
+#include "Core/System/ComponentPool.h"
 
 class TransformComponent : public Component {
 public:

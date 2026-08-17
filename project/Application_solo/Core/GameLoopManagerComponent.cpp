@@ -1,14 +1,14 @@
 #include "Core/GameLoopManagerComponent.h"
-#include "Framework/GameObject.h"
-#include "Framework/SceneManager.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/SceneManager.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/TextRendererComponent.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Engine/Irufemi.h"
 
 #include "Player/GravityPlayerComponent.h"
 #include "Combat/Boss/BossComponent.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 
 void GameLoopManagerComponent::Initialize() {

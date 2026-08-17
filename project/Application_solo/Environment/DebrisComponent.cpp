@@ -1,27 +1,27 @@
 #include "Environment/DebrisComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Platform/Input/InputManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "RailMechanics/RailShooterEnemyComponent.h"
 #include "Combat/Boss/BossComponent.h"
 #include "Environment/DebrisManagerComponent.h"
 #include "Effects/EffectManagerComponent.h"
-#include "Engine/Core/Math/Random/Random.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Core/Math/Random/Random.h"
+#include "Core/Math/MathFunction.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
+#include "Renderer/Camera/CameraManager.h"
 #include "Environment/DestructibleEnvironmentComponent.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include <cmath>
 #include <windows.h>
 #include <iostream>
-#include "Engine/Core/Utility/Log.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Core/Utility/Log.h"
+#include "Physics/CollisionManager.h"
 
 static ColliderComponent* GetColliderFromObj(GameObject* obj) {
     if (!obj) return nullptr;

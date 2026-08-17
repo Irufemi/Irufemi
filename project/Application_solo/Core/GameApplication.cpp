@@ -4,7 +4,7 @@
 #include <string>
 
 #include "Engine/Irufemi.h"
-#include "Framework/SceneManager.h"
+#include "Framework/Scene/SceneManager.h"
 
 // memoryでの未定義
 
@@ -31,8 +31,8 @@
 #include "Core/GameLoopManagerComponent.h"
 
 // エンジン機能
-#include "Engine/Graphics/DirectX/ShaderManager.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
+#include "RHI/DirectX12/ShaderManager.h"
+#include "Renderer/Pipeline/PSOManager.h"
 
 // UI
 #include "UI/LoadingScreen.h"
@@ -45,7 +45,7 @@
 #include "Scenes/TL1/TL1Scene.h"
 
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-#include "Framework/DebugScene.h"
+#include "Framework/Scene/DebugScene.h"
 #endif
 #include "Scenes/TL1/TL1Scene.h"
 

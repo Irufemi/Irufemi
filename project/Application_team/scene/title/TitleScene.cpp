@@ -1,7 +1,7 @@
 #include "TitleScene.h"
 
-#include "Framework/SceneManager.h"
-#include "Framework/SceneSerializer.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Framework/Scene/SceneSerializer.h"
 #include "Irufemi.h"
 
 // デストラクタ

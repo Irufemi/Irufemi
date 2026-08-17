@@ -2,7 +2,7 @@
 #include <string>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include "Engine/Core/Math/Vector3.h"
+#include "Core/Math/Vector3.h"
 
 class WaveManagerComponent;
 

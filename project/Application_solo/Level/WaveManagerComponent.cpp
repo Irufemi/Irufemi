@@ -1,11 +1,11 @@
 #include "Level/WaveManagerComponent.h"
 #include "Level/WaveEventHandlers.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
 #include "RailMechanics/SplineFollowerComponent.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 #include <fstream>
 #include <iostream>
 #include "Framework/Component/Utility/SplineComponent.h"

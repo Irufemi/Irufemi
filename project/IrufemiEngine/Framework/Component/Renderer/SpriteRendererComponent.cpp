@@ -1,6 +1,6 @@
-#include "SpriteRendererComponent.h"
-#include "../../GameObject.h"
-#include "../TransformComponent.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"
 
 

@@ -1,12 +1,12 @@
-﻿#include "LineClass.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
+﻿#include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Camera/CameraManager.h"
 
-#include "Engine/Graphics/Camera/Camera.h"
-#include "Engine/Manager/DrawManager.h"
-#include "Engine/Graphics/DirectX/DirectXCommon.h"
-#include "Engine/Graphics/DirectX/DescriptorPool.h"
-#include "Engine/Core/Math/Math.h"
-#include "Engine/IrufemiEngine.h"
+#include "Renderer/Camera/Camera.h"
+#include "Renderer/DrawManager.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/DescriptorPool.h"
+#include "Core/Math/Math.h"
+#include "Core/System/IrufemiEngine.h"
 
 DirectXCommon* Line3DBatch::dx_ = nullptr;
 DrawManager* Line3DBatch::drawManager_ = nullptr;

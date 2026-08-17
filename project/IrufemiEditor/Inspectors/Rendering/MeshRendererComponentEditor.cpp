@@ -5,11 +5,11 @@
 #include <filesystem>
 #include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
 #include "UI/EditorDragDrop.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Resource/Model/ModelManager.h"
 
 void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {

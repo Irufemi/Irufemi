@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Data/ObjModel.h"
+#include "Resource/Model/Data/ObjModel.h"
 
 class ModelImporter {
 public:

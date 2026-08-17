@@ -1,13 +1,13 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
-#include "../../System/Core/BaseBatch.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
-#include "Engine/Core/Shape/Sphere.h"
+#include "Core/Utility/ErrorUtility.h"
+#include "Renderer/System/Core/BaseBatch.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Core/Shape/Sphere.h"
 #include <cassert>
 #include <cstring>
-#include "Engine/Core/Math/Math.h"
-#include "Engine/Core/Math/Geometry/Collision.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Math/Math.h"
+#include "Physics/Collision/Collision.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 #include "Resource/Texture/TextureManager.h"
 DirectXCommon* BaseBatch::dx_ = nullptr;

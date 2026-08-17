@@ -1,8 +1,8 @@
-#include "VirtualEntityManagerComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Core/Math/MathFunction.h"
 #include <algorithm>
 
 

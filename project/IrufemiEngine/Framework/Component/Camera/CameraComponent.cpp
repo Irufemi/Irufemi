@@ -1,8 +1,8 @@
-#include "CameraComponent.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
-#include "Framework/GameObject.h"
+#include "Framework/Component/Camera/CameraComponent.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 
 CameraComponent::CameraComponent() = default;

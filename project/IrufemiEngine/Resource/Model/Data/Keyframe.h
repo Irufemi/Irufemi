@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Quaternion.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Quaternion.h"
 
 template <typename tValue>
 struct Keyframe {

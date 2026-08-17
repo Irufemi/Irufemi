@@ -3,7 +3,7 @@
 #include <d3d12.h>
 #include <memory>
 
-#include "MultiBufferSyncState.h"
+#include "Renderer/System/Core/MultiBufferSyncState.h"
 
 class DirectXCommon;
 

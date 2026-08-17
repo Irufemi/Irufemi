@@ -1,7 +1,7 @@
 #include "Scenes/TL1/MagicBrushClient.h"
-#include "../../../IrufemiEngine/Engine/Graphics/DirectX/ShaderCompiler.h"
-#include "Engine/Graphics/DirectX/ShaderManager.h"
-#include "../../../IrufemiEngine/Engine/Core/Utility/StringUtility.h"
+#include "RHI/DirectX12/ShaderCompiler.h"
+#include "RHI/DirectX12/ShaderManager.h"
+#include "Core/Utility/StringUtility.h"
 #include <fstream>
 #include <sstream>
 #include <filesystem>

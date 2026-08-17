@@ -1,8 +1,8 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Engine/Core/Utility/ObjectPool.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Math/Matrix4x4.h"
+#include "Core/Utility/ObjectPool.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Matrix4x4.h"
 #include <memory>
 #include <vector>
 #include <functional>

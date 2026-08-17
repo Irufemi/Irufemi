@@ -1,9 +1,9 @@
-#include "Engine/Core/Utility/ErrorUtility.h"
-#include "Texture.h"
+#include "Core/Utility/ErrorUtility.h"
+#include "Resource/Texture/Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
 #include "../../../externals/DirectXTex/d3dx12.h"
-#include "../../Engine/Graphics/DirectX/DirectXCommon.h"
-#include "../../Engine/Graphics/DirectX/DescriptorPool.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/DescriptorPool.h"
 #include <cassert>
 
 DirectXCommon* Texture::dxCommon_ = nullptr;

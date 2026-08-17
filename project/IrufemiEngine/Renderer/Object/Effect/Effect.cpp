@@ -1,12 +1,12 @@
-﻿#include "Effect.h"
+﻿#include "Renderer/Object/Effect/Effect.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
-#include "Engine/Manager/DebugUI.h"
+#include "Framework/UI/DebugUI.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/Core/Math/Math.h"
+#include "Core/Math/Math.h"
 #include "Engine/Irufemi.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
-#include "Engine/Manager/PrimitiveManager.h"
+#include "Renderer/Object/PrimitiveManager.h"
 
 IrufemiEngine* Effect::engine_ = nullptr;
 

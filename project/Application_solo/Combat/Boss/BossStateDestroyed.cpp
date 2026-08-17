@@ -1,8 +1,8 @@
 #include "Combat/Boss/BossStateDestroyed.h"
 #include "Combat/Boss/BossComponent.h"
-#include "Framework/GameObject.h"
-#include "Engine/Core/Utility/Log.h"
-#include "Framework/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Core/Utility/Log.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
 #include <iostream>
 

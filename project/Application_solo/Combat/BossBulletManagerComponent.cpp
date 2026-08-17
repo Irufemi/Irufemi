@@ -1,14 +1,14 @@
 #include "Combat/BossBulletManagerComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Player/GravityPlayerComponent.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Physics/CollisionManager.h"
 #include "Framework/Component/Collider/ColliderComponent.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 
 BossBulletManagerComponent::BossBulletManagerComponent() {}

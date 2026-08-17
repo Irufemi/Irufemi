@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Engine/Core/Math/Vector3.h"
-#include "Engine/Core/Utility/ObjectPool.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Utility/ObjectPool.h"
 #include <memory>
 #include <unordered_map>
 

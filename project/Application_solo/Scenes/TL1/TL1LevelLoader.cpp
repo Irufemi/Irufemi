@@ -1,8 +1,8 @@
 #include "Scenes/TL1/TL1LevelLoader.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
-#include "Engine/Core/Utility/Log.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Core/Utility/Log.h"
+#include "Core/Math/MathFunction.h"
 #include <fstream>
 #include <iostream>
 

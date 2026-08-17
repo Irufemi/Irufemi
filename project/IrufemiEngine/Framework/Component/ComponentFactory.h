@@ -3,7 +3,7 @@
 #include <memory>
 #include <map>
 #include <functional>
-#include "Component.h"
+#include "Framework/Component/Component.h"
 
 class ComponentFactory {
 public:

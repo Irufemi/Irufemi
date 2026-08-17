@@ -1,8 +1,8 @@
-﻿#include "Primitive2DObject.h"
-#include "Engine/Graphics/Camera/CameraManager.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Manager/DebugUI.h"
-#include "Engine/Manager/DrawManager.h"
+﻿#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/UI/DebugUI.h"
+#include "Renderer/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 
 #include <algorithm>

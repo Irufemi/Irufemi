@@ -1,13 +1,13 @@
 #pragma once
 
 #include <string>
-#include "Data/Animation.h"
-#include "Data/NodeAnimation.h"
-#include "Data/Joint.h"
-#include "Data/Node.h"
-#include "Data/SkeletonData.h"
-#include "Data/SkeletonPose.h"
-#include "Data/SkinCluster.h"
+#include "Resource/Model/Data/Animation.h"
+#include "Resource/Model/Data/NodeAnimation.h"
+#include "Resource/Model/Data/Joint.h"
+#include "Resource/Model/Data/Node.h"
+#include "Resource/Model/Data/SkeletonData.h"
+#include "Resource/Model/Data/SkeletonPose.h"
+#include "Resource/Model/Data/SkinCluster.h"
 #include <optional>
 #include <unordered_map>
 #include <memory>
@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <wrl.h>
 #include <d3d12.h>
-#include "../../Engine/Core/System/DirectoryWatcher.h"
+#include "Core/System/DirectoryWatcher.h"
 
 // 前方宣言
 class DirectXCommon;

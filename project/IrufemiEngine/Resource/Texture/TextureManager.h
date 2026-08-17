@@ -7,15 +7,15 @@
 #include <mutex>  
 #include <d3d12.h>
 #include <wrl.h>
-#include "Texture.h"
+#include "Resource/Texture/Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
-#include "../../Engine/Core/System/ThreadPool.h"
-#include "../../Engine/Core/System/TaskGroup.h"
+#include "Core/System/ThreadPool.h"
+#include "Core/System/TaskGroup.h"
 #include <atomic>
 #include <future>
 #include <type_traits>
 #include <functional>
-#include "../../Engine/Core/System/ResourceCachePool.h"
+#include "Core/System/ResourceCachePool.h"
 
 // 前方宣言
 namespace DirectX {

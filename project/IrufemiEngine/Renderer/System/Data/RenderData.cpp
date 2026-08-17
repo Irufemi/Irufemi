@@ -1,7 +1,7 @@
 #include "Renderer/System/Data/RenderData.h"
-#include "Engine/Manager/PrimitiveManager.h"
+#include "Renderer/Object/PrimitiveManager.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Engine/Graphics/Camera/Camera.h"
+#include "Renderer/Camera/Camera.h"
 
 // --- TransformComponent ---
 

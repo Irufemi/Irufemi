@@ -1,12 +1,12 @@
 #include "Combat/Boss/BossStateCoreExposed.h"
 #include "Combat/Boss/BossStateDestroyed.h"
 #include "Combat/Boss/BossComponent.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 #include <memory>
 #include <string>
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
 #include <string>
 

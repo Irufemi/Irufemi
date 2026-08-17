@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "Engine/Core/System/IEngineExtension.h"
+#include "Core/System/IEngineExtension.h"
 
 class IrufemiEngine;
 class GameObject;

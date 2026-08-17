@@ -1,5 +1,5 @@
-﻿#include "Primitive2DBatch.h"
-#include "Engine/Manager/DrawManager.h"
+﻿#include "Renderer/Object/2D/PrimitiveBatch/Primitive2DBatch.h"
+#include "Renderer/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include <cmath>
 #include <algorithm>

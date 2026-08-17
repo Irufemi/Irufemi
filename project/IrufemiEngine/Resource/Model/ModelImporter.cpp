@@ -1,15 +1,15 @@
-#include "ModelImporter.h"
+#include "Resource/Model/ModelImporter.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
-#include "Engine/Core/Utility/ErrorUtility.h"
+#include "Core/Utility/ErrorUtility.h"
 #include <filesystem>
 #include <algorithm>
 #include <limits>
 #include <cmath>
-#include "AssimpMutex.h"
-#include "Engine/Core/Utility/Log.h"
+#include "Resource/Model/AssimpMutex.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 
 namespace {

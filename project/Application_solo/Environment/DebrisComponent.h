@@ -1,6 +1,6 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Engine/Core/Math/Vector3.h"
+#include "Core/Math/Vector3.h"
 
 class DebrisManagerComponent;
 

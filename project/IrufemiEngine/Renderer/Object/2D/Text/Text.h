@@ -1,12 +1,12 @@
 ﻿#pragma once
 
-#include "../../../System/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #include <d3d12.h>
 #include <vector>
 #include <string>
 #include <cstdint>
 #include "Renderer/System/Core/Object2DResource.h"
-#include "Engine/Core/Math/Vector2.h"
+#include "Core/Math/Vector2.h"
 #include <wrl.h>
 #include <memory>
 

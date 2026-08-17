@@ -1,7 +1,7 @@
-#include "SphereColliderComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Physics/CollisionManager.h"
 
 #include <algorithm>
 #include <cmath>

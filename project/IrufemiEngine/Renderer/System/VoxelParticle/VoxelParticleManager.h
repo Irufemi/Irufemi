@@ -1,11 +1,11 @@
 #pragma once
 
-#include "VoxelParticleSystem.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
 #include <vector>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "Engine/Core/Math/Vector3Int.h"
+#include "Core/Math/Vector3Int.h"
 
 class IrufemiEngine;
 namespace Irufemi { struct OBB; }

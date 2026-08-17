@@ -1,8 +1,8 @@
-#include "Animator.h"
-#include "Engine/IrufemiEngine.h"
+#include "Resource/Model/Animator.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Resource/Model/AnimationManager.h"
-#include "Engine/Manager/DebugUI.h"
-#include "Engine/Core/Math/Math.h"
+#include "Framework/UI/DebugUI.h"
+#include "Core/Math/Math.h"
 #include <cmath>
 
 #if defined USE_IMGUI

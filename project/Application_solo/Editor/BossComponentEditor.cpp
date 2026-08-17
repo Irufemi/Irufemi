@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <string>
-#include "Engine/Core/Utility/Log.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 
 void BossComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {

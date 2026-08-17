@@ -1,11 +1,11 @@
-#include "VoxelParticleComponent.h"
-#include "../../GameObject.h"
-#include "../../BaseScene.h"
-#include "../TransformComponent.h"
-#include "../Renderer/MeshRendererComponent.h"
-#include "../Renderer/ModelBatchRendererComponent.h"
-#include "../../../Engine/IrufemiEngine.h"
-#include "../../../Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Framework/Component/Effect/VoxelParticleComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 
 #include <iostream>
 

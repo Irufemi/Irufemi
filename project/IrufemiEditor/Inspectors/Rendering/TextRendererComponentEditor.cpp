@@ -4,11 +4,11 @@
 #include <imgui/imgui.h>
 #include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/Renderer/TextRendererComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorCommands.h"
-#include "Engine/Graphics/Font/FontManager.h"
-#include "Engine/Core/Utility/StringUtility.h"
+#include "Renderer/Font/FontManager.h"
+#include "Core/Utility/StringUtility.h"
 
 void TextRendererComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* comp = static_cast<TextRendererComponent*>(component);

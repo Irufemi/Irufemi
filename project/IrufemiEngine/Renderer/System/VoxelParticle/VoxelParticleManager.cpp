@@ -1,6 +1,6 @@
-#include "VoxelParticleManager.h"
-#include "Engine/IrufemiEngine.h"
-#include "Engine/Graphics/Pipeline/PSOManager.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Renderer/Pipeline/PSOManager.h"
 
 void VoxelParticleManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;

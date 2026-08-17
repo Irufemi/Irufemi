@@ -1,12 +1,12 @@
 #include "Core/SceneTransitionButtonComponent.h"
-#include "Framework/GameObject.h"
-#include "Framework/BaseScene.h"
-#include "Framework/SceneManager.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/Scene/SceneManager.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Component/UI/ButtonComponent.h"
-#include "Engine/IrufemiEngine.h"
-#include "Framework/SceneTransition.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Scene/SceneTransition.h"
 
 void SceneTransitionButtonComponent::OnRegisterProperties() {
     RegisterProperty("Load Scene Name", &onClickLoadScene_);

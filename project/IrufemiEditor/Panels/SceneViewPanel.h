@@ -2,10 +2,10 @@
 
 #ifdef EditorMode
 #include "Core/IEditorPanel.h"
-#include "Engine/Core/Math/Vector3.h"
+#include "Core/Math/Vector3.h"
 #include <imgui.h>
 #include "imgui/ImGuizmo.h"
-#include "Engine/Graphics/Camera/OrbitCameraController.h"
+#include "Renderer/Camera/OrbitCameraController.h"
 
 /**
  * @class SceneViewPanel

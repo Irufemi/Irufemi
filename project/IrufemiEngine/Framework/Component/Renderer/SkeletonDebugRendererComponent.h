@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include <memory>
 #include <string>
 

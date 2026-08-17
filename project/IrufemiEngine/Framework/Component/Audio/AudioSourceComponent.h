@@ -1,8 +1,8 @@
 #pragma once
-#include "../Component.h"
+#include "Framework/Component/Component.h"
 #include <string>
 #include <memory>
-#include "Resource/Audio/AudioPlayer.h"
+#include "Audio/AudioPlayer.h"
 
 /**
  * @class AudioSourceComponent

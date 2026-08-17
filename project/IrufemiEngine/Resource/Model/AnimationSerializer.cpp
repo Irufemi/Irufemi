@@ -1,4 +1,4 @@
-#include "AnimationSerializer.h"
+#include "Resource/Model/AnimationSerializer.h"
 #include <fstream>
 #include <vector>
 

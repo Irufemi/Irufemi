@@ -1,11 +1,11 @@
 #include "Effects/EffectManagerComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Utility/LifetimeComponent.h"
-#include "Engine/IrufemiEngine.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "Framework/BaseScene.h"
+#include "Framework/Scene/BaseScene.h"
 
 EffectManagerComponent* EffectManagerComponent::instance_ = nullptr;
 

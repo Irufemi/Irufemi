@@ -1,7 +1,7 @@
-#include "AABBColliderComponent.h"
-#include "Framework/GameObject.h"
+#include "Framework/Component/Collider/AABBColliderComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Engine/Manager/CollisionManager.h"
+#include "Physics/CollisionManager.h"
 
 
 AABBColliderComponent::AABBColliderComponent() {}

@@ -1,6 +1,6 @@
 #pragma once
-#include "../Component.h"
-#include "Engine/Graphics/Camera/Camera.h"
+#include "Framework/Component/Component.h"
+#include "Renderer/Camera/Camera.h"
 #include <memory>
 
 /**

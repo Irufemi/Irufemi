@@ -1,6 +1,6 @@
 #pragma once
-#include "../Component.h"
-#include "../../../Engine/Graphics/PostProcess/PostProcessManager.h"
+#include "Framework/Component/Component.h"
+#include "Renderer/PostProcess/PostProcessManager.h"
 #include <string>
 #include <nlohmann/json.hpp>
 

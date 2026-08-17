@@ -1,11 +1,11 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Engine/Core/Math/MathFunction.h"
+#include "Core/Math/MathFunction.h"
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <memory>
-#include "Engine/Core/Utility/ObjectPool.h"
+#include "Core/Utility/ObjectPool.h"
 
 class GameObject;
 

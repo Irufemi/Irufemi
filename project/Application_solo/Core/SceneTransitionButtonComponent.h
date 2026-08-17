@@ -1,8 +1,8 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include <string>
-#include "Framework/UIAnimator.h"
-#include "Engine/Core/Math/Vector3.h"
+#include "Framework/UI/UIAnimator.h"
+#include "Core/Math/Vector3.h"
 
 class ButtonComponent;
 class TransformComponent;

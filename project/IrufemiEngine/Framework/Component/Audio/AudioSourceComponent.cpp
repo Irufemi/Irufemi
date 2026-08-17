@@ -1,8 +1,8 @@
-#include "AudioSourceComponent.h"
-#include "../../GameObject.h"
-#include "../../BaseScene.h"
-#include "Engine/IrufemiEngine.h"
-#include "Resource/Audio/AudioManager.h"
+#include "Framework/Component/Audio/AudioSourceComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Audio/AudioManager.h"
 
 AudioSourceComponent::AudioSourceComponent() {
 }
