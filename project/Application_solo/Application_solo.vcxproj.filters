@@ -162,6 +162,12 @@
     <ClCompile Include="components\EnvironmentManagerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
+    <ClCompile Include="components\DestructibleEnvironmentComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
+    <ClCompile Include="components\GameLoopManagerComponent.cpp">
+      <Filter>components</Filter>
+    </ClCompile>
     <ClCompile Include="components\GravityPlayerComponent.cpp">
       <Filter>components</Filter>
     </ClCompile>
@@ -286,6 +292,12 @@
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\EnvironmentManagerComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\DestructibleEnvironmentComponent.h">
+      <Filter>components</Filter>
+    </ClInclude>
+    <ClInclude Include="components\GameLoopManagerComponent.h">
       <Filter>components</Filter>
     </ClInclude>
     <ClInclude Include="components\GravityPlayerComponent.h">

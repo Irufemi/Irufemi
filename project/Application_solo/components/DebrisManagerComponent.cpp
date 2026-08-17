@@ -251,26 +251,54 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
     float bestDistSq = radius * radius;
     int bestId = -1;
     int bestVarIndex = -1;
+    std::shared_ptr<GameObject> bestPromotedObj = nullptr;
 
     for (size_t v = 0; v < variations_.size(); ++v) {
         auto& virtualInstances = variations_[v].virtualManager->GetDenseInstances();
         for (const auto& vi : virtualInstances) {
+            float dx, dy, dz;
+            bool isValid = false;
+            
             if (!vi.isPromoted_) {
-                float dx = vi.position_.x - pos.x;
-                float dy = vi.position_.y - pos.y;
-                float dz = vi.position_.z - pos.z;
+                dx = vi.position_.x - pos.x;
+                dy = vi.position_.y - pos.y;
+                dz = vi.position_.z - pos.z;
+                isValid = true;
+            } else {
+                auto obj = variations_[v].virtualManager->Promote(vi.id_);
+                if (obj && obj->GetIsActive()) {
+                    if (auto comp = obj->GetComponent<DebrisComponent>()) {
+                        if (comp->GetState() == DebrisState::Idle) {
+                            if (auto t = obj->GetTransform()) {
+                                dx = t->GetPosition().x - pos.x;
+                                dy = t->GetPosition().y - pos.y;
+                                dz = t->GetPosition().z - pos.z;
+                                isValid = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (isValid) {
                 float distSq = dx*dx + dy*dy + dz*dz;
                 if (distSq <= bestDistSq) {
                     bestDistSq = distSq;
                     bestId = vi.id_;
                     bestVarIndex = static_cast<int>(v);
+                    
+                    if (vi.isPromoted_) {
+                        bestPromotedObj = variations_[v].virtualManager->Promote(vi.id_);
+                    } else {
+                        bestPromotedObj = nullptr;
+                    }
                 }
             }
         }
     }
 
     if (bestId >= 0 && bestVarIndex >= 0) {
-        auto obj = variations_[bestVarIndex].virtualManager->Promote(bestId);
+        auto obj = bestPromotedObj ? bestPromotedObj : variations_[bestVarIndex].virtualManager->Promote(bestId);
         if (obj) {
             auto comp = obj->GetComponent<DebrisComponent>();
             if (comp) {

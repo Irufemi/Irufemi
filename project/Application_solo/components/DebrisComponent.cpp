@@ -12,6 +12,7 @@
 #include "Engine/Core/Math/MathFunction.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Engine/Graphics/Camera/CameraManager.h"
+#include "DestructibleEnvironmentComponent.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Framework/BaseScene.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
@@ -93,6 +94,9 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
             }
             hit = true;
         }
+    } else if (auto destructible = otherObj->GetComponent<DestructibleEnvironmentComponent>()) {
+        destructible->TakeDamage(1);
+        hit = true;
     } else if (auto collider = GetColliderFromObj(otherObj)) {
         auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
         // 建造物（Environmentレイヤー）との衝突検知

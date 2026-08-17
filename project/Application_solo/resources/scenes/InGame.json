@@ -3791,6 +3791,12 @@
               0.8999999761581421,
               0.4000000059604645
             ],
+            "IsDestructible_Env_Arch": false,
+            "IsDestructible_Env_Pillar": false,
+            "IsDestructible_Env_Wall": true,
+            "SpawnCount_Env_Arch": 3,
+            "SpawnCount_Env_Pillar": 3,
+            "SpawnCount_Env_Wall": 3,
             "Target Prefabs": "Env_Pillar,Env_Arch,Env_Wall",
             "Type_Env_Arch": 0,
             "Type_Env_Pillar": 0,

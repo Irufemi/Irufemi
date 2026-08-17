@@ -262,6 +262,7 @@ exit 0</Command>
     <ClCompile Include="components\DroneManagerComponent.cpp" />
     <ClCompile Include="components\DebrisManagerComponent.cpp" />
     <ClCompile Include="components\EnvironmentManagerComponent.cpp" />
+    <ClCompile Include="components\DestructibleEnvironmentComponent.cpp" />
     <ClCompile Include="components\GravityPlayerComponent.cpp" />
     <ClCompile Include="components\GameLoopManagerComponent.cpp" />
     <ClCompile Include="components\DebugEnemySpawnerComponent.cpp" />
@@ -309,6 +310,7 @@ exit 0</Command>
     <ClInclude Include="components\DroneManagerComponent.h" />
     <ClInclude Include="components\DebrisManagerComponent.h" />
     <ClInclude Include="components\EnvironmentManagerComponent.h" />
+    <ClInclude Include="components\DestructibleEnvironmentComponent.h" />
     <ClInclude Include="components\GravityPlayerComponent.h" />
     <ClInclude Include="components\GameLoopManagerComponent.h" />
     <ClInclude Include="components\DebugEnemySpawnerComponent.h" />
