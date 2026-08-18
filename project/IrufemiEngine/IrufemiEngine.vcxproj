@@ -284,6 +284,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Renderer\Pipeline\RenderGraph\PostUIPass.cpp" />
     <ClCompile Include="Renderer\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Renderer\PostProcess\PostProcessRunner.cpp" />
+    <ClCompile Include="Core\System\EngineCVars.cpp" />
+    <ClCompile Include="Framework\Utility\CVar.cpp" />
     <ClCompile Include="Core\System\IrufemiEngine.cpp" />
     <ClCompile Include="Core\Profiler\TelemetrySender.cpp" />
     <ClCompile Include="Core\Profiler\TelemetryGatherer.cpp" />
@@ -380,6 +382,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\VirtualEntity\VirtualEntityManagerComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Framework\Utility\CVar.h" />
     <ClInclude Include="Engine\Irufemi.h" />
     <ClInclude Include="Core\System\IrufemiEngine.h" />
     <ClInclude Include="Core\Profiler\TelemetrySender.h" />

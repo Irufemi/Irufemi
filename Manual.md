@@ -949,6 +949,54 @@ Setter を通じて座標を変更しても、**その瞬間にすべての行�
 
 ---
 
+
+### 2.3 設定管理 (Settings Management & CVar)
+
+ゲームのコア設定（画面解像度、ウィンドウモード、VSync、各種デバッグ表示ON/OFFなど）は、**CVarSystem** 等を通じてデータ駆動で一元管理されています。
+これにより、ソースコードの再コンパイルなしで設定の変更や、ユーザー環境に合わせた設定ファイルの分離・保存（永続化）が可能になります。
+
+#### 2.3.1 設定ファイルの分離アーキテクチャ
+CVarSystem は以下の2つのファイルを段階的にロードします。
+1. **`resources/settings.json` (プリセット設定)**
+   - プロジェクトとしてのデフォルト（初期）状態を定義します。Gitリポジトリで管理され、ビルド時に自動コピーされます。
+2. **`resources/settings_local.json` (ユーザーのローカル設定)**
+   - ユーザーがImGui等で設定を変更した際に保存されるファイルです。ロード時は `settings.json` の後に上書きで適用されます。
+   - このファイルは `.gitignore` 対象であり、ビルドプロセスで初期化（上書きコピー）されないように保護されています。
+
+#### 2.3.2 CVar の定義と使い方
+新しいコンソール変数を追加するには、`Core/System/EngineCVars.cpp` 等で以下のマクロを使用します。
+
+```cpp
+#include "Framework/Utility/CVar.h"
+
+// 整数型のCVarを定義（変数名, 初期値, 説明文）
+DEFINE_CVAR_INT("r.DisplayMode", 0, "Display mode: 0=Windowed, 1=Borderless");
+
+// bool型のCVarを定義
+DEFINE_CVAR_BOOL("r.VSync", true, "Enable Vertical Sync");
+```
+
+定義した変数は、どこからでも `CVarSystem::GetInt` などで取得・変更が可能です。
+```cpp
+// 取得
+bool vsync = Irufemi::CVarSystem::GetBool("r.VSync");
+
+// 変更（ImGui等から）
+Irufemi::CVarSystem::SetBool("r.VSync", false);
+```
+
+#### 2.3.3 コールバックの登録 (値変更時の即時反映)
+変数の値が変更された際（あるいはロード時に値が設定された直後）に、自動的に特定の関数を走らせるためのコールバック機構（`SetOnChangeCallback`）が備わっています。
+
+```cpp
+// エンジン初期化時などに登録
+Irufemi::CVarSystem::SetOnChangeCallback("r.VSync", [this]() {
+    bool vsync = Irufemi::CVarSystem::GetBool("r.VSync");
+    this->SetVSync(vsync); // 値が変わったら即座に描画システムへ反映
+});
+```
+※コールバックを登録した瞬間に、現在の値をもって一度即時実行されるため、ロード直後の初期化もこれ一つでカバーできます。
+
 ## 3. 描画パイプラインとグラフィックス (Graphics & Rendering)
 
 ## 静的モデルの描画 (MeshRendererComponent)

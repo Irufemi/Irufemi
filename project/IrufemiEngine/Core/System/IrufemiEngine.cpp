@@ -24,6 +24,11 @@
 #include "Renderer/Font/FontManager.h"
 #include "Core/Profiler/TelemetrySender.h"
 #include "Core/Profiler/GpuProfiler.h"
+#include "Framework/Utility/CVar.h"
+
+namespace Irufemi {
+    extern void ReferenceEngineCVars();
+}
 
 IrufemiEngine::IrufemiEngine() = default;
 
@@ -443,6 +448,22 @@ void IrufemiEngine::Initialize(const std::wstring &title,
   shaderWatchers_.push_back(std::make_unique<DirectoryWatcher>(FileSystem::GetEngineRoot() + "/EngineResources/shaders", reloadCallback));
 #endif
 
+
+  // --- CVar (Console Variables) のロードとコールバック設定 ---
+  Irufemi::ReferenceEngineCVars();
+  Irufemi::CVarSystem::Load("resources/settings.json");       // プロジェクトのプリセット設定
+  Irufemi::CVarSystem::Load("resources/settings_local.json"); // ユーザーの変更済みローカル設定（上書き）
+
+  Irufemi::CVarSystem::SetOnChangeCallback("r.DisplayMode", [this]() {
+      int mode = Irufemi::CVarSystem::GetInt("r.DisplayMode");
+      this->SetDisplayMode(static_cast<DisplayMode>(mode));
+  });
+
+  Irufemi::CVarSystem::SetOnChangeCallback("r.VSync", [this]() {
+      bool vsync = Irufemi::CVarSystem::GetBool("r.VSync");
+      this->SetVSync(vsync);
+  });
+  // -------------------------------------------------------------
   TelemetrySender::GetInstance().Initialize();
 
   // TelemetryGatherer の初期化 (ここでプロファイル項目をバインド)
@@ -669,15 +690,27 @@ void IrufemiEngine::Finalize() {
       depthSrvIndex_ = 0xFFFFFFFF;
     }
     dxCommon_->Finalize();
-    dxCommon_.reset();
-  }
+      dxCommon_.reset();
+    }
 
-  // 7. OS・ウィンドウ
-  if (winApp_) {
-    winApp_.reset();
-  }
+    // 1. エディタとUI (描画マネージャ等に依存)
+    if (screenCaptureManager_) {
+        screenCaptureManager_->Finalize();
+        screenCaptureManager_.reset();
+    }
+    if (ui_) {
+      ui_->Shutdown();
+      ui_.reset();
+    }
 
-  TelemetrySender::GetInstance().Finalize();
+    // 7. OS・ウィンドウ
+    if (winApp_) {
+      winApp_.reset();
+    }
+
+    Irufemi::CVarSystem::Save("resources/settings_local.json");
+
+    TelemetrySender::GetInstance().Finalize();
   
   // OSタイマー精度の引き上げを解除
   timeEndPeriod(1);
@@ -714,13 +747,13 @@ void IrufemiEngine::Execute() {
 #ifdef USE_IMGUI
     if (ui_->BeginEngineDebugWindow()) {
         if (ImGui::BeginTabItem("Display")) {
-            int displayModeInt = static_cast<int>(winApp_->GetDisplayMode());
+            int displayModeInt = Irufemi::CVarSystem::GetInt("r.DisplayMode");
             if (ImGui::Combo("Mode", &displayModeInt, "Windowed\0Borderless\0")) {
-                SetDisplayMode(static_cast<DisplayMode>(displayModeInt));
+                Irufemi::CVarSystem::SetInt("r.DisplayMode", displayModeInt);
             }
-            bool vSync = drawManager_->IsVSyncEnabled();
+            bool vSync = Irufemi::CVarSystem::GetBool("r.VSync");
             if (ImGui::Checkbox("VSync", &vSync)) {
-                SetVSync(vSync);
+                Irufemi::CVarSystem::SetBool("r.VSync", vSync);
             }
             if (dxCommon_->IsTearingSupported()) {
                 ImGui::TextColored(ImVec4(0, 1, 0, 1), "Tearing (VRR) is Supported.");

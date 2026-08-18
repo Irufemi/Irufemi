@@ -465,6 +465,12 @@
     <ClCompile Include="Renderer\PostProcess\PostProcessRunner.cpp">
       <Filter>Renderer\PostProcess</Filter>
     </ClCompile>
+    <ClCompile Include="Core\System\EngineCVars.cpp">
+      <Filter>Core\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Utility\CVar.cpp">
+      <Filter>Framework\Utility</Filter>
+    </ClCompile>
     <ClCompile Include="Core\System\IrufemiEngine.cpp">
       <Filter>Core\System</Filter>
     </ClCompile>
@@ -1060,6 +1066,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\PostProcess\PostProcessRunner.h">
       <Filter>Renderer\PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Utility\CVar.h">
+      <Filter>Framework\Utility</Filter>
     </ClInclude>
     <ClInclude Include="Physics\CollisionManager.h">
       <Filter>Physics</Filter>
