@@ -232,6 +232,12 @@ public: // ゲッター
 	 * @return 取得された RtvDesc
 	 */
 	D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc();
+	
+	/**
+	 * @brief Tearingサポートの有無を取得する。
+	 * @return Tearingサポートの有無
+	 */
+	bool IsTearingSupported() const;
 	///@}
 
 	/** @name 同期・フェンス関連の取得 */

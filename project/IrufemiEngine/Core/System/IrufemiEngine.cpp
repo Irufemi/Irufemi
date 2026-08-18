@@ -1,7 +1,9 @@
 #include "Core/Utility/ErrorUtility.h"
 #include "Core/System/IrufemiEngine.h"
+#include <imgui.h>
 
 #include "Platform/Input/InputManager.h"
+
 #include "Platform/WindowsAPI/WinApp.h"
 #include "Renderer/DrawManager.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
@@ -711,8 +713,26 @@ void IrufemiEngine::Execute() {
 // ImGui
 #ifdef USE_IMGUI
     if (ui_->BeginEngineDebugWindow()) {
+        if (ImGui::BeginTabItem("Display")) {
+            int displayModeInt = static_cast<int>(winApp_->GetDisplayMode());
+            if (ImGui::Combo("Mode", &displayModeInt, "Windowed\0Borderless\0")) {
+                SetDisplayMode(static_cast<DisplayMode>(displayModeInt));
+            }
+            bool vSync = drawManager_->IsVSyncEnabled();
+            if (ImGui::Checkbox("VSync", &vSync)) {
+                SetVSync(vSync);
+            }
+            if (dxCommon_->IsTearingSupported()) {
+                ImGui::TextColored(ImVec4(0, 1, 0, 1), "Tearing (VRR) is Supported.");
+            } else {
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "Tearing (VRR) is NOT Supported.");
+            }
+            ImGui::EndTabItem();
+        }
         ui_->SceneSelectorTab(sceneManager_.get());
+
         ui_->PostProcessTab(this);
+
         ui_->ScreenCaptureTab(screenCaptureManager_.get());
       // デバッグ機能の追加
       if (gpuParticleManager_) {
@@ -1065,4 +1085,16 @@ bool IrufemiEngine::SaveScreenShotWithAlpha(const std::wstring& filePath) {
 bool IrufemiEngine::SaveScreenShotDepth(const std::wstring& filePath) {
     if (screenCaptureManager_) return screenCaptureManager_->RequestCaptureDepth(filePath);
     return false;
+}
+
+void IrufemiEngine::SetDisplayMode(DisplayMode mode) {
+    if (winApp_) {
+        winApp_->SetDisplayMode(mode);
+    }
+}
+
+void IrufemiEngine::SetVSync(bool enable) {
+    if (drawManager_) {
+        drawManager_->SetVSync(enable);
+    }
 }

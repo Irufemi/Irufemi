@@ -360,7 +360,9 @@ void DrawManager::PostDraw() {
     ID3D12CommandList* commandLists[] = { commandList_ };
     dxCommon_->GetCommandQueue()->ExecuteCommandLists(_countof(commandLists), commandLists);
     //GPUとOSに画面の交換を行うよう通知する
-    hr = dxCommon_->GetSwapChain()->Present(1, 0);
+    UINT syncInterval = vSyncEnabled_ ? 1 : 0;
+    UINT presentFlags = (dxCommon_->IsTearingSupported() && !vSyncEnabled_) ? DXGI_PRESENT_ALLOW_TEARING : 0;
+    hr = dxCommon_->GetSwapChain()->Present(syncInterval, presentFlags);
     // デバイスが削除されたかどうかのチェック
     if (FAILED(hr)) {
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {

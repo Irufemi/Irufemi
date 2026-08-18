@@ -4,6 +4,11 @@
 #include <string>
 #include <cstdint>
 
+enum class DisplayMode {
+    Windowed,
+    Borderless
+};
+
 // 前方宣言
 class InputManager;
 class IrufemiEngine;
@@ -92,6 +97,16 @@ public:
     ///@}
 
     /**
+     * @brief ディスプレイモードの取得
+     */
+    DisplayMode GetDisplayMode() const { return displayMode_; }
+
+    /**
+     * @brief ディスプレイモードの変更
+     */
+    void SetDisplayMode(DisplayMode mode);
+
+    /**
      * @brief カーソル固定状態の設定
      */
     void SetCursorLocked(bool lock);
@@ -142,4 +157,6 @@ private:
     
     std::string droppedFilePath_ = ""; // 最後にドロップされたファイルのパス
     bool cursorLocked_ = true; // カーソル固定状態デフォルト真
+    DisplayMode displayMode_ = DisplayMode::Windowed;
+    RECT windowedRect_{}; // ウィンドウモード時のサイズ保存用
 };

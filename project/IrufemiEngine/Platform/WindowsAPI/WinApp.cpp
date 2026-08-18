@@ -328,5 +328,50 @@ LONG WINAPI WinApp::ExportDump(EXCEPTION_POINTERS* exception) {
     MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
     //ほかに関連づけられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
     return EXCEPTION_EXECUTE_HANDLER;
+}
 
+void WinApp::SetDisplayMode(DisplayMode mode) {
+    if (displayMode_ == mode) return;
+
+    if (mode == DisplayMode::Borderless) {
+        // Save current windowed rect
+        GetWindowRect(hwnd_, &windowedRect_);
+
+        // Change style to WS_POPUP
+        SetWindowLongW(hwnd_, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+
+        // Get monitor info
+        HMONITOR monitor = MonitorFromWindow(hwnd_, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO mi = { sizeof(mi) };
+        GetMonitorInfoW(monitor, &mi);
+
+        // Resize and position window to fill the monitor
+        SetWindowPos(hwnd_, HWND_TOP, 
+            mi.rcMonitor.left, mi.rcMonitor.top,
+            mi.rcMonitor.right - mi.rcMonitor.left,
+            mi.rcMonitor.bottom - mi.rcMonitor.top,
+            SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOOWNERZORDER);
+    } else if (mode == DisplayMode::Windowed) {
+        // Change style back to WS_OVERLAPPEDWINDOW
+        SetWindowLongW(hwnd_, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+
+        // Restore saved rect (or default if it was empty)
+        if (windowedRect_.right - windowedRect_.left > 0) {
+            SetWindowPos(hwnd_, HWND_NOTOPMOST,
+                windowedRect_.left, windowedRect_.top,
+                windowedRect_.right - windowedRect_.left,
+                windowedRect_.bottom - windowedRect_.top,
+                SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOOWNERZORDER);
+        } else {
+            // Fallback if windowedRect_ is empty
+            RECT wrc = { 0,0,clientWidth_ ,clientHeight_ };
+            AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
+            SetWindowPos(hwnd_, HWND_NOTOPMOST,
+                0, 0,
+                wrc.right - wrc.left, wrc.bottom - wrc.top,
+                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+        }
+    }
+    
+    displayMode_ = mode;
 }

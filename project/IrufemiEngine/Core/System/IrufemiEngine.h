@@ -4,7 +4,9 @@
 #include "RHI/DirectX12/D3DResourceLeakChecker.h"
 class InputManager;
 class WinApp;
+enum class DisplayMode;
 class DrawManager;
+
 class DebugPrimitiveRenderer;
 class DebugUI;
 class IEngineExtension;
@@ -158,6 +160,17 @@ public: // メンバ関数
     void SetLoadingScreen(std::shared_ptr<ILoadingScreen> loadingScreen) {
         loadingScreen_ = std::move(loadingScreen);
     }
+
+    /**
+     * @brief ディスプレイモード（ウィンドウ/仮想フルスクリーン）を変更する
+     */
+    void SetDisplayMode(DisplayMode mode);
+
+    /**
+     * @brief VSync（垂直同期）の有効/無効を設定する
+     */
+    void SetVSync(bool enable);
+
 
  private: // メンバ関数(内部処理)
 

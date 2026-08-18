@@ -23,6 +23,15 @@ void DXSwapChainManager::Finalize() {
 }
 
 void DXSwapChainManager::CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd, int32_t width, int32_t height) {
+    // Check for tearing support
+    Microsoft::WRL::ComPtr<IDXGIFactory5> factory5;
+    if (SUCCEEDED(dxgiFactory->QueryInterface(IID_PPV_ARGS(&factory5)))) {
+        BOOL allowTearing = FALSE;
+        if (SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing))) && allowTearing) {
+            isTearingSupported_ = true;
+        }
+    }
+
     swapChainDesc_.Width = width;
     swapChainDesc_.Height = height;
     swapChainDesc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -30,6 +39,8 @@ void DXSwapChainManager::CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12Comma
     swapChainDesc_.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc_.BufferCount = 2;
     swapChainDesc_.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc_.Flags = isTearingSupported_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+
 
     HRESULT hr = dxgiFactory->CreateSwapChainForHwnd(
         commandQueue, 
@@ -148,7 +159,7 @@ void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, in
 
     DXGI_SWAP_CHAIN_DESC1 desc{};
     swapChain_->GetDesc1(&desc);
-    HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format, desc.Flags);
+    HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format, isTearingSupported_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : desc.Flags);
     ASSERT_IF_FAILED(hr);
 
     for (uint32_t i = 0; i < desc.BufferCount; ++i) {

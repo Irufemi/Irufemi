@@ -2171,7 +2171,29 @@ TelemetrySender::GetInstance().SetMetric("Game/PlayerHP", player->GetHP());
 **【注意】**
 `TelemetrySender` からツールへ送られる `System/FPS` は、微小なジッター（数マイクロ秒のブレ）を吸収して読みやすくするため「指数移動平均 (EMA)」フィルタを通した滑らかな値になっています。
 
+### 8.3 ディスプレイモードと VSync (Tearing) 制御
+エンジンは最新のAAAゲーム水準のディスプレイ制御をサポートしており、コードおよびエディタのUIから動的に変更可能です。
+
+**【ディスプレイモード (DisplayMode)】**
+- `DisplayMode::Windowed` : 通常のウィンドウモード（タイトルバーあり）。
+- `DisplayMode::Borderless` : ボーダーレスウィンドウモード。画面全体を覆い、タイトルバーによる操作フリーズを防ぎます。
+```cpp
+// プログラムからの切り替え例
+engine->SetDisplayMode(DisplayMode::Borderless);
+```
+
+**【VSync と Tearing 対応 (低遅延描画)】**
+- 通常、ウィンドウモードやボーダーレスモードではOS側で強制的にVSyncがオンになり、入力遅延（インプットラグ）が発生します。
+- 当エンジンは `DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING` に対応しており、対応環境では **「ボーダーレスモードでありながらVSyncをオフにして遅延を極限まで減らす」** ことが可能です。
+- VSyncオフ時でも、上記の `FrameRateController` (CPU側のハイブリッドスリープ) が正確に60FPSでキャッチするため、ゲームが早送りになることはなく、最小遅延・安定FPSを両立します。
+```cpp
+// VSyncの切り替え
+engine->SetVSync(false);
+```
+※ エディタ実行時は、`EngineDebugWindow` の **[Display Settings]** タブから動的に切り替えと対応状況の確認が可能です。
+
 ---
+
 
 ## 9. トラブルシューティング (Troubleshooting)
 

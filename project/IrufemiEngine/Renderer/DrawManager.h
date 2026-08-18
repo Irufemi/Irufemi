@@ -633,8 +633,19 @@ public:
      * @return 取得された ShadowMap
      */
     ShadowMap* GetShadowMap() const { return shadowMaps_[dxCommon_->GetFrameIndex()].get(); }
+
+    /**
+     * @brief VSyncの有効/無効を設定する。
+     */
+    void SetVSync(bool enable) { vSyncEnabled_ = enable; }
+    
+    /**
+     * @brief VSyncが有効か取得する。
+     */
+    bool IsVSyncEnabled() const { return vSyncEnabled_; }
     ///@}
 
 private:
     Microsoft::WRL::ComPtr<ID3D12CommandSignature> commandSignature_;
-};
+    bool vSyncEnabled_ = true;
+};

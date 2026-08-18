@@ -130,9 +130,15 @@ public:
      * @return 取得された RtvHandles
      */
     D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return rtvHandles_[index]; }
+
+    /**
+     * @brief ティアリング（VSyncオフ時の低遅延描画）がサポートされているか取得する
+     */
+    bool IsTearingSupported() const { return isTearingSupported_; }
     ///@}
 
 private:
+
     /**
      * @brief 指定したサイズ・フォーマットの深度ステンシルリソースを生成する
      */
@@ -164,6 +170,7 @@ private:
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc_{};
     Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> swapChainResources_[2];
+    bool isTearingSupported_ = false;
     
     // --- 深度ステンシル ---
     Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_ = nullptr;

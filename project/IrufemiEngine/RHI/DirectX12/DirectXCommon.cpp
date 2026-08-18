@@ -482,6 +482,7 @@ IDXGISwapChain4* DirectXCommon::GetSwapChain() { return swapChainManager_->GetSw
 ID3D12Resource* DirectXCommon::GetSwapChainResources(UINT index) { return swapChainManager_->GetSwapChainResource(index); }
 UINT DirectXCommon::GetCurrentBackBufferIndex() const { return swapChainManager_->GetCurrentBackBufferIndex(); }
 D3D12_RENDER_TARGET_VIEW_DESC& DirectXCommon::GetRtvDesc() { return swapChainManager_->GetRtvDesc(); }
+bool DirectXCommon::IsTearingSupported() const { return swapChainManager_->IsTearingSupported(); }
 ID3D12DescriptorHeap* DirectXCommon::GetDsvDescriptorHeap() { return swapChainManager_->GetDSVDescriptorHeap(); }
 D3D12_CPU_DESCRIPTOR_HANDLE& DirectXCommon::GetRtvHandles(UINT index) { return swapChainManager_->GetRtvHandles(index); }
 ID3D12Resource* DirectXCommon::GetDepthStencilResource() const { return swapChainManager_->GetDepthStencilResource(); }
