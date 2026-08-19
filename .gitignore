@@ -129,7 +129,12 @@ debuglog.txt
 # Cache files (PSO etc)
 # ====================================================================
 **/resources/cache/
+**/resources/scenes/temp/
 *.temp_playmode.json
+*.temp_prefab_backup.json
+
+# Local settings
+settings_local.json
 
 # ====================================================================
 # Repository Cleanup (Build Outputs & Temp Files)

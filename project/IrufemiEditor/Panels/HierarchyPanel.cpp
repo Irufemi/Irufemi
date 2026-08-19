@@ -80,6 +80,27 @@ void HierarchyPanel::Draw() {
 
                 bool isOpen = ImGui::TreeNodeEx((void*)obj.get(), flags, "%s", isRenaming ? (icon + " ").c_str() : displayName.c_str());
 
+                // コンテキストメニュー (右クリック)
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::Selectable("Duplicate")) {
+                        if (auto am = editorManager_->GetActionManager()) {
+                            am->DuplicateObject(obj);
+                        }
+                    }
+                    if (ImGui::Selectable("Delete")) {
+                        if (auto am = editorManager_->GetActionManager()) {
+                            am->DeleteObject(obj);
+                        }
+                    }
+                    ImGui::Separator();
+                    if (ImGui::Selectable("Save as Prefab")) {
+                        std::filesystem::create_directories("resources/prefabs"); // ディレクトリがないと保存に失敗するため
+                        std::string path = "resources/prefabs/" + obj->GetName() + ".prefab.json";
+                        SceneSerializer::SavePrefab(obj, path);
+                    }
+                    ImGui::EndPopup();
+                }
+
                 // クリックで選択 (TreeNodeExがクリックされたかを判定)
                 if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
                     editorManager_->SetSelectedObject(obj);
@@ -157,26 +178,7 @@ void HierarchyPanel::Draw() {
                     ImGui::EndDragDropTarget();
                 }
 
-                // コンテキストメニュー (右クリック)
-                if (ImGui::BeginPopupContextItem()) {
-                    if (ImGui::Selectable("Duplicate")) {
-                        if (auto am = editorManager_->GetActionManager()) {
-                            am->DuplicateObject(obj);
-                        }
-                    }
-                    if (ImGui::Selectable("Delete")) {
-                        if (auto am = editorManager_->GetActionManager()) {
-                            am->DeleteObject(obj);
-                        }
-                    }
-                    ImGui::Separator();
-                    if (ImGui::Selectable("Save as Prefab")) {
-                        std::string path = "resources/prefabs/" + obj->GetName() + ".prefab.json";
-                        SceneSerializer::SavePrefab(obj, path);
-                    }
-                    ImGui::EndPopup();
-                }
-
+                // コンテキストメニューは上部に移動しました
                 // 子ノードの描画
                 if (isOpen && hasChildrenAtStart) {
                     // vector のコピーを回す（描画中に要素が削除・追加されても安全なように）

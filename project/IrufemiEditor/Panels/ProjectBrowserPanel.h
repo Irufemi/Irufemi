@@ -60,6 +60,7 @@ private:
     // Project Browser 用のパス管理
     std::filesystem::path projectRootPath_;
     std::filesystem::path currentProjectBrowserPath_;
+    std::filesystem::path selectedPath_;
 
     // キャッシュ
     std::unique_ptr<DirectoryNode> rootNode_;

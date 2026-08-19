@@ -21,7 +21,8 @@ class ComponentEditorRegistry;
 enum class EditorModeState {
     Edit,
     Playing,
-    Paused
+    Paused,
+    PrefabEdit
 };
 
 /**
@@ -68,12 +69,24 @@ public:
      */
     void TogglePauseMode();
 
+    /**
+     * @brief Prefabモードに入る
+     */
+    void EnterPrefabMode(const std::string& prefabPath);
+
+    /**
+     * @brief Prefabモードから出る
+     * @param saveChanges trueなら現在のルートオブジェクトをPrefabとして上書き保存する
+     */
+    void ExitPrefabMode(bool saveChanges);
+
 private:
 
     IrufemiEngine* engine_ = nullptr;
 
     EditorModeState currentMode_ = EditorModeState::Edit;
     std::string playModeStartSceneName_ = "";
+    std::string editingPrefabPath_ = "";
     bool isStepRequested_ = false; // コマ送りの予約フラグ
     
     // レイアウトのリセット用フラグ

@@ -229,8 +229,10 @@ void ProjectBrowserPanel::Draw() {
                 bool isRenamingThis = (renamingTarget_ == path);
 
                 // --- タイルの下地となるSelectable ---
+                bool isSelected = (selectedPath_ == path);
                 bool isDoubleClick = false;
-                if (ImGui::Selectable("##Tile", false, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(itemWidth, itemHeight))) {
+                if (ImGui::Selectable("##Tile", isSelected, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(itemWidth, itemHeight))) {
+                    selectedPath_ = path; // クリックで選択状態にする
                     if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                         isDoubleClick = true;
                     }
@@ -244,6 +246,18 @@ void ProjectBrowserPanel::Draw() {
                     ImGui::EndGroup();
                     ImGui::PopID();
                     return; // イテレータ的に問題はないがUIとしては抜ける
+                }
+
+                // プレハブのダブルクリックによるPrefabモード移行
+                if (isDoubleClick && !isDir && (ext == ".prefab" || ext == ".json")) {
+                    // .json の場合はファイル名に .prefab が含まれるか確認する（現状のIrufemiEngineの慣例に合わせる）
+                    std::string filenameLower = filenameString;
+                    std::transform(filenameLower.begin(), filenameLower.end(), filenameLower.begin(), ::tolower);
+                    if (ext == ".prefab" || filenameLower.find(".prefab.json") != std::string::npos) {
+                        if (editorManager_) {
+                            editorManager_->EnterPrefabMode(path.string());
+                        }
+                    }
                 }
 
                 // --- 右クリックメニュー ---

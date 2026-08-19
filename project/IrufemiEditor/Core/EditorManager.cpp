@@ -103,7 +103,7 @@ void EditorManager::EnterPlayMode() {
     }
 
     // 現在のシーン状態をバックアップ
-    SceneSerializer::Save(scene, ".temp_playmode");
+    SceneSerializer::Save(scene, "temp/.temp_playmode");
     playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
 
     // === ここから追加: Play開始時にシーンをクリーンな状態にリロードする ===
@@ -118,7 +118,7 @@ void EditorManager::EnterPlayMode() {
     }
     
     // 保存したばかりのバックアップから復元して、完全に初期化し直す
-    SceneSerializer::Load(scene, ".temp_playmode");
+    SceneSerializer::Load(scene, "temp/.temp_playmode");
     // === ここまで追加 ===
 
     currentMode_ = EditorModeState::Playing;
@@ -157,7 +157,7 @@ void EditorManager::ExitPlayMode() {
     }
     
     // バックアップから復元
-    SceneSerializer::Load(scene, ".temp_playmode");
+    SceneSerializer::Load(scene, "temp/.temp_playmode");
     currentMode_ = EditorModeState::Edit;
     engine_->SetPlayMode(false);
     engine_->SetTimeScale(1.0f);
@@ -172,6 +172,76 @@ void EditorManager::TogglePauseMode() {
         if (engine_) engine_->SetTimeScale(1.0f); // 時を動かす
     }
 }
+
+void EditorManager::EnterPrefabMode(const std::string& prefabPath) {
+    if (!engine_ || !engine_->GetSceneManager()) return;
+    if (currentMode_ == EditorModeState::Playing || currentMode_ == EditorModeState::Paused) {
+        ExitPlayMode();
+    }
+
+    auto scene = engine_->GetSceneManager()->GetCurrentScene();
+    if (!scene) return;
+
+    // 現在のシーン状態をバックアップ
+    SceneSerializer::Save(scene, "temp/.temp_prefab_backup");
+
+    ClearSelectedObject();
+
+    // GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄
+    if (auto dxCommon = engine_->GetDirectXCommon()) {
+        dxCommon->WaitForGPU();
+    }
+    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+        baseScene->ClearGameObjects();
+    }
+
+    // Prefabの読み込み
+    auto prefabObj = SceneSerializer::LoadPrefab(prefabPath);
+    if (prefabObj) {
+        if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+            baseScene->AddGameObject(prefabObj);
+            SetSelectedObject(prefabObj);
+        }
+    } else {
+        Log::OutPutLog(std::cerr, "Failed to load prefab: " + prefabPath);
+    }
+
+    currentMode_ = EditorModeState::PrefabEdit;
+    editingPrefabPath_ = prefabPath;
+}
+
+void EditorManager::ExitPrefabMode(bool saveChanges) {
+    if (!engine_ || !engine_->GetSceneManager()) return;
+    auto scene = engine_->GetSceneManager()->GetCurrentScene();
+    if (!scene) return;
+
+    if (saveChanges) {
+        if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+            auto gameObjects = baseScene->GetGameObjects();
+            if (!gameObjects.empty()) {
+                // シーン内の最初のルートオブジェクトをPrefabとして上書き保存
+                SceneSerializer::SavePrefab(gameObjects.front(), editingPrefabPath_);
+                Log::OutPutLog(std::cout, "Prefab saved successfully: " + editingPrefabPath_);
+            }
+        }
+    }
+
+    ClearSelectedObject();
+
+    if (auto dxCommon = engine_->GetDirectXCommon()) {
+        dxCommon->WaitForGPU();
+    }
+    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+        baseScene->ClearGameObjects();
+    }
+
+    // バックアップから元のシーンを復元
+    SceneSerializer::Load(scene, "temp/.temp_prefab_backup");
+
+    currentMode_ = EditorModeState::Edit;
+    editingPrefabPath_ = "";
+}
+
 
 void EditorManager::OnDrawUI() {
     if (!engine_ || !engine_->GetMainRenderTexture()) return;
@@ -227,6 +297,30 @@ void EditorManager::OnDrawUI() {
         ImGui::DockBuilderDockWindow("Console", dock_id_bottom);
         
         ImGui::DockBuilderFinish(dockspaceId);
+    }
+
+    if (currentMode_ == EditorModeState::PrefabEdit) {
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.3f, 0.6f, 1.0f));
+        if (ImGui::BeginChild("PrefabModeBanner", ImVec2(0, 32), true, ImGuiWindowFlags_NoScrollbar)) {
+            ImGui::Text("%s PREFAB MODE: %s", ICON_FA_CUBE, editingPrefabPath_.c_str());
+            ImGui::SameLine(ImGui::GetWindowWidth() - 220.0f);
+            
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+            if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save & Exit", ImVec2(100, 20))) {
+                ExitPrefabMode(true);
+            }
+            ImGui::PopStyleColor();
+            
+            ImGui::SameLine();
+            
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
+            if (ImGui::Button(ICON_FA_XMARK " Cancel", ImVec2(80, 20))) {
+                ExitPrefabMode(false);
+            }
+            ImGui::PopStyleColor();
+        }
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
     }
 
     ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
