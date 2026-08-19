@@ -17,7 +17,9 @@
 
 #include "Framework/Scene/SceneSerializer.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Core/Utility/Log.h"
 #include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <regex>
@@ -559,6 +561,8 @@ void BaseScene::Deserialize(const nlohmann::json& j) {
         goArray = &j;
     } else if (j.contains("gameObjects") && j["gameObjects"].is_array()) {
         goArray = &j["gameObjects"];
+    } else {
+        Log::OutPutLog(std::cerr, "[BaseScene] Warning: Invalid JSON format. 'gameObjects' array not found.\n");
     }
 
     if (goArray) {

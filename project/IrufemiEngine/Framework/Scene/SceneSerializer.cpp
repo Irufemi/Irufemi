@@ -44,10 +44,16 @@ bool SceneSerializer::Load(IScene* scene, const std::string& sceneName) {
 
     std::string pathStr = GetSceneFilePath(scene, sceneName);
     fs::path path(pathStr);
-    if (!fs::exists(path)) return false;
+    if (!fs::exists(path)) {
+        Log::OutPutLog(std::cerr, "[SceneSerializer] Error: File not found: " + pathStr + "\n");
+        return false;
+    }
 
     std::ifstream file(path);
-    if (!file.is_open()) return false;
+    if (!file.is_open()) {
+        Log::OutPutLog(std::cerr, "[SceneSerializer] Error: Failed to open file: " + pathStr + "\n");
+        return false;
+    }
 
     nlohmann::json root;
     try {

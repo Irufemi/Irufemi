@@ -4,7 +4,9 @@
 #include <filesystem> // フォルダ内のファイルを探索するために使用
 #include <algorithm>  // 文字列を小文字に変換するために使用
 #include <Windows.h>
+#include <iostream>
 #include "Framework/Utility/CVar.h"
+#include "Core/Utility/Log.h"
 
 #pragma comment (lib,"xaudio2.lib")
 #pragma comment(lib, "Mf.lib")
@@ -94,6 +96,7 @@ void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
     categoryMap_.clear();
     namespace fs = std::filesystem;
     if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        Log::OutPutLog(std::cerr, "[AudioManager] Warning: Sound folder not found or is not a directory: " + folderPath + "\n");
         return;
     }
     for (const auto& entry : fs::directory_iterator(folderPath)) {
@@ -109,6 +112,7 @@ void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std
     namespace fs = std::filesystem;
 
     if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
+        Log::OutPutLog(std::cerr, "[AudioManager] Warning: Category folder not found or is not a directory: " + folderPath + "\n");
         return;
     }
 
@@ -129,9 +133,9 @@ void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std
             if (sd->Load(wpath)) {
                 soundRegistry_[key] = sd;
                 categoryMap_[category].push_back(filename);
-
+            } else {
+                Log::OutPutLog(std::cerr, "[AudioManager] Warning: Failed to load sound file: " + key + "\n");
             }
-
         }
 
     }
