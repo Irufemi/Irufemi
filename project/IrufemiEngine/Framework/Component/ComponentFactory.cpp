@@ -22,6 +22,7 @@
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/ParticleFieldComponent.h"
 #include "Framework/Component/UI/ButtonComponent.h"
+#include "Framework/Component/UI/SliderComponent.h"
 #include "Framework/Component/UI/CanvasComponent.h"
 #include "Framework/Component/Camera/CameraComponent.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
@@ -83,6 +84,7 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("ParticleEmitterComponent", "Effect", []() { return std::make_shared<ParticleEmitterComponent>(); });
     Register("ParticleFieldComponent", "Effect", []() { return std::make_shared<ParticleFieldComponent>(); });
     Register("ButtonComponent", "UI", []() { return std::make_shared<ButtonComponent>(); });
+    Register("SliderComponent", "UI", []() { return std::make_shared<SliderComponent>(); });
     Register("CanvasComponent", "UI", []() { return std::make_shared<CanvasComponent>(); });
     Register("CameraComponent", "Camera", []() { return std::make_shared<CameraComponent>(); });
     Register("CameraShakeComponent", "Camera", []() { return std::make_shared<CameraShakeComponent>(); });

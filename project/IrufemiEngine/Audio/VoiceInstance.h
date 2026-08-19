@@ -3,10 +3,17 @@
 #include <memory>
 #include "Audio/VoiceCallback.h"
 
+enum class AudioCategory {
+    Master, // 特殊な用途
+    BGM,
+    SE,
+    UI
+};
+
 class VoiceInstance {
 public:
-    VoiceInstance(IXAudio2SourceVoice* voice, std::unique_ptr<VoiceCallback> callback)
-        : voice_(voice), callback_(std::move(callback)) {}
+    VoiceInstance(IXAudio2SourceVoice* voice, std::unique_ptr<VoiceCallback> callback, AudioCategory category = AudioCategory::SE)
+        : voice_(voice), callback_(std::move(callback)), category_(category) {}
 
     ~VoiceInstance() {
         if (voice_) {
@@ -59,13 +66,21 @@ public:
      * @return 取得された Voice
      */
     IXAudio2SourceVoice* GetVoice() const { return voice_; }
+
     /**
      * @brief Callback を取得する。
      * @return 取得された Callback
      */
     VoiceCallback* GetCallback() const { return callback_.get(); }
 
+    bool IsFinished() const {
+        return callback_ && callback_->IsFinished();
+    }
+
+    AudioCategory GetCategory() const { return category_; }
+
 private:
-    IXAudio2SourceVoice* voice_ = nullptr;
+    IXAudio2SourceVoice* voice_;
     std::unique_ptr<VoiceCallback> callback_;
+    AudioCategory category_;
 };

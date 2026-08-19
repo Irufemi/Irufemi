@@ -4,6 +4,7 @@
 #include <filesystem> // フォルダ内のファイルを探索するために使用
 #include <algorithm>  // 文字列を小文字に変換するために使用
 #include <Windows.h>
+#include "Framework/Utility/CVar.h"
 
 #pragma comment (lib,"xaudio2.lib")
 #pragma comment(lib, "Mf.lib")
@@ -80,6 +81,12 @@ void AudioManager::Update() {
                 return instance->GetCallback()->IsFinished();
             }),
         activeVoices_.end());
+
+    // マスターボリュームの適用
+    if (pMasteringVoice_) {
+        float masterVol = Irufemi::CVarSystem::GetFloat("a.MasterVolume");
+        pMasteringVoice_->SetVolume(masterVol);
+    }
 }
 
 void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
@@ -159,7 +166,8 @@ std::vector<std::string> AudioManager::GetCategories() const {
     return cats;
 }
 
-std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData, bool loop, float volume) {
+std::weak_ptr<VoiceInstance> AudioManager::Play(
+    std::shared_ptr<Sound> soundData, bool loop, float volume, AudioCategory category) {
     if (finalized_) return {};
     if (!pXAudio2_ || !soundData) {
         return {};
@@ -193,7 +201,7 @@ std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData
     ASSERT_IF_FAILED(hr);
 
     // 管理インスタンスを生成してリストに追加
-    auto instance = std::make_shared<VoiceInstance>(pSourceVoice, std::move(callback));
+    auto instance = std::make_shared<VoiceInstance>(pSourceVoice, std::move(callback), category);
     activeVoices_.push_back(instance);
     return instance;
 }
@@ -232,6 +240,22 @@ void AudioManager::PauseAll() {
 void AudioManager::ResumeAll() {
     for (auto& voice : activeVoices_) {
         if (voice) {
+            voice->Resume();
+        }
+    }
+}
+
+void AudioManager::PauseCategory(AudioCategory category) {
+    for (auto& voice : activeVoices_) {
+        if (voice && voice->GetCategory() == category) {
+            voice->Pause();
+        }
+    }
+}
+
+void AudioManager::ResumeCategory(AudioCategory category) {
+    for (auto& voice : activeVoices_) {
+        if (voice && voice->GetCategory() == category) {
             voice->Resume();
         }
     }

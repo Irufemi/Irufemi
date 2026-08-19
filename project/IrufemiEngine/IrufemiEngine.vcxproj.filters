@@ -585,6 +585,9 @@
     <ClCompile Include="Framework\Component\UI\ButtonComponent.cpp">
       <Filter>Framework\Component\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\UI\SliderComponent.cpp">
+      <Filter>Framework\Component\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Component\UI\CanvasComponent.cpp">
       <Filter>Framework\Component\UI</Filter>
     </ClCompile>
@@ -607,6 +610,9 @@
       <Filter>Framework\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Scene\SceneSerializer.cpp">
+      <Filter>Framework\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Framework\Scene\OptionsScene.cpp">
       <Filter>Framework\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Scene\SceneTransition.cpp">
@@ -1130,6 +1136,9 @@
     <ClInclude Include="Framework\Scene\SceneSerializer.h">
       <Filter>Framework\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Framework\Scene\OptionsScene.h">
+      <Filter>Framework\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="Framework\Scene\SceneTransition.h">
       <Filter>Framework\Scene</Filter>
     </ClInclude>
@@ -1212,6 +1221,9 @@
       <Filter>Framework\Component\Effect</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h">
+      <Filter>Framework\Component\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\UI\SliderComponent.h">
       <Filter>Framework\Component\UI</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h">

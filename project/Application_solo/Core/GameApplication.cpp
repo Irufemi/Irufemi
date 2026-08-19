@@ -43,6 +43,7 @@
 #include "Scenes/inGame/GameScene.h"
 #include "Scenes/Pause/PauseScene.h"
 #include "Scenes/TL1/TL1Scene.h"
+#include "Framework/Scene/OptionsScene.h"
 
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "Framework/Scene/DebugScene.h"
@@ -81,7 +82,7 @@ namespace {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
-        sm.Register("TL1", [] { return std::make_unique<TL1Scene>(); });
+        sm.Register("OptionsScene", [] { return std::make_unique<OptionsScene>(); });
     }
 }
 

@@ -112,10 +112,11 @@ public:
      * @param[in] soundData ロード済みのサウンドデータ
      * @param[in] loop ループ再生するか
      * @param[in] volume 音量 (0.0 ～ 1.0)
+     * @param[in] category 再生するカテゴリ (デフォルト: SE)
      * @return 再生中インスタンスへの弱参照。操作が必要な場合に保持してください。
      */
     std::weak_ptr<VoiceInstance> Play(
-        std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f);
+        std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f, AudioCategory category = AudioCategory::SE);
 
     /**
      * @brief 再生中のサウンドを停止する
@@ -137,6 +138,18 @@ public:
      * @brief すべての一時停止中のサウンドを再開する
      */
     void ResumeAll();
+
+    /**
+     * @brief 特定のカテゴリのサウンドをすべて一時停止する
+     * @param[in] category 対象カテゴリ
+     */
+    void PauseCategory(AudioCategory category);
+
+    /**
+     * @brief 特定のカテゴリのサウンドをすべて再開する
+     * @param[in] category 対象カテゴリ
+     */
+    void ResumeCategory(AudioCategory category);
 
     /**
      * @brief 重複を避けてファイルからロードまたは取得する

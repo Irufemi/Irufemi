@@ -4,6 +4,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               640.0,
               500.0,
@@ -11,7 +12,7 @@
             ],
             "rotation": [
               0.0,
-              0.0,
+              -0.0,
               0.0
             ],
             "scale": [
@@ -85,6 +86,7 @@
           "type": "SceneTransitionButtonComponent"
         }
       ],
+      "instanceId": 17668703084784663331,
       "name": "StartButton",
       "tag": "Untagged"
     },
@@ -92,6 +94,7 @@
       "components": [
         {
           "data": {
+            "inheritScale": true,
             "position": [
               640.0,
               200.0,
@@ -99,7 +102,7 @@
             ],
             "rotation": [
               0.0,
-              0.0,
+              -0.0,
               0.0
             ],
             "scale": [
@@ -127,6 +130,7 @@
           "type": "TextRendererComponent"
         }
       ],
+      "instanceId": 216986397884451233,
       "name": "TitleText",
       "tag": "Untagged"
     }

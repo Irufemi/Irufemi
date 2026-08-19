@@ -23,6 +23,11 @@ void TitleScene::Update() {
     if (IsKeyPressed(VK_SPACE) || IsButtonPressed(XINPUT_GAMEPAD_A)) {
         engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Fade, 1.0f);
     }
+    
+    // オプション画面のテスト用呼び出し
+    if (IsKeyPressed('O') || IsButtonPressed(XINPUT_GAMEPAD_START)) {
+        engine_->GetSceneManager()->PushScene("OptionsScene");
+    }
 }
 
 void TitleScene::Draw() {

@@ -118,4 +118,10 @@ public:
      * @return 判定結果 (true/false)
      */
     virtual bool IsCursorVisible() const { return true; }
+
+    /**
+     * @brief このシーンが重なった時に、下のシーンのオーディオ（SE等）をポーズするか
+     * @return trueの場合は指定カテゴリをポーズする
+     */
+    virtual bool IsAudioBlocking() const { return true; }
 };

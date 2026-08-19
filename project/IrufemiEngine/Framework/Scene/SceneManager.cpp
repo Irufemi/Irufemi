@@ -116,13 +116,16 @@ void SceneManager::PushScene(const Key& name) {
     if (!sceneStack_.empty()) {
         // 現在の最前面シーンをサスペンド状態にする（バックグラウンドへ）
         sceneStack_.back().scene->OnSuspend();
-        // ★全てのSE（効果音）とBGMをポーズする
-        engine_->GetAudioManager()->PauseAll();
     }
 
     SceneStackItem item;
     item.name = name;
     item.scene = it->second();
+
+    // ★上に重なるシーンがAudioをブロックする場合、SEだけをポーズする（BGMとUIはそのまま）
+    if (!sceneStack_.empty() && item.scene->IsAudioBlocking()) {
+        engine_->GetAudioManager()->PauseCategory(AudioCategory::SE);
+    }
 
     // データがあればロード
     bool hasData = SceneSerializer::Load(item.scene.get(), name);
@@ -164,8 +167,8 @@ void SceneManager::PopScene() {
     if (!sceneStack_.empty()) {
         // 次のシーンが最前面に復帰するためレジューム処理を行う
         sceneStack_.back().scene->OnResume();
-        // ★全てのSE（効果音）とBGMを再開する
-        engine_->GetAudioManager()->ResumeAll();
+        // ★ポーズしていたSEカテゴリを再開する
+        engine_->GetAudioManager()->ResumeCategory(AudioCategory::SE);
         engine_->SetCursorLocked(!sceneStack_.back().scene->IsCursorVisible());
     } else {
         engine_->SetCursorLocked(false);

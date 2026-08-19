@@ -1,0 +1,169 @@
+{
+  "gameObjects": [
+    {
+      "name": "OptionsUI_Root",
+      "instanceId": 1000,
+      "components": [
+        {
+          "type": "TransformComponent",
+          "data": {
+            "position": [640.0, 360.0, 1.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0]
+          }
+        },
+        {
+          "type": "SpriteRendererComponent",
+          "data": {
+            "texturePath": "resources/whiteTexture.png",
+            "size": [1280.0, 720.0],
+            "color": [0.0, 0.0, 0.0, 0.8]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Slider_BGM",
+      "instanceId": 1001,
+      "components": [
+        {
+          "type": "TransformComponent",
+          "data": {
+            "position": [640.0, 300.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0]
+          }
+        },
+        {
+          "type": "SpriteRendererComponent",
+          "data": {
+            "texturePath": "resources/whiteTexture.png",
+            "size": [400.0, 10.0],
+            "anchor": [0.5, 0.5],
+            "color": [0.3, 0.3, 0.3, 1.0]
+          }
+        },
+        {
+          "type": "SliderComponent",
+          "data": {
+            "Handle Object ID": 1002,
+            "Hitbox Scale": [1.0, 2.0],
+            "Value": 1.0
+          }
+        }
+      ],
+      "children": [
+        {
+          "name": "Slider_BGM_Handle",
+          "instanceId": 1002,
+          "components": [
+            {
+              "type": "TransformComponent",
+              "data": {
+                "position": [0.0, 0.0, 0.0],
+                "rotation": [0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+              }
+            },
+            {
+              "type": "SpriteRendererComponent",
+              "data": {
+                "texturePath": "resources/whiteTexture.png",
+                "size": [20.0, 30.0],
+                "anchor": [0.5, 0.5],
+                "color": [1.0, 1.0, 1.0, 1.0]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Slider_SE",
+      "instanceId": 1003,
+      "components": [
+        {
+          "type": "TransformComponent",
+          "data": {
+            "position": [640.0, 400.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0]
+          }
+        },
+        {
+          "type": "SpriteRendererComponent",
+          "data": {
+            "texturePath": "resources/whiteTexture.png",
+            "size": [400.0, 10.0],
+            "anchor": [0.5, 0.5],
+            "color": [0.3, 0.3, 0.3, 1.0]
+          }
+        },
+        {
+          "type": "SliderComponent",
+          "data": {
+            "Handle Object ID": 1004,
+            "Hitbox Scale": [1.0, 2.0],
+            "Value": 1.0
+          }
+        }
+      ],
+      "children": [
+        {
+          "name": "Slider_SE_Handle",
+          "instanceId": 1004,
+          "components": [
+            {
+              "type": "TransformComponent",
+              "data": {
+                "position": [0.0, 0.0, 0.0],
+                "rotation": [0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+              }
+            },
+            {
+              "type": "SpriteRendererComponent",
+              "data": {
+                "texturePath": "resources/whiteTexture.png",
+                "size": [20.0, 30.0],
+                "anchor": [0.5, 0.5],
+                "color": [1.0, 1.0, 1.0, 1.0]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Button_Close",
+      "instanceId": 1005,
+      "components": [
+        {
+          "type": "TransformComponent",
+          "data": {
+            "position": [640.0, 550.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0]
+          }
+        },
+        {
+          "type": "SpriteRendererComponent",
+          "data": {
+            "texturePath": "resources/whiteTexture.png",
+            "size": [200.0, 50.0],
+            "anchor": [0.5, 0.5],
+            "color": [0.8, 0.2, 0.2, 1.0]
+          }
+        },
+        {
+          "type": "ButtonComponent",
+          "data": {
+            "Normal Color": [0.8, 0.2, 0.2, 1.0],
+            "Hover Color": [0.9, 0.4, 0.4, 1.0],
+            "Click Color": [0.5, 0.1, 0.1, 1.0]
+          }
+        }
+      ]
+    }
+  ]
+}
