@@ -8,6 +8,9 @@
 #include <filesystem>
 #include <Windows.h>
 #include <chrono>
+#include <string>
+#include <iostream>
+#include "Core/Utility/Log.h"
 #include <thread>
 #include <format>
 #include "Resource/Model/ModelImporter.h"
@@ -325,7 +328,10 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
     namespace fs = std::filesystem;
     const std::string rootBase = rootDir_.empty() ? "resources/model" : rootDir_;
     fs::path start = fs::path(rootBase) / relativeFolder;
-    if (!fs::exists(start)) { return; }
+    if (!fs::exists(start)) {
+        Log::OutPutLog(std::cerr, "[ModelManager] Warning: Preload directory not found: " + start.string() + "\n");
+        return;
+    }
 
     for (auto& entry : fs::recursive_directory_iterator(start)) {
         if (!entry.is_regular_file()) continue;
@@ -358,6 +364,7 @@ void ModelManager::RefreshAvailableModels() {
     
     const fs::path rootPath = rootDir_.empty() ? "resources/model" : rootDir_;
     if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        Log::OutPutLog(std::cerr, "[ModelManager] Warning: Model root directory not found: " + rootPath.string() + "\n");
         isAvailableModelsCached_ = true;
         return;
     }
@@ -489,6 +496,7 @@ std::string ModelManager::FindFileRecursive(const std::string& filename) const {
 
     const fs::path rootPath = rootDir_;
     if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        Log::OutPutLog(std::cerr, "[ModelManager] Warning: Materials directory not found: " + rootPath.string() + "\n");
         return "";
     }
 

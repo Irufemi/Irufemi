@@ -379,6 +379,10 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     if (baseJ.contains("components")) {
         std::vector<std::shared_ptr<Component>> loadedComps;
         for (const auto& cj : baseJ["components"]) {
+            if (!cj.contains("type")) {
+                Log::OutPutLog(std::cerr, "[GameObject] Warning: Component in base data missing 'type' field.\n");
+                continue;
+            }
             std::string type = cj["type"];
             std::shared_ptr<Component> newComp;
             bool isExisting = false;
@@ -432,7 +436,10 @@ void GameObject::Deserialize(const nlohmann::json& j) {
         // プレハブには存在しないが、ローカルデータで追加された新規コンポーネントを復元
         if (j.contains("components")) {
             for (const auto& localCj : j["components"]) {
-                if (!localCj.contains("type")) continue;
+                if (!localCj.contains("type")) {
+                    Log::OutPutLog(std::cerr, "[GameObject] Warning: Component in local data missing 'type' field.\n");
+                    continue;
+                }
                 std::string localType = localCj["type"];
                 
                 // ベースデータに既に存在するかチェック

@@ -32,6 +32,8 @@
 #include "Framework/Component/Utility/SplineNodeComponent.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Core/System/ComponentPool.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 
 std::map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetMap() {
     static std::map<std::string, ComponentRegistration> factoryMap;
@@ -47,6 +49,7 @@ std::shared_ptr<Component> ComponentFactory::Create(const std::string& typeName)
     if (map.find(typeName) != map.end()) {
         return map[typeName].creator();
     }
+    Log::OutPutLog(std::cerr, "[ComponentFactory] Error: Component type '" + typeName + "' is not registered.\n");
     return nullptr;
 }
 

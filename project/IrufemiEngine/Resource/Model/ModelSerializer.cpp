@@ -1,5 +1,8 @@
 #include "Resource/Model/ModelSerializer.h"
 #include <fstream>
+#include <filesystem>
+#include <iostream>
+#include "Core/Utility/Log.h"
 #include <vector>
 
 namespace {
@@ -124,7 +127,10 @@ namespace {
 
 bool ModelSerializer::Serialize(const std::string& filepath, const ObjModel& model, uint64_t sourceLastWriteTime) {
     std::ofstream ofs(filepath, std::ios::binary);
-    if (!ofs.is_open()) return false;
+    if (!ofs.is_open()) {
+        Log::OutPutLog(std::cerr, "[ModelSerializer] Error: Failed to open file for writing: " + filepath + "\n");
+        return false;
+    }
 
     // ヘッダー書き込み
     Header header;
@@ -164,7 +170,10 @@ bool ModelSerializer::Serialize(const std::string& filepath, const ObjModel& mod
 
 bool ModelSerializer::Deserialize(const std::string& filepath, ObjModel& outModel, uint64_t& outSourceLastWriteTime) {
     std::ifstream ifs(filepath, std::ios::binary);
-    if (!ifs.is_open()) return false;
+    if (!ifs.is_open()) {
+        Log::OutPutLog(std::cerr, "[ModelSerializer] Error: Failed to open file for reading: " + filepath + "\n");
+        return false;
+    }
 
     Header header;
     if (!ReadHeader(filepath, header)) return false; // ヘッダーチェック
@@ -211,7 +220,10 @@ bool ModelSerializer::Deserialize(const std::string& filepath, ObjModel& outMode
 
 bool ModelSerializer::ReadHeader(const std::string& filepath, Header& outHeader) {
     std::ifstream ifs(filepath, std::ios::binary);
-    if (!ifs.is_open()) return false;
+    if (!ifs.is_open()) {
+        Log::OutPutLog(std::cerr, "[ModelSerializer] Error: Failed to open file for reading header: " + filepath + "\n");
+        return false;
+    }
 
     ReadPOD(ifs, outHeader);
     if (outHeader.magic != kMagicNumber) return false;

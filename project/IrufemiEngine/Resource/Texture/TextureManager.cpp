@@ -13,6 +13,8 @@
 #include "../../../externals/DirectXTex/d3dx12.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Framework/Scene/SceneManager.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 
 static bool IsImageExtImpl(const std::string& extLower) {
     static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };
@@ -51,7 +53,10 @@ void TextureManager::Initialize(DirectXCommon* dxCommon) {
 
 // 指定フォルダ配下を走査してロード(キーはフルパス文字列)
 void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
-    if (!std::filesystem::exists(folderPath)) { return; }
+    if (!std::filesystem::exists(folderPath)) {
+        Log::OutPutLog(std::cerr, "[TextureManager] Warning: Folder not found: " + folderPath + "\n");
+        return;
+    }
 
     for (auto& entry : std::filesystem::recursive_directory_iterator(folderPath)) {
         if (!entry.is_regular_file()) { continue; }

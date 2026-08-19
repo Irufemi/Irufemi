@@ -15,6 +15,8 @@
 #include <filesystem>
 #include "Resource/Model/AnimationImporter.h"
 #include "Resource/Model/AnimationSerializer.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 
 void AnimationManager::Initialize(DirectXCommon* dxCommon) {
     dxCommon_ = dxCommon;
@@ -445,6 +447,7 @@ std::string AnimationManager::FindFileRecursive(const std::string& filename) con
 
     const fs::path rootPath = rootDir_;
     if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
+        Log::OutPutLog(std::cerr, "[AnimationManager] Warning: Animation directory not found: " + rootPath.string() + "\n");
         return "";
     }
 
@@ -661,8 +664,8 @@ void AnimationManager::RefreshAvailableAnimations() {
                 }
             }
         }
-    } catch (const std::exception&) {
-        // エラーハンドリング
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[AnimationManager] Error: Failed to refresh animations: " + std::string(e.what()) + "\n");
     }
 }
 

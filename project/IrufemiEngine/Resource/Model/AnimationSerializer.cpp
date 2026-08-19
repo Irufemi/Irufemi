@@ -1,5 +1,7 @@
 #include "Resource/Model/AnimationSerializer.h"
 #include <fstream>
+#include <iostream>
+#include "Core/Utility/Log.h"
 #include <vector>
 
 namespace {
@@ -68,7 +70,10 @@ namespace {
 
 bool AnimationSerializer::Serialize(const std::string& filepath, const Animation& animation, uint64_t sourceLastWriteTime) {
     std::ofstream ofs(filepath, std::ios::binary);
-    if (!ofs.is_open()) return false;
+    if (!ofs.is_open()) {
+        Log::OutPutLog(std::cerr, "[AnimationSerializer] Error: Failed to open file for writing: " + filepath + "\n");
+        return false;
+    }
 
     Header header;
     header.magic = kMagicNumber;
@@ -90,7 +95,10 @@ bool AnimationSerializer::Serialize(const std::string& filepath, const Animation
 
 bool AnimationSerializer::Deserialize(const std::string& filepath, Animation& outAnimation, uint64_t& outSourceLastWriteTime) {
     std::ifstream ifs(filepath, std::ios::binary);
-    if (!ifs.is_open()) return false;
+    if (!ifs.is_open()) {
+        Log::OutPutLog(std::cerr, "[AnimationSerializer] Error: Failed to open file for reading: " + filepath + "\n");
+        return false;
+    }
 
     Header header;
     if (!ReadHeader(filepath, header)) return false;
@@ -116,7 +124,10 @@ bool AnimationSerializer::Deserialize(const std::string& filepath, Animation& ou
 
 bool AnimationSerializer::ReadHeader(const std::string& filepath, Header& outHeader) {
     std::ifstream ifs(filepath, std::ios::binary);
-    if (!ifs.is_open()) return false;
+    if (!ifs.is_open()) {
+        Log::OutPutLog(std::cerr, "[AnimationSerializer] Error: Failed to open file for reading header: " + filepath + "\n");
+        return false;
+    }
 
     ReadPOD(ifs, outHeader);
     if (outHeader.magic != kMagicNumber) return false;
