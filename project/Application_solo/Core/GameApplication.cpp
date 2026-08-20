@@ -29,6 +29,7 @@
 #include "Combat/DroneManagerComponent.h"
 #include "Combat/BossBulletManagerComponent.h"
 #include "Core/GameLoopManagerComponent.h"
+#include "Combat/EnemyBeamComponent.h"
 
 // エンジン機能
 #include "RHI/DirectX12/ShaderManager.h"
@@ -157,6 +158,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("LockonMarkerUIComponent", "UI", []() { return std::make_shared<LockonMarkerUIComponent>(); });
     ComponentFactory::Register("DroneManagerComponent", "Game", []() { return std::make_shared<DroneManagerComponent>(); });
     ComponentFactory::Register("BossBulletManagerComponent", "Game", []() { return std::make_shared<BossBulletManagerComponent>(); });
+    ComponentFactory::Register("EnemyBeamComponent", "Game", []() { return std::make_shared<EnemyBeamComponent>(); });
 
     ComponentFactory::Register("GameLoopManagerComponent", "Game", []() { return std::make_shared<GameLoopManagerComponent>(); });
     // UIの登録

@@ -32,4 +32,10 @@ struct SkeletonPose {
     const void* lastAppliedAnimation = nullptr;
     // Jointインデックスと対象NodeAnimationのポインタを紐付けたリスト
     std::vector<std::pair<int32_t, const NodeAnimation*>> activeAnimationBindings;
+
+    // --- ブレンド用最適化キャッシュ ---
+    const void* lastBlendAnimA = nullptr;
+    const void* lastBlendAnimB = nullptr;
+    // Jointインデックス, NodeAnimA, NodeAnimB (どちらかがnullptrの場合もある)
+    std::vector<std::tuple<int32_t, const NodeAnimation*, const NodeAnimation*>> activeBlendBindings;
 };

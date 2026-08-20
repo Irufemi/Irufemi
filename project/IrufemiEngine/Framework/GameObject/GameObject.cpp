@@ -26,9 +26,7 @@ GameObject::GameObject(const std::string& name) : instanceId_(Irufemi::Random::G
     AddComponent<TransformComponent>();
 }
 
-TransformComponent* GameObject::GetTransform() const {
-    return GetComponent<TransformComponent>();
-}
+// GetTransform() is now inline in GameObject.h
 
 
 
@@ -217,6 +215,11 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
+    
+    if (auto transform = dynamic_cast<TransformComponent*>(component.get())) {
+        transformCache_ = transform;
+    }
+    
     component->OnRegisterProperties();
     component->Initialize();
     if (isActive_) {
@@ -228,7 +231,7 @@ void GameObject::RemoveComponent(Component* component) {
     if (!component) return;
 
     // TransformComponentは基本として削除不可とする
-    if (component->GetComponentName() == "TransformComponent") return;
+    if (component == transformCache_) return;
 
     // componentMap_からの削除
     auto typeIt = componentMap_.find(typeid(*component));

@@ -113,6 +113,10 @@ public:
         components_.push_back(component);
         componentMap_[typeid(T)].push_back(component.get());
         
+        if constexpr (std::is_same_v<T, TransformComponent>) {
+            transformCache_ = reinterpret_cast<TransformComponent*>(component.get());
+        }
+        
         component->OnRegisterProperties();
         component->Initialize();
         if (isActive_) {
@@ -146,7 +150,7 @@ public:
      * @brief 自身のアタッチされている TransformComponent を取得するショートカット
      * @return TransformComponent* (GameObjectは必ずTransformを持つため、基本的にはnullptrにならない)
      */
-    class TransformComponent* GetTransform() const;
+    class TransformComponent* GetTransform() const { return transformCache_; }
 
     /**
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントを1つ探して取得する
@@ -362,6 +366,7 @@ private:
 
     std::vector<std::shared_ptr<Component>> components_;
     std::unordered_map<std::type_index, std::vector<Component*>> componentMap_;
+    class TransformComponent* transformCache_ = nullptr;
 
 private:
     template<typename T>

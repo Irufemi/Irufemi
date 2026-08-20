@@ -503,10 +503,9 @@ std::string ModelManager::FindFileRecursive(const std::string& filename) const {
     for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
         if (entry.is_regular_file()) {
             std::string entryFilename = entry.path().filename().string();
-            std::transform(entryFilename.begin(), entryFilename.end(), entryFilename.begin(),
-                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-            if (entryFilename == lowerFilename) {
+            
+            // _stricmp を用いて大文字小文字を無視した比較を行う（ループ内の無駄なアロケーションを排除）
+            if (_stricmp(entryFilename.c_str(), filename.c_str()) == 0) {
                 std::string foundPath = entry.path().string();
                 std::replace(foundPath.begin(), foundPath.end(), '\\', '/');
                 {
