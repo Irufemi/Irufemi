@@ -388,3 +388,14 @@ void TransformComponent::Deserialize(const nlohmann::json& j) {
     }
     MarkLocalDirty(); // Deserialize時にDirtyにする
 }
+
+std::shared_ptr<Component> TransformComponent::Clone() {
+    auto clone = std::make_shared<TransformComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->position_ = this->position_;
+    clone->rotation_ = this->rotation_;
+    clone->scale_ = this->scale_;
+    clone->inheritScale_ = this->inheritScale_;
+    // 行列等は初期化後にDirtyフラグ経由で再計算される
+    return clone;
+}

@@ -225,6 +225,11 @@ public:
      */
     void Deserialize(const nlohmann::json& j) override;
 
+    /**
+     * @brief クローンを作成する (高速なディープコピー)
+     */
+    std::shared_ptr<Component> Clone() override;
+
 
 
 private:

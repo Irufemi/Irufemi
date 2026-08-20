@@ -120,8 +120,11 @@ void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std
         if (!entry.is_regular_file()) continue;
 
         std::string ext = entry.path().extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if (ext != ".wav" && ext != ".mp3" && ext != ".wma") continue;
+        if (_stricmp(ext.c_str(), ".wav") != 0 && 
+            _stricmp(ext.c_str(), ".mp3") != 0 && 
+            _stricmp(ext.c_str(), ".wma") != 0) {
+            continue;
+        }
 
         std::string filename = entry.path().filename().string();
         std::wstring wpath = entry.path().wstring();

@@ -97,6 +97,11 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
+    /**
      * @brief 現在読み込まれているモデル名を取得します。
      * @return モデル名
      */

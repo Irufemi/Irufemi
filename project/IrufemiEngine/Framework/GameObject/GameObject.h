@@ -72,6 +72,11 @@ public:
     std::shared_ptr<GameObject> Clone();
 
     /**
+     * @brief 内部再帰用のクローン処理 (IDマッピングを構築しながらコピーする)
+     */
+    std::shared_ptr<GameObject> CloneInternal(std::unordered_map<uint64_t, uint64_t>& idMap);
+
+    /**
      * @brief 一意のインスタンスIDを再生成する（CloneやPrefabロード時のID重複回避用）
      * @param recursive 子オブジェクトも再帰的にIDを再生成するかどうか
      */

@@ -8,6 +8,7 @@ class GameObject;
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Vector4.h"
+#include "Core/Utility/JsonUtility.h"
 namespace Irufemi { struct Ray; }
 
 enum class ComponentPropertyType { Float, Float2, Float3, Float4, Int, Bool, String, Float3Array, Header, Separator, Enum, GameObjectRef };
@@ -191,21 +192,21 @@ public:
     /**
      * @brief RegisterProperty を実行する。
      */
-    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y}}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", JsonUtility::ToJson(*ptr)}); return properties_.back(); }
     /**
      * @brief RegisterProperty を実行する。
      */
-    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z}}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", JsonUtility::ToJson(*ptr)}); return properties_.back(); }
     /**
      * @brief RegisterProperty を実行する。
      */
-    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", nlohmann::json{ptr->x, ptr->y, ptr->z, ptr->w}}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", JsonUtility::ToJson(*ptr)}); return properties_.back(); }
     /**
      * @brief RegisterProperty を実行する。
      */
     ComponentProperty& RegisterProperty(const std::string& name, std::vector<Irufemi::Vector3>* ptr) { 
         nlohmann::json jArray = nlohmann::json::array();
-        for (const auto& v : *ptr) jArray.push_back({ v.x, v.y, v.z });
+        for (const auto& v : *ptr) jArray.push_back(JsonUtility::ToJson(v));
         properties_.push_back({name, ComponentPropertyType::Float3Array, ptr, 0.0f, 0.0f, {}, "", jArray}); 
         return properties_.back(); 
     }
@@ -233,24 +234,24 @@ public:
                 case ComponentPropertyType::GameObjectRef: j[prop.name] = *static_cast<uint64_t*>(prop.data); break;
                 case ComponentPropertyType::Float2: {
                     auto* v = static_cast<Irufemi::Vector2*>(prop.data);
-                    j[prop.name] = { v->x, v->y };
+                    j[prop.name] = JsonUtility::ToJson(*v);
                     break;
                 }
                 case ComponentPropertyType::Float3: {
                     auto* v = static_cast<Irufemi::Vector3*>(prop.data);
-                    j[prop.name] = { v->x, v->y, v->z };
+                    j[prop.name] = JsonUtility::ToJson(*v);
                     break;
                 }
                 case ComponentPropertyType::Float4: {
                     auto* v = static_cast<Irufemi::Vector4*>(prop.data);
-                    j[prop.name] = { v->x, v->y, v->z, v->w };
+                    j[prop.name] = JsonUtility::ToJson(*v);
                     break;
                 }
                 case ComponentPropertyType::Float3Array: {
                     auto* arr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
                     nlohmann::json jArray = nlohmann::json::array();
                     for (const auto& v : *arr) {
-                        jArray.push_back({ v.x, v.y, v.z });
+                        jArray.push_back(JsonUtility::ToJson(v));
                     }
                     j[prop.name] = jArray;
                     break;
@@ -278,26 +279,17 @@ public:
                 case ComponentPropertyType::GameObjectRef: *static_cast<uint64_t*>(prop.data) = j[prop.name].get<uint64_t>(); break;
                 case ComponentPropertyType::Float2: {
                     auto* v = static_cast<Irufemi::Vector2*>(prop.data);
-                    auto arr = j[prop.name];
-                    if (arr.is_array() && arr.size() >= 2) {
-                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>();
-                    }
+                    *v = JsonUtility::ToVector2(j[prop.name], *v);
                     break;
                 }
                 case ComponentPropertyType::Float3: {
                     auto* v = static_cast<Irufemi::Vector3*>(prop.data);
-                    auto arr = j[prop.name];
-                    if (arr.is_array() && arr.size() >= 3) {
-                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>();
-                    }
+                    *v = JsonUtility::ToVector3(j[prop.name], *v);
                     break;
                 }
                 case ComponentPropertyType::Float4: {
                     auto* v = static_cast<Irufemi::Vector4*>(prop.data);
-                    auto arr = j[prop.name];
-                    if (arr.is_array() && arr.size() >= 4) {
-                        v->x = arr[0].get<float>(); v->y = arr[1].get<float>(); v->z = arr[2].get<float>(); v->w = arr[3].get<float>();
-                    }
+                    *v = JsonUtility::ToVector4(j[prop.name], *v);
                     break;
                 }
                 case ComponentPropertyType::Float3Array: {
@@ -306,9 +298,7 @@ public:
                     if (arr.is_array()) {
                         vecArr->clear();
                         for (const auto& item : arr) {
-                            if (item.is_array() && item.size() >= 3) {
-                                vecArr->push_back({item[0].get<float>(), item[1].get<float>(), item[2].get<float>()});
-                            }
+                            vecArr->push_back(JsonUtility::ToVector3(item));
                         }
                     }
                     break;
@@ -316,9 +306,41 @@ public:
                 case ComponentPropertyType::Header:
                 case ComponentPropertyType::Separator:
                     break;
+        }
+    }
+
+    /**
+     * @brief コンポーネントのプロパティを別のコンポーネントからコピーする (ディープコピー用)
+     */
+    virtual void CopyPropertiesFrom(const Component* other) {
+        if (!other) return;
+        if (properties_.size() != other->properties_.size()) return;
+        for (size_t i = 0; i < properties_.size(); ++i) {
+            auto& dst = properties_[i];
+            const auto& src = other->properties_[i];
+            if (dst.type != src.type) continue;
+            switch (dst.type) {
+                case ComponentPropertyType::Float: *static_cast<float*>(dst.data) = *static_cast<float*>(src.data); break;
+                case ComponentPropertyType::Int:
+                case ComponentPropertyType::Enum: *static_cast<int*>(dst.data) = *static_cast<int*>(src.data); break;
+                case ComponentPropertyType::Bool: *static_cast<bool*>(dst.data) = *static_cast<bool*>(src.data); break;
+                case ComponentPropertyType::String: *static_cast<std::string*>(dst.data) = *static_cast<std::string*>(src.data); break;
+                case ComponentPropertyType::GameObjectRef: *static_cast<uint64_t*>(dst.data) = *static_cast<uint64_t*>(src.data); break;
+                case ComponentPropertyType::Float2: *static_cast<Irufemi::Vector2*>(dst.data) = *static_cast<Irufemi::Vector2*>(src.data); break;
+                case ComponentPropertyType::Float3: *static_cast<Irufemi::Vector3*>(dst.data) = *static_cast<Irufemi::Vector3*>(src.data); break;
+                case ComponentPropertyType::Float4: *static_cast<Irufemi::Vector4*>(dst.data) = *static_cast<Irufemi::Vector4*>(src.data); break;
+                case ComponentPropertyType::Float3Array: *static_cast<std::vector<Irufemi::Vector3>*>(dst.data) = *static_cast<std::vector<Irufemi::Vector3>*>(src.data); break;
+                case ComponentPropertyType::Header:
+                case ComponentPropertyType::Separator:
+                    break;
             }
         }
     }
+
+    /**
+     * @brief クローンを作成する
+     */
+    virtual std::shared_ptr<Component> Clone();
 
     /**
      * @brief エディタ（インスペクター）用UIの描画処理について

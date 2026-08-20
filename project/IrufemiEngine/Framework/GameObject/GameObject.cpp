@@ -517,18 +517,10 @@ void GameObject::Deserialize(const nlohmann::json& j) {
 }
 
 std::shared_ptr<GameObject> GameObject::Clone() {
-    auto clone = std::make_shared<GameObject>();
-    
-    nlohmann::json root = this->Serialize();
     std::unordered_map<uint64_t, uint64_t> idMap;
-    GameObject::RemapJSONInstanceIDs(root, idMap);
+    auto clone = CloneInternal(idMap);
     
-    clone->Deserialize(root);
-    
-    // クローン元のシリアライズフラグを引き継ぐ
-    clone->SetIsSerializable(this->IsSerializable());
-
-    // --- コンポーネントにアタッチされた GameObject の参照をクローン側に差し替える ---
+    // --- 名前解決とIDの差し替え ---
     if (scene_) {
         clone->SetName(scene_->GetUniqueObjectName(this->GetName()));
     } else {
@@ -536,6 +528,37 @@ std::shared_ptr<GameObject> GameObject::Clone() {
     }
     
     clone->OnIDRemapped(idMap);
+    
+    return clone;
+}
+
+std::shared_ptr<GameObject> GameObject::CloneInternal(std::unordered_map<uint64_t, uint64_t>& idMap) {
+    auto clone = std::make_shared<GameObject>();
+    idMap[this->GetInstanceID()] = clone->GetInstanceID();
+
+    clone->SetName(this->GetName());
+    clone->SetTag(this->GetTag());
+    clone->SetIsActive(this->GetIsActive());
+    clone->SetIsFolder(this->GetIsFolder());
+    clone->SetIsLocked(this->GetIsLocked());
+    clone->SetIsSerializable(this->IsSerializable());
+    clone->SetSourcePrefabPath(this->GetSourcePrefabPath());
+    
+    // Deep copy components
+    for (const auto& comp : components_) {
+        auto clonedComp = comp->Clone();
+        if (clonedComp) {
+            clone->AddComponent(clonedComp);
+        } else {
+            Log::OutPutLog(std::cerr, "[GameObject] Error: Failed to clone component: " + comp->GetComponentName() + "\n");
+        }
+    }
+
+    // Deep copy children
+    for (const auto& child : children_) {
+        auto clonedChild = child->CloneInternal(idMap);
+        clone->AddChild(clonedChild);
+    }
     
     return clone;
 }

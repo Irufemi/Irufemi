@@ -13,6 +13,7 @@
 namespace fs = std::filesystem;
 
 std::unordered_map<std::string, nlohmann::json> SceneSerializer::prefabCache_;
+std::unordered_map<std::string, std::shared_ptr<GameObject>> SceneSerializer::prefabInstanceCache_;
 
 bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
     if (!scene) return false;
@@ -122,25 +123,29 @@ nlohmann::json SceneSerializer::GetPrefabJson(const std::string& filepath) {
 }
 
 std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
-    nlohmann::json root = GetPrefabJson(filepath);
-    if (root.empty()) return nullptr;
+    auto it = prefabInstanceCache_.find(filepath);
+    std::shared_ptr<GameObject> templateObj;
 
-    // プレハブ展開時に全UUIDを新しく生成し、新旧対応表を作成する
-    std::unordered_map<uint64_t, uint64_t> idMap;
-    GameObject::RemapJSONInstanceIDs(root, idMap);
+    if (it != prefabInstanceCache_.end()) {
+        templateObj = it->second;
+    } else {
+        nlohmann::json root = GetPrefabJson(filepath);
+        if (root.empty()) return nullptr;
 
-    auto obj = std::make_shared<GameObject>();
-    obj->Deserialize(root);
+        templateObj = std::make_shared<GameObject>();
+        templateObj->Deserialize(root);
+        prefabInstanceCache_[filepath] = templateObj;
+    }
+
+    // テンプレートからディープコピー (超高速クローン)
+    auto obj = templateObj->Clone();
     obj->Initialize();
-
-    // デシリアライズ・初期化完了後にコンポーネントへIDの読み替えを通知する
-    obj->OnIDRemapped(idMap);
-
     return obj;
 }
 
 void SceneSerializer::ClearCache() {
     prefabCache_.clear();
+    prefabInstanceCache_.clear();
 }
 
 std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& sceneName) {

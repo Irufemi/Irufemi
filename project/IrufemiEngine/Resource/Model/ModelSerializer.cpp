@@ -31,7 +31,19 @@ namespace {
             str.clear();
             return;
         }
+
+        // 残りファイルサイズによるバリデーション
+        auto currentPos = ifs.tellg();
+        ifs.seekg(0, std::ios::end);
+        auto endPos = ifs.tellg();
+        ifs.seekg(currentPos, std::ios::beg);
         
+        if (size > static_cast<uint32_t>(endPos - currentPos)) {
+            Log::OutPutLog(std::cerr, "[ModelSerializer] Error: String size validation failed.\n");
+            str.clear();
+            return;
+        }
+
         std::vector<char> buffer(size);
         ifs.read(buffer.data(), size);
         if (ifs.fail()) {
@@ -58,6 +70,20 @@ namespace {
             vec.clear();
             return;
         }
+
+        // 残りファイルサイズによるバリデーション
+        auto currentPos = ifs.tellg();
+        ifs.seekg(0, std::ios::end);
+        auto endPos = ifs.tellg();
+        ifs.seekg(currentPos, std::ios::beg);
+        
+        uint64_t bytesNeeded = static_cast<uint64_t>(size) * sizeof(T);
+        if (bytesNeeded > static_cast<uint64_t>(endPos - currentPos)) {
+            Log::OutPutLog(std::cerr, "[ModelSerializer] Error: Vector size validation failed.\n");
+            vec.clear();
+            return;
+        }
+
         vec.resize(size);
         ifs.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
         if (ifs.fail()) {

@@ -78,3 +78,14 @@ void ParticleEmitterComponent::Deserialize(const nlohmann::json& j) {
         particleObj_->Deserialize(j["ParticleData"]);
     }
 }
+
+std::shared_ptr<Component> ParticleEmitterComponent::Clone() {
+    auto clone = std::make_shared<ParticleEmitterComponent>();
+    clone->CopyPropertiesFrom(this);
+    if (this->particleObj_) {
+        nlohmann::json particleJson;
+        this->particleObj_->Serialize(particleJson);
+        clone->particleObj_->Deserialize(particleJson);
+    }
+    return clone;
+}

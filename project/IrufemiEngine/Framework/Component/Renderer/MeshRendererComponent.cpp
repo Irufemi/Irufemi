@@ -136,3 +136,14 @@ void MeshRendererComponent::Deserialize(const nlohmann::json& j) {
         LoadModel(modelName);
     }
 }
+
+std::shared_ptr<Component> MeshRendererComponent::Clone() {
+    auto clone = std::make_shared<MeshRendererComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->castShadows_ = this->castShadows_;
+    clone->isVisible_ = this->isVisible_;
+    if (!this->modelName_.empty()) {
+        clone->LoadModel(this->modelName_);
+    }
+    return clone;
+}
