@@ -208,3 +208,15 @@ void ScreenEffectComponent::Deserialize(const nlohmann::json& j) {
         if (rj.contains("numSamples")) targetRadialBlurParams_.numSamples = rj["numSamples"];
     }
 }
+
+std::shared_ptr<Component> ScreenEffectComponent::Clone() {
+    auto clone = std::make_shared<ScreenEffectComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->mode_ = this->mode_;
+    clone->duration_ = this->duration_;
+    clone->targetGlitchParams_ = this->targetGlitchParams_;
+    clone->targetVignetteParams_ = this->targetVignetteParams_;
+    clone->targetChromaticAberrationParams_ = this->targetChromaticAberrationParams_;
+    clone->targetRadialBlurParams_ = this->targetRadialBlurParams_;
+    return clone;
+}

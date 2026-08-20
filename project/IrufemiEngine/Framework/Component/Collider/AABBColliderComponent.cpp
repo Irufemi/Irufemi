@@ -84,3 +84,11 @@ void AABBColliderComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("layer")) layer_ = j["layer"];
     if (j.contains("mask")) mask_ = j["mask"];
 }
+
+std::shared_ptr<Component> AABBColliderComponent::Clone() {
+    auto clone = std::make_shared<AABBColliderComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->localOffset_ = this->localOffset_;
+    clone->localSize_ = this->localSize_;
+    return clone;
+}

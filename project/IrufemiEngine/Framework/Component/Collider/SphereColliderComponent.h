@@ -56,6 +56,11 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
+    /**
      * @brief コンポーネント名の取得
      * @return "SphereColliderComponent"
      */

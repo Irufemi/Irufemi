@@ -81,3 +81,13 @@ void EffectMaskComponent::Deserialize(const nlohmann::json& j) {
         if (p.contains("param4")) customParams_.param4 = p["param4"];
     }
 }
+
+std::shared_ptr<Component> EffectMaskComponent::Clone() {
+    auto clone = std::make_shared<EffectMaskComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->enableEffectMask_ = this->enableEffectMask_;
+    clone->customEffectType_ = this->customEffectType_;
+    clone->customParams_ = this->customParams_;
+    clone->cachedEffectParam_ = this->cachedEffectParam_;
+    return clone;
+}

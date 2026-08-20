@@ -272,3 +272,23 @@ void EnemyBeamComponent::Draw() {
         }
     }
 }
+
+std::shared_ptr<Component> EnemyBeamComponent::Clone() {
+    auto clone = std::make_shared<EnemyBeamComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->beamLength_ = this->beamLength_;
+    clone->beamMaxRadius_ = this->beamMaxRadius_;
+    clone->chargeDuration_ = this->chargeDuration_;
+    clone->fireDuration_ = this->fireDuration_;
+    clone->chargeColor_ = this->chargeColor_;
+    clone->beamColor_ = this->beamColor_;
+    clone->beamCoreColor_ = this->beamCoreColor_;
+    clone->beamIntensity_ = this->beamIntensity_;
+    clone->beamCoreIntensity_ = this->beamCoreIntensity_;
+    clone->beamSpeed_ = this->beamSpeed_;
+    clone->auraColor_ = this->auraColor_;
+    clone->auraCoreColor_ = this->auraCoreColor_;
+    clone->auraIntensity_ = this->auraIntensity_;
+    clone->auraSpeed_ = this->auraSpeed_;
+    return clone;
+}

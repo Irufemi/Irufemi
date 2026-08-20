@@ -37,6 +37,11 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
+    /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */

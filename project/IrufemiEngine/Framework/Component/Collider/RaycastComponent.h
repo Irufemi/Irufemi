@@ -49,6 +49,11 @@ protected:
      */
     void Deserialize(const nlohmann::json& j) override;
 
+    /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
     /// @brief 現在レイが何かに当たっているかを取得する
     bool IsHit() const { return hitInfo_.isHit; }
     

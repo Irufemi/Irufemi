@@ -19,6 +19,11 @@ public:
     std::string GetComponentName() const override { return "BossBulletComponent"; }
 
     /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
+    /**
      * @brief 弾を発射する
      * @param manager 自身を管理しているマネージャー（回収時に通知するため）
      * @param startPos 発射初期座標

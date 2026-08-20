@@ -192,21 +192,21 @@ public:
     /**
      * @brief RegisterProperty を実行する。
      */
-    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", JsonUtility::ToJson(*ptr)}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector2* ptr) { properties_.push_back({name, ComponentPropertyType::Float2, ptr, 0.0f, 0.0f, {}, "", Irufemi::JsonUtility::ToJson(*ptr)}); return properties_.back(); }
     /**
      * @brief RegisterProperty を実行する。
      */
-    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", JsonUtility::ToJson(*ptr)}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector3* ptr) { properties_.push_back({name, ComponentPropertyType::Float3, ptr, 0.0f, 0.0f, {}, "", Irufemi::JsonUtility::ToJson(*ptr)}); return properties_.back(); }
     /**
      * @brief RegisterProperty を実行する。
      */
-    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", JsonUtility::ToJson(*ptr)}); return properties_.back(); }
+    ComponentProperty& RegisterProperty(const std::string& name, Irufemi::Vector4* ptr) { properties_.push_back({name, ComponentPropertyType::Float4, ptr, 0.0f, 0.0f, {}, "", Irufemi::JsonUtility::ToJson(*ptr)}); return properties_.back(); }
     /**
      * @brief RegisterProperty を実行する。
      */
     ComponentProperty& RegisterProperty(const std::string& name, std::vector<Irufemi::Vector3>* ptr) { 
         nlohmann::json jArray = nlohmann::json::array();
-        for (const auto& v : *ptr) jArray.push_back(JsonUtility::ToJson(v));
+        for (const auto& v : *ptr) jArray.push_back(Irufemi::JsonUtility::ToJson(v));
         properties_.push_back({name, ComponentPropertyType::Float3Array, ptr, 0.0f, 0.0f, {}, "", jArray}); 
         return properties_.back(); 
     }
@@ -234,24 +234,24 @@ public:
                 case ComponentPropertyType::GameObjectRef: j[prop.name] = *static_cast<uint64_t*>(prop.data); break;
                 case ComponentPropertyType::Float2: {
                     auto* v = static_cast<Irufemi::Vector2*>(prop.data);
-                    j[prop.name] = JsonUtility::ToJson(*v);
+                    j[prop.name] = Irufemi::JsonUtility::ToJson(*v);
                     break;
                 }
                 case ComponentPropertyType::Float3: {
                     auto* v = static_cast<Irufemi::Vector3*>(prop.data);
-                    j[prop.name] = JsonUtility::ToJson(*v);
+                    j[prop.name] = Irufemi::JsonUtility::ToJson(*v);
                     break;
                 }
                 case ComponentPropertyType::Float4: {
                     auto* v = static_cast<Irufemi::Vector4*>(prop.data);
-                    j[prop.name] = JsonUtility::ToJson(*v);
+                    j[prop.name] = Irufemi::JsonUtility::ToJson(*v);
                     break;
                 }
                 case ComponentPropertyType::Float3Array: {
                     auto* arr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
                     nlohmann::json jArray = nlohmann::json::array();
                     for (const auto& v : *arr) {
-                        jArray.push_back(JsonUtility::ToJson(v));
+                        jArray.push_back(Irufemi::JsonUtility::ToJson(v));
                     }
                     j[prop.name] = jArray;
                     break;
@@ -279,17 +279,17 @@ public:
                 case ComponentPropertyType::GameObjectRef: *static_cast<uint64_t*>(prop.data) = j[prop.name].get<uint64_t>(); break;
                 case ComponentPropertyType::Float2: {
                     auto* v = static_cast<Irufemi::Vector2*>(prop.data);
-                    *v = JsonUtility::ToVector2(j[prop.name], *v);
+                    *v = Irufemi::JsonUtility::ToVector2(j[prop.name], *v);
                     break;
                 }
                 case ComponentPropertyType::Float3: {
                     auto* v = static_cast<Irufemi::Vector3*>(prop.data);
-                    *v = JsonUtility::ToVector3(j[prop.name], *v);
+                    *v = Irufemi::JsonUtility::ToVector3(j[prop.name], *v);
                     break;
                 }
                 case ComponentPropertyType::Float4: {
                     auto* v = static_cast<Irufemi::Vector4*>(prop.data);
-                    *v = JsonUtility::ToVector4(j[prop.name], *v);
+                    *v = Irufemi::JsonUtility::ToVector4(j[prop.name], *v);
                     break;
                 }
                 case ComponentPropertyType::Float3Array: {
@@ -298,7 +298,7 @@ public:
                     if (arr.is_array()) {
                         vecArr->clear();
                         for (const auto& item : arr) {
-                            vecArr->push_back(JsonUtility::ToVector3(item));
+                            vecArr->push_back(Irufemi::JsonUtility::ToVector3(item));
                         }
                     }
                     break;
@@ -308,6 +308,7 @@ public:
                     break;
         }
     }
+}
 
     /**
      * @brief コンポーネントのプロパティを別のコンポーネントからコピーする (ディープコピー用)

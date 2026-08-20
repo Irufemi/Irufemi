@@ -21,6 +21,11 @@ public:
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
 
+    /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
     /// @brief 演出を開始する（Weight を 1.0 にし、時間経過で減衰させる）
     void Play();
 

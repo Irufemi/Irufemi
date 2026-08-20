@@ -74,3 +74,14 @@ void RaycastComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("mask")) mask_ = j["mask"];
     if (j.contains("showDebugLine")) showDebugLine_ = j["showDebugLine"];
 }
+
+std::shared_ptr<Component> RaycastComponent::Clone() {
+    auto clone = std::make_shared<RaycastComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->localOffset_ = this->localOffset_;
+    clone->localDirection_ = this->localDirection_;
+    clone->maxDistance_ = this->maxDistance_;
+    clone->mask_ = this->mask_;
+    clone->showDebugLine_ = this->showDebugLine_;
+    return clone;
+}

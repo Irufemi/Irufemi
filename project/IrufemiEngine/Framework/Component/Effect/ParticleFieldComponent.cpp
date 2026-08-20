@@ -75,3 +75,10 @@ void ParticleFieldComponent::Deserialize(const nlohmann::json& j) {
         fieldData_.axis.z = j["axis"][2];
     }
 }
+
+std::shared_ptr<Component> ParticleFieldComponent::Clone() {
+    auto clone = std::make_shared<ParticleFieldComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->fieldData_ = this->fieldData_;
+    return clone;
+}

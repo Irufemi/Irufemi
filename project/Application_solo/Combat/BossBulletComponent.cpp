@@ -12,6 +12,16 @@ void BossBulletComponent::OnRegisterProperties() {
     // 登録が必要なプロパティがあれば記述
 }
 
+std::shared_ptr<Component> BossBulletComponent::Clone() {
+    auto clone = std::make_shared<BossBulletComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->manager_ = this->manager_;
+    clone->velocity_ = this->velocity_;
+    clone->lifeTimer_ = this->lifeTimer_;
+    clone->isActiveBullet_ = this->isActiveBullet_;
+    return clone;
+}
+
 void BossBulletComponent::Shoot(BossBulletManagerComponent* manager, const Irufemi::Vector3& startPos, const Irufemi::Vector3& velocity, float lifeTime) {
     manager_ = manager;
     velocity_ = velocity;

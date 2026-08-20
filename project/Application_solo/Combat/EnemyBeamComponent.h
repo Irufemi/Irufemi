@@ -23,6 +23,11 @@ public:
     std::string GetComponentName() const override { return "EnemyBeamComponent"; }
 
     /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
+    /**
      * @brief ビーム発射シーケンスを開始する
      * @param startPos 発射元の座標
      * @param targetPos ターゲットの座標

@@ -390,7 +390,12 @@ void TransformComponent::Deserialize(const nlohmann::json& j) {
 }
 
 std::shared_ptr<Component> TransformComponent::Clone() {
-    auto clone = std::make_shared<TransformComponent>();
+    std::shared_ptr<TransformComponent> clone;
+    if constexpr (IsPooledComponent<TransformComponent>::value) {
+        clone = ComponentPool<TransformComponent>::GetInstance().Create();
+    } else {
+        clone = std::make_shared<TransformComponent>();
+    }
     clone->CopyPropertiesFrom(this);
     clone->position_ = this->position_;
     clone->rotation_ = this->rotation_;

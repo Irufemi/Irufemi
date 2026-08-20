@@ -27,6 +27,11 @@ public:
     void OnCollisionEnter(GameObject* hitObject) override;
     std::string GetComponentName() const override { return "DebrisComponent"; }
 
+    /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
     // 状態変更用のインターフェース
     void SetState(DebrisState newState);
     DebrisState GetState() const { return state_; }

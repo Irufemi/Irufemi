@@ -75,6 +75,11 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     /**
+     * @brief クローンを作成する
+     */
+    std::shared_ptr<Component> Clone() override;
+
+    /**
      * @brief フィールドデータへの参照を取得する
      * @return 更新や取得のための ParticleField 構造体への参照
      */

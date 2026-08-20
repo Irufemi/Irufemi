@@ -20,6 +20,7 @@
 #include "Core/Utility/FileSystem.h"
 #include "Framework/Scene/SceneManager.h"
 #include "Framework/Scene/SceneTransition.h"
+#include "Framework/Scene/SceneSerializer.h"
 #include "Core/System/DirectoryWatcher.h"
 #include "Renderer/Font/FontManager.h"
 #include "Core/Profiler/TelemetrySender.h"
@@ -512,8 +513,15 @@ void IrufemiEngine::Finalize() {
   if (sceneManager_) {
     sceneManager_.reset();
   }
+  
+  // シーンシリアライザが保持している静的キャッシュ(プレハブのGameObjectインスタンス)を破棄する
+  // これを行わないと、メインスレッド終了後の静的変数破棄の順序(ComponentPoolより後)によって
+  // コンポーネントプールの不正アクセス(デストラクタ呼び出し)が発生しクラッシュする
+  SceneSerializer::ClearCache();
+
   if (loadingScreen_) {
     loadingScreen_->Finalize();
+
     loadingScreen_.reset();
   }
   if (sceneTransition_) {

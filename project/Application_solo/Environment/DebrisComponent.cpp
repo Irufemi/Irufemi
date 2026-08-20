@@ -366,5 +366,17 @@ void DebrisComponent::Update() {
             }
             break;
         }
+        }
     }
+
+std::shared_ptr<Component> DebrisComponent::Clone() {
+    auto clone = std::make_shared<DebrisComponent>();
+    clone->CopyPropertiesFrom(this);
+    clone->state_ = this->state_;
+    clone->virtualId_ = this->virtualId_;
+    clone->variationIndex_ = this->variationIndex_;
+    clone->manager_ = this->manager_;
+    clone->targetObject_ = this->targetObject_;
+    // No need to copy internal state variables like idleTimeY_, baseIdleY_ deeply, but doing default member copy is fine since it's a new instance.
+    return clone;
 }
