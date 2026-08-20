@@ -26,6 +26,14 @@ namespace {
     void ReadString(std::ifstream& ifs, std::string& str) {
         uint32_t size = 0;
         ReadPOD(ifs, size);
+        
+        // サイズバリデーション（キャッシュ破損による巨大アロケーションクラッシュ防止）
+        if (size > 4096) {
+            Log::OutPutLog(std::cerr, "[AnimationSerializer] Error: Invalid string size detected (" + std::to_string(size) + " bytes). File might be corrupted.\n");
+            str.clear();
+            return;
+        }
+
         if (size > 0) {
             str.resize(size);
             ifs.read(str.data(), size);

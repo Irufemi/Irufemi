@@ -16,10 +16,10 @@
 #include "Core/Utility/Log.h"
 #include <iostream>
 
-static bool IsImageExtImpl(const std::string& extLower) {
+static bool IsImageExtImpl(const std::string& ext) {
     static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };
     for (auto* e : exts) {
-        if (extLower == e) { return true; }
+        if (_stricmp(ext.c_str(), e) == 0) { return true; }
     }
     return false;
 }
@@ -62,7 +62,6 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
         if (!entry.is_regular_file()) { continue; }
         auto p = entry.path();
         auto ext = p.extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (!IsImageExtImpl(ext)) { continue; }
 
         const std::string key = p.generic_string();

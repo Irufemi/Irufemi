@@ -35,8 +35,8 @@
 #include "Core/Utility/Log.h"
 #include <iostream>
 
-std::map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetMap() {
-    static std::map<std::string, ComponentRegistration> factoryMap;
+std::unordered_map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetMap() {
+    static std::unordered_map<std::string, ComponentRegistration> factoryMap;
     return factoryMap;
 }
 
@@ -53,7 +53,7 @@ std::shared_ptr<Component> ComponentFactory::Create(const std::string& typeName)
     return nullptr;
 }
 
-const std::map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetFactoryMap() {
+const std::unordered_map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetFactoryMap() {
     return GetMap();
 }
 

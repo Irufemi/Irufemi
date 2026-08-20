@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <functional>
 #include "Framework/Component/Component.h"
 
@@ -22,11 +22,11 @@ public:
      * @brief Create を実行する。
      */
     static std::shared_ptr<Component> Create(const std::string& typeName);
-    static const std::map<std::string, ComponentRegistration>& GetFactoryMap();
+    static const std::unordered_map<std::string, ComponentRegistration>& GetFactoryMap();
 
     /// @brief エンジン組み込みのコンポーネントを一括登録する
     static void RegisterAllCoreComponents();
 
 private:
-    static std::map<std::string, ComponentRegistration>& GetMap();
+    static std::unordered_map<std::string, ComponentRegistration>& GetMap();
 };
