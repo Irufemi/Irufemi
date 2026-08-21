@@ -93,7 +93,15 @@ void CollisionManager::CheckAllCollisions() {
 
     // --- BVH Update Phase ---
     for (ColliderComponent* collider : colliders_) {
-        if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
+        if (!collider) continue;
+        auto go = collider->GetGameObject();
+        if (!go) continue;
+        if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
+            Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" + 
+                           std::format("{:X}", reinterpret_cast<uintptr_t>(go)) + ") in CollisionManager!\n");
+            continue;
+        }
+        if (!go->GetIsActive()) continue;
         dynamicBVH_.Update(collider->bvhNodeId_, collider->GetBoundingBox());
     }
 
@@ -102,14 +110,29 @@ void CollisionManager::CheckAllCollisions() {
 
     for (size_t i = 0; i < colliders_.size(); ++i) {
         ColliderComponent* colA = colliders_[i];
-        if (!colA || !colA->GetGameObject() || !colA->GetGameObject()->GetIsActive()) continue;
+        if (!colA) continue;
+        auto goA = colA->GetGameObject();
+        if (!goA) continue;
+        if (reinterpret_cast<uintptr_t>(goA) < 0x1000) {
+            Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" + 
+                           std::format("{:X}", reinterpret_cast<uintptr_t>(goA)) + ") in CheckAllCollisions (colA)!\n");
+            continue;
+        }
+        if (!goA->GetIsActive()) continue;
 
         potentialHits.clear();
         dynamicBVH_.Query(colA->GetBoundingBox(), potentialHits);
 
         for (ColliderComponent* colB : potentialHits) {
             if (!colB || colA == colB) continue;
-            if (!colB->GetGameObject() || !colB->GetGameObject()->GetIsActive()) continue;
+            auto goB = colB->GetGameObject();
+            if (!goB) continue;
+            if (reinterpret_cast<uintptr_t>(goB) < 0x1000) {
+                Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" + 
+                               std::format("{:X}", reinterpret_cast<uintptr_t>(goB)) + ") in CheckAllCollisions (colB)!\n");
+                continue;
+            }
+            if (!goB->GetIsActive()) continue;
 
             // 重複判定を防ぐため、アドレスが小さい方から大きい方へのみ判定を行う
             if (colA >= colB) continue;
@@ -246,7 +269,15 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
     debugLine_->ClearInstances();
     
     for (ColliderComponent* collider : colliders_) {
-        if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
+        if (!collider) continue;
+        auto go = collider->GetGameObject();
+        if (!go) continue;
+        if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
+            Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" + 
+                           std::format("{:X}", reinterpret_cast<uintptr_t>(go)) + ") in CollisionManager!\n");
+            continue;
+        }
+        if (!go->GetIsActive()) continue;
         
         bool isSelected = false;
         if (selectedObject) {
@@ -412,7 +443,15 @@ bool CollisionManager::Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, flo
     dynamicBVH_.RaycastQuery(ray, maxDistance, potentialHits);
 
     for (ColliderComponent* collider : potentialHits) {
-        if (!collider || !collider->GetGameObject() || !collider->GetGameObject()->GetIsActive()) continue;
+        if (!collider) continue;
+        auto go = collider->GetGameObject();
+        if (!go) continue;
+        if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
+            Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" + 
+                           std::format("{:X}", reinterpret_cast<uintptr_t>(go)) + ") in CollisionManager!\n");
+            continue;
+        }
+        if (!go->GetIsActive()) continue;
 
         // 除外オブジェクトならスキップ
         if (ignoreObject && collider->GetGameObject() == ignoreObject) continue;

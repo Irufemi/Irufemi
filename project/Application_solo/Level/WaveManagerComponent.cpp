@@ -174,6 +174,16 @@ void WaveManagerComponent::CacheSpawnPoints() {
     spawnPointsMap_.clear();
     const auto& objs = scene->GetGameObjects();
     for (const auto& obj : objs) {
+        if (!obj) continue;
+        
+        // 最初のバグ (this == 0xF) 対策: 生ポインタが異常に小さい値かどうかをチェック
+        auto* rawPtr = obj.get();
+        if (reinterpret_cast<uintptr_t>(rawPtr) < 0x1000) {
+            Log::OutPutLog(std::cerr, "[WaveManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" + 
+                           std::format("{:X}", reinterpret_cast<uintptr_t>(rawPtr)) + ") in CacheSpawnPoints!\n");
+            continue;
+        }
+
         if (!obj->GetIsActive()) continue;
         auto sp = obj->GetComponent<SpawnPointComponent>();
         if (sp) {
