@@ -46,6 +46,9 @@
     <Filter Include="Scenes\title">
       <UniqueIdentifier>{f64a4eda-87c3-415f-e7ee-463d72828382}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scenes\Result">
+      <UniqueIdentifier>{abcdabcd-1234-5678-90ab-cdef12345678}</UniqueIdentifier>
+    </Filter>
     <Filter Include="UI">
       <UniqueIdentifier>{71ff7152-6d15-db86-eb50-fcac245d183b}</UniqueIdentifier>
     </Filter>
@@ -62,6 +65,9 @@
   <ItemGroup>
     <ClCompile Include="Scenes\inGame\GameScene.cpp">
       <Filter>Scenes\inGame</Filter>
+    </ClCompile>
+    <ClCompile Include="Scenes\Result\ResultScene.cpp">
+      <Filter>Scenes\Result</Filter>
     </ClCompile>
     <ClCompile Include="Scenes\Pause\PauseScene.cpp">
       <Filter>Scenes\Pause</Filter>
@@ -147,6 +153,9 @@
     <ClCompile Include="Core\GameLoopManagerComponent.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Core\ResultManagerComponent.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="Player\GravityPlayerComponent.cpp">
       <Filter>Player</Filter>
     </ClCompile>
@@ -188,6 +197,9 @@
     </ClInclude>
     <ClInclude Include="Scenes\inGame\GameScene.h">
       <Filter>Scenes\inGame</Filter>
+    </ClInclude>
+    <ClInclude Include="Scenes\Result\ResultScene.h">
+      <Filter>Scenes\Result</Filter>
     </ClInclude>
     <ClInclude Include="Scenes\Pause\PauseScene.h">
       <Filter>Scenes\Pause</Filter>
@@ -271,6 +283,9 @@
       <Filter>Environment</Filter>
     </ClInclude>
     <ClInclude Include="Core\GameLoopManagerComponent.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\ResultManagerComponent.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Player\GravityPlayerComponent.h">

@@ -6,8 +6,7 @@ class GameLoopManagerComponent : public Component {
 public:
     enum class State {
         Playing,
-        ResultTransition,
-        WaitingForInput
+        Finished
     };
 
     GameLoopManagerComponent() = default;
@@ -25,10 +24,9 @@ private:
     float timer_ = 0.0f;
     bool isClear_ = false;
 
+    std::string targetPlayerName_ = "Player";
+    std::string targetBossName_ = "Boss";
+
     class GravityPlayerComponent* player_ = nullptr;
     class BossComponent* boss_ = nullptr;
-    class GameObject* resultTextObj_ = nullptr;
-    class GameObject* pressSpaceObj_ = nullptr;
-
-    void ShowResultUI(bool isClear);
 };

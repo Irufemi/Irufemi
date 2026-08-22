@@ -1,6 +1,8 @@
 #include "Core/Utility/ErrorUtility.h"
 #include "Core/System/IrufemiEngine.h"
+#ifdef USE_IMGUI
 #include <imgui.h>
+#endif
 
 #include "Platform/Input/InputManager.h"
 

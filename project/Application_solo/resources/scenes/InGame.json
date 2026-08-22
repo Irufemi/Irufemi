@@ -4304,7 +4304,9 @@
         {
           "data": {
             "Result Delay Time": 3.0,
-            "Result Time Scale": 0.10000000149011612
+            "Result Time Scale": 0.10000000149011612,
+            "Target Boss Name": "Boss",
+            "Target Player Name": "Player"
           },
           "type": "GameLoopManagerComponent"
         },

@@ -239,6 +239,7 @@ exit 0</Command>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</WholeProgramOptimization>
     </ClCompile>
     <ClCompile Include="Scenes\inGame\GameScene.cpp" />
+    <ClCompile Include="Scenes\Result\ResultScene.cpp" />
 
     <ClCompile Include="Scenes\Pause\PauseScene.cpp" />
 
@@ -265,6 +266,7 @@ exit 0</Command>
     <ClCompile Include="Environment\DestructibleEnvironmentComponent.cpp" />
     <ClCompile Include="Player\GravityPlayerComponent.cpp" />
     <ClCompile Include="Core\GameLoopManagerComponent.cpp" />
+    <ClCompile Include="Core\ResultManagerComponent.cpp" />
     <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp" />
     <ClCompile Include="Core\SceneTransitionButtonComponent.cpp" />
     <ClCompile Include="Effects\EffectManagerComponent.cpp" />
@@ -286,6 +288,7 @@ exit 0</Command>
     <ClInclude Include="Scenes\TL1\MagicBrushClient.h" />
     <ClInclude Include="scene\GameOver\GameOverScene.h" />
     <ClInclude Include="Scenes\inGame\GameScene.h" />
+    <ClInclude Include="Scenes\Result\ResultScene.h" />
 
     <ClInclude Include="Scenes\Pause\PauseScene.h" />
 
@@ -313,6 +316,7 @@ exit 0</Command>
     <ClInclude Include="Environment\DestructibleEnvironmentComponent.h" />
     <ClInclude Include="Player\GravityPlayerComponent.h" />
     <ClInclude Include="Core\GameLoopManagerComponent.h" />
+    <ClInclude Include="Core\ResultManagerComponent.h" />
     <ClInclude Include="Combat\DebugEnemySpawnerComponent.h" />
     <ClInclude Include="Core\SceneTransitionButtonComponent.h" />
     <ClInclude Include="Effects\EffectManagerComponent.h" />

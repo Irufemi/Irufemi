@@ -111,7 +111,8 @@ void SceneManager::PushScene(const Key& name) {
     auto it = factories_.find(name);
     if (it == factories_.end()) { return; }
 
-    engine_->GetDirectXCommon()->WaitForGPU();
+    // 重ねるだけのシーン遷移では既存リソースを破棄しないため、GPUの完了待機は不要（FPS低下・スパイクの原因となるため削除）
+    // engine_->GetDirectXCommon()->WaitForGPU();
 
     if (!sceneStack_.empty()) {
         // 現在の最前面シーンをサスペンド状態にする（バックグラウンドへ）
@@ -358,8 +359,8 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
-    // ロード待ちの場合は背景のみ(UIはIrufemiEngine側で描画される)
-    if (IsLoading()) {
+    // 完全に新しいシーンへの遷移中で、かつ表示すべき既存シーンが存在しない場合のみ背景描画をスキップする
+    if (IsLoading() && sceneStack_.empty()) {
         return;
     }
 

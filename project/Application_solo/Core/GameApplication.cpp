@@ -29,6 +29,7 @@
 #include "Combat/DroneManagerComponent.h"
 #include "Combat/BossBulletManagerComponent.h"
 #include "Core/GameLoopManagerComponent.h"
+#include "Core/ResultManagerComponent.h"
 #include "Combat/EnemyBeamComponent.h"
 
 // エンジン機能
@@ -50,6 +51,7 @@
 #include "Framework/Scene/DebugScene.h"
 #endif
 #include "Scenes/TL1/TL1Scene.h"
+#include "Scenes/Result/ResultScene.h"
 
 #ifdef EditorMode
 #include "Core/EditorManager.h"
@@ -79,6 +81,7 @@ namespace {
         sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
         sm.Register("Pause", [] { return std::make_unique<PauseScene>(); });
         sm.Register("TL1", [] { return std::make_unique<TL1Scene>(); });
+        sm.Register("Result", [] { return std::make_unique<ResultScene>(); });
 
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
@@ -161,6 +164,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("EnemyBeamComponent", "Game", []() { return std::make_shared<EnemyBeamComponent>(); });
 
     ComponentFactory::Register("GameLoopManagerComponent", "Game", []() { return std::make_shared<GameLoopManagerComponent>(); });
+    ComponentFactory::Register("ResultManagerComponent", "Game", []() { return std::make_shared<ResultManagerComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

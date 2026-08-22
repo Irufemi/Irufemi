@@ -1,7 +1,7 @@
 {
-    "maxHp": 1000.0,
-    "maxShieldCount": 100,
-    "shieldRadius": 8.0,
     "beamInterval": 10.0,
-    "beamRange": 1000.0
+    "beamRange": 1000.0,
+    "maxHp": 1.0,
+    "maxShieldCount": 1,
+    "shieldRadius": 8.0
 }
