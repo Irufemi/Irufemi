@@ -6,6 +6,8 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 
 EffectManagerComponent* EffectManagerComponent::instance_ = nullptr;
 
@@ -20,14 +22,11 @@ void EffectManagerComponent::Initialize() {
 
 void EffectManagerComponent::Start() {
     hitEffectPool_ = std::make_unique<ObjectPool<GameObject>>(maxHitEffects_, [this]() {
-        auto obj = gameObject_->Instantiate(hitEffectPath_); // ★ Instantiate内部でシーン登録されるが、すぐ後で外せばよい
+        auto obj = gameObject_->Instantiate(hitEffectPath_); // ☛Instantiate内部でシーン登録される
         if (obj) {
-            obj->SetIsActive(false);
-            if (auto scene = gameObject_->GetScene()) {
-                scene->RemoveGameObject(obj);
-            }
+            obj->SetIsActive(false); // Removeせずに非アクティブ状態で休眠させる
             
-            // 寿命コンポーネントがあれば、プール運用のためDestroyではなくDisableに変更する
+            // 寿命コンポーネントがあれば、プール運用のためにDestroyではなくDisableに変更する
             if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
                 lifetime->SetTimeoutAction(TimeoutAction::Disable);
             }
@@ -45,10 +44,6 @@ void EffectManagerComponent::Update() {
                 hitEffectPool_->Release(it->handle);
                 it = activeEffects_.erase(it);
                 
-                // シーンから外す
-                if (auto scene = gameObject_->GetScene()) {
-                    scene->RemoveGameObject(obj);
-                }
                 continue;
             }
         }
@@ -64,6 +59,20 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
 
     if (effectKey == "Hit" && hitEffectPool_) {
         auto handle = hitEffectPool_->Acquire();
+        
+        // プールが枯渇した場合、一番古いエフェクトを強制終了して再利用する
+        if (!handle.IsValid() && !activeEffects_.empty()) {
+            auto oldest = activeEffects_.front();
+            activeEffects_.erase(activeEffects_.begin());
+            
+            auto obj = hitEffectPool_->Resolve(oldest.handle);
+            if (obj) {
+                obj->SetIsActive(false);
+            }
+            hitEffectPool_->Release(oldest.handle);
+            handle = hitEffectPool_->Acquire();
+        }
+        
         if (handle.IsValid()) {
             auto obj = hitEffectPool_->Resolve(handle);
             if (obj) {
@@ -71,11 +80,6 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
                     t->SetPosition(worldPosition);
                 }
                 
-                // シーンに追加する
-                if (auto scene = gameObject_->GetScene()) {
-                    scene->AddGameObject(obj);
-                }
-
                 // アクティブ化して LifetimeComponent のタイマーをリセットする
                 obj->SetIsActive(true);
                 if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
@@ -84,6 +88,7 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
                 
                 // ツリー全体からすべての ParticleEmitterComponent を取得して再発火させる
                 auto emitters = obj->GetComponentsInChildren<ParticleEmitterComponent>();
+                
                 for (auto pe : emitters) {
                     pe->Restart(false);
                 }

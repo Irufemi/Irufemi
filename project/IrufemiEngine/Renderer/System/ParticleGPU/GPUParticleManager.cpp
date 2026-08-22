@@ -31,17 +31,18 @@ void GPUParticleManager::ClearAllParticles() {
     }
 }
 
-GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting) {
-    SystemKey key{ texturePath, blendMode, isUnscaledTime, enableLighting };
+GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting, PSOManager::DepthWrite depthWrite) {
+    SystemKey key{ texturePath, blendMode, isUnscaledTime, enableLighting, depthWrite };
     auto& ctx = systems_[key];
 
-    // 新規テクスチャの場合はシステムを初期化
     if (!ctx.system) {
+        // Create new system
         ctx.system = std::make_unique<GPUParticleSystem>();
         ctx.system->Initialize(texturePath);
         ctx.system->SetBlendMode(blendMode);
         ctx.system->SetUnscaledTime(isUnscaledTime);
         ctx.system->SetEnableLighting(enableLighting);
+        ctx.system->SetDepthWrite(depthWrite);
     }
     
     uint32_t assignedIndex = 0;

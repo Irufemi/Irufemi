@@ -114,10 +114,10 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     }
 
     if (hit) {
-
         if (auto t = GetTransform()) {
             if (auto effectManager = EffectManagerComponent::GetInstance()) {
-                effectManager->PlayEffect("Hit", t->GetWorldPosition());
+                Irufemi::Vector3 hitPos = t->GetWorldPosition();
+                effectManager->PlayEffect("Hit", hitPos);
             }
         }
         if (manager_) {

@@ -178,7 +178,7 @@ class GPUParticleSystem : public IComputeTask
 , public IRenderable {
 public:
     friend class GPUParticleManager;
-    static const uint32_t kMaxEmitters = 256;
+    static const uint32_t kMaxEmitters = 2048;
 
     GPUParticleSystem();
     ~GPUParticleSystem();

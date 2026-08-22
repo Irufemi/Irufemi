@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <functional>
 
 class DebrisManagerComponent;
 class GameObject;
@@ -21,6 +22,9 @@ public:
     void Initialize() override;
     void Start() override;
     void Update() override;
+
+    std::function<void()> onBossDied;
+    std::function<void()> onDeathSequenceFinished;
 
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "BossComponent"; }

@@ -1,6 +1,8 @@
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 
 ParticleEmitterComponent::ParticleEmitterComponent() {
     particleObj_ = std::make_unique<ParticleObject>();
@@ -41,6 +43,10 @@ void ParticleEmitterComponent::Play() {
 
 void ParticleEmitterComponent::Restart(bool withChildren) {
     if (particleObj_) {
+        // GPU側に放出リクエストを送る前に、最新のワールド座標を即座に反映する
+        if (GetTransform()) {
+            particleObj_->SetPosition(GetTransform()->GetWorldPosition());
+        }
         particleObj_->Restart();
     }
     

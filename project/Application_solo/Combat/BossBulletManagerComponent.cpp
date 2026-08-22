@@ -83,12 +83,9 @@ void BossBulletManagerComponent::Update() {
                     if (obj && obj->GetName() == "Player") {
                         if (auto playerComp = obj->GetComponent<GravityPlayerComponent>()) {
                             if (!playerComp->IsInvincible()) {
-                                Log::OutPutLog(std::cout, "[BossBulletManager] Hit Player!\n");
                                 playerComp->TakeDamage(1);
                                 isHit = true;
                                 break;
-                            } else {
-                                Log::OutPutLog(std::cout, "[BossBulletManager] Player is invincible.\n");
                             }
                         }
                     }

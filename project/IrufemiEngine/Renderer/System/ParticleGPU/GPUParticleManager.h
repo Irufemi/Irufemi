@@ -62,7 +62,7 @@ int GetTotalEmittersUsed() const;
     /**
      * @brief 指定したテクスチャ、ブレンドモード、タイムスケール設定に対するシステムを取得し、エミッターを登録する
      */
-    EmitterHandle RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting);
+    EmitterHandle RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting, PSOManager::DepthWrite depthWrite = PSOManager::DepthWrite::Disable);
 
     /**
      * @brief 登録したエミッターを解放する
@@ -119,12 +119,14 @@ private:
         Irufemi::BlendMode blendMode;
         bool isUnscaledTime;
         bool enableLighting;
+        PSOManager::DepthWrite depthWrite;
 
         bool operator==(const SystemKey& other) const {
             return texturePath == other.texturePath && 
                    blendMode == other.blendMode && 
                    isUnscaledTime == other.isUnscaledTime &&
-                   enableLighting == other.enableLighting;
+                   enableLighting == other.enableLighting &&
+                   depthWrite == other.depthWrite;
         }
     };
 
@@ -134,7 +136,8 @@ private:
             std::size_t h2 = std::hash<int>()(static_cast<int>(k.blendMode));
             std::size_t h3 = std::hash<bool>()(k.isUnscaledTime);
             std::size_t h4 = std::hash<bool>()(k.enableLighting);
-            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+            std::size_t h5 = std::hash<int>()(static_cast<int>(k.depthWrite));
+            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4);
         }
     };
 

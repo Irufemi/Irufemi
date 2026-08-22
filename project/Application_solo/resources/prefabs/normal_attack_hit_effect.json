@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "HitEffectRoot",
   "isFolder": false,
   "isActive": true,
@@ -25,7 +25,7 @@
           "data": {
             "ParticleData": {
               "texturePath": "resources/circle.png",
-              "blendMode": 2,
+              "blendMode": 2, "depthWrite": 2,
               "emitOnAwake": true,
               "burstCountOnAwake": 1,
               "emitType": 0,
@@ -52,7 +52,7 @@
           "data": {
             "ParticleData": {
               "texturePath": "resources/circle.png",
-              "blendMode": 2,
+              "blendMode": 2, "depthWrite": 2,
               "midPoint": 0.3,
               "emitOnAwake": true,
               "showDebugArea": false,
@@ -113,7 +113,7 @@
           "data": {
             "ParticleData": {
               "texturePath": "resources/circle.png",
-              "blendMode": 2,
+              "blendMode": 2, "depthWrite": 2,
               "midPoint": 0.2,
               "emitOnAwake": true,
               "showDebugArea": false,
@@ -174,7 +174,7 @@
           "data": {
             "ParticleData": {
               "texturePath": "resources/texture/ring.png",
-              "blendMode": 2,
+              "blendMode": 2, "depthWrite": 2,
               "midPoint": 0.0,
               "emitOnAwake": true,
               "showDebugArea": false,

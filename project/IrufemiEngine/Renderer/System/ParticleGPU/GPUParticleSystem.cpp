@@ -224,12 +224,12 @@ void GPUParticleSystem::Update() {
   isCulled_ = false;
   if (isCullingEnabled_) {
     bool anyVisible = false;
-    for (auto &em : emittersData_) {
+    for (const auto &em : emittersData_) {
       Irufemi::Sphere boundingSphere;
       boundingSphere.center = {em.translateX, em.translateY, em.translateZ};
-      // Boundingを計算。Sphereなら半径*3、Beamなら広めに設定
+      // Boundingを計算。Sphereなら半径*3 (最低20.0fを保証)、Beamなら広めに設定
       if (em.type == 0) {
-        boundingSphere.radius = em.radius * 3.0f;
+        boundingSphere.radius = (std::max)(20.0f, em.radius * 3.0f);
       } else {
         boundingSphere.radius = 50.0f; // ビームは長いので広めに
       }

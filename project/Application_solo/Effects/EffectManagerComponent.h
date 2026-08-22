@@ -45,7 +45,7 @@ private:
     // 内部的にキーからパスを引くための辞書
     std::unordered_map<std::string, std::string> effectDictionary_;
 
-    int maxHitEffects_ = 20;
+    int maxHitEffects_ = 50;
     float effectDuration_ = 2.0f; // エフェクトの生存時間
     std::unique_ptr<ObjectPool<GameObject>> hitEffectPool_;
 
