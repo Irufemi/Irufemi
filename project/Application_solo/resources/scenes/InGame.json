@@ -4062,6 +4062,7 @@
         },
         {
           "data": {
+            "Dust Effect Path": "resources/prefabs/debris_dust_effect.json",
             "Hit Effect Path": "resources/prefabs/normal_attack_hit_effect.json"
           },
           "type": "EffectManagerComponent"
@@ -4240,6 +4241,8 @@
             {
               "data": {
                 "Default Life Time": 5.0,
+                "Explosion Model Path": "resources/model/BossBulletSphere.obj",
+                "Hit Effect Key": "Dust",
                 "Hit Radius": 1.0,
                 "Max Bullets": 2000
               },

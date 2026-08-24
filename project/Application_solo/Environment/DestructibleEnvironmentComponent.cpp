@@ -37,7 +37,7 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
             
             // 破壊エフェクト（ヒットエフェクト流用）
             if (auto effectManager = EffectManagerComponent::GetInstance()) {
-                effectManager->PlayEffect("Hit", pos);
+                effectManager->PlayEffect("Dust", pos);
             }
             
             // 瓦礫のスポーン（散らばるように）

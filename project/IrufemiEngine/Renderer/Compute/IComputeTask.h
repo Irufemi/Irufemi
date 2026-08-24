@@ -14,4 +14,9 @@ public:
      * @details DrawManagerによって、毎フレームの描画前に1回だけ呼び出される
      */
     virtual void DispatchCompute() = 0;
+    
+    /**
+     * @brief 描画前（RenderGraph構築時）にリソースの依存状態を宣言する
+     */
+    virtual void Setup(class RenderGraphBuilder& builder) {}
 };

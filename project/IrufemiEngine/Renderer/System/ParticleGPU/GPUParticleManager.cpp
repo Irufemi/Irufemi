@@ -1,6 +1,8 @@
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
+#include <Windows.h>
+#include <cstdio>
 
 
 
@@ -85,8 +87,10 @@ void GPUParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
 void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GPUParticleEmitter& data) {
     if (handle.IsValid() && handle.emitterIndex < handle.system->emittersData_.size()) {
         uint32_t burst = handle.system->emittersData_[handle.emitterIndex].burstCount + data.burstCount;
+        float residue = handle.system->emittersData_[handle.emitterIndex].emissionResidue;
         handle.system->emittersData_[handle.emitterIndex] = data;
         handle.system->emittersData_[handle.emitterIndex].burstCount = burst;
+        handle.system->emittersData_[handle.emitterIndex].emissionResidue = residue;
     }
 }
 

@@ -186,6 +186,7 @@ public:
     /** @name 初期化・更新・描画 */
     ///@{
     void DispatchCompute() override;
+    void Setup(class RenderGraphBuilder& builder) override;
     /**
      * @brief Initialize を実行する。
      */

@@ -9,6 +9,8 @@
 #include "Physics/CollisionManager.h"
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Core/Utility/Log.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Effects/EffectManagerComponent.h"
 #include <iostream>
 
 BossBulletManagerComponent::BossBulletManagerComponent() {}
@@ -51,15 +53,41 @@ void BossBulletManagerComponent::Update() {
         auto& data = bulletDataList_[vid];
         data.lifeTimer -= dt;
         
-        if (data.lifeTimer <= 0.0f) {
-            ReleaseBullet(vid);
-            continue;
-        }
-        
         // Find index in dense_ array
         int denseIndex = virtualManager_->GetSparseIndex(vid);
         if (denseIndex >= 0) {
             auto& vi = virtualInstances[denseIndex];
+
+            // 共通の爆発エフェクト処理ラムダ
+            auto playExplosion = [&](const Irufemi::Vector3& pos) {
+                if (auto effectManager = EffectManagerComponent::GetInstance()) {
+                    effectManager->PlayEffect(hitEffectKey_, pos);
+                }
+                
+                if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {
+                    VoxelEmitter p{};
+                    p.particleType = 5; // DebrisExplosive
+                    p.lifeTime = 1.0f;
+                    p.gravity = 5.0f;
+                    p.dispersion = 12.0f;
+                    p.scale = {0.5f, 0.5f, 0.5f};
+                    
+                    Irufemi::Vector4 aura = {0.8f, 0.0f, 0.6f, 0.4f}; // Boss Aura
+                    Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
+                    p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f, rockColor.z + aura.z * 2.0f, 1.0f};
+                    p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
+                    p.dissolveEdgeColor = aura;
+
+                    voxelManager->PlayExplosion(explosionModelPath_, pos, {0,0,0}, {0,0,0}, {1,1,1}, p, {2,2,2});
+                }
+            };
+
+            if (data.lifeTimer <= 0.0f) {
+                playExplosion(vi.position_);
+                ReleaseBullet(vid);
+                continue;
+            }
+            
             vi.position_ += data.velocity * dt;
             
             auto engine = BaseModel::GetIrufemiEngine();
@@ -92,6 +120,7 @@ void BossBulletManagerComponent::Update() {
                 }
                 
                 if (isHit) {
+                    playExplosion(vi.position_);
                     ReleaseBullet(vid);
                     continue;
                 }
@@ -108,6 +137,8 @@ void BossBulletManagerComponent::OnRegisterProperties() {
     RegisterProperty("Max Bullets", &maxBullets_);
     RegisterProperty("Default Life Time", &defaultLifeTime_);
     RegisterPropertyRange("Hit Radius", &hitRadius_, 0.1f, 10.0f);
+    RegisterProperty("Hit Effect Key", &hitEffectKey_);
+    RegisterProperty("Explosion Model Path", &explosionModelPath_);
 }
 
 void BossBulletManagerComponent::SpawnBullet(const Irufemi::Vector3& position, const Irufemi::Vector3& velocity) {

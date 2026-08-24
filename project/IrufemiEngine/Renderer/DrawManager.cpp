@@ -966,11 +966,6 @@ void DrawManager::SubmitGPUParticle(const RenderPackets::GPUParticlePacket& pack
 void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
     if (!commandList_) return;
 
-    // リソースバリヤー: UAV -> ShaderResource (読み取り)
-    if (packet.particleResource) {
-        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-    }
-
     // IA 設定: VB/Topology
     commandList_->IASetVertexBuffers(0, 1, &packet.vbv);
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -999,11 +994,6 @@ void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet
     } else {
         // 従来のビルボード互換
         commandList_->DrawInstanced(6, packet.instanceCount, 0, 0);
-    }
-
-    // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
-    if (packet.particleResource) {
-        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     }
 }
 

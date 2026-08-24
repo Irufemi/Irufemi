@@ -23,6 +23,13 @@ void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawMa
     if (auto dx = drawManager->GetDxCommon()) {
         builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
     }
+    
+    // GPUParticleのリソースを読み取り専用として要求
+    for (const auto& p : drawManager->GetGPUParticleQueue()) {
+        if (p.particleResource) {
+            builder.RequireState(p.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        }
+    }
 }
 
 void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {

@@ -75,11 +75,11 @@ PixelShaderOutput main(VertexShaderOutput input)
 	
 	/*ソフトパーティクル計算*/
 	
-	float softScale = 1.0f; // TODO: 必要ならマテリアルやエミッターパラメータに出す
-	float fade = CalculateDepthFade(gDepthTexture, input.position, input.cameraNear, input.cameraFar, softScale);
+	float softScale = 1.0f; // TODO: 必要な場合はマテリアルやエミッターパラメータに出す
+	// float fade = CalculateDepthFade(gDepthTexture, input.position, input.cameraNear, input.cameraFar, softScale);
 	
-	// αにフェードを適用
-	output.color.a *= fade;
+	// αにフェードを適用 (Zファイト/めり込み防止だが、HitEffectが表面で発生すると見えなくなるため一時無効化)
+	// output.color.a *= fade;
 	
 	output.mask.r = gMaterial.customEffectType / 255.0f;
 	output.mask.g = gMaterial.customEffectParam;
