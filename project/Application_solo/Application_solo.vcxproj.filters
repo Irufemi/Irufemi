@@ -123,9 +123,6 @@
     <ClCompile Include="Combat\Boss\BossStateDestroyed.cpp">
       <Filter>Combat\Boss</Filter>
     </ClCompile>
-    <ClCompile Include="Combat\BossBulletComponent.cpp">
-      <Filter>Combat</Filter>
-    </ClCompile>
     <ClCompile Include="Combat\BossBulletManagerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
@@ -257,9 +254,6 @@
     </ClInclude>
     <ClInclude Include="Combat\Boss\BossStateDestroyed.h">
       <Filter>Combat\Boss</Filter>
-    </ClInclude>
-    <ClInclude Include="Combat\BossBulletComponent.h">
-      <Filter>Combat</Filter>
     </ClInclude>
     <ClInclude Include="Combat\BossBulletManagerComponent.h">
       <Filter>Combat</Filter>

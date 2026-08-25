@@ -257,7 +257,6 @@ exit 0</Command>
     <ClCompile Include="Combat\Boss\BossStateIdle.cpp" />
     <ClCompile Include="Combat\Boss\BossStateCoreExposed.cpp" />
     <ClCompile Include="Combat\Boss\BossStateDestroyed.cpp" />
-    <ClCompile Include="Combat\BossBulletComponent.cpp" />
     <ClCompile Include="Combat\BossBulletManagerComponent.cpp" />
 
     <ClCompile Include="Combat\DroneManagerComponent.cpp" />
@@ -307,7 +306,6 @@ exit 0</Command>
     <ClInclude Include="Combat\Boss\BossStateIdle.h" />
     <ClInclude Include="Combat\Boss\BossStateCoreExposed.h" />
     <ClInclude Include="Combat\Boss\BossStateDestroyed.h" />
-    <ClInclude Include="Combat\BossBulletComponent.h" />
     <ClInclude Include="Combat\BossBulletManagerComponent.h" />
 
     <ClInclude Include="Combat\DroneManagerComponent.h" />
