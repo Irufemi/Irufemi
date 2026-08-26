@@ -3833,6 +3833,9 @@
           "type": "TransformComponent"
         },
         {
+          "data": {
+            "Enemy Model Path": "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj"
+          },
           "type": "DebugEnemySpawnerComponent"
         }
       ],
@@ -4314,7 +4317,9 @@
         },
         {
           "data": {
-            "Level Data Path": "resources/GameData/WaveData_Stage1.json"
+            "Editor Preview Distance": 0.0,
+            "Level Data Path": "resources/GameData/WaveData_Stage1.json",
+            "Target Spline": 8865338349013935913
           },
           "type": "WaveManagerComponent"
         }
