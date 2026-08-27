@@ -4327,6 +4327,51 @@
       "instanceId": 8040492037901668950,
       "name": "GameManager",
       "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "inheritScale": true,
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              -0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "Bloom Intensity": 1.7999999523162842,
+            "Bloom Sigma": 4.0,
+            "Bloom Threshold": 0.6000000238418579,
+            "Enable Bloom": true,
+            "Enable Color Grading": true,
+            "Enable Vignette": true,
+            "Exposure": 1.0,
+            "Hue": 0.0,
+            "Saturation": -0.20000000298023224,
+            "Value": -0.10000000149011612,
+            "Vignette Radius": 0.800000011920929,
+            "Vignette Softness": 0.5
+          },
+          "type": "GlobalPostProcessComponent"
+        }
+      ],
+      "instanceId": 998877665544332211,
+      "name": "GlobalPostProcessVolume",
+      "tag": "Untagged"
     }
   ],
   "settings": {

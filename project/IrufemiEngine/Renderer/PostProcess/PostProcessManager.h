@@ -58,6 +58,19 @@ class IrufemiEngine;
 class PostProcessRunner;
 
 /**
+ * @struct PostProcessModeInfo
+ * @brief エフェクトとその優先度を保持する内部用構造体
+ */
+struct PostProcessModeInfo {
+    PostProcessMode mode;
+    int priority;
+
+    bool operator<(const PostProcessModeInfo& other) const {
+        return priority < other.priority;
+    }
+};
+
+/**
  * @class PostProcessManager
  * @brief ポストプロセス（画面全体にかけるエフェクト）を管理するクラス。
  * 
@@ -612,14 +625,27 @@ public:
 
     // --- Getters & Setters ---
 
-    /** @brief 描画フェーズに備えて保留中の状態を同期する */
+    /** @brief 描画フェーズに備えて保留中の状態を同期し、ソートする */
     void CommitPendingModes() {
         /**
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        activePreUI_ = pendingPreUI_;
-        activePostUI_ = pendingPostUI_;
+        
+        // ソート実行
+        std::sort(pendingPreUI_.begin(), pendingPreUI_.end());
+        std::sort(pendingPostUI_.begin(), pendingPostUI_.end());
+
+        // Mode のみを取り出して active リストへ
+        activePreUI_.clear();
+        for (const auto& info : pendingPreUI_) {
+            activePreUI_.push_back(info.mode);
+        }
+
+        activePostUI_.clear();
+        for (const auto& info : pendingPostUI_) {
+            activePostUI_.push_back(info.mode);
+        }
     }
 
     /** @brief 現在アクティブなエフェクトスタックを取得 (レイヤー指定) */
@@ -634,19 +660,64 @@ public:
         return all;
     }
 
-    /** @brief エフェクトをスタックに追加 */
-    void AddActiveMode(Mode mode, Layer layer = Layer::PreUI) {
+    /** @brief エフェクトをスタックに追加（カスタム優先度指定可能） */
+    void AddActiveMode(Mode mode, int customPriority = -1) {
+        AddActiveMode(mode, Layer::PreUI, customPriority);
+    }
+    
+    void AddActiveMode(Mode mode, Layer layer, int customPriority = -1) {
         /**
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        if (layer == Layer::PreUI) pendingPreUI_.push_back(mode);
-        else pendingPostUI_.push_back(mode);
+        int priority = (customPriority == -1) ? GetDefaultPriority(mode) : customPriority;
+        if (layer == Layer::PreUI) {
+            pendingPreUI_.push_back({mode, priority});
+        } else {
+            // PostUI は全体的に優先度を高くする（既存互換のため9000番台をベースに加算）
+            pendingPostUI_.push_back({mode, priority + 9000});
+        }
     }
     
     // -------------------------------------------------------------
     // 静的ヘルパー関数
     // -------------------------------------------------------------
+    
+    /**
+     * @brief モードのデフォルト実行優先度（Pipeline Order）を取得
+     * 小さい数値ほど先に（下層に）描画される
+     */
+    static int GetDefaultPriority(Mode mode) {
+        switch (mode) {
+            // Priority 1000: Pre-HDR 
+            case Mode::DepthBasedOutline: return 1100;
+            case Mode::RadialBlur: return 1200;
+            case Mode::DepthOfField: return 1300;
+            case Mode::LightShafts: return 1400;
+            case Mode::DualKawaseBlur: return 1500;
+            
+            // Priority 2000: HDR Effects
+            case Mode::Bloom: return 2000;
+
+            // Priority 3000: ToneMapping (HDR -> LDR)
+            case Mode::ToneMapping: return 3000;
+
+            // Priority 4000: LDR Color Grading
+            case Mode::HSV: return 4000;
+            case Mode::Grayscale: return 4100;
+            case Mode::Sepia: return 4200;
+            case Mode::Posterization: return 4300;
+
+            // Priority 5000: LDR Polish (画面演出・オーバーレイ系)
+            case Mode::Vignette: return 5000;
+            case Mode::Noise: return 5100;
+            case Mode::Glitch: return 5200;
+            case Mode::ChromaticAberration: return 5300;
+            case Mode::Pixelation: return 5400;
+            
+            default: return 9999;
+        }
+    }
     
     /**
      * @brief そのエフェクトが深度バッファを必要とするかどうか
@@ -665,8 +736,10 @@ public:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingPreUI_.erase(std::remove(pendingPreUI_.begin(), pendingPreUI_.end(), mode), pendingPreUI_.end());
-        pendingPostUI_.erase(std::remove(pendingPostUI_.begin(), pendingPostUI_.end(), mode), pendingPostUI_.end());
+        pendingPreUI_.erase(std::remove_if(pendingPreUI_.begin(), pendingPreUI_.end(), 
+            [mode](const PostProcessModeInfo& info){ return info.mode == mode; }), pendingPreUI_.end());
+        pendingPostUI_.erase(std::remove_if(pendingPostUI_.begin(), pendingPostUI_.end(), 
+            [mode](const PostProcessModeInfo& info){ return info.mode == mode; }), pendingPostUI_.end());
     }
 
     /** @brief 全てのエフェクトを解除（クリア） */
@@ -704,8 +777,11 @@ public:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingPreUI_ = modes;
-        pendingPostUI_.clear(); // 必要に応じて分離するか検討
+        pendingPreUI_.clear();
+        for(auto mode : modes) {
+            pendingPreUI_.push_back({mode, GetDefaultPriority(mode)});
+        }
+        pendingPostUI_.clear(); // 必要に応じて呼ぶか？
     }
 
     /** @brief エフェクトスタックをレイヤー別に設定 */
@@ -714,8 +790,11 @@ public:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingPreUI_ = preUI;
-        pendingPostUI_ = postUI;
+        pendingPreUI_.clear();
+        for(auto mode : preUI) pendingPreUI_.push_back({mode, GetDefaultPriority(mode)});
+        
+        pendingPostUI_.clear();
+        for(auto mode : postUI) pendingPostUI_.push_back({mode, GetDefaultPriority(mode) + 9000});
     }
 
     /** @brief 全てのパラメータをデフォルト状態にリセットする */
@@ -736,8 +815,9 @@ public:
         pendingPreUI_.clear(); 
         pendingPostUI_.clear();
         if (mode != Mode::None) {
-            if (layer == Layer::PreUI) pendingPreUI_.push_back(mode);
-            else pendingPostUI_.push_back(mode);
+            int priority = GetDefaultPriority(mode);
+            if (layer == Layer::PreUI) pendingPreUI_.push_back({mode, priority});
+            else pendingPostUI_.push_back({mode, priority + 9000});
         }
     }
 
@@ -938,10 +1018,10 @@ private:
     
     std::mutex modesMutex_;
     std::vector<Mode> activePreUI_;
-    std::vector<Mode> pendingPreUI_;
+    std::vector<PostProcessModeInfo> pendingPreUI_;
     
     std::vector<Mode> activePostUI_;
-    std::vector<Mode> pendingPostUI_;
+    std::vector<PostProcessModeInfo> pendingPostUI_;
 
     std::mutex customParamsMutex_;
     std::vector<CustomEffectParams> customEffectParamsList_;

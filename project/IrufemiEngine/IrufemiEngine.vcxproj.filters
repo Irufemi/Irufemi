@@ -561,6 +561,9 @@
     <ClCompile Include="Framework\Component\Effect\ScreenEffectComponent.cpp">
       <Filter>Framework\Component\Effect</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Component\Effect\GlobalPostProcessComponent.cpp">
+      <Filter>Framework\Component\Effect</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp">
       <Filter>Framework\Component\Renderer</Filter>
     </ClCompile>
@@ -1218,6 +1221,9 @@
       <Filter>Framework\Component\Effect</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Effect\ScreenEffectComponent.h">
+      <Filter>Framework\Component\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Component\Effect\GlobalPostProcessComponent.h">
       <Filter>Framework\Component\Effect</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h">
