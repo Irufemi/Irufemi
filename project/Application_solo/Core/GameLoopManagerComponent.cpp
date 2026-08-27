@@ -15,7 +15,6 @@
 
 void GameLoopManagerComponent::Initialize() {
     state_ = State::Playing;
-    timer_ = 0.0f;
     player_ = nullptr;
     boss_ = nullptr;
 
@@ -31,41 +30,54 @@ void GameLoopManagerComponent::Initialize() {
 
 void GameLoopManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
-    RegisterProperty("Result Delay Time", &resultDelayTime_);
     RegisterProperty("Result Time Scale", &timeScaleAtResult_);
     RegisterProperty("Target Player Name", &targetPlayerName_);
     RegisterProperty("Target Boss Name", &targetBossName_);
 }
 
 void GameLoopManagerComponent::Update() {
-    auto engine = BaseModel::GetIrufemiEngine();
-
     if (state_ == State::Playing) {
         if (!player_ && !targetPlayerName_.empty()) {
             auto playerObj = gameObject_->GetScene()->FindGameObject(targetPlayerName_);
-            if (playerObj) player_ = playerObj->GetComponent<GravityPlayerComponent>();
+            if (playerObj) {
+                player_ = playerObj->GetComponent<GravityPlayerComponent>();
+                if (player_) {
+                    player_->onPlayerDied = [this]() { OnPlayerDied(); };
+                    player_->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
+                }
+            }
         }
         if (!boss_ && !targetBossName_.empty()) {
             auto bossObj = gameObject_->GetScene()->FindGameObject(targetBossName_);
-            if (bossObj) boss_ = bossObj->GetComponent<BossComponent>();
-        }
-
-        if (player_ && player_->IsDead()) {
-            state_ = State::Finished;
-            isClear_ = false;
-            ResultScene::s_isClear = false;
-            engine->SetTimeScale(timeScaleAtResult_);
-            engine->GetSceneManager()->PushScene("Result");
-        }
-        else if (boss_ && boss_->GetHp() <= 0) {
-            state_ = State::Finished;
-            isClear_ = true;
-            if (player_) {
-                player_->SetGodMode(true); // ゲームクリア時に被弾しないようにする
+            if (bossObj) {
+                boss_ = bossObj->GetComponent<BossComponent>();
+                if (boss_) {
+                    boss_->onBossDied = [this]() { OnBossDied(); };
+                    boss_->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
+                }
             }
-            ResultScene::s_isClear = true;
-            engine->SetTimeScale(timeScaleAtResult_);
-            engine->GetSceneManager()->PushScene("Result");
         }
     }
+}
+
+void GameLoopManagerComponent::OnBossDied() {
+    if (state_ != State::Playing) return;
+    state_ = State::Finished;
+    isClear_ = true;
+    if (player_) {
+        player_->SetGodMode(true); // ゲームクリア時に被弾しないようにする
+    }
+    BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);
+}
+
+void GameLoopManagerComponent::OnPlayerDied() {
+    if (state_ != State::Playing) return;
+    state_ = State::Finished;
+    isClear_ = false;
+    BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);
+}
+
+void GameLoopManagerComponent::OnDeathSequenceFinished() {
+    ResultScene::s_isClear = isClear_;
+    BaseModel::GetIrufemiEngine()->GetSceneManager()->PushScene("Result");
 }

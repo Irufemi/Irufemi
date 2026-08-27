@@ -40,6 +40,8 @@ private:
     float defaultLifeTime_ = 5.0f;
     Irufemi::Vector3 bulletScale_ = { 0.5f, 0.5f, 0.5f };
     float hitRadius_ = 2.0f;
+    std::string hitEffectKey_ = "Dust";
+    std::string explosionModelPath_ = "resources/model/BossBulletSphere.obj";
 
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
     std::vector<BossBulletData> bulletDataList_;

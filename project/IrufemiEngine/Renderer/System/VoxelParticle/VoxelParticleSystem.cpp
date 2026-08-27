@@ -110,8 +110,6 @@ void VoxelParticleSystem::Update(float deltaTime) {
         voxelCount_ = asyncData_->voxelCount;
         status_.store(LoadingStatus::ReadyToCreateResources);
         
-        Log::OutPutLog(std::cout, "[VoxelParticleSystem] Voxelization finished for model: " + asyncData_->modelName + " (Voxels: " + std::to_string(voxelCount_) + ")\n");
-
         asyncData_.reset();
         FinishInitialization();
     } else if (s == LoadingStatus::Failed) {

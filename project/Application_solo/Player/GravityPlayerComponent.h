@@ -2,6 +2,7 @@
 #include "Framework/Component/Component.h"
 #include <vector>
 #include <memory>
+#include <functional>
 
 class GameObject;
 class PlayerTargetingComponent;
@@ -21,6 +22,9 @@ public:
     void Update() override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override { return "GravityPlayerComponent"; }
+
+    std::function<void()> onPlayerDied;
+    std::function<void()> onDeathSequenceFinished;
 
     void LoadStatusFromJson();
     
@@ -79,4 +83,7 @@ private:
     int maxHp_ = 100;
     bool isDead_ = false;
     bool isGodMode_ = false;
+
+    float deathStartTime_ = 0.0f;
+    bool hasTriggeredDeathSequenceFinished_ = false;
 };

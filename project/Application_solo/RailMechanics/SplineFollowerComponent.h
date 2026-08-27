@@ -25,6 +25,7 @@ public:
 
     float GetCurrentDistance() const { return currentDistance_; }
     SplineComponent* GetCachedPath() const { return cachedPath_; }
+    uint64_t GetTargetPathID() const { return targetPathID_; }
 
     void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 

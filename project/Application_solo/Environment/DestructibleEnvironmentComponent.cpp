@@ -36,8 +36,12 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
             Irufemi::Vector3 pos = transform->GetWorldPosition();
             
             // 破壊エフェクト（ヒットエフェクト流用）
-            if (auto effectManager = EffectManagerComponent::GetInstance()) {
-                effectManager->PlayEffect("Hit", pos);
+            EffectManagerComponent* effectManager = nullptr;
+            if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                effectManager = go->GetComponent<EffectManagerComponent>();
+            }
+            if (effectManager) {
+                effectManager->PlayEffect("Dust", pos);
             }
             
             // 瓦礫のスポーン（散らばるように）

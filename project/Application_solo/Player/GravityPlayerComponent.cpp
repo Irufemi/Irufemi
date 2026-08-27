@@ -1,5 +1,9 @@
 #include "Player/GravityPlayerComponent.h"
+#include "Framework/Component/Effect/ParticleEmitterComponent.h"
+#include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Player/PlayerTargetingComponent.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Effects/EffectManagerComponent.h"
 #include "Environment/DebrisComponent.h"
 #include "Environment/DebrisManagerComponent.h"
 #include "Framework/GameObject/GameObject.h"
@@ -67,6 +71,8 @@ void GravityPlayerComponent::Initialize() {
     flashTimer_ = 0.0f;
     flashInterval_ = 0.1f;
     colorCached_ = false;
+
+
 }
 
 void GravityPlayerComponent::Start() {
@@ -88,9 +94,26 @@ void GravityPlayerComponent::Update() {
         isGodMode_ = !isGodMode_;
         Log::OutPutLog(std::cout, std::string("[GravityPlayer] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
     }
+    
+    // ----------------------------------------------------
+    // デバッグ用: God Mode
+    if (BaseModel::GetIrufemiEngine()->GetInputManager()->IsKeyPressed(VK_F9)) {
+        isGodMode_ = !isGodMode_;
+        Log::OutPutLog(std::cout, std::string("[GravityPlayer] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
+    }
+    // ----------------------------------------------------
 #endif
 
-    if (isDead_) return;
+    if (isDead_) {
+        if (!hasTriggeredDeathSequenceFinished_) {
+            float currentTime = BaseModel::GetIrufemiEngine()->GetGameTime();
+            if (currentTime >= deathStartTime_ + 3.0f) {
+                hasTriggeredDeathSequenceFinished_ = true;
+                if (onDeathSequenceFinished) onDeathSequenceFinished();
+            }
+        }
+        return;
+    }
 
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (dt <= 0.0f) return;
@@ -169,6 +192,8 @@ void GravityPlayerComponent::TakeDamage(int damage) {
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
+        deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
+        if (onPlayerDied) onPlayerDied();
         Log::OutPutLog(std::cout, "[GravityPlayer] Player Died!\n");
         
         // 自機が死んだときに自機のモデルの描画を切る

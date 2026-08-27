@@ -1,4 +1,4 @@
-﻿#include "Inspectors/ComponentEditorRegistry.h"
+#include "Inspectors/ComponentEditorRegistry.h"
 
 #ifdef EditorMode
 #include <imgui/imgui.h>
@@ -21,6 +21,7 @@
 #include "Inspectors/Physics/RaycastComponentEditor.h"
 #include "Inspectors/Effects/VoxelParticleComponentEditor.h"
 #include "Inspectors/Effects/EffectMaskComponentEditor.h"
+#include "Inspectors/Effects/GlobalPostProcessComponentEditor.h"
 #include "Inspectors/Camera/CameraComponentEditor.h"
 
 // Engine Components
@@ -39,6 +40,7 @@
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Framework/Component/Effect/EffectMaskComponent.h"
+#include "Framework/Component/Effect/GlobalPostProcessComponent.h"
 #include "Framework/Component/Camera/CameraComponent.h"
 
 // =======================================================================
@@ -64,6 +66,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<ParticleEmitterComponent, ParticleEmitterComponentEditor>();
     RegisterEditor<VoxelParticleComponent, VoxelParticleComponentEditor>();
     RegisterEditor<EffectMaskComponent, EffectMaskComponentEditor>();
+    RegisterEditor<GlobalPostProcessComponent, GlobalPostProcessComponentEditor>();
     RegisterEditor<CameraComponent, CameraComponentEditor>();
 }
 

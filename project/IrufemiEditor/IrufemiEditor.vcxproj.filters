@@ -78,6 +78,9 @@
     <ClCompile Include="Inspectors\Effects\EffectMaskComponentEditor.cpp">
       <Filter>Inspectors\Effects</Filter>
     </ClCompile>
+    <ClCompile Include="Inspectors\Effects\GlobalPostProcessComponentEditor.cpp">
+      <Filter>Inspectors\Effects</Filter>
+    </ClCompile>
     <ClCompile Include="Inspectors\Rendering\PrimitiveRendererComponentEditor.cpp">
       <Filter>Inspectors\Rendering</Filter>
     </ClCompile>
@@ -168,6 +171,9 @@
       <Filter>Inspectors\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Inspectors\Effects\EffectMaskComponentEditor.h">
+      <Filter>Inspectors\Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="Inspectors\Effects\GlobalPostProcessComponentEditor.h">
       <Filter>Inspectors\Effects</Filter>
     </ClInclude>
     <ClInclude Include="Inspectors\Rendering\PrimitiveRendererComponentEditor.h">

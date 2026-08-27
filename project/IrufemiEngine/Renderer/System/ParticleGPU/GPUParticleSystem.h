@@ -178,7 +178,7 @@ class GPUParticleSystem : public IComputeTask
 , public IRenderable {
 public:
     friend class GPUParticleManager;
-    static const uint32_t kMaxEmitters = 256;
+    static const uint32_t kMaxEmitters = 2048;
 
     GPUParticleSystem();
     ~GPUParticleSystem();
@@ -186,6 +186,7 @@ public:
     /** @name 初期化・更新・描画 */
     ///@{
     void DispatchCompute() override;
+    void Setup(class RenderGraphBuilder& builder) override;
     /**
      * @brief Initialize を実行する。
      */

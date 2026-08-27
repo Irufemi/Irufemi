@@ -2,7 +2,7 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -11,21 +11,32 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Player/TargetableComponent.h"
 
+// AAAタイトルのアプローチ (Data-Oriented Design & Instancing)
+// 個々の敵オブジェクトにMeshRendererを持たせるのではなく、Spawnerが一括でModelBatchRendererComponentを管理します。
+// これにより、数千体の敵を描画する際でもドローコールが1回（Instancing）に削減され、
+// CPUとGPUのオーバーヘッドが劇的に改善されます（Unreal EngineのHISMやUnityのDOTSに近いアーキテクチャ）。
+
 void DebugEnemySpawnerComponent::Initialize() {
 }
 
+void DebugEnemySpawnerComponent::OnRegisterProperties() {
+    RegisterProperty("Enemy Model Path", &enemyModelPath_);
+}
+
 void DebugEnemySpawnerComponent::Start() {
+    batchRenderer_ = gameObject_->AddComponent<ModelBatchRendererComponent>();
+    batchRenderer_->LoadModel(enemyModelPath_);
+
     auto scene = gameObject_->GetScene();
     if (!scene) return;
 
     enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
         auto enemy = std::make_shared<GameObject>("DebugEnemy");
-        // scene->AddGameObject(enemy);
+        scene->AddGameObject(enemy);
         
         auto transform = enemy->GetTransform();
         transform->SetScale({1.2f, 1.2f, 1.2f});
 
-        enemy->AddComponent<PrimitiveRendererComponent>();
         auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
         // プール運用のため、エネミー死亡時は Destroy ではなくプールへ返却する
         enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
@@ -46,6 +57,19 @@ void DebugEnemySpawnerComponent::Start() {
 }
 
 void DebugEnemySpawnerComponent::Update() {
+    if (batchRenderer_) {
+        // 毎フレーム、バッチレンダラーのインスタンス（描画キュー）をクリアします。
+        batchRenderer_->ClearInstances();
+        
+        // アクティブなすべての敵のトランスフォームを収集し、一括登録します（Instancing描画）。
+        for (const auto& pair : activeEnemyHandles_) {
+            GameObject* enemyObj = pair.first;
+            if (enemyObj && enemyObj->GetIsActive()) {
+                batchRenderer_->AddInstanceWorld(enemyObj->GetTransform()->GetWorldMatrix());
+            }
+        }
+    }
+
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
     if (!input) return;
 

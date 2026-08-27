@@ -1,5 +1,10 @@
 #include "Core/Utility/ErrorUtility.h"
+#include "Core/Utility/Log.h"
+#include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
+#include <iostream>
+#include <Windows.h>
+#include <cstdio>
 #include "Renderer/Camera/CameraManager.h"
 #include "Core/Shape/Sphere.h"
 #include "Renderer/Data/VertexData.h"
@@ -224,12 +229,12 @@ void GPUParticleSystem::Update() {
   isCulled_ = false;
   if (isCullingEnabled_) {
     bool anyVisible = false;
-    for (auto &em : emittersData_) {
+    for (const auto &em : emittersData_) {
       Irufemi::Sphere boundingSphere;
       boundingSphere.center = {em.translateX, em.translateY, em.translateZ};
-      // Boundingを計算。Sphereなら半径*3、Beamなら広めに設定
+      // Boundingを計算。Sphereなら半径*3 (最低20.0fを保証)、Beamなら広めに設定
       if (em.type == 0) {
-        boundingSphere.radius = em.radius * 3.0f;
+        boundingSphere.radius = (std::max)(20.0f, em.radius * 3.0f);
       } else {
         boundingSphere.radius = 50.0f; // ビームは長いので広めに
       }
@@ -348,6 +353,12 @@ void GPUParticleSystem::SyncBeforeDraw() {
   materialBuffer_.Update(cpuMaterialData_, frameIndex);
 
   lastUpdateFrame_ = frameIndex;
+}
+
+void GPUParticleSystem::Setup(RenderGraphBuilder& builder) {
+    if (particleResource_) {
+        builder.RequireState(particleResource_.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    }
 }
 
 void GPUParticleSystem::DispatchCompute() {
@@ -891,6 +902,8 @@ void GPUParticleSystem::DrawCylinderWireframe(const Irufemi::Vector3 &center,
 
 void GPUParticleSystem::DispatchComputeShaders(
     ID3D12GraphicsCommandList *commandList) {
+  if (!engine_) return;
+
   ID3D12DescriptorHeap *descriptorHeaps[] = {dxCommon_->GetSrvDescriptorHeap()};
   commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -929,6 +942,11 @@ void GPUParticleSystem::DispatchComputeShaders(
   for (size_t i = 0; i < emittersData_.size(); ++i) {
     uint32_t emitCount = emittersData_[i].burstCount;
     if (emitCount > 0) {
+      
+      #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+      Log::OutPutLog(std::cout, "[GPUParticleSystem] Emitting " + std::to_string(emitCount) + " particles for system at pos: " + std::to_string(emittersData_[i].translateX) + ", " + std::to_string(emittersData_[i].translateY) + ", " + std::to_string(emittersData_[i].translateZ) + "\n");
+      #endif
+      
       commandList->SetComputeRoot32BitConstant(9, (uint32_t)i,
                                                0); // b2: gEmitterIndex
       

@@ -9,13 +9,25 @@
 #include <fstream>
 #include <iostream>
 #include "Framework/Component/Utility/SplineComponent.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include "Core/Math/MathFunction.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Resource/Model/ModelManager.h"
 #include "Framework/Component/Logic/SpawnPointComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 
 WaveManagerComponent::WaveManagerComponent() {}
 
 void WaveManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Level Data Path", &levelDataPath_);
+    RegisterGameObjectRef("Target Spline", &targetSplineID_);
+    RegisterProperty("Editor Preview Distance", &editorPreviewDistance_);
+}
+
+void WaveManagerComponent::Deserialize(const nlohmann::json& j) {
+    Component::Deserialize(j);
+    ReloadLevelData();
 }
 
 void WaveManagerComponent::Initialize() {
@@ -24,6 +36,86 @@ void WaveManagerComponent::Initialize() {
     RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
     
     ReloadLevelData();
+}
+
+std::shared_ptr<ModelBatchRendererComponent> WaveManagerComponent::GetPreviewBatchRenderer(const std::string& modelPath) {
+    auto engine = BaseModel::GetIrufemiEngine();
+    if (!engine) return nullptr;
+
+    if (currentPreviewModelPath_ != modelPath || !previewBatch_) {
+        currentPreviewModelPath_ = modelPath;
+        if (!previewBatch_) {
+            previewBatch_ = std::make_shared<ModelBatchRendererComponent>();
+            previewBatch_->SetGameObject(gameObject_);
+            previewBatch_->SetUseGPUCulling(false); // プレビュー用なのでカリング無効化
+            previewBatch_->Initialize();
+        }
+        previewBatch_->LoadModel(modelPath);
+    }
+
+    return previewBatch_;
+}
+
+void WaveManagerComponent::Draw() {
+#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
+    auto engine = BaseModel::GetIrufemiEngine();
+    if (engine && engine->GetSelectedObject().get() == gameObject_) {
+        auto scene = gameObject_->GetScene();
+        if (!scene) return;
+        
+        if (previewBatch_) {
+            previewBatch_->ClearInstances();
+        }
+
+        SplineComponent* spline = nullptr;
+        if (targetSplineID_ != 0) {
+            auto splineObj = scene->FindGameObjectByID(targetSplineID_);
+            if (splineObj) spline = splineObj->GetComponent<SplineComponent>();
+        }
+        
+        if (spline) {
+            if (engine->GetDebugPrimitiveRenderer()) {
+                Irufemi::Vector3 phPos = spline->GetPointAtDistance(editorPreviewDistance_);
+                Irufemi::Vector3 scale = {3.0f, 3.0f, 3.0f};
+                Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, phPos);
+                Irufemi::Vector4 color = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow for Playhead
+                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
+            }
+        }
+
+        auto cartObj = scene->FindGameObject("PlayerCart");
+        if (!cartObj) cartObj = scene->FindGameObject("Player");
+        auto follower = cartObj ? cartObj->GetComponent<SplineFollowerComponent>() : nullptr;
+        SplineComponent* railSpline = nullptr;
+        if (follower) {
+            if (auto pathObj = scene->FindGameObjectByID(follower->GetTargetPathID())) {
+                railSpline = pathObj->GetComponent<SplineComponent>();
+            }
+        }
+
+        if (railSpline) {
+            for (const auto& ev : allEvents_) {
+                auto it = handlers_.find(ev.eventType);
+                if (it != handlers_.end() && it->second) {
+                    Irufemi::Vector3 pos = railSpline->GetPointAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 fwd = railSpline->GetTangentAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 up = {0.0f, 1.0f, 0.0f};
+                    Irufemi::Vector3 right = { up.y * fwd.z - up.z * fwd.y, 
+                                               up.z * fwd.x - up.x * fwd.z, 
+                                               up.x * fwd.y - up.y * fwd.x };
+                    float len = std::sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
+                    if (len > 0.0001f) { right.x /= len; right.y /= len; right.z /= len; }
+                    
+                    it->second->DrawEditorPreview(this, ev, pos, fwd, right);
+                }
+            }
+        }
+        
+        if (previewBatch_) {
+            previewBatch_->Draw();
+        }
+    }
+#endif
 }
 
 void WaveManagerComponent::ReloadLevelData() {
@@ -72,40 +164,6 @@ void WaveManagerComponent::Update() {
         CacheSpawnPoints();
         hasCachedSpawnPoints_ = true;
     }
-
-#if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
-    // エディタモード中、自身が選択されている時のみプレビューを描画する
-    auto engine = BaseModel::GetIrufemiEngine();
-    if (engine && engine->GetSelectedObject().get() == gameObject_) {
-        // キャッシュの再構築（SpawnPointがエディタ上で移動・追加されている可能性を考慮して毎フレーム更新）
-        CacheSpawnPoints();
-
-        auto scene = gameObject_->GetScene();
-        auto cartObj = scene ? scene->FindGameObject("PlayerCart") : nullptr;
-        if (!cartObj && scene) cartObj = scene->FindGameObject("Player");
-        
-        auto follower = cartObj ? cartObj->GetComponent<SplineFollowerComponent>() : nullptr;
-        auto spline = follower ? follower->GetCachedPath() : nullptr;
-
-        if (spline) {
-            for (const auto& ev : allEvents_) {
-                auto it = handlers_.find(ev.eventType);
-                if (it != handlers_.end() && it->second) {
-                    Irufemi::Vector3 pos = spline->GetPointAtDistance(ev.triggerDistance);
-                    Irufemi::Vector3 fwd = spline->GetTangentAtDistance(ev.triggerDistance);
-                    Irufemi::Vector3 up = {0.0f, 1.0f, 0.0f};
-                    Irufemi::Vector3 right = { up.y * fwd.z - up.z * fwd.y, 
-                                               up.z * fwd.x - up.x * fwd.z, 
-                                               up.x * fwd.y - up.y * fwd.x };
-                    float len = std::sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
-                    if (len > 0.0001f) { right.x /= len; right.y /= len; right.z /= len; }
-                    
-                    it->second->DrawEditorPreview(this, ev, pos, fwd, right);
-                }
-            }
-        }
-    }
-#endif
 
     if (!playerFollower_) {
         // PlayerCart または Player にアタッチされている SplineFollowerComponent を探す
@@ -199,4 +257,37 @@ const std::vector<SpawnPointComponent*>& WaveManagerComponent::GetSpawnPoints(co
         return it->second;
     }
     return emptyList;
+}
+
+void WaveManagerComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
+    if (targetSplineID_ != 0) {
+        auto it = idMap.find(targetSplineID_);
+        if (it != idMap.end()) {
+            targetSplineID_ = it->second;
+        }
+    }
+}
+
+void WaveManagerComponent::SaveLevelData() {
+    SaveLevelData(levelDataPath_);
+}
+
+void WaveManagerComponent::SaveLevelData(const std::string& filePath) {
+    nlohmann::json j;
+    auto& eventsJson = j["Stage1_LevelData"]["Events"];
+    eventsJson = nlohmann::json::array();
+
+    for (const auto& ev : allEvents_) {
+        nlohmann::json eventJson = ev.parameters;
+        eventJson["TriggerDistance"] = ev.triggerDistance;
+        eventJson["Type"] = ev.eventType;
+        eventsJson.push_back(eventJson);
+    }
+
+    std::ofstream file(filePath);
+    if (file.is_open()) {
+        file << j.dump(4);
+    } else {
+        Log::OutPutLog(std::cout, "[WaveManager] Failed to save level data: " + filePath + "\n");
+    }
 }

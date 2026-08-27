@@ -322,6 +322,8 @@ public: //メンバ関数
         computeTasks_.push_back(task);
     }
     
+    const std::vector<IComputeTask*>& GetComputeTasks() const { return computeTasks_; }
+    
     /**
      * @brief 登録された全Computeタスクを一括実行し、リストをクリアする
      */

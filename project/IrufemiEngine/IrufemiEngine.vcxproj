@@ -316,6 +316,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Effect\ParticleEmitterComponent.cpp" />
     <ClCompile Include="Framework\Component\Effect\VoxelParticleComponent.cpp" />
     <ClCompile Include="Framework\Component\Effect\ScreenEffectComponent.cpp" />
+    <ClCompile Include="Framework\Component\Effect\GlobalPostProcessComponent.cpp" />
+    <ClCompile Include="Framework\Component\Effect\PostProcessSettings.cpp" />
     <ClCompile Include="Framework\Component\Renderer\MeshRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\ModelBatchRendererComponent.cpp" />
     <ClCompile Include="Framework\Component\Renderer\PrimitiveRendererComponent.cpp" />
@@ -535,6 +537,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Renderer\TextRendererComponent.h" />
     <ClInclude Include="Framework\Component\Effect\VoxelParticleComponent.h" />
     <ClInclude Include="Framework\Component\Effect\ScreenEffectComponent.h" />
+    <ClInclude Include="Framework\Component\Effect\GlobalPostProcessComponent.h" />
+    <ClInclude Include="Framework\Component\Effect\PostProcessSettings.h" />
     <ClInclude Include="Framework\Component\UI\ButtonComponent.h" />
     <ClInclude Include="Framework\Component\UI\SliderComponent.h" />
     <ClInclude Include="Framework\Component\UI\CanvasComponent.h" />

@@ -18,10 +18,12 @@ public:
     std::string GetComponentName() const override { return "GameLoopManagerComponent"; }
 
 private:
+    void OnBossDied();
+    void OnPlayerDied();
+    void OnDeathSequenceFinished();
+
     State state_ = State::Playing;
-    float resultDelayTime_ = 3.0f;
     float timeScaleAtResult_ = 0.1f;
-    float timer_ = 0.0f;
     bool isClear_ = false;
 
     std::string targetPlayerName_ = "Player";

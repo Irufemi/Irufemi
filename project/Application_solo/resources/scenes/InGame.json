@@ -3833,6 +3833,9 @@
           "type": "TransformComponent"
         },
         {
+          "data": {
+            "Enemy Model Path": "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj"
+          },
           "type": "DebugEnemySpawnerComponent"
         }
       ],
@@ -4062,6 +4065,7 @@
         },
         {
           "data": {
+            "Dust Effect Path": "resources/prefabs/debris_dust_effect.json",
             "Hit Effect Path": "resources/prefabs/normal_attack_hit_effect.json"
           },
           "type": "EffectManagerComponent"
@@ -4240,6 +4244,8 @@
             {
               "data": {
                 "Default Life Time": 5.0,
+                "Explosion Model Path": "resources/model/BossBulletSphere.obj",
+                "Hit Effect Key": "Dust",
                 "Hit Radius": 1.0,
                 "Max Bullets": 2000
               },
@@ -4303,7 +4309,6 @@
         },
         {
           "data": {
-            "Result Delay Time": 3.0,
             "Result Time Scale": 0.10000000149011612,
             "Target Boss Name": "Boss",
             "Target Player Name": "Player"
@@ -4312,13 +4317,71 @@
         },
         {
           "data": {
-            "Level Data Path": "resources/GameData/WaveData_Stage1.json"
+            "Editor Preview Distance": 0.0,
+            "Level Data Path": "resources/GameData/WaveData_Stage1.json",
+            "Target Spline": 8865338349013935913
           },
           "type": "WaveManagerComponent"
         }
       ],
       "instanceId": 8040492037901668950,
       "name": "GameManager",
+      "tag": "Untagged"
+    },
+    {
+      "components": [
+        {
+          "data": {
+            "inheritScale": true,
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              -0.0,
+              0.0
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "type": "TransformComponent"
+        },
+        {
+          "data": {
+            "overrides": [
+              {
+                "type": "Bloom",
+                "enabled": true,
+                "intensity": 1.7999999523162842,
+                "sigma": 4.0,
+                "threshold": 0.6000000238418579
+              },
+              {
+                "type": "ColorGrading",
+                "enabled": true,
+                "exposure": 2.0,
+                "hue": 0.0,
+                "saturation": 0.2,
+                "value": -0.10000000149011612
+              },
+              {
+                "type": "Vignette",
+                "enabled": true,
+                "radius": 0.800000011920929,
+                "softness": 0.5
+              }
+            ]
+          },
+          "type": "GlobalPostProcessComponent"
+        }
+      ],
+      "instanceId": 998877665544332211,
+      "name": "GlobalPostProcessVolume",
       "tag": "Untagged"
     }
   ],

@@ -8,6 +8,7 @@
 
 class SplineFollowerComponent;
 class SpawnPointComponent;
+class ModelBatchRendererComponent;
 
 /**
  * @class WaveManagerComponent
@@ -20,12 +21,16 @@ public:
 
     void Initialize() override;
     void Update() override;
+    void Draw() override;
     bool CanUpdateInEditMode() const override { return true; }
     
+    void Deserialize(const nlohmann::json& j) override;
     std::string GetComponentName() const override { return "WaveManagerComponent"; }
     void OnRegisterProperties() override;
     
     void ReloadLevelData();
+
+    std::shared_ptr<ModelBatchRendererComponent> GetPreviewBatchRenderer(const std::string& modelPath);
 
     /**
      * @brief 特定のイベント種類に対するハンドラを登録する
@@ -53,7 +58,22 @@ private:
     std::string levelDataPath_ = "resources/GameData/WaveData_Stage1.json";
 
 public:
+    std::vector<WaveEventData>& GetAllEventsMutable() { return allEvents_; }
     const std::vector<WaveEventData>& GetAllEvents() const { return allEvents_; }
     const std::string& GetLevelDataPath() const { return levelDataPath_; }
     void SetLevelDataPath(const std::string& path) { levelDataPath_ = path; }
+
+    void SaveLevelData();
+    void SaveLevelData(const std::string& filePath);
+
+    float GetEditorPreviewDistance() const { return editorPreviewDistance_; }
+    void SetEditorPreviewDistance(float dist) { editorPreviewDistance_ = dist; }
+
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
+
+private:
+    float editorPreviewDistance_ = 0.0f;
+    std::string currentPreviewModelPath_ = "";
+    std::shared_ptr<ModelBatchRendererComponent> previewBatch_;
+    uint64_t targetSplineID_ = 0;
 };
