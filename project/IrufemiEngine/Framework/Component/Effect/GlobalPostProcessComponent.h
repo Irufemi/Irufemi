@@ -1,9 +1,12 @@
 #pragma once
 #include "Framework/Component/Component.h"
+#include "PostProcessSettings.h"
+#include <vector>
+#include <memory>
 
 /**
  * @class GlobalPostProcessComponent
- * @brief シーン全体のポストプロセス（Bloom, Color Grading等）を制御するPost Process Volume
+ * @brief 動的な Post Process Volume (Volume Framework 互換)
  */
 class GlobalPostProcessComponent : public Component {
 public:
@@ -18,22 +21,21 @@ public:
     std::string GetComponentName() const override { return "GlobalPostProcessComponent"; }
     std::shared_ptr<Component> Clone() override;
 
+    // JSON Serialization
+    nlohmann::json Serialize() override;
+    void Deserialize(const nlohmann::json& j) override;
+
+    // 内部設定リストへのアクセス（エディタ用）
+    const std::vector<std::shared_ptr<IPostProcessSettings>>& GetOverrides() const { return overrides_; }
+    void AddOverride(std::shared_ptr<IPostProcessSettings> setting) { overrides_.push_back(setting); }
+    void RemoveOverride(size_t index) { 
+        if (index < overrides_.size()) {
+            overrides_.erase(overrides_.begin() + index);
+        }
+    }
+
 private:
-    // Bloom
-    bool enableBloom_ = true;
-    float bloomThreshold_ = 0.6f;
-    float bloomIntensity_ = 1.8f;
-    float bloomSigma_ = 4.0f;
+    friend class GlobalPostProcessComponentEditor;
 
-    // Vignette
-    bool enableVignette_ = true;
-    float vignetteRadius_ = 0.8f;
-    float vignetteSoftness_ = 0.5f;
-
-    // ToneMapping & HSV (Color Grading)
-    bool enableColorGrading_ = true;
-    float exposure_ = 1.0f;
-    float hue_ = 0.0f;
-    float saturation_ = -0.1f;
-    float value_ = 0.0f;
+    std::vector<std::shared_ptr<IPostProcessSettings>> overrides_;
 };
