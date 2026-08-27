@@ -5,6 +5,7 @@
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Player/GravityPlayerComponent.h"
 #include "Physics/CollisionManager.h"
 #include "Framework/Component/Collider/ColliderComponent.h"
@@ -60,7 +61,11 @@ void BossBulletManagerComponent::Update() {
 
             // 共通の爆発エフェクト処理ラムダ
             auto playExplosion = [&](const Irufemi::Vector3& pos) {
-                if (auto effectManager = EffectManagerComponent::GetInstance()) {
+                EffectManagerComponent* effectManager = nullptr;
+                if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                    effectManager = go->GetComponent<EffectManagerComponent>();
+                }
+                if (effectManager) {
                     effectManager->PlayEffect(hitEffectKey_, pos);
                 }
                 

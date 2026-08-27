@@ -36,7 +36,11 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
             Irufemi::Vector3 pos = transform->GetWorldPosition();
             
             // 破壊エフェクト（ヒットエフェクト流用）
-            if (auto effectManager = EffectManagerComponent::GetInstance()) {
+            EffectManagerComponent* effectManager = nullptr;
+            if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                effectManager = go->GetComponent<EffectManagerComponent>();
+            }
+            if (effectManager) {
                 effectManager->PlayEffect("Dust", pos);
             }
             

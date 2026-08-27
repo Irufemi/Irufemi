@@ -123,7 +123,11 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
         if (auto t = GetTransform()) {
             Irufemi::Vector3 hitPos = t->GetWorldPosition();
             
-            if (auto effectManager = EffectManagerComponent::GetInstance()) {
+            EffectManagerComponent* effectManager = nullptr;
+            if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                effectManager = go->GetComponent<EffectManagerComponent>();
+            }
+            if (effectManager) {
                 effectManager->PlayEffect(hitEffectKey_, hitPos);
             }
             
@@ -373,7 +377,11 @@ void DebrisComponent::Update() {
                 float distSq = dx*dx + dy*dy + dz*dz;
                 
                 if (distSq > manager_->GetMaxThrowDistanceSq()) {
-                    if (auto effectManager = EffectManagerComponent::GetInstance()) {
+                    EffectManagerComponent* effectManager = nullptr;
+                    if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                        effectManager = go->GetComponent<EffectManagerComponent>();
+                    }
+                    if (effectManager) {
                         effectManager->PlayEffect(hitEffectKey_, pos);
                     }
                     if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {

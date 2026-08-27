@@ -12,7 +12,6 @@
 #include "Core/Utility/Log.h"
 #include <iostream>
 
-EffectManagerComponent* EffectManagerComponent::instance_ = nullptr;
 
 void EffectManagerComponent::OnRegisterProperties() {
     RegisterProperty("Hit Effect Path", &hitEffectPath_);
@@ -20,7 +19,6 @@ void EffectManagerComponent::OnRegisterProperties() {
 }
 
 void EffectManagerComponent::Initialize() {
-    instance_ = this;
     effectDictionary_["Hit"] = hitEffectPath_;
     effectDictionary_["Dust"] = dustEffectPath_;
 }
