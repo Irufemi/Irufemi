@@ -4359,9 +4359,9 @@
             "Enable Bloom": true,
             "Enable Color Grading": true,
             "Enable Vignette": true,
-            "Exposure": 1.0,
+            "Exposure": 2.0,
             "Hue": 0.0,
-            "Saturation": -0.20000000298023224,
+            "Saturation": 0.2,
             "Value": -0.10000000149011612,
             "Vignette Radius": 0.800000011920929,
             "Vignette Softness": 0.5

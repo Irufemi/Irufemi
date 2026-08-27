@@ -17,6 +17,12 @@ void GlobalPostProcessComponent::OnRegisterProperties() {
     RegisterProperty("Vignette Radius", &vignetteRadius_).SetMinMax(0.0f, 1.5f);
     RegisterProperty("Vignette Softness", &vignetteSoftness_).SetMinMax(0.0f, 1.0f);
 
+    RegisterHeader("Color Grading (ToneMapping & HSV)");
+    RegisterProperty("Enable Color Grading", &enableColorGrading_);
+    RegisterProperty("Exposure", &exposure_).SetMinMax(0.1f, 5.0f);
+    RegisterProperty("Hue", &hue_).SetMinMax(-180.0f, 180.0f);
+    RegisterProperty("Saturation", &saturation_).SetMinMax(-1.0f, 2.0f);
+    RegisterProperty("Value", &value_).SetMinMax(-1.0f, 2.0f);
 }
 
 void GlobalPostProcessComponent::Start() {
@@ -48,7 +54,29 @@ void GlobalPostProcessComponent::Update() {
         pp->RemoveActiveMode(PostProcessMode::Bloom);
     }
 
-    // 2. Vignette - 画面演出系
+    // 2. Color Grading (ToneMapping & HSV) - 色調補正系
+    // ※ 優先度（Priority）は PostProcessManager 側でハードコードされているため、
+    // ここでの AddActiveMode の順序は実行順序に影響しません。
+    if (enableColorGrading_) {
+        if (!pp->HasActiveMode(PostProcessMode::ToneMapping)) {
+            pp->AddActiveMode(PostProcessMode::ToneMapping);
+        }
+        if (!pp->HasActiveMode(PostProcessMode::HSV)) {
+            pp->AddActiveMode(PostProcessMode::HSV);
+        }
+        auto& tm = pp->GetToneMappingParams();
+        tm.exposure = exposure_;
+
+        auto& hsv = pp->GetHSVParams();
+        hsv.hue = hue_;
+        hsv.saturation = saturation_;
+        hsv.value = value_;
+    } else {
+        pp->RemoveActiveMode(PostProcessMode::ToneMapping);
+        pp->RemoveActiveMode(PostProcessMode::HSV);
+    }
+
+    // 3. Vignette - 画面演出系
     if (enableVignette_) {
         if (!pp->HasActiveMode(PostProcessMode::Vignette)) {
             pp->AddActiveMode(PostProcessMode::Vignette);
