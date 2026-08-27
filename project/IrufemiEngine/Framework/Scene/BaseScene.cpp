@@ -296,10 +296,6 @@ void BaseScene::Update() {
 }
 
 void BaseScene::Draw() {
-    if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
-        engine_->GetDebugPrimitiveRenderer()->ClearInstances();
-    }
-
     // --- GameObject の描画 (マルチスレッド化) ---
     std::vector<std::future<void>> drawFutures;
     for (size_t i = 0; i < gameObjects_.size(); ++i) {

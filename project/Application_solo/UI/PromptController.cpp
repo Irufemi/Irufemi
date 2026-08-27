@@ -2,6 +2,7 @@
 #include "Platform/Input/InputManager.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Engine/Irufemi.h"
 
 PromptController::PromptController() {
     animator_.Reset();
@@ -16,8 +17,8 @@ void PromptController::SetTarget(Sprite* targetSprite) {
 }
 
 void PromptController::Update(InputManager* input) {
-    // 1フレームの時間を 1.0f / 60.0f と仮定
-    animator_.Update(1.0f / 60.0f);
+    float dt = BaseModel::GetIrufemiEngine()->GetDeltaTime();
+    animator_.Update(dt);
 
     if (!isDecided_) {
         // --- 待機中 ---
@@ -39,7 +40,8 @@ void PromptController::Update(InputManager* input) {
         }
     } else {
         // --- 決定後 ---
-        transitionDelayTimer_ += 1.0f / 60.0f;
+        float dt = BaseModel::GetIrufemiEngine()->GetDeltaTime();
+        transitionDelayTimer_ += dt;
         
         // 高速フラッシュ
         isVisible_ = animator_.GetFlashVisibility(40.0f);

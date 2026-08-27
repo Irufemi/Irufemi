@@ -16,7 +16,7 @@ public:
      * @param[in] drawManager 設定する up の値
      * @param[in] engine 設定する up の値
      */
-    void Setup(class RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) override {}
+    void Setup(class RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) override;
     /**
      * @brief Execute を実行する。
      */

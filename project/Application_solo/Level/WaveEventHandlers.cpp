@@ -10,6 +10,9 @@
 #include "Level/WaveManagerComponent.h"
 #include "Framework/Component/Logic/SpawnPointComponent.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Core/Math/MathFunction.h"
 #include <iostream>
 
 std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
@@ -96,17 +99,38 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
     auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
     
     auto engine = BaseModel::GetIrufemiEngine();
-    if (engine && engine->GetDebugPrimitiveRenderer()) {
+    if (!engine) return;
+
+    std::string modelPath = "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj";
+    auto scene = manager->GetGameObject()->GetScene();
+    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
+        auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
+        if (spawnerObj) {
+            if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
+                modelPath = spawner->enemyModelPath_;
+            }
+        }
+    }
+
+    auto previewBatch = manager->GetPreviewBatchRenderer(modelPath);
+    if (previewBatch) {
+        for (size_t i = 0; i < positions.size(); ++i) {
+            Irufemi::Vector3 scale = {1.2f, 1.2f, 1.2f};
+            Irufemi::Vector3 rot = {0.0f, std::atan2(-railForward.x, -railForward.z), 0.0f};
+            Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(scale, rot, positions[i]);
+            previewBatch->AddInstanceWorld(transform);
+            
+            // モデルが背景に溶け込んで見えにくいため、同時に赤いワイヤー（キューブ）も描画して視認性を上げる
+            if (engine->GetDebugPrimitiveRenderer()) {
+                Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
+                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
+            }
+        }
+    } else if (engine->GetDebugPrimitiveRenderer()) {
         Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
-        
         for (const auto& pos : positions) {
-            float scale = 2.0f;
-            Irufemi::Matrix4x4 transform = {
-                scale, 0, 0, 0,
-                0, scale, 0, 0,
-                0, 0, scale, 0,
-                pos.x, pos.y + (scale * 0.5f), pos.z, 1.0f // 地面にめり込まないように少し上げる
-            };
+            Irufemi::Vector3 scale = {2.0f, 2.0f, 2.0f};
+            Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, pos);
             engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
         }
     }

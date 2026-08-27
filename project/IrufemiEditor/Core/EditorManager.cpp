@@ -246,8 +246,6 @@ void EditorManager::ExitPrefabMode(bool saveChanges) {
 void EditorManager::OnDrawUI() {
     if (!engine_ || !engine_->GetMainRenderTexture()) return;
 
-    OnUpdate(engine_->GetDeltaTime()); // ここでショートカット処理を呼ぶ
-
     // 1. 全画面を覆う DockSpace の背景ウィンドウを作成
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);

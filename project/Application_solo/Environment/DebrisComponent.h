@@ -25,6 +25,9 @@ public:
     void OnEnable() override;
     void Update() override;
     void OnCollisionEnter(GameObject* hitObject) override;
+    
+    void OnRegisterProperties() override;
+    
     std::string GetComponentName() const override { return "DebrisComponent"; }
 
     /**
@@ -90,4 +93,7 @@ private:
     float bossOrbitSpeedY_ = 0.0f;
     float bossOrbitSpeedZ_ = 0.0f;
     float bossOrbitRadiusOffset_ = 0.0f;
+    
+    std::string hitEffectKey_ = "Dust";
+    std::string explosionModelPath_ = "resources/model/Debris/Generic/Debris_Generic.obj";
 };

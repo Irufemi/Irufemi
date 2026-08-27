@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Vector4.h"
@@ -123,6 +123,12 @@ public:
      * @param[in] mode 設定する BlendMode の値
      */
     void SetBlendMode(Irufemi::BlendMode mode);
+    
+    /**
+     * @brief 深度書き込み（深度テスト）の設定
+     */
+    void SetDepthWrite(PSOManager::DepthWrite depthWrite);
+
     /**
      * @brief BlendMode を取得する。
      * @return 取得された BlendMode
@@ -531,6 +537,7 @@ private:
 
     std::string texturePath_ = "resources/circle.png";
     Irufemi::BlendMode blendMode_ = Irufemi::BlendMode::kBlendModeAdd;
+    PSOManager::DepthWrite depthWrite_ = PSOManager::DepthWrite::Disable;
     bool enableLighting_ = false;
     bool isUnscaledTime_ = false;
     bool emitOnAwake_ = true;

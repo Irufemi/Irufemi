@@ -46,6 +46,12 @@ public:
      */
     void PlayShakeSeconds(float intensity, float durationSeconds, float frequency = 10.0f);
 
+    /**
+     * @brief 現在シェイクが再生中かどうかを判定する
+     * @return 再生中ならtrue
+     */
+    bool IsPlaying() const { return !activeShakes_.empty(); }
+
 protected:
     void OnRegisterProperties() override;
 

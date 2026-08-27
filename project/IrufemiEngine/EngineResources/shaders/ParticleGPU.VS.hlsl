@@ -1,25 +1,11 @@
 #include "ParticleGPU.hlsli"
 #include "VertexData.hlsli"
 #include "CullingUtility.hlsli"
+#include "MathUtility.hlsli"
 
 StructuredBuffer<Particle> gParticles : register(t0);
 StructuredBuffer<ParticleSortData> gSortList : register(t1);
 ConstantBuffer<PerView> gPerView : register(b0);
-
-// struct VertexShaderInput は VertexData.hlsli で定義
-
-// 回転行列の作成 (XYZ)
-float4x4 MakeRotationMatrix(float3 rotate)
-{
-    float3 c = cos(rotate);
-    float3 s = sin(rotate);
-
-    float4x4 mX = { 1, 0, 0, 0, 0, c.x, s.x, 0, 0, -s.x, c.x, 0, 0, 0, 0, 1 };
-    float4x4 mY = { c.y, 0, -s.y, 0, 0, 1, 0, 0, s.y, 0, c.y, 0, 0, 0, 0, 1 };
-    float4x4 mZ = { c.z, s.z, 0, 0, -s.z, c.z, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-
-    return mul(mZ, mul(mX, mY));
-}
 
 VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID) 
 {
@@ -28,40 +14,28 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
     ParticleSortData sortData = gSortList[instanceId];
 	Particle particle = gParticles[sortData.particleIndex];
     
-    // ソート時に付与したdepthが負の場合は死んでいるパーティクルなので描画しない
+    // 繧ｽ繝ｼ繝域凾縺ｫ莉倅ｸ弱＠縺歸epth縺瑚ｲ�縺ｮ蝣ｴ蜷医・豁ｻ繧薙〒縺・ｋ繝代・繝・ぅ繧ｯ繝ｫ縺ｪ縺ｮ縺ｧ繧ｫ繝ｪ繝ｳ繧ｰ
     if (sortData.depth < 0.0f)
     {
         CullInstanceByScale(particle.scale);
     }
 	
-    float4x4 worldMatrix;
+    // 繝ｭ繝ｼ繧ｫ繝ｫ蠎ｧ讓吶↓繧ｹ繧ｱ繝ｼ繝ｫ繧帝←逕ｨ
+    float3 localPos = input.position.xyz * particle.scale;
+    float3 worldPos = float3(0, 0, 0);
     
-    if (particle.billboardMode == 1)
+    if (particle.billboardMode == 1) // Billboard
     {
-        // Z軸回転の行列を作成
-        float c = cos(particle.rotation.z);
-        float s = sin(particle.rotation.z);
-        float4x4 rotZ = {
-             c, s, 0, 0,
-            -s, c, 0, 0,
-             0, 0, 1, 0,
-             0, 0, 0, 1
-        };
+        // Z霆ｸ蝗櫁ｻ｢繧帝←逕ｨ
+        float4x4 rotZ = MakeRotateZMatrix(particle.rotation.z);
+        float3 rotPos = mul(float4(localPos, 1.0f), rotZ).xyz;
         
-        // スケール行列の作成
-        float4x4 scaleMatrix = {
-            particle.scale.x, 0, 0, 0,
-            0, particle.scale.y, 0, 0,
-            0, 0, particle.scale.z, 0,
-            0, 0, 0, 1
-        };
-
-        // スケール -> Z軸回転 -> ビルボード（カメラ向き）の順に行列を合成
-        worldMatrix = mul(mul(scaleMatrix, rotZ), gPerView.billboardMatrix);
+        // 繝薙Ν繝懊・繝芽｡悟・繧帝←逕ｨ縺励※蟷ｳ陦檎ｧｻ蜍・
+        worldPos = mul(float4(rotPos, 1.0f), gPerView.billboardMatrix).xyz + particle.translate;
     }
-    else if (particle.billboardMode == 2)
+    else if (particle.billboardMode == 2) // Velocity Billboard
     {
-        // 速度方向ビルボード (Velocity Billboard)
+        // 騾溷ｺｦ譁ｹ蜷代ン繝ｫ繝懊・繝・(Velocity Billboard)
         float3 dir = particle.velocity;
         float len = length(dir);
         if (len < 0.0001f)
@@ -73,15 +47,15 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
             dir /= len;
         }
 
-        // カメラからパーティクルへの方向ベクトル
+        // 繧ｫ繝｡繝ｩ縺九ｉ繝代・繝・ぅ繧ｯ繝ｫ縺ｸ縺ｮ譁ｹ蜷代・繧ｯ繝医Ν
         float3 viewDir = normalize(particle.translate - gPerView.worldPosition);
 
-        // パーティクルの右方向（進行方向と視線ベクトルの外積）
+        // 繝代・繝・ぅ繧ｯ繝ｫ縺ｮ蜿ｳ譁ｹ蜷托ｼ磯ｲ陦梧婿蜷代→隕也ｷ壹・繧ｯ繝医Ν縺ｮ螟也ｩ搾ｼ・
         float3 right = cross(dir, viewDir);
         float lenR = length(right);
         if (lenR < 0.0001f)
         {
-            // 進行方向と視線が平行な場合は、任意の右方向を定義
+            // 騾ｲ陦梧婿蜷代→隕也ｷ壹′蟷ｳ陦後↑蝣ｴ蜷医・縲∽ｻｻ諢上・蜿ｳ譁ｹ蜷代ｒ螳夂ｾｩ
             float3 upVec = abs(dir.y) < 0.999f ? float3(0,1,0) : float3(1,0,0);
             right = normalize(cross(dir, upVec));
         }
@@ -90,46 +64,30 @@ VertexShaderOutput main(VertexInput input, uint instanceId : SV_InstanceID)
             right /= lenR;
         }
 
-        // パーティクルの手前（法線）方向
+        // 繝代・繝・ぅ繧ｯ繝ｫ縺ｮ謇句燕・域ｳ慕ｷ夲ｼ画婿蜷・
         float3 normal = cross(right, dir);
 
-        // スケール行列
-        float4x4 scaleMatrix = {
-            particle.scale.x, 0, 0, 0,
-            0, particle.scale.y, 0, 0,
-            0, 0, particle.scale.z, 0,
-            0, 0, 0, 1
+        // 騾溷ｺｦ譁ｹ蜷代ン繝ｫ繝懊・繝牙屓霆｢陦悟・
+        // Y霆ｸ縺碁ｲ陦梧婿蜷・(dir) 縺ｫ謨ｴ蛻励＠縲々霆ｸ縺悟承 (right) 縺ｫ謨ｴ蛻励＠縲〇霆ｸ縺梧焔蜑・(normal) 縺ｫ謨ｴ蛻励☆繧・
+        float3x3 rotMatrix = {
+            right.x,  right.y,  right.z,
+            dir.x,    dir.y,    dir.z,
+            normal.x, normal.y, normal.z
         };
 
-        // 速度方向ビルボード回転行列
-        // Y軸が進行方向 (dir) に整列し、X軸が右 (right) に整列し、Z軸が手前 (normal) に整列する
-        float4x4 rotMatrix = {
-            right.x,  right.y,  right.z,  0,
-            dir.x,    dir.y,    dir.z,    0,
-            normal.x, normal.y, normal.z, 0,
-            0,        0,        0,        1
-        };
-
-        worldMatrix = mul(scaleMatrix, rotMatrix);
+        worldPos = mul(localPos, rotMatrix) + particle.translate;
     }
-    else
+    else // 3D Rotation
     {
-        // 3D回転 (SRT)
-        float4x4 rotateMatrix = MakeRotationMatrix(particle.rotation);
-        float4x4 scaleMatrix = {
-            particle.scale.x, 0, 0, 0,
-            0, particle.scale.y, 0, 0,
-            0, 0, particle.scale.z, 0,
-            0, 0, 0, 1
-        };
-        worldMatrix = mul(scaleMatrix, rotateMatrix);
+        // 3D蝗櫁ｻ｢ (SRT)
+        float4x4 rotateMatrix = MakeRotateXYZMatrix(particle.rotation);
+        worldPos = mul(float4(localPos, 1.0f), rotateMatrix).xyz + particle.translate;
     }
     
-	worldMatrix[3].xyz = particle.translate;
-    
-	output.position = mul(input.position, mul(worldMatrix, gPerView.viewProjection));
+    // ViewProjection繧帝←逕ｨ縺励※譛邨ら噪縺ｪ鬆らせ蠎ｧ讓吶ｒ險育ｮ・
+	output.position = mul(float4(worldPos, 1.0f), gPerView.viewProjection);
 	
-    // UV アニメーション (テクスチャアトラス)
+    // UV 繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ (繝・け繧ｹ繝√Ε繧｢繝医Λ繧ｹ)
     float2 uv = input.texcoord;
     uint atlasRows = (particle.atlasSize >> 16) & 0xFFFF;
     uint atlasCols = particle.atlasSize & 0xFFFF;

@@ -31,27 +31,25 @@ public:
      */
     void PlayEffect(const std::string& effectKey, const Irufemi::Vector3& worldPosition);
 
-    /**
-     * @brief シングルトン的なアクセスを提供する（シーン内に1つだけ存在する想定）
-     */
-    static EffectManagerComponent* GetInstance() { return instance_; }
-
 private:
-    static EffectManagerComponent* instance_;
 
     // エディタから設定する、代表的なエフェクトのPrefabパス
     std::string hitEffectPath_ = "resources/prefabs/normal_attack_hit_effect.json";
+    std::string dustEffectPath_ = "resources/prefabs/debris_dust_effect.json";
 
     // 内部的にキーからパスを引くための辞書
     std::unordered_map<std::string, std::string> effectDictionary_;
 
-    int maxHitEffects_ = 20;
+    int maxHitEffects_ = 50;
+    int maxDustEffects_ = 50;
     float effectDuration_ = 2.0f; // エフェクトの生存時間
     std::unique_ptr<ObjectPool<GameObject>> hitEffectPool_;
+    std::unique_ptr<ObjectPool<GameObject>> dustEffectPool_;
 
     struct ActiveEffect {
         ObjectPool<GameObject>::Handle handle;
         float timer;
+        std::string effectKey;
     };
     std::vector<ActiveEffect> activeEffects_;
 };

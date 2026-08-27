@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Renderer/Object/Particle/ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Resource/Model/ModelManager.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -32,7 +32,7 @@ void ParticleObject::Initialize() {
 void ParticleObject::PrewarmSystem() {
     // パラメータは送信せず、単にマネージャーにテクスチャ等の登録（GPUバッファの確保）だけを依頼する
     if (!emitterHandle_.IsValid() && gpuParticleManager_) {
-        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
     }
 }
 
@@ -46,6 +46,12 @@ void ParticleObject::Restart() {
     if (burstCountOnAwake_ > 0) {
         EmitBurst(burstCountOnAwake_);
     }
+    #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+    Log::OutPutLog(std::cout, "[HitEffect-Trace] ParticleObject::Restart. Sending " + std::to_string(burstCountPending_) + " bursts to GPU.\n");
+    #endif
+    // 1フレームのズレを防ぐため、GPUマネージャーへ最新情報を即座に送信する
+    UpdateSystem();
+    isDirty_ = false;
 }
 
 void ParticleObject::Stop() {
@@ -70,7 +76,7 @@ void ParticleObject::SetTexturePath(const std::string& path) {
         texturePath_ = path;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
             gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
         }
         MarkDirty();
     }
@@ -81,7 +87,18 @@ void ParticleObject::SetBlendMode(Irufemi::BlendMode mode) {
         blendMode_ = mode;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
             gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
+        }
+        MarkDirty();
+    }
+}
+
+void ParticleObject::SetDepthWrite(PSOManager::DepthWrite depthWrite) {
+    if (depthWrite_ != depthWrite) {
+        depthWrite_ = depthWrite;
+        if (emitterHandle_.IsValid() && gpuParticleManager_) {
+            gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
         }
         MarkDirty();
     }
@@ -92,7 +109,7 @@ void ParticleObject::SetEnableLighting(bool val) {
         enableLighting_ = val;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
             gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
         }
         MarkDirty();
     }
@@ -103,7 +120,7 @@ void ParticleObject::SetUnscaledTime(bool val) {
         isUnscaledTime_ = val;
         if (emitterHandle_.IsValid() && gpuParticleManager_) {
             gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+            emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
         }
         MarkDirty();
     }
@@ -119,7 +136,7 @@ void ParticleObject::SetEmitterModelPath(const std::string& path) {
 
 void ParticleObject::UpdateSystem() {
     if (!emitterHandle_.IsValid() && gpuParticleManager_) {
-        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+        emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
     }
 
     GPUParticleEmitter data;
@@ -207,6 +224,9 @@ void ParticleObject::UpdateSystem() {
 
     if (burstCountPending_ > 0) {
         data.burstCount = burstCountPending_;
+        #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+        Log::OutPutLog(std::cout, "[HitEffect-Trace] UpdateSystem: setting burstCount = " + std::to_string(burstCountPending_) + " for handle index " + std::to_string(emitterHandle_.emitterIndex) + "\n");
+        #endif
         burstCountPending_ = 0;
     }
     if (gpuParticleManager_) gpuParticleManager_->UpdateEmitterData(emitterHandle_, data);
@@ -215,6 +235,7 @@ void ParticleObject::UpdateSystem() {
 void ParticleObject::Serialize(nlohmann::json& j) const {
     j["texturePath"] = texturePath_;
     j["blendMode"] = static_cast<int>(blendMode_);
+    j["depthWrite"] = static_cast<int>(depthWrite_);
     j["enableLighting"] = enableLighting_;
     j["isUnscaledTime"] = isUnscaledTime_;
     j["emitOnAwake"] = emitOnAwake_;
@@ -264,6 +285,9 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("blendMode")) {
         SetBlendMode(static_cast<Irufemi::BlendMode>(j["blendMode"].get<int>()));
+    }
+    if (j.contains("depthWrite")) {
+        SetDepthWrite(static_cast<PSOManager::DepthWrite>(j["depthWrite"].get<int>()));
     }
     if (j.contains("enableLighting")) {
         SetEnableLighting(j["enableLighting"].get<bool>());
@@ -448,14 +472,21 @@ void ParticleObject::DebugUI(const char* name) {
             }
             
             bool lighting = enableLighting_;
-            if (ImGui::Checkbox("Enable Lighting", &lighting)) {
+            int currentDepthWrite = static_cast<int>(depthWrite_);
+            const char* depthWriteNames[] = { "Enable", "Disable", "Off" };
+            if (ImGui::Combo("Depth Write", &currentDepthWrite, depthWriteNames, IM_ARRAYSIZE(depthWriteNames))) {
+                SetDepthWrite(static_cast<PSOManager::DepthWrite>(currentDepthWrite));
+                changed = true;
+            }
+            
+            if (ImGui::Checkbox("Enable Lighting", &enableLighting_)) {
                 SetEnableLighting(lighting);
             }
             
             if (ImGui::Checkbox("Unscaled Time", &isUnscaledTime_)) {
                 if (emitterHandle_.IsValid() && gpuParticleManager_) {
                     gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
                 }
                 changed = true;
             }
@@ -463,7 +494,7 @@ void ParticleObject::DebugUI(const char* name) {
             if (ImGui::Button("再生成")) {
                 if (gpuParticleManager_ && emitterHandle_.IsValid()) {
                     gpuParticleManager_->UnregisterEmitter(emitterHandle_);
-                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_);
+                    emitterHandle_ = gpuParticleManager_->RegisterEmitter(texturePath_, blendMode_, isUnscaledTime_, enableLighting_, depthWrite_);
                 }
             }
             
