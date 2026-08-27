@@ -31,7 +31,13 @@
     - **オニオンスキニングと軌跡(Trail)描画**: 過去数フレームのボーン姿勢を保存するリングバッファを設け、姿勢を半透明(ゴースト)で同時描画。手首など指定エンドエフェクタの過去の位置をラインで結んで描画し、モーションの軌道(アーク)を可視化する。
     - **デバッグUI統合 (Skeleton Tree View)**: ImGuiインスペクタ上にスケルトンの階層ツリービューを構築。メッシュ/ライン切替、色分けON/OFF、ラベル表示トグルなどを制御する専用のデバッグパネルを実装する。
 
-### ⚡ パフォーマンスと最適化 (Performance & Optimization)
+### ⌨️ 入力システム (Input System) の AAA アーキテクチャ化
+- [ ] **同時押し (Chord) キーバインドのサポート**
+    - 現在1対1の物理キーバインドしかサポートしていない `InputManager` と `InputBinding` を拡張し、「Ctrl + Z」のようなモディファイアキーを含む複数キーの同時押し判定をサポートする。
+- [ ] **InputMappingContext によるコンテキストルーティングの本格化**
+    - エディタ用の `InputMappingContext` を定義し、`ImGui::IsKeyPressed` で一時的に処理されているエディタのショートカット（Undo/Redo 等）をエンジンの入力パイプラインに完全統合する。
+    - ゲームプレイ中とエディタ操作中で入力フォーカスを安全に切り替えられる仕組み（Input Context Priority）を構築する。
+
 ### ⚡ 次世代パフォーマンス・アーキテクチャ最適化 (Next-Gen AAA Performance)
 - [x] **CollisionManager のスレッドセーフ化と Async Raycast の実装**
     - `shared_mutex` を用いたRead-Write Lockの導入と、ThreadPoolと連携した非同期物理クエリAPIの提供。（完了）
