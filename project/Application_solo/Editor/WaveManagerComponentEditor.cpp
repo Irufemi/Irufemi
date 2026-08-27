@@ -24,7 +24,11 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         waveManager->ReloadLevelData();
     }
     ImGui::SameLine();
-    if (ImGui::Button("Save to JSON", ImVec2(150, 0))) {
+    if (ImGui::Button("Save to JSON##Top", ImVec2(150, 0))) {
+        auto& evs = waveManager->GetAllEventsMutable();
+        std::sort(evs.begin(), evs.end(), [](const WaveEventData& a, const WaveEventData& b) {
+            return a.triggerDistance < b.triggerDistance;
+        });
         waveManager->SaveLevelData();
     }
     
@@ -140,6 +144,14 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         events.erase(events.begin() + selectedEventIndex);
         selectedEventIndex = -1;
     }
+    ImGui::SameLine();
+    if (ImGui::Button("Save to JSON##Bottom")) {
+        // 距離でソートしてから保存する
+        std::sort(events.begin(), events.end(), [](const WaveEventData& a, const WaveEventData& b) {
+            return a.triggerDistance < b.triggerDistance;
+        });
+        waveManager->SaveLevelData();
+    }
 
     // Event Properties Editor
     if (selectedEventIndex >= 0 && selectedEventIndex < events.size()) {
@@ -151,7 +163,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         
         char typeBuf[64];
         strncpy_s(typeBuf, sizeof(typeBuf), ev.eventType.c_str(), _TRUNCATE);
-        buffer[sizeof(typeBuf) - 1] = '\0';
+        typeBuf[sizeof(typeBuf) - 1] = '\0';
         if (ImGui::InputText("Event Type", typeBuf, sizeof(typeBuf))) {
             ev.eventType = typeBuf;
         }

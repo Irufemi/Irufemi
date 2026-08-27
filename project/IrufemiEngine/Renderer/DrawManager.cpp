@@ -13,6 +13,7 @@ using namespace RenderPackets;
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
 #include "Renderer/Object/Batch/PrimitiveBatch.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 
 #include "Renderer/Object/Line/LineClass.h"
 #include "Renderer/Object/Skybox/Skybox.h"
@@ -1350,6 +1351,11 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     if (auto scm = engine->GetScreenCaptureManager()) {
         scm->OnPostDepthDraw(engine->GetCommandList(), dxCommon_->GetDepthStencilResource());
     }
+
+    if (engine->GetDebugPrimitiveRenderer()) {
+        engine->GetDebugPrimitiveRenderer()->ClearInstances();
+    }
+    // TODO: engine->GetCollisionManager()->ClearDebugLines() 等、他のグローバルデバッグバッチもここでクリアするアーキテクチャに統一できる
 
     ClearRenderQueues();
 }
