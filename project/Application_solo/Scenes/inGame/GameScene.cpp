@@ -1,7 +1,6 @@
 #include "Scenes/inGame/GameScene.h"
 #include "Framework/Scene/SceneManager.h"
 #include "Irufemi.h"
-#include "Renderer/PostProcess/PostProcessManager.h"
 
 // ECSコンポーネントのインクルード
 #include "Framework/GameObject/GameObject.h"
