@@ -95,6 +95,11 @@ void WaveManagerComponent::Draw() {
 
         if (railSpline) {
             for (const auto& ev : allEvents_) {
+                // GPU負荷軽減のため、現在のプレイヘッド距離から遠すぎるイベントはプレビュー描画をスキップする
+                if (std::abs(ev.triggerDistance - editorPreviewDistance_) > 300.0f) {
+                    continue;
+                }
+                
                 auto it = handlers_.find(ev.eventType);
                 if (it != handlers_.end() && it->second) {
                     Irufemi::Vector3 pos = railSpline->GetPointAtDistance(ev.triggerDistance);
@@ -163,6 +168,12 @@ void WaveManagerComponent::Update() {
     if (!hasCachedSpawnPoints_) {
         CacheSpawnPoints();
         hasCachedSpawnPoints_ = true;
+    }
+
+    auto engine = BaseModel::GetIrufemiEngine();
+    bool isPlayMode = engine && engine->IsPlayMode();
+    if (!isPlayMode) {
+        return; // エディタモードではイベントの消費とスポーンを行わない
     }
 
     if (!playerFollower_) {

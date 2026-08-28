@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h" // リネーム済み
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h" // リネーム済み
 #include "Core/Utility/ErrorUtility.h"
 #include <filesystem>
 #include <algorithm>
@@ -223,7 +223,7 @@ void StaticModelObject::Draw() {
     bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
                           std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
-    if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
+    if (isDirty_ || cameraChanged) {
         Update();
     }
     

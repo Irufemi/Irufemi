@@ -38,7 +38,6 @@ void DebugEnemySpawnerComponent::Start() {
         transform->SetScale({1.2f, 1.2f, 1.2f});
 
         auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-        // プール運用のため、エネミー死亡時は Destroy ではなくプールへ返却する
         enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
             deadObj->SetIsActive(false);
             if (enemyPool_) {
@@ -46,7 +45,6 @@ void DebugEnemySpawnerComponent::Start() {
                 if (it != activeEnemyHandles_.end()) {
                     enemyPool_->Release(it->second);
                     activeEnemyHandles_.erase(it);
-                    if (scene) scene->RemoveGameObject(deadObj->shared_from_this());
                 }
             }
         });
@@ -120,12 +118,7 @@ void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, co
     
     auto enemy = enemyPool_->Resolve(handle);
     if (enemy) {
-        // マップに登録
         activeEnemyHandles_[enemy.get()] = handle;
-        
-        if (auto scene = gameObject_->GetScene()) {
-            scene->AddGameObject(enemy);
-        }
 
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
             transform->SetWorldPosition(position);
