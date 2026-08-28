@@ -104,11 +104,11 @@
 ## 6. コードレビュー修正（07/03指摘分）
 - [ ] **アーキテクチャ・設計の改善**
   - [x] `BossComponent` の状態遷移（enum + if文）に State パターンを適用し、状態ごとの振る舞いをクラスとして分離する
-  - [ ] `EffectManagerComponent` などの静的インスタンス管理（シングルトン）を排除し、DIまたはエンジン側のマネージャ経由の管理へ移行する
+  - [x] `EffectManagerComponent` などの静的インスタンス管理（シングルトン）を排除し、DIまたはエンジン側のマネージャ経由の管理へ移行する
   - [ ] 責務が集中している長大なクラス・関数（Update等）の分割・移譲を行う
 - [x] **安全性とパフォーマンスの向上**
   - [x] `BossComponent.cpp`, `DebrisComponent.cpp` などのマジックナンバーをメンバ変数化（プロパティ化）し、JSON/Editorから調整可能にする
-- [ ] **コード規則・構成の整理**
+- [x] **コード規則・構成の整理**
   - [x] `Application_solo/components` 内のファイル数が増加している場合、機能単位でサブフォルダに分割して管理する（Boss関連対応済）
 
 ## 7. 追加タスク（ボス・ドローン・弾幕の構造リファクタリング）
@@ -116,7 +116,7 @@
   - [x] `BossContainer` 直下にあった複数のバッチ描画用コンポーネント（ModelBatchRendererComponent）の競合を防ぐため、専用の子オブジェクトとして `BossDroneManager` と `BossBulletManager` を分離。
   - [x] 欠落していた `DroneManagerComponent`, `BossBulletManagerComponent` などのファクトリへの登録処理を追加。
   - [x] `DroneManagerComponent::DeployDrones` に残っていた古い「`DroneManager` フォルダを動的生成する」ハードコードを削除し、プレハブを直接 `BossDroneManager` の子オブジェクトとして追加するように修正。
-- [ ] **ドローン・弾幕システムの実装仕上げ（やり残しタスク）**
+- [x] **ドローン・弾幕システムの実装仕上げ（やり残しタスク）**
   - [x] **ボスの弾幕の当たり判定（DOD）実装**
     - `BossBulletManagerComponent::Update()` において、仮想エンティティ（実体のない弾）とプレイヤーの距離（Distance）を毎フレーム計算し、一定距離以下なら被弾とする高速な当たり判定処理を追加する。（実装完了済）
   - [x] **エディタ上でのアクティブ数表示の修正**
