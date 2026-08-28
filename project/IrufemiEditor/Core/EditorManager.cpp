@@ -1,39 +1,42 @@
 #include "Core/EditorManager.h"
 
 #ifdef EditorMode
-#include <filesystem>
-#include "imgui/imgui.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Utility/Log.h"
-#include <iostream>
-#include "RHI/DirectX12/RenderTexture.h"
-#include "imgui/imgui_internal.h"
-#include "Framework/Scene/SceneManager.h"
-#include "Framework/Scene/IScene.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Framework/Scene/IScene.h"
+#include "Framework/Scene/SceneManager.h"
 #include "Framework/Scene/SceneSerializer.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Physics/CollisionManager.h"
+#include "RHI/DirectX12/RenderTexture.h"
 #include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
+#include <filesystem>
+#include <iostream>
+
 
 // 分離したエディタパネル群
 #include "Core/IEditorPanel.h"
-#include "Panels/SceneViewPanel.h"
+#include "Panels/ConsolePanel.h"
 #include "Panels/HierarchyPanel.h"
 #include "Panels/InspectorPanel.h"
 #include "Panels/ProjectBrowserPanel.h"
-#include "Panels/ConsolePanel.h"
+#include "Panels/SceneViewPanel.h"
+
 
 // Editor Core
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorShortcutManager.h"
-#include "Inspectors/ComponentEditorRegistry.h"
 #include "Core/EditorTheme.h"
+#include "Inspectors/ComponentEditorRegistry.h"
+
 
 // FontAwesome 用のヘッダーを含める
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
@@ -71,17 +74,20 @@ std::shared_ptr<GameObject> EditorManager::GetSelectedObject() const {
 }
 
 void EditorManager::SetSelectedObject(std::shared_ptr<GameObject> obj) {
-    if (engine_) engine_->SetSelectedObject(obj);
+    if (engine_)
+        engine_->SetSelectedObject(obj);
 }
 
 void EditorManager::ClearSelectedObject() {
-    if (engine_) engine_->SetSelectedObject(nullptr);
+    if (engine_)
+        engine_->SetSelectedObject(nullptr);
 }
 
 void EditorManager::OnUpdate(float deltaTime) {
     if (isStepRequested_) {
         // 次のフレームで再び停止
-        if (engine_) engine_->SetTimeScale(0.0f);
+        if (engine_)
+            engine_->SetTimeScale(0.0f);
         isStepRequested_ = false;
     }
 
@@ -91,12 +97,14 @@ void EditorManager::OnUpdate(float deltaTime) {
 }
 
 void EditorManager::EnterPlayMode() {
-    if (!engine_ || !engine_->GetSceneManager()) return;
+    if (!engine_ || !engine_->GetSceneManager())
+        return;
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene) return;
+    if (!scene)
+        return;
 
     std::string currentSceneName = engine_->GetSceneManager()->GetCurrent();
-    
+
     // Play押下時に現在のシーンを実ファイルにも保存する
     if (!currentSceneName.empty()) {
         SceneSerializer::Save(scene, currentSceneName);
@@ -116,7 +124,7 @@ void EditorManager::EnterPlayMode() {
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         baseScene->ClearGameObjects();
     }
-    
+
     // 保存したばかりのバックアップから復元して、完全に初期化し直す
     SceneSerializer::Load(scene, "temp/.temp_playmode");
     // === ここまで追加 ===
@@ -127,8 +135,9 @@ void EditorManager::EnterPlayMode() {
 }
 
 void EditorManager::ExitPlayMode() {
-    if (!engine_ || !engine_->GetSceneManager()) return;
-    
+    if (!engine_ || !engine_->GetSceneManager())
+        return;
+
     std::string currentSceneName = engine_->GetSceneManager()->GetCurrent();
 
     // プレイモード中にシーンが変わっていた場合は元のシーンに戻す
@@ -141,7 +150,8 @@ void EditorManager::ExitPlayMode() {
     }
 
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene) return;
+    if (!scene)
+        return;
 
     // プレイモード中の選択状態をクリア
     ClearSelectedObject();
@@ -155,7 +165,7 @@ void EditorManager::ExitPlayMode() {
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         baseScene->ClearGameObjects();
     }
-    
+
     // バックアップから復元
     SceneSerializer::Load(scene, "temp/.temp_playmode");
     currentMode_ = EditorModeState::Edit;
@@ -166,21 +176,25 @@ void EditorManager::ExitPlayMode() {
 void EditorManager::TogglePauseMode() {
     if (currentMode_ == EditorModeState::Playing) {
         currentMode_ = EditorModeState::Paused;
-        if (engine_) engine_->SetTimeScale(0.0f); // 時を止める
+        if (engine_)
+            engine_->SetTimeScale(0.0f); // 時を止める
     } else if (currentMode_ == EditorModeState::Paused) {
         currentMode_ = EditorModeState::Playing;
-        if (engine_) engine_->SetTimeScale(1.0f); // 時を動かす
+        if (engine_)
+            engine_->SetTimeScale(1.0f); // 時を動かす
     }
 }
 
 void EditorManager::EnterPrefabMode(const std::string& prefabPath) {
-    if (!engine_ || !engine_->GetSceneManager()) return;
+    if (!engine_ || !engine_->GetSceneManager())
+        return;
     if (currentMode_ == EditorModeState::Playing || currentMode_ == EditorModeState::Paused) {
         ExitPlayMode();
     }
 
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene) return;
+    if (!scene)
+        return;
 
     // 現在のシーン状態をバックアップ
     SceneSerializer::Save(scene, "temp/.temp_prefab_backup");
@@ -211,9 +225,11 @@ void EditorManager::EnterPrefabMode(const std::string& prefabPath) {
 }
 
 void EditorManager::ExitPrefabMode(bool saveChanges) {
-    if (!engine_ || !engine_->GetSceneManager()) return;
+    if (!engine_ || !engine_->GetSceneManager())
+        return;
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene) return;
+    if (!scene)
+        return;
 
     if (saveChanges) {
         if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
@@ -242,20 +258,19 @@ void EditorManager::ExitPrefabMode(bool saveChanges) {
     editingPrefabPath_ = "";
 }
 
-
 void EditorManager::OnDrawUI() {
-    if (!engine_ || !engine_->GetMainRenderTexture()) return;
+    if (!engine_ || !engine_->GetMainRenderTexture())
+        return;
 
     // 1. 全画面を覆う DockSpace の背景ウィンドウを作成
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
     ImGui::SetNextWindowViewport(viewport->ID);
-    
+
     // 背景ウィンドウの装飾を全て消すフラグ
-    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | 
-                                   ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | 
-                                   ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | 
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+                                   ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                                    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -285,15 +300,17 @@ void EditorManager::OnDrawUI() {
 
         ImGuiID dock_main_id = dockspaceId;
         ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.20f, nullptr, &dock_main_id);
-        ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
-        ImGuiID dock_id_bottom = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.30f, nullptr, &dock_main_id);
+        ImGuiID dock_id_right =
+            ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+        ImGuiID dock_id_bottom =
+            ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.30f, nullptr, &dock_main_id);
 
         ImGui::DockBuilderDockWindow("SceneView", dock_main_id);
         ImGui::DockBuilderDockWindow("Hierarchy", dock_id_left);
         ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
         ImGui::DockBuilderDockWindow("ProjectBrowser", dock_id_bottom);
         ImGui::DockBuilderDockWindow("Console", dock_id_bottom);
-        
+
         ImGui::DockBuilderFinish(dockspaceId);
     }
 
@@ -302,15 +319,15 @@ void EditorManager::OnDrawUI() {
         if (ImGui::BeginChild("PrefabModeBanner", ImVec2(0, 32), true, ImGuiWindowFlags_NoScrollbar)) {
             ImGui::Text("%s PREFAB MODE: %s", ICON_FA_CUBE, editingPrefabPath_.c_str());
             ImGui::SameLine(ImGui::GetWindowWidth() - 220.0f);
-            
+
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
             if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save & Exit", ImVec2(100, 20))) {
                 ExitPrefabMode(true);
             }
             ImGui::PopStyleColor();
-            
+
             ImGui::SameLine();
-            
+
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
             if (ImGui::Button(ICON_FA_XMARK " Cancel", ImVec2(80, 20))) {
                 ExitPrefabMode(false);
@@ -359,23 +376,30 @@ void EditorManager::OnDrawUI() {
         }
 
         if (ImGui::BeginMenu("GameObject")) {
-            if (ImGui::MenuItem("Create Empty")) actionManager_->CreatePrimitiveObject("Empty");
+            if (ImGui::MenuItem("Create Empty"))
+                actionManager_->CreatePrimitiveObject("Empty");
             if (ImGui::BeginMenu("3D Object")) {
-                if (ImGui::MenuItem("Cube")) actionManager_->CreatePrimitiveObject("Cube");
-                if (ImGui::MenuItem("Sphere")) actionManager_->CreatePrimitiveObject("Sphere");
-                if (ImGui::MenuItem("Cylinder")) actionManager_->CreatePrimitiveObject("Cylinder");
-                if (ImGui::MenuItem("Plane")) actionManager_->CreatePrimitiveObject("Plane");
+                if (ImGui::MenuItem("Cube"))
+                    actionManager_->CreatePrimitiveObject("Cube");
+                if (ImGui::MenuItem("Sphere"))
+                    actionManager_->CreatePrimitiveObject("Sphere");
+                if (ImGui::MenuItem("Cylinder"))
+                    actionManager_->CreatePrimitiveObject("Cylinder");
+                if (ImGui::MenuItem("Plane"))
+                    actionManager_->CreatePrimitiveObject("Plane");
                 ImGui::Separator();
-                if (ImGui::MenuItem("Model (MeshRenderer)")) actionManager_->CreatePrimitiveObject("Model");
+                if (ImGui::MenuItem("Model (MeshRenderer)"))
+                    actionManager_->CreatePrimitiveObject("Model");
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("2D Object")) {
-                if (ImGui::MenuItem("Sprite")) actionManager_->CreatePrimitiveObject("Sprite");
+                if (ImGui::MenuItem("Sprite"))
+                    actionManager_->CreatePrimitiveObject("Sprite");
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
-        
+
         if (ImGui::BeginMenu("Window")) {
             ImGui::MenuItem("Performance", nullptr, &showPerformancePanel);
             ImGui::Separator();
@@ -389,16 +413,21 @@ void EditorManager::OnDrawUI() {
                     const char* currentIni = ImGui::GetIO().IniFilename;
                     if (currentIni && std::filesystem::exists(presetPath)) {
                         std::error_code ec;
-                        std::filesystem::copy_file(presetPath, currentIni, std::filesystem::copy_options::overwrite_existing, ec);
+                        std::filesystem::copy_file(presetPath, currentIni,
+                                                   std::filesystem::copy_options::overwrite_existing, ec);
                         if (ec) {
                             Log::OutPutLog(std::cerr, "Failed to load preset: " + ec.message());
-                            MessageBoxA(nullptr, ("Failed to load preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
+                            MessageBoxA(nullptr, ("Failed to load preset: " + ec.message()).c_str(), "Error",
+                                        MB_OK | MB_ICONERROR);
                         } else {
                             // アプリ終了時にImGuiが現在の状態をファイルへ自動保存（上書き）してしまうのを防ぐ
                             ImGui::GetIO().IniFilename = nullptr;
-                            
+
                             Log::OutPutLog(std::cout, "Default layout has been loaded.");
-                            MessageBoxA(nullptr, "Default layout has been loaded.\nThe application will now close to apply the clean layout. Please restart the app.", "Restart Required", MB_OK | MB_ICONINFORMATION);
+                            MessageBoxA(nullptr,
+                                        "Default layout has been loaded.\nThe application will now close to apply the "
+                                        "clean layout. Please restart the app.",
+                                        "Restart Required", MB_OK | MB_ICONINFORMATION);
                             PostQuitMessage(0);
                         }
                     }
@@ -410,20 +439,23 @@ void EditorManager::OnDrawUI() {
                         const char* presetPath = "../IrufemiEngine/EngineResources/default_imgui.ini";
                         if (std::filesystem::exists(currentIni)) {
                             std::error_code ec;
-                            std::filesystem::copy_file(currentIni, presetPath, std::filesystem::copy_options::overwrite_existing, ec);
+                            std::filesystem::copy_file(currentIni, presetPath,
+                                                       std::filesystem::copy_options::overwrite_existing, ec);
                             if (ec) {
                                 Log::OutPutLog(std::cerr, "Failed to save preset: " + ec.message());
-                                MessageBoxA(nullptr, ("Failed to save preset: " + ec.message()).c_str(), "Error", MB_OK | MB_ICONERROR);
+                                MessageBoxA(nullptr, ("Failed to save preset: " + ec.message()).c_str(), "Error",
+                                            MB_OK | MB_ICONERROR);
                             } else {
                                 Log::OutPutLog(std::cout, "Default layout preset saved successfully!");
-                                MessageBoxA(nullptr, "Default layout preset saved successfully!", "Success", MB_OK | MB_ICONINFORMATION);
+                                MessageBoxA(nullptr, "Default layout preset saved successfully!", "Success",
+                                            MB_OK | MB_ICONINFORMATION);
                             }
                         }
                     }
                 }
                 ImGui::EndMenu();
             }
-        ImGui::EndMenu();
+            ImGui::EndMenu();
         }
 
         // --- 中央への Play / Pause / Step / Stop コントロール配置 ---
@@ -442,8 +474,10 @@ void EditorManager::OnDrawUI() {
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
         }
         if (ImGui::Button(ICON_FA_PLAY, ImVec2(playButtonWidth, playButtonHeight))) {
-            if (currentMode_ == EditorModeState::Edit) EnterPlayMode();
-            else if (currentMode_ == EditorModeState::Paused) TogglePauseMode();
+            if (currentMode_ == EditorModeState::Edit)
+                EnterPlayMode();
+            else if (currentMode_ == EditorModeState::Paused)
+                TogglePauseMode();
         }
         ImGui::PopStyleColor();
 
@@ -457,7 +491,8 @@ void EditorManager::OnDrawUI() {
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
         }
         if (ImGui::Button(ICON_FA_PAUSE, ImVec2(playButtonWidth, playButtonHeight))) {
-            if (currentMode_ != EditorModeState::Edit) TogglePauseMode();
+            if (currentMode_ != EditorModeState::Edit)
+                TogglePauseMode();
         }
         ImGui::PopStyleColor();
 
@@ -469,7 +504,8 @@ void EditorManager::OnDrawUI() {
         if (ImGui::Button(ICON_FA_FORWARD_STEP, ImVec2(playButtonWidth, playButtonHeight))) {
             if (currentMode_ == EditorModeState::Paused) {
                 isStepRequested_ = true;
-                if (engine_) engine_->SetTimeScale(1.0f); // 時を1フレームだけ動かす
+                if (engine_)
+                    engine_->SetTimeScale(1.0f); // 時を1フレームだけ動かす
             }
         }
         ImGui::PopStyleColor();
@@ -481,7 +517,8 @@ void EditorManager::OnDrawUI() {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
         if (ImGui::Button(ICON_FA_STOP, ImVec2(playButtonWidth, playButtonHeight))) {
-            if (currentMode_ != EditorModeState::Edit) ExitPlayMode();
+            if (currentMode_ != EditorModeState::Edit)
+                ExitPlayMode();
         }
         ImGui::PopStyleColor(2);
 
@@ -496,7 +533,8 @@ void EditorManager::OnDrawUI() {
     // 3. パフォーマンスパネルの描画
     if (showPerformancePanel) {
         ImGui::Begin("Performance", &showPerformancePanel, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+                    ImGui::GetIO().Framerate);
         if (engine_) {
             ImGui::Text("Real Delta Time: %f", engine_->GetRealDeltaTime());
             ImGui::Text("Game Delta Time: %f (Scale: %.2f)", engine_->GetDeltaTime(), engine_->GetTimeScale());

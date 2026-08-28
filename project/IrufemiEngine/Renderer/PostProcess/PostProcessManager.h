@@ -670,6 +670,18 @@ public:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
+        
+        // 既に同じモードが存在するかチェック（重複追加を防ぐ）
+        if (layer == Layer::PreUI) {
+            auto it = std::find_if(pendingPreUI_.begin(), pendingPreUI_.end(), 
+                [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
+            if (it != pendingPreUI_.end()) return;
+        } else {
+            auto it = std::find_if(pendingPostUI_.begin(), pendingPostUI_.end(), 
+                [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
+            if (it != pendingPostUI_.end()) return;
+        }
+
         int priority = (customPriority == -1) ? GetDefaultPriority(mode) : customPriority;
         if (layer == Layer::PreUI) {
             pendingPreUI_.push_back({mode, priority});

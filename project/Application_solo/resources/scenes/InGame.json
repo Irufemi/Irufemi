@@ -4355,25 +4355,25 @@
           "data": {
             "overrides": [
               {
-                "type": "Bloom",
                 "enabled": true,
                 "intensity": 1.7999999523162842,
                 "sigma": 4.0,
-                "threshold": 0.6000000238418579
+                "threshold": 0.6000000238418579,
+                "type": "Bloom"
               },
               {
-                "type": "ColorGrading",
                 "enabled": true,
                 "exposure": 2.0,
                 "hue": 0.0,
-                "saturation": 0.2,
+                "saturation": 0.20000000298023224,
+                "type": "ColorGrading",
                 "value": -0.10000000149011612
               },
               {
-                "type": "Vignette",
                 "enabled": true,
                 "radius": 0.800000011920929,
-                "softness": 0.5
+                "softness": 0.5,
+                "type": "Vignette"
               }
             ]
           },
