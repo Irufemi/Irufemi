@@ -1,4 +1,5 @@
 #include "Player/GravityPlayerComponent.h"
+#include "Player/PlayerHealthComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Player/PlayerTargetingComponent.h"
@@ -42,7 +43,6 @@ void GravityPlayerComponent::LoadStatusFromJson() {
         nlohmann::json j;
         file >> j;
         
-        if (j.contains("maxHp")) { maxHp_ = j["maxHp"].get<int>(); hp_ = maxHp_; }
         if (j.contains("maxOrbitCount")) { maxOrbitCount_ = j["maxOrbitCount"].get<int>(); }
         if (j.contains("pullRadius")) { pullRadius_ = j["pullRadius"].get<float>(); }
         if (j.contains("throwInterval")) { throwInterval_ = j["throwInterval"].get<float>(); }
@@ -57,7 +57,6 @@ void GravityPlayerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Status Data Path", &statusDataPath_);
     RegisterProperty("No Lock Throw Dist", &noLockThrowDistance_);
-    RegisterProperty("God Mode", &isGodMode_);
     RegisterProperty("Orbit Angle Max", &orbitAngleRandomMax_);
 }
 
@@ -67,17 +66,12 @@ void GravityPlayerComponent::Initialize() {
     orbitingDebris_.clear();
     isThrowing_ = false;
     throwTimer_ = 0.0f;
-    invincibilityTimer_ = 0.0f;
-    flashTimer_ = 0.0f;
-    flashInterval_ = 0.1f;
-    colorCached_ = false;
-
-
 }
 
 void GravityPlayerComponent::Start() {
     if (!gameObject_) return;
     targetingComp_ = gameObject_->GetComponent<PlayerTargetingComponent>();
+    healthComp_ = gameObject_->GetComponent<PlayerHealthComponent>();
     
     auto scene = gameObject_->GetScene();
     if (scene) {
@@ -89,65 +83,12 @@ void GravityPlayerComponent::Start() {
 }
 
 void GravityPlayerComponent::Update() {
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-    if (BaseModel::GetIrufemiEngine()->GetInputManager()->IsKeyPressed(VK_F9)) {
-        isGodMode_ = !isGodMode_;
-        Log::OutPutLog(std::cout, std::string("[GravityPlayer] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
-    }
-    
-    // ----------------------------------------------------
-    // デバッグ用: God Mode
-    if (BaseModel::GetIrufemiEngine()->GetInputManager()->IsKeyPressed(VK_F9)) {
-        isGodMode_ = !isGodMode_;
-        Log::OutPutLog(std::cout, std::string("[GravityPlayer] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
-    }
-    // ----------------------------------------------------
-#endif
-
-    if (isDead_) {
-        if (!hasTriggeredDeathSequenceFinished_) {
-            float currentTime = BaseModel::GetIrufemiEngine()->GetGameTime();
-            if (currentTime >= deathStartTime_ + 3.0f) {
-                hasTriggeredDeathSequenceFinished_ = true;
-                if (onDeathSequenceFinished) onDeathSequenceFinished();
-            }
-        }
+    if (healthComp_ && healthComp_->IsDead()) {
         return;
     }
 
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (dt <= 0.0f) return;
-
-    // --- 被弾時の無敵時間と点滅処理 ---
-    if (invincibilityTimer_ > 0.0f) {
-        invincibilityTimer_ -= dt;
-        flashTimer_ += dt;
-        
-        BaseModel* model = nullptr;
-        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
-            model = reinterpret_cast<BaseModel*>(mesh->GetRenderable());
-        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
-            model = reinterpret_cast<BaseModel*>(skinned->GetRenderable());
-        }
-        
-        if (model) {
-            if (!colorCached_) {
-                originalBaseColor_ = model->GetColor();
-                colorCached_ = true;
-            }
-            if (fmod(flashTimer_, flashInterval_ * 2.0f) < flashInterval_) {
-                model->SetColor({1.0f, 0.0f, 0.0f, 1.0f}); // 赤色
-            } else {
-                model->SetColor(originalBaseColor_); // 通常色
-            }
-        }
-        
-        if (invincibilityTimer_ <= 0.0f) {
-            if (model && colorCached_) {
-                model->SetColor(originalBaseColor_);
-            }
-        }
-    }
 
     // 無効になったガレキを除外
     orbitingDebris_.erase(
@@ -174,60 +115,7 @@ void GravityPlayerComponent::Update() {
     }
 }
 
-void GravityPlayerComponent::TakeDamage(int damage) {
-    if (isDead_) return;
-    
-    if (isGodMode_) {
-        Log::OutPutLog(std::cout, "[GravityPlayer] TakeDamage ignored (God Mode)\n");
-        return;
-    }
 
-    if (IsInvincible()) {
-        Log::OutPutLog(std::cout, "[GravityPlayer] TakeDamage ignored (Invincible)\n");
-        return;
-    }
-
-    hp_ -= damage;
-    Log::OutPutLog(std::cout, "[GravityPlayer] Took Damage! HP: " + std::to_string(hp_) + "\n");
-    if (hp_ <= 0) {
-        hp_ = 0;
-        isDead_ = true;
-        deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
-        if (onPlayerDied) onPlayerDied();
-        Log::OutPutLog(std::cout, "[GravityPlayer] Player Died!\n");
-        
-        // 自機が死んだときに自機のモデルの描画を切る
-        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
-            mesh->SetVisible(false);
-        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
-            skinned->SetVisible(false);
-        }
-        
-        return;
-    }
-
-    Log::OutPutLog(std::cout, "[GravityPlayer] Triggering flashing...\n");
-    invincibilityTimer_ = maxInvincibilityTime_;
-    isFlashing_ = true;
-    flashTimer_ = 0.0f;
-    
-    // カメラシェイク発火 (プレイヤー被弾時なので強め)
-    if (auto scene = gameObject_->GetScene()) {
-        if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {
-            if (auto shakeComp = mainCameraObj->GetComponent<CameraShakeComponent>()) {
-                shakeComp->PlayShake(1.0f, 30, 20.0f); // Intensity=1.0, 30 Frames, Freq=20
-            }
-        }
-    }
-
-    // ポストエフェクト演出の再生
-    auto& comps = gameObject_->GetComponents();
-    for (auto& comp : comps) {
-        if (auto screenEffect = std::dynamic_pointer_cast<ScreenEffectComponent>(comp)) {
-            screenEffect->Play();
-        }
-    }
-}
 
 void GravityPlayerComponent::HandlePullInput() {
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();

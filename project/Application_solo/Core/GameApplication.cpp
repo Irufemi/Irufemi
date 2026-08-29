@@ -18,6 +18,7 @@
 #include "Environment/DebrisManagerComponent.h"
 #include "Level/WaveManagerComponent.h"
 #include "Player/GravityPlayerComponent.h"
+#include "Player/PlayerHealthComponent.h"
 #include "Player/PlayerTargetingComponent.h"
 #include "Combat/DebugEnemySpawnerComponent.h"
 #include "Combat/Boss/BossComponent.h"
@@ -152,6 +153,7 @@ void GameApplication::Run() {
     ComponentFactory::Register("WaveManagerComponent", "Game", []() { return std::make_shared<WaveManagerComponent>(); });
     ComponentFactory::Register("EnvironmentManagerComponent", "Game", []() { return std::make_shared<EnvironmentManagerComponent>(); });
     ComponentFactory::Register("GravityPlayerComponent", "Game", []() { return std::make_shared<GravityPlayerComponent>(); });
+    ComponentFactory::Register("PlayerHealthComponent", "Game", []() { return std::make_shared<PlayerHealthComponent>(); });
     ComponentFactory::Register("PlayerTargetingComponent", "Game", []() { return std::make_shared<PlayerTargetingComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game", []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });

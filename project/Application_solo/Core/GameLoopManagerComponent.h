@@ -29,6 +29,6 @@ private:
     std::string targetPlayerName_ = "Player";
     std::string targetBossName_ = "Boss";
 
-    class GravityPlayerComponent* player_ = nullptr;
+    class PlayerHealthComponent* playerHealth_ = nullptr;
     class BossComponent* boss_ = nullptr;
 };

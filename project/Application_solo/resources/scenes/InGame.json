@@ -1534,7 +1534,6 @@
             },
             {
               "data": {
-                "God Mode": false,
                 "No Lock Throw Dist": 1000.0,
                 "Orbit Angle Max": 6.28000020980835,
                 "Status Data Path": "resources/GameData/PlayerStatus.json"
@@ -1543,6 +1542,13 @@
             },
             {
               "type": "PlayerTargetingComponent"
+            },
+            {
+              "data": {
+                "God Mode": false,
+                "Status Data Path": "resources/GameData/PlayerStatus.json"
+              },
+              "type": "PlayerHealthComponent"
             },
             {
               "data": {

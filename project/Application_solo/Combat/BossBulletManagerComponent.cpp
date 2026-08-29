@@ -7,6 +7,8 @@
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Player/GravityPlayerComponent.h"
+#include "Player/PlayerHealthComponent.h"
+#include "Environment/DebrisComponent.h"
 #include "Physics/CollisionManager.h"
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Core/Utility/Log.h"
@@ -114,9 +116,9 @@ void BossBulletManagerComponent::Update() {
                     if (!col) continue;
                     auto obj = col->GetGameObject();
                     if (obj && obj->GetName() == "Player") {
-                        if (auto playerComp = obj->GetComponent<GravityPlayerComponent>()) {
-                            if (!playerComp->IsInvincible()) {
-                                playerComp->TakeDamage(1);
+                        if (auto healthComp = obj->GetComponent<PlayerHealthComponent>()) {
+                            if (!healthComp->IsInvincible()) {
+                                healthComp->TakeDamage(1);
                                 isHit = true;
                                 break;
                             }

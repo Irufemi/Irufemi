@@ -156,6 +156,9 @@
     <ClCompile Include="Player\GravityPlayerComponent.cpp">
       <Filter>Player</Filter>
     </ClCompile>
+    <ClCompile Include="Player\PlayerHealthComponent.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
     <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
@@ -283,6 +286,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Player\GravityPlayerComponent.h">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Player\PlayerHealthComponent.h">
       <Filter>Player</Filter>
     </ClInclude>
     <ClInclude Include="Combat\DebugEnemySpawnerComponent.h">
