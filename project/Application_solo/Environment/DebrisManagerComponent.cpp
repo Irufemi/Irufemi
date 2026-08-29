@@ -23,6 +23,9 @@
 #include <nlohmann/json.hpp>
 #include "Core/Utility/Log.h"
 #include <iostream>
+#include <algorithm>
+#include "Effects/EffectManagerComponent.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 
 void DebrisManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -201,10 +204,23 @@ void DebrisManagerComponent::Update() {
         spawnDebris(10000);
     }
 
+    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    if (deltaTime > 0.0f) {
+        UpdatePulledDebris(deltaTime);
+        UpdateOrbitingDebris(deltaTime);
+        UpdateBossOrbitingDebris(deltaTime);
+        UpdateThrownDebris(deltaTime);
+    }
+
     for (auto& debris : pendingReleases_) {
         ReleaseDebris(debris);
     }
     pendingReleases_.clear();
+    
+    for (auto& pair : pendingDestroys_) {
+        NotifyDestroyed(pair.first, pair.second);
+    }
+    pendingDestroys_.clear();
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
@@ -316,5 +332,215 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
 void DebrisManagerComponent::NotifyDestroyed(int virtualId, int variationIndex) {
     if (variationIndex >= 0 && variationIndex < variations_.size()) {
         variations_[variationIndex].virtualManager->RemoveVirtualInstance(virtualId);
+    }
+}
+
+void DebrisManagerComponent::MarkForDestroy(int virtualId, int variationIndex) {
+    pendingDestroys_.push_back({virtualId, variationIndex});
+}
+
+void DebrisManagerComponent::RegisterDebris(DebrisComponent* debris, DebrisState state) {
+    switch(state) {
+        case DebrisState::Pulled: pulledDebris_.push_back(debris); break;
+        case DebrisState::Orbiting: orbitingDebris_.push_back(debris); break;
+        case DebrisState::BossOrbiting: bossOrbitingDebris_.push_back(debris); break;
+        case DebrisState::Thrown: thrownDebris_.push_back(debris); break;
+        default: break;
+    }
+}
+
+void DebrisManagerComponent::UnregisterDebris(DebrisComponent* debris, DebrisState state) {
+    auto remove_func = [debris](std::vector<DebrisComponent*>& vec) {
+        auto it = std::find(vec.begin(), vec.end(), debris);
+        if (it != vec.end()) {
+            vec.erase(it);
+        }
+    };
+    switch(state) {
+        case DebrisState::Pulled: remove_func(pulledDebris_); break;
+        case DebrisState::Orbiting: remove_func(orbitingDebris_); break;
+        case DebrisState::BossOrbiting: remove_func(bossOrbitingDebris_); break;
+        case DebrisState::Thrown: remove_func(thrownDebris_); break;
+        default: break;
+    }
+}
+
+void DebrisManagerComponent::UpdatePulledDebris(float deltaTime) {
+    float catchDistSq = GetCatchDistanceSq();
+    float pullSpeed = GetDebrisPullSpeed();
+    float pullYOffset = GetDebrisPullYOffset();
+
+    for (int i = (int)pulledDebris_.size() - 1; i >= 0; --i) {
+        DebrisComponent* debris = pulledDebris_[i];
+        if (!debris || !debris->gameObject_) continue;
+        auto transform = debris->GetTransform();
+        if (!transform) continue;
+
+        if (auto target = debris->targetObject_.lock()) {
+            auto targetTransform = target->GetComponent<TransformComponent>();
+            if (targetTransform) {
+                Irufemi::Vector3 targetPos = targetTransform->GetWorldPosition();
+                Irufemi::Vector3 pos = transform->GetWorldPosition();
+                Irufemi::Vector3 diff = {
+                    targetPos.x - pos.x,
+                    targetPos.y + pullYOffset - pos.y,
+                    targetPos.z - pos.z
+                };
+                pos.x += diff.x * pullSpeed * deltaTime;
+                pos.y += diff.y * pullSpeed * deltaTime;
+                pos.z += diff.z * pullSpeed * deltaTime;
+                transform->SetPosition(pos);
+
+                float distSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+                if (distSq < catchDistSq) {
+                    debris->SetState(DebrisState::Orbiting);
+                }
+            }
+        }
+    }
+}
+
+void DebrisManagerComponent::UpdateOrbitingDebris(float deltaTime) {
+    float orbitSpeed = GetDebrisOrbitSpeed();
+
+    for (int i = (int)orbitingDebris_.size() - 1; i >= 0; --i) {
+        DebrisComponent* debris = orbitingDebris_[i];
+        if (!debris || !debris->gameObject_) continue;
+        auto transform = debris->GetTransform();
+        if (!transform) continue;
+
+        if (auto target = debris->targetObject_.lock()) {
+            auto targetTransform = target->GetComponent<TransformComponent>();
+            if (targetTransform) {
+                debris->orbitAngle_ += orbitSpeed * deltaTime;
+                
+                Irufemi::Vector3 offset = {
+                    std::cos(debris->orbitAngle_) * debris->orbitRadius_,
+                    std::sin(debris->orbitAngle_ * 2.0f) * 0.5f + 1.0f,
+                    std::sin(debris->orbitAngle_) * debris->orbitRadius_
+                };
+                
+                Irufemi::Vector3 pos = transform->GetWorldPosition();
+                pos.x = targetTransform->GetWorldPosition().x + offset.x;
+                pos.y = targetTransform->GetWorldPosition().y + offset.y;
+                pos.z = targetTransform->GetWorldPosition().z + offset.z;
+                transform->SetPosition(pos);
+            }
+        }
+    }
+}
+
+void DebrisManagerComponent::UpdateBossOrbitingDebris(float deltaTime) {
+    float shieldRotationSpeed = 1.0f;
+    float currentRadiusBase = GetBossShieldRadius();
+
+    for (int i = (int)bossOrbitingDebris_.size() - 1; i >= 0; --i) {
+        DebrisComponent* debris = bossOrbitingDebris_[i];
+        if (!debris || !debris->gameObject_) continue;
+        auto transform = debris->GetTransform();
+        if (!transform) continue;
+
+        if (auto target = debris->targetObject_.lock()) {
+            auto targetTransform = target->GetComponent<TransformComponent>();
+            if (targetTransform) {
+                debris->bossOrbitAngleX_ += debris->bossOrbitSpeedX_ * shieldRotationSpeed * deltaTime;
+                debris->bossOrbitAngleY_ += debris->bossOrbitSpeedY_ * shieldRotationSpeed * deltaTime;
+                debris->bossOrbitAngleZ_ += debris->bossOrbitSpeedZ_ * shieldRotationSpeed * deltaTime;
+
+                Irufemi::Matrix4x4 rotMatrix = Irufemi::Math::MakeRotateXYZMatrix(Irufemi::Vector3{debris->bossOrbitAngleX_, debris->bossOrbitAngleY_, debris->bossOrbitAngleZ_});
+                float currentRadius = currentRadiusBase + debris->bossOrbitRadiusOffset_;
+                Irufemi::Vector3 baseOffset = { 0, 0, currentRadius };
+                Irufemi::Vector3 localPos = Irufemi::Math::TransformNormal(baseOffset, rotMatrix);
+
+                Irufemi::Vector3 pos = transform->GetWorldPosition();
+                pos.x = targetTransform->GetWorldPosition().x + localPos.x;
+                pos.y = targetTransform->GetWorldPosition().y + localPos.y;
+                pos.z = targetTransform->GetWorldPosition().z + localPos.z;
+                transform->SetPosition(pos);
+
+                transform->SetRotation({ debris->bossOrbitAngleX_ * 2.0f, debris->bossOrbitAngleY_ * 2.0f, debris->bossOrbitAngleZ_ * 2.0f });
+            }
+        }
+    }
+}
+
+void DebrisManagerComponent::UpdateThrownDebris(float deltaTime) {
+    float throwSpeed = GetDebrisThrowSpeed();
+    float maxDistSq = GetMaxThrowDistanceSq();
+    EffectManagerComponent* effectManager = nullptr;
+    auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager();
+    
+    if (gameObject_ && gameObject_->GetScene()) {
+        if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+            effectManager = go->GetComponent<EffectManagerComponent>();
+        }
+    }
+
+    for (int i = (int)thrownDebris_.size() - 1; i >= 0; --i) {
+        DebrisComponent* debris = thrownDebris_[i];
+        if (!debris || !debris->gameObject_) continue;
+        auto transform = debris->GetTransform();
+        if (!transform) continue;
+
+        bool updatedWithTarget = false;
+        if (auto target = debris->targetObject_.lock()) {
+            if (target->GetIsActive()) {
+                auto targetTransform = target->GetComponent<TransformComponent>();
+                if (targetTransform) {
+                    Irufemi::Vector3 targetPos = targetTransform->GetWorldPosition();
+                    Irufemi::Vector3 pos = transform->GetWorldPosition();
+                    Irufemi::Vector3 diff = { targetPos.x - pos.x, targetPos.y - pos.y, targetPos.z - pos.z };
+                    float len = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
+                    float moveDist = throwSpeed * deltaTime;
+                    if (len > 0.001f) {
+                        if (len <= moveDist) {
+                            debris->throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
+                            pos.x += diff.x;
+                            pos.y += diff.y;
+                            pos.z += diff.z;
+                            transform->SetPosition(pos);
+                            continue; // 衝突処理はOnCollisionEnterに任せるためここでは移動のみ
+                        } else {
+                            debris->throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
+                        }
+                    }
+                    updatedWithTarget = true;
+                }
+            }
+        }
+        
+        Irufemi::Vector3 pos = transform->GetWorldPosition();
+        pos.x += debris->throwDirection_.x * throwSpeed * deltaTime;
+        pos.y += debris->throwDirection_.y * throwSpeed * deltaTime;
+        pos.z += debris->throwDirection_.z * throwSpeed * deltaTime;
+        transform->SetPosition(pos);
+        
+        float dx = pos.x - debris->throwOrigin_.x;
+        float dy = pos.y - debris->throwOrigin_.y;
+        float dz = pos.z - debris->throwOrigin_.z;
+        float distSq = dx*dx + dy*dy + dz*dz;
+        
+        if (distSq > maxDistSq) {
+            if (effectManager) {
+                effectManager->PlayEffect(debris->hitEffectKey_, pos);
+            }
+            if (voxelManager) {
+                VoxelEmitter p{};
+                p.particleType = 5; // DebrisExplosive
+                p.lifeTime = 1.0f;
+                p.gravity = 5.0f;
+                p.dispersion = 12.0f;
+                p.scale = {0.5f, 0.5f, 0.5f};
+                
+                Irufemi::Vector4 aura = (debris->state_ == DebrisState::BossOrbiting) ? GetBossAuraColor() : GetPlayerAuraColor();
+                Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
+                p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f, rockColor.z + aura.z * 2.0f, 1.0f};
+                p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
+                p.dissolveEdgeColor = aura;
+
+                voxelManager->PlayExplosion(debris->explosionModelPath_, pos, {0,0,0}, {0,0,0}, {1,1,1}, p, {2,2,2});
+            }
+            MarkForRelease(debris->gameObject_->shared_from_this());
+        }
     }
 }

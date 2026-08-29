@@ -23,7 +23,7 @@ public:
 
     void Initialize() override;
     void OnEnable() override;
-    void Update() override;
+    void OnDisable() override;
     void OnCollisionEnter(GameObject* hitObject) override;
     
     void OnRegisterProperties() override;
@@ -52,6 +52,7 @@ public:
     int GetVariationIndex() const { return variationIndex_; }
 
 private:
+    friend class DebrisManagerComponent;
     DebrisState state_ = DebrisState::Idle;
     
     int virtualId_ = -1;

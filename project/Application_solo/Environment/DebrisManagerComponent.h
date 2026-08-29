@@ -8,6 +8,8 @@
 
 class GameObject;
 class VirtualEntityManagerComponent;
+class DebrisComponent;
+enum class DebrisState;
 
 // がれきのアニメーション用並行データ（Data-Oriented Parallel Array）
 struct DebrisAnimData {
@@ -44,6 +46,14 @@ public:
      * @brief ガレキをプール返却キューに積む（Update中の安全な削除用）
      */
     void MarkForRelease(std::shared_ptr<GameObject> debris);
+    
+    /**
+     * @brief 仮想ガレキデータの完全削除をキューに積む（Update中の安全な削除用）
+     */
+    void MarkForDestroy(int virtualId, int variationIndex);
+
+    void RegisterDebris(DebrisComponent* debris, DebrisState state);
+    void UnregisterDebris(DebrisComponent* debris, DebrisState state);
 
     // プレイヤーからの引き寄せ処理用：指定座標から一番近い未昇格のがれきを実体化して返す
     std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Irufemi::Vector3& pos, float radius);
@@ -108,4 +118,15 @@ private:
     float maxThrowDistance_ = 1500.0f;
 
     std::vector<std::shared_ptr<GameObject>> pendingReleases_;
+    std::vector<std::pair<int, int>> pendingDestroys_;
+
+    void UpdatePulledDebris(float deltaTime);
+    void UpdateOrbitingDebris(float deltaTime);
+    void UpdateBossOrbitingDebris(float deltaTime);
+    void UpdateThrownDebris(float deltaTime);
+
+    std::vector<DebrisComponent*> pulledDebris_;
+    std::vector<DebrisComponent*> orbitingDebris_;
+    std::vector<DebrisComponent*> bossOrbitingDebris_;
+    std::vector<DebrisComponent*> thrownDebris_;
 };

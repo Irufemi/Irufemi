@@ -67,11 +67,15 @@ void DebrisComponent::OnEnable() {
     }
 }
 
+void DebrisComponent::OnDisable() {
+    if (manager_) {
+        manager_->UnregisterDebris(this, state_);
+    }
+}
+
 void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     if (state_ != DebrisState::Thrown) return;
     if (!otherObj) return;
-
-    Log::OutPutLog(std::cout, "Debris (Thrown) OnCollisionEnter with: " + otherObj->GetName() + "\n");
 
     bool hit = false;
     if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
@@ -89,11 +93,11 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
                 }
             }
             
-            // シールド側を消滅させる
+            // シールドを消滅させる
             if (debrisComp->manager_) {
-                debrisComp->manager_->ReleaseDebris(otherObj->shared_from_this());
+                debrisComp->manager_->MarkForRelease(otherObj->shared_from_this());
                 if (debrisComp->virtualId_ >= 0) {
-                    debrisComp->manager_->NotifyDestroyed(debrisComp->virtualId_, debrisComp->variationIndex_);
+                    debrisComp->manager_->MarkForDestroy(debrisComp->virtualId_, debrisComp->variationIndex_);
                 }
             } else {
                 otherObj->SetIsActive(false);
@@ -109,12 +113,8 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
         // 衝突した場合は破砕エフェクトを再生し、プールへ返却（回収）する
         if (cm) {
             uint32_t envMask = cm->GetLayerMask("Environment");
-            Log::OutPutLog(std::cout, "Checking Environment collision. Collider Layer: " + std::to_string(collider->layer_) + ", EnvMask: " + std::to_string(envMask) + "\n");
             if ((collider->layer_ & envMask) != 0) {
-                Log::OutPutLog(std::cout, "Environment Hit Detected!\n");
                 hit = true;
-            } else {
-                Log::OutPutLog(std::cout, "Not Environment Layer. Collision ignored.\n");
             }
         }
     }
@@ -148,11 +148,11 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
                 voxelManager->PlayExplosion(explosionModelPath_, hitPos, {0,0,0}, {0,0,0}, {1,1,1}, p, {2,2,2});
             }
         }
-        if (manager_) {
-            manager_->ReleaseDebris(gameObject_->shared_from_this());
-            if (virtualId_ >= 0) {
-                manager_->NotifyDestroyed(virtualId_, variationIndex_);
-            }
+          if (manager_) {
+              manager_->MarkForRelease(gameObject_->shared_from_this());
+              if (virtualId_ >= 0) {
+                  manager_->MarkForDestroy(virtualId_, variationIndex_);
+              }
         } else {
             gameObject_->SetIsActive(false); 
         }
@@ -160,7 +160,14 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
 }
 
 void DebrisComponent::SetState(DebrisState newState) {
+    if (state_ == newState) return;
+    if (manager_) {
+        manager_->UnregisterDebris(this, state_);
+    }
     state_ = newState;
+    if (manager_) {
+        manager_->RegisterDebris(this, state_);
+    }
 
     // オーラ用子オブジェクトの表示切り替えと色の変更
     if (gameObject_) {
@@ -247,175 +254,7 @@ void DebrisComponent::SetState(DebrisState newState) {
     }
 }
 
-void DebrisComponent::Update() {
-    if (!gameObject_) return;
-    auto transform = GetTransform();
-    if (!transform) return;
 
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-    if (deltaTime <= 0.0f) return;
-
-    switch (state_) {
-        case DebrisState::Idle: {
-            // アニメーション計算は VirtualEntityManager(DebrisManager) 側で行うため、ここでは何もしない
-            break;
-        }
-        case DebrisState::Pulled: {
-            if (auto target = targetObject_.lock()) {
-                auto targetTransform = target->GetComponent<TransformComponent>();
-                if (targetTransform) {
-                    Irufemi::Vector3 targetPos = targetTransform->GetWorldPosition();
-                    // ターゲット(プレイヤー)に向かってLerpで移動
-                    Irufemi::Vector3 diff = {
-                        targetPos.x - transform->GetWorldPosition().x,
-                        targetPos.y + GetPullYOffset() - transform->GetWorldPosition().y, // 少し上に引き寄せる
-                        targetPos.z - transform->GetWorldPosition().z
-                    };
-                    Irufemi::Vector3 pos = transform->GetWorldPosition();
-                    pos.x += diff.x * GetPullSpeed() * deltaTime;
-                    pos.y += diff.y * GetPullSpeed() * deltaTime;
-                    pos.z += diff.z * GetPullSpeed() * deltaTime;
-                    transform->SetPosition(pos);
-
-                    // 一定距離に近づいたらOrbitingへ自動遷移
-                    float distSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
-                    if (distSq < GetCatchDistanceSq()) {
-                        SetState(DebrisState::Orbiting);
-                    }
-                }
-            }
-            break;
-        }
-        case DebrisState::Orbiting: {
-            if (auto target = targetObject_.lock()) {
-                auto targetTransform = target->GetComponent<TransformComponent>();
-                if (targetTransform) {
-                    orbitAngle_ += GetOrbitSpeed() * deltaTime;
-                    
-                    // プレイヤーの周囲を回転するローカル座標を計算
-                    Irufemi::Vector3 offset = {
-                        std::cos(orbitAngle_) * orbitRadius_,
-                        std::sin(orbitAngle_ * 2.0f) * 0.5f + 1.0f, // 8の字にフワフワ
-                        std::sin(orbitAngle_) * orbitRadius_
-                    };
-                    
-                    Irufemi::Vector3 pos = transform->GetWorldPosition();
-                    pos.x = targetTransform->GetWorldPosition().x + offset.x;
-                    pos.y = targetTransform->GetWorldPosition().y + offset.y;
-                    pos.z = targetTransform->GetWorldPosition().z + offset.z;
-                    transform->SetPosition(pos);
-                }
-            }
-            break;
-        }
-        case DebrisState::BossOrbiting: {
-            if (auto target = targetObject_.lock()) {
-                auto targetTransform = target->GetComponent<TransformComponent>();
-                if (targetTransform) {
-                    float shieldRotationSpeed = 1.0f; // ボス側のパラメータを取得してもよいがとりあえず固定値
-                    bossOrbitAngleX_ += bossOrbitSpeedX_ * shieldRotationSpeed * deltaTime;
-                    bossOrbitAngleY_ += bossOrbitSpeedY_ * shieldRotationSpeed * deltaTime;
-                    bossOrbitAngleZ_ += bossOrbitSpeedZ_ * shieldRotationSpeed * deltaTime;
-
-                    Irufemi::Matrix4x4 rotMatrix = Irufemi::Math::MakeRotateXYZMatrix(Irufemi::Vector3{bossOrbitAngleX_, bossOrbitAngleY_, bossOrbitAngleZ_});
-                    float currentRadius = GetBossShieldRadius() + bossOrbitRadiusOffset_;
-                    Irufemi::Vector3 baseOffset = { 0, 0, currentRadius };
-                    Irufemi::Vector3 localPos = Irufemi::Math::TransformNormal(baseOffset, rotMatrix);
-
-                    Irufemi::Vector3 pos = transform->GetWorldPosition();
-                    pos.x = targetTransform->GetWorldPosition().x + localPos.x;
-                    pos.y = targetTransform->GetWorldPosition().y + localPos.y;
-                    pos.z = targetTransform->GetWorldPosition().z + localPos.z;
-                    transform->SetPosition(pos);
-
-                    // 自身の回転も反映（2倍の速度で自転）
-                    transform->SetRotation({ bossOrbitAngleX_ * 2.0f, bossOrbitAngleY_ * 2.0f, bossOrbitAngleZ_ * 2.0f });
-                }
-            }
-            break;
-        }
-        case DebrisState::Thrown: {
-            if (auto target = targetObject_.lock(); target && target->GetIsActive()) {
-                auto targetTransform = target->GetComponent<TransformComponent>();
-                if (targetTransform) {
-                    // 敵に向かって高速ホーミング移動
-                    Irufemi::Vector3 diff = {
-                        targetTransform->GetWorldPosition().x - transform->GetWorldPosition().x,
-                        targetTransform->GetWorldPosition().y - transform->GetWorldPosition().y,
-                        targetTransform->GetWorldPosition().z - transform->GetWorldPosition().z
-                    };
-                    float len = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z);
-                    float moveDist = GetThrowSpeed() * deltaTime;
-                    if (len > 0.001f) {
-                        if (len <= moveDist) {
-                            throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
-                            Irufemi::Vector3 pos = transform->GetWorldPosition();
-                            pos.x += diff.x;
-                            pos.y += diff.y;
-                            pos.z += diff.z;
-                            transform->SetPosition(pos);
-                            return;
-                        } else {
-                            throwDirection_ = { diff.x / len, diff.y / len, diff.z / len };
-                        }
-                    }
-                }
-            }
-            
-            // ターゲットがない（または既に死んだ）場合でも、計算された(または初期設定された)方向に飛び続ける
-            Irufemi::Vector3 pos = transform->GetWorldPosition();
-            pos.x += throwDirection_.x * GetThrowSpeed() * deltaTime;
-            pos.y += throwDirection_.y * GetThrowSpeed() * deltaTime;
-            pos.z += throwDirection_.z * GetThrowSpeed() * deltaTime;
-            transform->SetPosition(pos);
-            
-            // 限界距離でのデスポーン（オブジェクトプール返却）
-            if (manager_) {
-                float dx = pos.x - throwOrigin_.x;
-                float dy = pos.y - throwOrigin_.y;
-                float dz = pos.z - throwOrigin_.z;
-                float distSq = dx*dx + dy*dy + dz*dz;
-                
-                if (distSq > manager_->GetMaxThrowDistanceSq()) {
-                    EffectManagerComponent* effectManager = nullptr;
-                    if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
-                        effectManager = go->GetComponent<EffectManagerComponent>();
-                    }
-                    if (effectManager) {
-                        effectManager->PlayEffect(hitEffectKey_, pos);
-                    }
-                    if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {
-                        VoxelEmitter p{};
-                        p.particleType = 5; // DebrisExplosive
-                        p.lifeTime = 1.0f;
-                        p.gravity = 5.0f;
-                        p.dispersion = 12.0f;
-                        p.scale = {0.5f, 0.5f, 0.5f};
-                        
-                        Irufemi::Vector4 aura = (state_ == DebrisState::BossOrbiting) ? GetBossAuraColor() : GetPlayerAuraColor();
-                        Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
-                        p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f, rockColor.z + aura.z * 2.0f, 1.0f};
-                        p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
-                        p.dissolveEdgeColor = aura;
-
-                        voxelManager->PlayExplosion(explosionModelPath_, pos, {0,0,0}, {0,0,0}, {1,1,1}, p, {2,2,2});
-                    }
-                    manager_->MarkForRelease(gameObject_->shared_from_this());
-                }
-            } else {
-                // Managerがない場合のフォールバック（デバッグ用など）
-                float dx = pos.x - throwOrigin_.x;
-                float dy = pos.y - throwOrigin_.y;
-                float dz = pos.z - throwOrigin_.z;
-                float distSq = dx*dx + dy*dy + dz*dz;
-                if (distSq > 1500.0f * 1500.0f) {
-                    gameObject_->SetIsActive(false);
-                }
-            }
-            break;
-        }
-        }
-    }
 
 std::shared_ptr<Component> DebrisComponent::Clone() {
     auto clone = std::make_shared<DebrisComponent>();

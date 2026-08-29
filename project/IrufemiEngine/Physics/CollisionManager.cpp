@@ -206,11 +206,13 @@ void CollisionManager::CheckAllCollisions() {
                     // --- コールバック呼び出し (Enter / Stay) ---
                     if (previousCollisions_.find(pairKey) == previousCollisions_.end()) {
                         // 新規衝突 (Enter)
-                        if (colA->onCollisionEnter_) colA->onCollisionEnter_(colB);
-                        if (colB->onCollisionEnter_) colB->onCollisionEnter_(colA);
-                        
-                        if (colA->GetGameObject()) colA->GetGameObject()->SendCollisionEnter(colB->GetGameObject());
-                        if (colB->GetGameObject()) colB->GetGameObject()->SendCollisionEnter(colA->GetGameObject());
+            if (result.isHit) {
+                if (colA->onCollisionEnter_) colA->onCollisionEnter_(colB);
+                if (colB->onCollisionEnter_) colB->onCollisionEnter_(colA);
+                
+                if (colA->GetGameObject()) colA->GetGameObject()->SendCollisionEnter(colB->GetGameObject());
+                if (colB->GetGameObject()) colB->GetGameObject()->SendCollisionEnter(colA->GetGameObject());
+            }
                     } else {
                         // 継続衝突 (Stay)
                         if (colA->onCollisionStay_) colA->onCollisionStay_(colB);
