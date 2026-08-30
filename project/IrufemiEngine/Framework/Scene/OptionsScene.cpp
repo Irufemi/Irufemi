@@ -49,8 +49,9 @@ void OptionsScene::OnExit() {
 
 void OptionsScene::BindUIComponents() {
     auto engine = GetEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     // UIを閉じるボタン用コールバック
     auto closeScene = [engine]() {

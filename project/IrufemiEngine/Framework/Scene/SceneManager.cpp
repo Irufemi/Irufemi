@@ -153,8 +153,9 @@ void SceneManager::PushScene(const Key& name) {
 }
 
 void SceneManager::PopScene() {
-    if (sceneStack_.empty())
+    if (sceneStack_.empty()) {
         return;
+    }
 
     engine_->GetDirectXCommon()->WaitForGPU();
 
@@ -183,8 +184,9 @@ void SceneManager::PopScene() {
 }
 
 void SceneManager::TransitionTo(const Key& next, SceneTransition::Type type, float duration, EaseType easeType) {
-    if (transitionPhase_ != TransitionPhase::None)
+    if (transitionPhase_ != TransitionPhase::None) {
         return; // 二重遷移防止
+    }
 
     pendingTransition_ = next;
     pendingType_ = type;

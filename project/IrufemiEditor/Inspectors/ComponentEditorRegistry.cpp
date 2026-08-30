@@ -71,8 +71,9 @@ void ComponentEditorRegistry::RegisterAllEditors() {
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {
-    if (!component)
+    if (!component) {
         return;
+    }
     ImGui::PushID(component);
     auto it = editors_.find(typeid(*component));
     if (it != editors_.end()) {

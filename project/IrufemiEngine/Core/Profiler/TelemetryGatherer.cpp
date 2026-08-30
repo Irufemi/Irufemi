@@ -11,8 +11,9 @@ void TelemetryGatherer::RegisterMetric(const std::string& name, std::function<fl
 }
 
 void TelemetryGatherer::Initialize(IrufemiEngine* engine) {
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     // ==========================================
     // System Metrics

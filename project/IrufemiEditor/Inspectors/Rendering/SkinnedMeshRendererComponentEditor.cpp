@@ -4,8 +4,9 @@
 
 void SkinnedMeshRendererComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto comp = static_cast<SkinnedMeshRendererComponent*>(component);
-    if (!comp)
+    if (!comp) {
         return;
+    }
 
     if (auto rawObj = comp->GetRawObject()) {
         size_t meshCount = rawObj->GetMeshCount();

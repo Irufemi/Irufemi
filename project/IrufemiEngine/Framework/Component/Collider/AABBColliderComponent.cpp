@@ -6,16 +6,18 @@
 AABBColliderComponent::AABBColliderComponent() {}
 
 AABBColliderComponent::~AABBColliderComponent() {
-    if (collisionManager_)
+    if (collisionManager_) {
         collisionManager_->UnregisterCollider(this);
+    }
 }
 
 void AABBColliderComponent::Initialize() {
     if (gameObject_) {
     }
     // 初期化時にCollisionManagerに自身を登録する
-    if (collisionManager_)
+    if (collisionManager_) {
         collisionManager_->RegisterCollider(this);
+    }
 }
 
 void AABBColliderComponent::Update() {
@@ -78,10 +80,12 @@ void AABBColliderComponent::Deserialize(const nlohmann::json& j) {
         localSize_.y = j["localSize"][1];
         localSize_.z = j["localSize"][2];
     }
-    if (j.contains("layer"))
+    if (j.contains("layer")) {
         layer_ = j["layer"];
-    if (j.contains("mask"))
+    }
+    if (j.contains("mask")) {
         mask_ = j["mask"];
+    }
 }
 
 std::shared_ptr<Component> AABBColliderComponent::Clone() {

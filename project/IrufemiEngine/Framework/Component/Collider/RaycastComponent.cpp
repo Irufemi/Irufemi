@@ -43,8 +43,9 @@ void RaycastComponent::DrawDebug() {
         Irufemi::Vector4 color =
             hitInfo_.isHit ? Irufemi::Vector4{1.0f, 0.0f, 0.0f, 1.0f} : Irufemi::Vector4{0.0f, 1.0f, 0.0f, 1.0f};
         float drawDist = hitInfo_.isHit ? hitInfo_.distance : maxDistance_;
-        if (collisionManager_)
+        if (collisionManager_) {
             collisionManager_->DrawDebugRay(currentRay_, drawDist, color);
+        }
     }
 }
 
@@ -69,12 +70,15 @@ void RaycastComponent::Deserialize(const nlohmann::json& j) {
         localDirection_.y = j["localDirection"][1];
         localDirection_.z = j["localDirection"][2];
     }
-    if (j.contains("maxDistance"))
+    if (j.contains("maxDistance")) {
         maxDistance_ = j["maxDistance"];
-    if (j.contains("mask"))
+    }
+    if (j.contains("mask")) {
         mask_ = j["mask"];
-    if (j.contains("showDebugLine"))
+    }
+    if (j.contains("showDebugLine")) {
         showDebugLine_ = j["showDebugLine"];
+    }
 }
 
 std::shared_ptr<Component> RaycastComponent::Clone() {

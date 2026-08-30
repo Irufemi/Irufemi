@@ -38,8 +38,9 @@ void VirtualEntityManagerComponent::Setup(int poolSize, int maxVirtualInstances,
 
 int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot,
                                                       const Irufemi::Vector3& scale) {
-    if (freeIds_.empty())
+    if (freeIds_.empty()) {
         return -1; // 上限到達
+    }
 
     int id = freeIds_.front();
     freeIds_.pop();
@@ -60,11 +61,13 @@ int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& po
 }
 
 void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
-    if (id < 0 || id >= maxVirtualInstances_)
+    if (id < 0 || id >= maxVirtualInstances_) {
         return;
+    }
     int denseIndex = sparse_[id];
-    if (denseIndex == -1)
+    if (denseIndex == -1) {
         return; // すでに存在しない
+    }
 
     auto& vi = dense_[denseIndex];
     if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
@@ -73,8 +76,9 @@ void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
             obj->SetIsActive(false);
             activeHandles_.erase(obj.get());
         }
-        if (pool_)
+        if (pool_) {
             pool_->Release(vi.promotedHandle_);
+        }
         vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
     }
 
@@ -93,14 +97,17 @@ void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
 }
 
 std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
-    if (!pool_)
+    if (!pool_) {
         return nullptr;
-    if (id < 0 || id >= maxVirtualInstances_)
+    }
+    if (id < 0 || id >= maxVirtualInstances_) {
         return nullptr;
+    }
 
     int denseIndex = sparse_[id];
-    if (denseIndex == -1)
+    if (denseIndex == -1) {
         return nullptr;
+    }
 
     auto& vi = dense_[denseIndex];
     if (!vi.isDestroyed_ && !vi.isPromoted_) {
@@ -131,12 +138,14 @@ void VirtualEntityManagerComponent::OnRegisterProperties() {
 }
 
 void VirtualEntityManagerComponent::Demote(int id) {
-    if (id < 0 || id >= maxVirtualInstances_)
+    if (id < 0 || id >= maxVirtualInstances_) {
         return;
+    }
 
     int denseIndex = sparse_[id];
-    if (denseIndex == -1)
+    if (denseIndex == -1) {
         return;
+    }
 
     auto& vi = dense_[denseIndex];
     if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
@@ -155,8 +164,9 @@ void VirtualEntityManagerComponent::Demote(int id) {
             gameObject_->RemoveChild(obj);
         }
 
-        if (pool_)
+        if (pool_) {
             pool_->Release(vi.promotedHandle_);
+        }
 
         vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
         vi.isPromoted_ = false;
@@ -178,8 +188,9 @@ void VirtualEntityManagerComponent::ReleaseGameObject(std::shared_ptr<GameObject
 }
 
 void VirtualEntityManagerComponent::Update() {
-    if (!batchRenderer_)
+    if (!batchRenderer_) {
         return;
+    }
 
     activeInstanceCount_ = static_cast<int>(dense_.size());
 

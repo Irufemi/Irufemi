@@ -45,21 +45,25 @@ void SkinnedMeshRendererComponent::Update() {
 }
 
 void SkinnedMeshRendererComponent::Draw() {
-    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive())
+    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) {
         return;
+    }
     animatedMesh_->Draw();
 }
 
 bool SkinnedMeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!animatedMesh_)
+    if (!animatedMesh_) {
         return false;
+    }
     auto cpuModel = animatedMesh_->GetCpuModel();
-    if (!cpuModel)
+    if (!cpuModel) {
         return false;
+    }
 
     auto transform = GetTransform();
-    if (!transform)
+    if (!transform) {
         return false;
+    }
 
     // ローカルAABBから中心とサイズを取得
     Irufemi::Vector3 localCenter = (cpuModel->boundingBox.min + cpuModel->boundingBox.max) * 0.5f;
@@ -87,20 +91,23 @@ bool SkinnedMeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDi
     float lenY = Irufemi::Math::Length(yAxis);
     float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f)
+    if (lenX > 0.0001f) {
         obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
-    else
+    } else {
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};
+    }
 
-    if (lenY > 0.0001f)
+    if (lenY > 0.0001f) {
         obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
-    else
+    } else {
         obb.orientations[1] = {0.0f, 1.0f, 0.0f};
+    }
 
-    if (lenZ > 0.0001f)
+    if (lenZ > 0.0001f) {
         obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
-    else
+    } else {
         obb.orientations[2] = {0.0f, 0.0f, 1.0f};
+    }
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;
@@ -120,6 +127,7 @@ void SkinnedMeshRendererComponent::OnRegisterProperties() {
 }
 
 void SkinnedMeshRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("Model File"))
+    if (j.contains("Model File")) {
         modelFilename_ = j["Model File"].get<std::string>();
+    }
 }

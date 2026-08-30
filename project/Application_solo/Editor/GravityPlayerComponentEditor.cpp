@@ -10,8 +10,9 @@
 
 void GravityPlayerComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto comp = dynamic_cast<GravityPlayerComponent*>(component);
-    if (!comp)
+    if (!comp) {
         return;
+    }
 
     ImGui::Text("Gravity Player Settings");
     ImGui::Separator();

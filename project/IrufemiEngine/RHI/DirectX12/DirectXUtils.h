@@ -16,8 +16,9 @@ namespace DirectXUtils {
 inline void TransitionBarrier(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* resource,
                               D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter,
                               UINT subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES) {
-    if (!resource || !cmdList)
+    if (!resource || !cmdList) {
         return;
+    }
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -29,8 +30,9 @@ inline void TransitionBarrier(ID3D12GraphicsCommandList* cmdList, ID3D12Resource
 }
 
 inline void UAVBarrier(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* resource = nullptr) {
-    if (!cmdList)
+    if (!cmdList) {
         return;
+    }
     D3D12_RESOURCE_BARRIER barrier{};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -44,13 +46,15 @@ inline void UAVBarrier(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* resou
  * @param resources 対象リソースのリスト (例: { resA, resB, resC })
  */
 inline void UAVBarriers(ID3D12GraphicsCommandList* cmdList, std::initializer_list<ID3D12Resource*> resources) {
-    if (!cmdList)
+    if (!cmdList) {
         return;
+    }
     std::vector<D3D12_RESOURCE_BARRIER> barriers;
     barriers.reserve(resources.size());
     for (auto* res : resources) {
-        if (!res)
+        if (!res) {
             continue;
+        }
         D3D12_RESOURCE_BARRIER b{};
         b.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         b.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;

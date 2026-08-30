@@ -16,8 +16,9 @@ void LoadingScreen::Finalize() {
 }
 
 void LoadingScreen::Initialize(IrufemiEngine* engine) {
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     camera_ = std::make_unique<Camera>();
     camera_->Initialize(engine->GetGameResolutionWidth(), engine->GetGameResolutionHeight());
@@ -94,8 +95,9 @@ void LoadingScreen::Update(float deltaTime) {
 }
 
 void LoadingScreen::Draw(IrufemiEngine* engine) {
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     // ウィンドウのリサイズに対応するため、描画時に画面サイズに合わせて位置とサイズを動的に更新する
     float screenW = static_cast<float>(engine->GetGameResolutionWidth());

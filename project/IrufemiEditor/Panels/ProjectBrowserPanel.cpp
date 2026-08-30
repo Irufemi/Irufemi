@@ -75,8 +75,9 @@ void ProjectBrowserPanel::RefreshCache() {
     auto newRoot = std::make_unique<DirectoryNode>();
     newRoot->path = projectRootPath_;
     std::string folderName = reinterpret_cast<const char*>(projectRootPath_.filename().u8string().c_str());
-    if (folderName.empty())
+    if (folderName.empty()) {
         folderName = "Root";
+    }
     newRoot->folderName = folderName;
 
     BuildDirectoryTree(newRoot.get());
@@ -91,10 +92,12 @@ void ProjectBrowserPanel::RefreshCache() {
 
 const DirectoryNode* ProjectBrowserPanel::FindNode(const DirectoryNode* node,
                                                    const std::filesystem::path& targetPath) const {
-    if (!node)
+    if (!node) {
         return nullptr;
-    if (node->path == targetPath)
+    }
+    if (node->path == targetPath) {
         return node;
+    }
     for (const auto& child : node->subDirectories) {
         if (const DirectoryNode* found = FindNode(child.get(), targetPath)) {
             return found;
@@ -104,8 +107,9 @@ const DirectoryNode* ProjectBrowserPanel::FindNode(const DirectoryNode* node,
 }
 
 void ProjectBrowserPanel::DrawProjectBrowserTree(const DirectoryNode* node) {
-    if (!node)
+    if (!node) {
         return;
+    }
 
     ImGuiTreeNodeFlags flags =
         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -141,8 +145,9 @@ void ProjectBrowserPanel::DrawProjectBrowserTree(const DirectoryNode* node) {
 }
 
 void ProjectBrowserPanel::Draw() {
-    if (!editorManager_)
+    if (!editorManager_) {
         return;
+    }
 
     // 監視スレッドからの通知があれば自動リフレッシュ
     if (isCacheDirty_.exchange(false)) {
@@ -358,8 +363,9 @@ void ProjectBrowserPanel::Draw() {
             // ディレクトリ一覧を描画
             for (const auto& childDir : currentNode->subDirectories) {
                 drawEntry(childDir->path, childDir->folderName, "", true);
-                if (currentProjectBrowserPath_ != currentNode->path)
+                if (currentProjectBrowserPath_ != currentNode->path) {
                     break; // 移動した場合はループを抜ける
+                }
             }
 
             // ファイル一覧を描画

@@ -9,8 +9,9 @@
 
 void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto waveManager = dynamic_cast<WaveManagerComponent*>(component);
-    if (!waveManager)
+    if (!waveManager) {
         return;
+    }
 
     auto& events = waveManager->GetAllEventsMutable();
 
@@ -19,8 +20,9 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     static bool isDraggingModified = false;
 
     auto pushUndo = [&](const std::vector<WaveEventData>& oldData) {
-        if (!actionManager)
+        if (!actionManager) {
             return;
+        }
         actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::vector<WaveEventData>>>(
             oldData, events,
             [waveManager](const std::vector<WaveEventData>& val) { waveManager->GetAllEventsMutable() = val; }));
@@ -76,8 +78,9 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
 
     float maxDist = 500.0f;
     for (const auto& ev : events) {
-        if (ev.triggerDistance > maxDist)
+        if (ev.triggerDistance > maxDist) {
             maxDist = ev.triggerDistance + 100.0f;
+        }
     }
     float scale = size.x / maxDist;
 
@@ -124,8 +127,9 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         if (draggingNodeIndex != -1 && draggingNodeIndex < events.size()) {
             if (ImGui::GetIO().MouseDelta.x != 0.0f) {
                 events[draggingNodeIndex].triggerDistance += ImGui::GetIO().MouseDelta.x / scale;
-                if (events[draggingNodeIndex].triggerDistance < 0)
+                if (events[draggingNodeIndex].triggerDistance < 0) {
                     events[draggingNodeIndex].triggerDistance = 0.0f;
+                }
                 isDraggingModified = true;
             }
         } else if (isTimelineActive) {
@@ -150,12 +154,15 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         ImVec2 nodeMax(x + 5, yCenter + 12);
 
         ImU32 color = IM_COL32(100, 150, 255, 255);
-        if (events[i].eventType == "SpawnBoss")
+        if (events[i].eventType == "SpawnBoss") {
             color = IM_COL32(255, 50, 50, 255);
-        if (events[i].eventType == "SpawnDebris")
+        }
+        if (events[i].eventType == "SpawnDebris") {
             color = IM_COL32(50, 200, 50, 255);
-        if (i == selectedEventIndex)
+        }
+        if (i == selectedEventIndex) {
             color = IM_COL32(255, 200, 0, 255);
+        }
 
         drawList->AddRectFilled(nodeMin, nodeMax, color);
         drawList->AddRect(nodeMin, nodeMax, IM_COL32(255, 255, 255, 255));
@@ -272,12 +279,15 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         if (hasOffset) {
             float offset[3] = {0, 0, 0};
             auto& jOffset = ev.parameters["OffsetFromRail"];
-            if (jOffset.contains("x"))
+            if (jOffset.contains("x")) {
                 offset[0] = jOffset["x"].get<float>();
-            if (jOffset.contains("y"))
+            }
+            if (jOffset.contains("y")) {
                 offset[1] = jOffset["y"].get<float>();
-            if (jOffset.contains("z"))
+            }
+            if (jOffset.contains("z")) {
                 offset[2] = jOffset["z"].get<float>();
+            }
 
             if (ImGui::DragFloat3("OffsetFromRail", offset, 0.1f)) {
                 jOffset["x"] = offset[0];

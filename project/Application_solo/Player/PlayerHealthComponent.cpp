@@ -15,8 +15,9 @@
 #include <cmath>
 
 void PlayerHealthComponent::LoadStatusFromJson() {
-    if (statusDataPath_.empty())
+    if (statusDataPath_.empty()) {
         return;
+    }
 
     std::ifstream file(statusDataPath_);
     if (!file.is_open()) {
@@ -67,16 +68,18 @@ void PlayerHealthComponent::Update() {
             float currentTime = BaseModel::GetIrufemiEngine()->GetGameTime();
             if (currentTime >= deathStartTime_ + 3.0f) {
                 hasTriggeredDeathSequenceFinished_ = true;
-                if (onDeathSequenceFinished)
+                if (onDeathSequenceFinished) {
                     onDeathSequenceFinished();
+                }
             }
         }
         return;
     }
 
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-    if (dt <= 0.0f)
+    if (dt <= 0.0f) {
         return;
+    }
 
     // --- 被弾時の無敵時間と点滅処理 ---
     if (invincibilityTimer_ > 0.0f) {
@@ -111,8 +114,9 @@ void PlayerHealthComponent::Update() {
 }
 
 void PlayerHealthComponent::TakeDamage(int damage) {
-    if (isDead_)
+    if (isDead_) {
         return;
+    }
 
     if (isGodMode_) {
         Log::OutPutLog(std::cout, "[PlayerHealth] TakeDamage ignored (God Mode)\n");
@@ -130,8 +134,9 @@ void PlayerHealthComponent::TakeDamage(int damage) {
         hp_ = 0;
         isDead_ = true;
         deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
-        if (onPlayerDied)
+        if (onPlayerDied) {
             onPlayerDied();
+        }
         Log::OutPutLog(std::cout, "[PlayerHealth] Player Died!\n");
 
         // 自機が死んだときに自機のモデルの描画を切る

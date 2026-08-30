@@ -46,8 +46,9 @@ void ScreenCaptureManager::Update() {
 bool ScreenCaptureManager::RequestCapture(const std::wstring& filePath, ScreenCaptureType type,
                                           std::function<void()> onComplete) {
     std::lock_guard<std::mutex> lock(requestMutex_);
-    if (isEncoding_)
+    if (isEncoding_) {
         return false; // 処理中はリクエストを破棄または待機 (ここでは簡単のため破棄)
+    }
 
     ScreenCaptureRequest req;
     req.filePath = filePath;
@@ -64,8 +65,9 @@ bool ScreenCaptureManager::RequestCapture(const std::wstring& filePath, ScreenCa
 bool ScreenCaptureManager::RequestCaptureWithMetadata(const std::wstring& filePath, ScreenCaptureType type,
                                                       std::function<void()> onComplete) {
     std::lock_guard<std::mutex> lock(requestMutex_);
-    if (isEncoding_)
+    if (isEncoding_) {
         return false;
+    }
 
     ScreenCaptureRequest req;
     req.filePath = filePath;
@@ -81,8 +83,9 @@ bool ScreenCaptureManager::RequestCaptureWithMetadata(const std::wstring& filePa
 
 bool ScreenCaptureManager::RequestCaptureWithAlpha(const std::wstring& filePath, std::function<void()> onComplete) {
     std::lock_guard<std::mutex> lock(requestMutex_);
-    if (isEncoding_)
+    if (isEncoding_) {
         return false;
+    }
 
     ScreenCaptureRequest req;
     req.filePath = filePath;
@@ -98,8 +101,9 @@ bool ScreenCaptureManager::RequestCaptureWithAlpha(const std::wstring& filePath,
 
 bool ScreenCaptureManager::RequestCaptureDepth(const std::wstring& filePath, std::function<void()> onComplete) {
     std::lock_guard<std::mutex> lock(requestMutex_);
-    if (isEncoding_)
+    if (isEncoding_) {
         return false;
+    }
 
     ScreenCaptureRequest req;
     req.filePath = filePath;
@@ -115,15 +119,17 @@ bool ScreenCaptureManager::RequestCaptureDepth(const std::wstring& filePath, std
 
 bool ScreenCaptureManager::IsCaptureWithAlphaRequested() const {
     for (const auto& req : pendingRequests_) {
-        if (req.isAlphaRequested)
+        if (req.isAlphaRequested) {
             return true;
+        }
     }
     return false;
 }
 
 void ScreenCaptureManager::RecordMetadata(IrufemiEngine* engine) {
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     std::stringstream ss;
     ss << "{\n";
@@ -150,8 +156,9 @@ void ScreenCaptureManager::RecordMetadata(IrufemiEngine* engine) {
 
 void ScreenCaptureManager::OnPreUIDraw(ID3D12GraphicsCommandList* commandList, RenderTexture* mainRenderTexture) {
     std::lock_guard<std::mutex> lock(requestMutex_);
-    if (pendingRequests_.empty() || isEncoding_)
+    if (pendingRequests_.empty() || isEncoding_) {
         return;
+    }
 
     for (size_t i = 0; i < pendingRequests_.size(); ++i) {
         auto& req = pendingRequests_[i];
@@ -193,8 +200,9 @@ void ScreenCaptureManager::OnPreUIDraw(ID3D12GraphicsCommandList* commandList, R
 
 void ScreenCaptureManager::OnPostUIDraw(ID3D12GraphicsCommandList* commandList, ID3D12Resource* backBuffer) {
     std::lock_guard<std::mutex> lock(requestMutex_);
-    if (pendingRequests_.empty() || isEncoding_)
+    if (pendingRequests_.empty() || isEncoding_) {
         return;
+    }
 
     for (size_t i = 0; i < pendingRequests_.size(); ++i) {
         auto& req = pendingRequests_[i];
@@ -236,8 +244,9 @@ void ScreenCaptureManager::OnPostUIDraw(ID3D12GraphicsCommandList* commandList, 
 
 void ScreenCaptureManager::OnPostDepthDraw(ID3D12GraphicsCommandList* commandList, ID3D12Resource* depthBuffer) {
     std::lock_guard<std::mutex> lock(requestMutex_);
-    if (pendingRequests_.empty() || isEncoding_)
+    if (pendingRequests_.empty() || isEncoding_) {
         return;
+    }
 
     for (size_t i = 0; i < pendingRequests_.size(); ++i) {
         auto& req = pendingRequests_[i];

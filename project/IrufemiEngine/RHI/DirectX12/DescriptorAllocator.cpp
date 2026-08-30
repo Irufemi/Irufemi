@@ -23,15 +23,17 @@ uint32_t DescriptorAllocator::Allocate() {
 }
 
 void DescriptorAllocator::Free(uint32_t index) {
-    if (index == kInvalid)
+    if (index == kInvalid) {
         return;
+    }
     std::lock_guard<std::mutex> lk(mutex_);
     freeList_.push_back(index);
 }
 
 void DescriptorAllocator::FreeAfterFence(uint32_t index, uint64_t safeFence) {
-    if (index == kInvalid)
+    if (index == kInvalid) {
         return;
+    }
     std::lock_guard<std::mutex> lk(mutex_);
     pending_.push(Pending{safeFence, index});
 }
@@ -63,15 +65,17 @@ void DescriptorAllocator::RebuildFreeListExcept(const std::vector<uint32_t>& use
     } else {
         nextIndex_ = baseIndex_;
     }
-    if (nextIndex_ > capacity_)
+    if (nextIndex_ > capacity_) {
         nextIndex_ = capacity_;
+    }
 }
 
 void DescriptorAllocator::ReservePrefix(uint32_t count) {
     std::lock_guard<std::mutex> lk(mutex_);
     baseIndex_ = (std::min)(capacity_, count);
-    if (nextIndex_ < baseIndex_)
+    if (nextIndex_ < baseIndex_) {
         nextIndex_ = baseIndex_;
+    }
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::GetCPUHandle(uint32_t index) const {

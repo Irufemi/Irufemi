@@ -4,8 +4,9 @@
 #include <algorithm>
 
 void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* input) {
-    if (!camera || !input)
+    if (!camera || !input) {
         return;
+    }
 
     bool isMiddleButtonDown = input->IsMouseButtonDown(Mouse::Button::Middle);
     auto* keyboard = input->GetKeyboard();
@@ -17,8 +18,9 @@ void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* inpu
         // カメラが現在いる位置から原点 (0,0,0) までの距離を基準に Target を算出する
         float distToOrigin = Irufemi::Math::Length(camera->GetTranslate());
         // 距離が近すぎる場合は最低限の距離を保つ
-        if (distToOrigin < 1.0f)
+        if (distToOrigin < 1.0f) {
             distToOrigin = 10.0f;
+        }
         SyncTargetFromCamera(camera, distToOrigin);
     } else {
         // 初期化済みだが、外部要因（シーンロードやスクリプト等）でカメラが移動した場合を検知
@@ -26,8 +28,9 @@ void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* inpu
         float rotDiff = Irufemi::Math::Length(Irufemi::Math::Subtract(camera->GetRotate(), lastCameraRotation_));
         if (posDiff > 0.01f || rotDiff > 0.01f) {
             float distToOrigin = Irufemi::Math::Length(camera->GetTranslate());
-            if (distToOrigin < 1.0f)
+            if (distToOrigin < 1.0f) {
                 distToOrigin = 10.0f;
+            }
             SyncTargetFromCamera(camera, distToOrigin);
         }
     }
@@ -62,8 +65,9 @@ void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* inpu
     if (wheelDelta != 0.0f) {
         const float zoomSpeed = 2.0f;
         distance_ -= wheelDelta * zoomSpeed;
-        if (distance_ < 1.0f)
+        if (distance_ < 1.0f) {
             distance_ = 1.0f; // 最小距離制限
+        }
         cameraChanged = true;
     }
 
@@ -83,8 +87,9 @@ void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* inpu
 }
 
 void OrbitCameraController::Focus(Camera* camera, const Irufemi::Vector3& targetPosition, float distance) {
-    if (!camera)
+    if (!camera) {
         return;
+    }
 
     target_ = targetPosition;
     if (distance > 0.0f) {
@@ -105,8 +110,9 @@ void OrbitCameraController::Focus(Camera* camera, const Irufemi::Vector3& target
 }
 
 void OrbitCameraController::SyncTargetFromCamera(const Camera* camera, float distance) {
-    if (!camera)
+    if (!camera) {
         return;
+    }
 
     distance_ = distance;
 
@@ -122,8 +128,9 @@ void OrbitCameraController::SyncTargetFromCamera(const Camera* camera, float dis
 }
 
 void OrbitCameraController::SetPreset(Preset preset, Camera* camera) {
-    if (!camera)
+    if (!camera) {
         return;
+    }
 
     switch (preset) {
     case Preset::TopDown:

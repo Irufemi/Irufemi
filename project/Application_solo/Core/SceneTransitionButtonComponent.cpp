@@ -25,15 +25,18 @@ void SceneTransitionButtonComponent::Initialize() {
 }
 
 void SceneTransitionButtonComponent::Update() {
-    if (!button_ || !gameObject_ || !sprite_)
+    if (!button_ || !gameObject_ || !sprite_) {
         return;
+    }
 
     auto scene = gameObject_->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
     auto engine = scene->GetEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     animator_.Update(1.0f / 60.0f);
 

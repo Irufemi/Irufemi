@@ -15,20 +15,23 @@ void AudioPlayer::Initialize(const std::string& filePath, const std::string& key
     sound_.reset();
     soundKey_.clear();
 
-    if (!audioManager_)
+    if (!audioManager_) {
         return;
+    }
 
     auto sd = audioManager_->GetOrLoadSoundByFile(filePath, key);
-    if (!sd)
+    if (!sd) {
         return;
+    }
 
     sound_ = sd;
     soundKey_ = key.empty() ? filePath : key;
 }
 
 void AudioPlayer::Play(std::optional<bool> loop) {
-    if (!audioManager_ || !sound_)
+    if (!audioManager_ || !sound_) {
         return;
+    }
 
     // 再生開始前に既存の再生を止める(同一インスタンスで再生を上書き)
     Stop();

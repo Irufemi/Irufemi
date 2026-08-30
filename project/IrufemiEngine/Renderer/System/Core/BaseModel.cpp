@@ -15,8 +15,9 @@ BaseModel::~BaseModel() {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS BaseModel::GetTransformationGpuAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1) || !engine_)
+    if (transformCbIndex_ == static_cast<uint32_t>(-1) || !engine_) {
         return 0;
+    }
     return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(
         transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
@@ -64,8 +65,9 @@ ObjMaterial* BaseModel::GetMaterial(size_t meshIndex) {
 }
 
 void BaseModel::UpdateMaterials() {
-    if (!engine_ || !engine_->GetObjModelManager())
+    if (!engine_ || !engine_->GetObjModelManager()) {
         return;
+    }
     auto m = engine_->GetObjModelManager()->Resolve(modelHandle_);
     if (!m || !m->cpuModel || meshResources_.empty()) {
         return;
@@ -73,12 +75,14 @@ void BaseModel::UpdateMaterials() {
 
     // 全メッシュのマテリアルを更新
     for (size_t i = 0; i < m->cpuModel->meshes.size(); ++i) {
-        if (i >= meshResources_.size())
+        if (i >= meshResources_.size()) {
             break;
+        }
 
         auto& res = meshResources_[i];
-        if (!res->GetMaterialData())
+        if (!res->GetMaterialData()) {
             continue;
+        }
 
         const ObjMaterial* cpuMatPtr = &m->cpuModel->meshes[i].material;
         if (materialOverrides_) {

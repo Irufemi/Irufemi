@@ -16,14 +16,18 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // G-Bufferをシェーダーリソースとして要求する
-    if (auto tex = engine->GetEffectMaskTexture())
+    if (auto tex = engine->GetEffectMaskTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetNormalTexture())
+    }
+    if (auto tex = engine->GetNormalTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetMaterialTexture())
+    }
+    if (auto tex = engine->GetMaterialTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetVelocityTexture())
+    }
+    if (auto tex = engine->GetVelocityTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
 
     workTextureHandles_.clear();
     bloomExtractHandle_ = kInvalidHandle;
@@ -43,16 +47,21 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         bool hasKawaseBlur = false;
         bool hasLightShafts = false;
         for (auto mode : activeModes) {
-            if (mode == PostProcessMode::Bloom)
+            if (mode == PostProcessMode::Bloom) {
                 hasBloom = true;
-            if (PostProcessManager::UsesDepthBuffer(mode))
+            }
+            if (PostProcessManager::UsesDepthBuffer(mode)) {
                 usesDepthBuffer = true;
-            if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter)
+            }
+            if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) {
                 hasSeparableBlur = true;
-            if (mode == PostProcessMode::DualKawaseBlur)
+            }
+            if (mode == PostProcessMode::DualKawaseBlur) {
                 hasKawaseBlur = true;
-            if (mode == PostProcessMode::LightShafts)
+            }
+            if (mode == PostProcessMode::LightShafts) {
                 hasLightShafts = true;
+            }
         }
 
         if (usesDepthBuffer) {

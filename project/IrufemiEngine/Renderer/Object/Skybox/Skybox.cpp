@@ -117,11 +117,13 @@ void Skybox::SyncBeforeDraw() {
 }
 
 void Skybox::Draw() {
-    if (!vertexResource_ || !indexResource_ || !engine_)
+    if (!vertexResource_ || !indexResource_ || !engine_) {
         return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged =
@@ -157,8 +159,9 @@ void Skybox::Debug() {
                     "Texture", &selectedTextureIndex_,
                     [](void* data, int idx) {
                         auto* names = reinterpret_cast<std::vector<std::string>*>(data);
-                        if (idx < 0 || idx >= static_cast<int>(names->size()))
+                        if (idx < 0 || idx >= static_cast<int>(names->size())) {
                             return (const char*)nullptr;
+                        }
                         return (*names)[idx].c_str();
                     },
                     &textureNames, static_cast<int>(textureNames.size()))) {

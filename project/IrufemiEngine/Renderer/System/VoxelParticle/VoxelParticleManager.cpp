@@ -36,8 +36,9 @@ VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const 
 }
 
 void VoxelParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
-    if (!handle.IsValid())
+    if (!handle.IsValid()) {
         return;
+    }
 
     // システムを検索してfreeIndicesに戻す
     for (auto& pair : systems_) {
@@ -80,8 +81,9 @@ void VoxelParticleManager::Clear() {
 }
 
 void VoxelParticleManager::UpdateEmitterData(const EmitterHandle& handle, const VoxelEmitter& data) {
-    if (!handle.IsValid())
+    if (!handle.IsValid()) {
         return;
+    }
     handle.system->UpdateEmitterData(handle.emitterIndex, data);
 }
 
@@ -142,8 +144,9 @@ void VoxelParticleManager::PlayExplosion(const std::string& modelName, const Iru
                                          const Irufemi::Vector3& scale, const VoxelEmitter& params,
                                          const Irufemi::Vector3Int& resolution) {
     auto handle = RegisterEmitter(modelName, resolution);
-    if (!handle.IsValid())
+    if (!handle.IsValid()) {
         return; // 制限オーバーで取得できなかった場合は処理しない
+    }
 
     VoxelEmitter explosion = params;
     explosion.emit = 1;

@@ -6,8 +6,9 @@ void SceneTransition::Initialize(PostProcessManager* ppManager) {
 }
 
 void SceneTransition::Start(Type type, float duration, bool isOut, EaseType easeType) {
-    if (!ppManager_)
+    if (!ppManager_) {
         return;
+    }
 
     currentType_ = type;
     easeType_ = easeType;
@@ -59,8 +60,9 @@ void SceneTransition::Start(Type type, float duration, bool isOut, EaseType ease
 }
 
 void SceneTransition::Update(float deltaTime) {
-    if (!isActive_ || !ppManager_)
+    if (!isActive_ || !ppManager_) {
         return;
+    }
 
     timer_ += deltaTime;
     float totalDuration = duration_ + kDwellTime;

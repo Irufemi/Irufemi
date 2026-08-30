@@ -99,11 +99,13 @@ void Sprite::Initialize(const std::string& textureName) {
 }
 
 void Sprite::Update() {
-    if (!resource_ || !cameraManager_)
+    if (!resource_ || !cameraManager_) {
         return;
+    }
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     // アンカーの変更を頂点へ反映
     ApplyAnchorToVertices();
@@ -150,11 +152,13 @@ void Sprite::SyncBeforeDraw() {
 }
 
 void Sprite::Draw() {
-    if (!resource_ || !drawManager_ || !cameraManager_)
+    if (!resource_ || !drawManager_ || !cameraManager_) {
         return;
+    }
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged =
@@ -186,14 +190,16 @@ void Sprite::SetSize(const float& width, const float& height) {
 }
 
 const Irufemi::Vector2 Sprite::GetPosition2D() const {
-    if (!resource_)
+    if (!resource_) {
         return {0.0f, 0.0f};
+    }
     return {resource_->transform_.translate.x, resource_->transform_.translate.y};
 }
 
 void Sprite::ApplyAnchorToVertices() {
-    if (!resource_ || resource_->vertexDataList_.size() < 4)
+    if (!resource_ || resource_->vertexDataList_.size() < 4) {
         return;
+    }
 
     // アンカーによるローカル頂点のずらし
     const float left = 0.0f - anchor_.x;
@@ -210,8 +216,9 @@ void Sprite::ApplyAnchorToVertices() {
 }
 
 bool Sprite::SetTextureRectPixels(int x, int y, int w, int h, bool autoResize) {
-    if (textureSize_.x <= 0.0f || textureSize_.y <= 0.0f)
+    if (textureSize_.x <= 0.0f || textureSize_.y <= 0.0f) {
         return false;
+    }
 
     const int texW = static_cast<int>(textureSize_.x);
     const int texH = static_cast<int>(textureSize_.y);
@@ -220,8 +227,9 @@ bool Sprite::SetTextureRectPixels(int x, int y, int w, int h, bool autoResize) {
     int sy = std::clamp(y, 0, texH);
     int ex = std::clamp(sx + std::max(w, 0), 0, texW);
     int ey = std::clamp(sy + std::max(h, 0), 0, texH);
-    if (ex <= sx || ey <= sy)
+    if (ex <= sx || ey <= sy) {
         return false;
+    }
 
     texRectLeftTop_ = {static_cast<float>(sx), static_cast<float>(sy)};
     texRectSize_ = {static_cast<float>(ex - sx), static_cast<float>(ey - sy)};
@@ -242,8 +250,9 @@ void Sprite::ClearTextureRect() {
 }
 
 void Sprite::SetTexture(const std::string& textureName) {
-    if (!resource_ || !textureManager_)
+    if (!resource_ || !textureManager_) {
         return;
+    }
 
     if (resource_->textureHandle_.IsValid()) {
         textureManager_->ReleaseTexture(resource_->textureHandle_);
@@ -277,12 +286,14 @@ std::string Sprite::GetTextureName() const {
 }
 
 void Sprite::AdjustTextureSize() {
-    if (!textureManager_)
+    if (!textureManager_) {
         return;
+    }
 
     auto names = textureManager_->GetTextureNamesForDebug();
-    if (names.empty())
+    if (names.empty()) {
         return;
+    }
 
     selectedTextureIndex_ = std::clamp(selectedTextureIndex_, 0, static_cast<int>(names.size()) - 1);
 
@@ -339,8 +350,9 @@ void Sprite::Debug([[maybe_unused]] const char* spriteName) {
             bool enabled = useTexRect_;
             if (ImGui::Checkbox("Enable", &enabled)) {
                 useTexRect_ = enabled;
-                if (!useTexRect_)
+                if (!useTexRect_) {
                     ClearTextureRect();
+                }
             }
             int lt[2] = {static_cast<int>(texRectLeftTop_.x), static_cast<int>(texRectLeftTop_.y)};
             int szpx[2] = {static_cast<int>(texRectSize_.x), static_cast<int>(texRectSize_.y)};

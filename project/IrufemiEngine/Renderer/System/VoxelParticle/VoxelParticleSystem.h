@@ -134,8 +134,9 @@ public:
      * @return 取得された EmitterData
      */
     const VoxelEmitter& GetEmitterData(uint32_t index) const {
-        if (index < emittersData_.size())
+        if (index < emittersData_.size()) {
             return emittersData_[index];
+        }
         static VoxelEmitter dummy;
         return dummy;
     }

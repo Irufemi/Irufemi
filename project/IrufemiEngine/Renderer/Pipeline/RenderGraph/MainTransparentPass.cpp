@@ -13,16 +13,21 @@ void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawMa
     }
 
     // G-Bufferをレンダーターゲットとして要求
-    if (auto tex = engine->GetMainRenderTexture())
+    if (auto tex = engine->GetMainRenderTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetEffectMaskTexture())
+    }
+    if (auto tex = engine->GetEffectMaskTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetNormalTexture())
+    }
+    if (auto tex = engine->GetNormalTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetMaterialTexture())
+    }
+    if (auto tex = engine->GetMaterialTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetVelocityTexture())
+    }
+    if (auto tex = engine->GetVelocityTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
 
     // 深度バッファを書き込み可能として要求
     if (auto dx = drawManager->GetDxCommon()) {
@@ -61,8 +66,9 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false,
                            bool isDebugPrimitive = false) {
-        if (queue.empty())
+        if (queue.empty()) {
             return;
+        }
 
         Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
@@ -85,12 +91,13 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
                 if (p.customPSO) {
                     drawManager->BindPSO(p.customPSO);
                 } else {
-                    if (isParticle)
+                    if (isParticle) {
                         engine->ApplyPSO("Particle");
-                    else if (isLine)
+                    } else if (isLine) {
                         engine->ApplyPSO("LineBatch");
-                    else if (isDebugPrimitive)
+                    } else if (isDebugPrimitive) {
                         engine->ApplyPSO("DebugPrimitive");
+                    }
                 }
 
                 currentBlend = p.blendMode;

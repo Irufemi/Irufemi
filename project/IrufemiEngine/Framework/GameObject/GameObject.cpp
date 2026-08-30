@@ -30,8 +30,9 @@ GameObject::GameObject(const std::string& name)
 // GetTransform() is now inline in GameObject.h
 
 void GameObject::SetIsActive(bool isActive) {
-    if (isActive_ == isActive)
+    if (isActive_ == isActive) {
         return;
+    }
     isActive_ = isActive;
 
     if (isActive_) {
@@ -55,8 +56,9 @@ void GameObject::Initialize() {
 }
 
 void GameObject::Start() {
-    if (isStarted_)
+    if (isStarted_) {
         return;
+    }
     isStarted_ = true;
 
     // Use index-based loop to allow components to add components/children during Start
@@ -69,8 +71,9 @@ void GameObject::Start() {
 }
 
 void GameObject::SetName(const std::string& name) {
-    if (name_ == name)
+    if (name_ == name) {
         return;
+    }
     std::string oldName = name_;
     name_ = name;
     if (scene_) {
@@ -91,8 +94,9 @@ void GameObject::SetScene(BaseScene* scene) {
 }
 
 void GameObject::Update(bool isPlayMode) {
-    if (!isActive_)
+    if (!isActive_) {
         return;
+    }
 
     bool isPaused = false;
     if (scene_) {
@@ -128,8 +132,9 @@ void GameObject::Update(bool isPlayMode) {
 }
 
 void GameObject::Draw() {
-    if (!isActive_)
+    if (!isActive_) {
         return;
+    }
     for (size_t i = 0; i < components_.size(); ++i) {
         components_[i]->Draw();
     }
@@ -139,8 +144,9 @@ void GameObject::Draw() {
 }
 
 void GameObject::DrawOutlineMask() {
-    if (!isActive_)
+    if (!isActive_) {
         return;
+    }
     for (size_t i = 0; i < components_.size(); ++i) {
         components_[i]->DrawOutlineMask();
     }
@@ -150,8 +156,9 @@ void GameObject::DrawOutlineMask() {
 }
 
 void GameObject::AddChild(std::shared_ptr<GameObject> child) {
-    if (!child)
+    if (!child) {
         return;
+    }
 
     // 既に親がいる場合は外す
     if (auto currentParent = child->GetParent()) {
@@ -171,8 +178,9 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
 }
 
 void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
-    if (!child)
+    if (!child) {
         return;
+    }
 
     if (auto currentParent = child->GetParent()) {
         currentParent->RemoveChild(child);
@@ -226,8 +234,9 @@ void GameObject::SetParent(std::shared_ptr<GameObject> parent) {
 }
 
 void GameObject::AddComponent(std::shared_ptr<Component> component) {
-    if (!component)
+    if (!component) {
         return;
+    }
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
@@ -244,12 +253,14 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
 }
 
 void GameObject::RemoveComponent(Component* component) {
-    if (!component)
+    if (!component) {
         return;
+    }
 
     // TransformComponentは基本として削除不可とする
-    if (component == transformCache_)
+    if (component == transformCache_) {
         return;
+    }
 
     // componentMap_からの削除
     auto typeIt = componentMap_.find(typeid(*component));
@@ -271,16 +282,21 @@ nlohmann::json GameObject::Serialize() const {
     j["instanceId"] = instanceId_;
 
     // デフォルト値と異なる場合のみ出力
-    if (!name_.empty())
+    if (!name_.empty()) {
         j["name"] = name_;
-    if (!tag_.empty())
+    }
+    if (!tag_.empty()) {
         j["tag"] = tag_;
-    if (!isActive_)
+    }
+    if (!isActive_) {
         j["isActive"] = isActive_; // default is true
-    if (isFolder_)
+    }
+    if (isFolder_) {
         j["isFolder"] = isFolder_; // default is false
-    if (isLocked_)
+    }
+    if (isLocked_) {
         j["isLocked"] = isLocked_; // default is false
+    }
 
     if (!sourcePrefabPath_.empty()) {
         j["prefabPath"] = sourcePrefabPath_;
@@ -305,8 +321,9 @@ nlohmann::json GameObject::Serialize() const {
                 continue;
             }
 
-            if (!cdata.is_object() || cdata.empty())
+            if (!cdata.is_object() || cdata.empty()) {
                 continue;
+            }
 
             bool isOverridden = true; // プレハブに存在しない、または差分がある場合はtrue
 
@@ -390,32 +407,44 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     }
 
     // まずベース(またはローカル)データから基本情報を復元
-    if (baseJ.contains("name"))
+    if (baseJ.contains("name")) {
         name_ = baseJ["name"];
-    if (baseJ.contains("instanceId"))
+    }
+    if (baseJ.contains("instanceId")) {
         instanceId_ = baseJ["instanceId"];
-    if (baseJ.contains("tag"))
+    }
+    if (baseJ.contains("tag")) {
         tag_ = baseJ["tag"];
-    if (baseJ.contains("isActive"))
+    }
+    if (baseJ.contains("isActive")) {
         isActive_ = baseJ["isActive"];
-    if (baseJ.contains("isFolder"))
+    }
+    if (baseJ.contains("isFolder")) {
         isFolder_ = baseJ["isFolder"];
-    if (baseJ.contains("isLocked"))
+    }
+    if (baseJ.contains("isLocked")) {
         isLocked_ = baseJ["isLocked"];
+    }
 
     // ローカル上書き情報がある場合はそれで上書き
-    if (j.contains("name"))
+    if (j.contains("name")) {
         name_ = j["name"];
-    if (j.contains("instanceId"))
+    }
+    if (j.contains("instanceId")) {
         instanceId_ = j["instanceId"];
-    if (j.contains("tag"))
+    }
+    if (j.contains("tag")) {
         tag_ = j["tag"];
-    if (j.contains("isActive"))
+    }
+    if (j.contains("isActive")) {
         isActive_ = j["isActive"];
-    if (j.contains("isFolder"))
+    }
+    if (j.contains("isFolder")) {
         isFolder_ = j["isFolder"];
-    if (j.contains("isLocked"))
+    }
+    if (j.contains("isLocked")) {
         isLocked_ = j["isLocked"];
+    }
 
     if (baseJ.contains("components")) {
         std::vector<std::shared_ptr<Component>> loadedComps;
@@ -547,8 +576,9 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("children") && j["children"].is_array()) {
         for (const auto& cj : j["children"]) {
             auto child = std::make_shared<GameObject>();
-            if (scene_)
+            if (scene_) {
                 child->SetScene(scene_);
+            }
             child->Deserialize(cj);
             AddChild(child);
         }

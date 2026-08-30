@@ -10,8 +10,9 @@
 
 void BossComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto comp = dynamic_cast<BossComponent*>(component);
-    if (!comp)
+    if (!comp) {
         return;
+    }
 
     ImGui::Text("Boss Settings");
     ImGui::Separator();

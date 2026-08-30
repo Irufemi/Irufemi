@@ -19,8 +19,9 @@
 EditorActionManager::EditorActionManager(EditorManager* editor) : editorManager_(editor) {}
 
 void EditorActionManager::PushAndExecute(std::unique_ptr<ICommand> command) {
-    if (!command)
+    if (!command) {
         return;
+    }
 
     // 操作の実行
     command->Do();
@@ -38,8 +39,9 @@ void EditorActionManager::PushAndExecute(std::unique_ptr<ICommand> command) {
 }
 
 void EditorActionManager::Undo() {
-    if (undoStack_.empty())
+    if (undoStack_.empty()) {
         return;
+    }
 
     // Undoスタックから取り出してUndo実行
     auto command = std::move(undoStack_.back());
@@ -52,8 +54,9 @@ void EditorActionManager::Undo() {
 }
 
 void EditorActionManager::Redo() {
-    if (redoStack_.empty())
+    if (redoStack_.empty()) {
         return;
+    }
 
     // Redoスタックから取り出して再度実行
     auto command = std::move(redoStack_.back());
@@ -71,15 +74,18 @@ void EditorActionManager::ClearHistory() {
 }
 
 void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Irufemi::Vector3& position) {
-    if (!editorManager_)
+    if (!editorManager_) {
         return;
+    }
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
+    if (!engine || !engine->GetSceneManager()) {
         return;
+    }
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
+    if (!baseScene) {
         return;
+    }
 
     std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(assetPath.c_str()));
     std::string ext = droppedPath.extension().string();
@@ -128,15 +134,18 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
 }
 
 void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
-    if (!editorManager_)
+    if (!editorManager_) {
         return;
+    }
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
+    if (!engine || !engine->GetSceneManager()) {
         return;
+    }
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
+    if (!baseScene) {
         return;
+    }
 
     std::shared_ptr<GameObject> obj = nullptr;
 
@@ -148,14 +157,15 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
         obj = std::make_shared<GameObject>(typeName);
         obj->GetTransform();
         auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-        if (typeName == "Cube")
+        if (typeName == "Cube") {
             renderer->SetShape(Irufemi::PrimitiveType::Cube);
-        else if (typeName == "Sphere")
+        } else if (typeName == "Sphere") {
             renderer->SetShape(Irufemi::PrimitiveType::Sphere);
-        else if (typeName == "Cylinder")
+        } else if (typeName == "Cylinder") {
             renderer->SetShape(Irufemi::PrimitiveType::Cylinder);
-        else if (typeName == "Plane")
+        } else if (typeName == "Plane") {
             renderer->SetShape(Irufemi::PrimitiveType::Plane);
+        }
         obj->Initialize();
     } else if (typeName == "Model") {
         obj = std::make_shared<GameObject>("Model");
@@ -178,15 +188,18 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
 }
 
 void EditorActionManager::DuplicateObject(std::shared_ptr<GameObject> target) {
-    if (!target || !editorManager_)
+    if (!target || !editorManager_) {
         return;
+    }
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
+    if (!engine || !engine->GetSceneManager()) {
         return;
+    }
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
+    if (!baseScene) {
         return;
+    }
 
     auto clone = target->Clone();
 
@@ -204,15 +217,18 @@ void EditorActionManager::DuplicateObject(std::shared_ptr<GameObject> target) {
 }
 
 void EditorActionManager::DeleteObject(std::shared_ptr<GameObject> target) {
-    if (!target || !editorManager_)
+    if (!target || !editorManager_) {
         return;
+    }
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
+    if (!engine || !engine->GetSceneManager()) {
         return;
+    }
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
+    if (!baseScene) {
         return;
+    }
 
     // 削除コマンドの発行
     PushAndExecute(std::make_unique<DeleteObjectCommand>(baseScene, target));

@@ -26,8 +26,9 @@ void TargetFollowComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint
 }
 
 void TargetFollowComponent::Update() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     // 正確なデルタタイムの取得
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
@@ -46,12 +47,14 @@ void TargetFollowComponent::Update() {
         }
     }
 
-    if (!targetTransform_)
+    if (!targetTransform_) {
         return;
+    }
 
     auto myTransform = GetTransform();
-    if (!myTransform)
+    if (!myTransform) {
         return;
+    }
 
     // プレイヤーの向き（回転角度）から進行方向をベースとしたローカル座標系を作成
     float yaw = targetTransform_->GetWorldRotation().y;

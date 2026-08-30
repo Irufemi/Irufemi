@@ -21,8 +21,9 @@ void InspectorPanel::Initialize(EditorManager* editorManager) {
 }
 
 void InspectorPanel::Draw() {
-    if (!editorManager_)
+    if (!editorManager_) {
         return;
+    }
 
     ImGui::Begin("Inspector");
 
@@ -40,8 +41,9 @@ void InspectorPanel::Draw() {
         if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer))) {
             selected->SetName(nameBuffer);
         }
-        if (ImGui::IsItemActivated())
+        if (ImGui::IsItemActivated()) {
             startName = selected->GetName();
+        }
         if (ImGui::IsItemDeactivatedAfterEdit()) {
             std::string endName = selected->GetName();
             editorManager_->GetActionManager()->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
@@ -83,13 +85,15 @@ void InspectorPanel::Draw() {
                 std::unordered_set<std::string> existingComponents;
 
                 for (const auto& comp : sel->GetComponents()) {
-                    if (!comp)
+                    if (!comp) {
                         continue;
+                    }
                     std::string name = comp->GetComponentName();
                     existingComponents.insert(name);
 
-                    if (name == "TransformComponent")
+                    if (name == "TransformComponent") {
                         hasTransform = true;
+                    }
                     if (name.find("Renderer") != std::string::npos) {
                         hasAnyRenderer = true;
                     }
@@ -98,8 +102,9 @@ void InspectorPanel::Draw() {
                 // カテゴリ分類
                 std::map<std::string, std::vector<std::string>> categories;
                 for (const auto& [name, reg] : ComponentFactory::GetFactoryMap()) {
-                    if (name == "TransformComponent")
+                    if (name == "TransformComponent") {
                         continue; // 個別処理
+                    }
 
                     categories[reg.category].push_back(name);
                 }
@@ -148,11 +153,13 @@ void InspectorPanel::Draw() {
                 if (ImGui::BeginMenu("Remove Component")) {
                     bool hasRemovable = false;
                     for (auto& comp : sel->GetComponents()) {
-                        if (!comp)
+                        if (!comp) {
                             continue;
+                        }
                         std::string compName = comp->GetComponentName();
-                        if (compName == "TransformComponent")
+                        if (compName == "TransformComponent") {
                             continue; // Transformは削除不可
+                        }
 
                         hasRemovable = true;
                         if (ImGui::Selectable(compName.c_str())) {

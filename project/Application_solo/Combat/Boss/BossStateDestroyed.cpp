@@ -31,20 +31,23 @@ void BossStateDestroyed::Enter(BossComponent* boss) {
         // 演出エフェクトが始まったタイミングでボスのモデル描画をすべて切る
         auto renderers = boss->gameObject_->GetComponentsInChildren<MeshRendererComponent>();
         for (auto* r : renderers) {
-            if (r)
+            if (r) {
                 r->SetVisible(false);
+            }
         }
         auto skinnedRenderers = boss->gameObject_->GetComponentsInChildren<SkinnedMeshRendererComponent>();
         for (auto* r : skinnedRenderers) {
-            if (r)
+            if (r) {
                 r->SetVisible(false);
+            }
         }
     }
 }
 
 void BossStateDestroyed::Update(BossComponent* boss) {
-    if (hasFinished_)
+    if (hasFinished_) {
         return;
+    }
 
     if (shakeComp_) {
         if (!shakeComp_->IsPlaying()) {

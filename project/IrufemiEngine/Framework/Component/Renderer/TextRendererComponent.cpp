@@ -25,8 +25,9 @@ void TextRendererComponent::Initialize() {
 }
 
 void TextRendererComponent::Update() {
-    if (!GetTransform() || !textObj_)
+    if (!GetTransform() || !textObj_) {
         return;
+    }
 
     // Reflection / Deserialize sync
     std::wstring newText = ConvertString(textU8_);
@@ -71,11 +72,13 @@ void TextRendererComponent::Draw() {
 }
 
 bool TextRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!gameObject_)
+    if (!gameObject_) {
         return false;
+    }
     auto transform = GetTransform();
-    if (!transform)
+    if (!transform) {
         return false;
+    }
 
     // 簡易的にBoundingSphereで判定
     Irufemi::Sphere sphere;

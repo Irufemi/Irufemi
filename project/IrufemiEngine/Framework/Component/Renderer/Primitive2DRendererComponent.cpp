@@ -128,12 +128,15 @@ nlohmann::json Primitive2DRendererComponent::Serialize() {
 }
 
 void Primitive2DRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("currentTypeIndex"))
+    if (j.contains("currentTypeIndex")) {
         currentTypeIndex_ = j["currentTypeIndex"];
-    if (j.contains("texturePath"))
+    }
+    if (j.contains("texturePath")) {
         texturePath_ = j["texturePath"];
-    if (j.contains("isTopMost"))
+    }
+    if (j.contains("isTopMost")) {
         isTopMost_ = j["isTopMost"];
+    }
 
     if (j.contains("size") && j["size"].is_array() && j["size"].size() == 2) {
         size_.x = j["size"][0];
@@ -149,10 +152,12 @@ void Primitive2DRendererComponent::Deserialize(const nlohmann::json& j) {
         color_.z = j["color"][2];
         color_.w = j["color"][3];
     }
-    if (j.contains("thickness"))
+    if (j.contains("thickness")) {
         thickness_ = j["thickness"];
-    if (j.contains("subdivision"))
+    }
+    if (j.contains("subdivision")) {
         subdivision_ = j["subdivision"];
+    }
 
     // すでにインスタンス化されている場合はパラメータを適用
     if (primitive_) {

@@ -56,11 +56,13 @@ void Primitive3DObject::ReinitializeMesh(const PrimitiveData& data) {
 }
 
 void Primitive3DObject::Update() {
-    if (!mesh_.resource || !engine_)
+    if (!mesh_.resource || !engine_) {
         return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     // 必要に応じてトランスフォーム更新
     if (transform_.isDirty) {
@@ -75,16 +77,18 @@ void Primitive3DObject::Update() {
 }
 
 void Primitive3DObject::Draw() {
-    if (!engine_)
+    if (!engine_) {
         return;
+    }
     if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
         Draw(*activeCam, false);
     }
 }
 
 void Primitive3DObject::Draw(bool isUI) {
-    if (!engine_)
+    if (!engine_) {
         return;
+    }
     if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
         Draw(*activeCam, isUI);
     }
@@ -95,8 +99,9 @@ void Primitive3DObject::Draw(const Camera& camera) {
 }
 
 void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
-    if (!mesh_.resource || !drawManager_)
+    if (!mesh_.resource || !drawManager_) {
         return;
+    }
 
     // 視錐台カリング
     if (isCullingEnabled_) {
@@ -146,15 +151,17 @@ void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
 }
 
 void Primitive3DObject::DrawOutlineMask() {
-    if (!mesh_.resource || !drawManager_)
+    if (!mesh_.resource || !drawManager_) {
         return;
+    }
     drawManager_->SubmitOutlineMask(mesh_.resource.get(), nullptr);
 }
 
 void Primitive3DObject::Debug(const char* label) {
 #ifdef USE_IMGUI
-    if (!ui_)
+    if (!ui_) {
         return;
+    }
 
     ImGui::Begin(label);
 
@@ -170,12 +177,15 @@ void Primitive3DObject::Debug(const char* label) {
 
     // --- Irufemi::Transform Component ---
     if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImGui::DragFloat3("Position", &transform_.transform.translate.x, 0.01f))
+        if (ImGui::DragFloat3("Position", &transform_.transform.translate.x, 0.01f)) {
             transform_.isDirty = true;
-        if (ImGui::DragFloat3("Rotation", &transform_.transform.rotate.x, 0.01f))
+        }
+        if (ImGui::DragFloat3("Rotation", &transform_.transform.rotate.x, 0.01f)) {
             transform_.isDirty = true;
-        if (ImGui::DragFloat3("Scale", &transform_.transform.scale.x, 0.01f))
+        }
+        if (ImGui::DragFloat3("Scale", &transform_.transform.scale.x, 0.01f)) {
             transform_.isDirty = true;
+        }
         ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
     }
 

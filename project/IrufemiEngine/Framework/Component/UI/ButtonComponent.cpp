@@ -26,15 +26,17 @@ void ButtonComponent::Initialize() {
 }
 
 bool ButtonComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
-    if (!GetTransform() || !sprite_)
+    if (!GetTransform() || !sprite_) {
         return false;
+    }
 
     Irufemi::Vector3 pos = GetTransform()->GetWorldPosition();
     Irufemi::Vector3 scale = GetTransform()->GetWorldScale();
 
     auto* s = sprite_->GetSprite();
-    if (!s)
+    if (!s) {
         return false;
+    }
 
     // スプライトのアンカーとサイズを取得
     Irufemi::Vector2 anchor = s->GetAnchor();
@@ -57,20 +59,24 @@ bool ButtonComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
 }
 
 void ButtonComponent::Update() {
-    if (!sprite_ || !gameObject_)
+    if (!sprite_ || !gameObject_) {
         return;
+    }
 
     auto scene = gameObject_->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
     auto engine = scene->GetEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     auto input = engine->GetInputManager();
     auto cameraManager = engine->GetCameraManager();
-    if (!input || !cameraManager || !cameraManager->GetActiveCamera())
+    if (!input || !cameraManager || !cameraManager->GetActiveCamera()) {
         return;
+    }
 
     Irufemi::Vector2 mousePos = input->GetMousePosition();
     Irufemi::Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);

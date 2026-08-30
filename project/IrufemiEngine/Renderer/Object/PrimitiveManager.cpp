@@ -99,8 +99,9 @@ const PrimitiveResource& PrimitiveManager::GetCylinderResource(bool hasTop, bool
 
 void PrimitiveManager::CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource) {
     auto* dxCommon = BaseResource::GetDirectXCommon();
-    if (!dxCommon)
+    if (!dxCommon) {
         return;
+    }
 
     resource.indexCount = static_cast<uint32_t>(data.indices.size());
 
@@ -379,8 +380,9 @@ void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, const RingParam
     const float pi = std::numbers::pi_v<float>;
     float startRad = params.startAngle * (pi / 180.0f);
     float endRad = params.endAngle * (pi / 180.0f);
-    if (endRad <= startRad)
+    if (endRad <= startRad) {
         endRad += 2.0f * pi;
+    }
     float arc = endRad - startRad;
     float radianPerDivide = arc / static_cast<float>(params.segments);
     float fadeRangeRad = params.fadeRangeAngle * (pi / 180.0f);
@@ -401,8 +403,9 @@ void PrimitiveManager::GenerateRingVertices(PrimitiveData& data, const RingParam
 
         // アルファフェードの計算
         auto calculateAlpha = [&](float currentAngleRad) {
-            if (fadeRangeRad <= 0.0f)
+            if (fadeRangeRad <= 0.0f) {
                 return 1.0f;
+            }
 
             float distanceFromStart = currentAngleRad - startRad;
             float distanceFromEnd = endRad - currentAngleRad;
@@ -619,8 +622,9 @@ PrimitiveData PrimitiveManager::CreateIcoSphere(float radius, uint32_t subdivisi
                                           {4, 9, 5},  {2, 4, 11}, {6, 2, 10},  {8, 6, 7},  {9, 8, 1}};
     auto getMiddle = [&](uint32_t p1, uint32_t p2, std::map<uint64_t, uint32_t>& cache) {
         uint64_t key = (static_cast<uint64_t>((std::min)(p1, p2)) << 32) | (std::max)(p1, p2);
-        if (cache.count(key))
+        if (cache.count(key)) {
             return cache[key];
+        }
         Irufemi::Vector3 v1 = verts[p1], v2 = verts[p2];
         Irufemi::Vector3 m = {(v1.x + v2.x) / 2, (v1.y + v2.y) / 2, (v1.z + v2.z) / 2};
         float l = std::sqrt(m.x * m.x + m.y * m.y + m.z * m.z);

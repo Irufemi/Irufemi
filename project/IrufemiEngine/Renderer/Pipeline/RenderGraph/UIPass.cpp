@@ -60,8 +60,9 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     cmdList->RSSetScissorRects(1, &scissor);
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
-        if (queue.empty())
+        if (queue.empty()) {
             return;
+        }
 
         Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;

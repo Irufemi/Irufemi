@@ -71,20 +71,23 @@ std::shared_ptr<GameObject> EditorManager::GetSelectedObject() const {
 }
 
 void EditorManager::SetSelectedObject(std::shared_ptr<GameObject> obj) {
-    if (engine_)
+    if (engine_) {
         engine_->SetSelectedObject(obj);
+    }
 }
 
 void EditorManager::ClearSelectedObject() {
-    if (engine_)
+    if (engine_) {
         engine_->SetSelectedObject(nullptr);
+    }
 }
 
 void EditorManager::OnUpdate(float deltaTime) {
     if (isStepRequested_) {
         // 次のフレームで再び停止
-        if (engine_)
+        if (engine_) {
             engine_->SetTimeScale(0.0f);
+        }
         isStepRequested_ = false;
     }
 
@@ -94,11 +97,13 @@ void EditorManager::OnUpdate(float deltaTime) {
 }
 
 void EditorManager::EnterPlayMode() {
-    if (!engine_ || !engine_->GetSceneManager())
+    if (!engine_ || !engine_->GetSceneManager()) {
         return;
+    }
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
 
     std::string currentSceneName = engine_->GetSceneManager()->GetCurrent();
 
@@ -132,8 +137,9 @@ void EditorManager::EnterPlayMode() {
 }
 
 void EditorManager::ExitPlayMode() {
-    if (!engine_ || !engine_->GetSceneManager())
+    if (!engine_ || !engine_->GetSceneManager()) {
         return;
+    }
 
     std::string currentSceneName = engine_->GetSceneManager()->GetCurrent();
 
@@ -147,8 +153,9 @@ void EditorManager::ExitPlayMode() {
     }
 
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
 
     // プレイモード中の選択状態をクリア
     ClearSelectedObject();
@@ -173,25 +180,29 @@ void EditorManager::ExitPlayMode() {
 void EditorManager::TogglePauseMode() {
     if (currentMode_ == EditorModeState::Playing) {
         currentMode_ = EditorModeState::Paused;
-        if (engine_)
+        if (engine_) {
             engine_->SetTimeScale(0.0f); // 時を止める
+        }
     } else if (currentMode_ == EditorModeState::Paused) {
         currentMode_ = EditorModeState::Playing;
-        if (engine_)
+        if (engine_) {
             engine_->SetTimeScale(1.0f); // 時を動かす
+        }
     }
 }
 
 void EditorManager::EnterPrefabMode(const std::string& prefabPath) {
-    if (!engine_ || !engine_->GetSceneManager())
+    if (!engine_ || !engine_->GetSceneManager()) {
         return;
+    }
     if (currentMode_ == EditorModeState::Playing || currentMode_ == EditorModeState::Paused) {
         ExitPlayMode();
     }
 
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
 
     // 現在のシーン状態をバックアップ
     SceneSerializer::Save(scene, "temp/.temp_prefab_backup");
@@ -222,11 +233,13 @@ void EditorManager::EnterPrefabMode(const std::string& prefabPath) {
 }
 
 void EditorManager::ExitPrefabMode(bool saveChanges) {
-    if (!engine_ || !engine_->GetSceneManager())
+    if (!engine_ || !engine_->GetSceneManager()) {
         return;
+    }
     auto scene = engine_->GetSceneManager()->GetCurrentScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
 
     if (saveChanges) {
         if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
@@ -256,8 +269,9 @@ void EditorManager::ExitPrefabMode(bool saveChanges) {
 }
 
 void EditorManager::OnDrawUI() {
-    if (!engine_ || !engine_->GetMainRenderTexture())
+    if (!engine_ || !engine_->GetMainRenderTexture()) {
         return;
+    }
 
     // 1. 全画面を覆う DockSpace の背景ウィンドウを作成
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -373,25 +387,32 @@ void EditorManager::OnDrawUI() {
         }
 
         if (ImGui::BeginMenu("GameObject")) {
-            if (ImGui::MenuItem("Create Empty"))
+            if (ImGui::MenuItem("Create Empty")) {
                 actionManager_->CreatePrimitiveObject("Empty");
+            }
             if (ImGui::BeginMenu("3D Object")) {
-                if (ImGui::MenuItem("Cube"))
+                if (ImGui::MenuItem("Cube")) {
                     actionManager_->CreatePrimitiveObject("Cube");
-                if (ImGui::MenuItem("Sphere"))
+                }
+                if (ImGui::MenuItem("Sphere")) {
                     actionManager_->CreatePrimitiveObject("Sphere");
-                if (ImGui::MenuItem("Cylinder"))
+                }
+                if (ImGui::MenuItem("Cylinder")) {
                     actionManager_->CreatePrimitiveObject("Cylinder");
-                if (ImGui::MenuItem("Plane"))
+                }
+                if (ImGui::MenuItem("Plane")) {
                     actionManager_->CreatePrimitiveObject("Plane");
+                }
                 ImGui::Separator();
-                if (ImGui::MenuItem("Model (MeshRenderer)"))
+                if (ImGui::MenuItem("Model (MeshRenderer)")) {
                     actionManager_->CreatePrimitiveObject("Model");
+                }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("2D Object")) {
-                if (ImGui::MenuItem("Sprite"))
+                if (ImGui::MenuItem("Sprite")) {
                     actionManager_->CreatePrimitiveObject("Sprite");
+                }
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();
@@ -471,10 +492,11 @@ void EditorManager::OnDrawUI() {
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
         }
         if (ImGui::Button(ICON_FA_PLAY, ImVec2(playButtonWidth, playButtonHeight))) {
-            if (currentMode_ == EditorModeState::Edit)
+            if (currentMode_ == EditorModeState::Edit) {
                 EnterPlayMode();
-            else if (currentMode_ == EditorModeState::Paused)
+            } else if (currentMode_ == EditorModeState::Paused) {
                 TogglePauseMode();
+            }
         }
         ImGui::PopStyleColor();
 
@@ -488,8 +510,9 @@ void EditorManager::OnDrawUI() {
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
         }
         if (ImGui::Button(ICON_FA_PAUSE, ImVec2(playButtonWidth, playButtonHeight))) {
-            if (currentMode_ != EditorModeState::Edit)
+            if (currentMode_ != EditorModeState::Edit) {
                 TogglePauseMode();
+            }
         }
         ImGui::PopStyleColor();
 
@@ -501,8 +524,9 @@ void EditorManager::OnDrawUI() {
         if (ImGui::Button(ICON_FA_FORWARD_STEP, ImVec2(playButtonWidth, playButtonHeight))) {
             if (currentMode_ == EditorModeState::Paused) {
                 isStepRequested_ = true;
-                if (engine_)
+                if (engine_) {
                     engine_->SetTimeScale(1.0f); // 時を1フレームだけ動かす
+                }
             }
         }
         ImGui::PopStyleColor();
@@ -514,8 +538,9 @@ void EditorManager::OnDrawUI() {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.1f, 0.1f, 1.0f));
         if (ImGui::Button(ICON_FA_STOP, ImVec2(playButtonWidth, playButtonHeight))) {
-            if (currentMode_ != EditorModeState::Edit)
+            if (currentMode_ != EditorModeState::Edit) {
                 ExitPlayMode();
+            }
         }
         ImGui::PopStyleColor(2);
 

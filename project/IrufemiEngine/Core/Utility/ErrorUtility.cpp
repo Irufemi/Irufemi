@@ -38,8 +38,9 @@ void ErrorUtility::ShowErrorBox(const std::string& title, const std::string& mes
 void ErrorUtility::Assert(bool condition, const std::string& msg, const char* file, int line) {
     if (!condition) {
         std::string fullMsg = "Assertion Failed!\n";
-        if (!msg.empty())
+        if (!msg.empty()) {
             fullMsg += "Message: " + msg + "\n";
+        }
         if (file) {
             fullMsg += "File: " + std::string(file) + "\n";
             fullMsg += "Line: " + std::to_string(line) + "\n";
@@ -68,8 +69,9 @@ void ErrorUtility::Assert(bool condition, const std::string& msg, const char* fi
 void ErrorUtility::Warning(bool condition, const std::string& msg, const char* file, int line) {
     if (!condition) {
         std::string fullMsg = "[WARNING] ";
-        if (!msg.empty())
+        if (!msg.empty()) {
             fullMsg += msg + " ";
+        }
         if (file) {
             fullMsg += "(File: " + std::string(file) + ", Line: " + std::to_string(line) + ")\n";
         }

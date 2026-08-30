@@ -7,16 +7,18 @@
 OBBColliderComponent::OBBColliderComponent() {}
 
 OBBColliderComponent::~OBBColliderComponent() {
-    if (collisionManager_)
+    if (collisionManager_) {
         collisionManager_->UnregisterCollider(this);
+    }
 }
 
 void OBBColliderComponent::Initialize() {
     if (gameObject_) {
     }
     // 初期化時にCollisionManagerに自身を登録する
-    if (collisionManager_)
+    if (collisionManager_) {
         collisionManager_->RegisterCollider(this);
+    }
 }
 
 void OBBColliderComponent::Update() {
@@ -98,10 +100,12 @@ void OBBColliderComponent::Deserialize(const nlohmann::json& j) {
         localSize_.y = j["size"][1];
         localSize_.z = j["size"][2];
     }
-    if (j.contains("layer"))
+    if (j.contains("layer")) {
         layer_ = j["layer"];
-    if (j.contains("mask"))
+    }
+    if (j.contains("mask")) {
         mask_ = j["mask"];
+    }
 }
 
 std::shared_ptr<Component> OBBColliderComponent::Clone() {

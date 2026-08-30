@@ -42,8 +42,9 @@ int32_t DynamicBVH::AllocateNode() {
 }
 
 void DynamicBVH::FreeNode(int32_t nodeId) {
-    if (nodeId < 0 || nodeId >= nodes_.size())
+    if (nodeId < 0 || nodeId >= nodes_.size()) {
         return;
+    }
 
     // nextポインタの代わりにparentIndexを使ってリストを繋ぐ
     nodes_[nodeId].parentIndex = freeListFirst_;
@@ -73,12 +74,15 @@ float DynamicBVH::SurfaceArea(const AABB& aabb) const {
 }
 
 bool DynamicBVH::Intersects(const AABB& a, const AABB& b) const {
-    if (a.max.x < b.min.x || a.min.x > b.max.x)
+    if (a.max.x < b.min.x || a.min.x > b.max.x) {
         return false;
-    if (a.max.y < b.min.y || a.min.y > b.max.y)
+    }
+    if (a.max.y < b.min.y || a.min.y > b.max.y) {
         return false;
-    if (a.max.z < b.min.z || a.min.z > b.max.z)
+    }
+    if (a.max.z < b.min.z || a.min.z > b.max.z) {
         return false;
+    }
     return true;
 }
 
@@ -102,15 +106,17 @@ int32_t DynamicBVH::Insert(ColliderComponent* collider, const AABB& aabb) {
 }
 
 void DynamicBVH::Remove(int32_t nodeId) {
-    if (nodeId == -1)
+    if (nodeId == -1) {
         return;
+    }
     RemoveLeaf(nodeId);
     FreeNode(nodeId);
 }
 
 void DynamicBVH::Update(int32_t nodeId, const AABB& newAABB) {
-    if (nodeId == -1 || nodeId >= nodes_.size())
+    if (nodeId == -1 || nodeId >= nodes_.size()) {
         return;
+    }
 
     // 現在のFattened AABBが、新しいAABBを完全に包んでいるかチェック
     const AABB& fatAABB = nodes_[nodeId].aabb;
@@ -273,8 +279,9 @@ void DynamicBVH::GetPotentialCollisionPairs(
 
 void DynamicBVH::ComputePairs(int32_t node0, int32_t node1,
                               std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
-    if (node0 == -1 || node1 == -1)
+    if (node0 == -1 || node1 == -1) {
         return;
+    }
 
     if (!Intersects(nodes_[node0].aabb, nodes_[node1].aabb)) {
         return;
@@ -313,8 +320,9 @@ void DynamicBVH::ComputePairs(int32_t node0, int32_t node1,
 }
 
 void DynamicBVH::Query(const AABB& testAabb, std::vector<ColliderComponent*>& outColliders) const {
-    if (rootIndex_ == -1)
+    if (rootIndex_ == -1) {
         return;
+    }
 
     std::vector<int32_t> stack;
     stack.reserve(256);
@@ -338,8 +346,9 @@ void DynamicBVH::Query(const AABB& testAabb, std::vector<ColliderComponent*>& ou
 }
 
 void DynamicBVH::RaycastQuery(const Ray& ray, float maxDistance, std::vector<ColliderComponent*>& outHits) const {
-    if (rootIndex_ == -1)
+    if (rootIndex_ == -1) {
         return;
+    }
 
     std::vector<int32_t> stack;
     stack.reserve(256);

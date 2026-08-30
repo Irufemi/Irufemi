@@ -40,8 +40,9 @@ void CollisionManager::Clear() {
 }
 
 void CollisionManager::RegisterCollider(ColliderComponent* collider) {
-    if (!collider)
+    if (!collider) {
         return;
+    }
     std::unique_lock<std::shared_mutex> lock(collidersMutex_);
     // 重複登録防止
     auto it = std::find(colliders_.begin(), colliders_.end(), collider);
@@ -52,8 +53,9 @@ void CollisionManager::RegisterCollider(ColliderComponent* collider) {
 }
 
 void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
-    if (!collider)
+    if (!collider) {
         return;
+    }
 
     std::unique_lock<std::shared_mutex> lock(collidersMutex_);
 
@@ -94,19 +96,22 @@ void CollisionManager::CheckAllCollisions() {
 
     // --- BVH Update Phase ---
     for (ColliderComponent* collider : colliders_) {
-        if (!collider)
+        if (!collider) {
             continue;
+        }
         auto go = collider->GetGameObject();
-        if (!go)
+        if (!go) {
             continue;
+        }
         if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
             Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
                                           std::format("{:X}", reinterpret_cast<uintptr_t>(go)) +
                                           ") in CollisionManager!\n");
             continue;
         }
-        if (!go->GetIsActive())
+        if (!go->GetIsActive()) {
             continue;
+        }
         dynamicBVH_.Update(collider->bvhNodeId_, collider->GetBoundingBox());
     }
 
@@ -115,41 +120,48 @@ void CollisionManager::CheckAllCollisions() {
 
     for (size_t i = 0; i < colliders_.size(); ++i) {
         ColliderComponent* colA = colliders_[i];
-        if (!colA)
+        if (!colA) {
             continue;
+        }
         auto goA = colA->GetGameObject();
-        if (!goA)
+        if (!goA) {
             continue;
+        }
         if (reinterpret_cast<uintptr_t>(goA) < 0x1000) {
             Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
                                           std::format("{:X}", reinterpret_cast<uintptr_t>(goA)) +
                                           ") in CheckAllCollisions (colA)!\n");
             continue;
         }
-        if (!goA->GetIsActive())
+        if (!goA->GetIsActive()) {
             continue;
+        }
 
         potentialHits.clear();
         dynamicBVH_.Query(colA->GetBoundingBox(), potentialHits);
 
         for (ColliderComponent* colB : potentialHits) {
-            if (!colB || colA == colB)
+            if (!colB || colA == colB) {
                 continue;
+            }
             auto goB = colB->GetGameObject();
-            if (!goB)
+            if (!goB) {
                 continue;
+            }
             if (reinterpret_cast<uintptr_t>(goB) < 0x1000) {
                 Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
                                               std::format("{:X}", reinterpret_cast<uintptr_t>(goB)) +
                                               ") in CheckAllCollisions (colB)!\n");
                 continue;
             }
-            if (!goB->GetIsActive())
+            if (!goB->GetIsActive()) {
                 continue;
+            }
 
             // 重複判定を防ぐため、アドレスが小さい方から大きい方へのみ判定を行う
-            if (colA >= colB)
+            if (colA >= colB) {
                 continue;
+            }
 
             // フィルタリング
             if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
@@ -213,27 +225,35 @@ void CollisionManager::CheckAllCollisions() {
                 if (previousCollisions_.find(pairKey) == previousCollisions_.end()) {
                     // 新規衝突 (Enter)
                     if (result.isHit) {
-                        if (colA->onCollisionEnter_)
+                        if (colA->onCollisionEnter_) {
                             colA->onCollisionEnter_(colB);
-                        if (colB->onCollisionEnter_)
+                        }
+                        if (colB->onCollisionEnter_) {
                             colB->onCollisionEnter_(colA);
+                        }
 
-                        if (colA->GetGameObject())
+                        if (colA->GetGameObject()) {
                             colA->GetGameObject()->SendCollisionEnter(colB->GetGameObject());
-                        if (colB->GetGameObject())
+                        }
+                        if (colB->GetGameObject()) {
                             colB->GetGameObject()->SendCollisionEnter(colA->GetGameObject());
+                        }
                     }
                 } else {
                     // 継続衝突 (Stay)
-                    if (colA->onCollisionStay_)
+                    if (colA->onCollisionStay_) {
                         colA->onCollisionStay_(colB);
-                    if (colB->onCollisionStay_)
+                    }
+                    if (colB->onCollisionStay_) {
                         colB->onCollisionStay_(colA);
+                    }
 
-                    if (colA->GetGameObject())
+                    if (colA->GetGameObject()) {
                         colA->GetGameObject()->SendCollisionStay(colB->GetGameObject());
-                    if (colB->GetGameObject())
+                    }
+                    if (colB->GetGameObject()) {
                         colB->GetGameObject()->SendCollisionStay(colA->GetGameObject());
+                    }
                 }
 
                 // --- 押し戻し処理 (Kinematic Resolution) ---
@@ -271,15 +291,19 @@ void CollisionManager::CheckAllCollisions() {
             ColliderComponent* colA = pair.first;
             ColliderComponent* colB = pair.second;
 
-            if (colA && colA->onCollisionExit_)
+            if (colA && colA->onCollisionExit_) {
                 colA->onCollisionExit_(colB);
-            if (colB && colB->onCollisionExit_)
+            }
+            if (colB && colB->onCollisionExit_) {
                 colB->onCollisionExit_(colA);
+            }
 
-            if (colA && colA->GetGameObject())
+            if (colA && colA->GetGameObject()) {
                 colA->GetGameObject()->SendCollisionExit(colB ? colB->GetGameObject() : nullptr);
-            if (colB && colB->GetGameObject())
+            }
+            if (colB && colB->GetGameObject()) {
                 colB->GetGameObject()->SendCollisionExit(colA ? colA->GetGameObject() : nullptr);
+            }
         }
     }
 
@@ -288,25 +312,29 @@ void CollisionManager::CheckAllCollisions() {
 }
 
 void CollisionManager::DrawDebug(GameObject* selectedObject) {
-    if (!debugLine_)
+    if (!debugLine_) {
         return;
+    }
 
     debugLine_->ClearInstances();
 
     for (ColliderComponent* collider : colliders_) {
-        if (!collider)
+        if (!collider) {
             continue;
+        }
         auto go = collider->GetGameObject();
-        if (!go)
+        if (!go) {
             continue;
+        }
         if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
             Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
                                           std::format("{:X}", reinterpret_cast<uintptr_t>(go)) +
                                           ") in CollisionManager!\n");
             continue;
         }
-        if (!go->GetIsActive())
+        if (!go->GetIsActive()) {
             continue;
+        }
 
         bool isSelected = false;
         if (selectedObject) {
@@ -335,8 +363,9 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
         }
 
         // 全体表示OFFのときでも、選択中のオブジェクト（またはその親・子）のコライダーは表示する
-        if (!isDrawDebugLine_ && !isSelected)
+        if (!isDrawDebugLine_ && !isSelected) {
             continue;
+        }
 
         Irufemi::Vector4 color =
             isSelected ? Irufemi::Vector4{1.0f, 0.5f, 0.0f, 1.0f} : Irufemi::Vector4{0.0f, 1.0f, 0.0f, 1.0f};
@@ -473,27 +502,32 @@ bool CollisionManager::Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, flo
     dynamicBVH_.RaycastQuery(ray, maxDistance, potentialHits);
 
     for (ColliderComponent* collider : potentialHits) {
-        if (!collider)
+        if (!collider) {
             continue;
+        }
         auto go = collider->GetGameObject();
-        if (!go)
+        if (!go) {
             continue;
+        }
         if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
             Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
                                           std::format("{:X}", reinterpret_cast<uintptr_t>(go)) +
                                           ") in CollisionManager!\n");
             continue;
         }
-        if (!go->GetIsActive())
+        if (!go->GetIsActive()) {
             continue;
+        }
 
         // 除外オブジェクトならスキップ
-        if (ignoreObject && collider->GetGameObject() == ignoreObject)
+        if (ignoreObject && collider->GetGameObject() == ignoreObject) {
             continue;
+        }
 
         // 指定されたレイヤーマスクに合致するか判定
-        if ((collider->layer_ & layerMask) == 0)
+        if ((collider->layer_ & layerMask) == 0) {
             continue;
+        }
 
         float distance = 0.0f;
         bool isHit = false;

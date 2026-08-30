@@ -46,16 +46,18 @@ void TransientResourceManager::ResetForFrame() {
 ID3D12Resource* TransientResourceManager::AcquirePlacedResource(const D3D12_RESOURCE_DESC& desc, uint64_t offset,
                                                                 D3D12_RESOURCE_STATES initialState,
                                                                 const D3D12_CLEAR_VALUE* clearValue) {
-    if (!heap_)
+    if (!heap_) {
         return nullptr;
+    }
 
     // 1. キャッシュから検索
     for (auto& res : resourcePool_) {
         bool clearValueMatch = false;
-        if (!clearValue && !res.hasClearValue)
+        if (!clearValue && !res.hasClearValue) {
             clearValueMatch = true;
-        else if (clearValue && res.hasClearValue && res.clearValue.Format == clearValue->Format)
+        } else if (clearValue && res.hasClearValue && res.clearValue.Format == clearValue->Format) {
             clearValueMatch = true; // 色の完全一致までは今回は省略可能
+        }
 
         if (!res.inUse && res.offset == offset && res.desc.Width == desc.Width && res.desc.Height == desc.Height &&
             res.desc.Format == desc.Format && res.desc.Flags == desc.Flags &&
@@ -80,8 +82,9 @@ ID3D12Resource* TransientResourceManager::AcquirePlacedResource(const D3D12_RESO
         cache.resource = resource;
         cache.inUse = true;
         cache.hasClearValue = (clearValue != nullptr);
-        if (clearValue)
+        if (clearValue) {
             cache.clearValue = *clearValue;
+        }
         cache.allocationSize = allocInfo.SizeInBytes;
         resourcePool_.push_back(cache);
         return resource.Get();
@@ -109,8 +112,9 @@ void TransientResourceManager::DebugUI() {
 
         // Draw each placed resource
         for (const auto& res : resourcePool_) {
-            if (!res.inUse)
+            if (!res.inUse) {
                 continue;
+            }
 
             float startRatio = static_cast<float>(res.offset) / static_cast<float>(heapSize_);
             float sizeRatio = static_cast<float>(res.allocationSize) / static_cast<float>(heapSize_);

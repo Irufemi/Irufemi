@@ -15,14 +15,16 @@ void BossStateIdle::Enter(BossComponent* boss) {
 }
 
 void BossStateIdle::Update(BossComponent* boss) {
-    if (!boss->gameObject_)
+    if (!boss->gameObject_) {
         return;
+    }
 
     // --- ビーム攻撃のタイマー処理 ---
     if (boss->beamComponent_) {
         float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-        if (deltaTime <= 0.0f)
+        if (deltaTime <= 0.0f) {
             deltaTime = 1.0f / 60.0f;
+        }
 
         if (!boss->beamComponent_->IsActive()) {
             boss->beamTimer_ += deltaTime;

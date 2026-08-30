@@ -16,14 +16,18 @@ void PostUIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, Ir
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // G-Bufferをシェーダーリソースとして要求する
-    if (auto tex = engine->GetEffectMaskTexture())
+    if (auto tex = engine->GetEffectMaskTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetNormalTexture())
+    }
+    if (auto tex = engine->GetNormalTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetMaterialTexture())
+    }
+    if (auto tex = engine->GetMaterialTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetVelocityTexture())
+    }
+    if (auto tex = engine->GetVelocityTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
 
     workTextureHandles_.clear();
 

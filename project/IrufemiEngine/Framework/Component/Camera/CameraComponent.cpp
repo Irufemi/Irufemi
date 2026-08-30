@@ -39,12 +39,14 @@ void CameraComponent::Initialize() {
 }
 
 void CameraComponent::Update() {
-    if (!gameObject_ || !camera_)
+    if (!gameObject_ || !camera_) {
         return;
+    }
 
     auto transform = GetTransform();
-    if (!transform)
+    if (!transform) {
         return;
+    }
 
     // GameObjectのTransformとCameraの座標・角度を同期（ワールド座標系）＋ 演出オフセット
     camera_->SetTranslate(Irufemi::Math::Add(transform->GetWorldPosition(), positionOffset_));

@@ -23,14 +23,16 @@ void SliderComponent::Initialize() {
 }
 
 bool SliderComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
-    if (!GetTransform() || !backgroundSprite_)
+    if (!GetTransform() || !backgroundSprite_) {
         return false;
+    }
 
     Irufemi::Vector3 pos = GetTransform()->GetWorldPosition();
 
     auto* s = backgroundSprite_->GetSprite();
-    if (!s)
+    if (!s) {
         return false;
+    }
 
     Irufemi::Vector2 anchor = s->GetAnchor();
     Irufemi::Vector2 baseSize = s->GetSize();
@@ -47,15 +49,18 @@ bool SliderComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
 }
 
 void SliderComponent::Update() {
-    if (!backgroundSprite_ || !gameObject_)
+    if (!backgroundSprite_ || !gameObject_) {
         return;
+    }
 
     auto scene = gameObject_->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
     auto engine = scene->GetEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     // ハンドルの探索 (初回のみ、または見つかってない場合)
     if (!handleObject_ && handleObjectID_ != 0) {
@@ -70,8 +75,9 @@ void SliderComponent::Update() {
 
     auto input = engine->GetInputManager();
     auto cameraManager = engine->GetCameraManager();
-    if (!input || !cameraManager || !cameraManager->GetActiveCamera())
+    if (!input || !cameraManager || !cameraManager->GetActiveCamera()) {
         return;
+    }
 
     Irufemi::Vector2 mousePos = input->GetMousePosition();
     Irufemi::Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
@@ -125,16 +131,19 @@ void SliderComponent::SetValue(float value) {
 }
 
 void SliderComponent::UpdateHandlePosition() {
-    if (!handleObject_ || !backgroundSprite_ || !GetTransform())
+    if (!handleObject_ || !backgroundSprite_ || !GetTransform()) {
         return;
+    }
 
     auto handleTransform = handleObject_->GetTransform();
-    if (!handleTransform)
+    if (!handleTransform) {
         return;
+    }
 
     auto* s = backgroundSprite_->GetSprite();
-    if (!s)
+    if (!s) {
         return;
+    }
 
     // スライダー背景のワールド幅を計算
     float width = s->GetSize().x;

@@ -68,14 +68,16 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
 void EnvironmentManagerComponent::Initialize() {}
 
 void EnvironmentManagerComponent::Start() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     // 子オブジェクトとして配置されている環境オブジェクトを検索して追跡リストに登録
     const auto& children = gameObject_->GetChildren();
     for (const auto& child : children) {
-        if (!child)
+        if (!child) {
             continue;
+        }
 
         for (auto& setting : batchCollisionSettings_) {
             if (child->GetName().find(setting.prefabPath) != std::string::npos) {
@@ -170,15 +172,17 @@ void EnvironmentManagerComponent::Draw() {
     // 2. 管理下のオブジェクトから Irufemi::Transform を取得し、バッチに登録
     for (const auto& info : spawnedObjects_) {
         if (auto obj = info.obj.lock()) {
-            if (!obj->GetIsActive())
+            if (!obj->GetIsActive()) {
                 continue; // 破壊された環境物は描画しない
+            }
             if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
                 // 個別の描画をストップ（Raycast判定などは生きたまま）
                 meshRenderer->SetVisible(false);
 
                 std::string modelName = meshRenderer->GetModelName();
-                if (modelName.empty())
+                if (modelName.empty()) {
                     continue;
+                }
 
                 // 未登録のモデルならバッチレンダラーを新規作成
                 if (batchRenderers_.find(modelName) == batchRenderers_.end() || !batchRenderers_[modelName]) {

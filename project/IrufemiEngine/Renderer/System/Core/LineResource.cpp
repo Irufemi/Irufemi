@@ -19,8 +19,9 @@ LineResource::~LineResource() {
 }
 
 void LineResource::CreateResource() {
-    if (!s_dxCommon_)
+    if (!s_dxCommon_) {
         return;
+    }
 
     // Irufemi::Line は基本 2 頂点
     if (!vertexResource_) {
@@ -85,15 +86,17 @@ void LineResource::UpdateTransform(const Camera& camera) {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetMaterialVAddress() const {
-    if (materialCbIndex_ == static_cast<uint32_t>(-1))
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
+    }
     return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
         materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetTransformVAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1))
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
+    }
     return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
         transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }

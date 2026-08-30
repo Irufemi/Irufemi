@@ -40,8 +40,9 @@ GPUParticleSystem::~GPUParticleSystem() {
     if (dxCommon_) {
         uint64_t fv = dxCommon_->GetCurrentFrameFenceValue();
         if (auto* srvPool = dxCommon_->GetSrvPool()) {
-            for (int i = 0; i < 3; ++i)
+            for (int i = 0; i < 3; ++i) {
                 srvPool->FreeAfterFence(emittersSrvIndex_[i], fv);
+            }
             srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
             srvPool->FreeAfterFence(particleUavIndex_, fv);
             srvPool->FreeAfterFence(particleSrvIndex_, fv);
@@ -190,16 +191,19 @@ void GPUParticleSystem::Initialize(const std::string& textureName) {
 
 // 更新
 void GPUParticleSystem::Update() {
-    if (emittersData_.empty() || !engine_)
+    if (emittersData_.empty() || !engine_) {
         return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     bool anyEmitting = false;
     for (const auto& em : emittersData_) {
-        if (em.emit)
+        if (em.emit) {
             anyEmitting = true;
+        }
     }
 
     // タイムスケールに応じた時間取得
@@ -214,8 +218,9 @@ void GPUParticleSystem::Update() {
                 totalTime_ = 0.0f;
                 // ※ループ時は必要なら一瞬だけ全クリアする等の処理を検討
             } else {
-                for (auto& em : emittersData_)
+                for (auto& em : emittersData_) {
                     em.emit = 0;
+                }
                 anyEmitting = false;
             }
         }
@@ -355,8 +360,9 @@ void GPUParticleSystem::Setup(RenderGraphBuilder& builder) {
 
 void GPUParticleSystem::DispatchCompute() {
     // カリングされていても、計算（シミュレーション）は継続する
-    if (!needsUpdateCS_)
+    if (!needsUpdateCS_) {
         return;
+    }
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
@@ -376,8 +382,9 @@ void GPUParticleSystem::DispatchCompute() {
 // 描画
 void GPUParticleSystem::Draw() {
 
-    if (isCulled_)
+    if (isCulled_) {
         return;
+    }
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
 
@@ -452,10 +459,12 @@ void GPUParticleSystem::UpdateDebugLines() {
 
     if (showEmitterArea_) {
         for (const auto& em : emittersData_) {
-            if (em.showDebugArea == 0)
+            if (em.showDebugArea == 0) {
                 continue;
-            if (em.emit == 0 && em.burstCount == 0)
+            }
+            if (em.emit == 0 && em.burstCount == 0) {
                 continue;
+            }
             Irufemi::Vector4 color = {0.0f, 1.0f, 0.0f, 1.0f};
             Irufemi::Vector3 translate = {em.translateX, em.translateY, em.translateZ};
             Irufemi::Vector3 direction = {em.directionX, em.directionY, em.directionZ};
@@ -533,8 +542,9 @@ void GPUParticleSystem::Emit(uint32_t count, uint32_t emitterIndex) {
 
 void GPUParticleSystem::SetSphereEmitter(const Irufemi::Vector3& pos, float radius, float emissionRate,
                                          uint32_t emitterIndex) {
-    if (emitterIndex >= emittersData_.size())
+    if (emitterIndex >= emittersData_.size()) {
         return;
+    }
     auto* emitter_ = &emittersData_[emitterIndex];
     emitter_->type = 0;
     emitter_->translateX = pos.x;
@@ -546,8 +556,9 @@ void GPUParticleSystem::SetSphereEmitter(const Irufemi::Vector3& pos, float radi
 
 void GPUParticleSystem::SetHemisphereEmitter(const Irufemi::Vector3& pos, float radius, float emissionRate,
                                              uint32_t emitterIndex) {
-    if (emitterIndex >= emittersData_.size())
+    if (emitterIndex >= emittersData_.size()) {
         return;
+    }
     auto* emitter_ = &emittersData_[emitterIndex];
     emitter_->type = 5;
     emitter_->translateX = pos.x;
@@ -559,8 +570,9 @@ void GPUParticleSystem::SetHemisphereEmitter(const Irufemi::Vector3& pos, float 
 
 void GPUParticleSystem::SetBeamEmitter(const Irufemi::Vector3& pos, const Irufemi::Vector3& direction, float radius,
                                        float velocity, float spread, float emissionRate, uint32_t emitterIndex) {
-    if (emitterIndex >= emittersData_.size())
+    if (emitterIndex >= emittersData_.size()) {
         return;
+    }
     auto* emitter_ = &emittersData_[emitterIndex];
     emitter_->type = 1;
     emitter_->translateX = pos.x;
@@ -576,8 +588,9 @@ void GPUParticleSystem::SetBeamEmitter(const Irufemi::Vector3& pos, const Irufem
 }
 
 void GPUParticleSystem::SetEmit(bool emit, uint32_t emitterIndex) {
-    if (emitterIndex < emittersData_.size())
+    if (emitterIndex < emittersData_.size()) {
         emittersData_[emitterIndex].emit = emit ? 1 : 0;
+    }
 }
 
 void GPUParticleSystem::SetParticleScale(const Irufemi::Vector3& startMin, const Irufemi::Vector3& startMax,
@@ -671,18 +684,21 @@ void GPUParticleSystem::SetPrimitive(Irufemi::PrimitiveType type) {
 }
 
 void GPUParticleSystem::SetBillboard(bool isBillboard, uint32_t emitterIndex) {
-    if (emitterIndex < emittersData_.size())
+    if (emitterIndex < emittersData_.size()) {
         emittersData_[emitterIndex].billboardMode = isBillboard ? 1 : 0;
+    }
 }
 
 void GPUParticleSystem::SetVelocityAligned(bool isAligned, uint32_t emitterIndex) {
-    if (emitterIndex < emittersData_.size())
+    if (emitterIndex < emittersData_.size()) {
         emittersData_[emitterIndex].billboardMode = isAligned ? 2 : 1;
+    }
 }
 
 void GPUParticleSystem::SetTexture(const std::string& textureFilePath) {
-    if (!textureManager_)
+    if (!textureManager_) {
         return;
+    }
 
     if (textureHandle_.IsValid()) {
         textureManager_->ReleaseTexture(textureHandle_);
@@ -699,8 +715,9 @@ void GPUParticleSystem::SetTexture(const std::string& textureFilePath) {
 
 void GPUParticleSystem::SetRingEmitter(const Irufemi::Vector3& pos, float radius, float thickness, float emissionRate,
                                        uint32_t emitterIndex) {
-    if (emitterIndex >= emittersData_.size())
+    if (emitterIndex >= emittersData_.size()) {
         return;
+    }
     auto* emitter_ = &emittersData_[emitterIndex];
     emitter_->type = 2;
     emitter_->translateX = pos.x;
@@ -713,8 +730,9 @@ void GPUParticleSystem::SetRingEmitter(const Irufemi::Vector3& pos, float radius
 
 void GPUParticleSystem::SetCylinderEmitter(const Irufemi::Vector3& pos, const Irufemi::Vector3& direction, float radius,
                                            float height, float emissionRate, uint32_t emitterIndex) {
-    if (emitterIndex >= emittersData_.size())
+    if (emitterIndex >= emittersData_.size()) {
         return;
+    }
     auto* emitter_ = &emittersData_[emitterIndex];
     emitter_->type = 3;
     emitter_->translateX = pos.x;
@@ -730,8 +748,9 @@ void GPUParticleSystem::SetCylinderEmitter(const Irufemi::Vector3& pos, const Ir
 
 void GPUParticleSystem::SetBoxEmitter(const Irufemi::Vector3& pos, const Irufemi::Vector3& size, float emissionRate,
                                       uint32_t emitterIndex) {
-    if (emitterIndex >= emittersData_.size())
+    if (emitterIndex >= emittersData_.size()) {
         return;
+    }
     auto* emitter_ = &emittersData_[emitterIndex];
     emitter_->type = 4;
     emitter_->translateX = pos.x;
@@ -745,8 +764,9 @@ void GPUParticleSystem::SetBoxEmitter(const Irufemi::Vector3& pos, const Irufemi
 
 void GPUParticleSystem::SetMeshEmitter(const Irufemi::Vector3& pos, D3D12_GPU_VIRTUAL_ADDRESS vbAddress,
                                        uint32_t vertexCount, float emissionRate, uint32_t emitterIndex) {
-    if (emitterIndex >= emittersData_.size())
+    if (emitterIndex >= emittersData_.size()) {
         return;
+    }
     auto* emitter_ = &emittersData_[emitterIndex];
     emitter_->type = 6;
     emitter_->translateX = pos.x;
@@ -791,8 +811,9 @@ void GPUParticleSystem::SetAttractor(const Irufemi::Vector3& pos, float strength
 
 void GPUParticleSystem::DrawAABB(const Irufemi::Vector3& min, const Irufemi::Vector3& max,
                                  const Irufemi::Vector4& color) {
-    if (!debugLineRegion_)
+    if (!debugLineRegion_) {
         return;
+    }
 
     Irufemi::Vector3 v[8] = {{min.x, min.y, min.z}, {max.x, min.y, min.z}, {min.x, max.y, min.z},
                              {max.x, max.y, min.z}, {min.x, min.y, max.z}, {max.x, min.y, max.z},
@@ -814,8 +835,9 @@ void GPUParticleSystem::DrawAABB(const Irufemi::Vector3& min, const Irufemi::Vec
 
 void GPUParticleSystem::DrawCircle(const Irufemi::Vector3& center, float radius, const Irufemi::Vector3& axis,
                                    const Irufemi::Vector4& color) {
-    if (!debugLineRegion_)
+    if (!debugLineRegion_) {
         return;
+    }
     Irufemi::Vector3 up = Irufemi::Math::Normalize(axis);
     Irufemi::Vector3 right = Irufemi::Math::Normalize(std::abs(up.y) > 0.9f ? Irufemi::Math::Cross({1, 0, 0}, up)
                                                                             : Irufemi::Math::Cross({0, 1, 0}, up));
@@ -840,8 +862,9 @@ void GPUParticleSystem::DrawSphereWireframe(const Irufemi::Vector3& center, floa
 
 void GPUParticleSystem::DrawCylinderWireframe(const Irufemi::Vector3& center, const Irufemi::Vector3& direction,
                                               float radius, float height, const Irufemi::Vector4& color) {
-    if (!debugLineRegion_)
+    if (!debugLineRegion_) {
         return;
+    }
     Irufemi::Vector3 dir = Irufemi::Math::Normalize(direction);
     Irufemi::Vector3 top = center + dir * height;
 
@@ -860,8 +883,9 @@ void GPUParticleSystem::DrawCylinderWireframe(const Irufemi::Vector3& center, co
 }
 
 void GPUParticleSystem::DispatchComputeShaders(ID3D12GraphicsCommandList* commandList) {
-    if (!engine_)
+    if (!engine_) {
         return;
+    }
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {dxCommon_->GetSrvDescriptorHeap()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);

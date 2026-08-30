@@ -100,8 +100,9 @@ public:
      * @param handle 返却するオブジェクトのハンドル
      */
     void Release(Handle handle) {
-        if (!IsValidHandle(handle))
+        if (!IsValidHandle(handle)) {
             return;
+        }
 
         uint32_t index = handle.index;
         slots_[index].active = false;
@@ -120,8 +121,9 @@ public:
      */
     const std::shared_ptr<T>& Resolve(Handle handle) const {
         static const std::shared_ptr<T> nullPtr = nullptr;
-        if (!IsValidHandle(handle))
+        if (!IsValidHandle(handle)) {
             return nullPtr;
+        }
         return slots_[handle.index].data;
     }
 
@@ -146,12 +148,15 @@ private:
      * @return 判定結果 (true/false)
      */
     bool IsValidHandle(Handle handle) const {
-        if (handle.index >= slots_.size())
+        if (handle.index >= slots_.size()) {
             return false;
-        if (!slots_[handle.index].active)
+        }
+        if (!slots_[handle.index].active) {
             return false;
-        if (slots_[handle.index].generation != handle.generation)
+        }
+        if (slots_[handle.index].generation != handle.generation) {
             return false; // 世代アンマッチ（古いハンドル）
+        }
         return true;
     }
 

@@ -29,8 +29,9 @@ void SplineFollowerComponent::OnIDRemapped(const std::unordered_map<uint64_t, ui
 }
 
 void SplineFollowerComponent::Start() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
     auto* scene = gameObject_->GetScene();
     if (scene && targetPathID_ != 0) {
         if (auto obj = scene->FindGameObjectByID(targetPathID_)) {
@@ -40,8 +41,9 @@ void SplineFollowerComponent::Start() {
 }
 
 void SplineFollowerComponent::Update() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     if (deltaTime <= 0.0f) {
@@ -52,8 +54,9 @@ void SplineFollowerComponent::Update() {
         // 進行度を前進させる (m/s)
         float totalLength = cachedPath_->GetTotalLength();
         currentDistance_ += speed_ * deltaTime;
-        if (currentDistance_ > totalLength)
+        if (currentDistance_ > totalLength) {
             currentDistance_ = totalLength;
+        }
 
         // レール上の座標と接線（進行方向）を距離ベースで取得
         Irufemi::Vector3 basePos = cachedPath_->GetPointAtDistance(currentDistance_);

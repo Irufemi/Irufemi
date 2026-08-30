@@ -112,11 +112,13 @@ void StaticModelObject::Update() {
     }
 
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_)
+    if (!m || !engine_) {
         return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     // 非同期ロードが終わっていればメッシュを構築する (遅延初期化)
     if (m->status.load() == ManagedModel::LoadingStatus::Loaded && !isResourceInitialized_) {
@@ -124,8 +126,9 @@ void StaticModelObject::Update() {
     }
 
     // まだリソースが準備できていない場合はスキップ
-    if (!isResourceInitialized_)
+    if (!isResourceInitialized_) {
         return;
+    }
 
     // オブジェクト全体のワールド行列を計算
     transformationMatrix_.world =
@@ -222,8 +225,9 @@ void StaticModelObject::Draw() {
         return;
     }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
     bool cameraChanged =
@@ -268,19 +272,22 @@ void StaticModelObject::Draw() {
 
 void StaticModelObject::DrawOutlineMask() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty())
+    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) {
         return;
+    }
     for (auto& res : meshResources_) {
         engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr);
     }
 }
 void StaticModelObject::DispatchCompute() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_)
+    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_) {
         return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});

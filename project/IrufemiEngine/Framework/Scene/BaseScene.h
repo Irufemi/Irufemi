@@ -92,8 +92,9 @@ public:
      */
     std::shared_ptr<GameObject> FindGameObject(GameObject* ptr) {
         for (auto& obj : gameObjects_) {
-            if (obj.get() == ptr)
+            if (obj.get() == ptr) {
                 return obj;
+            }
         }
         return nullptr;
     }

@@ -12,12 +12,14 @@ void ReticleUIComponent::Initialize() {
 }
 
 void ReticleUIComponent::Update() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     auto transform = GetTransform();
-    if (!transform)
+    if (!transform) {
         return;
+    }
 
     // マウスカーソルの座標を取得
     auto engine = BaseModel::GetIrufemiEngine();

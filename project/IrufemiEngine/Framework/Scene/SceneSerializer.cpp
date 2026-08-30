@@ -16,8 +16,9 @@ std::unordered_map<std::string, nlohmann::json> SceneSerializer::prefabCache_;
 std::unordered_map<std::string, std::shared_ptr<GameObject>> SceneSerializer::prefabInstanceCache_;
 
 bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
-    if (!scene)
+    if (!scene) {
         return false;
+    }
 
     // シーン自身にシリアライズを委譲する
     nlohmann::json root = scene->Serialize();
@@ -42,8 +43,9 @@ bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
 }
 
 bool SceneSerializer::Load(IScene* scene, const std::string& sceneName) {
-    if (!scene)
+    if (!scene) {
         return false;
+    }
 
     std::string pathStr = GetSceneFilePath(scene, sceneName);
     fs::path path(pathStr);
@@ -78,8 +80,9 @@ bool SceneSerializer::Exists(IScene* scene, const std::string& sceneName) {
 }
 
 bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::string& filepath) {
-    if (!obj)
+    if (!obj) {
         return false;
+    }
 
     // 単一のオブジェクトをシリアライズ
     nlohmann::json root = obj->Serialize();
@@ -107,12 +110,14 @@ nlohmann::json SceneSerializer::GetPrefabJson(const std::string& filepath) {
     }
 
     fs::path path(filepath);
-    if (!fs::exists(path))
+    if (!fs::exists(path)) {
         return nlohmann::json::object();
+    }
 
     std::ifstream file(path);
-    if (!file.is_open())
+    if (!file.is_open()) {
         return nlohmann::json::object();
+    }
 
     nlohmann::json root;
     try {
@@ -135,8 +140,9 @@ std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filep
         templateObj = it->second;
     } else {
         nlohmann::json root = GetPrefabJson(filepath);
-        if (root.empty())
+        if (root.empty()) {
             return nullptr;
+        }
 
         templateObj = std::make_shared<GameObject>();
         templateObj->Deserialize(root);

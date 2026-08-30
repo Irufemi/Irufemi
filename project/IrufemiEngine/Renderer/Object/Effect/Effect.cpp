@@ -378,12 +378,15 @@ void Effect::Update() {
         }
     }
 
-    if (hitParticle_)
+    if (hitParticle_) {
         hitParticle_->Update();
-    if (impactPlaneParticle_)
+    }
+    if (impactPlaneParticle_) {
         impactPlaneParticle_->Update();
-    if (explosionSparkParticle_)
+    }
+    if (explosionSparkParticle_) {
         explosionSparkParticle_->Update();
+    }
 }
 
 void Effect::SyncBeforeDraw() {
@@ -606,8 +609,9 @@ void Effect::Debug(const char* name) {
                                     currentTextureName_ = textureNames[i];
                                     changed = true;
                                 }
-                                if (is_selected)
+                                if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
@@ -615,25 +619,33 @@ void Effect::Debug(const char* name) {
 
                     ImGui::Separator();
                     ImGui::Text("--- Hit Emitter Parameters ---");
-                    if (ImGui::ColorEdit4("Color", &hitConfig_.color.x))
+                    if (ImGui::ColorEdit4("Color", &hitConfig_.color.x)) {
                         changed = true;
-                    if (ImGui::DragFloat2("Life (Min/Max)", &hitConfig_.lifeMin, 0.01f, 0.01f, 10.0f))
+                    }
+                    if (ImGui::DragFloat2("Life (Min/Max)", &hitConfig_.lifeMin, 0.01f, 0.01f, 10.0f)) {
                         changed = true;
-                    if (ImGui::DragFloat("Jitter", &hitConfig_.jitter, 0.001f, 0.0f, 1.0f))
+                    }
+                    if (ImGui::DragFloat("Jitter", &hitConfig_.jitter, 0.001f, 0.0f, 1.0f)) {
                         changed = true;
-                    if (ImGui::DragInt("Emit Count", &hitConfig_.emitCount, 1, 1, 500))
+                    }
+                    if (ImGui::DragInt("Emit Count", &hitConfig_.emitCount, 1, 1, 500)) {
                         changed = true;
+                    }
 
                     ImGui::Separator();
                     ImGui::Text("Scale Parameters");
-                    if (ImGui::DragFloat3("Start Scale Min", &hitConfig_.startScaleMin.x, 0.01f))
+                    if (ImGui::DragFloat3("Start Scale Min", &hitConfig_.startScaleMin.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Start Scale Max", &hitConfig_.startScaleMax.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Start Scale Max", &hitConfig_.startScaleMax.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("End Scale Min", &hitConfig_.endScaleMin.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("End Scale Min", &hitConfig_.endScaleMin.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("End Scale Max", &hitConfig_.endScaleMax.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("End Scale Max", &hitConfig_.endScaleMax.x, 0.01f)) {
                         changed = true;
+                    }
 
                     if (changed && engine_) {
                         Initialize(EffectType::kHit);
@@ -662,17 +674,20 @@ void Effect::Debug(const char* name) {
                                     impactConfig_.planeTexture = textureNames[i];
                                     changed = true;
                                 }
-                                if (is_selected)
+                                if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
                     }
 
-                    if (ImGui::Checkbox("Enable Random 3D Rotation##Plane", &impactConfig_.planeEnableRandomRotation))
+                    if (ImGui::Checkbox("Enable Random 3D Rotation##Plane", &impactConfig_.planeEnableRandomRotation)) {
                         changed = true;
-                    if (ImGui::DragInt("Emit Count##Plane", &impactConfig_.planeEmitCount, 1, 1, 50))
+                    }
+                    if (ImGui::DragInt("Emit Count##Plane", &impactConfig_.planeEmitCount, 1, 1, 50)) {
                         changed = true;
+                    }
 
                     ImGui::Separator();
                     ImGui::Text("--- Ring Emitter ---");
@@ -691,49 +706,66 @@ void Effect::Debug(const char* name) {
                                     impactConfig_.ringTexture = textureNames[i];
                                     changed = true;
                                 }
-                                if (is_selected)
+                                if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
                     }
-                    if (ImGui::Checkbox("Enable Random 3D Rotation##Ring", &impactConfig_.ringEnableRandomRotation))
+                    if (ImGui::Checkbox("Enable Random 3D Rotation##Ring", &impactConfig_.ringEnableRandomRotation)) {
                         changed = true;
-                    if (ImGui::DragInt("Emit Count##Ring", &impactConfig_.ringEmitCount, 1, 1, 50))
+                    }
+                    if (ImGui::DragInt("Emit Count##Ring", &impactConfig_.ringEmitCount, 1, 1, 50)) {
                         changed = true;
+                    }
 
                     ImGui::Separator();
 
                     ImGui::Text("--- Transform / Physics ---");
-                    if (ImGui::DragFloat("Jitter (Random Walk)", &impactConfig_.jitter, 0.001f, 0.0f, 1.0f))
+                    if (ImGui::DragFloat("Jitter (Random Walk)", &impactConfig_.jitter, 0.001f, 0.0f, 1.0f)) {
                         changed = true;
+                    }
 
-                    if (ImGui::DragFloat2("UV Scale (Ring)", &impactConfig_.uvScale.x, 0.1f))
+                    if (ImGui::DragFloat2("UV Scale (Ring)", &impactConfig_.uvScale.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::DragFloat2("UV Scroll Speed (Ring)", &impactConfig_.uvScrollSpeed.x, 0.1f))
+                    }
+                    if (ImGui::DragFloat2("UV Scroll Speed (Ring)", &impactConfig_.uvScrollSpeed.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::Checkbox("Use Clamp Sampler (Ring)", &impactConfig_.useClamp))
+                    }
+                    if (ImGui::Checkbox("Use Clamp Sampler (Ring)", &impactConfig_.useClamp)) {
                         changed = true;
-                    if (ImGui::ColorEdit4("Color", &impactConfig_.color.x))
+                    }
+                    if (ImGui::ColorEdit4("Color", &impactConfig_.color.x)) {
                         changed = true;
-                    if (ImGui::DragFloat2("Life (Min/Max)", &impactConfig_.lifeMin, 0.01f))
+                    }
+                    if (ImGui::DragFloat2("Life (Min/Max)", &impactConfig_.lifeMin, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Plane Start Scale Min", &impactConfig_.planeStartScaleMin.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Plane Start Scale Min", &impactConfig_.planeStartScaleMin.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Plane Start Scale Max", &impactConfig_.planeStartScaleMax.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Plane Start Scale Max", &impactConfig_.planeStartScaleMax.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Plane End Scale Min", &impactConfig_.planeEndScaleMin.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Plane End Scale Min", &impactConfig_.planeEndScaleMin.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Plane End Scale Max", &impactConfig_.planeEndScaleMax.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Plane End Scale Max", &impactConfig_.planeEndScaleMax.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Ring Start Scale Min", &impactConfig_.ringStartScaleMin.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Ring Start Scale Min", &impactConfig_.ringStartScaleMin.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Ring Start Scale Max", &impactConfig_.ringStartScaleMax.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Ring Start Scale Max", &impactConfig_.ringStartScaleMax.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Ring End Scale Min", &impactConfig_.ringEndScaleMin.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Ring End Scale Min", &impactConfig_.ringEndScaleMin.x, 0.01f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Ring End Scale Max", &impactConfig_.ringEndScaleMax.x, 0.01f))
+                    }
+                    if (ImGui::DragFloat3("Ring End Scale Max", &impactConfig_.ringEndScaleMax.x, 0.01f)) {
                         changed = true;
+                    }
 
                     if (changed && engine_) {
                         Initialize(EffectType::kImpact);
@@ -753,23 +785,29 @@ void Effect::Debug(const char* name) {
                                     auraConfig_.texture = textureNames[i];
                                     changed = true;
                                 }
-                                if (is_selected)
+                                if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
                     }
 
-                    if (ImGui::ColorEdit4("Color", &auraConfig_.color.x))
+                    if (ImGui::ColorEdit4("Color", &auraConfig_.color.x)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Scale (Radius X/Z, Height Y)", &auraConfig_.scale.x, 0.1f))
+                    }
+                    if (ImGui::DragFloat3("Scale (Radius X/Z, Height Y)", &auraConfig_.scale.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::DragFloat2("UV Scroll Speed", &auraConfig_.uvScrollSpeed.x, 0.1f))
+                    }
+                    if (ImGui::DragFloat2("UV Scroll Speed", &auraConfig_.uvScrollSpeed.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::Checkbox("Flip V", &auraConfig_.flipV))
+                    }
+                    if (ImGui::Checkbox("Flip V", &auraConfig_.flipV)) {
                         changed = true;
-                    if (ImGui::Checkbox("Use Clamp", &auraConfig_.useClamp))
+                    }
+                    if (ImGui::Checkbox("Use Clamp", &auraConfig_.useClamp)) {
                         changed = true;
+                    }
 
                     if (changed && auraObject_) {
                         auraObject_->SetScale(auraConfig_.scale);
@@ -798,42 +836,55 @@ void Effect::Debug(const char* name) {
                                     swingConfig_.texture = textureNames[i];
                                     changed = true;
                                 }
-                                if (is_selected)
+                                if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
                     }
 
-                    if (ImGui::ColorEdit4("Color", &swingConfig_.color.x))
+                    if (ImGui::ColorEdit4("Color", &swingConfig_.color.x)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Start Scale", &swingConfig_.startScale.x, 0.1f))
+                    }
+                    if (ImGui::DragFloat3("Start Scale", &swingConfig_.startScale.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("End Scale", &swingConfig_.endScale.x, 0.1f))
+                    }
+                    if (ImGui::DragFloat3("End Scale", &swingConfig_.endScale.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::DragFloat2("UV Scroll Speed", &swingConfig_.uvScrollSpeed.x, 0.1f))
+                    }
+                    if (ImGui::DragFloat2("UV Scroll Speed", &swingConfig_.uvScrollSpeed.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::DragFloat2("UV Scale", &swingConfig_.uvScale.x, 0.1f))
+                    }
+                    if (ImGui::DragFloat2("UV Scale", &swingConfig_.uvScale.x, 0.1f)) {
                         changed = true;
-                    if (ImGui::DragFloat("Life Time", &swingConfig_.lifeTime, 0.01f, 0.01f, 5.0f))
+                    }
+                    if (ImGui::DragFloat("Life Time", &swingConfig_.lifeTime, 0.01f, 0.01f, 5.0f)) {
                         changed = true;
-                    if (ImGui::Checkbox("Use Clamp", &swingConfig_.useClamp))
+                    }
+                    if (ImGui::Checkbox("Use Clamp", &swingConfig_.useClamp)) {
                         changed = true;
+                    }
 
                     // 新規追加したカスタムパラメータのUI
                     ImGui::Separator();
                     ImGui::Text("Ring Shape Settings");
-                    if (ImGui::DragFloat("Inner Radius", &swingConfig_.innerRadius, 0.01f, 0.0f, 1.0f))
+                    if (ImGui::DragFloat("Inner Radius", &swingConfig_.innerRadius, 0.01f, 0.0f, 1.0f)) {
                         changed = true;
-                    if (ImGui::DragFloat("Start Angle", &swingConfig_.startAngle, 1.0f, 0.0f, 360.0f))
+                    }
+                    if (ImGui::DragFloat("Start Angle", &swingConfig_.startAngle, 1.0f, 0.0f, 360.0f)) {
                         changed = true;
-                    if (ImGui::DragFloat("End Angle", &swingConfig_.endAngle, 1.0f, 0.0f, 360.0f))
+                    }
+                    if (ImGui::DragFloat("End Angle", &swingConfig_.endAngle, 1.0f, 0.0f, 360.0f)) {
                         changed = true;
-                    if (ImGui::DragFloat("Fade Range Angle", &swingConfig_.fadeRangeAngle, 1.0f, 0.0f, 180.0f))
+                    }
+                    if (ImGui::DragFloat("Fade Range Angle", &swingConfig_.fadeRangeAngle, 1.0f, 0.0f, 180.0f)) {
                         changed = true;
+                    }
                     if (ImGui::DragFloat("Swing Rotation Angle (Rad)", &swingConfig_.swingRotationAngle, 0.01f, 0.0f,
-                                         6.28f))
+                                         6.28f)) {
                         changed = true;
+                    }
 
                     if (changed && swingObject_) {
                         Initialize(EffectType::kSwing);
@@ -865,8 +916,9 @@ void Effect::Debug(const char* name) {
                                     explosionConfig_.coreTexture = textureNames[i];
                                     changed = true;
                                 }
-                                if (is_selected)
+                                if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
@@ -890,8 +942,9 @@ void Effect::Debug(const char* name) {
                                     explosionConfig_.waveTexture = textureNames[i];
                                     changed = true;
                                 }
-                                if (is_selected)
+                                if (is_selected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
@@ -899,20 +952,27 @@ void Effect::Debug(const char* name) {
 
                     ImGui::Separator();
                     ImGui::Text("--- Explosion Parameters ---");
-                    if (ImGui::ColorEdit4("Color", &explosionConfig_.color.x))
+                    if (ImGui::ColorEdit4("Color", &explosionConfig_.color.x)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Core Start Scale", &explosionConfig_.coreStartScale.x, 0.05f))
+                    }
+                    if (ImGui::DragFloat3("Core Start Scale", &explosionConfig_.coreStartScale.x, 0.05f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Core End Scale", &explosionConfig_.coreEndScale.x, 0.05f))
+                    }
+                    if (ImGui::DragFloat3("Core End Scale", &explosionConfig_.coreEndScale.x, 0.05f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Wave Start Scale", &explosionConfig_.waveStartScale.x, 0.05f))
+                    }
+                    if (ImGui::DragFloat3("Wave Start Scale", &explosionConfig_.waveStartScale.x, 0.05f)) {
                         changed = true;
-                    if (ImGui::DragFloat3("Wave End Scale", &explosionConfig_.waveEndScale.x, 0.05f))
+                    }
+                    if (ImGui::DragFloat3("Wave End Scale", &explosionConfig_.waveEndScale.x, 0.05f)) {
                         changed = true;
-                    if (ImGui::DragFloat("Life Time", &explosionConfig_.lifeTime, 0.01f, 0.05f, 5.0f))
+                    }
+                    if (ImGui::DragFloat("Life Time", &explosionConfig_.lifeTime, 0.01f, 0.05f, 5.0f)) {
                         changed = true;
-                    if (ImGui::DragFloat2("UV Scroll Speed (Core)", &explosionConfig_.uvScrollSpeed.x, 0.05f))
+                    }
+                    if (ImGui::DragFloat2("UV Scroll Speed (Core)", &explosionConfig_.uvScrollSpeed.x, 0.05f)) {
                         changed = true;
+                    }
 
                     if (changed) {
                         Initialize(EffectType::kExplosion);

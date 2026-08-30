@@ -198,8 +198,9 @@ bool ModelSerializer::Deserialize(const std::string& filepath, ObjModel& outMode
     }
 
     Header header;
-    if (!ReadHeader(filepath, header))
+    if (!ReadHeader(filepath, header)) {
         return false; // ヘッダーチェック
+    }
 
     ifs.seekg(sizeof(Header), std::ios::beg); // ヘッダーの次から読み込む
 
@@ -236,8 +237,9 @@ bool ModelSerializer::Deserialize(const std::string& filepath, ObjModel& outMode
     ReadPOD(ifs, outModel.boundingSphere);
     ReadPOD(ifs, outModel.boundingBox);
 
-    if (ifs.fail())
+    if (ifs.fail()) {
         return false;
+    }
 
     return true;
 }
@@ -251,10 +253,12 @@ bool ModelSerializer::ReadHeader(const std::string& filepath, Header& outHeader)
     }
 
     ReadPOD(ifs, outHeader);
-    if (outHeader.magic != kMagicNumber)
+    if (outHeader.magic != kMagicNumber) {
         return false;
-    if (outHeader.version != kVersion)
+    }
+    if (outHeader.version != kVersion) {
         return false;
+    }
 
     return true;
 }

@@ -51,12 +51,13 @@ void DebugPrimitiveRenderer::CreateSphereResource() {
             float s = std::sin(angle);
 
             Irufemi::Vector3 pos;
-            if (ring == 0)
+            if (ring == 0) {
                 pos = {c, s, 0.0f};
-            else if (ring == 1)
+            } else if (ring == 1) {
                 pos = {0.0f, c, s};
-            else
+            } else {
                 pos = {s, 0.0f, c};
+            }
 
             VertexData vd{};
             vd.position = {pos.x, pos.y, pos.z, 1.0f};
@@ -191,15 +192,17 @@ void DebugPrimitiveRenderer::EnsureInstancingSRVs() {
 }
 
 void DebugPrimitiveRenderer::BuildInstanceBuffer() {
-    if (activeSphereCount_ == 0 && activeCubeCount_ == 0)
+    if (activeSphereCount_ == 0 && activeCubeCount_ == 0) {
         return;
+    }
 
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
 
     Camera* activeCam = dx_->GetEngine()->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     // Irufemi::Sphere Buffer
     if (activeSphereCount_ > 0) {

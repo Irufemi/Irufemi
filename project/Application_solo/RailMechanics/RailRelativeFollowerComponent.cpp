@@ -28,8 +28,9 @@ void RailRelativeFollowerComponent::OnIDRemapped(const std::unordered_map<uint64
 }
 
 void RailRelativeFollowerComponent::Start() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
     auto scene = gameObject_->GetScene();
     if (scene) {
         // IDでターゲットオブジェクトを検索 (O(1)で高速かつ確実)
@@ -45,8 +46,9 @@ void RailRelativeFollowerComponent::Start() {
 }
 
 void RailRelativeFollowerComponent::Update() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     // ターゲットまたはパスが未解決の場合は再取得を試みる
     if (!targetFollower_ || !cachedPath_) {
@@ -58,8 +60,9 @@ void RailRelativeFollowerComponent::Update() {
             if (targetFollower_ && !cachedPath_) {
                 cachedPath_ = targetFollower_->GetCachedPath();
             }
-            if (!targetFollower_ || !cachedPath_)
+            if (!targetFollower_ || !cachedPath_) {
                 return;
+            }
         } else {
             // FindGameObject はシーンのミューテックスをロックするため、
             // 毎フレーム複数スレッドから呼ばれると深刻なスレッド競合（ガタつき）の原因になる。
@@ -71,8 +74,9 @@ void RailRelativeFollowerComponent::Update() {
             s_retryCounter = 0;
 
             Start();
-            if (!targetFollower_ || !cachedPath_)
+            if (!targetFollower_ || !cachedPath_) {
                 return; // それでも見つからなければ終了
+            }
         }
     }
 
@@ -84,10 +88,12 @@ void RailRelativeFollowerComponent::Update() {
     float totalLength = cachedPath_->GetTotalLength();
 
     // 距離のクランプ（レールの終端を超えないようにする）
-    if (targetDistance > totalLength)
+    if (targetDistance > totalLength) {
         targetDistance = totalLength;
-    if (targetDistance < 0.0f)
+    }
+    if (targetDistance < 0.0f) {
         targetDistance = 0.0f;
+    }
 
     // レール上の座標と接線（進行方向）を取得
     Irufemi::Vector3 basePos = cachedPath_->GetPointAtDistance(targetDistance);

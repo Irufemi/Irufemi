@@ -17,8 +17,9 @@ void RaycastComponentEditor::Draw(Component* component, EditorActionManager* act
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -98,10 +99,11 @@ void RaycastComponentEditor::Draw(Component* component, EditorActionManager* act
                     bool isMasked = (comp->mask_ & (1u << i)) != 0;
                     if (ImGui::Checkbox((std::string("##Mask") + std::to_string(i)).c_str(), &isMasked)) {
                         uint32_t newMask = comp->mask_;
-                        if (isMasked)
+                        if (isMasked) {
                             newMask |= (1u << i);
-                        else
+                        } else {
                             newMask &= ~(1u << i);
+                        }
                         ComponentUIHelpers::PushInstantUndo(actionManager, comp->mask_, newMask, &comp->mask_);
                     }
                 }

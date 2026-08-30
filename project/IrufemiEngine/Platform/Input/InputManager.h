@@ -242,8 +242,9 @@ public:
 
     /** @brief エディタ用：仮想的なマウスローカル座標を上書き設定する */
     void SetVirtualMousePosition(const Irufemi::Vector2& pos, bool enable) {
-        if (mouse_)
+        if (mouse_) {
             mouse_->SetVirtualPosition(pos, enable);
+        }
     }
     ///@}
 

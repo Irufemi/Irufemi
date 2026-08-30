@@ -19,8 +19,9 @@ CameraComponentEditor::~CameraComponentEditor() = default;
 
 void CameraComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* cameraComp = dynamic_cast<CameraComponent*>(component);
-    if (!cameraComp)
+    if (!cameraComp) {
         return;
+    }
 
     // FOV (Rad to Deg)
     float fovRad = cameraComp->GetFovAngleY();
@@ -50,8 +51,9 @@ void CameraComponentEditor::Draw(Component* component, EditorActionManager* acti
         if (engine) {
             float w = static_cast<float>(engine->GetGameResolutionWidth());
             float h = static_cast<float>(engine->GetGameResolutionHeight());
-            if (h > 0)
+            if (h > 0) {
                 aspect = w / h;
+            }
         }
 
         float fovHalf = cameraComp->GetFovAngleY() * 0.5f;

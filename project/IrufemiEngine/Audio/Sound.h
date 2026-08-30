@@ -17,8 +17,9 @@
  */
 struct CoTaskMemDeleter {
     void operator()(void* p) const {
-        if (p)
+        if (p) {
             CoTaskMemFree(p);
+        }
     }
 };
 

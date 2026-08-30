@@ -70,8 +70,9 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
 }
 
 void GPUParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
-    if (!handle.IsValid())
+    if (!handle.IsValid()) {
         return;
+    }
 
     // Find the context to add free index
     for (auto& pair : systems_) {
@@ -126,8 +127,9 @@ GPUParticleManager::FieldHandle GPUParticleManager::RegisterField() {
 }
 
 void GPUParticleManager::UnregisterField(const FieldHandle& handle) {
-    if (!handle.IsValid())
+    if (!handle.IsValid()) {
         return;
+    }
 
     if (handle.index < globalFields_.size()) {
         globalFields_[handle.index].strength = 0.0f; // Disable

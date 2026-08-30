@@ -16,8 +16,9 @@ void TextRendererComponentEditor::Draw(Component* component, EditorActionManager
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -41,8 +42,9 @@ void TextRendererComponentEditor::Draw(Component* component, EditorActionManager
                 comp->SetText(ConvertString(std::string(textBuffer)));
             }
             ImGui::PopItemWidth();
-            if (ImGui::IsItemActivated())
+            if (ImGui::IsItemActivated()) {
                 startText = utf8Text;
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 std::string endText = textBuffer;
                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
@@ -84,8 +86,9 @@ void TextRendererComponentEditor::Draw(Component* component, EditorActionManager
                                 std::function<void(const std::string&)>(
                                     [comp](const std::string& v) { comp->SetFontId(v); }));
                         }
-                        if (isSelected)
+                        if (isSelected) {
                             ImGui::SetItemDefaultFocus();
+                        }
                     }
                     ImGui::EndCombo();
                 }
@@ -109,8 +112,9 @@ void TextRendererComponentEditor::Draw(Component* component, EditorActionManager
                     comp->SetFontId(fontBuffer);
                 }
                 ImGui::PopItemWidth();
-                if (ImGui::IsItemActivated())
+                if (ImGui::IsItemActivated()) {
                     startFont = fontId;
+                }
                 if (ImGui::IsItemDeactivatedAfterEdit()) {
                     std::string endFont = fontBuffer;
                     actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
@@ -143,8 +147,9 @@ void TextRendererComponentEditor::Draw(Component* component, EditorActionManager
                             std::function<void(const TextAlignment&)>(
                                 [comp](const TextAlignment& v) { comp->SetAlignment(v); }));
                     }
-                    if (isSelected)
+                    if (isSelected) {
                         ImGui::SetItemDefaultFocus();
+                    }
                 }
                 ImGui::EndCombo();
             }

@@ -49,8 +49,9 @@ void EnemyBeamComponent::OnRegisterProperties() {
 
 void EnemyBeamComponent::Initialize() {
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     // --- チャージ球の初期化 ---
     chargeSphere_ = std::make_unique<Primitive3DObject>();
@@ -149,13 +150,15 @@ void EnemyBeamComponent::Update() {
         auraParamsData_->speed = auraSpeed_;
     }
 
-    if (state_ == State::IDLE)
+    if (state_ == State::IDLE) {
         return;
+    }
 
     auto engine = BaseModel::GetIrufemiEngine();
     float deltaTime = engine->GetGameDeltaTime();
-    if (deltaTime <= 0.0f)
+    if (deltaTime <= 0.0f) {
         deltaTime = 1.0f / 60.0f;
+    }
 
     stateTimer_ += deltaTime;
 
@@ -250,8 +253,9 @@ void EnemyBeamComponent::Update() {
 
 void EnemyBeamComponent::Draw() {
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     if (state_ == State::CHARGING) {
         if (chargeSphere_ && chargeSphere_->GetTransform().transform.scale.x > 0.0f) {

@@ -147,8 +147,9 @@ void DXSwapChainManager::ReleaseSwapChainResources() {
 }
 
 void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, int32_t height) {
-    if (width <= 0 || height <= 0)
+    if (width <= 0 || height <= 0) {
         return;
+    }
 
     ReleaseSwapChainResources();
 
@@ -211,8 +212,9 @@ uint32_t DXSwapChainManager::AllocateRTVIndex() {
 }
 
 void DXSwapChainManager::FreeRTVIndex(uint32_t index, uint64_t currentFenceValue) {
-    if (index == 0xFFFFFFFF)
+    if (index == 0xFFFFFFFF) {
         return;
+    }
     std::lock_guard<std::mutex> lock(descriptorMutex_);
     pendingFreeRtvs_.push_back({currentFenceValue, index});
 }
@@ -229,8 +231,9 @@ uint32_t DXSwapChainManager::AllocateDSVIndex() {
 }
 
 void DXSwapChainManager::FreeDSVIndex(uint32_t index, uint64_t currentFenceValue) {
-    if (index == 0xFFFFFFFF)
+    if (index == 0xFFFFFFFF) {
         return;
+    }
     std::lock_guard<std::mutex> lock(descriptorMutex_);
     pendingFreeDsvs_.push_back({currentFenceValue, index});
 }

@@ -18,8 +18,9 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -70,8 +71,9 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
                                 std::function<void(const std::string&)>(
                                     [comp](const std::string& v) { comp->LoadModel(v); }));
                         }
-                        if (isSelected)
+                        if (isSelected) {
                             ImGui::SetItemDefaultFocus();
+                        }
                     }
                     ImGui::EndCombo();
                 }

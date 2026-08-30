@@ -17,8 +17,9 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     AddGameObject(managerObj);
 
     auto t = managerObj->GetTransform();
-    if (t)
+    if (t) {
         t->SetPosition({640.0f, 340.0f, 0.0f});
+    }
 
     // ResultManagerComponent にすべてのロジックを委譲する
     managerObj->AddComponent<ResultManagerComponent>();

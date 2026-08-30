@@ -29,23 +29,27 @@ void SkeletonDebugRendererComponent::Update() {
     boneMeshes_->ClearInstances();
     debugAxesLines_->ClearInstances();
 
-    if (!showBones_ && !showAxes_)
+    if (!showBones_ && !showAxes_) {
         return;
+    }
 
     auto skinnedMesh = GetGameObject()->GetComponent<SkinnedMeshRendererComponent>();
-    if (!skinnedMesh || !skinnedMesh->GetRawObject())
+    if (!skinnedMesh || !skinnedMesh->GetRawObject()) {
         return;
+    }
 
     auto transform = GetTransform();
-    if (!transform)
+    if (!transform) {
         return;
+    }
 
     auto rawObj = skinnedMesh->GetRawObject();
     const SkeletonData* skeletonData = rawObj->GetSkeletonData();
     const SkeletonPose* currentPose = rawObj->GetInternalSkeletonPose(); // スキンメッシュの最新ポーズ
 
-    if (!skeletonData || !currentPose || currentPose->jointPoses.empty())
+    if (!skeletonData || !currentPose || currentPose->jointPoses.empty()) {
         return;
+    }
 
     Irufemi::Matrix4x4 worldMatrix = Irufemi::Math::MakeAffineMatrix(
         transform->GetWorldScale(), transform->GetWorldRotation(), transform->GetWorldPosition());
@@ -205,12 +209,15 @@ nlohmann::json SkeletonDebugRendererComponent::Serialize() {
 }
 
 void SkeletonDebugRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("Show Bones"))
+    if (j.contains("Show Bones")) {
         showBones_ = j["Show Bones"].get<bool>();
-    if (j.contains("Show Axes"))
+    }
+    if (j.contains("Show Axes")) {
         showAxes_ = j["Show Axes"].get<bool>();
-    if (j.contains("Axis Scale"))
+    }
+    if (j.contains("Axis Scale")) {
         axisScale_ = j["Axis Scale"].get<float>();
+    }
 }
 
 void SkeletonDebugRendererComponent::OnRegisterProperties() {

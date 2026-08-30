@@ -36,8 +36,9 @@ void PrimitiveRendererComponent::Update() {
 }
 
 void PrimitiveRendererComponent::Draw() {
-    if (!gameObject_ || !gameObject_->GetIsActive())
+    if (!gameObject_ || !gameObject_->GetIsActive()) {
         return;
+    }
     if (primitive_) {
         primitive_->Draw();
     }
@@ -99,8 +100,9 @@ void PrimitiveRendererComponent::SetUseClampSampler(int32_t useClamp) {
 }
 
 void PrimitiveRendererComponent::RebuildMesh() {
-    if (!primitive_)
+    if (!primitive_) {
         return;
+    }
 
     Irufemi::PrimitiveType type = static_cast<Irufemi::PrimitiveType>(currentTypeIndex_);
     PrimitiveData data;
@@ -141,52 +143,70 @@ nlohmann::json PrimitiveRendererComponent::Serialize() {
     j["currentTypeIndex"] = currentTypeIndex_;
 
     // それぞれのデフォルト値と異なる場合のみ出力
-    if (radius_ != 1.0f)
+    if (radius_ != 1.0f) {
         j["radius"] = radius_;
-    if (subdivisions_ != 16)
+    }
+    if (subdivisions_ != 16) {
         j["subdivisions"] = subdivisions_;
-    if (height_ != 1.0f)
+    }
+    if (height_ != 1.0f) {
         j["height"] = height_;
-    if (topRadius_ != 1.0f)
+    }
+    if (topRadius_ != 1.0f) {
         j["topRadius"] = topRadius_;
-    if (bottomRadius_ != 1.0f)
+    }
+    if (bottomRadius_ != 1.0f) {
         j["bottomRadius"] = bottomRadius_;
-    if (hasTop_ != true)
+    }
+    if (hasTop_ != true) {
         j["hasTop"] = hasTop_;
-    if (hasBottom_ != true)
+    }
+    if (hasBottom_ != true) {
         j["hasBottom"] = hasBottom_;
-    if (torusMajorRadius_ != 1.0f)
+    }
+    if (torusMajorRadius_ != 1.0f) {
         j["torusMajorRadius"] = torusMajorRadius_;
-    if (torusMinorRadius_ != 0.3f)
+    }
+    if (torusMinorRadius_ != 0.3f) {
         j["torusMinorRadius"] = torusMinorRadius_;
-    if (torusMajorSegments_ != 32)
+    }
+    if (torusMajorSegments_ != 32) {
         j["torusMajorSegments"] = torusMajorSegments_;
-    if (torusMinorSegments_ != 16)
+    }
+    if (torusMinorSegments_ != 16) {
         j["torusMinorSegments"] = torusMinorSegments_;
+    }
 
     if (primitive_) {
         const auto& mat = primitive_->GetMaterial();
         nlohmann::json matJson;
 
         // テクスチャはデフォルトの uvChecker.png なら省略
-        if (mat.texturePath != "resources/uvChecker.png")
+        if (mat.texturePath != "resources/uvChecker.png") {
             matJson["texturePath"] = mat.texturePath;
+        }
 
         if (mat.color.x != 1.0f || mat.color.y != 1.0f || mat.color.z != 1.0f || mat.color.w != 1.0f) {
             matJson["color"] = nlohmann::json::array({mat.color.x, mat.color.y, mat.color.z, mat.color.w});
         }
-        if (mat.enableLighting != true)
+        if (mat.enableLighting != true) {
             matJson["enableLighting"] = mat.enableLighting;
-        if (mat.lightingMode != 3)
+        }
+        if (mat.lightingMode != 3) {
             matJson["lightingMode"] = mat.lightingMode;
-        if (mat.metallic != 0.0f)
+        }
+        if (mat.metallic != 0.0f) {
             matJson["metallic"] = mat.metallic;
-        if (mat.roughness != 0.5f)
+        }
+        if (mat.roughness != 0.5f) {
             matJson["roughness"] = mat.roughness;
-        if (mat.alphaReference != 0.0f)
+        }
+        if (mat.alphaReference != 0.0f) {
             matJson["alphaReference"] = mat.alphaReference;
-        if (mat.useClampSampler != 0)
+        }
+        if (mat.useClampSampler != 0) {
             matJson["useClampSampler"] = mat.useClampSampler;
+        }
 
         if (!matJson.empty()) {
             j["material"] = matJson;
@@ -197,30 +217,42 @@ nlohmann::json PrimitiveRendererComponent::Serialize() {
 }
 
 void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("currentTypeIndex"))
+    if (j.contains("currentTypeIndex")) {
         currentTypeIndex_ = j["currentTypeIndex"];
-    if (j.contains("radius"))
+    }
+    if (j.contains("radius")) {
         radius_ = j["radius"];
-    if (j.contains("subdivisions"))
+    }
+    if (j.contains("subdivisions")) {
         subdivisions_ = j["subdivisions"];
-    if (j.contains("height"))
+    }
+    if (j.contains("height")) {
         height_ = j["height"];
-    if (j.contains("topRadius"))
+    }
+    if (j.contains("topRadius")) {
         topRadius_ = j["topRadius"];
-    if (j.contains("bottomRadius"))
+    }
+    if (j.contains("bottomRadius")) {
         bottomRadius_ = j["bottomRadius"];
-    if (j.contains("hasTop"))
+    }
+    if (j.contains("hasTop")) {
         hasTop_ = j["hasTop"];
-    if (j.contains("hasBottom"))
+    }
+    if (j.contains("hasBottom")) {
         hasBottom_ = j["hasBottom"];
-    if (j.contains("torusMajorRadius"))
+    }
+    if (j.contains("torusMajorRadius")) {
         torusMajorRadius_ = j["torusMajorRadius"];
-    if (j.contains("torusMinorRadius"))
+    }
+    if (j.contains("torusMinorRadius")) {
         torusMinorRadius_ = j["torusMinorRadius"];
-    if (j.contains("torusMajorSegments"))
+    }
+    if (j.contains("torusMajorSegments")) {
         torusMajorSegments_ = j["torusMajorSegments"];
-    if (j.contains("torusMinorSegments"))
+    }
+    if (j.contains("torusMinorSegments")) {
         torusMinorSegments_ = j["torusMinorSegments"];
+    }
 
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive3DObject>();
@@ -243,26 +275,33 @@ void PrimitiveRendererComponent::Deserialize(const nlohmann::json& j) {
         const auto& matJson = j["material"];
         auto& mat = primitive_->GetMaterial();
 
-        if (matJson.contains("texturePath"))
+        if (matJson.contains("texturePath")) {
             mat.texturePath = matJson["texturePath"];
+        }
         if (matJson.contains("color") && matJson["color"].is_array() && matJson["color"].size() == 4) {
             mat.color.x = matJson["color"][0];
             mat.color.y = matJson["color"][1];
             mat.color.z = matJson["color"][2];
             mat.color.w = matJson["color"][3];
         }
-        if (matJson.contains("enableLighting"))
+        if (matJson.contains("enableLighting")) {
             mat.enableLighting = matJson["enableLighting"];
-        if (matJson.contains("lightingMode"))
+        }
+        if (matJson.contains("lightingMode")) {
             mat.lightingMode = matJson["lightingMode"];
-        if (matJson.contains("metallic"))
+        }
+        if (matJson.contains("metallic")) {
             mat.metallic = matJson["metallic"];
-        if (matJson.contains("roughness"))
+        }
+        if (matJson.contains("roughness")) {
             mat.roughness = matJson["roughness"];
-        if (matJson.contains("alphaReference"))
+        }
+        if (matJson.contains("alphaReference")) {
             mat.alphaReference = matJson["alphaReference"];
-        if (matJson.contains("useClampSampler"))
+        }
+        if (matJson.contains("useClampSampler")) {
             mat.useClampSampler = matJson["useClampSampler"];
+        }
 
         primitive_->SetTexture(mat.texturePath);
     }
@@ -287,8 +326,9 @@ Irufemi::Sphere PrimitiveRendererComponent::GetWorldSphere() const {
 }
 
 bool PrimitiveRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!primitive_ || !GetTransform())
+    if (!primitive_ || !GetTransform()) {
         return false;
+    }
 
     // プリミティブ形状の基本AABB（一辺1のキューブ）
     Irufemi::Vector3 localHalfSize = {0.5f, 0.5f, 0.5f};
@@ -305,20 +345,23 @@ bool PrimitiveRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDist
     float lenY = Irufemi::Math::Length(yAxis);
     float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f)
+    if (lenX > 0.0001f) {
         obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
-    else
+    } else {
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};
+    }
 
-    if (lenY > 0.0001f)
+    if (lenY > 0.0001f) {
         obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
-    else
+    } else {
         obb.orientations[1] = {0.0f, 1.0f, 0.0f};
+    }
 
-    if (lenZ > 0.0001f)
+    if (lenZ > 0.0001f) {
         obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
-    else
+    } else {
         obb.orientations[2] = {0.0f, 0.0f, 1.0f};
+    }
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;

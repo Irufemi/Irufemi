@@ -14,8 +14,9 @@ void TransformComponentEditor::Draw(Component* component, EditorActionManager* a
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -37,8 +38,9 @@ void TransformComponentEditor::Draw(Component* component, EditorActionManager* a
                 comp->SetPosition(pos);
             }
             ImGui::PopItemWidth();
-            if (ImGui::IsItemActivated())
+            if (ImGui::IsItemActivated()) {
                 startPos = comp->GetPosition();
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 Irufemi::Vector3 endPos = comp->GetPosition();
                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
@@ -68,8 +70,9 @@ void TransformComponentEditor::Draw(Component* component, EditorActionManager* a
                 comp->SetRotation(rot);
             }
             ImGui::PopItemWidth();
-            if (ImGui::IsItemActivated())
+            if (ImGui::IsItemActivated()) {
                 startRot = comp->GetRotation();
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 Irufemi::Vector3 endRot = comp->GetRotation();
                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
@@ -94,8 +97,9 @@ void TransformComponentEditor::Draw(Component* component, EditorActionManager* a
                 comp->SetScale(scale);
             }
             ImGui::PopItemWidth();
-            if (ImGui::IsItemActivated())
+            if (ImGui::IsItemActivated()) {
                 startScale = comp->GetScale();
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 Irufemi::Vector3 endScale = comp->GetScale();
                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(

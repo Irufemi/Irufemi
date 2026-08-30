@@ -294,8 +294,9 @@ public: // ゲッター・セッター
     void MarkAsDirty() override {
         MultiBufferSyncState::MarkAsDirty();
         for (auto& res : meshResources_) {
-            if (res)
+            if (res) {
                 res->MarkAsDirty();
+            }
         }
     }
 
@@ -364,8 +365,9 @@ public: // ゲッター・セッター
      */
     void SetCustomPSO(ID3D12PipelineState* pso) {
         for (auto& res : meshResources_) {
-            if (res)
+            if (res) {
                 res->SetCustomPSO(pso);
+            }
         }
     }
     /**
@@ -374,8 +376,9 @@ public: // ゲッター・セッター
      */
     void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) {
         for (auto& res : meshResources_) {
-            if (res)
+            if (res) {
                 res->SetCustomCBVAddress(addr);
+            }
         }
     }
 

@@ -9,8 +9,9 @@
 
 void SelectionOutlinePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
 #ifdef EditorMode
-    if (drawManager->GetSelectionMaskQueue().empty() && drawManager->GetSelectionMaskQueue2D().empty())
+    if (drawManager->GetSelectionMaskQueue().empty() && drawManager->GetSelectionMaskQueue2D().empty()) {
         return;
+    }
 
     // MainRenderTarget を更新する (合成用)
     builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -27,8 +28,9 @@ void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engi
 #ifdef EditorMode
     const auto& queue3D = drawManager->GetSelectionMaskQueue();
     const auto& queue2D = drawManager->GetSelectionMaskQueue2D();
-    if (queue3D.empty() && queue2D.empty())
+    if (queue3D.empty() && queue2D.empty()) {
         return;
+    }
 
     auto* cmdList = drawManager->GetDxCommon()->GetCommandList();
     auto* psoManager = drawManager->GetDxCommon()->GetPSOManager();

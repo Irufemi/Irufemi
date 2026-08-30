@@ -242,8 +242,9 @@ void ParticleObject::UpdateSystem() {
 
     if (emitType_ == 6) {
         if (!emitterModelHandle_.IsValid() && !emitterModelPath_.empty()) {
-            if (modelManager_)
+            if (modelManager_) {
                 emitterModelHandle_ = modelManager_->LoadModel(emitterModelPath_);
+            }
         }
         if (emitterModelHandle_.IsValid() && modelManager_) {
             auto cachedModel_ = modelManager_->Resolve(emitterModelHandle_);
@@ -271,8 +272,9 @@ void ParticleObject::UpdateSystem() {
 #endif
         burstCountPending_ = 0;
     }
-    if (gpuParticleManager_)
+    if (gpuParticleManager_) {
         gpuParticleManager_->UpdateEmitterData(emitterHandle_, data);
+    }
 }
 
 void ParticleObject::Serialize(nlohmann::json& j) const {
@@ -283,75 +285,107 @@ void ParticleObject::Serialize(nlohmann::json& j) const {
     j["isUnscaledTime"] = isUnscaledTime_;
     j["emitOnAwake"] = emitOnAwake_;
 
-    if (emitType_ != 0)
+    if (emitType_ != 0) {
         j["emitType"] = emitType_;
-    if (emissionRate_ != 50.0f)
+    }
+    if (emissionRate_ != 50.0f) {
         j["emissionRate"] = emissionRate_;
-    if (lifeTimeMin_ != 0.5f)
+    }
+    if (lifeTimeMin_ != 0.5f) {
         j["lifeTimeMin"] = lifeTimeMin_;
-    if (lifeTimeMax_ != 1.0f)
+    }
+    if (lifeTimeMax_ != 1.0f) {
         j["lifeTimeMax"] = lifeTimeMax_;
-    if (velocity_ != 1.0f)
+    }
+    if (velocity_ != 1.0f) {
         j["velocity"] = velocity_;
-    if (radius_ != 0.0f)
+    }
+    if (radius_ != 0.0f) {
         j["radius"] = radius_;
-    if (spread_ != 0.1f)
+    }
+    if (spread_ != 0.1f) {
         j["spread"] = spread_;
+    }
 
-    if (atlasRows_ != 1)
+    if (atlasRows_ != 1) {
         j["atlasRows"] = atlasRows_;
-    if (atlasCols_ != 1)
+    }
+    if (atlasCols_ != 1) {
         j["atlasCols"] = atlasCols_;
+    }
 
-    if (gravity_ != 0.0f)
+    if (gravity_ != 0.0f) {
         j["gravity"] = gravity_;
-    if (damping_ != 0.0f)
+    }
+    if (damping_ != 0.0f) {
         j["damping"] = damping_;
-    if (bounce_ != 0.0f)
+    }
+    if (bounce_ != 0.0f) {
         j["bounce"] = bounce_;
-    if (groundHeight_ != -100.0f)
+    }
+    if (groundHeight_ != -100.0f) {
         j["groundHeight"] = groundHeight_;
-    if (attractorStrength_ != 0.0f)
+    }
+    if (attractorStrength_ != 0.0f) {
         j["attractorStrength"] = attractorStrength_;
-    if (attractorPos_.x != 0.0f || attractorPos_.y != 0.0f || attractorPos_.z != 0.0f)
+    }
+    if (attractorPos_.x != 0.0f || attractorPos_.y != 0.0f || attractorPos_.z != 0.0f) {
         j["attractorPos"] = {attractorPos_.x, attractorPos_.y, attractorPos_.z};
-    if (jitter_ != 0.0f)
+    }
+    if (jitter_ != 0.0f) {
         j["jitter"] = jitter_;
+    }
 
-    if (enableTrail_)
+    if (enableTrail_) {
         j["enableTrail"] = enableTrail_;
-    if (trailFrequency_ != 0.05f)
+    }
+    if (trailFrequency_ != 0.05f) {
         j["trailFrequency"] = trailFrequency_;
-    if (!showDebugArea_)
+    }
+    if (!showDebugArea_) {
         j["showDebugArea"] = showDebugArea_;
-    if (enableDeathEmit_)
+    }
+    if (enableDeathEmit_) {
         j["enableDeathEmit"] = enableDeathEmit_;
-    if (enableRandomRotation_)
+    }
+    if (enableRandomRotation_) {
         j["enableRandomRotation"] = enableRandomRotation_;
+    }
 
-    if (billboardMode_ != 1)
+    if (billboardMode_ != 1) {
         j["billboardMode"] = billboardMode_;
-    if (burstCountOnAwake_ != 0)
+    }
+    if (burstCountOnAwake_ != 0) {
         j["burstCountOnAwake"] = burstCountOnAwake_;
-    if (color_.x != 1.0f || color_.y != 1.0f || color_.z != 1.0f || color_.w != 1.0f)
+    }
+    if (color_.x != 1.0f || color_.y != 1.0f || color_.z != 1.0f || color_.w != 1.0f) {
         j["color"] = {color_.x, color_.y, color_.z, color_.w};
-    if (midColor_.x != 1.0f || midColor_.y != 1.0f || midColor_.z != 1.0f || midColor_.w != 1.0f)
+    }
+    if (midColor_.x != 1.0f || midColor_.y != 1.0f || midColor_.z != 1.0f || midColor_.w != 1.0f) {
         j["midColor"] = {midColor_.x, midColor_.y, midColor_.z, midColor_.w};
-    if (startScale_.x != 1.0f || startScale_.y != 1.0f || startScale_.z != 1.0f)
+    }
+    if (startScale_.x != 1.0f || startScale_.y != 1.0f || startScale_.z != 1.0f) {
         j["startScale"] = {startScale_.x, startScale_.y, startScale_.z};
-    if (midScale_.x != 1.0f || midScale_.y != 1.0f || midScale_.z != 1.0f)
+    }
+    if (midScale_.x != 1.0f || midScale_.y != 1.0f || midScale_.z != 1.0f) {
         j["midScale"] = {midScale_.x, midScale_.y, midScale_.z};
-    if (endScale_.x != 0.0f || endScale_.y != 0.0f || endScale_.z != 0.0f)
+    }
+    if (endScale_.x != 0.0f || endScale_.y != 0.0f || endScale_.z != 0.0f) {
         j["endScale"] = {endScale_.x, endScale_.y, endScale_.z};
-    if (midPoint_ != 0.5f)
+    }
+    if (midPoint_ != 0.5f) {
         j["midPoint"] = midPoint_;
+    }
 
-    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 0.0f)
+    if (direction_.x != 0.0f || direction_.y != 0.0f || direction_.z != 0.0f) {
         j["direction"] = {direction_.x, direction_.y, direction_.z};
-    if (!emitterModelPath_.empty())
+    }
+    if (!emitterModelPath_.empty()) {
         j["emitterModelPath"] = emitterModelPath_;
-    if (areaSize_.x != 10.0f || areaSize_.y != 10.0f || areaSize_.z != 10.0f)
+    }
+    if (areaSize_.x != 10.0f || areaSize_.y != 10.0f || areaSize_.z != 10.0f) {
         j["areaSize"] = {areaSize_.x, areaSize_.y, areaSize_.z};
+    }
 }
 
 void ParticleObject::Deserialize(const nlohmann::json& j) {
@@ -370,60 +404,83 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("isUnscaledTime")) {
         SetUnscaledTime(j["isUnscaledTime"].get<bool>());
     }
-    if (j.contains("emitOnAwake"))
+    if (j.contains("emitOnAwake")) {
         emitOnAwake_ = j["emitOnAwake"].get<bool>();
+    }
 
-    if (j.contains("emitType"))
+    if (j.contains("emitType")) {
         emitType_ = j["emitType"].get<int>();
-    if (j.contains("emissionRate"))
+    }
+    if (j.contains("emissionRate")) {
         emissionRate_ = j["emissionRate"].get<float>();
-    if (j.contains("lifeTimeMin"))
+    }
+    if (j.contains("lifeTimeMin")) {
         lifeTimeMin_ = j["lifeTimeMin"].get<float>();
-    if (j.contains("lifeTimeMax"))
+    }
+    if (j.contains("lifeTimeMax")) {
         lifeTimeMax_ = j["lifeTimeMax"].get<float>();
-    if (j.contains("velocity"))
+    }
+    if (j.contains("velocity")) {
         velocity_ = j["velocity"].get<float>();
-    if (j.contains("radius"))
+    }
+    if (j.contains("radius")) {
         radius_ = j["radius"].get<float>();
-    if (j.contains("spread"))
+    }
+    if (j.contains("spread")) {
         spread_ = j["spread"].get<float>();
+    }
 
-    if (j.contains("atlasRows"))
+    if (j.contains("atlasRows")) {
         atlasRows_ = j["atlasRows"].get<int>();
-    if (j.contains("atlasCols"))
+    }
+    if (j.contains("atlasCols")) {
         atlasCols_ = j["atlasCols"].get<int>();
+    }
 
-    if (j.contains("gravity"))
+    if (j.contains("gravity")) {
         gravity_ = j["gravity"].get<float>();
-    if (j.contains("damping"))
+    }
+    if (j.contains("damping")) {
         damping_ = j["damping"].get<float>();
-    if (j.contains("bounce"))
+    }
+    if (j.contains("bounce")) {
         bounce_ = j["bounce"].get<float>();
-    if (j.contains("groundHeight"))
+    }
+    if (j.contains("groundHeight")) {
         groundHeight_ = j["groundHeight"].get<float>();
-    if (j.contains("attractorStrength"))
+    }
+    if (j.contains("attractorStrength")) {
         attractorStrength_ = j["attractorStrength"].get<float>();
+    }
     if (j.contains("attractorPos") && j["attractorPos"].size() == 3) {
         attractorPos_ = {j["attractorPos"][0], j["attractorPos"][1], j["attractorPos"][2]};
     }
-    if (j.contains("jitter"))
+    if (j.contains("jitter")) {
         jitter_ = j["jitter"].get<float>();
+    }
 
-    if (j.contains("enableTrail"))
+    if (j.contains("enableTrail")) {
         enableTrail_ = j["enableTrail"].get<bool>();
-    if (j.contains("trailFrequency"))
+    }
+    if (j.contains("trailFrequency")) {
         trailFrequency_ = j["trailFrequency"].get<float>();
-    if (j.contains("showDebugArea"))
+    }
+    if (j.contains("showDebugArea")) {
         showDebugArea_ = j["showDebugArea"].get<bool>();
-    if (j.contains("enableDeathEmit"))
+    }
+    if (j.contains("enableDeathEmit")) {
         enableDeathEmit_ = j["enableDeathEmit"].get<bool>();
-    if (j.contains("enableRandomRotation"))
+    }
+    if (j.contains("enableRandomRotation")) {
         enableRandomRotation_ = j["enableRandomRotation"].get<bool>();
+    }
 
-    if (j.contains("billboardMode"))
+    if (j.contains("billboardMode")) {
         billboardMode_ = j["billboardMode"].get<int>();
-    if (j.contains("burstCountOnAwake"))
+    }
+    if (j.contains("burstCountOnAwake")) {
         burstCountOnAwake_ = j["burstCountOnAwake"].get<int>();
+    }
     if (j.contains("color") && j["color"].size() == 4) {
         color_ = {j["color"][0], j["color"][1], j["color"][2], j["color"][3]};
     }
@@ -439,15 +496,17 @@ void ParticleObject::Deserialize(const nlohmann::json& j) {
     if (j.contains("endScale") && j["endScale"].size() == 3) {
         endScale_ = {j["endScale"][0], j["endScale"][1], j["endScale"][2]};
     }
-    if (j.contains("midPoint"))
+    if (j.contains("midPoint")) {
         midPoint_ = j["midPoint"].get<float>();
+    }
 
     if (j.contains("direction")) {
         auto dir = j["direction"];
         direction_ = {dir[0], dir[1], dir[2]};
     }
-    if (j.contains("emitterModelPath"))
+    if (j.contains("emitterModelPath")) {
         emitterModelPath_ = j["emitterModelPath"].get<std::string>();
+    }
     if (j.contains("areaSize") && j["areaSize"].size() == 3) {
         areaSize_ = {j["areaSize"][0], j["areaSize"][1], j["areaSize"][2]};
     }
@@ -480,8 +539,9 @@ bool ParticleObject::LoadFromJson(const std::string& filepath) {
 }
 
 void ParticleObject::RegisterProperties(Component* comp) {
-    if (!comp)
+    if (!comp) {
         return;
+    }
 
     comp->RegisterHeader("Emitter Basics");
     comp->RegisterProperty("Emit On Awake", &emitOnAwake_);
@@ -555,8 +615,9 @@ void ParticleObject::DebugUI(const char* name) {
                         currentIndex = i;
                     }
                 }
-                if (currentIndex == -1)
+                if (currentIndex == -1) {
                     currentIndex = 0; // fallback
+                }
 
                 if (ImGui::Combo("Texture", &currentIndex, namesCStr.data(), (int)namesCStr.size())) {
                     if (texturePath_ != textureNames[currentIndex]) {
@@ -613,11 +674,13 @@ void ParticleObject::DebugUI(const char* name) {
                 EmitBurst(50);
             }
             ImGui::SameLine();
-            if (ImGui::Button("Play"))
+            if (ImGui::Button("Play")) {
                 Play();
+            }
             ImGui::SameLine();
-            if (ImGui::Button("Stop"))
+            if (ImGui::Button("Stop")) {
                 Stop();
+            }
 
             ImGui::TreePop();
         }
@@ -672,8 +735,9 @@ void ParticleObject::DebugUI(const char* name) {
 
             ImGui::Separator();
             changed |= ImGui::Checkbox("Enable Trail (Sparks)", &enableTrail_);
-            if (enableTrail_)
+            if (enableTrail_) {
                 changed |= ImGui::DragFloat("Trail Frequency", &trailFrequency_, 0.01f, 0.01f, 1.0f);
+            }
             changed |= ImGui::Checkbox("Enable Death Emit", &enableDeathEmit_);
             changed |= ImGui::Checkbox("Enable Random Rotation", &enableRandomRotation_);
 

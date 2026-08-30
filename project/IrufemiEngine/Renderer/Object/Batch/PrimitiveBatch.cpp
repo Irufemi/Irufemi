@@ -77,8 +77,9 @@ void PrimitiveBatch::Draw() {
         res = &primitiveManager_->GetStandardResource(type_);
     }
 
-    if (!res || !res->vertexResource)
+    if (!res || !res->vertexResource) {
         return;
+    }
 
     RenderPackets::PrimitiveBatchPacket p{};
     // We need to make sure DrawManager understands PrimitiveBatchPacket

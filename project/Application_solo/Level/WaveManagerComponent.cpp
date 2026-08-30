@@ -41,8 +41,9 @@ void WaveManagerComponent::Initialize() {
 std::shared_ptr<ModelBatchRendererComponent>
 WaveManagerComponent::GetPreviewBatchRenderer(const std::string& modelPath) {
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine)
+    if (!engine) {
         return nullptr;
+    }
 
     if (currentPreviewModelPath_ != modelPath || !previewBatch_) {
         currentPreviewModelPath_ = modelPath;
@@ -63,8 +64,9 @@ void WaveManagerComponent::Draw() {
     auto engine = BaseModel::GetIrufemiEngine();
     if (engine && engine->GetSelectedObject().get() == gameObject_) {
         auto scene = gameObject_->GetScene();
-        if (!scene)
+        if (!scene) {
             return;
+        }
 
         if (previewBatch_) {
             previewBatch_->ClearInstances();
@@ -73,8 +75,9 @@ void WaveManagerComponent::Draw() {
         SplineComponent* spline = nullptr;
         if (targetSplineID_ != 0) {
             auto splineObj = scene->FindGameObjectByID(targetSplineID_);
-            if (splineObj)
+            if (splineObj) {
                 spline = splineObj->GetComponent<SplineComponent>();
+            }
         }
 
         if (spline) {
@@ -89,8 +92,9 @@ void WaveManagerComponent::Draw() {
         }
 
         auto cartObj = scene->FindGameObject("PlayerCart");
-        if (!cartObj)
+        if (!cartObj) {
             cartObj = scene->FindGameObject("Player");
+        }
         auto follower = cartObj ? cartObj->GetComponent<SplineFollowerComponent>() : nullptr;
         SplineComponent* railSpline = nullptr;
         if (follower) {
@@ -201,8 +205,9 @@ void WaveManagerComponent::Update() {
                 }
             }
         }
-        if (!playerFollower_)
+        if (!playerFollower_) {
             return;
+        }
     }
 
     float currentDist = playerFollower_->GetCurrentDistance();
@@ -250,14 +255,16 @@ void WaveManagerComponent::Update() {
 
 void WaveManagerComponent::CacheSpawnPoints() {
     auto scene = gameObject_->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
 
     spawnPointsMap_.clear();
     const auto& objs = scene->GetGameObjects();
     for (const auto& obj : objs) {
-        if (!obj)
+        if (!obj) {
             continue;
+        }
 
         // 最初のバグ (this == 0xF) 対策: 生ポインタが異常に小さい値かどうかをチェック
         auto* rawPtr = obj.get();
@@ -268,8 +275,9 @@ void WaveManagerComponent::CacheSpawnPoints() {
             continue;
         }
 
-        if (!obj->GetIsActive())
+        if (!obj->GetIsActive()) {
             continue;
+        }
         auto sp = obj->GetComponent<SpawnPointComponent>();
         if (sp) {
             spawnPointsMap_[sp->GetWaveId()].push_back(sp);

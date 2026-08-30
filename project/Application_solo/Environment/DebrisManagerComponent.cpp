@@ -155,8 +155,9 @@ void DebrisManagerComponent::Update() {
             totalWeight += var.spawnWeight;
         }
 
-        if (totalWeight <= 0)
+        if (totalWeight <= 0) {
             return;
+        }
 
         for (int i = 0; i < count; ++i) {
             float distFwd = (count > 100) ? Irufemi::Random::GeneratorFloat(10.0f, 300.0f)
@@ -227,8 +228,9 @@ void DebrisManagerComponent::Update() {
 }
 
 std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
-    if (variations_.empty())
+    if (variations_.empty()) {
         return nullptr;
+    }
 
     // Boss用などは一旦0番（Archwayや固定のもの）を渡しておく
     auto& var = variations_[0];
@@ -246,8 +248,9 @@ std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
 }
 
 void DebrisManagerComponent::ReleaseDebris(std::shared_ptr<GameObject> debris) {
-    if (!debris)
+    if (!debris) {
         return;
+    }
     auto comp = debris->GetComponent<DebrisComponent>();
     if (comp) {
         int vid = comp->GetVirtualId();
@@ -396,11 +399,13 @@ void DebrisManagerComponent::UpdatePulledDebris(float deltaTime) {
 
     for (int i = (int)pulledDebris_.size() - 1; i >= 0; --i) {
         DebrisComponent* debris = pulledDebris_[i];
-        if (!debris || !debris->gameObject_)
+        if (!debris || !debris->gameObject_) {
             continue;
+        }
         auto transform = debris->GetTransform();
-        if (!transform)
+        if (!transform) {
             continue;
+        }
 
         if (auto target = debris->targetObject_.lock()) {
             auto targetTransform = target->GetComponent<TransformComponent>();
@@ -427,11 +432,13 @@ void DebrisManagerComponent::UpdateOrbitingDebris(float deltaTime) {
 
     for (int i = (int)orbitingDebris_.size() - 1; i >= 0; --i) {
         DebrisComponent* debris = orbitingDebris_[i];
-        if (!debris || !debris->gameObject_)
+        if (!debris || !debris->gameObject_) {
             continue;
+        }
         auto transform = debris->GetTransform();
-        if (!transform)
+        if (!transform) {
             continue;
+        }
 
         if (auto target = debris->targetObject_.lock()) {
             auto targetTransform = target->GetComponent<TransformComponent>();
@@ -458,11 +465,13 @@ void DebrisManagerComponent::UpdateBossOrbitingDebris(float deltaTime) {
 
     for (int i = (int)bossOrbitingDebris_.size() - 1; i >= 0; --i) {
         DebrisComponent* debris = bossOrbitingDebris_[i];
-        if (!debris || !debris->gameObject_)
+        if (!debris || !debris->gameObject_) {
             continue;
+        }
         auto transform = debris->GetTransform();
-        if (!transform)
+        if (!transform) {
             continue;
+        }
 
         if (auto target = debris->targetObject_.lock()) {
             auto targetTransform = target->GetComponent<TransformComponent>();
@@ -504,11 +513,13 @@ void DebrisManagerComponent::UpdateThrownDebris(float deltaTime) {
 
     for (int i = (int)thrownDebris_.size() - 1; i >= 0; --i) {
         DebrisComponent* debris = thrownDebris_[i];
-        if (!debris || !debris->gameObject_)
+        if (!debris || !debris->gameObject_) {
             continue;
+        }
         auto transform = debris->GetTransform();
-        if (!transform)
+        if (!transform) {
             continue;
+        }
 
         bool updatedWithTarget = false;
         if (auto target = debris->targetObject_.lock()) {

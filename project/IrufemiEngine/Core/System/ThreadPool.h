@@ -160,8 +160,9 @@ auto ThreadPool::Enqueue(std::shared_ptr<TaskGroup> group, F&& f,
          */
         std::unique_lock<std::mutex> lock(queueMutex_);
         if (stop_) {
-            if (group)
+            if (group) {
                 group->NotifyTaskFinished();
+            }
             throw std::runtime_error("Enqueue on stopped ThreadPool");
         }
 

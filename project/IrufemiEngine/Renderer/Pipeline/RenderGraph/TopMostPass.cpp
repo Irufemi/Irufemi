@@ -69,8 +69,9 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // キューの描画関数を定義
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
-        if (queue.empty())
+        if (queue.empty()) {
             return;
+        }
 
         Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;

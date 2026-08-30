@@ -48,13 +48,15 @@ void CameraShakeComponent::Update() {
         if (gameObject_) {
             cameraComp_ = gameObject_->GetComponent<CameraComponent>();
         }
-        if (!cameraComp_)
+        if (!cameraComp_) {
             return;
+        }
     }
 
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     float dt = engine->GetGameDeltaTime();
 

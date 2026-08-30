@@ -271,8 +271,9 @@ public:
      */
     ComponentProperty& RegisterProperty(const std::string& name, std::vector<Irufemi::Vector3>* ptr) {
         nlohmann::json jArray = nlohmann::json::array();
-        for (const auto& v : *ptr)
+        for (const auto& v : *ptr) {
             jArray.push_back(Irufemi::JsonUtility::ToJson(v));
+        }
         properties_.push_back({name, ComponentPropertyType::Float3Array, ptr, 0.0f, 0.0f, {}, "", jArray});
         return properties_.back();
     }
@@ -351,8 +352,9 @@ public:
      */
     virtual void Deserialize(const nlohmann::json& j) {
         for (const auto& prop : properties_) {
-            if (!j.contains(prop.name))
+            if (!j.contains(prop.name)) {
                 continue;
+            }
             switch (prop.type) {
             case ComponentPropertyType::Float:
                 *static_cast<float*>(prop.data) = j[prop.name].get<float>();
@@ -407,15 +409,18 @@ public:
      * @brief コンポーネントのプロパティを別のコンポーネントからコピーする (ディープコピー用)
      */
     virtual void CopyPropertiesFrom(const Component* other) {
-        if (!other)
+        if (!other) {
             return;
-        if (properties_.size() != other->properties_.size())
+        }
+        if (properties_.size() != other->properties_.size()) {
             return;
+        }
         for (size_t i = 0; i < properties_.size(); ++i) {
             auto& dst = properties_[i];
             const auto& src = other->properties_[i];
-            if (dst.type != src.type)
+            if (dst.type != src.type) {
                 continue;
+            }
             switch (dst.type) {
             case ComponentPropertyType::Float:
                 *static_cast<float*>(dst.data) = *static_cast<float*>(src.data);

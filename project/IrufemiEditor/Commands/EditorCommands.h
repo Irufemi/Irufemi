@@ -42,23 +42,26 @@ public:
 
     void Do() override {
         if (parent_) {
-            if (index_ == (size_t)-1)
+            if (index_ == (size_t)-1) {
                 parent_->AddChild(object_);
-            else
+            } else {
                 parent_->InsertChild(object_, index_);
+            }
         } else {
-            if (index_ == (size_t)-1)
+            if (index_ == (size_t)-1) {
                 scene_->AddGameObject(object_);
-            else
+            } else {
                 scene_->InsertGameObject(object_, index_);
+            }
         }
     }
 
     void Undo() override {
-        if (parent_)
+        if (parent_) {
             parent_->RemoveChild(object_);
-        else
+        } else {
             scene_->RemoveGameObject(object_);
+        }
     }
 
 private:
@@ -84,10 +87,11 @@ public:
     }
 
     void Do() override {
-        if (parent_)
+        if (parent_) {
             parent_->RemoveChild(object_);
-        else
+        } else {
             scene_->RemoveGameObject(object_);
+        }
     }
 
     void Undo() override {

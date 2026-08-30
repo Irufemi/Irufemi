@@ -61,8 +61,9 @@ void GameLoopManagerComponent::Update() {
 }
 
 void GameLoopManagerComponent::OnBossDied() {
-    if (state_ != State::Playing)
+    if (state_ != State::Playing) {
         return;
+    }
     state_ = State::Finished;
     isClear_ = true;
     if (playerHealth_) {
@@ -72,8 +73,9 @@ void GameLoopManagerComponent::OnBossDied() {
 }
 
 void GameLoopManagerComponent::OnPlayerDied() {
-    if (state_ != State::Playing)
+    if (state_ != State::Playing) {
         return;
+    }
     state_ = State::Finished;
     isClear_ = false;
     BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);

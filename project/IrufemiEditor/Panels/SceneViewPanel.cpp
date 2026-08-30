@@ -35,8 +35,9 @@ void SceneViewPanel::Initialize(EditorManager* editorManager) {
 }
 
 void SceneViewPanel::Draw() {
-    if (!editorManager_)
+    if (!editorManager_) {
         return;
+    }
 
     ImGui::Begin("Scene");
 
@@ -191,15 +192,18 @@ void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
 
         auto DrawToolBtn = [](const char* icon, bool selected, ImGuizmo::OPERATION op, ImGuizmo::OPERATION& currentOp,
                               const char* tooltip) {
-            if (selected)
+            if (selected) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-            else
+            } else {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-            if (ImGui::Button(icon, ImVec2(24, 24)))
+            }
+            if (ImGui::Button(icon, ImVec2(24, 24))) {
                 currentOp = op;
+            }
             ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered())
+            if (ImGui::IsItemHovered()) {
                 ImGui::SetTooltip("%s", tooltip);
+            }
         };
 
         DrawToolBtn(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, isTranslate, ImGuizmo::TRANSLATE, currentGizmoOperation_,
@@ -229,17 +233,19 @@ void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
         bool* drawCollider = engine->GetCollisionManager()->GetIsDrawDebugLinePtr();
         if (drawCollider) {
             bool isActive = *drawCollider;
-            if (isActive)
+            if (isActive) {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-            else
+            } else {
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            }
 
             if (ImGui::Button("Col", ImVec2(35, 24))) {
                 *drawCollider = !isActive;
             }
             ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered())
+            if (ImGui::IsItemHovered()) {
                 ImGui::SetTooltip("Toggle Collider Debug Draw");
+            }
         }
 
         ImGui::PopStyleVar();
@@ -256,8 +262,9 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
     auto* engine = editorManager_->GetEngine();
     if (auto selectedObj = editorManager_->GetSelectedObject()) {
         // ロックされている、またはフォルダの場合はギズモを非表示・操作不可にする
-        if (selectedObj->GetIsLocked() || selectedObj->GetIsFolder())
+        if (selectedObj->GetIsLocked() || selectedObj->GetIsFolder()) {
             return;
+        }
 
         if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
             Irufemi::Matrix4x4 view = camera->GetViewMatrix();
@@ -486,8 +493,9 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
 
             std::function<void(const std::shared_ptr<GameObject>&)> PickUI =
                 [&](const std::shared_ptr<GameObject>& obj) {
-                    if (!obj || obj->IsDestroyed() || !obj->GetIsActive())
+                    if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) {
                         return;
+                    }
 
                     if (auto spriteComp = obj->GetComponent<SpriteRendererComponent>()) {
                         if (auto transform = obj->GetComponent<TransformComponent>()) {
@@ -536,15 +544,17 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
 
                     for (auto it = obj->GetChildren().rbegin(); it != obj->GetChildren().rend(); ++it) {
                         PickUI(*it);
-                        if (isHit)
+                        if (isHit) {
                             return;
+                        }
                     }
                 };
 
             for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
                 PickUI(*it);
-                if (isHit)
+                if (isHit) {
                     break;
+                }
             }
         }
 
@@ -565,8 +575,9 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                 if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
                     std::function<void(const std::shared_ptr<GameObject>&)> Pick3D =
                         [&](const std::shared_ptr<GameObject>& obj) {
-                            if (!obj || obj.get() == closestObj)
+                            if (!obj || obj.get() == closestObj) {
                                 return;
+                            }
 
                             float dist = 0.0f;
                             for (auto& comp : obj->GetComponents()) {

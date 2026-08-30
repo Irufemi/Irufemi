@@ -17,8 +17,9 @@
 #include "Core/Utility/Log.h"
 
 void BossComponent::LoadStatusFromJson() {
-    if (statusDataPath_.empty())
+    if (statusDataPath_.empty()) {
         return;
+    }
 
     std::ifstream file(statusDataPath_);
     if (!file.is_open()) {
@@ -87,19 +88,22 @@ void BossComponent::Initialize() {
 }
 
 void BossComponent::Start() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
     auto scene = gameObject_->GetScene();
     if (scene) {
         auto container = scene->FindGameObject("BossContainer");
         if (container) {
             bossContainer_ = container;
             auto droneObj = scene->FindGameObject("BossDroneManager");
-            if (droneObj)
+            if (droneObj) {
                 droneManager_ = droneObj->GetComponent<DroneManagerComponent>();
+            }
             auto bulletObj = scene->FindGameObject("BossBulletManager");
-            if (bulletObj)
+            if (bulletObj) {
                 bulletManager_ = bulletObj->GetComponent<BossBulletManagerComponent>();
+            }
         }
 
         auto managerObj = scene->FindGameObject("DebrisManager");
@@ -133,8 +137,9 @@ void BossComponent::Start() {
 }
 
 void BossComponent::Update() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     if (currentState_) {
         currentState_->Update(this);
@@ -148,8 +153,9 @@ void BossComponent::OnRegisterProperties() {
 }
 
 std::shared_ptr<GameObject> BossComponent::ExtractDebris() {
-    if (shields_.empty())
+    if (shields_.empty()) {
         return nullptr;
+    }
 
     auto debris = shields_.back();
     shields_.pop_back();

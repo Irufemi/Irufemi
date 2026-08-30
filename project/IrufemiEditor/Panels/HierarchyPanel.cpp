@@ -20,8 +20,9 @@ void HierarchyPanel::Initialize(EditorManager* editorManager) {
 }
 
 void HierarchyPanel::Draw() {
-    if (!editorManager_)
+    if (!editorManager_) {
         return;
+    }
 
     ImGui::Begin("Hierarchy");
 
@@ -39,12 +40,14 @@ void HierarchyPanel::Draw() {
 
             // 循環参照チェック用ラムダ
             auto IsDescendant = [](std::shared_ptr<GameObject> potentialDescendant, GameObject* ancestor) {
-                if (!potentialDescendant || !ancestor)
+                if (!potentialDescendant || !ancestor) {
                     return false;
+                }
                 auto current = potentialDescendant->GetParent();
                 while (current) {
-                    if (current.get() == ancestor)
+                    if (current.get() == ancestor) {
                         return true;
+                    }
                     current = current->GetParent();
                 }
                 return false;
@@ -52,8 +55,9 @@ void HierarchyPanel::Draw() {
 
             // 再帰描画用ラムダ関数
             std::function<void(std::shared_ptr<GameObject>)> DrawNode = [&](std::shared_ptr<GameObject> obj) {
-                if (!obj)
+                if (!obj) {
                     return;
+                }
 
                 bool isSelected = false;
                 if (auto selected = editorManager_->GetSelectedObject()) {
@@ -232,8 +236,9 @@ void HierarchyPanel::Draw() {
             // --- 全体の空白での右クリック「Create」メニューを表示 ---
             if (ImGui::BeginPopupContextItem("HierarchyContextMenu", ImGuiPopupFlags_MouseButtonRight)) {
                 if (auto am = editorManager_->GetActionManager()) {
-                    if (ImGui::Selectable("Create Empty"))
+                    if (ImGui::Selectable("Create Empty")) {
                         am->CreatePrimitiveObject("Empty");
+                    }
                     if (ImGui::Selectable("Create Folder")) {
                         am->CreatePrimitiveObject("Empty");
                         if (auto newObj = editorManager_->GetSelectedObject()) {
@@ -243,23 +248,29 @@ void HierarchyPanel::Draw() {
                     }
 
                     if (ImGui::BeginMenu("3D Object")) {
-                        if (ImGui::Selectable("Cube"))
+                        if (ImGui::Selectable("Cube")) {
                             am->CreatePrimitiveObject("Cube");
-                        if (ImGui::Selectable("Sphere"))
+                        }
+                        if (ImGui::Selectable("Sphere")) {
                             am->CreatePrimitiveObject("Sphere");
-                        if (ImGui::Selectable("Cylinder"))
+                        }
+                        if (ImGui::Selectable("Cylinder")) {
                             am->CreatePrimitiveObject("Cylinder");
-                        if (ImGui::Selectable("Plane"))
+                        }
+                        if (ImGui::Selectable("Plane")) {
                             am->CreatePrimitiveObject("Plane");
+                        }
                         ImGui::Separator();
-                        if (ImGui::Selectable("Model (MeshRenderer)"))
+                        if (ImGui::Selectable("Model (MeshRenderer)")) {
                             am->CreatePrimitiveObject("Model");
+                        }
                         ImGui::EndMenu();
                     }
 
                     if (ImGui::BeginMenu("2D Object")) {
-                        if (ImGui::Selectable("Sprite"))
+                        if (ImGui::Selectable("Sprite")) {
                             am->CreatePrimitiveObject("Sprite");
+                        }
                         ImGui::EndMenu();
                     }
                 }
