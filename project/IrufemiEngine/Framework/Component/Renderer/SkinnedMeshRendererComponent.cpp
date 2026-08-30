@@ -37,33 +37,36 @@ void SkinnedMeshRendererComponent::Update() {
         animatedMesh_->SetScale(transform->GetWorldScale());
     }
 
-    
     // Animatorからのポーズがあれば適用、なければバインドポーズ(nullptr)
     animatedMesh_->Update(poseOverride_);
-    
+
     // 次フレームのためにリセット（毎フレーム指定される想定）
     poseOverride_ = nullptr;
 }
 
 void SkinnedMeshRendererComponent::Draw() {
-    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) return;
+    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive())
+        return;
     animatedMesh_->Draw();
 }
 
 bool SkinnedMeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!animatedMesh_) return false;
+    if (!animatedMesh_)
+        return false;
     auto cpuModel = animatedMesh_->GetCpuModel();
-    if (!cpuModel) return false;
-    
+    if (!cpuModel)
+        return false;
+
     auto transform = GetTransform();
-    if (!transform) return false;
+    if (!transform)
+        return false;
 
     // ローカルAABBから中心とサイズを取得
     Irufemi::Vector3 localCenter = (cpuModel->boundingBox.min + cpuModel->boundingBox.max) * 0.5f;
     Irufemi::Vector3 localHalfSize = (cpuModel->boundingBox.max - cpuModel->boundingBox.min) * 0.5f;
 
     Irufemi::OBB obb;
-    
+
     // スケルトンのルートノードのTransform（スケール等）を適用する
     Irufemi::Matrix4x4 rootTransform = Irufemi::Math::MakeIdentity4x4();
     auto skeletonData = animatedMesh_->GetSkeletonData();
@@ -76,22 +79,28 @@ bool SkinnedMeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDi
     obb.center = Irufemi::Math::Transform(localCenter, wmat);
 
     // ワールド行列の各軸ベクトルを抽出して正規化（回転）＆スケール適用
-    Irufemi::Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
-    Irufemi::Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
-    Irufemi::Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
+    Irufemi::Vector3 xAxis = {wmat.m[0][0], wmat.m[0][1], wmat.m[0][2]};
+    Irufemi::Vector3 yAxis = {wmat.m[1][0], wmat.m[1][1], wmat.m[1][2]};
+    Irufemi::Vector3 zAxis = {wmat.m[2][0], wmat.m[2][1], wmat.m[2][2]};
 
     float lenX = Irufemi::Math::Length(xAxis);
     float lenY = Irufemi::Math::Length(yAxis);
     float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f) obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
-    else obb.orientations[0] = {1.0f, 0.0f, 0.0f};
+    if (lenX > 0.0001f)
+        obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
+    else
+        obb.orientations[0] = {1.0f, 0.0f, 0.0f};
 
-    if (lenY > 0.0001f) obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
-    else obb.orientations[1] = {0.0f, 1.0f, 0.0f};
+    if (lenY > 0.0001f)
+        obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
+    else
+        obb.orientations[1] = {0.0f, 1.0f, 0.0f};
 
-    if (lenZ > 0.0001f) obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
-    else obb.orientations[2] = {0.0f, 0.0f, 1.0f};
+    if (lenZ > 0.0001f)
+        obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
+    else
+        obb.orientations[2] = {0.0f, 0.0f, 1.0f};
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;
@@ -107,10 +116,10 @@ nlohmann::json SkinnedMeshRendererComponent::Serialize() {
 }
 
 void SkinnedMeshRendererComponent::OnRegisterProperties() {
-    RegisterProperty("Model File", &modelFilename_)
-        .SetTooltip("The path to the GLTF or OBJ file to load");
+    RegisterProperty("Model File", &modelFilename_).SetTooltip("The path to the GLTF or OBJ file to load");
 }
 
 void SkinnedMeshRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("Model File")) modelFilename_ = j["Model File"].get<std::string>();
+    if (j.contains("Model File"))
+        modelFilename_ = j["Model File"].get<std::string>();
 }

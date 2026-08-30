@@ -56,17 +56,23 @@ public:
     /**
      * @brief Capacity を実行する。
      */
-    uint32_t Capacity() const { return capacity_; }
+    uint32_t Capacity() const {
+        return capacity_;
+    }
     /**
      * @brief BaseIndex を実行する。
      */
-    uint32_t BaseIndex() const { return baseIndex_; }
+    uint32_t BaseIndex() const {
+        return baseIndex_;
+    }
 
 private:
     struct Pending {
         uint64_t fence;
         uint32_t index;
-        bool operator<(const Pending& rhs) const { return fence > rhs.fence; } // フェンス小→大
+        bool operator<(const Pending& rhs) const {
+            return fence > rhs.fence;
+        } // フェンス小→大
     };
 
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> heap_;

@@ -26,10 +26,14 @@ public:
     void Start() override;
     void Update() override;
     void Draw() override;
-    
-    std::string GetComponentName() const override { return "EnvironmentManagerComponent"; }
+
+    std::string GetComponentName() const override {
+        return "EnvironmentManagerComponent";
+    }
     void OnRegisterProperties() override;
-    bool CanUpdateInEditMode() const override { return true; }
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
 
 private:
     struct SpawnedEnvInfo {

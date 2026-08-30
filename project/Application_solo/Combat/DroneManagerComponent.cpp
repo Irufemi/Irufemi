@@ -27,22 +27,26 @@ void DroneManagerComponent::Start() {
 void DroneManagerComponent::Update() {
     if (!batchRenderer_) {
         batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
-        if (!batchRenderer_) return;
+        if (!batchRenderer_)
+            return;
     }
-    
+
     batchRenderer_->ClearInstances();
-    
+
     activeDroneCount_ = static_cast<int>(activeDrones_.size());
-    if (activeDrones_.empty()) return;
+    if (activeDrones_.empty())
+        return;
 
     auto bossObj = boss_.lock();
-    if (!bossObj) return;
-    
+    if (!bossObj)
+        return;
+
     auto bossTransform = bossObj->GetComponent<TransformComponent>();
-    if (!bossTransform) return;
-    
+    if (!bossTransform)
+        return;
+
     Irufemi::Vector3 bossPos = bossTransform->GetWorldPosition();
-    
+
     // プレイヤーの座標取得
     Irufemi::Vector3 playerPos = bossPos; // デフォルト
     bool hasPlayer = false;
@@ -59,17 +63,18 @@ void DroneManagerComponent::Update() {
     for (size_t i = 0; i < activeDrones_.size(); ++i) {
         auto& droneObj = activeDrones_[i];
         auto& anim = animDataList_[i];
-        
-        if (!droneObj || !droneObj->GetIsActive()) continue;
-        
+
+        if (!droneObj || !droneObj->GetIsActive())
+            continue;
+
         // 1. 旋回角度の更新
         anim.orbitAngle += orbitSpeed_ * deltaTime;
-        
+
         // 2. 座標の計算
         float x = std::cos(anim.orbitAngle) * orbitRadius_;
         float y = std::sin(anim.orbitAngle) * orbitRadius_;
         Irufemi::Vector3 targetPos = bossPos + Irufemi::Vector3{x, y, 0.0f};
-        
+
         // 3. 向きの計算
         Irufemi::Vector3 rot = {0.0f, 0.0f, 0.0f};
         if (hasPlayer) {
@@ -79,14 +84,14 @@ void DroneManagerComponent::Update() {
             Irufemi::Vector3 dirToBoss = Irufemi::Math::Subtract(bossPos, targetPos).GetNormalized();
             rot = Irufemi::Math::LookRotation(dirToBoss);
         }
-        
+
         // 4. 当たり判定（GameObject）のTransform更新
         auto t = droneObj->GetComponent<TransformComponent>();
         if (t) {
             t->SetPosition(targetPos);
             t->SetRotation(rot);
         }
-        
+
         // 5. 弾幕の発射処理
         anim.fireTimer += deltaTime;
         if (anim.fireTimer >= fireInterval_) {
@@ -96,17 +101,17 @@ void DroneManagerComponent::Update() {
                 bulletManager_->SpawnBullet(targetPos, Irufemi::Math::Multiply(30.0f, dirToPlayer));
             }
         }
-        
+
         // 6. GPUバッチ描画用インスタンスデータの登録
         Irufemi::Transform batchT;
         batchT.translate = targetPos;
         batchT.rotate = rot;
         batchT.scale = {1.0f, 1.0f, 1.0f}; // Prefabのスケーリングを適用する場合は変更
-        if (t) batchT.scale = t->GetScale();
+        if (t)
+            batchT.scale = t->GetScale();
         batchRenderer_->AddInstance(batchT);
     }
 }
-
 
 void DroneManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -116,10 +121,11 @@ void DroneManagerComponent::OnRegisterProperties() {
     RegisterProperty("Active Drones (Batch)", &activeDroneCount_);
 }
 
-void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int count, BossBulletManagerComponent* bulletMgr) {
+void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int count,
+                                         BossBulletManagerComponent* bulletMgr) {
     boss_ = boss;
     bulletManager_ = bulletMgr;
-    
+
     if (!dronePool_) {
         auto factory = [this, boss]() {
             auto obj = GetGameObject()->Instantiate("resources/prefabs/BossDrone.json");
@@ -133,8 +139,9 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
         };
         dronePool_ = std::make_unique<ObjectPool<GameObject>>(maxDrones_, factory);
     }
-    
-    if (!dronePool_) return;
+
+    if (!dronePool_)
+        return;
 
     float angleStep = (Irufemi::Math::PI * 2.0f) / count;
 
@@ -145,7 +152,7 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
             if (droneObj) {
                 droneObj->SetIsActive(true);
                 activeDrones_.push_back(droneObj);
-                
+
                 DroneAnimData anim;
                 anim.orbitAngle = angleStep * i;
                 anim.fireTimer = Irufemi::Random::GeneratorFloat(0.0f, fireInterval_);
@@ -156,7 +163,8 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
 }
 
 void DroneManagerComponent::RecallAllDrones() {
-    if (!dronePool_) return;
+    if (!dronePool_)
+        return;
     for (auto& droneObj : activeDrones_) {
         if (droneObj) {
             droneObj->SetIsActive(false);

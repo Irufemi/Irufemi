@@ -25,7 +25,8 @@ public:
      * @param width ウィンドウ幅
      * @param height ウィンドウ高さ
      */
-    void Initialize(ID3D12Device* device, IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd, int32_t width, int32_t height);
+    void Initialize(ID3D12Device* device, IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd,
+                    int32_t width, int32_t height);
 
     /**
      * @brief 解放処理
@@ -43,7 +44,9 @@ public:
     /**
      * @brief 表示するバックバッファのインデックスを取得
      */
-    UINT GetCurrentBackBufferIndex() const { return swapChain_->GetCurrentBackBufferIndex(); }
+    UINT GetCurrentBackBufferIndex() const {
+        return swapChain_->GetCurrentBackBufferIndex();
+    }
 
     /** @name デスクリプタヒープの割り当て・解放 */
     ///@{
@@ -71,28 +74,38 @@ public:
 
     /** @name ゲッター */
     ///@{
-    IDXGISwapChain4* GetSwapChain() const { return swapChain_.Get(); }
+    IDXGISwapChain4* GetSwapChain() const {
+        return swapChain_.Get();
+    }
     /**
      * @brief SwapChainResource を取得する。
      * @return 取得された SwapChainResource
      */
-    ID3D12Resource* GetSwapChainResource(UINT index) const { return swapChainResources_[index].Get(); }
+    ID3D12Resource* GetSwapChainResource(UINT index) const {
+        return swapChainResources_[index].Get();
+    }
     /**
      * @brief DepthStencilResource を取得する。
      * @return 取得された DepthStencilResource
      */
-    ID3D12Resource* GetDepthStencilResource() const { return depthStencilResource_.Get(); }
+    ID3D12Resource* GetDepthStencilResource() const {
+        return depthStencilResource_.Get();
+    }
 
     /**
      * @brief RTVDescriptorHeap を取得する。
      * @return 取得された RTVDescriptorHeap
      */
-    ID3D12DescriptorHeap* GetRTVDescriptorHeap() const { return rtvDescriptorHeap_.Get(); }
+    ID3D12DescriptorHeap* GetRTVDescriptorHeap() const {
+        return rtvDescriptorHeap_.Get();
+    }
     /**
      * @brief DSVDescriptorHeap を取得する。
      * @return 取得された DSVDescriptorHeap
      */
-    ID3D12DescriptorHeap* GetDSVDescriptorHeap() const { return dsvDescriptorHeap_.Get(); }
+    ID3D12DescriptorHeap* GetDSVDescriptorHeap() const {
+        return dsvDescriptorHeap_.Get();
+    }
 
     /**
      * @brief RTVCPUDescriptorHandle を取得する。
@@ -119,35 +132,44 @@ public:
      * @brief RtvDesc を取得する。
      * @return 取得された RtvDesc
      */
-    D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() { return rtvDesc_; }
+    D3D12_RENDER_TARGET_VIEW_DESC& GetRtvDesc() {
+        return rtvDesc_;
+    }
     /**
      * @brief SwapChainDesc を取得する。
      * @return 取得された SwapChainDesc
      */
-    DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() { return swapChainDesc_; }
+    DXGI_SWAP_CHAIN_DESC1& GetSwapChainDesc() {
+        return swapChainDesc_;
+    }
     /**
      * @brief RtvHandles を取得する。
      * @return 取得された RtvHandles
      */
-    D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) { return rtvHandles_[index]; }
+    D3D12_CPU_DESCRIPTOR_HANDLE& GetRtvHandles(UINT index) {
+        return rtvHandles_[index];
+    }
 
     /**
      * @brief ティアリング（VSyncオフ時の低遅延描画）がサポートされているか取得する
      */
-    bool IsTearingSupported() const { return isTearingSupported_; }
+    bool IsTearingSupported() const {
+        return isTearingSupported_;
+    }
     ///@}
 
 private:
-
     /**
      * @brief 指定したサイズ・フォーマットの深度ステンシルリソースを生成する
      */
-    Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height);
+    Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width,
+                                                                             int32_t height);
 
     /**
      * @brief 各種オブジェクトの生成処理
      */
-    void CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd, int32_t width, int32_t height);
+    void CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd, int32_t width,
+                         int32_t height);
     /**
      * @brief CreateDescriptorHeaps を実行する。
      */
@@ -171,7 +193,7 @@ private:
     Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> swapChainResources_[2];
     bool isTearingSupported_ = false;
-    
+
     // --- 深度ステンシル ---
     Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_ = nullptr;
 
@@ -193,7 +215,7 @@ private:
     std::vector<uint32_t> freeDsvIndices_;
     std::vector<PendingDescriptor> pendingFreeRtvs_;
     std::vector<PendingDescriptor> pendingFreeDsvs_;
-    
+
     uint32_t nextRtvIndex_ = 4;
     uint32_t nextDsvIndex_ = 1;
 

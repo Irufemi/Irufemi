@@ -3,8 +3,7 @@
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Quaternion.h"
 
-template <typename tValue>
-struct Keyframe {
+template <typename tValue> struct Keyframe {
     float time;
     tValue value;
 };

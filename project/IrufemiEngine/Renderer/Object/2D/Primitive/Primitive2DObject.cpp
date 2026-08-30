@@ -148,8 +148,6 @@ void Primitive2DObject::SetShape(Irufemi::Primitive2DType type) {
     }
 }
 
-
-
 void Primitive2DObject::SetSubdivision(uint32_t subdiv) {
     if (subdivision_ != subdiv) {
         subdivision_ = subdiv;

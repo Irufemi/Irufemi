@@ -39,7 +39,7 @@ void CameraShakeComponent::PlayShakeSeconds(float intensity, float durationSecon
     // X, Y, Z の揺れやすさにバラツキを持たせる
     ev.axisIntensity = {1.0f, 1.0f, 0.5f};
     ev.seed = std::rand();
-    
+
     activeShakes_.push_back(ev);
 }
 
@@ -48,14 +48,16 @@ void CameraShakeComponent::Update() {
         if (gameObject_) {
             cameraComp_ = gameObject_->GetComponent<CameraComponent>();
         }
-        if (!cameraComp_) return;
+        if (!cameraComp_)
+            return;
     }
 
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine) return;
+    if (!engine)
+        return;
 
     float dt = engine->GetGameDeltaTime();
-    
+
     Irufemi::Vector3 totalOffset = {0.0f, 0.0f, 0.0f};
 
     for (auto& ev : activeShakes_) {
@@ -66,7 +68,7 @@ void CameraShakeComponent::Update() {
 
         // 0.0(開始) から 1.0(終了) へ
         float t = ev.currentTime / ev.duration;
-        
+
         // 減衰計算 (EaseOutQuadでフェードアウト)
         // tが1.0に近づくほど、1.0から0.0へ減衰させる
         float decay = 1.0f - EaseOutQuad(t);
@@ -84,11 +86,9 @@ void CameraShakeComponent::Update() {
     }
 
     // 終了したイベントを削除
-    activeShakes_.erase(
-        std::remove_if(activeShakes_.begin(), activeShakes_.end(),
-            [](const ShakeEvent& e) { return e.currentTime >= e.duration; }),
-        activeShakes_.end()
-    );
+    activeShakes_.erase(std::remove_if(activeShakes_.begin(), activeShakes_.end(),
+                                       [](const ShakeEvent& e) { return e.currentTime >= e.duration; }),
+                        activeShakes_.end());
 
     cameraComp_->SetPositionOffset(totalOffset);
 }

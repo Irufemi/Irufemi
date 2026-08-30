@@ -8,7 +8,9 @@
 #include "Core/Math/Vector3Int.h"
 
 class IrufemiEngine;
-namespace Irufemi { struct OBB; }
+namespace Irufemi {
+struct OBB;
+}
 
 class VoxelParticleManager {
 public:
@@ -39,7 +41,9 @@ public:
          * @brief IsValid かどうかを判定する。
          * @return 判定結果 (true/false)
          */
-        bool IsValid() const { return system != nullptr && emitterIndex != 0xFFFFFFFF; }
+        bool IsValid() const {
+            return system != nullptr && emitterIndex != 0xFFFFFFFF;
+        }
     };
 
     /**
@@ -70,9 +74,13 @@ public:
     /**
      * @brief その場での爆発エフェクトを発生させる
      */
-    void PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params, const Irufemi::Vector3Int& resolution);
+    void PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity,
+                       const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params,
+                       const Irufemi::Vector3Int& resolution);
 
-    uint32_t GetActiveSystemCount() const { return static_cast<uint32_t>(systems_.size()); }
+    uint32_t GetActiveSystemCount() const {
+        return static_cast<uint32_t>(systems_.size());
+    }
     uint32_t GetTotalEmittersUsed() const {
         uint32_t count = 0;
         for (const auto& pair : systems_) {
@@ -90,10 +98,8 @@ private:
         Irufemi::Vector3Int resolution;
 
         bool operator==(const SystemKey& other) const {
-            return modelName == other.modelName && 
-                   resolution.x == other.resolution.x &&
-                   resolution.y == other.resolution.y &&
-                   resolution.z == other.resolution.z;
+            return modelName == other.modelName && resolution.x == other.resolution.x &&
+                   resolution.y == other.resolution.y && resolution.z == other.resolution.z;
         }
     };
 

@@ -14,7 +14,7 @@ public:
         // 初期状態ではすべてのフレームのバッファ更新が必要
         MarkAsDirty();
     }
-    
+
     virtual ~MultiBufferSyncState() = default;
 
     /**
@@ -41,5 +41,5 @@ public:
     }
 
 protected:
-    bool isDirtyBuffer_[kMaxFramesInFlight] = { true, true, true };
+    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
 };

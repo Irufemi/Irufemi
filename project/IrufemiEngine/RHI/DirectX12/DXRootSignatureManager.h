@@ -30,12 +30,16 @@ public:
     /**
      * @brief 描画用のルートシグネチャを取得
      */
-    ID3D12RootSignature* GetGraphicsRootSignature() const { return graphicsRootSignature_.Get(); }
+    ID3D12RootSignature* GetGraphicsRootSignature() const {
+        return graphicsRootSignature_.Get();
+    }
 
     /**
      * @brief コンピュートシェーダ用のルートシグネチャを取得
      */
-    ID3D12RootSignature* GetComputeRootSignature() const { return computeRootSignature_.Get(); }
+    ID3D12RootSignature* GetComputeRootSignature() const {
+        return computeRootSignature_.Get();
+    }
 
 private:
     Microsoft::WRL::ComPtr<ID3D12RootSignature> graphicsRootSignature_ = nullptr;

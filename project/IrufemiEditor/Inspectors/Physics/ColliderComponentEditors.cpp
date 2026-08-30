@@ -17,11 +17,14 @@ void AABBColliderComponentEditor::Draw(Component* component, EditorActionManager
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+        if (ImGui::MenuItem("Remove Component"))
+            pendingRemove = true;
         ImGui::EndPopup();
     }
     if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
+            comp->GetGameObject()->shared_from_this(),
+            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {
@@ -37,11 +40,14 @@ void OBBColliderComponentEditor::Draw(Component* component, EditorActionManager*
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+        if (ImGui::MenuItem("Remove Component"))
+            pendingRemove = true;
         ImGui::EndPopup();
     }
     if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
+            comp->GetGameObject()->shared_from_this(),
+            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {
@@ -57,11 +63,14 @@ void SphereColliderComponentEditor::Draw(Component* component, EditorActionManag
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
+        if (ImGui::MenuItem("Remove Component"))
+            pendingRemove = true;
         ImGui::EndPopup();
     }
     if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
+            comp->GetGameObject()->shared_from_this(),
+            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {

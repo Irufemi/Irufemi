@@ -29,23 +29,27 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
-    
+
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override { return true; }
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
 
     /**
      * @brief OnRegisterProperties を実行する。
      */
     void OnRegisterProperties() override;
-    
+
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "SkinnedMeshRendererComponent"; }
+    std::string GetComponentName() const override {
+        return "SkinnedMeshRendererComponent";
+    }
     /**
      * @brief Raycast を実行する。
      */
@@ -54,13 +58,15 @@ public:
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override { return animatedMesh_.get(); }
+    IRenderable* GetRenderable() override {
+        return animatedMesh_.get();
+    }
 
     /**
      * @brief LoadModel を実行する。
      */
     void LoadModel(const std::string& filename);
-    
+
     /**
      * @brief Serialize を実行する。
      */
@@ -69,32 +75,39 @@ public:
      * @brief Deserialize を実行する。
      */
     void Deserialize(const nlohmann::json& j) override;
-    
+
     // アニメーターや他のロジックからポーズを流し込むための窓口
     /**
      * @brief RawObject を取得する。
      * @return 取得された RawObject
      */
-    AnimatedMeshObject* GetRawObject() { return animatedMesh_.get(); }
-
+    AnimatedMeshObject* GetRawObject() {
+        return animatedMesh_.get();
+    }
 
     // Animatorからのポーズ上書き用
     /**
      * @brief PoseOverride を設定する。
      * @param[in] pose 設定する PoseOverride の値
      */
-    void SetPoseOverride(const struct SkeletonPose* pose) { poseOverride_ = pose; }
+    void SetPoseOverride(const struct SkeletonPose* pose) {
+        poseOverride_ = pose;
+    }
 
     /**
      * @brief Visible を設定する。
      * @param[in] visible 設定する Visible の値
      */
-    void SetVisible(bool visible) { isVisible_ = visible; }
+    void SetVisible(bool visible) {
+        isVisible_ = visible;
+    }
     /**
      * @brief IsVisible かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsVisible() const { return isVisible_; }
+    bool IsVisible() const {
+        return isVisible_;
+    }
 
 private:
     std::unique_ptr<AnimatedMeshObject> animatedMesh_;
@@ -103,7 +116,7 @@ private:
 
     const struct SkeletonPose* poseOverride_ = nullptr;
     bool isVisible_ = true;
-    
+
     std::unordered_map<size_t, ObjMaterial> materialOverrides_;
 
 public:
@@ -111,7 +124,9 @@ public:
      * @brief HasMaterialOverride かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool HasMaterialOverride(size_t meshIndex) const { return materialOverrides_.find(meshIndex) != materialOverrides_.end(); }
+    bool HasMaterialOverride(size_t meshIndex) const {
+        return materialOverrides_.find(meshIndex) != materialOverrides_.end();
+    }
     /**
      * @brief MaterialOverride を取得する。
      * @return 取得された MaterialOverride
@@ -142,5 +157,7 @@ public:
     void RemoveMaterialOverride(size_t meshIndex) {
         materialOverrides_.erase(meshIndex);
     }
-    const std::unordered_map<size_t, ObjMaterial>& GetAllMaterialOverrides() const { return materialOverrides_; }
+    const std::unordered_map<size_t, ObjMaterial>& GetAllMaterialOverrides() const {
+        return materialOverrides_;
+    }
 };

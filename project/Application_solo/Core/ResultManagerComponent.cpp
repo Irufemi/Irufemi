@@ -29,14 +29,15 @@ void ResultManagerComponent::Initialize() {
     if (!text) {
         text = gameObject_->AddComponent<TextRendererComponent>().get();
     }
-    
+
     // ResultScene に渡された静的フラグを使って表示文字を決定
     text->SetFontId("toro_glitch");
     text->SetText(ResultScene::s_isClear ? L"STAGE CLEAR" : L"GAME OVER");
     text->SetTopMost(true);
     text->SetAlignment(TextAlignment::Center);
     // クリア時は緑っぽく、失敗時は赤っぽくするなど
-    text->SetColor(ResultScene::s_isClear ? Irufemi::Vector4{0.5f, 1.0f, 0.5f, 1.0f} : Irufemi::Vector4{1.0f, 0.2f, 0.2f, 1.0f});
+    text->SetColor(ResultScene::s_isClear ? Irufemi::Vector4{0.5f, 1.0f, 0.5f, 1.0f}
+                                          : Irufemi::Vector4{1.0f, 0.2f, 0.2f, 1.0f});
 }
 
 void ResultManagerComponent::Update() {
@@ -58,10 +59,10 @@ void ResultManagerComponent::Update() {
         timeScaleRecoveryTimer_ += dt;
         float duration = (std::max)(timeScaleRecoveryDuration_, 0.001f);
         float t = std::clamp(timeScaleRecoveryTimer_ / duration, 0.0f, 1.0f);
-        
+
         // 滑らかに補間する (Smoothstep: 3t^2 - 2t^3)
         float easeT = t * t * (3.0f - 2.0f * t);
-        
+
         // C++20 std::lerp (無い場合は std::lerp互換の計算: a + (b-a)*t)
         float newScale = startTimeScale_ + (1.0f - startTimeScale_) * easeT;
         engine->SetTimeScale(newScale);
@@ -80,7 +81,8 @@ void ResultManagerComponent::Update() {
         auto uiObj = std::make_shared<GameObject>("ReturnText");
         gameObject_->GetScene()->AddGameObject(uiObj);
         auto t = uiObj->GetTransform();
-        if (t) t->SetPosition({ 640.0f, 600.0f, 0.0f });
+        if (t)
+            t->SetPosition({640.0f, 600.0f, 0.0f});
 
         auto text = uiObj->AddComponent<TextRendererComponent>().get();
         text->SetFontId("toro_glitch");
@@ -94,9 +96,9 @@ void ResultManagerComponent::Update() {
     }
 
     if (canReturnToTitle_) {
-        if (engine->GetInputManager()->IsKeyPressed(VK_SPACE) || 
+        if (engine->GetInputManager()->IsKeyPressed(VK_SPACE) ||
             engine->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
-            
+
             engine->SetTimeScale(1.0f);
             engine->GetSceneManager()->TransitionTo(nextSceneName_, SceneTransition::Type::Fade, 1.0f);
         }

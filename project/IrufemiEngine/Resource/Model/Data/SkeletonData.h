@@ -17,7 +17,7 @@ struct JointData {
     int32_t index;
     std::optional<int32_t> parent;
     std::vector<int32_t> children;
-    
+
     // Bind Pose (初期状態のTransformとローカル行列)
     Irufemi::QuaternionTransform bindTransform;
     Irufemi::Matrix4x4 bindLocalMatrix;

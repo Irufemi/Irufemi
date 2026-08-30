@@ -6,7 +6,8 @@ class IrufemiEngine;
 /**
  * @class ILoadingScreen
  * @brief エンジンからローディング画面の描画を要求するためのインターフェース
- * @details アプリケーション側でこのインターフェースを実装し、IrufemiEngineに登録することで任意のローディングUIを描画できます。
+ * @details
+ * アプリケーション側でこのインターフェースを実装し、IrufemiEngineに登録することで任意のローディングUIを描画できます。
  */
 class ILoadingScreen {
 public:

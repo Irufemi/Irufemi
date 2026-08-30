@@ -19,12 +19,13 @@ CameraComponentEditor::~CameraComponentEditor() = default;
 
 void CameraComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* cameraComp = dynamic_cast<CameraComponent*>(component);
-    if (!cameraComp) return;
+    if (!cameraComp)
+        return;
 
     // FOV (Rad to Deg)
     float fovRad = cameraComp->GetFovAngleY();
     float fovDeg = fovRad * 180.0f / Irufemi::Math::PI;
-    
+
     if (ImGui::SliderFloat("FOV (Degree)", &fovDeg, 10.0f, 170.0f)) {
         cameraComp->SetFovAngleY(fovDeg * Irufemi::Math::PI / 180.0f);
     }
@@ -49,7 +50,8 @@ void CameraComponentEditor::Draw(Component* component, EditorActionManager* acti
         if (engine) {
             float w = static_cast<float>(engine->GetGameResolutionWidth());
             float h = static_cast<float>(engine->GetGameResolutionHeight());
-            if (h > 0) aspect = w / h;
+            if (h > 0)
+                aspect = w / h;
         }
 
         float fovHalf = cameraComp->GetFovAngleY() * 0.5f;
@@ -63,17 +65,8 @@ void CameraComponentEditor::Draw(Component* component, EditorActionManager* acti
 
         // ローカル座標の8頂点
         Irufemi::Vector3 ln[4] = {
-            { nearW,  nearH, nearZ},
-            {-nearW,  nearH, nearZ},
-            {-nearW, -nearH, nearZ},
-            { nearW, -nearH, nearZ}
-        };
-        Irufemi::Vector3 lf[4] = {
-            { farW,  farH, farZ},
-            {-farW,  farH, farZ},
-            {-farW, -farH, farZ},
-            { farW, -farH, farZ}
-        };
+            {nearW, nearH, nearZ}, {-nearW, nearH, nearZ}, {-nearW, -nearH, nearZ}, {nearW, -nearH, nearZ}};
+        Irufemi::Vector3 lf[4] = {{farW, farH, farZ}, {-farW, farH, farZ}, {-farW, -farH, farZ}, {farW, -farH, farZ}};
 
         // ワールド座標へ変換
         Irufemi::Matrix4x4 worldMat = transform->GetWorldMatrix();

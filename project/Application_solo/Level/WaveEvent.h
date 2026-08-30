@@ -28,12 +28,15 @@ public:
      * @param railForward イベント発火時点でのレール上の接線（進行方向）ベクトル
      * @param railRight イベント発火時点でのレール上の右方向ベクトル
      */
-    virtual void Execute(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) = 0;
+    virtual void Execute(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos,
+                         const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) = 0;
 
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
     /**
      * @brief エディタ用のプレビュー（Gizmo等）を描画する
      */
-    virtual void DrawEditorPreview(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {}
+    virtual void DrawEditorPreview(WaveManagerComponent* manager, const WaveEventData& data,
+                                   const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward,
+                                   const Irufemi::Vector3& railRight) {}
 #endif
 };

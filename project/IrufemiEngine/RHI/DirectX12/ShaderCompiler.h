@@ -12,9 +12,9 @@
  * @brief シェーダーコンパイル時の詳細設定を保持する構造体
  */
 struct ShaderCompileOptions {
-    std::wstring entryPoint = L"main";                          ///< エントリポイント名
-    std::vector<std::pair<std::wstring, std::wstring>> macros;  ///< マクロ定義 (Name, Value)
-    bool isDebug = false;                                       ///< デバッグ情報を埋め込むか
+    std::wstring entryPoint = L"main";                         ///< エントリポイント名
+    std::vector<std::pair<std::wstring, std::wstring>> macros; ///< マクロ定義 (Name, Value)
+    bool isDebug = false;                                      ///< デバッグ情報を埋め込むか
 };
 
 /**
@@ -35,13 +35,10 @@ public:
      * @param[in] options コンパイルオプション（エントリポイント、マクロ、デバッグフラグ等）
      * @return コンパイルされたシェーダのBlob。失敗時はnullptrを返す。
      */
-    Microsoft::WRL::ComPtr<IDxcBlob> Compile(
-        const std::wstring& filePath,
-        const wchar_t* profile,
-        const ShaderCompileOptions& options = {},
-        const std::vector<std::wstring>& includeDirs = {},
-        std::string* outErrorLog = nullptr
-    );
+    Microsoft::WRL::ComPtr<IDxcBlob> Compile(const std::wstring& filePath, const wchar_t* profile,
+                                             const ShaderCompileOptions& options = {},
+                                             const std::vector<std::wstring>& includeDirs = {},
+                                             std::string* outErrorLog = nullptr);
 
     /**
      * @brief ファイル名からプロファイルを推論する
@@ -55,4 +52,3 @@ private:
     Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler_;
     Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler_;
 };
-

@@ -19,7 +19,7 @@ struct PrimitiveData;
  */
 struct PrimitiveTransform {
     Irufemi::Transform transform; //!< トランスフォーム情報
-    bool isDirty = true; //!< 行列再計算が必要な場合のフラグ
+    bool isDirty = true;          //!< 行列再計算が必要な場合のフラグ
 
     /**
      * @brief トランスフォーム情報をリソースへ反映し、行列を更新する
@@ -34,7 +34,7 @@ struct PrimitiveTransform {
  * @brief メッシュ形状（頂点・インデックス情報）を管理するデータ
  */
 struct MeshDesc {
-    Irufemi::PrimitiveType type;                          //!< 現在のプリミティブ形状タイプ
+    Irufemi::PrimitiveType type;                //!< 現在のプリミティブ形状タイプ
     std::unique_ptr<Object3DResource> resource; //!< D3D12リソース
 
     /**
@@ -53,7 +53,9 @@ struct MeshDesc {
      * @brief PrimitiveManager を設定する。
      * @param[in] pm 設定する PrimitiveManager の値
      */
-    static void SetPrimitiveManager(PrimitiveManager* pm) { primitiveManager_ = pm; }
+    static void SetPrimitiveManager(PrimitiveManager* pm) {
+        primitiveManager_ = pm;
+    }
 
 private:
     inline static PrimitiveManager* primitiveManager_ = nullptr;
@@ -64,16 +66,16 @@ private:
  * @brief 色やテクスチャ、ライティング設定を管理するデータ
  */
 struct MaterialDesc {
-    std::string texturePath;      //!< テクスチャパス
-    std::string loadedTexturePath; //!< 前回ロードしたパス（変更検知用）
-    ResourceHandle textureHandle; //!< AAA: キャッシュ用ハンドル
-    int selectedTextureIndex = 0; //!< ImGui選択用インデックス
-    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; //!< ベースカラー
-    bool enableLighting = true;   //!< ライティングの有無
-    int lightingMode = 3;         //!< ライティングモード (0:None, 1:Lambert, 2:Half-Lambert, 3:PBR)
-    float metallic = 0.0f;        //!< 金属度
-    float roughness = 0.5f;       //!< 粗さ
-    
+    std::string texturePath;                           //!< テクスチャパス
+    std::string loadedTexturePath;                     //!< 前回ロードしたパス（変更検知用）
+    ResourceHandle textureHandle;                      //!< AAA: キャッシュ用ハンドル
+    int selectedTextureIndex = 0;                      //!< ImGui選択用インデックス
+    Irufemi::Vector4 color = {1.0f, 1.0f, 1.0f, 1.0f}; //!< ベースカラー
+    bool enableLighting = true;                        //!< ライティングの有無
+    int lightingMode = 3;   //!< ライティングモード (0:None, 1:Lambert, 2:Half-Lambert, 3:PBR)
+    float metallic = 0.0f;  //!< 金属度
+    float roughness = 0.5f; //!< 粗さ
+
     // clang-format off
     Irufemi::Matrix4x4 uvTransform = {
         1.0f, 0.0f, 0.0f, 0.0f,
@@ -82,8 +84,8 @@ struct MaterialDesc {
         0.0f, 0.0f, 0.0f, 1.0f
     }; //!< UV変換行列（スクロール・反転等用）
     // clang-format on
-    float alphaReference = 0.0f;                       //!< ディスカード閾値
-    int32_t useClampSampler = 0;                       //!< サンプラー切替 (0:WRAP, 1:CLAMP)
+    float alphaReference = 0.0f; //!< ディスカード閾値
+    int32_t useClampSampler = 0; //!< サンプラー切替 (0:WRAP, 1:CLAMP)
 
     /**
      * @brief マテリアル設定をリソースへ反映する

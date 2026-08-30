@@ -15,7 +15,8 @@
 #include <cmath>
 
 void PlayerHealthComponent::LoadStatusFromJson() {
-    if (statusDataPath_.empty()) return;
+    if (statusDataPath_.empty())
+        return;
 
     std::ifstream file(statusDataPath_);
     if (!file.is_open()) {
@@ -26,8 +27,11 @@ void PlayerHealthComponent::LoadStatusFromJson() {
     try {
         nlohmann::json j;
         file >> j;
-        
-        if (j.contains("maxHp")) { maxHp_ = j["maxHp"].get<int>(); hp_ = maxHp_; }
+
+        if (j.contains("maxHp")) {
+            maxHp_ = j["maxHp"].get<int>();
+            hp_ = maxHp_;
+        }
     } catch (const std::exception& e) {
         Log::OutPutLog(std::cout, std::string("[PlayerHealth] JSON Parse Error: ") + e.what() + "\n");
     }
@@ -41,15 +45,14 @@ void PlayerHealthComponent::OnRegisterProperties() {
 
 void PlayerHealthComponent::Initialize() {
     LoadStatusFromJson();
-    
+
     invincibilityTimer_ = 0.0f;
     flashTimer_ = 0.0f;
     flashInterval_ = 0.1f;
     colorCached_ = false;
 }
 
-void PlayerHealthComponent::Start() {
-}
+void PlayerHealthComponent::Start() {}
 
 void PlayerHealthComponent::Update() {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
@@ -64,27 +67,29 @@ void PlayerHealthComponent::Update() {
             float currentTime = BaseModel::GetIrufemiEngine()->GetGameTime();
             if (currentTime >= deathStartTime_ + 3.0f) {
                 hasTriggeredDeathSequenceFinished_ = true;
-                if (onDeathSequenceFinished) onDeathSequenceFinished();
+                if (onDeathSequenceFinished)
+                    onDeathSequenceFinished();
             }
         }
         return;
     }
 
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-    if (dt <= 0.0f) return;
+    if (dt <= 0.0f)
+        return;
 
     // --- 被弾時の無敵時間と点滅処理 ---
     if (invincibilityTimer_ > 0.0f) {
         invincibilityTimer_ -= dt;
         flashTimer_ += dt;
-        
+
         BaseModel* model = nullptr;
         if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
             model = reinterpret_cast<BaseModel*>(mesh->GetRenderable());
         } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
             model = reinterpret_cast<BaseModel*>(skinned->GetRenderable());
         }
-        
+
         if (model) {
             if (!colorCached_) {
                 originalBaseColor_ = model->GetColor();
@@ -96,7 +101,7 @@ void PlayerHealthComponent::Update() {
                 model->SetColor(originalBaseColor_); // 通常色
             }
         }
-        
+
         if (invincibilityTimer_ <= 0.0f) {
             if (model && colorCached_) {
                 model->SetColor(originalBaseColor_);
@@ -106,8 +111,9 @@ void PlayerHealthComponent::Update() {
 }
 
 void PlayerHealthComponent::TakeDamage(int damage) {
-    if (isDead_) return;
-    
+    if (isDead_)
+        return;
+
     if (isGodMode_) {
         Log::OutPutLog(std::cout, "[PlayerHealth] TakeDamage ignored (God Mode)\n");
         return;
@@ -124,16 +130,17 @@ void PlayerHealthComponent::TakeDamage(int damage) {
         hp_ = 0;
         isDead_ = true;
         deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
-        if (onPlayerDied) onPlayerDied();
+        if (onPlayerDied)
+            onPlayerDied();
         Log::OutPutLog(std::cout, "[PlayerHealth] Player Died!\n");
-        
+
         // 自機が死んだときに自機のモデルの描画を切る
         if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
             mesh->SetVisible(false);
         } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
             skinned->SetVisible(false);
         }
-        
+
         return;
     }
 
@@ -141,7 +148,7 @@ void PlayerHealthComponent::TakeDamage(int damage) {
     invincibilityTimer_ = maxInvincibilityTime_;
     isFlashing_ = true;
     flashTimer_ = 0.0f;
-    
+
     // カメラシェイク発火 (プレイヤー被弾時なので強め)
     if (auto scene = gameObject_->GetScene()) {
         if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {

@@ -21,7 +21,7 @@ void Text::Initialize(const std::string& fontId) {
 
     // マテリアルの初期化
     if (resource_->GetMaterialData()) {
-        resource_->GetMaterialData()->color = { 1.0f,1.0f,1.0f,1.0f };
+        resource_->GetMaterialData()->color = {1.0f, 1.0f, 1.0f, 1.0f};
         resource_->GetMaterialData()->enableLighting = false;
         resource_->GetMaterialData()->hasTexture = true;
         resource_->GetMaterialData()->lightingMode = 2; // Unlit相当
@@ -46,7 +46,8 @@ void Text::SetFontId(const std::string& fontId) {
 }
 
 void Text::GenerateVertices() {
-    if (!fontManager_) return;
+    if (!fontManager_)
+        return;
 
     // 文字が存在しない可能性があるため、まずは非同期生成要求をかける
     fontManager_->PrecacheText(fontId_, text_);
@@ -63,7 +64,7 @@ void Text::GenerateVertices() {
     std::vector<float> lineWidths;
     float currentLineWidth = 0.0f;
     float scaleFactor = baseScale_ / 32.0f; // GLYPH_SIZE(32)を基準にスケール
-    
+
     bool hasPendingGlyphs = false;
 
     for (wchar_t c : text_) {
@@ -141,10 +142,22 @@ void Text::GenerateVertices() {
 
         // 頂点の並び: 左下(0), 左上(1), 右下(2), 右上(3)
         // Spriteコンポーネントに合わせて法線は Z=-1
-        resource_->vertexDataList_.push_back({ { left,  bottom, 0.0f, 1.0f }, { glyph->uvTopLeft.x, glyph->uvBottomRight.y }, {0.0f,0.0f,-1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} });
-        resource_->vertexDataList_.push_back({ { left,  top,    0.0f, 1.0f }, { glyph->uvTopLeft.x, glyph->uvTopLeft.y },     {0.0f,0.0f,-1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} });
-        resource_->vertexDataList_.push_back({ { right, bottom, 0.0f, 1.0f }, { glyph->uvBottomRight.x, glyph->uvBottomRight.y }, {0.0f,0.0f,-1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} });
-        resource_->vertexDataList_.push_back({ { right, top,    0.0f, 1.0f }, { glyph->uvBottomRight.x, glyph->uvTopLeft.y },     {0.0f,0.0f,-1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} });
+        resource_->vertexDataList_.push_back({{left, bottom, 0.0f, 1.0f},
+                                              {glyph->uvTopLeft.x, glyph->uvBottomRight.y},
+                                              {0.0f, 0.0f, -1.0f},
+                                              {1.0f, 1.0f, 1.0f, 1.0f}});
+        resource_->vertexDataList_.push_back({{left, top, 0.0f, 1.0f},
+                                              {glyph->uvTopLeft.x, glyph->uvTopLeft.y},
+                                              {0.0f, 0.0f, -1.0f},
+                                              {1.0f, 1.0f, 1.0f, 1.0f}});
+        resource_->vertexDataList_.push_back({{right, bottom, 0.0f, 1.0f},
+                                              {glyph->uvBottomRight.x, glyph->uvBottomRight.y},
+                                              {0.0f, 0.0f, -1.0f},
+                                              {1.0f, 1.0f, 1.0f, 1.0f}});
+        resource_->vertexDataList_.push_back({{right, top, 0.0f, 1.0f},
+                                              {glyph->uvBottomRight.x, glyph->uvTopLeft.y},
+                                              {0.0f, 0.0f, -1.0f},
+                                              {1.0f, 1.0f, 1.0f, 1.0f}});
 
         resource_->indexDataList_.push_back(startIndex + 0);
         resource_->indexDataList_.push_back(startIndex + 1);
@@ -157,11 +170,11 @@ void Text::GenerateVertices() {
     }
 
     if (minX <= maxX && minY <= maxY) {
-        localBoundsMin_ = { minX, minY };
-        localBoundsMax_ = { maxX, maxY };
+        localBoundsMin_ = {minX, minY};
+        localBoundsMax_ = {maxX, maxY};
     } else {
-        localBoundsMin_ = { 0.0f, 0.0f };
-        localBoundsMax_ = { 0.0f, 0.0f };
+        localBoundsMin_ = {0.0f, 0.0f};
+        localBoundsMax_ = {0.0f, 0.0f};
     }
 
     if (hasPendingGlyphs) {
@@ -173,7 +186,8 @@ void Text::GenerateVertices() {
     resource_->textureHandle_ = fontManager_->GetAtlasHandle();
 
     // 頂点がなければ終了
-    if (resource_->vertexDataList_.empty()) return;
+    if (resource_->vertexDataList_.empty())
+        return;
 
     // GPUリソースの再生成(文字数によって頂点数が可変なため、毎回バッファを作り直すか拡張する)
     resource_->CreateResource();
@@ -187,8 +201,9 @@ void Text::GenerateVertices() {
 }
 
 void Text::Update() {
-    if (!resource_ || !cameraManager_ || !fontManager_) return;
-    
+    if (!resource_ || !cameraManager_ || !fontManager_)
+        return;
+
     // AtlasのSRVが変わったか(リビルドされた等)、テキストに変更があった場合は再生成
     ResourceHandle currentAtlas = fontManager_->GetAtlasHandle();
     if (lastAtlasHandle_ != currentAtlas) {
@@ -203,7 +218,8 @@ void Text::Update() {
     }
 
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam)
+        return;
 
     if (isDirty_) {
         resource_->UpdateTransform(*activeCam);
@@ -221,20 +237,24 @@ void Text::SyncBeforeDraw() {
 }
 
 void Text::Draw() {
-    if (!resource_ || !drawManager_ || !cameraManager_) return;
+    if (!resource_ || !drawManager_ || !cameraManager_)
+        return;
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam)
+        return;
 
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetOrthographicMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
+    bool cameraChanged =
+        (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+         std::memcmp(&lastProjectionMatrix_, &activeCam->GetOrthographicMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged || isTextDirty_) {
         Update();
     }
-    
+
     SyncBeforeDraw();
 
-    if (resource_->vertexDataList_.empty()) return; // 描画するものがなければスキップ
+    if (resource_->vertexDataList_.empty())
+        return; // 描画するものがなければスキップ
 
     // TextRenderer用の描画キューに送信
     if (isTopMost_) {
@@ -245,17 +265,19 @@ void Text::Draw() {
 }
 
 void Text::DrawOutlineMask() {
-    if (!resource_ || !drawManager_ || !cameraManager_) return;
+    if (!resource_ || !drawManager_ || !cameraManager_)
+        return;
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam)
+        return;
 
     if (isDirty_ || isTextDirty_) {
         Update();
     }
     SyncBeforeDraw();
 
-    if (resource_->vertexDataList_.empty()) return;
+    if (resource_->vertexDataList_.empty())
+        return;
 
     drawManager_->SubmitTextOutlineMask(resource_.get());
 }
-

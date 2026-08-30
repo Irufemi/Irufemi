@@ -22,7 +22,9 @@ public:
     void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "EffectManagerComponent"; }
+    std::string GetComponentName() const override {
+        return "EffectManagerComponent";
+    }
 
     /**
      * @brief 指定したキーのエフェクトを指定したワールド座標で再生する
@@ -32,7 +34,6 @@ public:
     void PlayEffect(const std::string& effectKey, const Irufemi::Vector3& worldPosition);
 
 private:
-
     // エディタから設定する、代表的なエフェクトのPrefabパス
     std::string hitEffectPath_ = "resources/prefabs/normal_attack_hit_effect.json";
     std::string dustEffectPath_ = "resources/prefabs/debris_dust_effect.json";

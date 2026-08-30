@@ -62,13 +62,17 @@ public:
      * @brief コンポーネント名の取得
      * @return "OBBColliderComponent"
      */
-    std::string GetComponentName() const override { return "OBBColliderComponent"; }
+    std::string GetComponentName() const override {
+        return "OBBColliderComponent";
+    }
 
     /**
      * @brief コライダーの型を取得
      * @return ColliderType::OBB
      */
-    ColliderType GetColliderType() const override { return ColliderType::OBB; }
+    ColliderType GetColliderType() const override {
+        return ColliderType::OBB;
+    }
 
     /**
      * @brief 衝突判定用のブロードフェーズバウンディングボックスを取得
@@ -86,27 +90,35 @@ public:
      * @brief ローカル空間でのオフセット座標を設定する
      * @param[in] offset ローカル座標系の中心からのズレ
      */
-    void SetLocalOffset(const Irufemi::Vector3& offset) { localOffset_ = offset; }
+    void SetLocalOffset(const Irufemi::Vector3& offset) {
+        localOffset_ = offset;
+    }
 
     /**
      * @brief ローカル空間でのオフセット座標を取得する
      * @return ローカル座標系の中心からのズレ
      */
-    const Irufemi::Vector3& GetLocalOffset() const { return localOffset_; }
+    const Irufemi::Vector3& GetLocalOffset() const {
+        return localOffset_;
+    }
 
     /**
      * @brief ローカル空間でのOBBのサイズ（各軸のExtents）を設定する
      * @param[in] size 幅・高さ・奥行きの半分（Extents）
      */
-    void SetLocalSize(const Irufemi::Vector3& size) { localSize_ = size; }
+    void SetLocalSize(const Irufemi::Vector3& size) {
+        localSize_ = size;
+    }
 
     /**
      * @brief ローカル空間でのOBBのサイズを取得する
      * @return OBBのExtents
      */
-    const Irufemi::Vector3& GetLocalSize() const { return localSize_; }
+    const Irufemi::Vector3& GetLocalSize() const {
+        return localSize_;
+    }
 
 private:
-    Irufemi::Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
-    Irufemi::Vector3 localSize_   = { 1.0f, 1.0f, 1.0f }; // Extents
+    Irufemi::Vector3 localOffset_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 localSize_ = {1.0f, 1.0f, 1.0f}; // Extents
 };

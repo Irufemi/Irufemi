@@ -45,7 +45,9 @@ public:
     /**
      * @brief 現在のアニメーション時間を取得する
      */
-    float GetTime() const { return time_; }
+    float GetTime() const {
+        return time_;
+    }
 
 private:
     float time_ = 0.0f;

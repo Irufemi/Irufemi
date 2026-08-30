@@ -12,7 +12,8 @@ enum class AudioCategory {
 
 class VoiceInstance {
 public:
-    VoiceInstance(IXAudio2SourceVoice* voice, std::unique_ptr<VoiceCallback> callback, AudioCategory category = AudioCategory::SE)
+    VoiceInstance(IXAudio2SourceVoice* voice, std::unique_ptr<VoiceCallback> callback,
+                  AudioCategory category = AudioCategory::SE)
         : voice_(voice), callback_(std::move(callback)), category_(category) {}
 
     ~VoiceInstance() {
@@ -65,19 +66,25 @@ public:
      * @brief Voice を取得する。
      * @return 取得された Voice
      */
-    IXAudio2SourceVoice* GetVoice() const { return voice_; }
+    IXAudio2SourceVoice* GetVoice() const {
+        return voice_;
+    }
 
     /**
      * @brief Callback を取得する。
      * @return 取得された Callback
      */
-    VoiceCallback* GetCallback() const { return callback_.get(); }
+    VoiceCallback* GetCallback() const {
+        return callback_.get();
+    }
 
     bool IsFinished() const {
         return callback_ && callback_->IsFinished();
     }
 
-    AudioCategory GetCategory() const { return category_; }
+    AudioCategory GetCategory() const {
+        return category_;
+    }
 
 private:
     IXAudio2SourceVoice* voice_;

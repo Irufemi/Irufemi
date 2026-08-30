@@ -30,7 +30,7 @@ public:
      * @brief Initialize を実行する。
      */
     void Initialize(const std::string& filename);
-    
+
     /// @brief 外部からポーズを渡して更新。nullptrの場合は内部のバインドポーズまたは前回状態を維持。
     void Update(const SkeletonPose* externalPose = nullptr);
 
@@ -76,7 +76,7 @@ private:
     SkinCluster skinCluster_;
     std::vector<D3D12_VERTEX_BUFFER_VIEW> drawVbvs_;
     std::vector<D3D12_VERTEX_BUFFER_VIEW> outlineVbvs_;
-    
+
     Irufemi::Matrix4x4 localMatrix_;
     Irufemi::Matrix4x4 worldMatrix_;
 

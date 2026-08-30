@@ -24,15 +24,17 @@ public:
      * @brief Raycast を実行する。
      */
     bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
-    
+
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "SplineNodeComponent"; }
+    std::string GetComponentName() const override {
+        return "SplineNodeComponent";
+    }
 
 private:
-    float radius_ = 0.5f;               ///< 球の半径
+    float radius_ = 0.5f;                               ///< 球の半径
     Irufemi::Vector4 color_ = {0.0f, 1.0f, 1.0f, 1.0f}; ///< 球の色 (Cyan)
-    bool drawDebug_ = true;             ///< デバッグ描画を行うかどうか
+    bool drawDebug_ = true;                             ///< デバッグ描画を行うかどうか
 };

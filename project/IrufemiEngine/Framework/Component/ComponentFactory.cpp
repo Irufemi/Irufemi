@@ -42,7 +42,7 @@ std::unordered_map<std::string, ComponentFactory::ComponentRegistration>& Compon
 }
 
 void ComponentFactory::Register(const std::string& typeName, const char* category, CreatorFunc func) {
-    GetMap()[typeName] = { category, func };
+    GetMap()[typeName] = {category, func};
 }
 
 std::shared_ptr<Component> ComponentFactory::Create(const std::string& typeName) {
@@ -59,7 +59,7 @@ const std::unordered_map<std::string, ComponentFactory::ComponentRegistration>& 
 }
 
 void ComponentFactory::RegisterAllCoreComponents() {
-    Register("TransformComponent", "Core", []() { 
+    Register("TransformComponent", "Core", []() {
         if constexpr (IsPooledComponent<TransformComponent>::value) {
             return std::static_pointer_cast<Component>(ComponentPool<TransformComponent>::GetInstance().Create());
         } else {
@@ -68,12 +68,16 @@ void ComponentFactory::RegisterAllCoreComponents() {
     });
     Register("MeshRendererComponent", "Renderer", []() { return std::make_shared<MeshRendererComponent>(); });
     Register("PrimitiveRendererComponent", "Renderer", []() { return std::make_shared<PrimitiveRendererComponent>(); });
-    Register("Primitive2DRendererComponent", "Renderer", []() { return std::make_shared<Primitive2DRendererComponent>(); });
-    Register("ModelBatchRendererComponent", "Renderer", []() { return std::make_shared<ModelBatchRendererComponent>(); });
+    Register("Primitive2DRendererComponent", "Renderer",
+             []() { return std::make_shared<Primitive2DRendererComponent>(); });
+    Register("ModelBatchRendererComponent", "Renderer",
+             []() { return std::make_shared<ModelBatchRendererComponent>(); });
     Register("SpriteRendererComponent", "Renderer", []() { return std::make_shared<SpriteRendererComponent>(); });
     Register("TextRendererComponent", "Renderer", []() { return std::make_shared<TextRendererComponent>(); });
-    Register("SkinnedMeshRendererComponent", "Renderer", []() { return std::make_shared<SkinnedMeshRendererComponent>(); });
-    Register("SkeletonDebugRendererComponent", "Debug", []() { return std::make_shared<SkeletonDebugRendererComponent>(); });
+    Register("SkinnedMeshRendererComponent", "Renderer",
+             []() { return std::make_shared<SkinnedMeshRendererComponent>(); });
+    Register("SkeletonDebugRendererComponent", "Debug",
+             []() { return std::make_shared<SkeletonDebugRendererComponent>(); });
     Register("AnimatorComponent", "Logic", []() { return std::make_shared<AnimatorComponent>(); });
     Register("BoneAttachmentComponent", "Logic", []() { return std::make_shared<BoneAttachmentComponent>(); });
     Register("SpawnPointComponent", "Logic", []() { return std::make_shared<SpawnPointComponent>(); });
@@ -97,5 +101,6 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("LifetimeComponent", "Utility", []() { return std::make_shared<LifetimeComponent>(); });
     Register("SplineComponent", "Utility", []() { return std::make_shared<SplineComponent>(); });
     Register("SplineNodeComponent", "Utility", []() { return std::make_shared<SplineNodeComponent>(); });
-    Register("VirtualEntityManagerComponent", "Utility", []() { return std::make_shared<VirtualEntityManagerComponent>(); });
+    Register("VirtualEntityManagerComponent", "Utility",
+             []() { return std::make_shared<VirtualEntityManagerComponent>(); });
 }

@@ -2,7 +2,7 @@
 
 #include "Renderer/System/Core/BaseBatch.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h" // For Primitive2DType
-#include "Renderer/System/Core/Object2DResource.h" // For VertexData
+#include "Renderer/System/Core/Object2DResource.h"          // For VertexData
 
 #include <vector>
 #include <string>
@@ -45,36 +45,46 @@ public:
      * @param[in] thickness 設定する Thickness の値
      */
     void SetThickness(float thickness);
-    
+
     // --- ゲッター ---
     /**
      * @brief VertexBufferView を取得する。
      * @return 取得された VertexBufferView
      */
-    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
+    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const {
+        return vertexBufferView_;
+    }
     /**
      * @brief IndexBufferView を取得する。
      * @return 取得された IndexBufferView
      */
-    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
+    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const {
+        return indexBufferView_;
+    }
     /**
      * @brief IndexCount を取得する。
      * @return 取得された IndexCount
      */
-    uint32_t GetIndexCount() const { return indexCount_; }
+    uint32_t GetIndexCount() const {
+        return indexCount_;
+    }
     /**
      * @brief Type を取得する。
      * @return 取得された Type
      */
-    Irufemi::Primitive2DType GetType() const { return type_; }
+    Irufemi::Primitive2DType GetType() const {
+        return type_;
+    }
 
 protected:
     /**
      * @brief BoundingSphereRadius を取得する。
      * @return 取得された BoundingSphereRadius
      */
-    float GetBoundingSphereRadius() const override { return 1000.0f; /* 2D なので適当な大きな値 */ }
-    
+    float GetBoundingSphereRadius() const override {
+        return 1000.0f; /* 2D なので適当な大きな値 */
+    }
+
     // メッシュ再構築
     /**
      * @brief RebuildMesh を実行する。

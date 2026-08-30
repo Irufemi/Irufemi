@@ -27,17 +27,16 @@ void AnimationManager::Initialize(DirectXCommon* dxCommon) {
 
 void AnimationManager::SetRootDirectory(std::string root) {
     std::replace(root.begin(), root.end(), '\\', '/');
-    if (!root.empty() && root.back() == '/') root.pop_back();
+    if (!root.empty() && root.back() == '/')
+        root.pop_back();
     rootDir_ = std::move(root);
 
-    directoryWatcher_ = std::make_unique<DirectoryWatcher>(rootDir_, [this]() {
-        OnDirectoryChanged();
-    });
+    directoryWatcher_ = std::make_unique<DirectoryWatcher>(rootDir_, [this]() { OnDirectoryChanged(); });
 }
 
 /*Animation*/
 
-///Animationを解析する
+/// Animationを解析する
 
 std::shared_ptr<Animation> AnimationManager::LoadAnimationFile(const std::string& filename) {
     std::string filePath;
@@ -46,13 +45,13 @@ std::shared_ptr<Animation> AnimationManager::LoadAnimationFile(const std::string
     } else {
         filePath = FindFileRecursive(filename);
     }
-    
+
     if (filePath.empty()) {
         return nullptr;
     }
-    
+
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     // キャッシュチェック
     if (auto it = cache_.find(filePath); it != cache_.end()) {
         if (it->second.animation) {
@@ -105,17 +104,20 @@ void AnimationManager::OnDirectoryChanged() {
 
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto& [path, cached] : cache_) {
-        if (cached.sourceFilePath.empty()) continue;
+        if (cached.sourceFilePath.empty())
+            continue;
 
         std::error_code ec;
         if (std::filesystem::exists(cached.sourceFilePath, ec)) {
             auto lastWrite = std::filesystem::last_write_time(cached.sourceFilePath, ec);
-            uint64_t currentLwt = std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
+            uint64_t currentLwt =
+                std::chrono::duration_cast<std::chrono::seconds>(lastWrite.time_since_epoch()).count();
 
             if (currentLwt > cached.lastLoadTime) {
                 Log::OutPutLog(std::cout, "[AnimationManager] Hot-Reloading: " + cached.sourceFilePath);
-                
-                std::string binPathStr = StringUtility::GetCacheFilePath(cached.sourceFilePath, "animation", ".anim.ibin");
+
+                std::string binPathStr =
+                    StringUtility::GetCacheFilePath(cached.sourceFilePath, "animation", ".anim.ibin");
                 std::filesystem::path binPathFs(binPathStr);
                 if (binPathFs.has_parent_path()) {
                     std::filesystem::create_directories(binPathFs.parent_path());
@@ -126,7 +128,7 @@ void AnimationManager::OnDirectoryChanged() {
                 if (newAnim->duration > 0.0f) {
                     AnimationSerializer::Serialize(binPath, *newAnim, currentLwt);
                 }
-                
+
                 cached.animation = newAnim;
                 cached.lastLoadTime = currentLwt;
             }
@@ -137,13 +139,14 @@ void AnimationManager::OnDirectoryChanged() {
 // 任意の時刻の値を取得する
 Irufemi::Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time) {
     IRUFEMI_ASSERT(!keyframes.empty());
-    if (keyframes.size() == 1 || time <= keyframes.front().time) return keyframes.front().value;
-    if (time >= keyframes.back().time) return keyframes.back().value;
+    if (keyframes.size() == 1 || time <= keyframes.front().time)
+        return keyframes.front().value;
+    if (time >= keyframes.back().time)
+        return keyframes.back().value;
 
-    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time, [](const KeyframeVector3& k, float t) {
-        return k.time < t;
-    });
-    
+    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
+                               [](const KeyframeVector3& k, float t) { return k.time < t; });
+
     auto prev = it - 1;
     float t = (time - prev->time) / (it->time - prev->time);
     return Lerp(prev->value, it->value, t);
@@ -152,13 +155,14 @@ Irufemi::Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVect
 // 任意の時刻の値を取得する
 Irufemi::Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQuaternion>& keyframes, float time) {
     IRUFEMI_ASSERT(!keyframes.empty());
-    if (keyframes.size() == 1 || time <= keyframes.front().time) return keyframes.front().value;
-    if (time >= keyframes.back().time) return keyframes.back().value;
+    if (keyframes.size() == 1 || time <= keyframes.front().time)
+        return keyframes.front().value;
+    if (time >= keyframes.back().time)
+        return keyframes.back().value;
 
-    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time, [](const KeyframeQuaternion& k, float t) {
-        return k.time < t;
-    });
-    
+    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
+                               [](const KeyframeQuaternion& k, float t) { return k.time < t; });
+
     auto prev = it - 1;
     float t = (time - prev->time) / (it->time - prev->time);
     return Irufemi::Math::Slerp(prev->value, it->value, t);
@@ -167,13 +171,14 @@ Irufemi::Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQ
 // 任意の時刻の値を取得する
 Irufemi::Vector3 AnimationManager::CalculateValue(const AnimationCurve<Irufemi::Vector3>& keyframes, float time) {
     IRUFEMI_ASSERT(!keyframes.keyframes.empty());
-    if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes.front().time) return keyframes.keyframes.front().value;
-    if (time >= keyframes.keyframes.back().time) return keyframes.keyframes.back().value;
+    if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes.front().time)
+        return keyframes.keyframes.front().value;
+    if (time >= keyframes.keyframes.back().time)
+        return keyframes.keyframes.back().value;
 
-    auto it = std::lower_bound(keyframes.keyframes.begin(), keyframes.keyframes.end(), time, [](const KeyframeVector3& k, float t) {
-        return k.time < t;
-    });
-    
+    auto it = std::lower_bound(keyframes.keyframes.begin(), keyframes.keyframes.end(), time,
+                               [](const KeyframeVector3& k, float t) { return k.time < t; });
+
     auto prev = it - 1;
     float t = (time - prev->time) / (it->time - prev->time);
     return Lerp(prev->value, it->value, t);
@@ -182,20 +187,22 @@ Irufemi::Vector3 AnimationManager::CalculateValue(const AnimationCurve<Irufemi::
 // 任意の時刻の値を取得する
 Irufemi::Quaternion AnimationManager::CalculateValue(const AnimationCurve<Irufemi::Quaternion>& keyframes, float time) {
     IRUFEMI_ASSERT(!keyframes.keyframes.empty());
-    if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes.front().time) return keyframes.keyframes.front().value;
-    if (time >= keyframes.keyframes.back().time) return keyframes.keyframes.back().value;
+    if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes.front().time)
+        return keyframes.keyframes.front().value;
+    if (time >= keyframes.keyframes.back().time)
+        return keyframes.keyframes.back().value;
 
-    auto it = std::lower_bound(keyframes.keyframes.begin(), keyframes.keyframes.end(), time, [](const KeyframeQuaternion& k, float t) {
-        return k.time < t;
-    });
-    
+    auto it = std::lower_bound(keyframes.keyframes.begin(), keyframes.keyframes.end(), time,
+                               [](const KeyframeQuaternion& k, float t) { return k.time < t; });
+
     auto prev = it - 1;
     float t = (time - prev->time) / (it->time - prev->time);
     return Irufemi::Math::Slerp(prev->value, it->value, t);
 }
 
 // 任意の時刻の値を取得する(オイラー角)
-Irufemi::Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Irufemi::Quaternion>& keyframes, float time) {
+Irufemi::Vector3 AnimationManager::CalculateValueAsEuler(const AnimationCurve<Irufemi::Quaternion>& keyframes,
+                                                         float time) {
     Irufemi::Quaternion rotation = CalculateValue(keyframes, time);
     return Irufemi::Math::ToEuler(rotation);
 }
@@ -217,7 +224,8 @@ SkeletonData AnimationManager::CreateSkeletonData(const Node& rootNode) {
 SkeletonPose AnimationManager::CreateSkeletonPose(const SkeletonData* data) {
     SkeletonPose pose;
     pose.data = data;
-    if (!data) return pose;
+    if (!data)
+        return pose;
 
     pose.jointPoses.resize(data->joints.size());
     for (size_t i = 0; i < data->joints.size(); ++i) {
@@ -225,15 +233,16 @@ SkeletonPose AnimationManager::CreateSkeletonPose(const SkeletonData* data) {
         pose.jointPoses[i].localMatrix = data->joints[i].bindLocalMatrix;
         pose.jointPoses[i].skeletonSpaceMatrix = Irufemi::Math::MakeIdentity4x4();
     }
-    
+
     // バインドポーズの初期状態として、正しい skeletonSpaceMatrix を計算しておく
     SkeletonUpdate(pose);
-    
+
     return pose;
 }
 
-//NodeからJointDataを作る
-int32_t AnimationManager::CreateJointData(const Node& node, const std::optional<int32_t>& parent, std::vector<JointData>& joints) {
+// NodeからJointDataを作る
+int32_t AnimationManager::CreateJointData(const Node& node, const std::optional<int32_t>& parent,
+                                          std::vector<JointData>& joints) {
     JointData joint;
     joint.name = node.name;
     joint.bindLocalMatrix = node.localMatrix;
@@ -252,16 +261,19 @@ int32_t AnimationManager::CreateJointData(const Node& node, const std::optional<
 
 // SkeletonPoseの更新
 void AnimationManager::SkeletonUpdate(SkeletonPose& skeleton) {
-    if (!skeleton.data) return;
-    
+    if (!skeleton.data)
+        return;
+
     // すべてのJointPoseを更新。親が若いので通常ループで処理可能になっている。
     for (size_t i = 0; i < skeleton.jointPoses.size(); ++i) {
         JointPose& jointPose = skeleton.jointPoses[i];
         const JointData& jointData = skeleton.data->joints[i];
 
-        jointPose.localMatrix = Irufemi::Math::MakeAffineMatrix(jointPose.transform.scale, jointPose.transform.rotate, jointPose.transform.translate);
+        jointPose.localMatrix = Irufemi::Math::MakeAffineMatrix(jointPose.transform.scale, jointPose.transform.rotate,
+                                                                jointPose.transform.translate);
         if (jointData.parent) { // 親がいれば親の行列を掛ける
-            jointPose.skeletonSpaceMatrix = jointPose.localMatrix * skeleton.jointPoses[*jointData.parent].skeletonSpaceMatrix;
+            jointPose.skeletonSpaceMatrix =
+                jointPose.localMatrix * skeleton.jointPoses[*jointData.parent].skeletonSpaceMatrix;
         } else { // 親がいないんでlocalMatrixとskeletonSpaceMatrixは一致する
             jointPose.skeletonSpaceMatrix = jointPose.localMatrix;
         }
@@ -269,8 +281,10 @@ void AnimationManager::SkeletonUpdate(SkeletonPose& skeleton) {
 }
 
 // SkeletonPoseに対してAnimationを適用する
-void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime, bool applyRootTranslation) {
-    if (!skeleton.data) return;
+void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime,
+                                      bool applyRootTranslation) {
+    if (!skeleton.data)
+        return;
 
     // アニメーションが変更された場合（または初回）のみ、バインディングを再構築する
     if (skeleton.lastAppliedAnimation != &animation) {
@@ -281,7 +295,7 @@ void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& a
         for (const auto& [nodeName, nodeAnimation] : animation.nodeAnimations) {
             auto it = skeleton.data->jointMap.find(nodeName);
             if (it != skeleton.data->jointMap.end()) {
-                skeleton.activeAnimationBindings.push_back({ it->second, &nodeAnimation });
+                skeleton.activeAnimationBindings.push_back({it->second, &nodeAnimation});
             }
         }
     }
@@ -303,8 +317,10 @@ void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& a
 }
 
 // 2つのAnimationをブレンドしてSkeletonPoseに適用する
-void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& animA, float timeA, const Animation& animB, float timeB, float weight, bool applyRootTranslation) {
-    if (!skeleton.data) return;
+void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& animA, float timeA,
+                                      const Animation& animB, float timeB, float weight, bool applyRootTranslation) {
+    if (!skeleton.data)
+        return;
 
     // Weightが0ならAのみ、1ならBのみを適用するショートカット
     if (weight <= 0.0f) {
@@ -324,19 +340,19 @@ void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& a
 
         for (size_t jointIndex = 0; jointIndex < skeleton.jointPoses.size(); ++jointIndex) {
             const JointData& jointData = skeleton.data->joints[jointIndex];
-            
+
             const NodeAnimation* nodeAnimA = nullptr;
             if (auto itA = animA.nodeAnimations.find(jointData.name); itA != animA.nodeAnimations.end()) {
                 nodeAnimA = &itA->second;
             }
-            
+
             const NodeAnimation* nodeAnimB = nullptr;
             if (auto itB = animB.nodeAnimations.find(jointData.name); itB != animB.nodeAnimations.end()) {
                 nodeAnimB = &itB->second;
             }
 
             if (nodeAnimA || nodeAnimB) {
-                skeleton.activeBlendBindings.push_back({ static_cast<int32_t>(jointIndex), nodeAnimA, nodeAnimB });
+                skeleton.activeBlendBindings.push_back({static_cast<int32_t>(jointIndex), nodeAnimA, nodeAnimB});
             }
         }
     }
@@ -346,14 +362,14 @@ void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& a
         int32_t jointIndex = std::get<0>(binding);
         const NodeAnimation* nodeAnimA = std::get<1>(binding);
         const NodeAnimation* nodeAnimB = std::get<2>(binding);
-        
+
         JointPose& jointPose = skeleton.jointPoses[jointIndex];
         const JointData& jointData = skeleton.data->joints[jointIndex];
 
         Irufemi::Vector3 transA = jointPose.transform.translate;
         Irufemi::Quaternion rotA = jointPose.transform.rotate;
         Irufemi::Vector3 scaleA = jointPose.transform.scale;
-        
+
         Irufemi::Vector3 transB = transA;
         Irufemi::Quaternion rotB = rotA;
         Irufemi::Vector3 scaleB = scaleA;
@@ -363,7 +379,7 @@ void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& a
             rotA = CalculateValue(nodeAnimA->rotate, timeA);
             scaleA = CalculateValue(nodeAnimA->scale, timeA);
         }
-        
+
         if (nodeAnimB) {
             transB = CalculateValue(nodeAnimB->translate, timeB);
             rotB = CalculateValue(nodeAnimB->rotate, timeB);
@@ -392,27 +408,26 @@ std::string AnimationManager::NormalizeAndResolve(const std::string& filename) c
     } else {
         f = rootDir_ + "/" + f;
     }
-    std::transform(f.begin(), f.end(), f.begin(),
-        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(f.begin(), f.end(), f.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return f;
 }
 
 bool AnimationManager::StartsWith(const std::string& s, const std::string& prefix) {
-    return s.size() >= prefix.size() &&
-        std::equal(prefix.begin(), prefix.end(), s.begin());
+    return s.size() >= prefix.size() && std::equal(prefix.begin(), prefix.end(), s.begin());
 }
 
 std::pair<std::string, std::string> AnimationManager::SplitDirectoryAndFile(const std::string& full) {
     auto pos = full.find_last_of('/');
-    if (pos == std::string::npos) return { ".", full };
-    return { full.substr(0, pos), full.substr(pos + 1) };
+    if (pos == std::string::npos)
+        return {".", full};
+    return {full.substr(0, pos), full.substr(pos + 1)};
 }
 
 std::string AnimationManager::FindFileRecursive(const std::string& filename) const {
     namespace fs = std::filesystem;
     std::string lowerFilename = filename;
     std::transform(lowerFilename.begin(), lowerFilename.end(), lowerFilename.begin(),
-        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -423,14 +438,15 @@ std::string AnimationManager::FindFileRecursive(const std::string& filename) con
 
     const fs::path rootPath = rootDir_;
     if (!fs::exists(rootPath) || !fs::is_directory(rootPath)) {
-        Log::OutPutLog(std::cerr, "[AnimationManager] Warning: Animation directory not found: " + rootPath.string() + "\n");
+        Log::OutPutLog(std::cerr,
+                       "[AnimationManager] Warning: Animation directory not found: " + rootPath.string() + "\n");
         return "";
     }
 
     for (const auto& entry : fs::recursive_directory_iterator(rootPath)) {
         if (entry.is_regular_file()) {
             std::string entryFilename = entry.path().filename().string();
-            
+
             // _stricmp を用いて大文字小文字を無視した比較を行う（ループ内の無駄なアロケーションを排除）
             if (_stricmp(entryFilename.c_str(), filename.c_str()) == 0) {
                 std::string foundPath = entry.path().string();
@@ -451,7 +467,6 @@ std::string AnimationManager::FindFileRecursive(const std::string& filename) con
 
 /// SkinClusterの生成
 
-
 // SkinClusterを生成 (ObjModel版)
 SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, const ObjModel& objModel) {
     SkinCluster skinCluster;
@@ -469,7 +484,8 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     size_t vertexOffset = 0;
     for (const auto& mesh : objModel.meshes) {
         if (!mesh.vertices.empty()) {
-            std::memcpy(mappedInputVertices + vertexOffset, mesh.vertices.data(), sizeof(VertexData) * mesh.vertices.size());
+            std::memcpy(mappedInputVertices + vertexOffset, mesh.vertices.data(),
+                        sizeof(VertexData) * mesh.vertices.size());
             vertexOffset += mesh.vertices.size();
         }
     }
@@ -487,15 +503,15 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     inputSrvDesc.Buffer.FirstElement = 0;
     inputSrvDesc.Buffer.NumElements = UINT(totalVertices);
     inputSrvDesc.Buffer.StructureByteStride = sizeof(VertexData);
-    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.inputVertexResource.Get(), &inputSrvDesc, skinCluster.inputVertexSrvHandle.first);
-
+    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.inputVertexResource.Get(), &inputSrvDesc,
+                                                     skinCluster.inputVertexSrvHandle.first);
 
     /// MatrixPalleteの作成
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         skinCluster.paletteResource[i] = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
         WellForGPU* mappedPallete = nullptr;
         skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
-        skinCluster.mappedPalette[i] = { mappedPallete, skeleton.joints.size() };
+        skinCluster.mappedPalette[i] = {mappedPallete, skeleton.joints.size()};
 
         uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
         IRUFEMI_ASSERT(paletteSrvIndex != DescriptorPool::kInvalid);
@@ -510,7 +526,8 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
         paletteSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
         paletteSrvDesc.Buffer.NumElements = UINT(skeleton.joints.size());
         paletteSrvDesc.Buffer.StructureByteStride = sizeof(WellForGPU);
-        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource[i].Get(), &paletteSrvDesc, skinCluster.paletteSrvHandle[i].first);
+        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.paletteResource[i].Get(), &paletteSrvDesc,
+                                                         skinCluster.paletteSrvHandle[i].first);
     }
 
     /// influence用Resourceの作成
@@ -518,7 +535,7 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     VertexInfluence* mappedInfluence = nullptr;
     skinCluster.influenceResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInfluence));
     std::memset(mappedInfluence, 0, sizeof(VertexInfluence) * totalVertices);
-    skinCluster.mappedInfluence = { mappedInfluence, totalVertices };
+    skinCluster.mappedInfluence = {mappedInfluence, totalVertices};
 
     skinCluster.influenceBufferView.BufferLocation = skinCluster.influenceResource->GetGPUVirtualAddress();
     skinCluster.influenceBufferView.SizeInBytes = UINT(sizeof(VertexInfluence) * totalVertices);
@@ -537,11 +554,12 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     influenceSrvDesc.Buffer.FirstElement = 0;
     influenceSrvDesc.Buffer.NumElements = UINT(totalVertices);
     influenceSrvDesc.Buffer.StructureByteStride = sizeof(VertexInfluence);
-    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.influenceResource.Get(), &influenceSrvDesc, skinCluster.influenceSrvHandle.first);
-
+    dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.influenceResource.Get(), &influenceSrvDesc,
+                                                     skinCluster.influenceSrvHandle.first);
 
     skinCluster.inverseBindPoseMatrices.resize(skeleton.joints.size());
-    std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(), [] {return Irufemi::Math::MakeIdentity4x4(); });
+    std::generate(skinCluster.inverseBindPoseMatrices.begin(), skinCluster.inverseBindPoseMatrices.end(),
+                  [] { return Irufemi::Math::MakeIdentity4x4(); });
 
     /// ModelDataを解析してInstanceを埋める
     for (const auto& jointWeight : objModel.skinClusterData) {
@@ -578,7 +596,8 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
         uavDesc.Buffer.FirstElement = 0;
         uavDesc.Buffer.NumElements = UINT(totalVertices);
         uavDesc.Buffer.StructureByteStride = sizeof(VertexData);
-        dxCommon_->GetDevice()->CreateUnorderedAccessView(skinCluster.skinnedVertexResource[i].Get(), nullptr, &uavDesc, skinCluster.skinnedVertexUavHandle[i].first);
+        dxCommon_->GetDevice()->CreateUnorderedAccessView(skinCluster.skinnedVertexResource[i].Get(), nullptr, &uavDesc,
+                                                          skinCluster.skinnedVertexUavHandle[i].first);
 
         // SRV
         uint32_t skinnedVertexSrvIndex = dxCommon_->GetSrvPool()->Allocate();
@@ -593,30 +612,36 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
         srvDesc.Buffer.FirstElement = 0;
         srvDesc.Buffer.NumElements = UINT(totalVertices);
         srvDesc.Buffer.StructureByteStride = sizeof(VertexData);
-        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.skinnedVertexResource[i].Get(), &srvDesc, skinCluster.skinnedVertexSrvHandle[i].first);
+        dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.skinnedVertexResource[i].Get(), &srvDesc,
+                                                         skinCluster.skinnedVertexSrvHandle[i].first);
 
         // VBV
-        skinCluster.skinnedVertexBufferView[i].BufferLocation = skinCluster.skinnedVertexResource[i]->GetGPUVirtualAddress();
+        skinCluster.skinnedVertexBufferView[i].BufferLocation =
+            skinCluster.skinnedVertexResource[i]->GetGPUVirtualAddress();
         skinCluster.skinnedVertexBufferView[i].SizeInBytes = UINT(sizeof(VertexData) * totalVertices);
         skinCluster.skinnedVertexBufferView[i].StrideInBytes = sizeof(VertexData);
     }
 
     // Skinning Information (CBV)
     skinCluster.skinningInformationResource = dxCommon_->CreateBufferResource(sizeof(SkinningInformation));
-    skinCluster.skinningInformationResource->Map(0, nullptr, reinterpret_cast<void**>(&skinCluster.mappedSkinningInformation));
+    skinCluster.skinningInformationResource->Map(0, nullptr,
+                                                 reinterpret_cast<void**>(&skinCluster.mappedSkinningInformation));
     skinCluster.mappedSkinningInformation->numVertices = static_cast<uint32_t>(totalVertices);
-
 
     return skinCluster;
 }
 
 // SkinClusterの更新
 void AnimationManager::SkinClusterUpdate(SkinCluster& skinCluster, const SkeletonPose& skeleton, uint32_t frameIndex) {
-    if (!skeleton.data) return;
+    if (!skeleton.data)
+        return;
     for (size_t jointIndex = 0; jointIndex < skeleton.jointPoses.size(); ++jointIndex) {
         IRUFEMI_ASSERT(jointIndex < skinCluster.inverseBindPoseMatrices.size());
-        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix = skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.jointPoses[jointIndex].skeletonSpaceMatrix;
-        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix = Irufemi::Math::Transpose(Irufemi::Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
+        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix =
+            skinCluster.inverseBindPoseMatrices[jointIndex] * skeleton.jointPoses[jointIndex].skeletonSpaceMatrix;
+        skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceInverseTransposeMatrix =
+            Irufemi::Math::Transpose(
+                Irufemi::Math::Inverse(skinCluster.mappedPalette[frameIndex][jointIndex].skeletonSpaceMatrix));
     }
 }
 
@@ -624,7 +649,8 @@ void AnimationManager::RefreshAvailableAnimations() {
     std::lock_guard<std::mutex> lock(mutex_);
     availableAnimations_.clear();
 
-    if (rootDir_.empty()) return;
+    if (rootDir_.empty())
+        return;
 
     try {
         for (const auto& entry : std::filesystem::recursive_directory_iterator(rootDir_)) {
@@ -640,7 +666,8 @@ void AnimationManager::RefreshAvailableAnimations() {
             }
         }
     } catch (const std::exception& e) {
-        Log::OutPutLog(std::cerr, "[AnimationManager] Error: Failed to refresh animations: " + std::string(e.what()) + "\n");
+        Log::OutPutLog(std::cerr,
+                       "[AnimationManager] Error: Failed to refresh animations: " + std::string(e.what()) + "\n");
     }
 }
 

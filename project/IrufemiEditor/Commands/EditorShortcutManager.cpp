@@ -9,10 +9,12 @@ EditorShortcutManager::EditorShortcutManager(EditorManager* editor, EditorAction
     : editorManager_(editor), actionManager_(actionManager) {}
 
 void EditorShortcutManager::Update() {
-    if (!editorManager_ || !actionManager_) return;
+    if (!editorManager_ || !actionManager_)
+        return;
 
     // もしImGuiがテキスト入力中ならショートカットを無視する
-    if (ImGui::GetIO().WantTextInput) return;
+    if (ImGui::GetIO().WantTextInput)
+        return;
 
     // Deleteキーでの削除
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {

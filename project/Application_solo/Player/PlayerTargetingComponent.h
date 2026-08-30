@@ -23,7 +23,9 @@ public:
     void Update() override;
     void OnRegisterProperties() override;
 
-    std::string GetComponentName() const override { return "PlayerTargetingComponent"; }
+    std::string GetComponentName() const override {
+        return "PlayerTargetingComponent";
+    }
 
     /**
      * @brief 右クリック時に呼ばれる。スコアが最も高い敵をキューに追加する
@@ -36,25 +38,31 @@ public:
      */
     void ClearTargets();
 
-    const std::vector<std::shared_ptr<GameObject>>& GetQueuedTargets() const { return queuedTargets_; }
-    
+    const std::vector<std::shared_ptr<GameObject>>& GetQueuedTargets() const {
+        return queuedTargets_;
+    }
+
     /**
      * @brief 現在レティクルが合っているホバー中のターゲットを取得する
      */
-    std::shared_ptr<GameObject> GetHoverTarget() const { return hoverTarget_; }
-    
+    std::shared_ptr<GameObject> GetHoverTarget() const {
+        return hoverTarget_;
+    }
+
     /**
      * @brief キューの先頭を取り出して返す（発射用）
      */
     std::shared_ptr<GameObject> PopTarget();
 
-    void SetMaxLockonCount(size_t count) { maxLockonCount_ = count; }
+    void SetMaxLockonCount(size_t count) {
+        maxLockonCount_ = count;
+    }
 
 private:
     size_t maxLockonCount_ = 1;
     std::vector<std::shared_ptr<GameObject>> queuedTargets_;
     std::shared_ptr<GameObject> hoverTarget_ = nullptr;
-    
+
     /** @brief 非同期レイキャストの結果待機用と時間間引き(Amortization)用キャッシュ構造体 */
     struct TargetVisibilityCache {
         bool canSee = true;

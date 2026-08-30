@@ -4,7 +4,7 @@
 
 /*objファイルを読んでみよう*/
 
-///ModelData構造体と読み込み関数
+/// ModelData構造体と読み込み関数
 
 /**
  * @class MaterialData

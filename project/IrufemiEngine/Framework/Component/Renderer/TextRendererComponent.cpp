@@ -25,7 +25,8 @@ void TextRendererComponent::Initialize() {
 }
 
 void TextRendererComponent::Update() {
-    if (!GetTransform() || !textObj_) return;
+    if (!GetTransform() || !textObj_)
+        return;
 
     // Reflection / Deserialize sync
     std::wstring newText = ConvertString(textU8_);
@@ -50,7 +51,8 @@ void TextRendererComponent::Update() {
     }
 
     // Transformの変更をTextオブジェクトに反映
-    textObj_->SetPosition(GetTransform()->GetWorldPosition().x, GetTransform()->GetWorldPosition().y, GetTransform()->GetWorldPosition().z);
+    textObj_->SetPosition(GetTransform()->GetWorldPosition().x, GetTransform()->GetWorldPosition().y,
+                          GetTransform()->GetWorldPosition().z);
     textObj_->SetRotation(GetTransform()->GetWorldRotation().z); // 2DなのでZ軸回転
     textObj_->SetScale(GetTransform()->GetWorldScale().x, GetTransform()->GetWorldScale().y);
 
@@ -69,16 +71,18 @@ void TextRendererComponent::Draw() {
 }
 
 bool TextRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!gameObject_) return false;
+    if (!gameObject_)
+        return false;
     auto transform = GetTransform();
-    if (!transform) return false;
-    
+    if (!transform)
+        return false;
+
     // 簡易的にBoundingSphereで判定
     Irufemi::Sphere sphere;
     sphere.center = transform->GetWorldPosition();
     float maxScale = (std::max)({transform->GetWorldScale().x, transform->GetWorldScale().y});
     // Textの横幅は文字数によるため、少し大きめの半径を確保（暫定）
-    sphere.radius = maxScale * baseScale_ * (text_.length() * 0.5f); 
+    sphere.radius = maxScale * baseScale_ * (text_.length() * 0.5f);
 
     return Irufemi::Collision::IsCollision(ray, sphere, outDistance);
 }
@@ -138,5 +142,3 @@ void TextRendererComponent::OnRegisterProperties() {
     RegisterProperty("alignment", &alignmentInt_);
     RegisterProperty("isTopMost", &isTopMost_);
 }
-
-

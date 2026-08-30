@@ -45,13 +45,9 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
             }
         }
         if (!found) {
-            newSettings.push_back({
-                name, 
-                Irufemi::Vector3(-1.0f, -1.0f, -1.0f), Irufemi::Vector3(-1.0f, -1.0f, -1.0f),
-                Irufemi::Vector3(0.0f, 0.0f, 0.0f), Irufemi::Vector3(0.0f, 0.0f, 0.0f),
-                0, 0,
-                false, 3
-            });
+            newSettings.push_back({name, Irufemi::Vector3(-1.0f, -1.0f, -1.0f), Irufemi::Vector3(-1.0f, -1.0f, -1.0f),
+                                   Irufemi::Vector3(0.0f, 0.0f, 0.0f), Irufemi::Vector3(0.0f, 0.0f, 0.0f), 0, 0, false,
+                                   3});
         }
     }
     batchCollisionSettings_ = newSettings;
@@ -63,22 +59,23 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
         RegisterProperty("ColOffset_" + name, &setting.collisionOffset);
         // Type_ is kept for serialization compatibility, but no longer modifies Y position.
         RegisterEnum("Type_" + name, &setting.placementType, {"Building", "Floating"});
-        
+
         RegisterProperty("IsDestructible_" + name, &setting.isDestructible);
         RegisterProperty("SpawnCount_" + name, &setting.debrisSpawnCount);
     }
 }
 
-void EnvironmentManagerComponent::Initialize() {
-}
+void EnvironmentManagerComponent::Initialize() {}
 
 void EnvironmentManagerComponent::Start() {
-    if (!gameObject_) return;
+    if (!gameObject_)
+        return;
 
     // 子オブジェクトとして配置されている環境オブジェクトを検索して追跡リストに登録
     const auto& children = gameObject_->GetChildren();
     for (const auto& child : children) {
-        if (!child) continue;
+        if (!child)
+            continue;
 
         for (auto& setting : batchCollisionSettings_) {
             if (child->GetName().find(setting.prefabPath) != std::string::npos) {
@@ -98,7 +95,7 @@ void EnvironmentManagerComponent::Start() {
                     origRot = transform->GetRotation();
                     origScale = transform->GetScale();
                 }
-                
+
                 if (setting.isDestructible) {
                     if (!child->GetComponent<TargetableComponent>()) {
                         child->AddComponent<TargetableComponent>();
@@ -108,13 +105,13 @@ void EnvironmentManagerComponent::Start() {
                         destructible->SetDebrisSpawnCount(setting.debrisSpawnCount);
                     }
                 }
-                
+
                 spawnedObjects_.push_back({child, setting.prefabPath, origPos, origRot, origScale});
                 break;
             }
         }
     }
-    
+
     // 最初のバッチ設定を適用
     for (const auto& info : spawnedObjects_) {
         if (auto obj = info.obj.lock()) {
@@ -134,8 +131,7 @@ void EnvironmentManagerComponent::Start() {
 void EnvironmentManagerComponent::Update() {
     bool anyChanged = false;
     for (auto& setting : batchCollisionSettings_) {
-        if (setting.collisionSize != setting.previousSize ||
-            setting.collisionOffset != setting.previousOffset) {
+        if (setting.collisionSize != setting.previousSize || setting.collisionOffset != setting.previousOffset) {
             setting.previousSize = setting.collisionSize;
             setting.previousOffset = setting.collisionOffset;
             anyChanged = true;
@@ -174,13 +170,15 @@ void EnvironmentManagerComponent::Draw() {
     // 2. 管理下のオブジェクトから Irufemi::Transform を取得し、バッチに登録
     for (const auto& info : spawnedObjects_) {
         if (auto obj = info.obj.lock()) {
-            if (!obj->GetIsActive()) continue; // 破壊された環境物は描画しない
+            if (!obj->GetIsActive())
+                continue; // 破壊された環境物は描画しない
             if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
                 // 個別の描画をストップ（Raycast判定などは生きたまま）
                 meshRenderer->SetVisible(false);
 
                 std::string modelName = meshRenderer->GetModelName();
-                if (modelName.empty()) continue;
+                if (modelName.empty())
+                    continue;
 
                 // 未登録のモデルならバッチレンダラーを新規作成
                 if (batchRenderers_.find(modelName) == batchRenderers_.end() || !batchRenderers_[modelName]) {
@@ -203,7 +201,8 @@ void EnvironmentManagerComponent::Draw() {
 
                 // ワールド行列を取得してバッチにインスタンスを追加
                 if (auto transform = obj->GetComponent<TransformComponent>()) {
-                    batchRenderers_[modelName]->AddInstanceWorld(transform->GetWorldMatrix(), effectType, effectParam, enableMask);
+                    batchRenderers_[modelName]->AddInstanceWorld(transform->GetWorldMatrix(), effectType, effectParam,
+                                                                 enableMask);
                 }
             }
         }

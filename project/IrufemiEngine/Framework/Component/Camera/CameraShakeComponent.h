@@ -7,7 +7,7 @@
 class CameraComponent;
 
 namespace Irufemi {
-    class PerlinNoise;
+class PerlinNoise;
 }
 
 struct ShakeEvent {
@@ -30,8 +30,10 @@ public:
 
     void Initialize() override;
     void Update() override;
-    
-    std::string GetComponentName() const override { return "CameraShakeComponent"; }
+
+    std::string GetComponentName() const override {
+        return "CameraShakeComponent";
+    }
 
     /**
      * @brief カメラシェイクを再生します
@@ -40,7 +42,7 @@ public:
      * @param frequency 揺れの速さ (周波数)
      */
     void PlayShake(float intensity, int durationFrames, float frequency = 10.0f);
-    
+
     /**
      * @brief カメラシェイクを再生します (秒指定)
      */
@@ -50,7 +52,9 @@ public:
      * @brief 現在シェイクが再生中かどうかを判定する
      * @return 再生中ならtrue
      */
-    bool IsPlaying() const { return !activeShakes_.empty(); }
+    bool IsPlaying() const {
+        return !activeShakes_.empty();
+    }
 
 protected:
     void OnRegisterProperties() override;
@@ -59,6 +63,6 @@ private:
     std::vector<ShakeEvent> activeShakes_;
     CameraComponent* cameraComp_ = nullptr;
     std::shared_ptr<Irufemi::PerlinNoise> perlinNoise_;
-    
+
     float globalIntensityMultiplier_ = 1.0f;
 };

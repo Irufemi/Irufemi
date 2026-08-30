@@ -34,7 +34,7 @@ public:
      * @brief Initialize を実行する。
      */
     void Initialize(DirectXCommon* dx, DrawManager* drawM, DescriptorPool* srvAlloc);
-    
+
     /**
      * @brief Update を実行する。
      */
@@ -48,7 +48,7 @@ public:
      * @brief AddCube を実行する。
      */
     void AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color);
-    
+
     /**
      * @brief ClearInstances を実行する。
      */
@@ -120,6 +120,6 @@ private:
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> cubeSrvGPU_{};
 
     uint32_t lastUpdateFrameIndex_ = 0;
-    
+
     std::mutex mutex_;
 };

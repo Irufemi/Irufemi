@@ -4,7 +4,6 @@
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Vector2.h"
 
-
 namespace Irufemi {
 // ボクセル化された個々のキューブの情報
 struct Voxel {

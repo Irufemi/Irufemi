@@ -19,7 +19,7 @@ void GpuProfiler::Initialize(DirectXCommon* dxCommon) {
     queryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
     queryHeapDesc.Count = kMaxFramesInFlight * 2;
     queryHeapDesc.NodeMask = 0;
-    
+
     HRESULT hr = device->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(&queryHeap_));
     IRUFEMI_ASSERT(SUCCEEDED(hr));
 
@@ -42,21 +42,16 @@ void GpuProfiler::Initialize(DirectXCommon* dxCommon) {
     bufferDesc.SampleDesc.Count = 1;
     bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    hr = device->CreateCommittedResource(
-        &heapProps,
-        D3D12_HEAP_FLAG_NONE,
-        &bufferDesc,
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&queryResultBuffer_)
-    );
+    hr = device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_COPY_DEST,
+                                         nullptr, IID_PPV_ARGS(&queryResultBuffer_));
     IRUFEMI_ASSERT(SUCCEEDED(hr));
 
     isInitialized_ = true;
 }
 
 void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
-    if (!isInitialized_) return;
+    if (!isInitialized_)
+        return;
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     uint32_t startIndex = frameIndex * 2;
@@ -66,10 +61,10 @@ void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
 
     // ストールを防ぐため、安全にGPU処理が終わっている（現在のフェンスで待機完了した）フレームの結果をリードバックする
     uint32_t safeFrameIndex = frameIndex;
-    
+
     // CPUでマップして読む
     uint64_t* pData = nullptr;
-    D3D12_RANGE readRange = { safeFrameIndex * 2 * sizeof(uint64_t), (safeFrameIndex * 2 + 2) * sizeof(uint64_t) };
+    D3D12_RANGE readRange = {safeFrameIndex * 2 * sizeof(uint64_t), (safeFrameIndex * 2 + 2) * sizeof(uint64_t)};
     if (SUCCEEDED(queryResultBuffer_->Map(0, &readRange, reinterpret_cast<void**>(&pData)))) {
         uint64_t startTimestamp = pData[safeFrameIndex * 2];
         uint64_t endTimestamp = pData[safeFrameIndex * 2 + 1];
@@ -78,14 +73,15 @@ void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
             uint64_t delta = endTimestamp - startTimestamp;
             lastGpuTimeMs_ = (static_cast<float>(delta) / static_cast<float>(gpuFrequency_)) * 1000.0f;
         }
-        
-        D3D12_RANGE writeRange = { 0, 0 };
+
+        D3D12_RANGE writeRange = {0, 0};
         queryResultBuffer_->Unmap(0, &writeRange);
     }
 }
 
 void GpuProfiler::EndFrame(ID3D12GraphicsCommandList* commandList) {
-    if (!isInitialized_) return;
+    if (!isInitialized_)
+        return;
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     uint32_t startIndex = frameIndex * 2;
@@ -95,12 +91,6 @@ void GpuProfiler::EndFrame(ID3D12GraphicsCommandList* commandList) {
     commandList->EndQuery(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, endIndex);
 
     // クエリヒープのデータをリードバックバッファに解決(Resolve)する
-    commandList->ResolveQueryData(
-        queryHeap_.Get(),
-        D3D12_QUERY_TYPE_TIMESTAMP,
-        startIndex,
-        2,
-        queryResultBuffer_.Get(),
-        startIndex * sizeof(uint64_t)
-    );
+    commandList->ResolveQueryData(queryHeap_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, startIndex, 2, queryResultBuffer_.Get(),
+                                  startIndex * sizeof(uint64_t));
 }

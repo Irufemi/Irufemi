@@ -5,8 +5,7 @@
 #include "Core/Math/Quaternion.h"
 #include "Resource/Model/Data/Keyframe.h"
 
-template<typename tValue>
-struct AnimationCurve {
+template <typename tValue> struct AnimationCurve {
     std::vector<Keyframe<tValue>> keyframes;
 };
 

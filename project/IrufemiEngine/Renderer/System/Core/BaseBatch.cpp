@@ -30,10 +30,14 @@ BaseBatch::~BaseBatch() {
                 idx = UINT32_MAX;
             }
         };
-        for (auto& idx : instancingSrvIndex_) freeIndex(idx);
-        for (auto& idx : outputInstanceSrvIndex_) freeIndex(idx);
-        for (auto& idx : outputInstanceUavIndex_) freeIndex(idx);
-        for (auto& idx : indirectCommandUavIndex_) freeIndex(idx);
+        for (auto& idx : instancingSrvIndex_)
+            freeIndex(idx);
+        for (auto& idx : outputInstanceSrvIndex_)
+            freeIndex(idx);
+        for (auto& idx : outputInstanceUavIndex_)
+            freeIndex(idx);
+        for (auto& idx : indirectCommandUavIndex_)
+            freeIndex(idx);
     }
     if (auto engine = dx_->GetEngine()) {
         if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
@@ -89,14 +93,16 @@ void BaseBatch::AddInstance(const Irufemi::Transform& t, int32_t effectType, flo
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Irufemi::Transform& t, const Irufemi::Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
+void BaseBatch::AddInstance(const Irufemi::Transform& t, const Irufemi::Vector4& color, int32_t effectType,
+                            float effectParam, bool enableMask) {
     instances_.push_back(t);
     instanceColors_.push_back(color);
     instanceEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const Irufemi::Vector3& rotate, int32_t effectType, float effectParam, bool enableMask) {
+void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const Irufemi::Vector3& rotate,
+                            int32_t effectType, float effectParam, bool enableMask) {
     Irufemi::Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
@@ -107,7 +113,8 @@ void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const I
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const Irufemi::Vector3& rotate, const Irufemi::Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
+void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const Irufemi::Vector3& rotate,
+                            const Irufemi::Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
     Irufemi::Transform t;
     t.translate = center;
     t.scale = {scale, scale, scale};
@@ -118,7 +125,8 @@ void BaseBatch::AddInstance(const Irufemi::Vector3& center, float scale, const I
     instanceDirty_ = true;
 }
 
-void BaseBatch::AddInstanceWorld(const Irufemi::Matrix4x4& world, const Irufemi::Vector4& color, int32_t effectType, float effectParam, bool enableMask) {
+void BaseBatch::AddInstanceWorld(const Irufemi::Matrix4x4& world, const Irufemi::Vector4& color, int32_t effectType,
+                                 float effectParam, bool enableMask) {
     instanceWorlds_.push_back(world);
     instanceWorldColors_.push_back(color);
     instanceWorldEffects_.push_back({static_cast<float>(effectType), effectParam, enableMask ? 1.0f : 0.0f, 0.0f});
@@ -155,12 +163,12 @@ void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
             IRUFEMI_ASSERT(srvPool_);
             uint32_t idx = srvPool_->Allocate();
-            if (idx == DescriptorPool::kInvalid) { 
+            if (idx == DescriptorPool::kInvalid) {
                 /**
                  * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
                  */
-                Log::OutPutLog(std::cerr, "BaseBatch SRV allocate failed"); 
-                return; 
+                Log::OutPutLog(std::cerr, "BaseBatch SRV allocate failed");
+                return;
             }
             instancingSrvIndex_[frameIndex] = idx;
             instancingSrvCPU_[frameIndex] = srvPool_->GetCPUHandle(idx);
@@ -176,7 +184,8 @@ void BaseBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         srv.Buffer.StructureByteStride = stride;
         srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-        dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srv, instancingSrvCPU_[frameIndex]);
+        dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srv,
+                                                   instancingSrvCPU_[frameIndex]);
     }
 }
 
@@ -212,7 +221,8 @@ void BaseBatch::CreateGPUCullingBuffers(uint32_t instanceCount) {
         srv.Buffer.NumElements = instanceCount;
         srv.Buffer.StructureByteStride = stride;
         srv.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-        dx_->GetDevice()->CreateShaderResourceView(outputInstanceBuffer_[frameIndex].Get(), &srv, outputInstanceSrvCPU_[frameIndex]);
+        dx_->GetDevice()->CreateShaderResourceView(outputInstanceBuffer_[frameIndex].Get(), &srv,
+                                                   outputInstanceSrvCPU_[frameIndex]);
 
         // UAV
         D3D12_UNORDERED_ACCESS_VIEW_DESC uav{};
@@ -223,7 +233,8 @@ void BaseBatch::CreateGPUCullingBuffers(uint32_t instanceCount) {
         uav.Buffer.StructureByteStride = stride;
         uav.Buffer.CounterOffsetInBytes = 0;
         uav.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-        dx_->GetDevice()->CreateUnorderedAccessView(outputInstanceBuffer_[frameIndex].Get(), nullptr, &uav, outputInstanceUavCPU_[frameIndex]);
+        dx_->GetDevice()->CreateUnorderedAccessView(outputInstanceBuffer_[frameIndex].Get(), nullptr, &uav,
+                                                    outputInstanceUavCPU_[frameIndex]);
     }
 
     // 2. Command Buffer (RWStructuredBuffer<uint> 5要素)
@@ -250,7 +261,8 @@ void BaseBatch::CreateGPUCullingBuffers(uint32_t instanceCount) {
         uav.Buffer.StructureByteStride = 4;
         uav.Buffer.CounterOffsetInBytes = 0;
         uav.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-        dx_->GetDevice()->CreateUnorderedAccessView(indirectCommandBuffer_[frameIndex].Get(), nullptr, &uav, indirectCommandUavCPU_[frameIndex]);
+        dx_->GetDevice()->CreateUnorderedAccessView(indirectCommandBuffer_[frameIndex].Get(), nullptr, &uav,
+                                                    indirectCommandUavCPU_[frameIndex]);
     }
 
     if (!indirectCommandUploadBuffer_[frameIndex]) {
@@ -265,16 +277,18 @@ void BaseBatch::CreateGPUCullingBuffers(uint32_t instanceCount) {
 }
 
 void BaseBatch::BuildInstanceBuffer(bool force) {
-    if (instances_.empty() && instanceWorlds_.empty()) { 
+    if (instances_.empty() && instanceWorlds_.empty()) {
         visibleInstanceCount_ = 0;
-        return; 
+        return;
     }
-    if (!force && !instanceDirty_) { return; }
+    if (!force && !instanceDirty_) {
+        return;
+    }
 
     const UINT totalCount = static_cast<UINT>(instances_.size() + instanceWorlds_.size());
-    
+
     const Irufemi::Frustum* frustum = nullptr;
-    
+
     Camera* activeCamera = nullptr;
     if (dx_ && dx_->GetEngine() && dx_->GetEngine()->GetCameraManager()) {
         activeCamera = dx_->GetEngine()->GetCameraManager()->GetActiveCamera();
@@ -295,24 +309,32 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
         temp.reserve(totalCount);
         for (size_t i = 0; i < instances_.size(); ++i) {
             TransformData td{};
-            td.position = Irufemi::Vector4(instances_[i].translate.x, instances_[i].translate.y, instances_[i].translate.z, 0.0f);
-            td.rotation = Irufemi::Vector4(instances_[i].rotate.x, instances_[i].rotate.y, instances_[i].rotate.z, 0.0f);
+            td.position =
+                Irufemi::Vector4(instances_[i].translate.x, instances_[i].translate.y, instances_[i].translate.z, 0.0f);
+            td.rotation =
+                Irufemi::Vector4(instances_[i].rotate.x, instances_[i].rotate.y, instances_[i].rotate.z, 0.0f);
             td.scale = Irufemi::Vector4(instances_[i].scale.x, instances_[i].scale.y, instances_[i].scale.z, 0.0f);
             td.color = instanceColors_[i];
-            td.customEffect = (i < instanceEffects_.size()) ? instanceEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+            td.customEffect =
+                (i < instanceEffects_.size()) ? instanceEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(td);
         }
         for (size_t i = 0; i < instanceWorlds_.size(); ++i) {
             TransformData td{};
-            td.position = Irufemi::Vector4(instanceWorlds_[i].m[3][0], instanceWorlds_[i].m[3][1], instanceWorlds_[i].m[3][2], 0.0f);
+            td.position = Irufemi::Vector4(instanceWorlds_[i].m[3][0], instanceWorlds_[i].m[3][1],
+                                           instanceWorlds_[i].m[3][2], 0.0f);
             Irufemi::Vector3 euler = Irufemi::Math::ExtractEulerFromMatrix(instanceWorlds_[i]);
             td.rotation = Irufemi::Vector4(euler.x, euler.y, euler.z, 0.0f);
-            float sx = Irufemi::Math::Length(Irufemi::Vector3{instanceWorlds_[i].m[0][0], instanceWorlds_[i].m[0][1], instanceWorlds_[i].m[0][2]});
-            float sy = Irufemi::Math::Length(Irufemi::Vector3{instanceWorlds_[i].m[1][0], instanceWorlds_[i].m[1][1], instanceWorlds_[i].m[1][2]});
-            float sz = Irufemi::Math::Length(Irufemi::Vector3{instanceWorlds_[i].m[2][0], instanceWorlds_[i].m[2][1], instanceWorlds_[i].m[2][2]});
+            float sx = Irufemi::Math::Length(
+                Irufemi::Vector3{instanceWorlds_[i].m[0][0], instanceWorlds_[i].m[0][1], instanceWorlds_[i].m[0][2]});
+            float sy = Irufemi::Math::Length(
+                Irufemi::Vector3{instanceWorlds_[i].m[1][0], instanceWorlds_[i].m[1][1], instanceWorlds_[i].m[1][2]});
+            float sz = Irufemi::Math::Length(
+                Irufemi::Vector3{instanceWorlds_[i].m[2][0], instanceWorlds_[i].m[2][1], instanceWorlds_[i].m[2][2]});
             td.scale = Irufemi::Vector4(sx, sy, sz, 0.0f);
             td.color = instanceWorldColors_[i];
-            td.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+            td.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i]
+                                                                 : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(td);
         }
 
@@ -339,10 +361,12 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
 
                 if (frustum) {
                     for (int i = 0; i < 6; ++i) {
-                        cullData.planes[i] = { frustum->planes[i].normal.x, frustum->planes[i].normal.y, frustum->planes[i].normal.z, -frustum->planes[i].distance };
+                        cullData.planes[i] = {frustum->planes[i].normal.x, frustum->planes[i].normal.y,
+                                              frustum->planes[i].normal.z, -frustum->planes[i].distance};
                     }
                 } else {
-                    for (int i = 0; i < 6; ++i) cullData.planes[i] = { 0,0,0, -10000.0f };
+                    for (int i = 0; i < 6; ++i)
+                        cullData.planes[i] = {0, 0, 0, -10000.0f};
                 }
 
                 std::memcpy(cullDst, &cullData, sizeof(CullingData));
@@ -355,22 +379,27 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
         for (size_t i = 0; i < instances_.size(); ++i) {
             const auto& inst = instances_[i];
             if (isCullingEnabled_ && activeCamera && frustum) {
-                float maxScale = (std::max)({ inst.scale.x, inst.scale.y, inst.scale.z });
+                float maxScale = (std::max)({inst.scale.x, inst.scale.y, inst.scale.z});
                 Irufemi::Sphere boundingSphere;
                 boundingSphere.center = inst.translate;
                 boundingSphere.radius = modelRadius * maxScale * 1.1f;
-                if (!Irufemi::Collision::IsCollision(*frustum, boundingSphere)) continue;
+                if (!Irufemi::Collision::IsCollision(*frustum, boundingSphere))
+                    continue;
             }
 
             InstanceData data;
             Irufemi::Matrix4x4 world = Irufemi::Math::MakeAffineMatrix(inst.scale, inst.rotate, inst.translate);
             Irufemi::Matrix4x4 worldForNormal = world;
-            worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+            worldForNormal.m[3][0] = 0.0f;
+            worldForNormal.m[3][1] = 0.0f;
+            worldForNormal.m[3][2] = 0.0f;
+            worldForNormal.m[3][3] = 1.0f;
             data.WVP = Irufemi::Math::MakeIdentity4x4();
             data.World = world;
             data.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
             data.color = instanceColors_[i];
-            data.customEffect = (i < instanceEffects_.size()) ? instanceEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+            data.customEffect =
+                (i < instanceEffects_.size()) ? instanceEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(data);
         }
         for (size_t i = 0; i < instanceWorlds_.size(); ++i) {
@@ -378,10 +407,14 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
             data.WVP = Irufemi::Math::MakeIdentity4x4();
             data.World = instanceWorlds_[i];
             Irufemi::Matrix4x4 worldForNormal = instanceWorlds_[i];
-            worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f; worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+            worldForNormal.m[3][0] = 0.0f;
+            worldForNormal.m[3][1] = 0.0f;
+            worldForNormal.m[3][2] = 0.0f;
+            worldForNormal.m[3][3] = 1.0f;
             data.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
             data.color = instanceWorldColors_[i];
-            data.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i] : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+            data.customEffect = (i < instanceWorldEffects_.size()) ? instanceWorldEffects_[i]
+                                                                   : Irufemi::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
             temp.push_back(data);
         }
 
@@ -407,7 +440,7 @@ void BaseBatch::SyncBeforeDraw() {
     if (instanceDirty_) {
         BuildInstanceBuffer(false);
     }
-    
+
     // [Bindless] テクスチャのインデックスを解決して反映
     if (textureManager_) {
         cpuMaterialData_.textureIndex = textureManager_->GetSrvIndex(textureHandle_);
@@ -416,7 +449,7 @@ void BaseBatch::SyncBeforeDraw() {
         cpuMaterialData_.textureIndex = 0;
         cpuMaterialData_.envMapIndex = 0;
     }
-    
+
     if (auto engine = dx_->GetEngine()) {
         uint32_t frameIndex = dx_->GetFrameIndex();
         if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
@@ -426,6 +459,7 @@ void BaseBatch::SyncBeforeDraw() {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS BaseBatch::GetMaterialVAddress() const {
-    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
+    if (materialCbIndex_ == static_cast<uint32_t>(-1))
+        return 0;
     return dx_->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, dx_->GetFrameIndex());
 }

@@ -17,7 +17,8 @@
 #include "Core/Utility/Log.h"
 
 void BossComponent::LoadStatusFromJson() {
-    if (statusDataPath_.empty()) return;
+    if (statusDataPath_.empty())
+        return;
 
     std::ifstream file(statusDataPath_);
     if (!file.is_open()) {
@@ -28,25 +29,35 @@ void BossComponent::LoadStatusFromJson() {
     try {
         nlohmann::json j;
         file >> j;
-        
-        if (j.contains("maxHp")) { maxHp_ = j["maxHp"].get<float>(); hp_ = maxHp_; }
-        if (j.contains("maxShieldCount")) { maxShieldCount_ = j["maxShieldCount"].get<int>(); }
-        if (j.contains("shieldRadius")) { shieldRadius_ = j["shieldRadius"].get<float>(); }
-        if (j.contains("beamInterval")) { beamInterval_ = j["beamInterval"].get<float>(); }
-        if (j.contains("beamRange")) { beamRange_ = j["beamRange"].get<float>(); }
+
+        if (j.contains("maxHp")) {
+            maxHp_ = j["maxHp"].get<float>();
+            hp_ = maxHp_;
+        }
+        if (j.contains("maxShieldCount")) {
+            maxShieldCount_ = j["maxShieldCount"].get<int>();
+        }
+        if (j.contains("shieldRadius")) {
+            shieldRadius_ = j["shieldRadius"].get<float>();
+        }
+        if (j.contains("beamInterval")) {
+            beamInterval_ = j["beamInterval"].get<float>();
+        }
+        if (j.contains("beamRange")) {
+            beamRange_ = j["beamRange"].get<float>();
+        }
     } catch (const std::exception& e) {
         Log::OutPutLog(std::cout, std::string("[BossComponent] JSON Parse Error: ") + e.what() + "\n");
     }
 }
 
-BossComponent::BossComponent() {
-}
+BossComponent::BossComponent() {}
 
 void BossComponent::Initialize() {
     if (!gameObject_->GetComponent<TargetableComponent>()) {
         gameObject_->AddComponent<TargetableComponent>();
     }
-    
+
     LoadStatusFromJson();
     hp_ = maxHp_;
     isShieldsInitialized_ = false;
@@ -76,16 +87,19 @@ void BossComponent::Initialize() {
 }
 
 void BossComponent::Start() {
-    if (!gameObject_) return;
+    if (!gameObject_)
+        return;
     auto scene = gameObject_->GetScene();
     if (scene) {
         auto container = scene->FindGameObject("BossContainer");
         if (container) {
             bossContainer_ = container;
             auto droneObj = scene->FindGameObject("BossDroneManager");
-            if (droneObj) droneManager_ = droneObj->GetComponent<DroneManagerComponent>();
+            if (droneObj)
+                droneManager_ = droneObj->GetComponent<DroneManagerComponent>();
             auto bulletObj = scene->FindGameObject("BossBulletManager");
-            if (bulletObj) bulletManager_ = bulletObj->GetComponent<BossBulletManagerComponent>();
+            if (bulletObj)
+                bulletManager_ = bulletObj->GetComponent<BossBulletManagerComponent>();
         }
 
         auto managerObj = scene->FindGameObject("DebrisManager");
@@ -96,7 +110,7 @@ void BossComponent::Start() {
                     auto debrisComp = debrisObj->GetComponent<DebrisComponent>();
                     if (debrisComp) {
                         debrisComp->SetTarget(gameObject_->shared_from_this());
-                        debrisComp->SetState(DebrisState::BossOrbiting); 
+                        debrisComp->SetState(DebrisState::BossOrbiting);
                     }
                     shields_.push_back(debrisObj);
                 };
@@ -109,7 +123,7 @@ void BossComponent::Start() {
                     }
                 }
                 isShieldsInitialized_ = true;
-                
+
                 if (droneManager_ && bulletManager_) {
                     droneManager_->DeployDrones(gameObject_->shared_from_this(), 10, bulletManager_);
                 }
@@ -119,8 +133,9 @@ void BossComponent::Start() {
 }
 
 void BossComponent::Update() {
-    if (!gameObject_) return;
-    
+    if (!gameObject_)
+        return;
+
     if (currentState_) {
         currentState_->Update(this);
     }
@@ -133,11 +148,12 @@ void BossComponent::OnRegisterProperties() {
 }
 
 std::shared_ptr<GameObject> BossComponent::ExtractDebris() {
-    if (shields_.empty()) return nullptr;
-    
+    if (shields_.empty())
+        return nullptr;
+
     auto debris = shields_.back();
     shields_.pop_back();
-    
+
     if (debris) {
         auto debrisComp = debris->GetComponent<DebrisComponent>();
         if (debrisComp) {

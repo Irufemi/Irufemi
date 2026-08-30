@@ -42,8 +42,10 @@ std::string FileSystem::GetEngineRoot() {
 std::string FileSystem::GetResourcePath(const std::string& relativePath) {
     std::string path = relativePath;
     // Remove leading "./" or "/" if present
-    if (path.find("./") == 0) path = path.substr(2);
-    if (path.find("/") == 0) path = path.substr(1);
+    if (path.find("./") == 0)
+        path = path.substr(2);
+    if (path.find("/") == 0)
+        path = path.substr(1);
 
     if (path.find("resources") != 0) {
         path = "resources/" + path;

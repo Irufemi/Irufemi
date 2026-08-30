@@ -3,18 +3,17 @@
 #include <cmath>
 #include <cassert>
 
-
 namespace Irufemi {
 namespace {
-    // AABBのマージン（オブジェクトが少し動いてもRebuildを避けるための「太らせる」余白）
-    const float AABB_MARGIN = 0.5f;
-    // 実際にAABBがこの倍率以上外にはみ出したらRebuild（Remove -> Insert）する
-    const float AABB_BOUNDS_MULTIPLIER = 1.2f;
-}
+// AABBのマージン（オブジェクトが少し動いてもRebuildを避けるための「太らせる」余白）
+const float AABB_MARGIN = 0.5f;
+// 実際にAABBがこの倍率以上外にはみ出したらRebuild（Remove -> Insert）する
+const float AABB_BOUNDS_MULTIPLIER = 1.2f;
+} // namespace
 
 DynamicBVH::DynamicBVH() {
     // メモリアロケーションを防ぐための事前確保
-    nodes_.reserve(10000); 
+    nodes_.reserve(10000);
 }
 
 void DynamicBVH::Clear() {
@@ -28,7 +27,7 @@ int32_t DynamicBVH::AllocateNode() {
     if (freeListFirst_ != -1) {
         int32_t nodeId = freeListFirst_;
         freeListFirst_ = nodes_[nodeId].parentIndex; // フリーリストの次を指している
-        
+
         // 初期化
         nodes_[nodeId].parentIndex = -1;
         nodes_[nodeId].leftChildIndex = -1;
@@ -43,8 +42,9 @@ int32_t DynamicBVH::AllocateNode() {
 }
 
 void DynamicBVH::FreeNode(int32_t nodeId) {
-    if (nodeId < 0 || nodeId >= nodes_.size()) return;
-    
+    if (nodeId < 0 || nodeId >= nodes_.size())
+        return;
+
     // nextポインタの代わりにparentIndexを使ってリストを繋ぐ
     nodes_[nodeId].parentIndex = freeListFirst_;
     nodes_[nodeId].leftChildIndex = -1;
@@ -58,7 +58,7 @@ AABB DynamicBVH::MergeAABB(const AABB& a, const AABB& b) const {
     result.min.x = std::min(a.min.x, b.min.x);
     result.min.y = std::min(a.min.y, b.min.y);
     result.min.z = std::min(a.min.z, b.min.z);
-    
+
     result.max.x = std::max(a.max.x, b.max.x);
     result.max.y = std::max(a.max.y, b.max.y);
     result.max.z = std::max(a.max.z, b.max.z);
@@ -73,15 +73,18 @@ float DynamicBVH::SurfaceArea(const AABB& aabb) const {
 }
 
 bool DynamicBVH::Intersects(const AABB& a, const AABB& b) const {
-    if (a.max.x < b.min.x || a.min.x > b.max.x) return false;
-    if (a.max.y < b.min.y || a.min.y > b.max.y) return false;
-    if (a.max.z < b.min.z || a.min.z > b.max.z) return false;
+    if (a.max.x < b.min.x || a.min.x > b.max.x)
+        return false;
+    if (a.max.y < b.min.y || a.min.y > b.max.y)
+        return false;
+    if (a.max.z < b.min.z || a.min.z > b.max.z)
+        return false;
     return true;
 }
 
 int32_t DynamicBVH::Insert(ColliderComponent* collider, const AABB& aabb) {
     int32_t nodeId = AllocateNode();
-    
+
     // マージンを持たせて太らせる
     AABB fattenedAABB;
     fattenedAABB.min.x = aabb.min.x - AABB_MARGIN;
@@ -99,20 +102,21 @@ int32_t DynamicBVH::Insert(ColliderComponent* collider, const AABB& aabb) {
 }
 
 void DynamicBVH::Remove(int32_t nodeId) {
-    if (nodeId == -1) return;
+    if (nodeId == -1)
+        return;
     RemoveLeaf(nodeId);
     FreeNode(nodeId);
 }
 
 void DynamicBVH::Update(int32_t nodeId, const AABB& newAABB) {
-    if (nodeId == -1 || nodeId >= nodes_.size()) return;
+    if (nodeId == -1 || nodeId >= nodes_.size())
+        return;
 
     // 現在のFattened AABBが、新しいAABBを完全に包んでいるかチェック
     const AABB& fatAABB = nodes_[nodeId].aabb;
-    bool isContained = 
-        newAABB.min.x >= fatAABB.min.x && newAABB.max.x <= fatAABB.max.x &&
-        newAABB.min.y >= fatAABB.min.y && newAABB.max.y <= fatAABB.max.y &&
-        newAABB.min.z >= fatAABB.min.z && newAABB.max.z <= fatAABB.max.z;
+    bool isContained = newAABB.min.x >= fatAABB.min.x && newAABB.max.x <= fatAABB.max.x &&
+                       newAABB.min.y >= fatAABB.min.y && newAABB.max.y <= fatAABB.max.y &&
+                       newAABB.min.z >= fatAABB.min.z && newAABB.max.z <= fatAABB.max.z;
 
     if (isContained) {
         // ツリー構造を変更する必要なし（超高速）
@@ -230,7 +234,8 @@ void DynamicBVH::RemoveLeaf(int32_t leafIndex) {
 
     int32_t parent = nodes_[leafIndex].parentIndex;
     int32_t grandParent = nodes_[parent].parentIndex;
-    int32_t sibling = (nodes_[parent].leftChildIndex == leafIndex) ? nodes_[parent].rightChildIndex : nodes_[parent].leftChildIndex;
+    int32_t sibling =
+        (nodes_[parent].leftChildIndex == leafIndex) ? nodes_[parent].rightChildIndex : nodes_[parent].leftChildIndex;
 
     if (grandParent != -1) {
         if (nodes_[grandParent].leftChildIndex == parent) {
@@ -258,15 +263,18 @@ void DynamicBVH::Refit(int32_t nodeIndex) {
     }
 }
 
-void DynamicBVH::GetPotentialCollisionPairs(std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
+void DynamicBVH::GetPotentialCollisionPairs(
+    std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
     outPairs.clear();
     if (rootIndex_ != -1) {
         ComputePairs(nodes_[rootIndex_].leftChildIndex, nodes_[rootIndex_].rightChildIndex, outPairs);
     }
 }
 
-void DynamicBVH::ComputePairs(int32_t node0, int32_t node1, std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
-    if (node0 == -1 || node1 == -1) return;
+void DynamicBVH::ComputePairs(int32_t node0, int32_t node1,
+                              std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
+    if (node0 == -1 || node1 == -1)
+        return;
 
     if (!Intersects(nodes_[node0].aabb, nodes_[node1].aabb)) {
         return;
@@ -276,7 +284,7 @@ void DynamicBVH::ComputePairs(int32_t node0, int32_t node1, std::vector<std::pai
     bool isLeaf1 = nodes_[node1].IsLeaf();
 
     if (isLeaf0 && isLeaf1) {
-        outPairs.push_back({ nodes_[node0].collider, nodes_[node1].collider });
+        outPairs.push_back({nodes_[node0].collider, nodes_[node1].collider});
     } else if (isLeaf0) {
         ComputePairs(node0, nodes_[node1].leftChildIndex, outPairs);
         ComputePairs(node0, nodes_[node1].rightChildIndex, outPairs);
@@ -305,7 +313,8 @@ void DynamicBVH::ComputePairs(int32_t node0, int32_t node1, std::vector<std::pai
 }
 
 void DynamicBVH::Query(const AABB& testAabb, std::vector<ColliderComponent*>& outColliders) const {
-    if (rootIndex_ == -1) return;
+    if (rootIndex_ == -1)
+        return;
 
     std::vector<int32_t> stack;
     stack.reserve(256);
@@ -329,7 +338,8 @@ void DynamicBVH::Query(const AABB& testAabb, std::vector<ColliderComponent*>& ou
 }
 
 void DynamicBVH::RaycastQuery(const Ray& ray, float maxDistance, std::vector<ColliderComponent*>& outHits) const {
-    if (rootIndex_ == -1) return;
+    if (rootIndex_ == -1)
+        return;
 
     std::vector<int32_t> stack;
     stack.reserve(256);

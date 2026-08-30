@@ -5,7 +5,6 @@
 #include "Core/Math/MathFunction.h"
 #include <algorithm>
 
-
 /**
  * @brief 初期化処理
  * @details JSONシリアライズ等で既にアタッチされている場合も考慮し、
@@ -20,14 +19,15 @@ void VirtualEntityManagerComponent::Initialize() {
     batchRenderer_->SetUseGPUCulling(true);
 }
 
-void VirtualEntityManagerComponent::Setup(int poolSize, int maxVirtualInstances, std::function<std::shared_ptr<GameObject>()> factory) {
+void VirtualEntityManagerComponent::Setup(int poolSize, int maxVirtualInstances,
+                                          std::function<std::shared_ptr<GameObject>()> factory) {
     maxPoolSize_ = poolSize;
     maxVirtualInstances_ = maxVirtualInstances;
     pool_ = std::make_unique<ObjectPool<GameObject>>(poolSize, factory);
 
     dense_.reserve(maxVirtualInstances_);
     sparse_.resize(maxVirtualInstances_, -1);
-    
+
     // IDを再利用可能なキューに積む
     std::queue<int> empty;
     std::swap(freeIds_, empty); // キューをリセット
@@ -36,8 +36,10 @@ void VirtualEntityManagerComponent::Setup(int poolSize, int maxVirtualInstances,
     }
 }
 
-int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot, const Irufemi::Vector3& scale) {
-    if (freeIds_.empty()) return -1; // 上限到達
+int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot,
+                                                      const Irufemi::Vector3& scale) {
+    if (freeIds_.empty())
+        return -1; // 上限到達
 
     int id = freeIds_.front();
     freeIds_.pop();
@@ -50,7 +52,7 @@ int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& po
     vi.isPromoted_ = false;
     vi.isDestroyed_ = false;
     vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
-    
+
     dense_.push_back(vi);
     sparse_[id] = static_cast<int>(dense_.size() - 1);
 
@@ -58,9 +60,11 @@ int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& po
 }
 
 void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
-    if (id < 0 || id >= maxVirtualInstances_) return;
+    if (id < 0 || id >= maxVirtualInstances_)
+        return;
     int denseIndex = sparse_[id];
-    if (denseIndex == -1) return; // すでに存在しない
+    if (denseIndex == -1)
+        return; // すでに存在しない
 
     auto& vi = dense_[denseIndex];
     if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
@@ -69,7 +73,8 @@ void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
             obj->SetIsActive(false);
             activeHandles_.erase(obj.get());
         }
-        if (pool_) pool_->Release(vi.promotedHandle_);
+        if (pool_)
+            pool_->Release(vi.promotedHandle_);
         vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
     }
 
@@ -81,18 +86,21 @@ void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
         // 移動した要素のsparse_を更新
         sparse_[dense_[denseIndex].id_] = denseIndex;
     }
-    
+
     dense_.pop_back();
-    sparse_[id] = -1; // 削除済みマーク
+    sparse_[id] = -1;  // 削除済みマーク
     freeIds_.push(id); // IDを解放して再利用可能にする
 }
 
 std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
-    if (!pool_) return nullptr;
-    if (id < 0 || id >= maxVirtualInstances_) return nullptr;
-    
+    if (!pool_)
+        return nullptr;
+    if (id < 0 || id >= maxVirtualInstances_)
+        return nullptr;
+
     int denseIndex = sparse_[id];
-    if (denseIndex == -1) return nullptr;
+    if (denseIndex == -1)
+        return nullptr;
 
     auto& vi = dense_[denseIndex];
     if (!vi.isDestroyed_ && !vi.isPromoted_) {
@@ -123,10 +131,12 @@ void VirtualEntityManagerComponent::OnRegisterProperties() {
 }
 
 void VirtualEntityManagerComponent::Demote(int id) {
-    if (id < 0 || id >= maxVirtualInstances_) return;
-    
+    if (id < 0 || id >= maxVirtualInstances_)
+        return;
+
     int denseIndex = sparse_[id];
-    if (denseIndex == -1) return;
+    if (denseIndex == -1)
+        return;
 
     auto& vi = dense_[denseIndex];
     if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
@@ -139,14 +149,15 @@ void VirtualEntityManagerComponent::Demote(int id) {
                 vi.rotation_ = t->GetRotation();
                 vi.scale_ = t->GetScale();
             }
-            
+
             obj->SetIsActive(false);
             activeHandles_.erase(obj.get());
             gameObject_->RemoveChild(obj);
         }
-        
-        if (pool_) pool_->Release(vi.promotedHandle_);
-        
+
+        if (pool_)
+            pool_->Release(vi.promotedHandle_);
+
         vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
         vi.isPromoted_ = false;
     }
@@ -167,12 +178,13 @@ void VirtualEntityManagerComponent::ReleaseGameObject(std::shared_ptr<GameObject
 }
 
 void VirtualEntityManagerComponent::Update() {
-    if (!batchRenderer_) return;
-    
+    if (!batchRenderer_)
+        return;
+
     activeInstanceCount_ = static_cast<int>(dense_.size());
 
     batchRenderer_->ClearInstances();
-    
+
     // 仮想インスタンス（未昇格）の描画
     for (auto& vi : dense_) {
         if (!vi.isPromoted_) {
@@ -183,7 +195,7 @@ void VirtualEntityManagerComponent::Update() {
             batchRenderer_->AddInstance(t);
         }
     }
-    
+
     // 実体化済みのインスタンスの描画（Promote時にAddChildされているためGetChildrenで走査可能）
     for (auto& child : gameObject_->GetChildren()) {
         if (child && child->GetIsActive() && !child->IsDestroyed()) {
@@ -193,5 +205,4 @@ void VirtualEntityManagerComponent::Update() {
             }
         }
     }
-
 }

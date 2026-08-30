@@ -20,6 +20,7 @@ struct AreaLight {
     Irufemi::Vector2 size;
     //!< 有効フラグ
     int32_t isActive;
+
 private:
     float padding;
 };

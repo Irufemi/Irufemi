@@ -10,19 +10,17 @@ using json = nlohmann::json;
 
 LevelData TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
     LevelData levelData;
-    
+
     if (!scene) {
         Log::OutPutLog(std::cerr, "[TL1LevelLoader] Scene is null.\n");
         return levelData;
     }
-
 
     std::ifstream file(filepath);
     if (!file.is_open()) {
         Log::OutPutLog(std::cerr, "[TL1LevelLoader] Failed to open file: " + filepath + "\n");
         return levelData;
     }
-
 
     json rootJson;
     try {
@@ -32,12 +30,10 @@ LevelData TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
         return levelData;
     }
 
-
     if (!rootJson.contains("objects") || !rootJson["objects"].is_array()) {
         Log::OutPutLog(std::cerr, "[TL1LevelLoader] JSON does not contain 'objects' array.\n");
         return levelData;
     }
-
 
     for (const auto& blenderNode : rootJson["objects"]) {
         if (blenderNode.contains("disabled")) {
@@ -46,7 +42,7 @@ LevelData TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
                 continue;
             }
         }
-        
+
         // "PlayerSpawn"の判定
         std::string type = blenderNode.value("type", "");
         if (type == "PlayerSpawn") {
@@ -102,7 +98,6 @@ LevelData TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
 
         json engineJson = ConvertBlenderJsonToEngineJson(blenderNode);
 
-        
         auto obj = std::make_shared<GameObject>();
         obj->SetScene(scene);
         try {
@@ -112,14 +107,13 @@ LevelData TL1LevelLoader::Load(const std::string& filepath, BaseScene* scene) {
             Log::OutPutLog(std::cerr, "[TL1LevelLoader] Error deserializing object: " + std::string(e.what()) + "\n");
         }
     }
-    
+
     return levelData;
 }
 
-
 nlohmann::json TL1LevelLoader::ConvertBlenderJsonToEngineJson(const nlohmann::json& blenderNode) {
     json engineJson;
-    
+
     engineJson["name"] = blenderNode.value("name", "Unnamed");
     engineJson["components"] = json::array();
 
@@ -127,7 +121,7 @@ nlohmann::json TL1LevelLoader::ConvertBlenderJsonToEngineJson(const nlohmann::js
     if (blenderNode.contains("transform")) {
         const auto& t = blenderNode["transform"];
         json transformData;
-        
+
         // Blender(X, Y, Z) -> Engine(X, Z, Y) への変換
         if (t.contains("translation") && t["translation"].size() == 3) {
             transformData["position"] = {
@@ -136,7 +130,7 @@ nlohmann::json TL1LevelLoader::ConvertBlenderJsonToEngineJson(const nlohmann::js
                 t["translation"][1].get<float>()  // Z <- Y
             };
         }
-        
+
         if (t.contains("rotation") && t["rotation"].size() == 3) {
             // Blenderのオイラー角(度)からラジアンへ変換し、軸を入れ替える
             float degToRad = Irufemi::Math::PI / 180.0f;
@@ -146,7 +140,7 @@ nlohmann::json TL1LevelLoader::ConvertBlenderJsonToEngineJson(const nlohmann::js
                 t["rotation"][1].get<float>() * degToRad  // Z <- Y
             };
         }
-        
+
         if (t.contains("scaling") && t["scaling"].size() == 3) {
             transformData["scale"] = {
                 t["scaling"][0].get<float>(),
@@ -181,13 +175,10 @@ nlohmann::json TL1LevelLoader::ConvertBlenderJsonToEngineJson(const nlohmann::js
                 c["size"][2].get<float>() * 0.5f, // Y <- Z
                 c["size"][1].get<float>() * 0.5f  // Z <- Y
             };
-            
+
             if (c.contains("center") && c["center"].size() == 3) {
-                colliderComp["data"]["localOffset"] = {
-                    c["center"][0].get<float>(),
-                    c["center"][2].get<float>(),
-                    c["center"][1].get<float>()
-                };
+                colliderComp["data"]["localOffset"] = {c["center"][0].get<float>(), c["center"][2].get<float>(),
+                                                       c["center"][1].get<float>()};
             }
             engineJson["components"].push_back(colliderComp);
         }

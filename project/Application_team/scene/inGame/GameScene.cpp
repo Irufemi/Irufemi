@@ -16,7 +16,6 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
-    
 }
 
 // 更新

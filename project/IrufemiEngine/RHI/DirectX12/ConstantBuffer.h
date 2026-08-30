@@ -9,8 +9,7 @@
 #include "RHI/DirectX12/DirectXCommon.h"
 
 // マルチバッファリング対応 汎用定数バッファ管理クラステンプレート
-template <typename T>
-class ConstantBuffer {
+template <typename T> class ConstantBuffer {
 public:
     ConstantBuffer() = default;
     ~ConstantBuffer() {

@@ -13,17 +13,10 @@ class EditorActionManager;
 class EditorShortcutManager;
 class ComponentEditorRegistry;
 
-
-
 /**
  * @brief エディタの現在の動作モード
  */
-enum class EditorModeState {
-    Edit,
-    Playing,
-    Paused,
-    PrefabEdit
-};
+enum class EditorModeState { Edit, Playing, Paused, PrefabEdit };
 
 /**
  * @class EditorManager
@@ -40,18 +33,30 @@ public:
 
     /** @name 各パネルからアクセスするための状態管理 Getter/Setter */
     ///@{
-    IrufemiEngine* GetEngine() const { return engine_; }
-    
-    EditorActionManager* GetActionManager() const { return actionManager_.get(); }
-    EditorShortcutManager* GetShortcutManager() const { return shortcutManager_.get(); }
-    ComponentEditorRegistry* GetComponentEditorRegistry() const { return componentEditorRegistry_.get(); }
-    
+    IrufemiEngine* GetEngine() const {
+        return engine_;
+    }
+
+    EditorActionManager* GetActionManager() const {
+        return actionManager_.get();
+    }
+    EditorShortcutManager* GetShortcutManager() const {
+        return shortcutManager_.get();
+    }
+    ComponentEditorRegistry* GetComponentEditorRegistry() const {
+        return componentEditorRegistry_.get();
+    }
+
     std::shared_ptr<GameObject> GetSelectedObject() const;
     void SetSelectedObject(std::shared_ptr<GameObject> obj);
     void ClearSelectedObject();
-    
-    EditorModeState GetCurrentMode() const { return currentMode_; }
-    bool IsPlayMode() const { return currentMode_ != EditorModeState::Edit; }
+
+    EditorModeState GetCurrentMode() const {
+        return currentMode_;
+    }
+    bool IsPlayMode() const {
+        return currentMode_ != EditorModeState::Edit;
+    }
     ///@}
 
     /**
@@ -81,14 +86,13 @@ public:
     void ExitPrefabMode(bool saveChanges);
 
 private:
-
     IrufemiEngine* engine_ = nullptr;
 
     EditorModeState currentMode_ = EditorModeState::Edit;
     std::string playModeStartSceneName_ = "";
     std::string editingPrefabPath_ = "";
     bool isStepRequested_ = false; // コマ送りの予約フラグ
-    
+
     // レイアウトのリセット用フラグ
     bool resetLayout_ = false;
 

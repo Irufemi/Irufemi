@@ -53,17 +53,19 @@ public:
     uint32_t indexCount_ = 0;
 
     // --- マテリアル ---
-    Irufemi::Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+    Irufemi::Transform uvTransform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
     Material cpuMaterialData_{};
     /**
      * @brief MaterialData を取得する。
      * @return 取得された MaterialData
      */
-    Material* GetMaterialData() { return &cpuMaterialData_; }
+    Material* GetMaterialData() {
+        return &cpuMaterialData_;
+    }
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
-    Irufemi::Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+    Irufemi::Transform transform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
     TransformationMatrix transformationMatrix_{};
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
@@ -81,33 +83,39 @@ public:
      * @return 取得された MaterialVAddress
      */
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
-    
 
-    
     // --- カスタム描画設定 ---
     ID3D12PipelineState* customPSO_ = nullptr;
     D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
-    
+
     /**
      * @brief CustomPSO を設定する。
      * @param[in] pso 設定する CustomPSO の値
      */
-    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    void SetCustomPSO(ID3D12PipelineState* pso) {
+        customPSO_ = pso;
+    }
     /**
      * @brief CustomPSO を取得する。
      * @return 取得された CustomPSO
      */
-    ID3D12PipelineState* GetCustomPSO() const { return customPSO_; }
+    ID3D12PipelineState* GetCustomPSO() const {
+        return customPSO_;
+    }
     /**
      * @brief CustomCBVAddress を設定する。
      * @param[in] address 設定する CustomCBVAddress の値
      */
-    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS address) { customCBVAddress_ = address; }
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS address) {
+        customCBVAddress_ = address;
+    }
     /**
      * @brief CustomCBVAddress を取得する。
      * @return 取得された CustomCBVAddress
      */
-    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const {
+        return customCBVAddress_;
+    }
 
     /**
      * @brief SyncBeforeDraw を実行する。

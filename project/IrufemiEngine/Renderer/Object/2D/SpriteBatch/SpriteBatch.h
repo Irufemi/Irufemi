@@ -49,8 +49,10 @@ public:
     /**
      * @brief AddInstance を実行する。
      */
-    void AddInstance(const Irufemi::Vector2& position, const Irufemi::Vector2& size, float rotation = 0.0f, const Irufemi::Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f}, const Irufemi::Vector2& anchor = {0.5f, 0.5f});
-    
+    void AddInstance(const Irufemi::Vector2& position, const Irufemi::Vector2& size, float rotation = 0.0f,
+                     const Irufemi::Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f},
+                     const Irufemi::Vector2& anchor = {0.5f, 0.5f});
+
     /**
      * @brief ClearInstances を実行する。
      */
@@ -74,7 +76,9 @@ public:
      * @brief D3D12Resource を取得する。
      * @return 取得された D3D12Resource
      */
-    Object2DResource* GetD3D12Resource() const { return baseResource_.get(); }
+    Object2DResource* GetD3D12Resource() const {
+        return baseResource_.get();
+    }
     /**
      * @brief InstancingSrvHandleGPU を取得する。
      * @return 取得された InstancingSrvHandleGPU
@@ -84,56 +88,74 @@ public:
      * @brief InstanceCount を取得する。
      * @return 取得された InstanceCount
      */
-    UINT GetInstanceCount() const { return static_cast<UINT>(visibleInstanceCount_); }
-    
+    UINT GetInstanceCount() const {
+        return static_cast<UINT>(visibleInstanceCount_);
+    }
+
     /**
      * @brief TopMost を設定する。
      * @param[in] isTopMost 設定する TopMost の値
      */
-    void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
+    void SetTopMost(bool isTopMost) {
+        isTopMost_ = isTopMost;
+    }
     /**
      * @brief CustomPSO を設定する。
      * @param[in] pso 設定する CustomPSO の値
      */
-    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
+    void SetCustomPSO(ID3D12PipelineState* pso) {
+        customPSO_ = pso;
+    }
     /**
      * @brief CustomCBV を設定する。
      * @param[in] cbv 設定する CustomCBV の値
      */
-    void SetCustomCBV(D3D12_GPU_VIRTUAL_ADDRESS cbv) { customCBVAddress_ = cbv; }
+    void SetCustomCBV(D3D12_GPU_VIRTUAL_ADDRESS cbv) {
+        customCBVAddress_ = cbv;
+    }
 
     /**
      * @brief TextureManager を設定する。
      * @param[in] tm 設定する TextureManager の値
      */
-    static void SetTextureManager(TextureManager* tm) { textureManager_ = tm; }
+    static void SetTextureManager(TextureManager* tm) {
+        textureManager_ = tm;
+    }
     /**
      * @brief DrawManager を設定する。
      * @param[in] dm 設定する DrawManager の値
      */
-    static void SetDrawManager(DrawManager* dm) { drawManager_ = dm; }
+    static void SetDrawManager(DrawManager* dm) {
+        drawManager_ = dm;
+    }
     /**
      * @brief CameraManager を設定する。
      * @param[in] cm 設定する CameraManager の値
      */
-    static void SetCameraManager(CameraManager* cm) { cameraManager_ = cm; }
+    static void SetCameraManager(CameraManager* cm) {
+        cameraManager_ = cm;
+    }
     /**
      * @brief DirectXCommon を設定する。
      * @param[in] dx 設定する DirectXCommon の値
      */
-    static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
+    static void SetDirectXCommon(DirectXCommon* dx) {
+        dx_ = dx;
+    }
     /**
      * @brief SrvAllocator を設定する。
      * @param[in] pool 設定する SrvAllocator の値
      */
-    static void SetSrvAllocator(DescriptorPool* pool) { srvPool_ = pool; }
+    static void SetSrvAllocator(DescriptorPool* pool) {
+        srvPool_ = pool;
+    }
 
 private:
     struct SpriteInstance {
         Irufemi::Transform transform;
         Irufemi::Vector4 color;
-        Irufemi::Vector2 anchor; 
-        Irufemi::Vector2 size;   
+        Irufemi::Vector2 anchor;
+        Irufemi::Vector2 size;
     };
 
     struct InstanceData {
@@ -162,10 +184,10 @@ private:
     bool instanceDirty_ = false;
     bool isTopMost_ = false;
     Irufemi::Vector2 textureSize_{0.0f, 0.0f};
-    
+
     ID3D12PipelineState* customPSO_ = nullptr;
     D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
-    
+
     // インスタンシング用バッファ
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> instanceBuffer_;
     std::array<InstanceData*, kMaxFramesInFlight> instanceData_{};

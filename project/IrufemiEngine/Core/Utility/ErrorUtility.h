@@ -47,4 +47,3 @@ public:
 #define IRUFEMI_ASSERT(condition) ErrorUtility::Assert(!!(condition), #condition, __FILE__, __LINE__)
 #define IRUFEMI_ASSERT_MSG(condition, msg) ErrorUtility::Assert(!!(condition), msg, __FILE__, __LINE__)
 #define IRUFEMI_WARNING(condition, msg) ErrorUtility::Warning(!!(condition), msg, __FILE__, __LINE__)
-

@@ -18,7 +18,8 @@ public:
     void Draw(Component* component, EditorActionManager* actionManager) override;
 
 private:
-    void DrawFloatProperty(const char* label, float& value, float defaultValue, float minVal, float maxVal, EditorActionManager* actionManager);
+    void DrawFloatProperty(const char* label, float& value, float defaultValue, float minVal, float maxVal,
+                           EditorActionManager* actionManager);
     void DrawBoolProperty(const char* label, bool& value, bool defaultValue, EditorActionManager* actionManager);
 };
 

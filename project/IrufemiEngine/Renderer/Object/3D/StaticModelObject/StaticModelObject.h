@@ -41,8 +41,6 @@ class ModelManager;
  */
 class StaticModelObject : public BaseModel, public IComputeTask {
 
-
-
 private:
     /**
      * @brief モデル内の各ノードの名前と、そのノードのグローバル行列（ローカル行列の累積）をマッピングするキャッシュ
@@ -61,8 +59,7 @@ private:
      */
     void InitializeResources();
 
-public: //メンバ関数
-
+public: // メンバ関数
     /**
      * @brief デストラクタ
      */
@@ -83,7 +80,7 @@ public: //メンバ関数
     /**
      * @brief 描画コマンドの積み込み
      */
-     void SyncBeforeDraw() override;
+    void SyncBeforeDraw() override;
     /**
      * @brief Draw を実行する。
      */
@@ -114,6 +111,4 @@ private:
     SkinCluster skinCluster_;
     uint32_t lastSkinnedFrameIndex_ = 0;
     bool isResourceInitialized_ = false;
-
 };
-

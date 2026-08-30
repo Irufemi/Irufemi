@@ -28,8 +28,7 @@ struct ObjModel; // 追加
  * @brief 3Dモデルのアニメーションリソースを統括管理するクラス
  * @details gltf等から読み込んだスケルトンやキーフレームデータを保持し、各フレームのアニメーション補間計算を担います。
  */
-class AnimationManager
-{
+class AnimationManager {
 public:
     AnimationManager() = default;
     ~AnimationManager() = default;
@@ -75,7 +74,6 @@ public:
     std::vector<std::string> GetAvailableAnimations() const;
 
 public: // 静的ヘルパ
-
     /**
      * @brief 任意の時刻の Vector3 の値を取得する
      * @param[in] keyframes キーフレームのリスト
@@ -137,7 +135,8 @@ public: // 静的ヘルパ
      * @param[out] joints 追加先のジョイント配列
      * @return 生成されたジョイントのインデックス
      */
-    static int32_t CreateJointData(const Node& node, const std::optional<int32_t>& parent, std::vector<JointData>& joints);
+    static int32_t CreateJointData(const Node& node, const std::optional<int32_t>& parent,
+                                   std::vector<JointData>& joints);
 
     /**
      * @brief SkeletonPoseのワールド行列などを更新する
@@ -152,7 +151,8 @@ public: // 静的ヘルパ
      * @param[in] animationTime 再生時刻
      * @param[in] applyRootTranslation Rootボーンの移動を適用するかどうか（Root Motion抽出時はfalse）
      */
-    static void ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime, bool applyRootTranslation = true);
+    static void ApplyAnimation(SkeletonPose& skeleton, const Animation& animation, float animationTime,
+                               bool applyRootTranslation = true);
 
     /**
      * @brief 2つのAnimationをブレンドしてSkeletonPoseに適用する
@@ -164,7 +164,8 @@ public: // 静的ヘルパ
      * @param[in] weight animBの重み (0.0 ~ 1.0)
      * @param[in] applyRootTranslation Rootボーンの移動を適用するかどうか
      */
-    static void BlendAnimation(SkeletonPose& skeleton, const Animation& animA, float timeA, const Animation& animB, float timeB, float weight, bool applyRootTranslation = true);
+    static void BlendAnimation(SkeletonPose& skeleton, const Animation& animA, float timeA, const Animation& animB,
+                               float timeB, float weight, bool applyRootTranslation = true);
 
     /**
      * @brief SkinCluster（行列パレット）を更新してGPUバッファに書き込む
@@ -193,7 +194,7 @@ private:
     DirectXCommon* dxCommon_ = nullptr;
     std::string rootDir_;
     mutable std::mutex mutex_;
-    
+
     struct CachedAnimation {
         std::shared_ptr<Animation> animation;
         uint64_t lastLoadTime = 0;
@@ -202,11 +203,10 @@ private:
     std::unordered_map<std::string, CachedAnimation> cache_;
     mutable std::unordered_map<std::string, std::string> filePathCache_;
     std::vector<std::string> availableAnimations_;
-    
+
     std::unique_ptr<DirectoryWatcher> directoryWatcher_;
     /**
      * @brief OnDirectoryChanged を実行する。
      */
     void OnDirectoryChanged();
 };
-
