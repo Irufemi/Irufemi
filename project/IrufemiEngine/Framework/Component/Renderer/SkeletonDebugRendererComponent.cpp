@@ -90,12 +90,14 @@ void SkeletonDebugRendererComponent::Update() {
             yAxis.x *= currentBoneLength;    yAxis.y *= currentBoneLength;    yAxis.z *= currentBoneLength;
             zAxis.x *= thickness; zAxis.y *= thickness; zAxis.z *= thickness;
 
+            // clang-format off
             Irufemi::Matrix4x4 boneWorld = {
                 xAxis.x, xAxis.y, xAxis.z, 0.0f,
                 yAxis.x, yAxis.y, yAxis.z, 0.0f,
                 zAxis.x, zAxis.y, zAxis.z, 0.0f,
                 parentPosition.x, parentPosition.y, parentPosition.z, 1.0f
             };
+            // clang-format on
 
             float hue = std::fmod(depth * 30.0f, 360.0f);
             float c = 1.0f;
