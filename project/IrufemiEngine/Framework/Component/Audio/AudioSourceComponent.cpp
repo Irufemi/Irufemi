@@ -1,10 +1,11 @@
 #include "Framework/Component/Audio/AudioSourceComponent.h"
-#include "Audio/AudioManager.h"
-#include "Core/System/IrufemiEngine.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Audio/AudioManager.h"
 
-AudioSourceComponent::AudioSourceComponent() {}
+AudioSourceComponent::AudioSourceComponent() {
+}
 
 AudioSourceComponent::~AudioSourceComponent() {
     Stop();
@@ -19,19 +20,16 @@ void AudioSourceComponent::OnRegisterProperties() {
 }
 
 void AudioSourceComponent::Initialize() {
-    if (!gameObject_)
-        return;
+    if (!gameObject_) return;
     auto scene = gameObject_->GetScene();
-    if (!scene)
-        return;
+    if (!scene) return;
     auto engine = scene->GetEngine();
-    if (!engine)
-        return;
+    if (!engine) return;
 
     auto audioManager = engine->GetAudioManager();
     if (audioManager) {
         player_ = std::make_unique<AudioPlayer>(audioManager, static_cast<AudioType>(audioType_));
-
+        
         std::string fullPath = "resources/" + audioPath_;
         if (audioPath_.find("resources/") == 0) {
             fullPath = audioPath_;

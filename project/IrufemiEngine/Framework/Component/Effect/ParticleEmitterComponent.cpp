@@ -1,14 +1,15 @@
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
-#include "Core/Utility/Log.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Core/Utility/Log.h"
 #include <iostream>
 
 ParticleEmitterComponent::ParticleEmitterComponent() {
     particleObj_ = std::make_unique<ParticleObject>();
 }
 
-ParticleEmitterComponent::~ParticleEmitterComponent() {}
+ParticleEmitterComponent::~ParticleEmitterComponent() {
+}
 
 void ParticleEmitterComponent::OnRegisterProperties() {
     if (particleObj_) {
@@ -29,19 +30,19 @@ void ParticleEmitterComponent::Update() {
     // エディタからの値変更をリアルタイム反映させるため、常にDirtyフラグを立てる
     particleObj_->MarkDirty();
 #endif
-
+    
     static int frameCounter = 0;
     if (frameCounter++ % 60 == 0) {
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        Log::OutPutLog(std::cout, "[ParticleEmitterComponent] Update called. Pos: " +
-                                      std::to_string(GetTransform()->GetWorldPosition().x) + "\n");
-#endif
+        #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+        Log::OutPutLog(std::cout, "[ParticleEmitterComponent] Update called. Pos: " + std::to_string(GetTransform()->GetWorldPosition().x) + "\n");
+        #endif
     }
 
     particleObj_->Update();
 }
 
-void ParticleEmitterComponent::Draw() {}
+void ParticleEmitterComponent::Draw() {
+}
 
 void ParticleEmitterComponent::Play() {
     particleObj_->Play();
@@ -53,16 +54,15 @@ void ParticleEmitterComponent::Restart(bool withChildren) {
         if (GetTransform()) {
             particleObj_->SetPosition(GetTransform()->GetWorldPosition());
         }
-
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+        
+        #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         auto pos = particleObj_->GetPosition();
-        Log::OutPutLog(std::cout, "[ParticleEmitterComponent] Restart. WorldPos: " + std::to_string(pos.x) + ", " +
-                                      std::to_string(pos.y) + ", " + std::to_string(pos.z) + "\n");
-#endif
-
+        Log::OutPutLog(std::cout, "[ParticleEmitterComponent] Restart. WorldPos: " + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ", " + std::to_string(pos.z) + "\n");
+        #endif
+        
         particleObj_->Restart();
     }
-
+    
     if (withChildren && gameObject_) {
         auto emitters = gameObject_->GetComponentsInChildren<ParticleEmitterComponent>();
         for (auto childEmitter : emitters) {

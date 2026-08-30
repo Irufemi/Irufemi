@@ -1,37 +1,37 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
 
-#include "Core/Math/Random/Random.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Core/Utility/Log.h"
-#include "Framework/Component/Collider/AABBColliderComponent.h"
-#include "Framework/Component/Collider/OBBColliderComponent.h"
-#include "Framework/Component/Collider/RaycastComponent.h"
-#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Component.h"
 #include "Framework/Component/ComponentFactory.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Collider/AABBColliderComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Framework/Component/Collider/OBBColliderComponent.h"
+#include "Framework/Component/Collider/RaycastComponent.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Core/Utility/Log.h"
 #include "Framework/Scene/SceneSerializer.h"
-#include <atomic>
 #include <iostream>
+#include <atomic>
+#include "Core/Math/Random/Random.h"
 
 GameObject::GameObject() : instanceId_(Irufemi::Random::GeneratorUint64(1, ULLONG_MAX)) {
     AddComponent<TransformComponent>();
 }
 
-GameObject::GameObject(const std::string& name)
-    : instanceId_(Irufemi::Random::GeneratorUint64(1, ULLONG_MAX)), name_(name) {
+GameObject::GameObject(const std::string& name) : instanceId_(Irufemi::Random::GeneratorUint64(1, ULLONG_MAX)), name_(name) {
     AddComponent<TransformComponent>();
 }
 
 // GetTransform() is now inline in GameObject.h
 
+
+
 void GameObject::SetIsActive(bool isActive) {
-    if (isActive_ == isActive)
-        return;
+    if (isActive_ == isActive) return;
     isActive_ = isActive;
 
     if (isActive_) {
@@ -55,8 +55,7 @@ void GameObject::Initialize() {
 }
 
 void GameObject::Start() {
-    if (isStarted_)
-        return;
+    if (isStarted_) return;
     isStarted_ = true;
 
     // Use index-based loop to allow components to add components/children during Start
@@ -69,8 +68,7 @@ void GameObject::Start() {
 }
 
 void GameObject::SetName(const std::string& name) {
-    if (name_ == name)
-        return;
+    if (name_ == name) return;
     std::string oldName = name_;
     name_ = name;
     if (scene_) {
@@ -91,8 +89,7 @@ void GameObject::SetScene(BaseScene* scene) {
 }
 
 void GameObject::Update(bool isPlayMode) {
-    if (!isActive_)
-        return;
+    if (!isActive_) return;
 
     bool isPaused = false;
     if (scene_) {
@@ -115,12 +112,12 @@ void GameObject::Update(bool isPlayMode) {
 
         comp->Update();
     }
-
+    
     // 破棄された子オブジェクトをリストから削除 (GC)
-    children_.erase(
-        std::remove_if(children_.begin(), children_.end(),
-                       [](const std::shared_ptr<GameObject>& child) { return !child || child->IsDestroyed(); }),
-        children_.end());
+    children_.erase(std::remove_if(children_.begin(), children_.end(),
+        [](const std::shared_ptr<GameObject>& child) {
+            return !child || child->IsDestroyed();
+        }), children_.end());
 
     for (size_t i = 0; i < children_.size(); ++i) {
         children_[i]->Update(isPlayMode);
@@ -128,8 +125,7 @@ void GameObject::Update(bool isPlayMode) {
 }
 
 void GameObject::Draw() {
-    if (!isActive_)
-        return;
+    if (!isActive_) return;
     for (size_t i = 0; i < components_.size(); ++i) {
         components_[i]->Draw();
     }
@@ -139,8 +135,7 @@ void GameObject::Draw() {
 }
 
 void GameObject::DrawOutlineMask() {
-    if (!isActive_)
-        return;
+    if (!isActive_) return;
     for (size_t i = 0; i < components_.size(); ++i) {
         components_[i]->DrawOutlineMask();
     }
@@ -150,14 +145,13 @@ void GameObject::DrawOutlineMask() {
 }
 
 void GameObject::AddChild(std::shared_ptr<GameObject> child) {
-    if (!child)
-        return;
-
+    if (!child) return;
+    
     // 既に親がいる場合は外す
     if (auto currentParent = child->GetParent()) {
         currentParent->RemoveChild(child);
     }
-
+    
     child->parent_ = shared_from_this();
     children_.push_back(child);
 
@@ -171,8 +165,7 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
 }
 
 void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
-    if (!child)
-        return;
+    if (!child) return;
 
     if (auto currentParent = child->GetParent()) {
         currentParent->RemoveChild(child);
@@ -198,7 +191,7 @@ void GameObject::RemoveChild(std::shared_ptr<GameObject> child) {
     auto it = std::find(children_.begin(), children_.end(), child);
     if (it != children_.end()) {
         (*it)->parent_.reset();
-
+        
         if (auto childTransform = (*it)->GetComponent<TransformComponent>()) {
             childTransform->MarkWorldDirty();
         }
@@ -226,16 +219,15 @@ void GameObject::SetParent(std::shared_ptr<GameObject> parent) {
 }
 
 void GameObject::AddComponent(std::shared_ptr<Component> component) {
-    if (!component)
-        return;
+    if (!component) return;
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
-
+    
     if (auto transform = dynamic_cast<TransformComponent*>(component.get())) {
         transformCache_ = transform;
     }
-
+    
     component->OnRegisterProperties();
     component->Initialize();
     if (isActive_) {
@@ -244,12 +236,10 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
 }
 
 void GameObject::RemoveComponent(Component* component) {
-    if (!component)
-        return;
+    if (!component) return;
 
     // TransformComponentは基本として削除不可とする
-    if (component == transformCache_)
-        return;
+    if (component == transformCache_) return;
 
     // componentMap_からの削除
     auto typeIt = componentMap_.find(typeid(*component));
@@ -259,29 +249,26 @@ void GameObject::RemoveComponent(Component* component) {
     }
 
     // components_からの削除
-    components_.erase(
-        std::remove_if(components_.begin(), components_.end(),
-                       [component](const std::shared_ptr<Component>& ptr) { return ptr.get() == component; }),
-        components_.end());
+    components_.erase(std::remove_if(components_.begin(), components_.end(),
+        [component](const std::shared_ptr<Component>& ptr) {
+            return ptr.get() == component;
+        }), components_.end());
 }
+
+
 
 nlohmann::json GameObject::Serialize() const {
     nlohmann::json j;
-
+    
     j["instanceId"] = instanceId_;
 
     // デフォルト値と異なる場合のみ出力
-    if (!name_.empty())
-        j["name"] = name_;
-    if (!tag_.empty())
-        j["tag"] = tag_;
-    if (!isActive_)
-        j["isActive"] = isActive_; // default is true
-    if (isFolder_)
-        j["isFolder"] = isFolder_; // default is false
-    if (isLocked_)
-        j["isLocked"] = isLocked_; // default is false
-
+    if (!name_.empty()) j["name"] = name_;
+    if (!tag_.empty()) j["tag"] = tag_;
+    if (!isActive_) j["isActive"] = isActive_; // default is true
+    if (isFolder_) j["isFolder"] = isFolder_;   // default is false
+    if (isLocked_) j["isLocked"] = isLocked_;   // default is false
+    
     if (!sourcePrefabPath_.empty()) {
         j["prefabPath"] = sourcePrefabPath_;
         // プレハブのベースデータを取得して比較し、差分（または追加分）のみ保存する
@@ -291,25 +278,22 @@ nlohmann::json GameObject::Serialize() const {
         nlohmann::json comps = nlohmann::json::array();
         for (const auto& comp : components_) {
             std::string cName = comp->GetComponentName();
-
+            
             nlohmann::json cdata;
             try {
                 cdata = comp->Serialize();
             } catch (const std::exception& e) {
-                Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName +
-                                              "': " + std::string(e.what()) + "\n");
+                Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName + "': " + std::string(e.what()) + "\n");
                 continue;
             } catch (...) {
-                Log::OutPutLog(std::cerr,
-                               "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
+                Log::OutPutLog(std::cerr, "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
                 continue;
             }
 
-            if (!cdata.is_object() || cdata.empty())
-                continue;
+            if (!cdata.is_object() || cdata.empty()) continue;
 
             bool isOverridden = true; // プレハブに存在しない、または差分がある場合はtrue
-
+            
             // プレハブ内の同一コンポーネントを検索
             for (const auto& baseCompJ : baseComps) {
                 if (baseCompJ.value("type", "") == cName) {
@@ -337,20 +321,18 @@ nlohmann::json GameObject::Serialize() const {
                 nlohmann::json cj;
                 std::string cName = comp->GetComponentName();
                 cj["type"] = cName;
-
+                
                 nlohmann::json cdata;
                 try {
                     cdata = comp->Serialize();
                 } catch (const std::exception& e) {
-                    Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName +
-                                                  "': " + std::string(e.what()) + "\n");
+                    Log::OutPutLog(std::cerr, "[GameObject] Exception during Serialize of component '" + cName + "': " + std::string(e.what()) + "\n");
                     std::cerr.flush();
                 } catch (...) {
-                    Log::OutPutLog(std::cerr,
-                                   "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
+                    Log::OutPutLog(std::cerr, "[GameObject] Unknown Exception during Serialize of component '" + cName + "'\n");
                     std::cerr.flush();
                 }
-
+                
                 // コンポーネントのデータが空でなければ出力
                 if (cdata.is_object() && !cdata.empty()) {
                     cj["data"] = cdata;
@@ -362,7 +344,7 @@ nlohmann::json GameObject::Serialize() const {
             }
         }
     }
-
+    
     if (!children_.empty()) {
         nlohmann::json childrenJson = nlohmann::json::array();
         for (const auto& child : children_) {
@@ -374,7 +356,7 @@ nlohmann::json GameObject::Serialize() const {
             j["children"] = childrenJson;
         }
     }
-
+    
     return j;
 }
 
@@ -390,32 +372,20 @@ void GameObject::Deserialize(const nlohmann::json& j) {
     }
 
     // まずベース(またはローカル)データから基本情報を復元
-    if (baseJ.contains("name"))
-        name_ = baseJ["name"];
-    if (baseJ.contains("instanceId"))
-        instanceId_ = baseJ["instanceId"];
-    if (baseJ.contains("tag"))
-        tag_ = baseJ["tag"];
-    if (baseJ.contains("isActive"))
-        isActive_ = baseJ["isActive"];
-    if (baseJ.contains("isFolder"))
-        isFolder_ = baseJ["isFolder"];
-    if (baseJ.contains("isLocked"))
-        isLocked_ = baseJ["isLocked"];
+    if (baseJ.contains("name")) name_ = baseJ["name"];
+    if (baseJ.contains("instanceId")) instanceId_ = baseJ["instanceId"];
+    if (baseJ.contains("tag")) tag_ = baseJ["tag"];
+    if (baseJ.contains("isActive")) isActive_ = baseJ["isActive"];
+    if (baseJ.contains("isFolder")) isFolder_ = baseJ["isFolder"];
+    if (baseJ.contains("isLocked")) isLocked_ = baseJ["isLocked"];
 
     // ローカル上書き情報がある場合はそれで上書き
-    if (j.contains("name"))
-        name_ = j["name"];
-    if (j.contains("instanceId"))
-        instanceId_ = j["instanceId"];
-    if (j.contains("tag"))
-        tag_ = j["tag"];
-    if (j.contains("isActive"))
-        isActive_ = j["isActive"];
-    if (j.contains("isFolder"))
-        isFolder_ = j["isFolder"];
-    if (j.contains("isLocked"))
-        isLocked_ = j["isLocked"];
+    if (j.contains("name")) name_ = j["name"];
+    if (j.contains("instanceId")) instanceId_ = j["instanceId"];
+    if (j.contains("tag")) tag_ = j["tag"];
+    if (j.contains("isActive")) isActive_ = j["isActive"];
+    if (j.contains("isFolder")) isFolder_ = j["isFolder"];
+    if (j.contains("isLocked")) isLocked_ = j["isLocked"];
 
     if (baseJ.contains("components")) {
         std::vector<std::shared_ptr<Component>> loadedComps;
@@ -443,7 +413,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             if (!newComp) {
                 newComp = ComponentFactory::Create(type);
             }
-
+            
             if (newComp) {
                 if (!isExisting) {
                     // AddComponentと同等の登録処理をInitializeの前に行う
@@ -452,7 +422,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                     componentMap_[typeid(*newComp)].push_back(newComp.get());
                     newComp->OnRegisterProperties();
                 }
-
+                
                 // ベースデータのプロパティを復元
                 if (cj.contains("data")) {
                     newComp->Deserialize(cj["data"]);
@@ -469,11 +439,11 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                         }
                     }
                 }
-
+                
                 loadedComps.push_back(newComp);
             }
         }
-
+        
         // プレハブには存在しないが、ローカルデータで追加された新規コンポーネントを復元
         if (j.contains("components")) {
             for (const auto& localCj : j["components"]) {
@@ -482,7 +452,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                     continue;
                 }
                 std::string localType = localCj["type"];
-
+                
                 // ベースデータに既に存在するかチェック
                 bool existsInBase = false;
                 if (baseJ.contains("components")) {
@@ -493,12 +463,12 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                         }
                     }
                 }
-
+                
                 // ベースデータに存在しない場合は新規追加
                 if (!existsInBase) {
                     std::shared_ptr<Component> newComp;
                     bool isExisting = false;
-
+                    
                     if (localType == "TransformComponent") {
                         if (auto existingTransform = GetComponent<TransformComponent>()) {
                             for (auto& comp : components_) {
@@ -513,7 +483,7 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                     if (!newComp) {
                         newComp = ComponentFactory::Create(localType);
                     }
-
+                    
                     if (newComp) {
                         if (!isExisting) {
                             newComp->SetGameObject(this);
@@ -521,11 +491,11 @@ void GameObject::Deserialize(const nlohmann::json& j) {
                             componentMap_[typeid(*newComp)].push_back(newComp.get());
                             newComp->OnRegisterProperties();
                         }
-
+                        
                         if (localCj.contains("data")) {
                             newComp->Deserialize(localCj["data"]);
                         }
-
+                        
                         loadedComps.push_back(newComp);
                     }
                 }
@@ -543,12 +513,11 @@ void GameObject::Deserialize(const nlohmann::json& j) {
             }
         }
     }
-
+    
     if (j.contains("children") && j["children"].is_array()) {
         for (const auto& cj : j["children"]) {
             auto child = std::make_shared<GameObject>();
-            if (scene_)
-                child->SetScene(scene_);
+            if (scene_) child->SetScene(scene_);
             child->Deserialize(cj);
             AddChild(child);
         }
@@ -558,16 +527,16 @@ void GameObject::Deserialize(const nlohmann::json& j) {
 std::shared_ptr<GameObject> GameObject::Clone() {
     std::unordered_map<uint64_t, uint64_t> idMap;
     auto clone = CloneInternal(idMap);
-
+    
     // --- 名前解決とIDの差し替え ---
     if (scene_) {
         clone->SetName(scene_->GetUniqueObjectName(this->GetName()));
     } else {
         clone->SetName(this->GetName() + " (Clone)");
     }
-
+    
     clone->OnIDRemapped(idMap);
-
+    
     return clone;
 }
 
@@ -582,15 +551,14 @@ std::shared_ptr<GameObject> GameObject::CloneInternal(std::unordered_map<uint64_
     clone->SetIsLocked(this->GetIsLocked());
     clone->SetIsSerializable(this->IsSerializable());
     clone->SetSourcePrefabPath(this->GetSourcePrefabPath());
-
+    
     // Deep copy components
     for (const auto& comp : components_) {
         auto clonedComp = comp->Clone();
         if (clonedComp) {
             clone->AddComponent(clonedComp);
         } else {
-            Log::OutPutLog(std::cerr,
-                           "[GameObject] Error: Failed to clone component: " + comp->GetComponentName() + "\n");
+            Log::OutPutLog(std::cerr, "[GameObject] Error: Failed to clone component: " + comp->GetComponentName() + "\n");
         }
     }
 
@@ -599,7 +567,7 @@ std::shared_ptr<GameObject> GameObject::CloneInternal(std::unordered_map<uint64_
         auto clonedChild = child->CloneInternal(idMap);
         clone->AddChild(clonedChild);
     }
-
+    
     return clone;
 }
 
@@ -653,7 +621,7 @@ void GameObject::RemapJSONInstanceIDs(nlohmann::json& j, std::unordered_map<uint
         j["instanceId"] = newId;
         outIdMap[oldId] = newId;
     }
-
+    
     if (j.contains("children") && j["children"].is_array()) {
         for (auto& cj : j["children"]) {
             RemapJSONInstanceIDs(cj, outIdMap);

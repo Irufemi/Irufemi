@@ -1,13 +1,13 @@
 #pragma once
-#include "Core/Math/Matrix4x4.h"
-#include "Core/Math/Vector3.h"
-#include "Core/Utility/ObjectPool.h"
 #include "Framework/Component/Component.h"
-#include <functional>
+#include "Core/Utility/ObjectPool.h"
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Matrix4x4.h"
 #include <memory>
+#include <vector>
+#include <functional>
 #include <queue>
 #include <unordered_map>
-#include <vector>
 
 class GameObject;
 class ModelBatchRendererComponent;
@@ -47,9 +47,7 @@ public:
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override {
-        return "VirtualEntityManagerComponent";
-    }
+    std::string GetComponentName() const override { return "VirtualEntityManagerComponent"; }
     /**
      * @brief OnRegisterProperties を実行する。
      */
@@ -67,8 +65,7 @@ public:
      * @brief 仮想インスタンスを追加する
      * @return 割り当てられたID
      */
-    int AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot = {0, 0, 0},
-                           const Irufemi::Vector3& scale = {1, 1, 1});
+    int AddVirtualInstance(const Irufemi::Vector3& pos, const Irufemi::Vector3& rot = {0, 0, 0}, const Irufemi::Vector3& scale = {1, 1, 1});
 
     /**
      * @brief 仮想インスタンスを論理削除する
@@ -89,9 +86,7 @@ public:
     /**
      * @brief データ配列（密配列・連続メモリ）を取得
      */
-    std::vector<VirtualInstance>& GetDenseInstances() {
-        return dense_;
-    }
+    std::vector<VirtualInstance>& GetDenseInstances() { return dense_; }
 
     /**
      * @brief 仮想IDから密配列のインデックスを取得
@@ -118,8 +113,8 @@ private:
 
     std::unique_ptr<ObjectPool<GameObject>> pool_;
     int maxPoolSize_ = 0;
-
+    
     ModelBatchRendererComponent* batchRenderer_ = nullptr;
-
+    
     std::unordered_map<GameObject*, ObjectPool<GameObject>::Handle> activeHandles_;
 };

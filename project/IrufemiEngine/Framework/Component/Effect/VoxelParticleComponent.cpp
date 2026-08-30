@@ -1,17 +1,19 @@
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 
 #include <iostream>
 
-VoxelParticleComponent::VoxelParticleComponent() {}
+VoxelParticleComponent::VoxelParticleComponent() {
+}
 
-VoxelParticleComponent::~VoxelParticleComponent() {}
+VoxelParticleComponent::~VoxelParticleComponent() {
+}
 
 void VoxelParticleComponent::Initialize() {
     cachedModelName_ = GetTargetModelName();
@@ -60,10 +62,8 @@ void VoxelParticleComponent::Emit() {
     // 拡張用：Emit（ポタポタ落ちるような挙動等）が必要になった場合はここに実装
 }
 
-void VoxelParticleComponent::Explode(const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate,
-                                     const Irufemi::Vector3& scale) {
-    if (!isInitialized_)
-        return;
+void VoxelParticleComponent::Explode(const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale) {
+    if (!isInitialized_) return;
 
     IrufemiEngine* engine = nullptr;
     if (auto* go = GetGameObject()) {
@@ -74,7 +74,7 @@ void VoxelParticleComponent::Explode(const Irufemi::Vector3& velocity, const Iru
 
     if (engine) {
         if (auto manager = engine->GetVoxelParticleManager()) {
-            Irufemi::Vector3 worldPos = {0, 0, 0};
+            Irufemi::Vector3 worldPos = {0,0,0};
             if (auto* go = GetGameObject()) {
                 if (auto transform = go->GetComponent<TransformComponent>()) {
                     worldPos = transform->GetWorldPosition();
@@ -90,7 +90,7 @@ nlohmann::json VoxelParticleComponent::Serialize() {
     j["overrideModelName"] = overrideModelName_;
     j["resolution"] = {resolution_.x, resolution_.y, resolution_.z};
     j["preAllocateCount"] = preAllocateCount_;
-
+    
     j["particleType"] = static_cast<uint32_t>(emitterParams_.particleType);
     j["lifeTime"] = emitterParams_.lifeTime;
     j["gravity"] = emitterParams_.gravity;
@@ -101,24 +101,17 @@ nlohmann::json VoxelParticleComponent::Serialize() {
 }
 
 void VoxelParticleComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("overrideModelName"))
-        overrideModelName_ = j["overrideModelName"];
+    if (j.contains("overrideModelName")) overrideModelName_ = j["overrideModelName"];
     if (j.contains("resolution")) {
         resolution_.x = j["resolution"][0];
         resolution_.y = j["resolution"][1];
         resolution_.z = j["resolution"][2];
     }
-    if (j.contains("preAllocateCount"))
-        preAllocateCount_ = j["preAllocateCount"];
+    if (j.contains("preAllocateCount")) preAllocateCount_ = j["preAllocateCount"];
 
-    if (j.contains("particleType"))
-        emitterParams_.particleType = j["particleType"];
-    if (j.contains("lifeTime"))
-        emitterParams_.lifeTime = j["lifeTime"];
-    if (j.contains("gravity"))
-        emitterParams_.gravity = j["gravity"];
-    if (j.contains("dispersion"))
-        emitterParams_.dispersion = j["dispersion"];
-    if (j.contains("convergence"))
-        emitterParams_.convergence = j["convergence"];
+    if (j.contains("particleType")) emitterParams_.particleType = j["particleType"];
+    if (j.contains("lifeTime")) emitterParams_.lifeTime = j["lifeTime"];
+    if (j.contains("gravity")) emitterParams_.gravity = j["gravity"];
+    if (j.contains("dispersion")) emitterParams_.dispersion = j["dispersion"];
+    if (j.contains("convergence")) emitterParams_.convergence = j["convergence"];
 }

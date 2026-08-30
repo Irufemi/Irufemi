@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Math/Vector4.h"
-#include "Framework/UI/UIAnimator.h"
-#include <variant>
 #include <vector>
+#include <variant>
+#include "Framework/UI/UIAnimator.h"
+#include "Core/Math/Vector4.h"
 
 class Sprite;
 class StaticModelObject;
@@ -11,8 +11,7 @@ class InputManager;
 /**
  * @class UISelectionGroup
  * @brief 縦並び・横並びのメニュー項目など、複数のSpriteやStaticModelObjectから一つを選択するためのコントローラー
- * @details
- * 方向キーでのインデックス切り替え、選択中の項目の明滅（色変更）、決定入力と決定後のフラッシュ演出を自動で行います。
+ * @details 方向キーでのインデックス切り替え、選択中の項目の明滅（色変更）、決定入力と決定後のフラッシュ演出を自動で行います。
  */
 class UISelectionGroup {
 public:
@@ -35,17 +34,13 @@ public:
      * @brief 選択中項目の基本色を設定する
      * @param color 色（RGBA）
      */
-    void SetActiveBaseColor(const Irufemi::Vector4& color) {
-        activeBaseColor_ = color;
-    }
+    void SetActiveBaseColor(const Irufemi::Vector4& color) { activeBaseColor_ = color; }
 
     /**
      * @brief 非選択中項目の色を設定する
      * @param color 色（RGBA）
      */
-    void SetInactiveColor(const Irufemi::Vector4& color) {
-        inactiveColor_ = color;
-    }
+    void SetInactiveColor(const Irufemi::Vector4& color) { inactiveColor_ = color; }
 
     /**
      * @brief 状態をリセットする（ポーズ再開時などに呼ぶ）
@@ -67,16 +62,12 @@ public:
     /**
      * @brief 現在選択されている項目のインデックスを取得
      */
-    int GetSelectedIndex() const {
-        return selectedIndex_;
-    }
+    int GetSelectedIndex() const { return selectedIndex_; }
 
     /**
      * @brief 決定キー（Space または Enter）が押されたかを判定する
      */
-    bool IsDecided() const {
-        return isDecided_;
-    }
+    bool IsDecided() const { return isDecided_; }
 
     /**
      * @brief 決定後、遷移遅延（フラッシュ演出など）が終わって次のシーンへ遷移すべきかを返す
@@ -86,22 +77,20 @@ public:
     /**
      * @brief UIを横並び（左右キー）で操作するかどうかを設定する
      */
-    void SetHorizontalMode(bool horizontal) {
-        isHorizontal_ = horizontal;
-    }
+    void SetHorizontalMode(bool horizontal) { isHorizontal_ = horizontal; }
 
 private:
     std::vector<std::variant<Sprite*, StaticModelObject*>> items_;
     int selectedIndex_ = 0;
-
+    
     UIAnimator animator_;
-
+    
     Irufemi::Vector4 activeBaseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
     Irufemi::Vector4 inactiveColor_ = {0.3f, 0.3f, 0.3f, 0.9f};
-
+    
     bool isDecided_ = false;
     bool isHorizontal_ = false; // 横並び操作モード
-    bool isVisible_ = true;     // 決定後のフラッシュ用
+    bool isVisible_ = true; // 決定後のフラッシュ用
     float transitionDelayTimer_ = 0.0f;
 
     static constexpr float kTransitionDelayLimit = 0.8f;

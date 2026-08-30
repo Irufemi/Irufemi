@@ -13,6 +13,7 @@ void PauseScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void PauseScene::Update() {
     BaseScene::Update();
+
 }
 
 void PauseScene::Draw() {

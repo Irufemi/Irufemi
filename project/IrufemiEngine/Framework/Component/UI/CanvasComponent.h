@@ -19,14 +19,12 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
-
+    
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override {
-        return "CanvasComponent";
-    }
+    std::string GetComponentName() const override { return "CanvasComponent"; }
     /**
      * @brief OnRegisterProperties を実行する。
      */

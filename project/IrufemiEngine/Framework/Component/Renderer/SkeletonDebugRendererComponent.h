@@ -34,9 +34,7 @@ public:
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override {
-        return true;
-    }
+    bool CanUpdateInEditMode() const override { return true; }
 
     /**
      * @brief OnRegisterProperties を実行する。
@@ -46,9 +44,7 @@ public:
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override {
-        return "SkeletonDebugRendererComponent";
-    }
+    std::string GetComponentName() const override { return "SkeletonDebugRendererComponent"; }
 
     /**
      * @brief Serialize を実行する。
@@ -63,16 +59,12 @@ public:
      * @brief ShowBones を設定する。
      * @param[in] show 設定する ShowBones の値
      */
-    void SetShowBones(bool show) {
-        showBones_ = show;
-    }
+    void SetShowBones(bool show) { showBones_ = show; }
     /**
      * @brief ShowAxes を設定する。
      * @param[in] show 設定する ShowAxes の値
      */
-    void SetShowAxes(bool show) {
-        showAxes_ = show;
-    }
+    void SetShowAxes(bool show) { showAxes_ = show; }
 
 private:
     std::unique_ptr<PrimitiveBatch> boneMeshes_;

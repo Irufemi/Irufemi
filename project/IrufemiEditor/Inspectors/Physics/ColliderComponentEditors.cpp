@@ -1,14 +1,14 @@
 #include "Inspectors/Physics/ColliderComponentEditors.h"
 
 #ifdef EditorMode
-#include "Commands/EditorActionManager.h"
-#include "Commands/EditorCommands.h"
+#include <imgui/imgui.h>
+#include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/Collider/AABBColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/GameObject/GameObject.h"
-#include "UI/ComponentUIHelpers.h"
-#include <imgui/imgui.h>
+#include "Commands/EditorActionManager.h"
+#include "Commands/EditorCommands.h"
 
 void AABBColliderComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* comp = static_cast<AABBColliderComponent*>(component);
@@ -17,14 +17,11 @@ void AABBColliderComponentEditor::Draw(Component* component, EditorActionManager
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
-            pendingRemove = true;
+        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
         ImGui::EndPopup();
     }
     if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
-            comp->GetGameObject()->shared_from_this(),
-            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {
@@ -40,14 +37,11 @@ void OBBColliderComponentEditor::Draw(Component* component, EditorActionManager*
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
-            pendingRemove = true;
+        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
         ImGui::EndPopup();
     }
     if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
-            comp->GetGameObject()->shared_from_this(),
-            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {
@@ -63,14 +57,11 @@ void SphereColliderComponentEditor::Draw(Component* component, EditorActionManag
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
-            pendingRemove = true;
+        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
         ImGui::EndPopup();
     }
     if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
-            comp->GetGameObject()->shared_from_this(),
-            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {

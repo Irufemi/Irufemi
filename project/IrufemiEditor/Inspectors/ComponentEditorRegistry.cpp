@@ -8,40 +8,40 @@
 #include "UI/ComponentUIHelpers.h"
 
 // Component Editors
-#include "Inspectors/Camera/CameraComponentEditor.h"
-#include "Inspectors/Effects/EffectMaskComponentEditor.h"
-#include "Inspectors/Effects/GlobalPostProcessComponentEditor.h"
-#include "Inspectors/Effects/ParticleEmitterComponentEditor.h"
-#include "Inspectors/Effects/VoxelParticleComponentEditor.h"
-#include "Inspectors/Physics/ColliderComponentEditors.h"
-#include "Inspectors/Physics/RaycastComponentEditor.h"
+#include "Inspectors/Transform/TransformComponentEditor.h"
 #include "Inspectors/Rendering/MeshRendererComponentEditor.h"
-#include "Inspectors/Rendering/ModelBatchRendererComponentEditor.h"
-#include "Inspectors/Rendering/Primitive2DRendererComponentEditor.h"
-#include "Inspectors/Rendering/PrimitiveRendererComponentEditor.h"
 #include "Inspectors/Rendering/SkinnedMeshRendererComponentEditor.h"
+#include "Inspectors/Rendering/ModelBatchRendererComponentEditor.h"
+#include "Inspectors/Rendering/PrimitiveRendererComponentEditor.h"
+#include "Inspectors/Rendering/Primitive2DRendererComponentEditor.h"
 #include "Inspectors/Rendering/SpriteRendererComponentEditor.h"
 #include "Inspectors/Rendering/TextRendererComponentEditor.h"
-#include "Inspectors/Transform/TransformComponentEditor.h"
+#include "Inspectors/Physics/ColliderComponentEditors.h"
+#include "Inspectors/Effects/ParticleEmitterComponentEditor.h"
+#include "Inspectors/Physics/RaycastComponentEditor.h"
+#include "Inspectors/Effects/VoxelParticleComponentEditor.h"
+#include "Inspectors/Effects/EffectMaskComponentEditor.h"
+#include "Inspectors/Effects/GlobalPostProcessComponentEditor.h"
+#include "Inspectors/Camera/CameraComponentEditor.h"
 
 // Engine Components
-#include "Framework/Component/Camera/CameraComponent.h"
-#include "Framework/Component/Collider/AABBColliderComponent.h"
-#include "Framework/Component/Collider/OBBColliderComponent.h"
-#include "Framework/Component/Collider/RaycastComponent.h"
-#include "Framework/Component/Collider/SphereColliderComponent.h"
-#include "Framework/Component/Effect/EffectMaskComponent.h"
-#include "Framework/Component/Effect/GlobalPostProcessComponent.h"
-#include "Framework/Component/Effect/ParticleEmitterComponent.h"
-#include "Framework/Component/Effect/VoxelParticleComponent.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
-#include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Component/Renderer/TextRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Collider/AABBColliderComponent.h"
+#include "Framework/Component/Collider/OBBColliderComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Framework/Component/Collider/RaycastComponent.h"
+#include "Framework/Component/Effect/ParticleEmitterComponent.h"
+#include "Framework/Component/Effect/VoxelParticleComponent.h"
+#include "Framework/Component/Effect/EffectMaskComponent.h"
+#include "Framework/Component/Effect/GlobalPostProcessComponent.h"
+#include "Framework/Component/Camera/CameraComponent.h"
 
 // =======================================================================
 // ComponentEditorRegistry
@@ -71,8 +71,7 @@ void ComponentEditorRegistry::RegisterAllEditors() {
 }
 
 void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionManager* actionManager) {
-    if (!component)
-        return;
+    if (!component) return;
     ImGui::PushID(component);
     auto it = editors_.find(typeid(*component));
     if (it != editors_.end()) {
@@ -84,3 +83,4 @@ void ComponentEditorRegistry::DrawComponent(Component* component, EditorActionMa
 }
 
 #endif // EditorMode
+

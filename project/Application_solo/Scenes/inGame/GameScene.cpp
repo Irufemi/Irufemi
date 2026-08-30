@@ -3,9 +3,9 @@
 #include "Irufemi.h"
 
 // ECSコンポーネントのインクルード
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
 #include "Framework/Scene/SceneSerializer.h"
 
 // デストラクタ
@@ -21,6 +21,8 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void GameScene::Update() {
     BaseScene::Update(); // これにより GameObject 群の Update が呼ばれる
+
+
 }
 
 void GameScene::Draw() {

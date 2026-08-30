@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Core/Math/Matrix4x4.h"
-#include "Core/Math/QuaternionTransform.h"
-#include <cstdint>
-#include <map>
-#include <optional>
 #include <string>
 #include <vector>
+#include <map>
+#include <cstdint>
+#include <optional>
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/QuaternionTransform.h"
 
 /**
  * @struct JointData
@@ -17,7 +17,7 @@ struct JointData {
     int32_t index;
     std::optional<int32_t> parent;
     std::vector<int32_t> children;
-
+    
     // Bind Pose (初期状態のTransformとローカル行列)
     Irufemi::QuaternionTransform bindTransform;
     Irufemi::Matrix4x4 bindLocalMatrix;

@@ -6,11 +6,11 @@
 /**
  * @class Singleton
  * @brief ゲーム開発向けの安全な手動ライフサイクル管理型シングルトンベースクラス (CRTP)
- * @details 派生クラスは friend class Singleton<T>; を指定し、コンストラクタ/デストラクタを private
- * にする必要があります。 初期化順序のバグを防ぐため、必ずメインスレッドの適切なタイミングで Initialize()
- * を呼び出してください。
+ * @details 派生クラスは friend class Singleton<T>; を指定し、コンストラクタ/デストラクタを private にする必要があります。
+ *          初期化順序のバグを防ぐため、必ずメインスレッドの適切なタイミングで Initialize() を呼び出してください。
  */
-template <typename T> class Singleton {
+template <typename T>
+class Singleton {
 protected:
     Singleton() = default;
     virtual ~Singleton() = default;
@@ -55,4 +55,5 @@ private:
     static T* instance_;
 };
 
-template <typename T> T* Singleton<T>::instance_ = nullptr;
+template <typename T>
+T* Singleton<T>::instance_ = nullptr;

@@ -1,16 +1,16 @@
 #include "Inspectors/Rendering/MeshRendererComponentEditor.h"
 
 #ifdef EditorMode
-#include "Commands/EditorActionManager.h"
-#include "Commands/EditorCommands.h"
-#include "Core/System/IrufemiEngine.h"
+#include <imgui/imgui.h>
+#include <filesystem>
+#include "UI/ComponentUIHelpers.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/GameObject/GameObject.h"
-#include "Resource/Model/ModelManager.h"
-#include "UI/ComponentUIHelpers.h"
+#include "Commands/EditorActionManager.h"
+#include "Commands/EditorCommands.h"
 #include "UI/EditorDragDrop.h"
-#include <filesystem>
-#include <imgui/imgui.h>
+#include "Core/System/IrufemiEngine.h"
+#include "Resource/Model/ModelManager.h"
 
 void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* comp = static_cast<MeshRendererComponent*>(component);
@@ -18,21 +18,18 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
-            pendingRemove = true;
+        if (ImGui::MenuItem("Remove Component")) pendingRemove = true;
         ImGui::EndPopup();
     }
     if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
-            comp->GetGameObject()->shared_from_this(),
-            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
+        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(comp->GetGameObject()->shared_from_this(), ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {
         if (ComponentUIHelpers::BeginPropertyTable("MeshRendererTable")) {
             ImGui::TableNextRow();
             ComponentUIHelpers::DrawPropertyLabel("Model", "Drag & Drop model file from Project Browser");
-
+            
             ImGui::TableSetColumnIndex(1);
             IrufemiEngine* engine = nullptr;
             if (comp->GetGameObject() && comp->GetGameObject()->GetScene()) {
@@ -42,18 +39,16 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
             if (engine && engine->GetObjModelManager()) {
                 ModelManager* modelManager = engine->GetObjModelManager();
                 std::vector<std::string> availableModels = modelManager->GetAvailableModels();
-
-                if (std::find(availableModels.begin(), availableModels.end(), comp->modelName_) ==
-                    availableModels.end()) {
+                
+                if (std::find(availableModels.begin(), availableModels.end(), comp->modelName_) == availableModels.end()) {
                     availableModels.push_back(comp->modelName_);
                 }
-
+                
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
                 if (ImGui::Button("Refresh")) {
                     modelManager->RefreshAvailableModels();
                     availableModels = modelManager->GetAvailableModels();
-                    if (std::find(availableModels.begin(), availableModels.end(), comp->modelName_) ==
-                        availableModels.end()) {
+                    if (std::find(availableModels.begin(), availableModels.end(), comp->modelName_) == availableModels.end()) {
                         availableModels.push_back(comp->modelName_);
                     }
                 }
@@ -65,13 +60,9 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
                         if (ImGui::Selectable(key.c_str(), isSelected)) {
                             std::string oldModel = comp->modelName_;
                             std::string newModel = key;
-                            ComponentUIHelpers::PushInstantUndo(
-                                actionManager, oldModel, newModel,
-                                std::function<void(const std::string&)>(
-                                    [comp](const std::string& v) { comp->LoadModel(v); }));
+                            ComponentUIHelpers::PushInstantUndo(actionManager, oldModel, newModel, std::function<void(const std::string&)>([comp](const std::string& v){ comp->LoadModel(v); }));
                         }
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
+                        if (isSelected) ImGui::SetItemDefaultFocus();
                     }
                     ImGui::EndCombo();
                 }
@@ -86,7 +77,7 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
                     std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(droppedPathStr.c_str()));
                     std::string ext = droppedPath.extension().string();
                     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
+                    
                     if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
                         std::string newModelName = droppedPathStr;
                         std::replace(newModelName.begin(), newModelName.end(), '\\', '/');
@@ -96,19 +87,15 @@ void MeshRendererComponentEditor::Draw(Component* component, EditorActionManager
                             newModelName = newModelName.substr(16);
                         }
                         std::string oldModel = comp->modelName_;
-                        ComponentUIHelpers::PushInstantUndo(actionManager, oldModel, newModelName,
-                                                            std::function<void(const std::string&)>(
-                                                                [comp](const std::string& v) { comp->LoadModel(v); }));
+                        ComponentUIHelpers::PushInstantUndo(actionManager, oldModel, newModelName, std::function<void(const std::string&)>([comp](const std::string& v){ comp->LoadModel(v); }));
                     }
                 }
                 ImGui::EndDragDropTarget();
             }
-
+            
             ComponentUIHelpers::DrawPropertyResetButton("##ModelReset", !comp->modelName_.empty(), [&]() {
                 std::string oldModel = comp->modelName_;
-                ComponentUIHelpers::PushInstantUndo(
-                    actionManager, oldModel, std::string(""),
-                    std::function<void(const std::string&)>([comp](const std::string& v) { comp->LoadModel(v); }));
+                ComponentUIHelpers::PushInstantUndo(actionManager, oldModel, std::string(""), std::function<void(const std::string&)>([comp](const std::string& v){ comp->LoadModel(v); }));
             });
 
             ComponentUIHelpers::EndPropertyTable();

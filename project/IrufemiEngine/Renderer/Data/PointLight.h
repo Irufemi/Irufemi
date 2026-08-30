@@ -17,7 +17,6 @@ struct PointLight {
     float decay;
     //!< 有効フラグ
     int32_t isActive;
-
 private:
     float padding;
 };

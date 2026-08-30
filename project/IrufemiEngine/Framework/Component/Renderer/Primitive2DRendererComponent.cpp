@@ -1,6 +1,6 @@
 #include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"
 
 Primitive2DRendererComponent::Primitive2DRendererComponent() {}
@@ -10,7 +10,7 @@ void Primitive2DRendererComponent::Initialize() {
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive2DObject>();
         primitive_->Initialize(static_cast<Irufemi::Primitive2DType>(currentTypeIndex_));
-
+        
         // 初期設定の適用
         if (!texturePath_.empty()) {
             primitive_->SetTexture(texturePath_);
@@ -32,13 +32,12 @@ void Primitive2DRendererComponent::Update() {
         // Primitive2DObjectは主に画面空間での描画を想定しているため、
         // Transformのx, yをポジションとし、zをソート順等の奥行きとして渡す
         primitive_->SetPosition(GetTransform()->GetWorldPosition());
-
+        
         // 2DなのでZ軸回転のみサポート
         primitive_->SetRotationZ(GetTransform()->GetWorldRotation().z);
-
+        
         // TransformのScaleは、コンポーネントが保持するベースサイズ(size_)に対する乗数として適用
-        Irufemi::Vector2 finalSize = {size_.x * GetTransform()->GetWorldScale().x,
-                                      size_.y * GetTransform()->GetWorldScale().y};
+        Irufemi::Vector2 finalSize = { size_.x * GetTransform()->GetWorldScale().x, size_.y * GetTransform()->GetWorldScale().y };
         primitive_->SetSize(finalSize);
     }
 
@@ -85,8 +84,7 @@ void Primitive2DRendererComponent::SetSize(const Irufemi::Vector2& size) {
     size_ = size;
     // Updateで最終的なサイズが再計算されるが、初期値として直接セットしておく
     if (primitive_ && GetTransform()) {
-        Irufemi::Vector2 finalSize = {size_.x * GetTransform()->GetWorldScale().x,
-                                      size_.y * GetTransform()->GetWorldScale().y};
+        Irufemi::Vector2 finalSize = { size_.x * GetTransform()->GetWorldScale().x, size_.y * GetTransform()->GetWorldScale().y };
         primitive_->SetSize(finalSize);
     } else if (primitive_) {
         primitive_->SetSize(size_);
@@ -119,22 +117,19 @@ nlohmann::json Primitive2DRendererComponent::Serialize() {
     j["currentTypeIndex"] = currentTypeIndex_;
     j["texturePath"] = texturePath_;
     j["isTopMost"] = isTopMost_;
-    j["size"] = nlohmann::json::array({size_.x, size_.y});
-    j["pivot"] = nlohmann::json::array({pivot_.x, pivot_.y});
-    j["color"] = nlohmann::json::array({color_.x, color_.y, color_.z, color_.w});
+    j["size"] = nlohmann::json::array({ size_.x, size_.y });
+    j["pivot"] = nlohmann::json::array({ pivot_.x, pivot_.y });
+    j["color"] = nlohmann::json::array({ color_.x, color_.y, color_.z, color_.w });
     j["thickness"] = thickness_;
     j["subdivision"] = subdivision_;
     return j;
 }
 
 void Primitive2DRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("currentTypeIndex"))
-        currentTypeIndex_ = j["currentTypeIndex"];
-    if (j.contains("texturePath"))
-        texturePath_ = j["texturePath"];
-    if (j.contains("isTopMost"))
-        isTopMost_ = j["isTopMost"];
-
+    if (j.contains("currentTypeIndex")) currentTypeIndex_ = j["currentTypeIndex"];
+    if (j.contains("texturePath")) texturePath_ = j["texturePath"];
+    if (j.contains("isTopMost")) isTopMost_ = j["isTopMost"];
+    
     if (j.contains("size") && j["size"].is_array() && j["size"].size() == 2) {
         size_.x = j["size"][0];
         size_.y = j["size"][1];
@@ -149,10 +144,8 @@ void Primitive2DRendererComponent::Deserialize(const nlohmann::json& j) {
         color_.z = j["color"][2];
         color_.w = j["color"][3];
     }
-    if (j.contains("thickness"))
-        thickness_ = j["thickness"];
-    if (j.contains("subdivision"))
-        subdivision_ = j["subdivision"];
+    if (j.contains("thickness")) thickness_ = j["thickness"];
+    if (j.contains("subdivision")) subdivision_ = j["subdivision"];
 
     // すでにインスタンス化されている場合はパラメータを適用
     if (primitive_) {

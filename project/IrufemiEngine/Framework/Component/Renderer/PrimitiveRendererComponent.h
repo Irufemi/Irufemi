@@ -1,9 +1,9 @@
 #pragma once
-#include "Core/Shape/Sphere.h"
-#include "Core/Type/PrimitiveType.h"
 #include "Framework/Component/Component.h"
 #include <memory>
 #include <string>
+#include "Core/Type/PrimitiveType.h"
+#include "Core/Shape/Sphere.h"
 
 // 前方宣言
 class Primitive3DObject;
@@ -26,23 +26,19 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
-
+    
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override {
-        return true;
-    }
+    bool CanUpdateInEditMode() const override { return true; }
 
     /**
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(primitive_.get());
-    }
-
+    IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(primitive_.get()); }
+    
     // エディタのRaycast用
     /**
      * @brief WorldSphere を取得する。
@@ -62,9 +58,7 @@ public:
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override {
-        return "PrimitiveRendererComponent";
-    }
+    std::string GetComponentName() const override { return "PrimitiveRendererComponent"; }
     /**
      * @brief Serialize を実行する。
      */
@@ -136,7 +130,7 @@ private:
     float radius_ = 1.0f;
     int subdivisions_ = 16;
     float height_ = 1.0f;
-
+    
     // Irufemi::Cylinder / Cone 用
     float topRadius_ = 1.0f;
     float bottomRadius_ = 1.0f;

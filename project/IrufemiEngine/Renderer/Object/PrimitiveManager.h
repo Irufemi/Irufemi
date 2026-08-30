@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Core/Type/PrimitiveType.h"
 #include "Renderer/Data/VertexData.h"
+#include "Core/Type/PrimitiveType.h"
 #include <cstdint>
-#include <d3d12.h>
-#include <map>
-#include <memory>
-#include <string>
 #include <vector>
+#include <map>
+#include <string>
+#include <memory>
+#include <d3d12.h>
 #include <wrl.h>
 
 struct PrimitiveData {
@@ -28,18 +28,18 @@ struct PrimitiveResource {
  * @brief Ring（ドーナツ型・三日月型）形状生成のための詳細パラメータ構造体
  */
 struct RingParams {
-    float innerRadius = 0.2f;                               ///< 内径
-    float startOuterRadius = 1.0f;                          ///< 開始地点の外径
-    float endOuterRadius = 1.0f;                            ///< 終了地点の外径
-    float startAngle = 0.0f;                                ///< 開始角度(度数法)
-    float endAngle = 360.0f;                                ///< 終了角度(度数法)
-    uint32_t segments = 32;                                 ///< 分割数
-    bool verticalUV = false;                                ///< UVをV方向に変更するかどうか
+    float innerRadius = 0.2f;            ///< 内径
+    float startOuterRadius = 1.0f;       ///< 開始地点の外径
+    float endOuterRadius = 1.0f;         ///< 終了地点の外径
+    float startAngle = 0.0f;             ///< 開始角度(度数法)
+    float endAngle = 360.0f;             ///< 終了角度(度数法)
+    uint32_t segments = 32;              ///< 分割数
+    bool verticalUV = false;             ///< UVをV方向に変更するかどうか
     Irufemi::Vector4 innerColor = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 内側の頂点カラー
     Irufemi::Vector4 outerColor = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 外側の頂点カラー
-    float startAlpha = 0.0f;                                ///< 開始地点のアルファ値（フェード用）
-    float endAlpha = 0.0f;                                  ///< 終了地点のアルファ値（フェード用）
-    float fadeRangeAngle = 0.0f;                            ///< フェードにかかる角度の範囲(度数法)
+    float startAlpha = 0.0f;             ///< 開始地点のアルファ値（フェード用）
+    float endAlpha = 0.0f;               ///< 終了地点のアルファ値（フェード用）
+    float fadeRangeAngle = 0.0f;         ///< フェードにかかる角度の範囲(度数法)
 };
 
 /**
@@ -48,7 +48,8 @@ struct RingParams {
  * @details 頻繁に使用される標準的な形状の CPU データおよび GPU リソース（頂点/インデックスバッファ）をキャッシュし、
  *          効率的な再利用を可能にします。
  */
-class PrimitiveManager {
+class PrimitiveManager
+{
 
 public:
     /** @name キャッシュデータの取得 */
@@ -91,13 +92,11 @@ public:
     /**
      * @brief CreateCylinder を実行する。
      */
-    static PrimitiveData CreateCylinder(float bottomRadius, float topRadius, float height, uint32_t segments,
-                                        bool hasTop = true, bool hasBottom = true, bool centered = true);
+    static PrimitiveData CreateCylinder(float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop = true, bool hasBottom = true, bool centered = true);
     /**
      * @brief CreateCylinder を実行する。
      */
-    static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments, bool hasTop = true,
-                                        bool hasBottom = true);
+    static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments, bool hasTop = true, bool hasBottom = true);
     /**
      * @brief CreateCone を実行する。
      */
@@ -105,8 +104,7 @@ public:
     /**
      * @brief CreateTorus を実行する。
      */
-    static PrimitiveData CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments,
-                                     uint32_t minorSegments);
+    static PrimitiveData CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
     /**
      * @brief CreateIcoSphere を実行する。
      */
@@ -122,8 +120,7 @@ public:
     /**
      * @brief CreateRing を実行する。
      */
-    static PrimitiveData CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle,
-                                    uint32_t segments, bool verticalUV);
+    static PrimitiveData CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle, uint32_t segments, bool verticalUV);
     /**
      * @brief CreatePlane を実行する。
      */
@@ -168,12 +165,11 @@ private:
      * @brief GenerateSphereIndices を実行する。
      */
     static void GenerateSphereIndices(PrimitiveData& data, uint32_t subdivision);
-
+    
     /**
      * @brief GenerateCylinderVertices を実行する。
      */
-    static void GenerateCylinderVertices(PrimitiveData& data, float bottomRadius, float topRadius, float height,
-                                         uint32_t segments, bool hasTop, bool hasBottom, bool centered);
+    static void GenerateCylinderVertices(PrimitiveData& data, float bottomRadius, float topRadius, float height, uint32_t segments, bool hasTop, bool hasBottom, bool centered);
     /**
      * @brief GenerateCylinderIndices を実行する。
      */
@@ -191,8 +187,7 @@ private:
     /**
      * @brief GenerateTorusVertices を実行する。
      */
-    static void GenerateTorusVertices(PrimitiveData& data, float majorRadius, float minorRadius, uint32_t majorSegments,
-                                      uint32_t minorSegments);
+    static void GenerateTorusVertices(PrimitiveData& data, float majorRadius, float minorRadius, uint32_t majorSegments, uint32_t minorSegments);
     /**
      * @brief GenerateTorusIndices を実行する。
      */
@@ -203,3 +198,4 @@ private:
     std::map<Irufemi::PrimitiveType, PrimitiveResource> gpuCache_;
     std::map<uint32_t, PrimitiveResource> cylinderGpuCache_;
 };
+

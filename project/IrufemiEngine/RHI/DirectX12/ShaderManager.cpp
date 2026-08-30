@@ -1,44 +1,32 @@
 #include "RHI/DirectX12/ShaderManager.h"
 #include "Core/Utility/ErrorUtility.h"
 #include <cassert>
-#include <filesystem>
 #include <fstream>
 #include <vector>
+#include <filesystem>
 
 #ifndef RUNTIME_SHADER_COMPILE
 // IDxcBlob を自作して dxcompiler.dll への依存を無くす
 class CustomBlob : public IDxcBlob {
     std::vector<uint8_t> data_;
     ULONG refCount_ = 1;
-
 public:
     CustomBlob(std::vector<uint8_t>&& data) : data_(std::move(data)) {}
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override {
-        if (!ppv)
-            return E_POINTER;
+        if (!ppv) return E_POINTER;
         if (riid == __uuidof(IUnknown) || riid == __uuidof(IDxcBlob)) {
-            *ppv = this;
-            AddRef();
-            return S_OK;
+            *ppv = this; AddRef(); return S_OK;
         }
-        *ppv = nullptr;
-        return E_NOINTERFACE;
+        *ppv = nullptr; return E_NOINTERFACE;
     }
-    ULONG STDMETHODCALLTYPE AddRef() override {
-        return ++refCount_;
-    }
+    ULONG STDMETHODCALLTYPE AddRef() override { return ++refCount_; }
     ULONG STDMETHODCALLTYPE Release() override {
         ULONG r = --refCount_;
-        if (r == 0)
-            delete this;
+        if (r == 0) delete this;
         return r;
     }
-    LPVOID STDMETHODCALLTYPE GetBufferPointer() override {
-        return data_.data();
-    }
-    SIZE_T STDMETHODCALLTYPE GetBufferSize() override {
-        return data_.size();
-    }
+    LPVOID STDMETHODCALLTYPE GetBufferPointer() override { return data_.data(); }
+    SIZE_T STDMETHODCALLTYPE GetBufferSize() override { return data_.size(); }
 };
 #endif
 
@@ -55,9 +43,12 @@ void ShaderManager::Initialize() {
 /**
  * @brief シェーダーを取得またはコンパイルする
  */
-Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(const std::wstring& filePath,
-                                                             const ShaderCompileOptions& options,
-                                                             const wchar_t* profileOverride, std::string* outErrorLog) {
+Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(
+    const std::wstring& filePath,
+    const ShaderCompileOptions& options,
+    const wchar_t* profileOverride,
+    std::string* outErrorLog
+) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // 1. キャッシュキーの構築
@@ -92,11 +83,10 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(const std::wstring&
             blob = new CustomBlob(std::move(buffer));
         }
     } else {
-        IRUFEMI_ASSERT_MSG(false,
-                           "Failed to open compiled shader (.cso) file. Check if the shader compiled successfully.");
+        IRUFEMI_ASSERT_MSG(false, "Failed to open compiled shader (.cso) file. Check if the shader compiled successfully.");
     }
 #endif
-
+    
     // 4. キャッシュに登録
     if (blob) {
         cache_[key] = blob;
@@ -108,9 +98,12 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(const std::wstring&
 /**
  * @brief シェーダーを強制的に再コンパイル（または再読み込み）する
  */
-Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::ReloadShader(const std::wstring& filePath,
-                                                             const ShaderCompileOptions& options,
-                                                             const wchar_t* profileOverride, std::string* outErrorLog) {
+Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::ReloadShader(
+    const std::wstring& filePath,
+    const ShaderCompileOptions& options,
+    const wchar_t* profileOverride,
+    std::string* outErrorLog
+) {
     ShaderKey key;
     key.filePath = filePath;
     key.entryPoint = options.entryPoint;

@@ -1,25 +1,26 @@
 #include "Renderer/Camera/Camera.h"
 
-#include "Core/Math/Math.h"
 #include "Framework/UI/DebugUI.h"
+#include "Core/Math/Math.h"
 
-#include <algorithm>
 #include <cmath>
+#include <algorithm>
 
-// コンストラクタ
+
+//コンストラクタ
 Camera::Camera() {}
 
-// デストラクタ
+//デストラクタ
 Camera::~Camera() {}
 
-// 初期化
-void Camera::Initialize(const int& windowWidth, const int& windowHeight) {
+//初期化
+void Camera::Initialize(const int& windowWidth,const int& windowHeight) {
     width_ = static_cast<float>(windowWidth);
     height_ = static_cast<float>(windowHeight);
 
     // ウィンドウサイズに基づいてアスペクト比を更新(3D用)
     aspectRatio_ = (height_ != 0.0f) ? (width_ / height_) : 1.0f;
-
+    
     // 2D正射影境界は、ウィンドウサイズが変わってもUIレイアウトが自動拡縮されるよう
     // 論理解像度(1280x720)に固定する
     right_ = 1280.0f;
@@ -28,11 +29,12 @@ void Camera::Initialize(const int& windowWidth, const int& windowHeight) {
     UpdateMatrix();
 }
 
-// 更新
+//更新
 void Camera::Update() {
     // 毎フレーム行列を更新する
     UpdateMatrix();
 }
+
 
 void Camera::DrawDebugTab([[maybe_unused]] const char* label) {
 #if defined USE_IMGUI
@@ -50,6 +52,7 @@ void Camera::DrawDebugContents() {
 #endif
 }
 
+
 Irufemi::Matrix4x4 Camera::GetViewProjectionMatrix2D() {
     return viewMatrix_ * orthographicMatrix_;
 }
@@ -58,36 +61,40 @@ Irufemi::Matrix4x4 Camera::GetViewProjectionMatrix3D() {
     return viewMatrix_ * perspectiveFovMatrix_;
 }
 
-// ワールド行列の作成
+//ワールド行列の作成
 void Camera::MakeWorldMatrix() {
 
     worldMatrix_ = Irufemi::Math::MakeAffineMatrix(scale_, rotate_, translate_);
+
 }
 
-// ビュー行列の作成
+//ビュー行列の作成
 void Camera::MakeViewMatrix() {
     viewMatrix_ = Irufemi::Math::Inverse(worldMatrix_); // カメラのワールド行列の逆行列がビュー行列
 }
 
-// 透視投影行列の更新
+//透視投影行列の更新
 void Camera::UpdatePerspectiveFovMatrix() {
 
     perspectiveFovMatrix_ = Irufemi::Math::MakePerspectiveFovMatrix(fovAngleY_, aspectRatio_, nearZ_, farZ_);
+
 }
 
-// 正射行列の更新
+//正射行列の更新
 void Camera::UpdateOrthographicMatrix() {
 
     orthographicMatrix_ = Irufemi::Math::MakeOrthographicMatrix(left_, top_, right_, bottom_, nearClip_, farClip_);
+
 }
 
-// ビューポート行列の更新
+//ビューポート行列の更新
 void Camera::UpdateViewportMatrix() {
-
+  
     viewportMatrix_ = Irufemi::Math::MakeViewportMatrix(leftTop_.x, leftTop_.y, width_, height_, minDepth_, maxDepth_);
+
 }
 
-// 各行列の更新
+//各行列の更新
 void Camera::UpdateMatrix() {
     MakeWorldMatrix();
     MakeViewMatrix();
@@ -100,14 +107,17 @@ void Camera::UpdateMatrix() {
 }
 
 Irufemi::Vector2 Camera::ScreenToUIPosition(const Irufemi::Vector2& screenPos) const {
-    if (width_ <= 0.0f || height_ <= 0.0f)
-        return screenPos;
+    if (width_ <= 0.0f || height_ <= 0.0f) return screenPos;
 
-    return {screenPos.x * (right_ / width_), screenPos.y * (bottom_ / height_)};
+    return {
+        screenPos.x * (right_ / width_),
+        screenPos.y * (bottom_ / height_)
+    };
 }
 
+
 // カメラ行列を取得する
-const Irufemi::Matrix4x4& Camera::GetCameraMatrix() {
+const Irufemi::Matrix4x4& Camera::GetCameraMatrix() { 
     worldMatrix_ = Irufemi::Math::MakeAffineMatrix(scale_, rotate_, translate_);
     return worldMatrix_;
 }

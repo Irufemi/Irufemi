@@ -1,7 +1,7 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
+#include <array>
 
 const uint32_t kNumMaxInfluence = 4;
 struct VertexInfluence {

@@ -1,11 +1,11 @@
 #pragma once
 #include "Renderer/Pipeline/RenderGraph/IRenderPass.h"
-#include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
-#include "Renderer/Pipeline/RenderGraph/TransientResourceManager.h"
-#include <d3d12.h>
+#include <vector>
 #include <memory>
 #include <unordered_map>
-#include <vector>
+#include <d3d12.h>
+#include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
+#include "Renderer/Pipeline/RenderGraph/TransientResourceManager.h"
 
 class DrawManager;
 class IrufemiEngine;
@@ -13,8 +13,7 @@ class IrufemiEngine;
 /**
  * @class RenderGraph
  * @brief 描画パス（RenderPass）を管理し、順次実行するクラス
- * @details 各パスの Setup を通じてリソースの使用状態を記録し、Execute
- * 時に自動でリソースバリア（Transition）を発行します。
+ * @details 各パスの Setup を通じてリソースの使用状態を記録し、Execute 時に自動でリソースバリア（Transition）を発行します。
  */
 class RenderGraph {
 public:
@@ -56,6 +55,7 @@ public:
     void DebugUI();
 #endif
 
+
     /**
      * @brief 描画実行時に一時リソースの実際のポインタを取得する
      */
@@ -84,9 +84,7 @@ public:
      * @brief TransientResourceManager を取得する。
      * @return 取得された TransientResourceManager
      */
-    TransientResourceManager* GetTransientResourceManager() {
-        return transientResourceManager_.get();
-    }
+    TransientResourceManager* GetTransientResourceManager() { return transientResourceManager_.get(); }
 
     /**
      * @brief 特定のリソースの現在のステートを登録する（初期ステートの通知用）

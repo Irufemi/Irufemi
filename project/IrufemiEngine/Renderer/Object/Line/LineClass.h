@@ -1,18 +1,18 @@
 ﻿#include "Renderer/System/Core/IRenderable.h"
 #pragma once
 
-#include "Core/Math/Transform.h"
+#include <d3d12.h>
+#include <memory>
+#include <cstdint>
+#include <random>
+#include <array>
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Vector4.h"
-#include "RHI/DirectX12/DirectXCommon.h"
+#include "Core/Math/Transform.h"
 #include "Renderer/Data/TransformationMatrix.h"
 #include "Renderer/System/Core/LineResource.h"
-#include <array>
-#include <cstdint>
-#include <d3d12.h>
-#include <memory>
-#include <random>
 
 // 前方宣言
 class Camera;
@@ -39,8 +39,7 @@ public:
     /**
      * @brief AddInstance を実行する。
      */
-    void AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color,
-                     float life = 1.0f);
+    void AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color, float life = 1.0f);
     /**
      * @brief ClearInstances を実行する。
      */
@@ -63,68 +62,50 @@ public:
      * @brief BaseResource を取得する。
      * @return 取得された BaseResource
      */
-    LineResource* GetBaseResource() const {
-        return baseLineResource_.get();
-    }
+    LineResource* GetBaseResource() const { return baseLineResource_.get(); }
     /**
      * @brief InstancingSrvHandleGPU を取得する。
      * @return 取得された InstancingSrvHandleGPU
      */
-    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const {
-        return instancingSrvGPU_[lastUpdateFrameIndex_];
-    }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const { return instancingSrvGPU_[lastUpdateFrameIndex_]; }
     /**
      * @brief InstanceCountU32 を取得する。
      * @return 取得された InstanceCountU32
      */
-    UINT GetInstanceCountU32() const {
-        return static_cast<UINT>(activeCount_);
-    }
+    UINT GetInstanceCountU32() const { return static_cast<UINT>(activeCount_); }
 
     /**
      * @brief DepthWrite を設定する。
      * @param[in] depthWrite 設定する DepthWrite の値
      */
-    void SetDepthWrite(PSOManager::DepthWrite depthWrite) {
-        depthWrite_ = depthWrite;
-    }
+    void SetDepthWrite(PSOManager::DepthWrite depthWrite) { depthWrite_ = depthWrite; }
     /**
      * @brief DepthWrite を取得する。
      * @return 取得された DepthWrite
      */
-    PSOManager::DepthWrite GetDepthWrite() const {
-        return depthWrite_;
-    }
+    PSOManager::DepthWrite GetDepthWrite() const { return depthWrite_; }
 
     // 依存注入
     /**
      * @brief DirectXCommon を設定する。
      * @param[in] dx 設定する DirectXCommon の値
      */
-    static void SetDirectXCommon(DirectXCommon* dx) {
-        dx_ = dx;
-    }
+    static void SetDirectXCommon(DirectXCommon* dx) { dx_ = dx; }
     /**
      * @brief SrvAllocator を設定する。
      * @param[in] alloc 設定する SrvAllocator の値
      */
-    static void SetSrvAllocator(DescriptorPool* alloc) {
-        s_srvAllocator_ = alloc;
-    }
+    static void SetSrvAllocator(DescriptorPool* alloc) { s_srvAllocator_ = alloc; }
     /**
      * @brief DrawManager を設定する。
      * @param[in] drawM 設定する DrawManager の値
      */
-    static void SetDrawManager(DrawManager* drawM) {
-        drawManager_ = drawM;
-    }
+    static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
     /**
      * @brief Engine を設定する。
      * @param[in] engine 設定する Engine の値
      */
-    static void SetEngine(class IrufemiEngine* engine) {
-        engine_ = engine;
-    }
+    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
 
 private:
     struct LineInstance {

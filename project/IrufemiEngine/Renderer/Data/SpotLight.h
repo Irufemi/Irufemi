@@ -4,7 +4,7 @@
 #include "Core/Math/Vector4.h"
 #include <cstdint>
 
-struct SpotLight {
+struct SpotLight{
     //!< ライトの色
     Irufemi::Vector4 color;
     //!< ライトの位置
@@ -15,7 +15,7 @@ struct SpotLight {
     Irufemi::Vector3 direction;
     //!< ライトの届く最大距離
     float distance;
-    //!< 減衰率
+    //!<減衰率
     float decay;
     //!< スポットライトの余弦
     float cosAngle;
@@ -23,7 +23,6 @@ struct SpotLight {
     float falloff;
     //!< 有効フラグ
     int32_t isActive;
-
 private:
     float padding[4]; // 16byteアラインメント用 (合計80バイト)
 };

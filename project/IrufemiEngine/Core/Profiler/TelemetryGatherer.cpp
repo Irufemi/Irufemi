@@ -1,44 +1,49 @@
 #include "Core/Profiler/TelemetryGatherer.h"
-#include "Core/Profiler/GpuProfiler.h"
 #include "Core/Profiler/TelemetrySender.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Core/System/ThreadPool.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Core/Profiler/GpuProfiler.h"
 
 void TelemetryGatherer::RegisterMetric(const std::string& name, std::function<float()> fetcher) {
-    metrics_.push_back({name, std::move(fetcher)});
+    metrics_.push_back({ name, std::move(fetcher) });
 }
 
 void TelemetryGatherer::Initialize(IrufemiEngine* engine) {
-    if (!engine)
-        return;
+    if (!engine) return;
 
     // ==========================================
     // System Metrics
     // ==========================================
-    RegisterMetric("System/FPS", [engine]() { return engine->GetEmaFps(); });
+    RegisterMetric("System/FPS", [engine]() { 
+        return engine->GetEmaFps(); 
+    });
 
-    RegisterMetric("System/FrameTime_ms", [engine]() { return engine->GetRealDeltaTime() * 1000.0f; });
+    RegisterMetric("System/FrameTime_ms", [engine]() { 
+        return engine->GetRealDeltaTime() * 1000.0f; 
+    });
 
-    RegisterMetric("System/CPU_Time_ms", [engine]() { return engine->GetPureCpuTimeMs(); });
+    RegisterMetric("System/CPU_Time_ms", [engine]() { 
+        return engine->GetPureCpuTimeMs(); 
+    });
 
-    RegisterMetric("System/GPU_Time_ms", []() {
+    RegisterMetric("System/GPU_Time_ms", []() { 
         // GpuProfiler is a singleton, so we can fetch it directly
-        return GpuProfiler::GetInstance().GetLastFrameGpuTimeMs();
+        return GpuProfiler::GetInstance().GetLastFrameGpuTimeMs(); 
     });
 
     // ==========================================
     // Thread Pool Metrics
     // ==========================================
-    RegisterMetric("System/ThreadPool_Active", [engine]() -> float {
+    RegisterMetric("System/ThreadPool_Active", [engine]() -> float { 
         if (auto* tp = engine->GetThreadPool()) {
             return static_cast<float>(tp->GetActiveThreadCount());
         }
         return 0.0f;
     });
 
-    RegisterMetric("System/ThreadPool_Queued", [engine]() -> float {
+    RegisterMetric("System/ThreadPool_Queued", [engine]() -> float { 
         if (auto* tp = engine->GetThreadPool()) {
             return static_cast<float>(tp->GetQueuedTaskCount());
         }
@@ -48,28 +53,28 @@ void TelemetryGatherer::Initialize(IrufemiEngine* engine) {
     // ==========================================
     // Particle Metrics
     // ==========================================
-    RegisterMetric("GPU_Particle/Active_Systems", [engine]() -> float {
+    RegisterMetric("GPU_Particle/Active_Systems", [engine]() -> float { 
         if (auto* gpm = engine->GetGPUParticleManager()) {
             return static_cast<float>(gpm->GetActiveSystemCount());
         }
         return 0.0f;
     });
 
-    RegisterMetric("GPU_Particle/Total_Emitters", [engine]() -> float {
+    RegisterMetric("GPU_Particle/Total_Emitters", [engine]() -> float { 
         if (auto* gpm = engine->GetGPUParticleManager()) {
             return static_cast<float>(gpm->GetTotalEmittersUsed());
         }
         return 0.0f;
     });
 
-    RegisterMetric("Voxel_Particle/Active_Systems", [engine]() -> float {
+    RegisterMetric("Voxel_Particle/Active_Systems", [engine]() -> float { 
         if (auto* vpm = engine->GetVoxelParticleManager()) {
             return static_cast<float>(vpm->GetActiveSystemCount());
         }
         return 0.0f;
     });
 
-    RegisterMetric("Voxel_Particle/Total_Emitters", [engine]() -> float {
+    RegisterMetric("Voxel_Particle/Total_Emitters", [engine]() -> float { 
         if (auto* vpm = engine->GetVoxelParticleManager()) {
             return static_cast<float>(vpm->GetTotalEmittersUsed());
         }
@@ -81,7 +86,7 @@ void TelemetryGatherer::DispatchAll() {
     for (const auto& metric : metrics_) {
         TelemetrySender::GetInstance().SetMetric(metric.name, metric.fetcher());
     }
-
+    
     // 最後にフレームの終了を通知
     TelemetrySender::GetInstance().OnFrameEnd();
 }

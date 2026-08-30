@@ -1,5 +1,6 @@
 #pragma once
 
+
 namespace Irufemi {
 /**
  * @struct Quaternion
@@ -27,8 +28,8 @@ struct Quaternion final {
 
     /** @name 複合代入演算子 */
     /** @{ */
-    Quaternion& operator+=(const Quaternion& rhs);
-    Quaternion& operator-=(const Quaternion& rhs);
+    Quaternion& operator+=( const Quaternion& rhs);
+    Quaternion& operator-=( const Quaternion& rhs);
     Quaternion& operator*=(float s);
     Quaternion& operator/=(float s);
     /** @} */
@@ -40,27 +41,27 @@ struct Quaternion final {
 /**
  * @brief クォータニオン同士の加算
  */
-Quaternion operator+(const Quaternion& lhs, Quaternion rhs);
+Quaternion operator+( const Quaternion& lhs, Quaternion rhs);
 
 /**
  * @brief クォータニオン同士の減算
  */
-Quaternion operator-(const Quaternion& lhs, Quaternion rhs);
+Quaternion operator-( const Quaternion& lhs, Quaternion rhs);
 
 /**
  * @brief 単項演算子 +
  */
-Quaternion operator+(const Quaternion& q);
+Quaternion operator+( const Quaternion& q);
 
 /**
  * @brief 単項演算子 - (符号反転)
  */
-Quaternion operator-(const Quaternion& q);
+Quaternion operator-( const Quaternion& q);
 
 /**
  * @brief スカラー乗算
  */
-Quaternion operator*(const Quaternion& q, float s);
+Quaternion operator*( const Quaternion& q, float s);
 
 /**
  * @brief スカラー乗算 (可換)
@@ -70,7 +71,7 @@ Quaternion operator*(float s, const Quaternion& q);
 /**
  * @brief スカラー除算
  */
-Quaternion operator/(const Quaternion& q, float s);
+Quaternion operator/( const Quaternion& q, float s);
 
 /**
  * @brief クォータニオン同士の積 (ハミルトン積)
@@ -78,5 +79,6 @@ Quaternion operator/(const Quaternion& q, float s);
 Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs);
 
 /** @} */
+
 
 } // namespace Irufemi

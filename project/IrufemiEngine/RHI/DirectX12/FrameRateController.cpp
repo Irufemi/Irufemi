@@ -1,6 +1,6 @@
 #include "RHI/DirectX12/FrameRateController.h"
-#include <Windows.h>
 #include <thread>
+#include <Windows.h>
 
 /**
  * @brief 初期化
@@ -46,7 +46,7 @@ void FrameRateController::Update() {
     // 現在時刻ではなく「本来の目標時刻」を次の基準とする
     auto nextReference = reference_ + kMinTime;
     auto nowAfter = std::chrono::steady_clock::now();
-
+    
     // もし重い処理などで1フレーム以上（16ms超過）遅延した場合は、
     // 巻き返しによる倍速進行を防ぐために現在時刻でリセットする
     if (nowAfter > nextReference + std::chrono::milliseconds(16)) {

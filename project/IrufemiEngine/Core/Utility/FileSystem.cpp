@@ -1,8 +1,8 @@
 #include "Core/Utility/FileSystem.h"
-#include "Core/Utility/StringUtility.h"
 #include <Windows.h>
-#include <algorithm>
 #include <filesystem>
+#include <algorithm>
+#include "Core/Utility/StringUtility.h"
 
 namespace fs = std::filesystem;
 
@@ -42,10 +42,8 @@ std::string FileSystem::GetEngineRoot() {
 std::string FileSystem::GetResourcePath(const std::string& relativePath) {
     std::string path = relativePath;
     // Remove leading "./" or "/" if present
-    if (path.find("./") == 0)
-        path = path.substr(2);
-    if (path.find("/") == 0)
-        path = path.substr(1);
+    if (path.find("./") == 0) path = path.substr(2);
+    if (path.find("/") == 0) path = path.substr(1);
 
     if (path.find("resources") != 0) {
         path = "resources/" + path;

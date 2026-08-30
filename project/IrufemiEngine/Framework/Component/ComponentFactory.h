@@ -1,9 +1,9 @@
 #pragma once
-#include "Framework/Component/Component.h"
-#include <functional>
-#include <memory>
 #include <string>
+#include <memory>
 #include <unordered_map>
+#include <functional>
+#include "Framework/Component/Component.h"
 
 class ComponentFactory {
 public:

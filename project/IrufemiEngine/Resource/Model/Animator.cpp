@@ -1,8 +1,8 @@
 #include "Resource/Model/Animator.h"
-#include "Core/Math/Math.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Framework/UI/DebugUI.h"
 #include "Resource/Model/AnimationManager.h"
+#include "Framework/UI/DebugUI.h"
+#include "Core/Math/Math.h"
 #include <cmath>
 
 #if defined USE_IMGUI
@@ -17,12 +17,10 @@ void Animator::Initialize(IrufemiEngine* engine) {
 }
 
 void Animator::Play(const std::string& filename, bool loop, float fadeDuration) {
-    if (!engine_ || !engine_->GetAnimationManager())
-        return;
+    if (!engine_ || !engine_->GetAnimationManager()) return;
 
     auto newAnim = engine_->GetAnimationManager()->LoadAnimationFile(filename);
-    if (!newAnim)
-        return;
+    if (!newAnim) return;
 
     if (currentAnimation_ && fadeDuration > 0.0f && currentAnimationName_ != filename) {
         previousAnimation_ = currentAnimation_;
@@ -45,13 +43,12 @@ void Animator::Play(const std::string& filename, bool loop, float fadeDuration) 
 }
 
 void Animator::Update(SkeletonPose& targetPose) {
-    if (!currentAnimation_ || !engine_)
-        return;
+    if (!currentAnimation_ || !engine_) return;
 
     float deltaTime = engine_->GetGameDeltaTime() * playbackSpeed_;
     float prevTime = animationTime_;
     animationTime_ += deltaTime;
-
+    
     if (currentAnimation_->duration > 0.0f) {
         if (isLooping_) {
             animationTime_ = std::fmod(animationTime_, currentAnimation_->duration);
@@ -65,8 +62,7 @@ void Animator::Update(SkeletonPose& targetPose) {
     }
 
     // Root Motion の抽出
-    ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_, deltaRootTranslation_,
-                      deltaRootRotation_);
+    ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_, deltaRootTranslation_, deltaRootRotation_);
 
     if (isBlending_ && previousAnimation_) {
         fadeTimer_ += engine_->GetGameDeltaTime(); // フェードは等速(playbackSpeedに依存しない)
@@ -80,30 +76,25 @@ void Animator::Update(SkeletonPose& targetPose) {
         if (weight >= 1.0f) {
             isBlending_ = false;
             previousAnimation_.reset();
-            AnimationManager::ApplyAnimation(targetPose, *currentAnimation_, animationTime_,
-                                             false); // Rootは適用しない(外部で移動)
+            AnimationManager::ApplyAnimation(targetPose, *currentAnimation_, animationTime_, false); // Rootは適用しない(外部で移動)
         } else {
             // ブレンド適用
-            AnimationManager::BlendAnimation(targetPose, *previousAnimation_, previousAnimationTime_,
-                                             *currentAnimation_, animationTime_, weight, false);
+            AnimationManager::BlendAnimation(targetPose, *previousAnimation_, previousAnimationTime_, *currentAnimation_, animationTime_, weight, false);
         }
     } else {
         // 通常の適用
         AnimationManager::ApplyAnimation(targetPose, *currentAnimation_, animationTime_, false);
     }
-
+    
     AnimationManager::SkeletonUpdate(targetPose);
 }
 
-void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime,
-                                 Irufemi::Vector3& outDeltaTrans, Irufemi::Quaternion& outDeltaRot) {
+void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skeleton, float prevTime, float currTime, Irufemi::Vector3& outDeltaTrans, Irufemi::Quaternion& outDeltaRot) {
     outDeltaTrans = {0.0f, 0.0f, 0.0f};
     outDeltaRot = {0.0f, 0.0f, 0.0f, 1.0f};
-    if (!anim || !skeleton)
-        return;
+    if (!anim || !skeleton) return;
 
-    if (anim->nodeAnimations.empty())
-        return;
+    if (anim->nodeAnimations.empty()) return;
 
     // ルートノードの探索（parentが存在しないジョイント）
     std::string rootNodeName = "";
@@ -114,12 +105,10 @@ void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skel
         }
     }
 
-    if (rootNodeName.empty())
-        return;
+    if (rootNodeName.empty()) return;
 
     auto rootIt = anim->nodeAnimations.find(rootNodeName);
-    if (rootIt == anim->nodeAnimations.end())
-        return;
+    if (rootIt == anim->nodeAnimations.end()) return;
 
     const NodeAnimation& rootAnim = rootIt->second;
 

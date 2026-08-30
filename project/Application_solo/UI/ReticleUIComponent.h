@@ -9,8 +9,6 @@ public:
 
     void Initialize() override;
     void Update() override;
-
-    std::string GetComponentName() const override {
-        return "ReticleUIComponent";
-    }
+    
+    std::string GetComponentName() const override { return "ReticleUIComponent"; }
 };

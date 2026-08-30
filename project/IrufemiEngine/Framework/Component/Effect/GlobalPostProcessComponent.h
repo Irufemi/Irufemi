@@ -1,8 +1,8 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include "PostProcessSettings.h"
-#include <memory>
 #include <vector>
+#include <memory>
 
 /**
  * @class GlobalPostProcessComponent
@@ -17,12 +17,8 @@ public:
     void Update() override;
     void OnRegisterProperties() override;
 
-    bool CanUpdateInEditMode() const override {
-        return true;
-    }
-    std::string GetComponentName() const override {
-        return "GlobalPostProcessComponent";
-    }
+    bool CanUpdateInEditMode() const override { return true; }
+    std::string GetComponentName() const override { return "GlobalPostProcessComponent"; }
     std::shared_ptr<Component> Clone() override;
 
     // JSON Serialization
@@ -30,13 +26,9 @@ public:
     void Deserialize(const nlohmann::json& j) override;
 
     // 内部設定リストへのアクセス（エディタ用）
-    const std::vector<std::shared_ptr<IPostProcessSettings>>& GetOverrides() const {
-        return overrides_;
-    }
-    void AddOverride(std::shared_ptr<IPostProcessSettings> setting) {
-        overrides_.push_back(setting);
-    }
-    void RemoveOverride(size_t index) {
+    const std::vector<std::shared_ptr<IPostProcessSettings>>& GetOverrides() const { return overrides_; }
+    void AddOverride(std::shared_ptr<IPostProcessSettings> setting) { overrides_.push_back(setting); }
+    void RemoveOverride(size_t index) { 
         if (index < overrides_.size()) {
             overrides_.erase(overrides_.begin() + index);
         }

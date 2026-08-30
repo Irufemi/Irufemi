@@ -1,25 +1,25 @@
 ﻿#pragma once
-#include "Core/Math/Matrix4x4.h"
+#include <d3d12.h>
+#include <string>
+#include "Renderer/Camera/Camera.h"
+#include "Renderer/Data/TransformationMatrix.h"
+#include <wrl.h>
+#include <cstdint>
+#include <memory>
+#include <vector>
+#include <map>
 #include "Core/Math/Transform.h"
 #include "Core/Math/Vector4.h"
-#include "RHI/DirectX12/DynamicConstantBuffer.h"
-#include "Renderer/Camera/Camera.h"
-#include "Renderer/Compute/IComputeTask.h"
-#include "Renderer/Data/Material.h"
-#include "Renderer/Data/TransformationMatrix.h"
-#include "Renderer/System/Core/BaseModel.h"
-#include "Renderer/System/Core/Object3DResource.h"
+#include "Core/Math/Matrix4x4.h"
 #include "Resource/Model/Data/ObjModel.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Renderer/Data/Material.h"
+#include "RHI/DirectX12/DynamicConstantBuffer.h"
+#include "Renderer/System/Core/BaseModel.h"
 #include "Resource/Model/Data/SkeletonData.h"
 #include "Resource/Model/Data/SkeletonPose.h"
 #include "Resource/Model/Data/SkinCluster.h"
-#include <cstdint>
-#include <d3d12.h>
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-#include <wrl.h>
+#include "Renderer/Compute/IComputeTask.h"
 
 class TextureManager;
 class DrawManager;
@@ -41,6 +41,8 @@ class ModelManager;
  */
 class StaticModelObject : public BaseModel, public IComputeTask {
 
+
+
 private:
     /**
      * @brief モデル内の各ノードの名前と、そのノードのグローバル行列（ローカル行列の累積）をマッピングするキャッシュ
@@ -59,7 +61,8 @@ private:
      */
     void InitializeResources();
 
-public: // メンバ関数
+public: //メンバ関数
+
     /**
      * @brief デストラクタ
      */
@@ -80,7 +83,7 @@ public: // メンバ関数
     /**
      * @brief 描画コマンドの積み込み
      */
-    void SyncBeforeDraw() override;
+     void SyncBeforeDraw() override;
     /**
      * @brief Draw を実行する。
      */
@@ -111,4 +114,6 @@ private:
     SkinCluster skinCluster_;
     uint32_t lastSkinnedFrameIndex_ = 0;
     bool isResourceInitialized_ = false;
+
 };
+

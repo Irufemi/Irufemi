@@ -6,8 +6,7 @@ void SceneTransition::Initialize(PostProcessManager* ppManager) {
 }
 
 void SceneTransition::Start(Type type, float duration, bool isOut, EaseType easeType) {
-    if (!ppManager_)
-        return;
+    if (!ppManager_) return;
 
     currentType_ = type;
     easeType_ = easeType;
@@ -33,7 +32,7 @@ void SceneTransition::Start(Type type, float duration, bool isOut, EaseType ease
     case Type::Dissolve:
         ppManager_->AddActiveMode(PostProcessMode::Dissolve, PostProcessManager::Layer::PostUI);
         activeTransitionModes_.push_back(PostProcessMode::Dissolve);
-        ppManager_->GetDissolveParams().edgeColor = {1.0f, 0.4f, 0.3f, 1.0f}; // 炎のようなオレンジ色
+        ppManager_->GetDissolveParams().edgeColor = { 1.0f, 0.4f, 0.3f, 1.0f }; // 炎のようなオレンジ色
         break;
     case Type::Slide:
         ppManager_->AddActiveMode(PostProcessMode::Slide, PostProcessManager::Layer::PostUI);
@@ -59,8 +58,7 @@ void SceneTransition::Start(Type type, float duration, bool isOut, EaseType ease
 }
 
 void SceneTransition::Update(float deltaTime) {
-    if (!isActive_ || !ppManager_)
-        return;
+    if (!isActive_ || !ppManager_) return;
 
     timer_ += deltaTime;
     float totalDuration = duration_ + kDwellTime;
@@ -68,7 +66,7 @@ void SceneTransition::Update(float deltaTime) {
     if (timer_ >= totalDuration) {
         timer_ = totalDuration;
         isActive_ = false;
-
+        
         // フェードイン（画面が表示される方）が完了した場合はトランジションエフェクトのみをクリア
         if (!isOut_) {
             for (auto mode : activeTransitionModes_) {
@@ -78,13 +76,13 @@ void SceneTransition::Update(float deltaTime) {
         }
     }
 
-    // 演出自体の進行度 (0.0 ~ 1.0)
+    // 演出自体の進行度 (0.0 ~ 1.0) 
     // 溜め時間 (kDwellTime) 中は 1.0 固定にする
     float progress = (std::min)(1.0f, timer_ / duration_);
-
+    
     // イージング関数の適用
     float easedProgress = EvaluateEase(easeType_, progress);
-
+    
     // 実際にエフェクトに適用する係数
     float factor = isOut_ ? easedProgress : (1.0f - easedProgress);
 

@@ -1,11 +1,11 @@
 #include "Renderer/Pipeline/RenderGraph/PostUIPass.h"
 #include "Core/Math/Math.h"
+#include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Renderer/PostProcess/PostProcessManager.h"
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DirectXUtils.h"
-#include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
-#include "Renderer/PostProcess/PostProcessManager.h"
 
 void PostUIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
     auto ppMgr = engine->GetPostProcessManager();
@@ -16,14 +16,10 @@ void PostUIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, Ir
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // G-Bufferをシェーダーリソースとして要求する
-    if (auto tex = engine->GetEffectMaskTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetNormalTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetMaterialTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetVelocityTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetEffectMaskTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetNormalTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetMaterialTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetVelocityTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
     workTextureHandles_.clear();
 
@@ -54,7 +50,7 @@ void PostUIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto* renderGraph = drawManager->GetRenderGraph();
 
     PostProcessManager::PostProcessWorkspace workspace;
-
+    
     if (!workTextureHandles_.empty()) {
         workspace.workTextures[0] = renderGraph->GetTransientRenderTexture(workTextureHandles_[0]);
         workspace.workTextures[1] = renderGraph->GetTransientRenderTexture(workTextureHandles_[1]);
@@ -62,20 +58,17 @@ void PostUIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // CopyResource (mainRenderTex -> ppSrcTex)
     auto ppSrcTex = renderGraph->GetTransientRenderTexture(postUiSrcHandle_);
-
+    
     // RenderGraph によるステート管理のため開始時に COPY_SOURCE に手動で遷移
-    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(),
-                                    D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
     cmdList->CopyResource(ppSrcTex->GetResource(), engine->GetMainRenderTexture()->GetResource());
 
     // バリア遷移
-    DirectXUtils::TransitionBarrier(cmdList, ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST,
-                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    DirectXUtils::TransitionBarrier(cmdList, ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     renderGraph->SetInitialResourceState(ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(),
-                                    D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    
+    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // 最終出力先の決定
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;

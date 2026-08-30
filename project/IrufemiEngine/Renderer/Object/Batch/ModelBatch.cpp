@@ -1,10 +1,10 @@
-#include "Renderer/Object/Batch/ModelBatch.h"
-#include "Core/System/IrufemiEngine.h"
 #include "Core/Utility/ErrorUtility.h"
-#include "Renderer/DrawManager.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include <cassert>
+#include "Core/System/IrufemiEngine.h"
 #include "Resource/Model/ModelManager.h"
 #include "Resource/Texture/TextureManager.h"
-#include <cassert>
+#include "Renderer/DrawManager.h"
 
 ModelManager* ModelBatch::modelManager_ = nullptr;
 
@@ -29,7 +29,7 @@ void ModelBatch::InitializeResources() {
 
     CreateMaterialResources(mesh);
     EnsureSharedTexture(mesh);
-
+    
     isResourcesInitialized_ = true;
 }
 
@@ -55,9 +55,7 @@ void ModelBatch::CreateMaterialResources(const ObjMesh& mesh) {
     cpuMaterialData_.environmentCoefficient = 0.0f;
     cpuMaterialData_.hasTexture = !mesh.material.textureFilePath.empty();
     cpuMaterialData_.lightingMode = mesh.material.enableLighting ? 3 : 0;
-    if (cpuMaterialData_.color.w <= 0.0f) {
-        cpuMaterialData_.color.w = 1.0f;
-    }
+    if (cpuMaterialData_.color.w <= 0.0f) { cpuMaterialData_.color.w = 1.0f; }
 
     if (auto engine = dx_->GetEngine()) {
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -93,8 +91,8 @@ void ModelBatch::Draw() {
         }
     }
 
-    if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || (instances_.empty() && instanceWorlds_.empty())) {
-        return;
+    if (!GetGpuMesh() || GetGpuMesh()->vertexCount == 0 || (instances_.empty() && instanceWorlds_.empty())) { 
+        return; 
     }
 
     SyncBeforeDraw();
@@ -119,8 +117,7 @@ void ModelBatch::Draw() {
         // UploadBufferへ描画引数の初期値を書き込む
         if (ID3D12Resource* uploadBuffer = GetIndirectCommandUploadBuffer()) {
             D3D12_DRAW_INDEXED_ARGUMENTS args{};
-            args.IndexCountPerInstance =
-                GetGpuMesh()->indexCount > 0 ? GetGpuMesh()->indexCount : GetGpuMesh()->vertexCount;
+            args.IndexCountPerInstance = GetGpuMesh()->indexCount > 0 ? GetGpuMesh()->indexCount : GetGpuMesh()->vertexCount;
             args.InstanceCount = 0; // 初期値は0
             args.StartIndexLocation = 0;
             args.BaseVertexLocation = 0;

@@ -1,9 +1,9 @@
+#include "Core/Utility/ErrorUtility.h"
 #include "Resource/Texture/Texture.h"
 #include "../../../externals/DirectXTex/DirectXTex.h"
 #include "../../../externals/DirectXTex/d3dx12.h"
-#include "Core/Utility/ErrorUtility.h"
-#include "RHI/DirectX12/DescriptorPool.h"
 #include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/DescriptorPool.h"
 #include <cassert>
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
@@ -67,7 +67,8 @@ void Texture::Initialize(const std::string& filePath) {
             srvDesc.TextureCube.MostDetailedMip = 0;
             srvDesc.TextureCube.MipLevels = UINT_MAX;
             srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-        } else {
+        }
+        else {
             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
         }
@@ -78,7 +79,8 @@ void Texture::Initialize(const std::string& filePath) {
         }
 
         status_.store(LoadingStatus::Loaded);
-    } catch (...) {
+    }
+    catch (...) {
         status_.store(LoadingStatus::Failed);
         // 失敗してもSRV自体は白テクスチャを指したままなので描画上は安全
     }
@@ -117,13 +119,13 @@ void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixe
         }
 
         status_.store(LoadingStatus::Loaded);
-    } catch (...) {
+    }
+    catch (...) {
         status_.store(LoadingStatus::Failed);
     }
 }
 
-void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width,
-                                       uint32_t height) {
+void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* pixels, uint32_t width, uint32_t height) {
     this->filePath_ = name;
     this->width_ = width;
     this->height_ = height;
@@ -162,13 +164,13 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
 
         isCubemap_ = true;
         status_.store(LoadingStatus::Loaded);
-    } catch (...) {
+    }
+    catch (...) {
         status_.store(LoadingStatus::Failed);
     }
 }
 
-void Texture::InitializeFromExternalResource(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource,
-                                             uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle) {
+void Texture::InitializeFromExternalResource(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle) {
     this->filePath_ = name;
     this->textureResource_ = resource;
 

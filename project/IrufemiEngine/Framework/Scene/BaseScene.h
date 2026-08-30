@@ -1,13 +1,13 @@
 #pragma once
-#include "Core/Math/Vector3.h"
 #include "Framework/Scene/IScene.h"
-#include "Renderer/Camera/OrbitCameraController.h"
-#include <cstdint>
 #include <memory>
-#include <mutex>
-#include <string>
-#include <unordered_map>
 #include <vector>
+#include <cstdint>
+#include <string>
+#include <mutex>
+#include <unordered_map>
+#include "Core/Math/Vector3.h"
+#include "Renderer/Camera/OrbitCameraController.h"
 
 // 前方宣言
 class IrufemiEngine;
@@ -35,12 +35,12 @@ public:
      * @brief シーンの初期化。継承先で必ず基底クラスの Initialize を呼んでください。
      */
     virtual void Initialize(IrufemiEngine* engine) override;
-
+    
     /**
      * @brief 毎フレームの更新。継承先はこれを呼び出すことで、カメラ等の共通更新が行われます。
      */
     virtual void Update() override;
-
+    
     /**
      * @brief 毎フレームの描画処理。継承先から呼び出すと GameObject の Draw が自動実行されます。
      */
@@ -72,15 +72,12 @@ public:
      * @param position 初期座標
      * @return 生成された GameObject のポインタ
      */
-    std::shared_ptr<GameObject> InstantiatePrefab(const std::string& prefabPath,
-                                                  const Irufemi::Vector3& position = {0, 0, 0});
+    std::shared_ptr<GameObject> InstantiatePrefab(const std::string& prefabPath, const Irufemi::Vector3& position = {0,0,0});
 
     /**
      * @brief シーンが保持する GameObject のリストを取得する
      */
-    const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override {
-        return gameObjects_;
-    }
+    const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const override { return gameObjects_; }
 
     /**
      * @brief オブジェクトの現在のインデックスを取得する (Undo用)
@@ -92,15 +89,13 @@ public:
      */
     std::shared_ptr<GameObject> FindGameObject(GameObject* ptr) {
         for (auto& obj : gameObjects_) {
-            if (obj.get() == ptr)
-                return obj;
+            if (obj.get() == ptr) return obj;
         }
         return nullptr;
     }
 
     /**
-     * @brief オブジェクトの名前から該当する shared_ptr の GameObject
-     * を探して返す（O(1)検索・最初に見つかったものを返す）
+     * @brief オブジェクトの名前から該当する shared_ptr の GameObject を探して返す（O(1)検索・最初に見つかったものを返す）
      */
     std::shared_ptr<GameObject> FindGameObject(const std::string& name);
 
@@ -113,6 +108,8 @@ public:
      * @brief 指定した名前を持つすべての GameObject を返す
      */
     std::vector<std::shared_ptr<GameObject>> FindGameObjects(const std::string& name);
+
+
 
     /**
      * @brief 指定したタグを持つ全てのGameObjectを取得する
@@ -127,11 +124,10 @@ public:
     /**
      * @brief GameObjectの名前が変更された際にインデックスを更新するためのコールバック
      */
-    void OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName,
-                                 const std::string& newName);
+    void OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName);
 
     // --- ライフサイクル関数 ---
-
+    
     /**
      * @brief シーンの終了処理。リソースの明示的な解放などを行います。
      */
@@ -160,12 +156,10 @@ public:
     /**
      * @brief IrufemiEngine のインスタンスを取得する
      */
-    IrufemiEngine* GetEngine() const {
-        return engine_;
-    }
+    IrufemiEngine* GetEngine() const { return engine_; }
 
     // --- デバッグ機能 ---
-
+    
     /**
      * @brief 共通のデバッグタブ描画。
      */
@@ -189,7 +183,7 @@ protected:
     std::vector<std::shared_ptr<GameObject>> gameObjects_;
     std::vector<std::shared_ptr<GameObject>> pendingAdds_;
     std::vector<std::shared_ptr<GameObject>> pendingRemoves_;
-
+    
     // 高速検索(O(1))用インデックス
     std::unordered_map<std::string, std::vector<std::weak_ptr<GameObject>>> nameIndex_;
     std::unordered_map<uint64_t, std::weak_ptr<GameObject>> idIndex_;
@@ -247,16 +241,12 @@ protected:
      * @brief IsKeyDown かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsKeyDown(uint8_t vk) const {
-        return DownVK(vk);
-    }
+    bool IsKeyDown(uint8_t vk) const { return DownVK(vk); }
     /**
      * @brief IsKeyPressed かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsKeyPressed(uint8_t vk) const {
-        return PressedVK(vk);
-    }
+    bool IsKeyPressed(uint8_t vk) const { return PressedVK(vk); }
     /**
      * @brief IsButtonDown かどうかを判定する。
      * @return 判定結果 (true/false)

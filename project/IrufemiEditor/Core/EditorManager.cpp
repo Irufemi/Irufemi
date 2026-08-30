@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <iostream>
 
+
 // 分離したエディタパネル群
 #include "Core/IEditorPanel.h"
 #include "Panels/ConsolePanel.h"
@@ -29,11 +30,13 @@
 #include "Panels/ProjectBrowserPanel.h"
 #include "Panels/SceneViewPanel.h"
 
+
 // Editor Core
 #include "Commands/EditorActionManager.h"
 #include "Commands/EditorShortcutManager.h"
 #include "Core/EditorTheme.h"
 #include "Inspectors/ComponentEditorRegistry.h"
+
 
 // FontAwesome 用のヘッダーを含める
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"

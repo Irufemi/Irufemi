@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+
 namespace Irufemi {
 /**
  * @struct Vector4
@@ -52,32 +53,23 @@ struct Vector4 final {
 
     /** @name 比較演算子 */
     /** @{ */
-    bool operator==(const Vector4& v) const {
-        return x == v.x && y == v.y && z == v.z && w == v.w;
-    }
-    bool operator!=(const Vector4& v) const {
-        return !(*this == v);
-    }
+    bool operator==(const Vector4& v) const { return x == v.x && y == v.y && z == v.z && w == v.w; }
+    bool operator!=(const Vector4& v) const { return !(*this == v); }
     /**
      * @brief Equals を実行する。
      */
     bool Equals(const Vector4& other, float epsilon = 1e-5f) const {
-        return std::abs(x - other.x) <= epsilon && std::abs(y - other.y) <= epsilon &&
-               std::abs(z - other.z) <= epsilon && std::abs(w - other.w) <= epsilon;
+        return std::abs(x - other.x) <= epsilon && std::abs(y - other.y) <= epsilon && std::abs(z - other.z) <= epsilon && std::abs(w - other.w) <= epsilon;
     }
     /** @} */
 
     /** @name 数学関数 */
     /** @{ */
-    inline float LengthSquared() const {
-        return x * x + y * y + z * z + w * w;
-    }
+    inline float LengthSquared() const { return x * x + y * y + z * z + w * w; }
     /**
      * @brief Length を実行する。
      */
-    inline float Length() const {
-        return std::sqrt(LengthSquared());
-    }
+    inline float Length() const { return std::sqrt(LengthSquared()); }
     /**
      * @brief Normalize を実行する。
      */
@@ -103,22 +95,16 @@ struct Vector4 final {
     /**
      * @brief Dot を実行する。
      */
-    inline float Dot(const Vector4& rhs) const {
-        return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w;
-    }
+    inline float Dot(const Vector4& rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w; }
     /** @} */
 
     /** @name データアクセサ */
     /** @{ */
-    const float* data() const {
-        return &x;
-    }
+    const float* data() const { return &x; }
     /**
      * @brief data を実行する。
      */
-    float* data() {
-        return &x;
-    }
+    float* data() { return &x; }
     /** @} */
 };
 

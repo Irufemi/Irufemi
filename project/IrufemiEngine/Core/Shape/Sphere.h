@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Core/Math/Vector3.h"
 #include <cstdint>
+#include "Core/Math/Vector3.h"
+
 
 namespace Irufemi {
 /**
@@ -11,10 +12,11 @@ namespace Irufemi {
  */
 struct Sphere {
     /** @brief 球の中心座標 */
-    Vector3 center = {0.0f, 0.0f, 0.0f};
+	Vector3 center = {0.0f, 0.0f, 0.0f};
 
     /** @brief 球の半径 */
     float radius = 1.0f;
 };
+
 
 } // namespace Irufemi

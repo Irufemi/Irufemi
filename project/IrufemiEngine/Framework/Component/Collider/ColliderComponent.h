@@ -5,7 +5,7 @@
 class CollisionManager;
 
 namespace Irufemi {
-struct AABB;
+    struct AABB;
 }
 
 /**
@@ -30,7 +30,7 @@ public:
      * @brief Draw を実行する。
      */
     virtual void Draw() override {}
-
+    
     /// @brief デバッグ用の当たり判定の枠線を描画する
     virtual void DrawDebug() = 0;
 
@@ -38,9 +38,7 @@ public:
      * @brief CollisionManager を設定する。
      * @param[in] manager 設定する CollisionManager の値
      */
-    static void SetCollisionManager(CollisionManager* manager) {
-        collisionManager_ = manager;
-    }
+    static void SetCollisionManager(CollisionManager* manager) { collisionManager_ = manager; }
 
 protected:
     inline static CollisionManager* collisionManager_ = nullptr;
@@ -59,8 +57,8 @@ public:
     std::function<void(ColliderComponent*)> onCollisionExit_;  // 離れた瞬間に呼ばれる
 
     // --- レイヤー設定 ---
-    uint32_t layer_ = 1;         // 1 << 0 (Default)
-    uint32_t mask_ = 0xFFFFFFFF; // All
+    uint32_t layer_ = 1; // 1 << 0 (Default)
+    uint32_t mask_  = 0xFFFFFFFF; // All
 
     // --- 物理設定 ---
     bool isTrigger_ = false; ///< trueならすり抜ける(判定のみ), falseなら物理的に押し戻す

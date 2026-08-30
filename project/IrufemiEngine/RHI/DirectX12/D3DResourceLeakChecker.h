@@ -1,11 +1,11 @@
 #pragma once
 
+#include <wrl.h>
+#include <dxgidebug.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
-#include <dxgidebug.h>
-#include <wrl.h>
 
-#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib,"dxguid.lib")
 
 struct D3DResourceLeakChecker {
     ~D3DResourceLeakChecker() {

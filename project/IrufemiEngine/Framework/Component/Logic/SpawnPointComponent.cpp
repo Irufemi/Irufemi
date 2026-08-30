@@ -1,6 +1,6 @@
 #include "Framework/Component/Logic/SpawnPointComponent.h"
-#include "Core/Utility/Log.h"
 #include "Framework/GameObject/GameObject.h"
+#include "Core/Utility/Log.h"
 
 void SpawnPointComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -25,9 +25,7 @@ void SpawnPointComponent::Deserialize(const nlohmann::json& json) {
     Component::Deserialize(json);
     if (json.contains("data")) {
         const auto& data = json["data"];
-        if (data.contains("waveId"))
-            waveId_ = data["waveId"].get<std::string>();
-        if (data.contains("enemyType"))
-            enemyType_ = data["enemyType"].get<std::string>();
+        if (data.contains("waveId")) waveId_ = data["waveId"].get<std::string>();
+        if (data.contains("enemyType")) enemyType_ = data["enemyType"].get<std::string>();
     }
 }

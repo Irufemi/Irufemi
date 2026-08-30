@@ -1,16 +1,15 @@
 #ifdef EditorMode
 #include "Editor/WaveManagerComponentEditor.h"
-#include "Commands/EditorActionManager.h"
-#include "Commands/EditorCommands.h"
 #include "Level/WaveManagerComponent.h"
-#include <algorithm>
+#include "Commands/EditorCommands.h"
+#include "Commands/EditorActionManager.h"
 #include <imgui/imgui.h>
 #include <string>
+#include <algorithm>
 
 void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto waveManager = dynamic_cast<WaveManagerComponent*>(component);
-    if (!waveManager)
-        return;
+    if (!waveManager) return;
 
     auto& events = waveManager->GetAllEventsMutable();
 
@@ -19,11 +18,11 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     static bool isDraggingModified = false;
 
     auto pushUndo = [&](const std::vector<WaveEventData>& oldData) {
-        if (!actionManager)
-            return;
+        if (!actionManager) return;
         actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::vector<WaveEventData>>>(
             oldData, events,
-            [waveManager](const std::vector<WaveEventData>& val) { waveManager->GetAllEventsMutable() = val; }));
+            [waveManager](const std::vector<WaveEventData>& val) { waveManager->GetAllEventsMutable() = val; }
+        ));
     };
 
     auto handleItemUndo = [&]() {
@@ -46,22 +45,23 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     if (ImGui::InputText("Level Data Path", buffer, sizeof(buffer))) {
         waveManager->SetLevelDataPath(buffer);
     }
-
+    
     if (ImGui::Button("Reload from JSON", ImVec2(150, 0))) {
         waveManager->ReloadLevelData();
     }
     ImGui::SameLine();
     if (ImGui::Button("Save to JSON##Top", ImVec2(150, 0))) {
-        std::sort(events.begin(), events.end(),
-                  [](const WaveEventData& a, const WaveEventData& b) { return a.triggerDistance < b.triggerDistance; });
+        std::sort(events.begin(), events.end(), [](const WaveEventData& a, const WaveEventData& b) {
+            return a.triggerDistance < b.triggerDistance;
+        });
         waveManager->SaveLevelData();
     }
-
+    
     ImGui::Separator();
-
+    
     static int selectedEventIndex = -1;
     static int draggingNodeIndex = -1;
-
+    
     // Timeline drawing
     ImGui::Text("Event Timeline (Distance)");
     float timelineHeight = 100.0f;
@@ -76,8 +76,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
 
     float maxDist = 500.0f;
     for (const auto& ev : events) {
-        if (ev.triggerDistance > maxDist)
-            maxDist = ev.triggerDistance + 100.0f;
+        if (ev.triggerDistance > maxDist) maxDist = ev.triggerDistance + 100.0f;
     }
     float scale = size.x / maxDist;
 
@@ -85,7 +84,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     for (float d = 0; d <= maxDist; d += 100.0f) {
         float dx = p.x + d * scale;
         drawList->AddLine(ImVec2(dx, p.y), ImVec2(dx, p.y + size.y), IM_COL32(60, 60, 60, 255));
-
+        
         char distLabel[32];
         snprintf(distLabel, sizeof(distLabel), "%.0f", d);
         drawList->AddText(ImVec2(dx + 2, p.y + 2), IM_COL32(150, 150, 150, 255), distLabel);
@@ -104,8 +103,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         // Search backwards to hit topmost (if overlapped)
         for (int i = (int)events.size() - 1; i >= 0; --i) {
             float x = p.x + events[i].triggerDistance * scale;
-            if (mousePos.x >= x - 6.0f && mousePos.x <= x + 6.0f && mousePos.y >= p.y &&
-                mousePos.y <= p.y + timelineHeight) {
+            if (mousePos.x >= x - 6.0f && mousePos.x <= x + 6.0f && mousePos.y >= p.y && mousePos.y <= p.y + timelineHeight) {
                 hitIndex = i;
                 break;
             }
@@ -119,13 +117,12 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
             selectedEventIndex = -1;
         }
     }
-
+    
     if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
         if (draggingNodeIndex != -1 && draggingNodeIndex < events.size()) {
             if (ImGui::GetIO().MouseDelta.x != 0.0f) {
                 events[draggingNodeIndex].triggerDistance += ImGui::GetIO().MouseDelta.x / scale;
-                if (events[draggingNodeIndex].triggerDistance < 0)
-                    events[draggingNodeIndex].triggerDistance = 0.0f;
+                if (events[draggingNodeIndex].triggerDistance < 0) events[draggingNodeIndex].triggerDistance = 0.0f;
                 isDraggingModified = true;
             }
         } else if (isTimelineActive) {
@@ -133,7 +130,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
             waveManager->SetEditorPreviewDistance((std::max)(0.0f, newDist));
         }
     }
-
+    
     if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
         if (draggingNodeIndex != -1 && isDraggingModified) {
             pushUndo(oldState);
@@ -148,28 +145,25 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         float yCenter = p.y + timelineHeight / 2.0f;
         ImVec2 nodeMin(x - 5, yCenter - 12);
         ImVec2 nodeMax(x + 5, yCenter + 12);
-
+        
         ImU32 color = IM_COL32(100, 150, 255, 255);
-        if (events[i].eventType == "SpawnBoss")
-            color = IM_COL32(255, 50, 50, 255);
-        if (events[i].eventType == "SpawnDebris")
-            color = IM_COL32(50, 200, 50, 255);
-        if (i == selectedEventIndex)
-            color = IM_COL32(255, 200, 0, 255);
-
+        if (events[i].eventType == "SpawnBoss") color = IM_COL32(255, 50, 50, 255);
+        if (events[i].eventType == "SpawnDebris") color = IM_COL32(50, 200, 50, 255);
+        if (i == selectedEventIndex) color = IM_COL32(255, 200, 0, 255);
+        
         drawList->AddRectFilled(nodeMin, nodeMax, color);
         drawList->AddRect(nodeMin, nodeMax, IM_COL32(255, 255, 255, 255));
     }
-
+    
     // Draw Playhead
     float previewDist = waveManager->GetEditorPreviewDistance();
     float phX = p.x + previewDist * scale;
     drawList->AddLine(ImVec2(phX, p.y), ImVec2(phX, p.y + size.y), IM_COL32(255, 0, 0, 255), 2.0f);
-
+    
     ImGui::Text("Preview Distance: %.1f", previewDist);
 
     ImGui::Spacing();
-
+    
     // Tool buttons
     if (ImGui::Button("Add Event")) {
         auto preEdit = events;
@@ -190,8 +184,9 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     ImGui::SameLine();
     if (ImGui::Button("Save to JSON##Bottom")) {
         // 距離でソートしてから保存する
-        std::sort(events.begin(), events.end(),
-                  [](const WaveEventData& a, const WaveEventData& b) { return a.triggerDistance < b.triggerDistance; });
+        std::sort(events.begin(), events.end(), [](const WaveEventData& a, const WaveEventData& b) {
+            return a.triggerDistance < b.triggerDistance;
+        });
         waveManager->SaveLevelData();
     }
 
@@ -200,10 +195,10 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         ImGui::Separator();
         ImGui::Text("Event Properties (Index: %d)", selectedEventIndex);
         auto& ev = events[selectedEventIndex];
-
+        
         ImGui::InputFloat("Trigger Distance", &ev.triggerDistance);
         handleItemUndo();
-
+        
         char typeBuf[64];
         strncpy_s(typeBuf, sizeof(typeBuf), ev.eventType.c_str(), _TRUNCATE);
         typeBuf[sizeof(typeBuf) - 1] = '\0';
@@ -211,15 +206,15 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
             ev.eventType = typeBuf;
         }
         handleItemUndo();
-
+        
         ImGui::Text("Parameters (JSON):");
-
+        
         auto editStringParam = [&](const char* key) {
             bool hasKey = ev.parameters.contains(key);
             std::string val = hasKey ? ev.parameters[key].get<std::string>() : "";
             char buf[128];
             strncpy_s(buf, sizeof(buf), val.c_str(), _TRUNCATE);
-
+            
             if (ImGui::InputText(key, buf, sizeof(buf))) {
                 ev.parameters[key] = std::string(buf);
             }
@@ -267,18 +262,15 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         editStringParam("BossID");
         editStringParam("Formation");
         editIntParam("Count");
-
+        
         bool hasOffset = ev.parameters.contains("OffsetFromRail");
         if (hasOffset) {
-            float offset[3] = {0, 0, 0};
+            float offset[3] = {0,0,0};
             auto& jOffset = ev.parameters["OffsetFromRail"];
-            if (jOffset.contains("x"))
-                offset[0] = jOffset["x"].get<float>();
-            if (jOffset.contains("y"))
-                offset[1] = jOffset["y"].get<float>();
-            if (jOffset.contains("z"))
-                offset[2] = jOffset["z"].get<float>();
-
+            if (jOffset.contains("x")) offset[0] = jOffset["x"].get<float>();
+            if (jOffset.contains("y")) offset[1] = jOffset["y"].get<float>();
+            if (jOffset.contains("z")) offset[2] = jOffset["z"].get<float>();
+            
             if (ImGui::DragFloat3("OffsetFromRail", offset, 0.1f)) {
                 jOffset["x"] = offset[0];
                 jOffset["y"] = offset[1];
@@ -298,7 +290,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
                 pushUndo(preEdit);
             }
         }
-
+        
         ImGui::Spacing();
         ImGui::Text("Raw JSON:");
         std::string rawJson = ev.parameters.dump(4);
@@ -307,8 +299,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         if (ImGui::InputTextMultiline("##RawJson", jsonBuf, sizeof(jsonBuf), ImVec2(-1, 100))) {
             try {
                 ev.parameters = nlohmann::json::parse(jsonBuf);
-            } catch (...) {
-            }
+            } catch (...) {}
         }
         handleItemUndo();
     }

@@ -1,25 +1,25 @@
 #pragma once
 
-#include "../../../externals/DirectXTex/DirectXTex.h"
-#include "Core/System/ResourceCachePool.h"
-#include "Core/System/TaskGroup.h"
-#include "Core/System/ThreadPool.h"
-#include "Resource/Texture/Texture.h"
-#include <atomic>
-#include <d3d12.h>
-#include <functional>
-#include <future>
-#include <memory>
-#include <mutex>
 #include <string>
-#include <type_traits>
-#include <unordered_map>
 #include <vector>
+#include <unordered_map>
+#include <memory>
+#include <mutex>  
+#include <d3d12.h>
 #include <wrl.h>
+#include "Resource/Texture/Texture.h"
+#include "../../../externals/DirectXTex/DirectXTex.h"
+#include "Core/System/ThreadPool.h"
+#include "Core/System/TaskGroup.h"
+#include <atomic>
+#include <future>
+#include <type_traits>
+#include <functional>
+#include "Core/System/ResourceCachePool.h"
 
 // 前方宣言
 namespace DirectX {
-class ScratchImage;
+    class ScratchImage;
 }
 
 class DirectXCommon;
@@ -69,8 +69,7 @@ public:
      * @param[in] srvHandle GPUディスクリプタハンドル
      * @return リソースハンドル
      */
-    ResourceHandle RegisterExternalTexture(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource,
-                                           uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle);
+    ResourceHandle RegisterExternalTexture(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle);
 
     /**
      * @brief テクスチャのリソースハンドルを解放する（参照カウントを減らす）
@@ -159,9 +158,7 @@ public:
     /**
      * @brief 白テクスチャのGPUハンドルを取得
      */
-    D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const {
-        return whiteTextureHandle_;
-    }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteTextureHandle() const { return whiteTextureHandle_; }
 
     /**
      * @brief [Bindless] 白テクスチャのSRVインデックスを取得
@@ -171,9 +168,7 @@ public:
     /**
      * @brief 白CubeMapテクスチャのGPUハンドルを取得
      */
-    D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteCubeMapHandle() const {
-        return whiteCubeMapHandle_;
-    }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetWhiteCubeMapHandle() const { return whiteCubeMapHandle_; }
 
     /**
      * @brief [Bindless] 白CubeMapテクスチャのSRVインデックスを取得
@@ -195,15 +190,14 @@ public:
     /**
      * @brief すべてのロードタスク（背景タスクを含む）が完了しているかを取得
      */
-    bool IsAllLoaded() const {
-        return taskGroup_->IsAllDone();
-    }
+    bool IsAllLoaded() const { return taskGroup_->IsAllDone(); }
 
     /**
      * @brief 非同期タスクの実行（シーンの状態による自動判定）
      */
     template <class F, class... Args>
-    auto EnqueueTask(F&& f, Args&&... args) -> std::future<typename std::invoke_result_t<F, Args...>> {
+    auto EnqueueTask(F&& f, Args&&... args) 
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
         bool isCritical = IsCurrentSceneInitializing();
         return EnqueueTask(isCritical, std::forward<F>(f), std::forward<Args>(args)...);
     }
@@ -212,17 +206,16 @@ public:
      * @brief 優先度を指定して非同期タスクを実行
      */
     template <class F, class... Args>
-    auto EnqueueTask(bool isCritical, F&& f, Args&&... args) -> std::future<typename std::invoke_result_t<F, Args...>> {
-        auto& group = isCritical ? taskGroup_ : backgroundTaskGroup_;
+    auto EnqueueTask(bool isCritical, F&& f, Args&&... args) 
+        -> std::future<typename std::invoke_result_t<F, Args...>> {
+        auto &group = isCritical ? taskGroup_ : backgroundTaskGroup_;
         return threadPool_->Enqueue(group, std::forward<F>(f), std::forward<Args>(args)...);
     }
 
     /**
      * @brief 白テクスチャのリソースを取得
      */
-    ID3D12Resource* GetWhiteTextureResource() const {
-        return whiteTextureResource_.Get();
-    }
+    ID3D12Resource* GetWhiteTextureResource() const { return whiteTextureResource_.Get(); }
 
 private:
     /**
@@ -234,7 +227,7 @@ private:
     ResourceCachePool texturePool_;
     mutable std::unordered_map<std::string, ResourceHandle> nameToHandleMap_;
     std::vector<std::shared_ptr<Texture>> textureResources_;
-
+    
     mutable std::mutex mutex_;
 
     std::unique_ptr<ThreadPool> threadPool_;
@@ -244,10 +237,11 @@ private:
     // フォールバック白テクスチャ
     std::unique_ptr<Texture> whiteTexture_;
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteTextureResource_;
-    D3D12_GPU_DESCRIPTOR_HANDLE whiteTextureHandle_{0};
+    D3D12_GPU_DESCRIPTOR_HANDLE whiteTextureHandle_{ 0 };
 
     // フォールバック白CubeMap
     std::unique_ptr<Texture> whiteCubeMap_;
     Microsoft::WRL::ComPtr<ID3D12Resource> whiteCubeMapResource_;
-    D3D12_GPU_DESCRIPTOR_HANDLE whiteCubeMapHandle_{0};
+    D3D12_GPU_DESCRIPTOR_HANDLE whiteCubeMapHandle_{ 0 };
+
 };

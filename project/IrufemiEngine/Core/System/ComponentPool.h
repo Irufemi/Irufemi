@@ -1,10 +1,10 @@
 #pragma once
-#include <array>
-#include <cstddef>
-#include <functional>
 #include <memory>
-#include <mutex>
 #include <vector>
+#include <array>
+#include <mutex>
+#include <functional>
+#include <cstddef>
 
 /**
  * @class ComponentPool
@@ -12,7 +12,8 @@
  * @tparam T 対象となるコンポーネントの型
  * @tparam ChunkSize 1つのチャンク（ブロック）に格納する要素数。デフォルトは1024。
  */
-template <typename T, size_t ChunkSize = 1024> class ComponentPool {
+template<typename T, size_t ChunkSize = 1024>
+class ComponentPool {
 public:
     /**
      * @brief Instance を取得する。
@@ -27,7 +28,7 @@ public:
      * @brief プールからメモリを確保し、コンポーネントを生成する
      * @return 確保されたコンポーネントの shared_ptr（カスタムデリータ付き）
      */
-    template <typename... Args>
+    template<typename... Args>
     /**
      * @brief Create を実行する。
      */
@@ -36,7 +37,7 @@ public:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(mutex_);
-
+        
         // 既存のチャンクから空きスロットを探す
         for (size_t chunkIdx = 0; chunkIdx < chunks_.size(); ++chunkIdx) {
             auto& chunk = chunks_[chunkIdx];
@@ -45,30 +46,33 @@ public:
                     chunk->active[i] = true;
                     // Placement new を使用して事前確保されたメモリ領域にオブジェクトを構築
                     T* ptr = new (&chunk->data[i]) T(std::forward<Args>(args)...);
-
+                    
                     // shared_ptrが破棄される際に呼ばれるカスタムデリータ
-                    return std::shared_ptr<T>(
-                        ptr, [chunkIdx, i](T* p) { ComponentPool::GetInstance().Free(chunkIdx, i, p); });
+                    return std::shared_ptr<T>(ptr, [chunkIdx, i](T* p) {
+                        ComponentPool::GetInstance().Free(chunkIdx, i, p);
+                    });
                 }
             }
         }
-
+        
         // 全チャンクが埋まっていれば新しいチャンクを追加
         auto newChunk = std::make_unique<Chunk>();
         newChunk->active[0] = true;
         T* ptr = new (&newChunk->data[0]) T(std::forward<Args>(args)...);
-
+        
         size_t newChunkIdx = chunks_.size();
         chunks_.push_back(std::move(newChunk));
-
-        return std::shared_ptr<T>(ptr, [newChunkIdx](T* p) { ComponentPool::GetInstance().Free(newChunkIdx, 0, p); });
+        
+        return std::shared_ptr<T>(ptr, [newChunkIdx](T* p) {
+            ComponentPool::GetInstance().Free(newChunkIdx, 0, p);
+        });
     }
 
     /**
      * @brief 確保されている全てのコンポーネントに対して一括で処理を行う（DODのコア）
      * @details メモリが連続しているため、CPUキャッシュヒット率が劇的に向上します
      */
-    template <typename Func>
+    template<typename Func>
     /**
      * @brief ForEach を実行する。
      */
@@ -130,7 +134,8 @@ private:
  * @brief 指定したコンポーネントがComponentPoolを使用するかどうかを判定するトレイト
  * @details プール対応させたいコンポーネントのヘッダで、この構造体を特殊化（std::true_type）してください。
  */
-template <typename T> struct IsPooledComponent : std::false_type {};
+template <typename T>
+struct IsPooledComponent : std::false_type {};
 
 class TransformComponent;
-template <> struct IsPooledComponent<TransformComponent> : std::true_type {};
+template<> struct IsPooledComponent<TransformComponent> : std::true_type {};

@@ -1,15 +1,15 @@
 #pragma once
-#include "Core/Math/Transform.h"
-#include "Core/System/ResourceHandle.h"
+#include "Renderer/System/Core/BaseResource.h"
+#include <vector>
 #include "RHI/DirectX12/DirectXCommon.h"
-#include "RHI/DirectX12/DynamicConstantBuffer.h"
+#include <wrl.h>
+#include <d3d12.h>
+#include "Renderer/Data/VertexData.h"
 #include "Renderer/Data/Material.h"
 #include "Renderer/Data/TransformationMatrix.h"
-#include "Renderer/Data/VertexData.h"
-#include "Renderer/System/Core/BaseResource.h"
-#include <d3d12.h>
-#include <vector>
-#include <wrl.h>
+#include "RHI/DirectX12/DynamicConstantBuffer.h"
+#include "Core/System/ResourceHandle.h"
+#include "Core/Math/Transform.h"
 
 class Camera;
 
@@ -39,31 +39,23 @@ public:
      * @brief CustomPSO を設定する。
      * @param[in] pso 設定する CustomPSO の値
      */
-    void SetCustomPSO(ID3D12PipelineState* pso) {
-        customPSO_ = pso;
-    }
+    void SetCustomPSO(ID3D12PipelineState* pso) { customPSO_ = pso; }
     /**
      * @brief CustomPSO を取得する。
      * @return 取得された CustomPSO
      */
-    ID3D12PipelineState* GetCustomPSO() const {
-        return customPSO_;
-    }
+    ID3D12PipelineState* GetCustomPSO() const { return customPSO_; }
 
     /**
      * @brief CustomCBVAddress を設定する。
      * @param[in] addr 設定する CustomCBVAddress の値
      */
-    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) {
-        customCBVAddress_ = addr;
-    }
+    void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) { customCBVAddress_ = addr; }
     /**
      * @brief CustomCBVAddress を取得する。
      * @return 取得された CustomCBVAddress
      */
-    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const {
-        return customCBVAddress_;
-    }
+    D3D12_GPU_VIRTUAL_ADDRESS GetCustomCBVAddress() const { return customCBVAddress_; }
 
 public:
     // --- 頂点バッファ ---
@@ -80,32 +72,28 @@ public:
     uint32_t indexCount_ = 0;
 
     // --- マテリアル ---
-    Irufemi::Transform uvTransform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+    Irufemi::Transform uvTransform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     Material cpuMaterialData_{};
     /**
      * @brief MaterialData を取得する。
      * @return 取得された MaterialData
      */
-    Material* GetMaterialData() {
-        return &cpuMaterialData_;
-    }
-
+    Material* GetMaterialData() { return &cpuMaterialData_; }
+    
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
-    Irufemi::Transform transform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+    Irufemi::Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
     TransformationMatrix transformationMatrix_{};
-
+    
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
     uint32_t* externalTransformCbIndex_ = nullptr;
-
+    
     /**
      * @brief TransformationMatrix を取得する。
      * @return 取得された TransformationMatrix
      */
-    const TransformationMatrix& GetTransformationMatrix() const {
-        return transformationMatrix_;
-    }
+    const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
 
     // --- getters ---
     /**
@@ -118,12 +106,12 @@ public:
      * @return 取得された TransformVAddress
      */
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
-
+    
     /**
      * @brief SyncBeforeDraw を実行する。
      */
     void SyncBeforeDraw();
-
+    
     // --- 外部リソースの借用 (StaticModelObject/AnimationModel等で共有するため) ---
     /**
      * @brief ExternalTransformCbIndex を設定する。

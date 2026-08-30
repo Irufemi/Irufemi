@@ -1,10 +1,10 @@
 #pragma once
 
 #ifdef EditorMode
-#include "Core/EditorManager.h"
 #include "Core/ICommand.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Core/EditorManager.h"
 #include <functional>
 #include <memory>
 
@@ -12,17 +12,14 @@
  * @class ChangeValueCommand
  * @brief 蛟､縺ｮ螟画峩繧定ｨ倬鹸縺励ゞndo/Redo 繧定｡後≧豎守畑繧ｳ繝槭Φ繝・
  */
-template <typename T> class ChangeValueCommand : public ICommand {
+template<typename T>
+class ChangeValueCommand : public ICommand {
 public:
     ChangeValueCommand(const T& oldValue, const T& newValue, std::function<void(const T&)> setter)
         : oldValue_(oldValue), newValue_(newValue), setter_(setter) {}
 
-    void Do() override {
-        setter_(newValue_);
-    }
-    void Undo() override {
-        setter_(oldValue_);
-    }
+    void Do() override { setter_(newValue_); }
+    void Undo() override { setter_(oldValue_); }
 
 private:
     T oldValue_;
@@ -36,29 +33,22 @@ private:
  */
 class CreateObjectCommand : public ICommand {
 public:
-    CreateObjectCommand(BaseScene* scene, std::shared_ptr<GameObject> object,
-                        std::shared_ptr<GameObject> parent = nullptr, size_t index = (size_t)-1)
+    CreateObjectCommand(BaseScene* scene, std::shared_ptr<GameObject> object, std::shared_ptr<GameObject> parent = nullptr, size_t index = (size_t)-1)
         : scene_(scene), object_(object), parent_(parent), index_(index) {}
 
     void Do() override {
         if (parent_) {
-            if (index_ == (size_t)-1)
-                parent_->AddChild(object_);
-            else
-                parent_->InsertChild(object_, index_);
+            if (index_ == (size_t)-1) parent_->AddChild(object_);
+            else parent_->InsertChild(object_, index_);
         } else {
-            if (index_ == (size_t)-1)
-                scene_->AddGameObject(object_);
-            else
-                scene_->InsertGameObject(object_, index_);
+            if (index_ == (size_t)-1) scene_->AddGameObject(object_);
+            else scene_->InsertGameObject(object_, index_);
         }
     }
 
     void Undo() override {
-        if (parent_)
-            parent_->RemoveChild(object_);
-        else
-            scene_->RemoveGameObject(object_);
+        if (parent_) parent_->RemoveChild(object_);
+        else scene_->RemoveGameObject(object_);
     }
 
 private:
@@ -74,7 +64,8 @@ private:
  */
 class DeleteObjectCommand : public ICommand {
 public:
-    DeleteObjectCommand(BaseScene* scene, std::shared_ptr<GameObject> object) : scene_(scene), object_(object) {
+    DeleteObjectCommand(BaseScene* scene, std::shared_ptr<GameObject> object)
+        : scene_(scene), object_(object) {
         parent_ = object->GetParent();
         if (parent_) {
             index_ = parent_->GetChildIndex(object);
@@ -84,10 +75,8 @@ public:
     }
 
     void Do() override {
-        if (parent_)
-            parent_->RemoveChild(object_);
-        else
-            scene_->RemoveGameObject(object_);
+        if (parent_) parent_->RemoveChild(object_);
+        else scene_->RemoveGameObject(object_);
     }
 
     void Undo() override {

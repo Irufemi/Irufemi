@@ -1,13 +1,13 @@
 #pragma once
-#include "Framework/Scene/SceneTransition.h"
-#include <atomic>
 #include <functional>
-#include <future>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <future>
+#include <mutex>
+#include <atomic>
+#include "Framework/Scene/SceneTransition.h"
 
 class IrufemiEngine;
 class IScene;
@@ -71,15 +71,13 @@ public:
      * @param[in] duration 演出時間（秒）
      * @param[in] easeType 演出のイージングタイプ（デフォルトは線形）
      */
-    void TransitionTo(const Key& next, SceneTransition::Type type, float duration,
-                      EaseType easeType = EaseType::Linear);
+    void TransitionTo(const Key& next, SceneTransition::Type type, float duration, EaseType easeType = EaseType::Linear);
 
     /**
      * @brief データ駆動シーン(JSON)への遷移を開始する
      * @param[in] sceneJsonName 読み込むJSON名 (拡張子なし)
      */
-    void LoadScene(const std::string& sceneJsonName, SceneTransition::Type type = SceneTransition::Type::Fade,
-                   float duration = 1.0f, EaseType easeType = EaseType::Linear);
+    void LoadScene(const std::string& sceneJsonName, SceneTransition::Type type = SceneTransition::Type::Fade, float duration = 1.0f, EaseType easeType = EaseType::Linear);
 
     /**
      * @brief 現在のシーンの上に新しいシーンを重ねる（同期）
@@ -139,9 +137,7 @@ public:
     ///@}
 
     /** @brief シーンの初期化（Initialize）実行中かどうかを取得 */
-    bool IsInitializing() const {
-        return isInitializing_;
-    }
+    bool IsInitializing() const { return isInitializing_; }
 
     /** @brief ロード画面を表示すべきロード中（または遷移中）かどうかを取得 */
     bool IsLoading() const;
@@ -154,7 +150,7 @@ private:
     IrufemiEngine* engine_ = nullptr; ///< エンジン本体への参照
 
     std::unordered_map<Key, Factory> factories_; ///< シーン識別名と生成関数のマップ
-    std::vector<Key> order_;                     ///< 登録されたシーン名のリスト（順序保持用）
+    std::vector<Key> order_; ///< 登録されたシーン名のリスト（順序保持用）
 
     struct SceneStackItem {
         Key name;
@@ -162,7 +158,7 @@ private:
     };
     std::vector<SceneStackItem> sceneStack_; ///< 現在実行中のシーンスタック
 
-    Key pending_{}; ///< 次フレームで切り替え予定のシーン名
+    Key pending_{};      ///< 次フレームで切り替え予定のシーン名
 
     bool isInitializing_ = false; ///< シーンの初期化（Initialize）実行中フラグ
 
@@ -173,7 +169,7 @@ private:
     float pendingDuration_ = 1.0f;
     EaseType pendingEaseType_ = EaseType::Linear;
 
-    bool wasLoading_ = false;   ///< 前フレームがロード中だったか
+    bool wasLoading_ = false; ///< 前フレームがロード中だったか
     float loadingTimer_ = 0.0f; ///< ロード状態の継続時間を計測するタイマー
 
     // --- 非同期読み込み用 ---

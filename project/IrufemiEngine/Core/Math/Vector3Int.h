@@ -1,5 +1,6 @@
 #pragma once
 
+
 namespace Irufemi {
 struct Vector3Int {
     int x;

@@ -1,7 +1,7 @@
 #pragma once
-#include "Resource/Model/Data/Animation.h"
-#include <cstdint>
 #include <string>
+#include <cstdint>
+#include "Resource/Model/Data/Animation.h"
 
 class AnimationSerializer {
 public:

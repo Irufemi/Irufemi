@@ -29,7 +29,5 @@ public:
     /**
      * @brief コアが露出している（ダメージを受け付ける/ターゲット可能）状態かどうか
      */
-    virtual bool IsCoreExposed() const {
-        return false;
-    }
+    virtual bool IsCoreExposed() const { return false; }
 };

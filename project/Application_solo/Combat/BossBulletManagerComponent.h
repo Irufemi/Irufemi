@@ -1,9 +1,9 @@
 #pragma once
-#include "Core/Math/Vector3.h"
 #include "Framework/Component/Component.h"
+#include "Core/Math/Vector3.h"
 #include <memory>
-#include <queue>
 #include <vector>
+#include <queue>
 
 class GameObject;
 class VirtualEntityManagerComponent;
@@ -18,9 +18,7 @@ public:
     void Update() override;
 
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override {
-        return "BossBulletManagerComponent";
-    }
+    std::string GetComponentName() const override { return "BossBulletManagerComponent"; }
 
     /**
      * @brief 指定した座標と速度で弾を発射する
@@ -40,7 +38,7 @@ private:
 
     int maxBullets_ = 2000;
     float defaultLifeTime_ = 5.0f;
-    Irufemi::Vector3 bulletScale_ = {0.5f, 0.5f, 0.5f};
+    Irufemi::Vector3 bulletScale_ = { 0.5f, 0.5f, 0.5f };
     float hitRadius_ = 2.0f;
     std::string hitEffectKey_ = "Dust";
     std::string explosionModelPath_ = "resources/model/BossBulletSphere.obj";

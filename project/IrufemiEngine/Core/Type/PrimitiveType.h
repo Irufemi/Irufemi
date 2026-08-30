@@ -1,5 +1,6 @@
 #pragma once
 
+
 namespace Irufemi {
 enum class PrimitiveType {
     Triangle,

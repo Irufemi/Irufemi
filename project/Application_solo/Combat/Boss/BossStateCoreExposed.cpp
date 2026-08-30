@@ -1,25 +1,28 @@
 #include "Combat/Boss/BossStateCoreExposed.h"
-#include "Combat/Boss/BossComponent.h"
 #include "Combat/Boss/BossStateDestroyed.h"
+#include "Combat/Boss/BossComponent.h"
 #include "Core/Utility/Log.h"
-#include "Framework/Component/Camera/CameraShakeComponent.h"
-#include "Framework/GameObject/GameObject.h"
-#include "Framework/Scene/BaseScene.h"
 #include <iostream>
 #include <memory>
+#include <string>
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/Component/Camera/CameraShakeComponent.h"
 #include <string>
 
 void BossStateCoreExposed::Enter(BossComponent* boss) {
     Log::OutPutLog(std::cout, "Boss entered CoreExposed State (Vulnerable)\n");
 }
 
-void BossStateCoreExposed::Update(BossComponent* boss) {}
+void BossStateCoreExposed::Update(BossComponent* boss) {
+}
 
-void BossStateCoreExposed::Exit(BossComponent* boss) {}
+void BossStateCoreExposed::Exit(BossComponent* boss) {
+}
 
 void BossStateCoreExposed::OnTakeDamage(BossComponent* boss, float damage) {
     boss->hp_ -= damage;
-
+    
     std::string dmgLog = "Boss took damage! HP: " + std::to_string(boss->hp_) + "\n";
     Log::OutPutLog(std::cout, dmgLog);
 

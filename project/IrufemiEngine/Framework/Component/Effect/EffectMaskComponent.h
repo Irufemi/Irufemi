@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include "Renderer/PostProcess/PostProcessManager.h"
 #include <string>
+#include "Renderer/PostProcess/PostProcessManager.h"
 
 class MeshRendererComponent;
 
@@ -28,17 +28,13 @@ public:
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override {
-        return true;
-    }
+    bool CanUpdateInEditMode() const override { return true; }
 
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override {
-        return "EffectMaskComponent";
-    }
+    std::string GetComponentName() const override { return "EffectMaskComponent"; }
     /**
      * @brief Serialize を実行する。
      */
@@ -57,54 +53,40 @@ public:
      * @brief EnableEffectMask を設定する。
      * @param[in] enable 設定する EnableEffectMask の値
      */
-    void SetEnableEffectMask(bool enable) {
-        enableEffectMask_ = enable;
-    }
+    void SetEnableEffectMask(bool enable) { enableEffectMask_ = enable; }
     /**
      * @brief EnableEffectMask を取得する。
      * @return 取得された EnableEffectMask
      */
-    bool GetEnableEffectMask() const {
-        return enableEffectMask_;
-    }
+    bool GetEnableEffectMask() const { return enableEffectMask_; }
 
     /**
      * @brief CustomEffectType を設定する。
      * @param[in] type 設定する CustomEffectType の値
      */
-    void SetCustomEffectType(int32_t type) {
-        customEffectType_ = type;
-    }
+    void SetCustomEffectType(int32_t type) { customEffectType_ = type; }
     /**
      * @brief CustomEffectType を取得する。
      * @return 取得された CustomEffectType
      */
-    int32_t GetCustomEffectType() const {
-        return customEffectType_;
-    }
+    int32_t GetCustomEffectType() const { return customEffectType_; }
 
     /**
      * @brief CachedEffectParam を取得する。
      * @return 取得された CachedEffectParam
      */
-    float GetCachedEffectParam() const {
-        return cachedEffectParam_;
-    }
+    float GetCachedEffectParam() const { return cachedEffectParam_; }
 
     /**
      * @brief CustomParams を取得する。
      * @return 取得された CustomParams
      */
-    PostProcessManager::CustomEffectParams& GetCustomParams() {
-        return customParams_;
-    }
+    PostProcessManager::CustomEffectParams& GetCustomParams() { return customParams_; }
     /**
      * @brief CustomParams を取得する。
      * @return 取得された CustomParams
      */
-    const PostProcessManager::CustomEffectParams& GetCustomParams() const {
-        return customParams_;
-    }
+    const PostProcessManager::CustomEffectParams& GetCustomParams() const { return customParams_; }
 
 private:
     /**
@@ -116,6 +98,6 @@ private:
     int32_t customEffectType_ = 0;
     float cachedEffectParam_ = 0.0f;
     PostProcessManager::CustomEffectParams customParams_;
-
+    
     MeshRendererComponent* cachedRenderer_ = nullptr;
 };

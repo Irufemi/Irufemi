@@ -1,6 +1,6 @@
 #pragma once
-#include "Resource/Model/Data/Animation.h"
 #include <string>
+#include "Resource/Model/Data/Animation.h"
 
 class AnimationImporter {
 public:

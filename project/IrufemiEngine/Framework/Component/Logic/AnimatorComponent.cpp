@@ -1,8 +1,8 @@
 #include "Framework/Component/Logic/AnimatorComponent.h"
-#include "Core/System/IrufemiEngine.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject/GameObject.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Framework/Scene/BaseScene.h"
 
 AnimatorComponent::AnimatorComponent() {
@@ -47,7 +47,7 @@ void AnimatorComponent::Update() {
         SkeletonPose* pose = renderer->GetRawObject()->GetInternalSkeletonPose();
         if (pose && pose->data) {
             animator_->Update(*pose);
-
+            
             // ルートモーションをGameObjectのTransformに適用する
             if (applyRootMotion_ && GetGameObject()) {
                 auto transform = GetTransform();
@@ -59,7 +59,7 @@ void AnimatorComponent::Update() {
                     // TODO: 厳密にはキャラクターの現在の回転を考慮してdeltaTransをワールド空間に変換して足す必要がある
                     // 今回は簡易的にローカル移動量をそのまま加算する
                     transform->SetPosition(Irufemi::Math::Add(transform->GetPosition(), deltaTrans));
-
+                    
                     // 回転も合成する場合（TransformComponentがオイラー角ならQuaternionに変換してから合成して戻す）
                     // ひとまず移動のみ適用でも効果は確認できる
                 }
@@ -72,10 +72,12 @@ void AnimatorComponent::Update() {
 }
 
 void AnimatorComponent::OnRegisterProperties() {
-    RegisterProperty("Default Animation", &defaultAnimation_).SetTooltip("The name of the initial animation to play");
-
-    RegisterProperty("Playback Speed", &playbackSpeed_).SetTooltip("Animation playback speed multiplier");
-
+    RegisterProperty("Default Animation", &defaultAnimation_)
+        .SetTooltip("The name of the initial animation to play");
+        
+    RegisterProperty("Playback Speed", &playbackSpeed_)
+        .SetTooltip("Animation playback speed multiplier");
+        
     RegisterProperty("Apply Root Motion", &applyRootMotion_)
         .SetTooltip("Apply animation root motion to GameObject transform");
 }

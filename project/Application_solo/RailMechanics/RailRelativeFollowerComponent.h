@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Math/Vector3.h"
 #include "Framework/Component/Component.h"
-#include <memory>
+#include "Core/Math/Vector3.h"
 #include <string>
+#include <memory>
 
 class GameObject;
 class SplineFollowerComponent;
@@ -22,18 +22,16 @@ public:
     void Update() override;
 
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override {
-        return "RailRelativeFollowerComponent";
-    }
+    std::string GetComponentName() const override { return "RailRelativeFollowerComponent"; }
 
     void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
 private:
-    uint64_t targetObjectID_ = 0;  ///< 追従する基準となるターゲットのオブジェクトID
-    float distanceOffset_ = 80.0f; ///< ターゲットからどれだけ前方に離れるか (m)
-    Irufemi::Vector3 localOffset_ = {0.0f, 0.0f, 0.0f}; ///< レール中心からのXYローカルオフセット
+    uint64_t targetObjectID_ = 0;                  ///< 追従する基準となるターゲットのオブジェクトID
+    float distanceOffset_ = 80.0f;                 ///< ターゲットからどれだけ前方に離れるか (m)
+    Irufemi::Vector3 localOffset_ = {0.0f, 0.0f, 0.0f};     ///< レール中心からのXYローカルオフセット
 
     std::weak_ptr<GameObject> targetObject_;
     SplineFollowerComponent* targetFollower_ = nullptr;
-    SplineComponent* cachedPath_ = nullptr; ///< ターゲットが乗っているレール（スプライン）
+    SplineComponent* cachedPath_ = nullptr;        ///< ターゲットが乗っているレール（スプライン）
 };

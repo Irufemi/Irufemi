@@ -20,5 +20,6 @@ DEFINE_CVAR_BOOL("d.ShowFPS", false, "Show FPS counter on screen");
 
 // 静的ライブラリでリンク落ちを防ぐためのダミー関数
 namespace Irufemi {
-void ReferenceEngineCVars() {}
-} // namespace Irufemi
+    void ReferenceEngineCVars() {}
+}
+

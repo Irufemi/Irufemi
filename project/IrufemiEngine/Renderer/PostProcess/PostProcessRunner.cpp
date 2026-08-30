@@ -1,23 +1,35 @@
 #include "Renderer/PostProcess/PostProcessRunner.h"
-#include "Core/System/IrufemiEngine.h"
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DirectXUtils.h"
+#include "Core/System/IrufemiEngine.h"
 #include <algorithm>
 #include <cassert>
 
 using Mode = PostProcessManager::Mode;
 
 bool PostProcessRunner::RequiresSeparatePass(Mode mode) const {
-    return (mode == Mode::GaussianFilter || mode == Mode::DepthBasedOutline || mode == Mode::RadialBlur ||
-            mode == Mode::Glitch || mode == Mode::DualKawaseBlur || mode == Mode::Pointillism ||
-            mode == Mode::Kaleidoscope || mode == Mode::ChromaticAberration || mode == Mode::DisplacementMap ||
-            mode == Mode::DirectionalBlur || mode == Mode::DepthOfField);
+    return (mode == Mode::GaussianFilter ||
+            mode == Mode::DepthBasedOutline ||
+            mode == Mode::RadialBlur ||
+            mode == Mode::Glitch ||
+            mode == Mode::DualKawaseBlur ||
+            mode == Mode::Pointillism ||
+            mode == Mode::Kaleidoscope ||
+            mode == Mode::ChromaticAberration ||
+            mode == Mode::DisplacementMap ||
+            mode == Mode::DirectionalBlur ||
+            mode == Mode::DepthOfField);
 }
 
-RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12GraphicsCommandList* commandList,
-                                      const std::vector<Mode>& modes, RenderTexture* srcTexture,
-                                      D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
-                                      const PostProcessManager::PostProcessWorkspace& workspace, bool isFinalOutput) {
+RenderTexture* PostProcessRunner::Run(
+    PostProcessManager* manager,
+    ID3D12GraphicsCommandList* commandList,
+    const std::vector<Mode>& modes,
+    RenderTexture* srcTexture,
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+    const PostProcessManager::PostProcessWorkspace& workspace,
+    bool isFinalOutput) 
+{
     RenderTexture* currentSource = srcTexture;
 
     bool needsFinalPass = isFinalOutput;
@@ -29,10 +41,10 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
     while (modeIdx < modes.size()) {
         Mode mode = modes[modeIdx];
         bool isLastBatch = (modeIdx == modes.size() - 1);
-
+        
         // Final Output なら rtvHandle に書き込むが、途中のレイヤーであれば pingpong などの RenderTexture に書く
         bool writeToScreen = isFinalOutput && isLastBatch;
-
+        
         // 1) Bloom
         if (mode == Mode::Bloom) {
             bool writeToScreen = false;
@@ -40,74 +52,46 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
             }
 
             RenderTexture* bloomExtract = workspace.bloomExtract;
             RenderTexture* blurH = workspace.bloomBlur;
             RenderTexture* blurV = workspace.bloomExtract;
 
-            DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(),
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
-            manager->DrawSinglePass(commandList, Mode::Bloom, currentSource, bloomExtract->GetRtvHandle(), false,
-                                    manager->bloomExtractPSO_.Get());
-            DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(),
-                                            D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-            manager->bloomParams_.direction = {1.0f, 0.0f};
-            if (manager->mappedBloom_) {
-                *(manager->mappedBloom_) = manager->bloomParams_;
-            }
-            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(),
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
-            manager->DrawSinglePass(commandList, Mode::Bloom, bloomExtract, blurH->GetRtvHandle(), false,
-                                    manager->bloomBlurHPSO_.Get());
-            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-            manager->bloomParams_.direction = {0.0f, 1.0f};
-            if (manager->mappedBloom_) {
-                *(manager->mappedBloom_) = manager->bloomParams_;
-            }
-            DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(),
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
-            manager->DrawSinglePass(commandList, Mode::Bloom, blurH, blurV->GetRtvHandle(), false,
-                                    manager->bloomBlurVPSO_.Get());
-            DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
+            DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            manager->DrawSinglePass(commandList, Mode::Bloom, currentSource, bloomExtract->GetRtvHandle(), false, manager->bloomExtractPSO_.Get());
+            DirectXUtils::TransitionBarrier(commandList, bloomExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            
+            manager->bloomParams_.direction = { 1.0f, 0.0f };
+            if (manager->mappedBloom_) { *(manager->mappedBloom_) = manager->bloomParams_; }
+            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            manager->DrawSinglePass(commandList, Mode::Bloom, bloomExtract, blurH->GetRtvHandle(), false, manager->bloomBlurHPSO_.Get());
+            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            
+            manager->bloomParams_.direction = { 0.0f, 1.0f };
+            if (manager->mappedBloom_) { *(manager->mappedBloom_) = manager->bloomParams_; }
+            DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            manager->DrawSinglePass(commandList, Mode::Bloom, blurH, blurV->GetRtvHandle(), false, manager->bloomBlurVPSO_.Get());
+            DirectXUtils::TransitionBarrier(commandList, blurV->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            
             commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-            float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+            float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
             commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
-            commandList->SetPipelineState(writeToScreen ? manager->finalBloomCombinePSO_.Get()
-                                                        : manager->bloomCombinePSO_.Get());
+            commandList->SetPipelineState(writeToScreen ? manager->finalBloomCombinePSO_.Get() : manager->bloomCombinePSO_.Get());
             commandList->SetGraphicsRootSignature(manager->rootSig_);
             commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex =
-                currentSource ? currentSource->GetSrvIndex() : 0;
-            manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex =
-                blurV ? blurV->GetSrvIndex() : 0;
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
-                                                           manager->bindlessCB_->GetGPUVirtualAddress() +
-                                                               manager->bindlessBufferOffset_ *
-                                                                   sizeof(PostProcessManager::BindlessParams));
+            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
+            manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex = blurV ? blurV->GetSrvIndex() : 0;
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, manager->bindlessCB_->GetGPUVirtualAddress() + manager->bindlessBufferOffset_ * sizeof(PostProcessManager::BindlessParams));
             manager->bindlessBufferOffset_++;
-
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
-                                                           manager->bloomCB_->GetGPUVirtualAddress());
+            
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, manager->bloomCB_->GetGPUVirtualAddress());
             commandList->DrawInstanced(3, 1, 0, 0);
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
                 pingPongIdx++;
                 finalWrittenTexture = nextTarget;
             } else {
@@ -123,76 +107,52 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
             }
 
             RenderTexture* lsExtract = workspace.lsExtract;
             RenderTexture* lsBlur = workspace.lsBlur;
 
-            DirectXUtils::TransitionBarrier(commandList, lsExtract->GetResource(),
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
+            DirectXUtils::TransitionBarrier(commandList, lsExtract->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
             D3D12_CPU_DESCRIPTOR_HANDLE lsExtractRtv = lsExtract->GetRtvHandle();
             commandList->OMSetRenderTargets(1, &lsExtractRtv, false, nullptr);
-            float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+            float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
             commandList->ClearRenderTargetView(lsExtractRtv, clearColor, 0, nullptr);
             commandList->SetPipelineState(manager->lsExtractPSO_.Get());
             commandList->SetGraphicsRootSignature(manager->rootSig_);
             commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex =
-                currentSource ? currentSource->GetSrvIndex() : 0;
+            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
             manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex = manager->depthSrvIndex_;
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
-                                                           manager->bindlessCB_->GetGPUVirtualAddress() +
-                                                               manager->bindlessBufferOffset_ *
-                                                                   sizeof(PostProcessManager::BindlessParams));
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, manager->bindlessCB_->GetGPUVirtualAddress() + manager->bindlessBufferOffset_ * sizeof(PostProcessManager::BindlessParams));
             manager->bindlessBufferOffset_++;
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
-                                                           manager->lightShaftsCB_->GetGPUVirtualAddress());
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, manager->lightShaftsCB_->GetGPUVirtualAddress());
             commandList->DrawInstanced(3, 1, 0, 0);
-            DirectXUtils::TransitionBarrier(commandList, lsExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            DirectXUtils::TransitionBarrier(commandList, lsExtract->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-            DirectXUtils::TransitionBarrier(commandList, lsBlur->GetResource(),
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
+            DirectXUtils::TransitionBarrier(commandList, lsBlur->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
             D3D12_CPU_DESCRIPTOR_HANDLE lsBlurRtv = lsBlur->GetRtvHandle();
             commandList->OMSetRenderTargets(1, &lsBlurRtv, false, nullptr);
             commandList->ClearRenderTargetView(lsBlurRtv, clearColor, 0, nullptr);
             commandList->SetPipelineState(manager->lsRadialBlurPSO_.Get());
             manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = lsExtract->GetSrvIndex();
             manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex = 0;
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
-                                                           manager->bindlessCB_->GetGPUVirtualAddress() +
-                                                               manager->bindlessBufferOffset_ *
-                                                                   sizeof(PostProcessManager::BindlessParams));
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, manager->bindlessCB_->GetGPUVirtualAddress() + manager->bindlessBufferOffset_ * sizeof(PostProcessManager::BindlessParams));
             manager->bindlessBufferOffset_++;
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
-                                                           manager->lightShaftsCB_->GetGPUVirtualAddress());
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, manager->lightShaftsCB_->GetGPUVirtualAddress());
             commandList->DrawInstanced(3, 1, 0, 0);
-            DirectXUtils::TransitionBarrier(commandList, lsBlur->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            DirectXUtils::TransitionBarrier(commandList, lsBlur->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
             commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
             commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
-            commandList->SetPipelineState(writeToScreen ? manager->finalLsCombinePSO_.Get()
-                                                        : manager->lsCombinePSO_.Get());
-            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex =
-                currentSource ? currentSource->GetSrvIndex() : 0;
+            commandList->SetPipelineState(writeToScreen ? manager->finalLsCombinePSO_.Get() : manager->lsCombinePSO_.Get());
+            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
             manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex = lsBlur->GetSrvIndex();
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
-                                                           manager->bindlessCB_->GetGPUVirtualAddress() +
-                                                               manager->bindlessBufferOffset_ *
-                                                                   sizeof(PostProcessManager::BindlessParams));
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, manager->bindlessCB_->GetGPUVirtualAddress() + manager->bindlessBufferOffset_ * sizeof(PostProcessManager::BindlessParams));
             manager->bindlessBufferOffset_++;
             commandList->DrawInstanced(3, 1, 0, 0);
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
                 pingPongIdx++;
                 finalWrittenTexture = nextTarget;
             } else {
@@ -208,12 +168,9 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
             RenderTexture* blurH = workspace.bloomBlur;
-            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(),
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
+            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-            ID3D12PipelineState* psoH =
-                (mode == Mode::Smoothing) ? manager->smoothingBlurPSO_.Get() : manager->gaussianBlurPSO_.Get();
+            ID3D12PipelineState* psoH = (mode == Mode::Smoothing) ? manager->smoothingBlurPSO_.Get() : manager->gaussianBlurPSO_.Get();
             ID3D12PipelineState* psoV = nullptr;
             if (mode == Mode::Smoothing) {
                 psoV = writeToScreen ? manager->finalSmoothingBlurPSO_.Get() : manager->smoothingBlurPSO_.Get();
@@ -222,48 +179,35 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             }
 
             if (mode == Mode::Smoothing) {
-                manager->smoothingParams_.direction = {1.0f, 0.0f};
-                if (manager->mappedSmoothing_) {
-                    *(manager->mappedSmoothing_) = manager->smoothingParams_;
-                }
+                manager->smoothingParams_.direction = { 1.0f, 0.0f };
+                if (manager->mappedSmoothing_) { *(manager->mappedSmoothing_) = manager->smoothingParams_; }
             } else {
-                manager->gaussianParams_.direction = {1.0f, 0.0f};
-                if (manager->mappedGaussian_) {
-                    *(manager->mappedGaussian_) = manager->gaussianParams_;
-                }
+                manager->gaussianParams_.direction = { 1.0f, 0.0f };
+                if (manager->mappedGaussian_) { *(manager->mappedGaussian_) = manager->gaussianParams_; }
             }
             manager->DrawSinglePass(commandList, mode, currentSource, blurH->GetRtvHandle(), false, psoH);
-
-            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            
+            DirectXUtils::TransitionBarrier(commandList, blurH->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
             }
 
             if (mode == Mode::Smoothing) {
-                manager->smoothingParams_.direction = {0.0f, 1.0f};
-                if (manager->mappedSmoothing_) {
-                    *(manager->mappedSmoothing_) = manager->smoothingParams_;
-                }
+                manager->smoothingParams_.direction = { 0.0f, 1.0f };
+                if (manager->mappedSmoothing_) { *(manager->mappedSmoothing_) = manager->smoothingParams_; }
             } else {
-                manager->gaussianParams_.direction = {0.0f, 1.0f};
-                if (manager->mappedGaussian_) {
-                    *(manager->mappedGaussian_) = manager->gaussianParams_;
-                }
+                manager->gaussianParams_.direction = { 0.0f, 1.0f };
+                if (manager->mappedGaussian_) { *(manager->mappedGaussian_) = manager->gaussianParams_; }
             }
-
+            
             commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-            float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+            float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
             commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
             manager->DrawSinglePass(commandList, mode, blurH, targetHandle, writeToScreen, psoV);
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
                 pingPongIdx++;
                 finalWrittenTexture = nextTarget;
             } else {
@@ -278,15 +222,13 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             RenderTexture* nextTarget = writeToScreen ? nullptr : workspace.workTextures[pingPongIdx % 2];
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
-            int32_t iterations = (std::min)(PostProcessManager::kMaxKawaseIterations,
-                                            (std::max)(1, manager->dualKawaseParams_.iterationCount));
+            int32_t iterations = (std::min)(PostProcessManager::kMaxKawaseIterations, (std::max)(1, manager->dualKawaseParams_.iterationCount));
             RenderTexture* prevSource = currentSource;
-
+            
             for (int i = 0; i < iterations; ++i) {
                 RenderTexture* kwTex = workspace.kawaseTextures[i];
-                if (!kwTex)
-                    break;
-
+                if (!kwTex) break;
+                
                 D3D12_VIEWPORT viewport{};
                 viewport.Width = (FLOAT)kwTex->GetWidth();
                 viewport.Height = (FLOAT)kwTex->GetHeight();
@@ -299,29 +241,22 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 scissorRect.bottom = kwTex->GetHeight();
                 commandList->RSSetScissorRects(1, &scissorRect);
 
-                DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(),
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-                if (manager->mappedDualKawase_) {
-                    *(manager->mappedDualKawase_) = manager->dualKawaseParams_;
-                }
-                manager->DrawSinglePass(commandList, Mode::DualKawaseBlur, prevSource, kwTex->GetRtvHandle(), false,
-                                        manager->dualKawaseDownsamplePSO_.Get());
-
-                DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+                
+                if (manager->mappedDualKawase_) { *(manager->mappedDualKawase_) = manager->dualKawaseParams_; }
+                manager->DrawSinglePass(commandList, Mode::DualKawaseBlur, prevSource, kwTex->GetRtvHandle(), false, manager->dualKawaseDownsamplePSO_.Get());
+                
+                DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
                 prevSource = kwTex;
             }
 
             for (int i = iterations - 2; i >= 0; --i) {
                 RenderTexture* kwTex = workspace.kawaseTextures[i];
-                if (!kwTex && i != 0)
-                    continue;
-
+                if (!kwTex && i != 0) continue; 
+                
                 bool isFinalUp = (i == 0);
                 D3D12_CPU_DESCRIPTOR_HANDLE upHandle = isFinalUp ? targetHandle : kwTex->GetRtvHandle();
-
+                
                 uint32_t tw = isFinalUp ? manager->engine_->GetGameResolutionWidth() : kwTex->GetWidth();
                 uint32_t th = isFinalUp ? manager->engine_->GetGameResolutionHeight() : kwTex->GetHeight();
 
@@ -338,35 +273,25 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 commandList->RSSetScissorRects(1, &scissorRect);
 
                 if (!isFinalUp) {
-                    DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(),
-                                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                                    D3D12_RESOURCE_STATE_RENDER_TARGET);
+                    DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
                 } else if (!writeToScreen) {
-                    DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                                    D3D12_RESOURCE_STATE_RENDER_TARGET);
+                    DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
                 }
-
-                ID3D12PipelineState* upPso = (isFinalUp && writeToScreen) ? manager->finalDualKawaseUpsamplePSO_.Get()
-                                                                          : manager->dualKawaseUpsamplePSO_.Get();
-
+                
+                ID3D12PipelineState* upPso = (isFinalUp && writeToScreen) ? manager->finalDualKawaseUpsamplePSO_.Get() : manager->dualKawaseUpsamplePSO_.Get();
+                
                 if (isFinalUp) {
                     commandList->OMSetRenderTargets(1, &upHandle, false, nullptr);
-                    float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+                    float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
                     commandList->ClearRenderTargetView(upHandle, clearColor, 0, nullptr);
                 }
 
-                manager->DrawSinglePass(commandList, Mode::DualKawaseBlur, prevSource, upHandle,
-                                        (isFinalUp && writeToScreen), upPso);
-
+                manager->DrawSinglePass(commandList, Mode::DualKawaseBlur, prevSource, upHandle, (isFinalUp && writeToScreen), upPso);
+                
                 if (!isFinalUp) {
-                    DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(),
-                                                    D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                    DirectXUtils::TransitionBarrier(commandList, kwTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
                 } else if (!writeToScreen) {
-                    DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                    D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                    DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
                     pingPongIdx++;
                     finalWrittenTexture = nextTarget;
                 } else {
@@ -377,7 +302,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
 
             D3D12_VIEWPORT fullViewport{};
             D3D12_RECT fullScissorRect{};
-
+            
             if (writeToScreen) {
                 // 画面に出力する場合はレターボックス（黒帯）処理を行う
 #ifdef EditorMode
@@ -395,10 +320,10 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
                 float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
                 float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
-
+                
                 float aspectGame = gameW / gameH;
                 float aspectClient = clientW / clientH;
-
+                
                 if (aspectClient > aspectGame) {
                     fullViewport.Height = clientH;
                     fullViewport.Width = clientH * aspectGame;
@@ -426,7 +351,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 fullScissorRect.top = 0;
                 fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
             }
-
+            
             fullViewport.MinDepth = 0.0f;
             fullViewport.MaxDepth = 1.0f;
             commandList->RSSetViewports(1, &fullViewport);
@@ -439,11 +364,14 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         else {
             std::vector<Mode> batch;
             size_t lookAhead = modeIdx;
-            while (lookAhead < modes.size() && modes[lookAhead] != Mode::Bloom &&
-                   modes[lookAhead] != Mode::LightShafts && modes[lookAhead] != Mode::Smoothing &&
-                   modes[lookAhead] != Mode::GaussianFilter && modes[lookAhead] != Mode::DualKawaseBlur &&
+            while (lookAhead < modes.size() && 
+                   modes[lookAhead] != Mode::Bloom && 
+                   modes[lookAhead] != Mode::LightShafts && 
+                   modes[lookAhead] != Mode::Smoothing && 
+                   modes[lookAhead] != Mode::GaussianFilter && 
+                   modes[lookAhead] != Mode::DualKawaseBlur && 
                    batch.size() < 16) {
-
+                
                 bool needsSeparate = RequiresSeparatePass(modes[lookAhead]);
 
                 if (!batch.empty() && needsSeparate) {
@@ -467,25 +395,22 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
             }
 
             manager->combinedParams_.effectCount = (int32_t)batch.size();
             for (int i = 0; i < (int)batch.size(); ++i) {
                 manager->combinedParams_.effects[i] = (int32_t)batch[i];
             }
-            if (manager->mappedCombined_) {
-                manager->mappedCombined_[manager->combinedBufferOffset_] = manager->combinedParams_;
+            if (manager->mappedCombined_) { 
+                manager->mappedCombined_[manager->combinedBufferOffset_] = manager->combinedParams_; 
             }
 
             commandList->OMSetRenderTargets(1, &targetHandle, false, nullptr);
-            float clearColor[] = {0, 0, 0, 1};
+            float clearColor[] = { 0, 0, 0, 1 };
             commandList->ClearRenderTargetView(targetHandle, clearColor, 0, nullptr);
 
-            commandList->SetPipelineState(writeToScreen ? manager->finalCombinedPSO_.Get()
-                                                        : manager->combinedPSO_.Get());
+            commandList->SetPipelineState(writeToScreen ? manager->finalCombinedPSO_.Get() : manager->combinedPSO_.Get());
             commandList->SetGraphicsRootSignature(manager->rootSig_);
             commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -541,9 +466,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             commandList->RSSetViewports(1, &fullViewport);
             commandList->RSSetScissorRects(1, &fullScissorRect);
 
-            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex =
-                currentSource ? currentSource->GetSrvIndex() : 0;
-
+            manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
+            
             uint32_t extraIdx = manager->depthSrvIndex_;
             for (int i = 0; i < (int)batch.size(); ++i) {
                 if (PostProcessManager::UsesDepthBuffer(batch[i])) {
@@ -554,29 +478,19 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 }
             }
             manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex = extraIdx;
-            manager->mappedBindless_[manager->bindlessBufferOffset_].maskTextureIndex =
-                manager->dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
-
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
-                                                           manager->bindlessCB_->GetGPUVirtualAddress() +
-                                                               manager->bindlessBufferOffset_ *
-                                                                   sizeof(PostProcessManager::BindlessParams));
+            manager->mappedBindless_[manager->bindlessBufferOffset_].maskTextureIndex = manager->dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
+            
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, manager->bindlessCB_->GetGPUVirtualAddress() + manager->bindlessBufferOffset_ * sizeof(PostProcessManager::BindlessParams));
             manager->bindlessBufferOffset_++;
-
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
-                                                           manager->combinedCB_->GetGPUVirtualAddress() +
-                                                               manager->combinedBufferOffset_ *
-                                                                   sizeof(PostProcessManager::CombinedParams));
+            
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, manager->combinedCB_->GetGPUVirtualAddress() + manager->combinedBufferOffset_ * sizeof(PostProcessManager::CombinedParams));
             manager->combinedBufferOffset_++;
-
-            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams,
-                                                           manager->customEffectParamsCB_->GetGPUVirtualAddress());
+            
+            commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams, manager->customEffectParamsCB_->GetGPUVirtualAddress());
             commandList->DrawInstanced(3, 1, 0, 0);
 
             if (!writeToScreen) {
-                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(),
-                                                D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                DirectXUtils::TransitionBarrier(commandList, nextTarget->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
                 pingPongIdx++;
                 finalWrittenTexture = nextTarget;
             } else {
@@ -586,15 +500,15 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             modeIdx = lookAhead;
         }
     }
-
+    
     if (needsFinalPass) {
         manager->combinedParams_.effectCount = 0;
-        if (manager->mappedCombined_) {
-            manager->mappedCombined_[manager->combinedBufferOffset_] = manager->combinedParams_;
+        if (manager->mappedCombined_) { 
+            manager->mappedCombined_[manager->combinedBufferOffset_] = manager->combinedParams_; 
         }
 
         commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
-        float clearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+        float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
         commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
         commandList->SetPipelineState(manager->finalCombinedPSO_.Get());
@@ -642,25 +556,17 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         commandList->RSSetViewports(1, &fullViewport);
         commandList->RSSetScissorRects(1, &fullScissorRect);
 
-        manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex =
-            currentSource ? currentSource->GetSrvIndex() : 0;
+        manager->mappedBindless_[manager->bindlessBufferOffset_].mainTextureIndex = currentSource ? currentSource->GetSrvIndex() : 0;
         manager->mappedBindless_[manager->bindlessBufferOffset_].extraTextureIndex = manager->depthSrvIndex_;
-        manager->mappedBindless_[manager->bindlessBufferOffset_].maskTextureIndex =
-            manager->dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
+        manager->mappedBindless_[manager->bindlessBufferOffset_].maskTextureIndex = manager->dxCommon_->GetEngine()->GetEffectMaskTexture()->GetSrvIndex();
 
-        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
-                                                       manager->bindlessCB_->GetGPUVirtualAddress() +
-                                                           manager->bindlessBufferOffset_ *
-                                                               sizeof(PostProcessManager::BindlessParams));
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon, manager->bindlessCB_->GetGPUVirtualAddress() + manager->bindlessBufferOffset_ * sizeof(PostProcessManager::BindlessParams));
         manager->bindlessBufferOffset_++;
 
-        commandList->SetGraphicsRootConstantBufferView(
-            (UINT)RootSlot::Material, manager->combinedCB_->GetGPUVirtualAddress() +
-                                          manager->combinedBufferOffset_ * sizeof(PostProcessManager::CombinedParams));
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, manager->combinedCB_->GetGPUVirtualAddress() + manager->combinedBufferOffset_ * sizeof(PostProcessManager::CombinedParams));
         manager->combinedBufferOffset_++;
-
-        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams,
-                                                       manager->customEffectParamsCB_->GetGPUVirtualAddress());
+        
+        commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams, manager->customEffectParamsCB_->GetGPUVirtualAddress());
         commandList->DrawInstanced(3, 1, 0, 0);
 
         finalWrittenTexture = nullptr;

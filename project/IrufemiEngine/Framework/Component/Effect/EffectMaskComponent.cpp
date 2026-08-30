@@ -1,8 +1,8 @@
 #include "Framework/Component/Effect/EffectMaskComponent.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Core/System/IrufemiEngine.h"
 
 EffectMaskComponent::EffectMaskComponent() {}
 
@@ -46,10 +46,8 @@ nlohmann::json EffectMaskComponent::Serialize() {
     nlohmann::json j;
     j["enableEffectMask"] = enableEffectMask_;
     j["customEffectType"] = customEffectType_;
-    j["customParams"]["color1"] = {customParams_.color1.x, customParams_.color1.y, customParams_.color1.z,
-                                   customParams_.color1.w};
-    j["customParams"]["color2"] = {customParams_.color2.x, customParams_.color2.y, customParams_.color2.z,
-                                   customParams_.color2.w};
+    j["customParams"]["color1"] = { customParams_.color1.x, customParams_.color1.y, customParams_.color1.z, customParams_.color1.w };
+    j["customParams"]["color2"] = { customParams_.color2.x, customParams_.color2.y, customParams_.color2.z, customParams_.color2.w };
     j["customParams"]["param1"] = customParams_.param1;
     j["customParams"]["param2"] = customParams_.param2;
     j["customParams"]["param3"] = customParams_.param3;
@@ -72,19 +70,15 @@ void EffectMaskComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("customParams")) {
         auto& p = j["customParams"];
         if (p.contains("color1")) {
-            customParams_.color1 = {p["color1"][0], p["color1"][1], p["color1"][2], p["color1"][3]};
+            customParams_.color1 = { p["color1"][0], p["color1"][1], p["color1"][2], p["color1"][3] };
         }
         if (p.contains("color2")) {
-            customParams_.color2 = {p["color2"][0], p["color2"][1], p["color2"][2], p["color2"][3]};
+            customParams_.color2 = { p["color2"][0], p["color2"][1], p["color2"][2], p["color2"][3] };
         }
-        if (p.contains("param1"))
-            customParams_.param1 = p["param1"];
-        if (p.contains("param2"))
-            customParams_.param2 = p["param2"];
-        if (p.contains("param3"))
-            customParams_.param3 = p["param3"];
-        if (p.contains("param4"))
-            customParams_.param4 = p["param4"];
+        if (p.contains("param1")) customParams_.param1 = p["param1"];
+        if (p.contains("param2")) customParams_.param2 = p["param2"];
+        if (p.contains("param3")) customParams_.param3 = p["param3"];
+        if (p.contains("param4")) customParams_.param4 = p["param4"];
     }
 }
 

@@ -1,7 +1,8 @@
 #include "Framework/Component/Collider/RaycastComponent.h"
-#include "Core/Math/MathFunction.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Core/Math/MathFunction.h"
+
 
 void RaycastComponent::Initialize() {
     if (gameObject_) {
@@ -16,11 +17,11 @@ void RaycastComponent::Update() {
         // ワールド空間でのレイの起点と方向を計算
         Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
         Irufemi::Matrix4x4 worldMat = GetTransform()->GetWorldMatrix();
-
+        
         // オフセットの適用
         Irufemi::Vector3 worldOffset = Irufemi::Math::TransformNormal(localOffset_, worldMat);
         currentRay_.origin = worldPos + worldOffset;
-
+        
         // 方向の適用（ローカル方向ベクトルをワールドへ回転）
         Irufemi::Vector3 worldDir = Irufemi::Math::TransformNormal(localDirection_, worldMat);
         worldDir = Irufemi::Math::Normalize(worldDir);
@@ -40,18 +41,18 @@ void RaycastComponent::Update() {
 
 void RaycastComponent::DrawDebug() {
     if (showDebugLine_) {
-        Irufemi::Vector4 color =
-            hitInfo_.isHit ? Irufemi::Vector4{1.0f, 0.0f, 0.0f, 1.0f} : Irufemi::Vector4{0.0f, 1.0f, 0.0f, 1.0f};
+        Irufemi::Vector4 color = hitInfo_.isHit ? Irufemi::Vector4{ 1.0f, 0.0f, 0.0f, 1.0f } : Irufemi::Vector4{ 0.0f, 1.0f, 0.0f, 1.0f };
         float drawDist = hitInfo_.isHit ? hitInfo_.distance : maxDistance_;
-        if (collisionManager_)
-            collisionManager_->DrawDebugRay(currentRay_, drawDist, color);
+        if (collisionManager_) collisionManager_->DrawDebugRay(currentRay_, drawDist, color);
     }
 }
 
+
+
 nlohmann::json RaycastComponent::Serialize() {
     nlohmann::json j;
-    j["localOffset"] = {localOffset_.x, localOffset_.y, localOffset_.z};
-    j["localDirection"] = {localDirection_.x, localDirection_.y, localDirection_.z};
+    j["localOffset"] = { localOffset_.x, localOffset_.y, localOffset_.z };
+    j["localDirection"] = { localDirection_.x, localDirection_.y, localDirection_.z };
     j["maxDistance"] = maxDistance_;
     j["mask"] = mask_;
     j["showDebugLine"] = showDebugLine_;
@@ -69,12 +70,9 @@ void RaycastComponent::Deserialize(const nlohmann::json& j) {
         localDirection_.y = j["localDirection"][1];
         localDirection_.z = j["localDirection"][2];
     }
-    if (j.contains("maxDistance"))
-        maxDistance_ = j["maxDistance"];
-    if (j.contains("mask"))
-        mask_ = j["mask"];
-    if (j.contains("showDebugLine"))
-        showDebugLine_ = j["showDebugLine"];
+    if (j.contains("maxDistance")) maxDistance_ = j["maxDistance"];
+    if (j.contains("mask")) mask_ = j["mask"];
+    if (j.contains("showDebugLine")) showDebugLine_ = j["showDebugLine"];
 }
 
 std::shared_ptr<Component> RaycastComponent::Clone() {

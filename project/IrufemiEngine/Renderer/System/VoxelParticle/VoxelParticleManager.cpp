@@ -6,9 +6,8 @@ void VoxelParticleManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
 }
 
-VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const std::string& modelName,
-                                                                          const Irufemi::Vector3Int& resolution) {
-    SystemKey key{modelName, resolution};
+VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const std::string& modelName, const Irufemi::Vector3Int& resolution) {
+    SystemKey key{ modelName, resolution };
     auto& context = systems_[key];
 
     if (!context.system) {
@@ -36,14 +35,13 @@ VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const 
 }
 
 void VoxelParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
-    if (!handle.IsValid())
-        return;
-
+    if (!handle.IsValid()) return;
+    
     // システムを検索してfreeIndicesに戻す
     for (auto& pair : systems_) {
         if (pair.second.system.get() == handle.system) {
             pair.second.freeIndices.push_back(handle.emitterIndex);
-
+            
             // 無効化用のダミーデータを送る
             VoxelEmitter emptyData;
             emptyData.emit = 0;
@@ -71,7 +69,7 @@ void VoxelParticleManager::Clear() {
                 emptyData.lifeTime = 0.0f;
                 pair.second.system->UpdateEmitterData(i, emptyData);
             }
-
+            
             // インデックスの割り当て状態を完全に初期化する
             pair.second.freeIndices.clear();
             pair.second.nextIndex = 0;
@@ -80,8 +78,7 @@ void VoxelParticleManager::Clear() {
 }
 
 void VoxelParticleManager::UpdateEmitterData(const EmitterHandle& handle, const VoxelEmitter& data) {
-    if (!handle.IsValid())
-        return;
+    if (!handle.IsValid()) return;
     handle.system->UpdateEmitterData(handle.emitterIndex, data);
 }
 
@@ -100,7 +97,7 @@ void VoxelParticleManager::Update(float deltaTime) {
         }
     }
 
-    for (auto it = oneShots_.begin(); it != oneShots_.end();) {
+    for (auto it = oneShots_.begin(); it != oneShots_.end(); ) {
         if (it->emitTimer > 0.0f) {
             it->emitTimer -= deltaTime;
             if (it->emitTimer <= 0.0f) {
@@ -109,7 +106,7 @@ void VoxelParticleManager::Update(float deltaTime) {
                 UpdateEmitterData(it->handle, data);
             }
         }
-
+        
         it->lifeTimer -= deltaTime;
         if (it->lifeTimer <= 0.0f) {
             UnregisterEmitter(it->handle);
@@ -131,19 +128,14 @@ void VoxelParticleManager::Draw() {
     }
 }
 
-void VoxelParticleManager::ReservePool(const std::string& modelName, const Irufemi::Vector3Int& resolution,
-                                       int preAllocateCount) {
+void VoxelParticleManager::ReservePool(const std::string& modelName, const Irufemi::Vector3Int& resolution, int preAllocateCount) {
     auto handle = RegisterEmitter(modelName, resolution);
     UnregisterEmitter(handle);
 }
 
-void VoxelParticleManager::PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos,
-                                         const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate,
-                                         const Irufemi::Vector3& scale, const VoxelEmitter& params,
-                                         const Irufemi::Vector3Int& resolution) {
+void VoxelParticleManager::PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos, const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate, const Irufemi::Vector3& scale, const VoxelEmitter& params, const Irufemi::Vector3Int& resolution) {
     auto handle = RegisterEmitter(modelName, resolution);
-    if (!handle.IsValid())
-        return; // 制限オーバーで取得できなかった場合は処理しない
+    if (!handle.IsValid()) return; // 制限オーバーで取得できなかった場合は処理しない
 
     VoxelEmitter explosion = params;
     explosion.emit = 1;

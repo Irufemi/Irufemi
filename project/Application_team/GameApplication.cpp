@@ -16,13 +16,13 @@
 #include "UI/LoadingScreen.h"
 
 // シーンのインクルード
-#include "Framework/Scene/OptionsScene.h"
+#include "scene/title/TitleScene.h"
+#include "scene/stageSelect/SelectScene.h"
+#include "scene/inGame/GameScene.h"
 #include "scene/Clear/ClearScene.h"
 #include "scene/GameOver/GameOverScene.h"
 #include "scene/Pause/PauseScene.h"
-#include "scene/inGame/GameScene.h"
-#include "scene/stageSelect/SelectScene.h"
-#include "scene/title/TitleScene.h"
+#include "Framework/Scene/OptionsScene.h"
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "Framework/Scene/DebugScene.h"
 #endif
@@ -32,32 +32,33 @@
 #endif
 
 namespace {
-// --- ゲーム固有の定数 ---
-const int32_t kClientWidth = 1280;
-const int32_t kClientHeight = 720;
-const std::wstring kTitle = L"Application_team";
-const Irufemi::Vector4 kClearColor = {0.1f, 0.25f, 0.5f, 1.0f};
-const char kInitialScene[]
+    // --- ゲーム固有の定数 ---
+    const int32_t kClientWidth = 1280;
+    const int32_t kClientHeight = 720;
+    const std::wstring kTitle = L"Application_team";
+    const Irufemi::Vector4 kClearColor = { 0.1f, 0.25f, 0.5f, 1.0f };
+    const char kInitialScene[]
 #if defined(_DEBUG) || defined(DEVELOPMENT)
-    = "Debug";
+        = "Debug";
 #else
-    = "Title";
+        = "Title";
 #endif
 
-// --- シーン登録処理 ---
-void RegisterScenes(SceneManager& sm) {
-    sm.Register("Title", [] { return std::make_unique<TitleScene>(); });
-    sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
-    sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
-    sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
-    sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });
-    sm.Register("Pause", [] { return std::make_unique<PauseScene>(); });
+    // --- シーン登録処理 ---
+    void RegisterScenes(SceneManager& sm) {
+        sm.Register("Title", [] { return std::make_unique<TitleScene>(); });
+        sm.Register("Select", [] { return std::make_unique<SelectScene>(); });
+        sm.Register("InGame", [] { return std::make_unique<GameScene>(); });
+        sm.Register("Clear", [] { return std::make_unique<ClearScene>(); });
+        sm.Register("GameOver", [] { return std::make_unique<GameOverScene>(); });
+        sm.Register("Pause", [] { return std::make_unique<PauseScene>(); });
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-    sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
+        sm.Register("Debug", [] { return std::make_unique<DebugScene>(); });
 #endif
-    sm.Register("OptionsScene", [] { return std::make_unique<OptionsScene>(); });
+        sm.Register("OptionsScene", [] { return std::make_unique<OptionsScene>(); });
+
+    }
 }
-} // namespace
 
 GameApplication::GameApplication() = default;
 GameApplication::~GameApplication() = default;
@@ -76,8 +77,7 @@ void GameApplication::Run() {
 
     // 独自コンポーネントの登録
 
-    ComponentFactory::Register("SceneTransitionButtonComponent", "Game",
-                               []() { return std::make_shared<SceneTransitionButtonComponent>(); });
+    ComponentFactory::Register("SceneTransitionButtonComponent", "Game", []() { return std::make_shared<SceneTransitionButtonComponent>(); });
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());

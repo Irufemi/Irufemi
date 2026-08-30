@@ -24,7 +24,7 @@ private:
 
     // XAudio2のコアインターフェース
     Microsoft::WRL::ComPtr<IXAudio2> pXAudio2_;
-    IXAudio2MasteringVoice* pMasteringVoice_{nullptr}; ///< IUnknownを継承しないため生ポインタ管理
+    IXAudio2MasteringVoice* pMasteringVoice_{ nullptr }; ///< IUnknownを継承しないため生ポインタ管理
 
     // ロードした音声データをファイル名をキーにして保持するマップ
     std::map<std::string, std::shared_ptr<Sound>> soundRegistry_;
@@ -36,7 +36,7 @@ private:
     std::map<std::string, std::vector<std::string>> categoryMap_;
 
     // ファイナライズ済みフラグ
-    bool finalized_{false};
+    bool finalized_{ false };
 
     /**
      * @brief 管理対象のボイスかどうか判定する
@@ -66,6 +66,7 @@ public:
      * @details すべての再生中ボイスを停止し、リソースを解放します。
      */
     void Finalize();
+
 
     /**
      * @brief 指定フォルダから対応する音声ファイルをすべてロードする
@@ -114,8 +115,8 @@ public:
      * @param[in] category 再生するカテゴリ (デフォルト: SE)
      * @return 再生中インスタンスへの弱参照。操作が必要な場合に保持してください。
      */
-    std::weak_ptr<VoiceInstance> Play(std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f,
-                                      AudioCategory category = AudioCategory::SE);
+    std::weak_ptr<VoiceInstance> Play(
+        std::shared_ptr<Sound> soundData, bool loop = false, float volume = 1.0f, AudioCategory category = AudioCategory::SE);
 
     /**
      * @brief 再生中のサウンドを停止する

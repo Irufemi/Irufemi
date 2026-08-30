@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Math/Vector3.h"
 #include "Framework/Component/Component.h"
-#include <string>
+#include "Core/Math/Vector3.h"
 #include <vector>
+#include <string>
 
 /**
  * @class SplineComponent
@@ -26,9 +26,7 @@ public:
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override {
-        return "SplineComponent";
-    }
+    std::string GetComponentName() const override { return "SplineComponent"; }
 
     /**
      * @brief 0.0 ~ 1.0 の進行度(t)から、スプライン上の座標を取得する
@@ -69,16 +67,14 @@ public:
      * @brief Waypoints を取得する。
      * @return 取得された Waypoints
      */
-    const std::vector<Irufemi::Vector3>& GetWaypoints() const {
-        return waypoints_;
-    }
+    const std::vector<Irufemi::Vector3>& GetWaypoints() const { return waypoints_; }
     /**
      * @brief Waypoints を設定する。
      * @param[in] points 設定する Waypoints の値
      */
-    void SetWaypoints(const std::vector<Irufemi::Vector3>& points) {
-        waypoints_ = points;
-        UpdateDistanceTable();
+    void SetWaypoints(const std::vector<Irufemi::Vector3>& points) { 
+        waypoints_ = points; 
+        UpdateDistanceTable(); 
     }
 
     /**

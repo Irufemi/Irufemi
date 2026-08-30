@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Core/Math/Vector3.h"
-#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
+#include "Core/Math/Vector3.h"
 
 class BaseScene;
 
@@ -47,6 +47,7 @@ public:
      * @return 抽出されたレベルデータ（自キャラの座標など）
      */
     static LevelData Load(const std::string& filepath, BaseScene* scene);
+
 
 private:
     /**

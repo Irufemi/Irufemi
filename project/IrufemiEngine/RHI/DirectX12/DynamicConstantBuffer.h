@@ -1,12 +1,12 @@
 #pragma once
 #include "Core/Utility/ErrorUtility.h"
-#include "RHI/DirectX12/DirectXCommon.h"
-#include <array>
-#include <cassert>
-#include <cstdint>
 #include <d3d12.h>
-#include <vector>
 #include <wrl.h>
+#include <array>
+#include <vector>
+#include <cstdint>
+#include <cassert>
+#include "RHI/DirectX12/DirectXCommon.h"
 
 /**
  * @class DynamicConstantBuffer
@@ -14,7 +14,8 @@
  * @details 数万オブジェクトの定数データを1つの ID3D12Resource で管理し、
  * 各オブジェクトにはインデックスのみを割り当てます。
  */
-template <typename T> class DynamicConstantBuffer {
+template <typename T>
+class DynamicConstantBuffer {
 public:
     DynamicConstantBuffer() = default;
     ~DynamicConstantBuffer() {
@@ -39,7 +40,7 @@ public:
         capacity_ = capacity;
         // 定数バッファは256バイトアライメント必須
         elementAlignedSize_ = (sizeof(T) + 255) & ~255;
-
+        
         for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
             resources_[i] = dxCommon_->CreateBufferResource(elementAlignedSize_ * capacity_);
             HRESULT hr = resources_[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedRawData_[i]));

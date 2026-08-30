@@ -4,8 +4,7 @@
 /**
  * @brief ゲームクリアおよびゲームオーバー時の結果表示シーン
  * @details SceneManager の PushScene() を利用してインゲームシーンの上に被せる（オーバーレイする）設計。
- * IsUpdateBlocking = false, IsDrawBlocking = false
- * とすることで、背景でゲーム世界が等倍速で動き続ける余韻演出を実現します。
+ * IsUpdateBlocking = false, IsDrawBlocking = false とすることで、背景でゲーム世界が等倍速で動き続ける余韻演出を実現します。
  */
 class ResultScene : public BaseScene {
 public:
@@ -16,17 +15,11 @@ public:
 
     // --- シーンスタック・オーバーレイの設定 ---
     // 下のシーン（GameScene）を等倍速で動かし続けるため、UpdateBlockingはfalse
-    bool IsUpdateBlocking() const override {
-        return false;
-    }
+    bool IsUpdateBlocking() const override { return false; }
     // 下のシーン（GameScene）を描画し続けるため、DrawBlockingはfalse
-    bool IsDrawBlocking() const override {
-        return false;
-    }
+    bool IsDrawBlocking() const override { return false; }
     // 音楽は止めない（または余韻を残す）ため、AudioBlockingもfalse
-    bool IsAudioBlocking() const override {
-        return false;
-    }
+    bool IsAudioBlocking() const override { return false; }
 
     // --- クリア結果受け渡し用のフラグ ---
     static bool s_isClear;

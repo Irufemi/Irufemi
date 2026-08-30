@@ -5,32 +5,33 @@
 
 #include "Framework/Scene/DebugScene.h" // Unified debug UI enabled
 
-#include "Core/Math/Math.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Framework/Component/Renderer/SkeletonDebugRendererComponent.h"
 #include "Framework/Scene/SceneManager.h"
-#include "Renderer/Camera/Camera.h"
 #include "Renderer/Camera/CameraManager.h"
+#include "Renderer/Camera/Camera.h"
+#include "Core/Math/Math.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Framework/Component/Renderer/SkeletonDebugRendererComponent.h"
+#include "Core/System/IrufemiEngine.h"
 
 // デストラクタ
-DebugScene::~DebugScene() {}
+DebugScene::~DebugScene() {
+}
 
 // 初期化
 void DebugScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
-
+    
     Camera* activeCamera = engine_->GetCameraManager()->GetActiveCamera();
-    activeCamera->SetTranslate(Irufemi::Vector3{0.0f, 0.0f, -10.0f});
+    activeCamera->SetTranslate(Irufemi::Vector3{ 0.0f, 0.0f, -10.0f });
     activeCamera->UpdateMatrix();
 
     auto areaLight = std::make_unique<AreaLight>();
-    areaLight->color = {1.0f, 0.5f, 0.5f, 1.0f};
-    areaLight->position = {0.0f, 2.0f, 2.0f};
+    areaLight->color = { 1.0f, 0.5f, 0.5f, 1.0f };
+    areaLight->position = { 0.0f, 2.0f, 2.0f };
     areaLight->intensity = 1.0f;
-    areaLight->direction = {0.0f, -1.0f, 0.0f};
+    areaLight->direction = { 0.0f, -1.0f, 0.0f };
     areaLight->range = 10.0f;
-    areaLight->size = {2.0f, 2.0f};
+    areaLight->size = { 2.0f, 2.0f };
     areaLight->isActive = 1;
     areaLights_.push_back(std::move(areaLight));
 
@@ -105,7 +106,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         particleObj_->Initialize();
     }
     if (isActiveVoxelParticle_) {
-        voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", {64, 64, 64});
+        voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", { 64,64,64 });
     }
     if (isActiveAnimatedCube_) {
         animatedCube_ = std::make_shared<GameObject>("AnimatedCube");
@@ -135,14 +136,14 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
     if (isActivePrimitiveObj_) {
         primitiveObj_ = std::make_unique<Primitive3DObject>();
         primitiveObj_->Initialize(Irufemi::PrimitiveType::Cube);
-        primitiveObj_->SetPosition({0.0f, 0.0f, 0.0f}); // 他のオブジェクトと被らないように少しずらす
+        primitiveObj_->SetPosition({ 0.0f, 0.0f, 0.0f }); // 他のオブジェクトと被らないように少しずらす
     }
 
     // 電撃エフェクトの初期化
     lightningCylinder_ = std::make_unique<Primitive3DObject>();
     lightningCylinder_->Initialize(Irufemi::PrimitiveType::Cylinder);
-    lightningCylinder_->SetScale({0.2f, 10.0f, 0.2f}); // ビームっぽく細長く
-    lightningCylinder_->SetPosition({-2.0f, 0.0f, 0.0f});
+    lightningCylinder_->SetScale({ 0.2f, 10.0f, 0.2f }); // ビームっぽく細長く
+    lightningCylinder_->SetPosition({ -2.0f, 0.0f, 0.0f });
 
     lightningParamsResource_ = engine_->GetDirectXCommon()->CreateBufferResource(sizeof(LightningParams));
     lightningParamsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightningParamsData_));
@@ -281,18 +282,17 @@ void DebugScene::Update() {
             particleObj_.reset();
         }
     }
-
+    
     if (isActiveVoxelParticle_) {
         if (!voxelEmitterHandle_.IsValid()) {
-            voxelEmitterHandle_ =
-                engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", {64, 64, 64});
+            voxelEmitterHandle_ = engine_->GetVoxelParticleManager()->RegisterEmitter("sample/terrain.obj", { 64,64,64 });
             voxelEmitParams_.emit = 0;
-            voxelEmitParams_.emitPosition = {0.0f, 0.0f, 0.0f};
+            voxelEmitParams_.emitPosition = { 0.0f, 0.0f, 0.0f };
             voxelEmitParams_.lifeTime = 2.0f;
             voxelEmitParams_.gravity = 2.0f;
             voxelEmitParams_.dispersion = 8.0f;
             voxelEmitParams_.convergence = 0.1f;
-            voxelEmitParams_.baseVelocity = {0.0f, 5.0f, 0.0f};
+            voxelEmitParams_.baseVelocity = { 0.0f, 5.0f, 0.0f };
         }
         engine_->GetVoxelParticleManager()->UpdateEmitterData(voxelEmitterHandle_, voxelEmitParams_);
     } else {
@@ -301,7 +301,7 @@ void DebugScene::Update() {
             voxelEmitterHandle_ = {};
         }
     }
-
+    
     if (isActiveAnimatedCube_) {
         if (!animatedCube_) {
             animatedCube_ = std::make_shared<GameObject>("AnimatedCube");
@@ -375,9 +375,9 @@ void DebugScene::Update() {
         if (!primitive2DObj_) {
             primitive2DObj_ = std::make_unique<Primitive2DObject>();
             primitive2DObj_->Initialize(Irufemi::Primitive2DType::Circle, "resources/uvChecker.png");
-            primitive2DObj_->SetSize({100.0f, 100.0f});
-            primitive2DObj_->SetPosition({640.0f, 360.0f, 0.0f});
-            primitive2DObj_->SetPivot({0.5f, 0.5f});
+            primitive2DObj_->SetSize({ 100.0f, 100.0f });
+            primitive2DObj_->SetPosition({ 640.0f, 360.0f, 0.0f });
+            primitive2DObj_->SetPivot({ 0.5f, 0.5f });
         }
         primitive2DObj_->Update();
     } else {
@@ -386,8 +386,7 @@ void DebugScene::Update() {
         }
     }
 
-    if (engine_->GetInputManager()->IsKeyPressed('P') ||
-        engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+    if (engine_->GetInputManager()->IsKeyPressed('P') || engine_->GetInputManager()->IsButtonPressed(XINPUT_GAMEPAD_A)) {
         engine_->GetSceneManager()->Request("InGame");
     }
 
@@ -399,49 +398,34 @@ void DebugScene::Update() {
 
     // 環境マップをDrawManagerに設定
     if (isActiveSkybox_) {
-        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle =
-            engine_->GetTextureManager()->ResolveCubeMap(skybox_->GetTextureHandle());
+        D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle = engine_->GetTextureManager()->ResolveCubeMap(skybox_->GetTextureHandle());
         engine_->GetDrawManager()->SetEnvironmentMap(envMapHandle);
     }
 }
 
 void DebugScene::Draw() {
     BaseScene::Draw();
-
+    
     // 3D
     engine_->SetBlend(Irufemi::BlendMode::kBlendModeNormal);
     engine_->SetDepthWrite(PSOManager::DepthWrite::Enable);
     engine_->SetCull(PSOManager::CullMode::Back);
     engine_->ApplyPSO("Object3D");
 
-    if (isActiveObj_)
-        obj_->Draw();
-    if (isActiveUtashTeapot_)
-        utashTeapot_->Draw();
-    if (isActiveStanfordBunny_)
-        stanfordBunny_->Draw();
-    if (isActiveMultiMesh_)
-        multiMesh_->Draw();
-    if (isActiveMultiMaterial_)
-        multiMaterial_->Draw();
-    if (isActiveSuzanne_)
-        suzanne_->Draw();
-    if (isActiveFence_)
-        fence_->Draw();
-    if (isActiveTerrain_)
-        terrain_->Draw();
-    if (isActiveAnimatedCube_)
-        animatedCube_->Draw();
-    if (isActiveWalk_)
-        walk_->Draw();
-    if (isActiveSneakWalk_)
-        sneakWalk_->Draw();
-    if (isActiveBlendTest_)
-        blendTest_->Draw();
-    if (isActivePrimitiveObj_)
-        primitiveObj_->Draw();
-    if (isActiveSkybox_)
-        skybox_->Draw();
+    if (isActiveObj_) obj_->Draw();
+    if (isActiveUtashTeapot_) utashTeapot_->Draw();
+    if (isActiveStanfordBunny_) stanfordBunny_->Draw();
+    if (isActiveMultiMesh_) multiMesh_->Draw();
+    if (isActiveMultiMaterial_) multiMaterial_->Draw();
+    if (isActiveSuzanne_) suzanne_->Draw();
+    if (isActiveFence_) fence_->Draw();
+    if (isActiveTerrain_) terrain_->Draw();
+    if (isActiveAnimatedCube_) animatedCube_->Draw();
+    if (isActiveWalk_) walk_->Draw();
+    if (isActiveSneakWalk_) sneakWalk_->Draw();
+    if (isActiveBlendTest_) blendTest_->Draw();
+    if (isActivePrimitiveObj_) primitiveObj_->Draw();
+    if (isActiveSkybox_) skybox_->Draw();
 
     if (isActiveLightningCrawl_) {
         lightningCylinder_->SyncBeforeDraw();
@@ -484,29 +468,24 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Sprite");
 
-    if (isActiveSprite_)
-        sprite_->Draw();
-    if (isActivePrimitive2DObj_)
-        primitive2DObj_->Draw();
+    if (isActiveSprite_) sprite_->Draw();
+    if (isActivePrimitive2DObj_) primitive2DObj_->Draw();
 }
 
 void DebugScene::DrawDebugTab() {
 #ifdef USE_IMGUI
     BaseScene::DrawDebugTab();
-
+    
     if (ImGui::Begin("DebugScene Global Settings")) {
         static bool s_showAllBones = false;
         static bool s_showAllAxes = false;
         bool changed = false;
-        if (ImGui::Checkbox("Show All Debug Bones", &s_showAllBones))
-            changed = true;
-        if (ImGui::Checkbox("Show All Debug Axes", &s_showAllAxes))
-            changed = true;
-
+        if (ImGui::Checkbox("Show All Debug Bones", &s_showAllBones)) changed = true;
+        if (ImGui::Checkbox("Show All Debug Axes", &s_showAllAxes)) changed = true;
+        
         if (changed) {
             auto setDebugProps = [](GameObject* go) {
-                if (!go)
-                    return;
+                if (!go) return;
                 if (auto comp = go->GetComponent<SkeletonDebugRendererComponent>()) {
                     comp->SetShowBones(s_showAllBones);
                     comp->SetShowAxes(s_showAllAxes);
@@ -524,16 +503,14 @@ void DebugScene::DrawDebugTab() {
         skybox_->Debug();
     }
 
-    if (isActivePrimitiveObj_ && primitiveObj_)
-        primitiveObj_->Debug("Primitive Object (New)");
+    if (isActivePrimitiveObj_ && primitiveObj_) primitiveObj_->Debug("Primitive Object (New)");
 
     if (isActiveVoxelParticle_ && voxelEmitterHandle_.IsValid()) {
         if (ImGui::Begin("Voxel Particle Test")) {
             ImGui::Separator();
             ImGui::Checkbox("Active Voxel Particle", &isActiveVoxelParticle_);
 
-            const char* particleTypes[] = {"Default",     "Building",           "AshDisintegration",
-                                           "FineScatter", "DebrisLargeGravity", "DebrisExplosive"};
+            const char* particleTypes[] = { "Default", "Building", "AshDisintegration", "FineScatter", "DebrisLargeGravity", "DebrisExplosive" };
             int currentType = static_cast<int>(voxelEmitParams_.particleType);
             if (ImGui::Combo("Particle Type", &currentType, particleTypes, IM_ARRAYSIZE(particleTypes))) {
                 voxelEmitParams_.particleType = static_cast<uint32_t>(currentType);
@@ -542,23 +519,21 @@ void DebugScene::DrawDebugTab() {
             ImGui::DragFloat("Gravity", &voxelEmitParams_.gravity, 0.1f, -20.0f, 100.0f);
             ImGui::DragFloat("Dispersion", &voxelEmitParams_.dispersion, 0.1f, 0.0f, 100.0f);
             ImGui::DragFloat("Convergence", &voxelEmitParams_.convergence, 0.01f, 0.0f, 1.0f);
-
+            
             bool isEmitting = voxelEmitParams_.emit > 0;
             if (ImGui::Checkbox("Continuous Emit", &isEmitting)) {
                 voxelEmitParams_.emit = isEmitting ? 1 : 0;
             }
 
             if (ImGui::Button("Play Explosion")) {
-                engine_->GetVoxelParticleManager()->PlayExplosion("sample/terrain.obj", {0, 0, 0}, {0, 0, 0}, {0, 0, 0},
-                                                                  {1, 1, 1}, voxelEmitParams_, {64, 64, 64});
+                engine_->GetVoxelParticleManager()->PlayExplosion("sample/terrain.obj", {0,0,0}, {0,0,0}, {0,0,0}, {1,1,1}, voxelEmitParams_, {64,64,64});
             }
         }
         ImGui::End();
     }
-
-    if (isActivePrimitive2DObj_ && primitive2DObj_)
-        primitive2DObj_->Debug("Primitive2D Test");
-
+    
+    if (isActivePrimitive2DObj_ && primitive2DObj_) primitive2DObj_->Debug("Primitive2D Test");
+    
     if (isActiveBlendTest_ && blendTest_) {
         if (ImGui::Begin("Blend Test Control")) {
             if (ImGui::Button("Crossfade to Walk (1.0s)")) {

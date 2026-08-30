@@ -41,9 +41,7 @@ public:
      * @brief コンポーネント名の取得
      * @return "BoneAttachmentComponent"
      */
-    std::string GetComponentName() const override {
-        return "BoneAttachmentComponent";
-    }
+    std::string GetComponentName() const override { return "BoneAttachmentComponent"; }
 
     /**
      * @brief コンポーネントの状態をJSON形式にシリアライズする
@@ -61,17 +59,13 @@ public:
      * @brief 追従対象となるGameObjectの名前を設定する
      * @param[in] targetName 対象のGameObject名
      */
-    void SetTargetName(const std::string& targetName) {
-        targetName_ = targetName;
-    }
+    void SetTargetName(const std::string& targetName) { targetName_ = targetName; }
 
     /**
      * @brief 追従対象となるボーン（関節）名を設定する
      * @param[in] boneName 対象のボーン名（例: "RightHand"）
      */
-    void SetTargetBoneName(const std::string& boneName) {
-        targetBoneName_ = boneName;
-    }
+    void SetTargetBoneName(const std::string& boneName) { targetBoneName_ = boneName; }
 
 private:
     std::string targetName_ = "";

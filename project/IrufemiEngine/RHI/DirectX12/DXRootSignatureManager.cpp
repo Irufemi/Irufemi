@@ -1,5 +1,5 @@
-#include "RHI/DirectX12/DXRootSignatureManager.h"
 #include "Core/Utility/ErrorUtility.h"
+#include "RHI/DirectX12/DXRootSignatureManager.h"
 #include "Core/Utility/Log.h"
 #include <cassert>
 
@@ -12,7 +12,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
 
         // space1: Texture2D (Material等)
         bindlessRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        bindlessRanges[0].NumDescriptors = -1;    // Unbounded
+        bindlessRanges[0].NumDescriptors = -1; // Unbounded
         bindlessRanges[0].BaseShaderRegister = 0; // t0
         bindlessRanges[0].RegisterSpace = 1;
         bindlessRanges[0].Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
@@ -119,16 +119,14 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::Material].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[(UINT)RootSlot::Material].Descriptor.ShaderRegister = 0;
         rootParameters[(UINT)RootSlot::Material].Descriptor.RegisterSpace = 0;
-        rootParameters[(UINT)RootSlot::Material].Descriptor.Flags =
-            D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        rootParameters[(UINT)RootSlot::Material].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         // Slot 1: Irufemi::Transform (b0, VS)
         rootParameters[(UINT)RootSlot::Transform].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Transform].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
         rootParameters[(UINT)RootSlot::Transform].Descriptor.ShaderRegister = 0;
         rootParameters[(UINT)RootSlot::Transform].Descriptor.RegisterSpace = 0;
-        rootParameters[(UINT)RootSlot::Transform].Descriptor.Flags =
-            D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        rootParameters[(UINT)RootSlot::Transform].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         // Slot 2: BindlessSRV (t0, space1-6, ALL)
         rootParameters[(UINT)RootSlot::BindlessSRV].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -141,8 +139,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::LightCommon].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[(UINT)RootSlot::LightCommon].Descriptor.ShaderRegister = 1;
         rootParameters[(UINT)RootSlot::LightCommon].Descriptor.RegisterSpace = 0;
-        rootParameters[(UINT)RootSlot::LightCommon].Descriptor.Flags =
-            D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        rootParameters[(UINT)RootSlot::LightCommon].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         // Slot 4: Instancing (t0, VS)
         rootParameters[(UINT)RootSlot::Instancing].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -155,16 +152,14 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::Camera].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[(UINT)RootSlot::Camera].Descriptor.ShaderRegister = 2;
         rootParameters[(UINT)RootSlot::Camera].Descriptor.RegisterSpace = 0;
-        rootParameters[(UINT)RootSlot::Camera].Descriptor.Flags =
-            D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        rootParameters[(UINT)RootSlot::Camera].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         // Slot 6: Special (b6, ALL)
         rootParameters[(UINT)RootSlot::Special].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParameters[(UINT)RootSlot::Special].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         rootParameters[(UINT)RootSlot::Special].Descriptor.ShaderRegister = 6;
         rootParameters[(UINT)RootSlot::Special].Descriptor.RegisterSpace = 0;
-        rootParameters[(UINT)RootSlot::Special].Descriptor.Flags =
-            D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        rootParameters[(UINT)RootSlot::Special].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         // Slot 7: LineInstancing (t1, VS)
         rootParameters[(UINT)RootSlot::LineInstancing].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -209,8 +204,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         rootParameters[(UINT)RootSlot::CustomEffectParams].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.ShaderRegister = 3;
         rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.RegisterSpace = 0;
-        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.Flags =
-            D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
+        rootParameters[(UINT)RootSlot::CustomEffectParams].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE;
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
         staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -270,32 +264,30 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
 
         Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
         Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
-
+        
         // D3D12SerializeVersionedRootSignature が古いSDKでない場合のチェック
-        HRESULT hr =
-            D3D12SerializeVersionedRootSignature(&rsDesc, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
-
+        HRESULT hr = D3D12SerializeVersionedRootSignature(&rsDesc, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
+        
         if (FAILED(hr)) {
             Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
             IRUFEMI_ASSERT(false);
         }
-        hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
-                                         IID_PPV_ARGS(graphicsRootSignature_.GetAddressOf()));
+        hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(graphicsRootSignature_.GetAddressOf()));
         ASSERT_IF_FAILED(hr);
     }
 
     // --- Compute Shader用 RootSignature ---
     {
         D3D12_DESCRIPTOR_RANGE srvRanges[3];
-        srvRanges[0] = {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND}; // t0
-        srvRanges[1] = {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND}; // t1
-        srvRanges[2] = {D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND}; // t2
+        srvRanges[0] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t0
+        srvRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t1
+        srvRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // t2
 
         D3D12_DESCRIPTOR_RANGE uavRanges[4];
-        uavRanges[0] = {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND}; // u0
-        uavRanges[1] = {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND}; // u1
-        uavRanges[2] = {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND}; // u2
-        uavRanges[3] = {D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND}; // u3
+        uavRanges[0] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u0
+        uavRanges[1] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u1
+        uavRanges[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u2
+        uavRanges[3] = { D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3, 0, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }; // u3
 
         D3D12_ROOT_PARAMETER computeRootParameters[11] = {};
         computeRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -360,15 +352,12 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
 
         Microsoft::WRL::ComPtr<ID3DBlob> computeSignatureBlob = nullptr;
         Microsoft::WRL::ComPtr<ID3DBlob> computeErrorBlob = nullptr;
-        HRESULT hr = D3D12SerializeRootSignature(&computeRSDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-                                                 computeSignatureBlob.GetAddressOf(), computeErrorBlob.GetAddressOf());
+        HRESULT hr = D3D12SerializeRootSignature(&computeRSDesc, D3D_ROOT_SIGNATURE_VERSION_1, computeSignatureBlob.GetAddressOf(), computeErrorBlob.GetAddressOf());
         if (FAILED(hr)) {
             Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(computeErrorBlob->GetBufferPointer()));
             IRUFEMI_ASSERT(false);
         }
-        hr = device->CreateRootSignature(0, computeSignatureBlob->GetBufferPointer(),
-                                         computeSignatureBlob->GetBufferSize(),
-                                         IID_PPV_ARGS(computeRootSignature_.GetAddressOf()));
+        hr = device->CreateRootSignature(0, computeSignatureBlob->GetBufferPointer(), computeSignatureBlob->GetBufferSize(), IID_PPV_ARGS(computeRootSignature_.GetAddressOf()));
         ASSERT_IF_FAILED(hr);
     }
 }

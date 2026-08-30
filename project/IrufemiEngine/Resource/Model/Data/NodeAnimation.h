@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Core/Math/Quaternion.h"
-#include "Core/Math/Vector3.h"
-#include "Resource/Model/Data/Keyframe.h"
 #include <vector>
+#include "Core/Math/Vector3.h"
+#include "Core/Math/Quaternion.h"
+#include "Resource/Model/Data/Keyframe.h"
 
-template <typename tValue> struct AnimationCurve {
+template<typename tValue>
+struct AnimationCurve {
     std::vector<Keyframe<tValue>> keyframes;
 };
 

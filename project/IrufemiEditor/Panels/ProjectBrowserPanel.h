@@ -2,11 +2,11 @@
 
 #ifdef EditorMode
 #include "Core/IEditorPanel.h"
-#include <atomic>
 #include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
+#include <atomic>
 
 struct ImGuiTextFilter;
 class DirectoryWatcher;
@@ -29,8 +29,8 @@ struct FileEntry {
 struct DirectoryNode {
     std::filesystem::path path;
     std::string folderName;
-    std::vector<FileEntry> files;                               // このフォルダ内のファイル一覧
-    std::vector<std::unique_ptr<DirectoryNode>> subDirectories; // サブディレクトリ一覧
+    std::vector<FileEntry> files;                                 // このフォルダ内のファイル一覧
+    std::vector<std::unique_ptr<DirectoryNode>> subDirectories;   // サブディレクトリ一覧
 };
 
 /**

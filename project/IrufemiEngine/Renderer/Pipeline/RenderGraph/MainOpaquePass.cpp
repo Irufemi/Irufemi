@@ -1,26 +1,21 @@
 #include "Renderer/Pipeline/RenderGraph/MainOpaquePass.h"
+#include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "RHI/DirectX12/ShadowMap.h"
-#include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 
 void MainOpaquePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
     if (auto shadowMap = drawManager->GetShadowMap()) {
         builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
-
+    
     // G-Bufferをレンダーターゲットとして要求
-    if (auto tex = engine->GetMainRenderTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetEffectMaskTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetNormalTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetMaterialTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetVelocityTexture())
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-
+    if (auto tex = engine->GetMainRenderTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetEffectMaskTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetNormalTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetMaterialTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (auto tex = engine->GetVelocityTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    
     // 深度バッファを書き込み可能として要求
     if (auto dx = drawManager->GetDxCommon()) {
         builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -36,12 +31,11 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
             drawManager->DrawSkybox(p);
         }
     }
-
+    
     // Helper lambda to apply PSO efficiently
     auto DrawWithPSO = [&](const auto& queue, auto applyPSOFunc, auto drawFunc) {
-        if (queue.empty())
-            return;
-
+        if (queue.empty()) return;
+        
         Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
@@ -49,23 +43,22 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         D3D12_GPU_VIRTUAL_ADDRESS currentCustomCBV = 0;
         bool psoApplied = false;
         bool first = true;
-
+        
         for (const auto& p : queue) {
-            bool stateChanged =
-                first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
+            bool stateChanged = first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
             bool psoChanged = (p.customPSO != currentCustomPSO);
-
+            
             if (stateChanged || psoChanged || !psoApplied) {
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
-
+                
                 if (p.customPSO) {
                     drawManager->BindPSO(p.customPSO);
                 } else {
                     applyPSOFunc();
                 }
-
+                
                 currentBlend = p.blendMode;
                 currentDepth = p.depthWrite;
                 currentCull = p.cullMode;
@@ -83,19 +76,13 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
             drawFunc(p);
         }
     };
-
+    
     // 2. Standard 3D (Opaque and Alpha blend)
-    DrawWithPSO(
-        drawManager->GetStandard3DQueue(), [&]() { engine->ApplyPSO("Object3D"); },
-        [&](const auto& p) { drawManager->DrawStandard3D(p); });
-
+    DrawWithPSO(drawManager->GetStandard3DQueue(), [&]() { engine->ApplyPSO("Object3D"); }, [&](const auto& p) { drawManager->DrawStandard3D(p); });
+    
     // PrimitiveBatch
-    DrawWithPSO(
-        drawManager->GetPrimitiveBatchQueue(), [&]() { engine->ApplyPSO("Batch"); },
-        [&](const auto& p) { drawManager->DrawPrimitiveBatch(p); });
+    DrawWithPSO(drawManager->GetPrimitiveBatchQueue(), [&]() { engine->ApplyPSO("Batch"); }, [&](const auto& p) { drawManager->DrawPrimitiveBatch(p); });
 
     // ModelBatch
-    DrawWithPSO(
-        drawManager->GetModelBatchQueue(), [&]() { engine->ApplyPSO("Batch"); },
-        [&](const auto& p) { drawManager->DrawModelBatch(p); });
+    DrawWithPSO(drawManager->GetModelBatchQueue(), [&]() { engine->ApplyPSO("Batch"); }, [&](const auto& p) { drawManager->DrawModelBatch(p); });
 }

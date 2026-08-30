@@ -1,8 +1,8 @@
 #pragma once
-#include <cstdint>
 #include <d3d12.h>
-#include <vector>
 #include <wrl/client.h>
+#include <cstdint>
+#include <vector>
 
 class DirectXCommon;
 
@@ -22,7 +22,7 @@ public:
      * @param heapSizeInBytes ヒープサイズ（デフォルトは64MB）
      */
     void Initialize(DirectXCommon* dxCommon, uint64_t heapSizeInBytes = 1024 * 1024 * 64);
-
+    
     /**
      * @brief 解放
      */
@@ -42,23 +42,21 @@ public:
      * @brief ヒープ上の指定オフセットにリソースを作成・配置する
      * @return 成功時はリソースのポインタ、失敗時はnullptr
      */
-    ID3D12Resource* AcquirePlacedResource(const D3D12_RESOURCE_DESC& desc, uint64_t offset,
-                                          D3D12_RESOURCE_STATES initialState, const D3D12_CLEAR_VALUE* clearValue);
+    ID3D12Resource* AcquirePlacedResource(const D3D12_RESOURCE_DESC& desc, uint64_t offset, D3D12_RESOURCE_STATES initialState, const D3D12_CLEAR_VALUE* clearValue);
 
     /**
      * @brief HeapSize を取得する。
      * @return 取得された HeapSize
      */
-    uint64_t GetHeapSize() const {
-        return heapSize_;
-    }
-
+    uint64_t GetHeapSize() const { return heapSize_; }
+    
 #ifdef USE_IMGUI
     /**
      * @brief デバッグUIの描画（エイリアシングのメモリ配置を可視化）
      */
     void DebugUI();
 #endif
+
 
 private:
     Microsoft::WRL::ComPtr<ID3D12Heap> heap_;

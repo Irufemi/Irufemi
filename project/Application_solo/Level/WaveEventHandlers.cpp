@@ -1,25 +1,21 @@
 #include "Level/WaveEventHandlers.h"
-#include "Audio/AudioManager.h"
 #include "Combat/DebugEnemySpawnerComponent.h"
-#include "Core/Math/MathFunction.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Core/Utility/Log.h"
-#include "Framework/Component/Logic/SpawnPointComponent.h"
-#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
-#include "Framework/Scene/SceneManager.h"
-#include "Level/WaveManagerComponent.h"
-#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Audio/AudioManager.h"
+#include "Core/Utility/Log.h"
+#include "Level/WaveManagerComponent.h"
+#include "Framework/Component/Logic/SpawnPointComponent.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Core/Math/MathFunction.h"
 #include <iostream>
 
-std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveManagerComponent* manager,
-                                                                         const WaveEventData& data,
-                                                                         const Irufemi::Vector3& railPos,
-                                                                         const Irufemi::Vector3& railForward,
-                                                                         const Irufemi::Vector3& railRight) {
+std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
     std::vector<Irufemi::Vector3> positions;
 
     // 1. GroupId / WaveId から SpawnPoint を取得
@@ -40,17 +36,14 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
                 spawnPos = t->GetPosition();
             }
         } else if (waveId != "Unknown") {
-            Log::OutPutLog(std::cout, "[WaveManager] Warning: SpawnPoint with WaveId '" + waveId +
-                                          "' not found in preview/execute.\n");
+            Log::OutPutLog(std::cout, "[WaveManager] Warning: SpawnPoint with WaveId '" + waveId + "' not found in preview/execute.\n");
         }
     }
 
     int count = 1;
     std::string formation = "Center";
-    if (data.parameters.contains("Count"))
-        count = data.parameters["Count"].get<int>();
-    if (data.parameters.contains("Formation"))
-        formation = data.parameters["Formation"].get<std::string>();
+    if (data.parameters.contains("Count")) count = data.parameters["Count"].get<int>();
+    if (data.parameters.contains("Formation")) formation = data.parameters["Formation"].get<std::string>();
 
     for (int i = 0; i < count; ++i) {
         Irufemi::Vector3 currentSpawnPos = spawnPos;
@@ -77,42 +70,36 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
     return positions;
 }
 
-void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data,
-                                const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward,
-                                const Irufemi::Vector3& railRight) {
+void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
     auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
     Irufemi::Vector3 spawnRot = {0.0f, std::atan2(-railForward.x, -railForward.z), 0.0f};
 
     auto engine = BaseModel::GetIrufemiEngine();
     auto scene = engine ? engine->GetSceneManager()->GetCurrentScene() : nullptr;
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
-        auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
+        auto spawnerObj = baseScene->FindGameObject("EnemySpawner"); 
         if (spawnerObj) {
             if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
                 for (const auto& pos : positions) {
                     spawner->SpawnEnemy(pos, spawnRot);
                 }
-                Log::OutPutLog(std::cout, "[WaveManager] Spawned " + std::to_string(positions.size()) +
-                                              " enemies at distance: " + std::to_string(data.triggerDistance) + "\n");
+                Log::OutPutLog(std::cout, "[WaveManager] Spawned " + std::to_string(positions.size()) + " enemies at distance: " + std::to_string(data.triggerDistance) + "\n");
                 return;
             }
         }
     }
-
+    
     Log::OutPutLog(std::cout, "[WaveManager] Warning: DebugEnemySpawner not found.\n");
 }
 
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 
-void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const WaveEventData& data,
-                                          const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward,
-                                          const Irufemi::Vector3& railRight) {
+void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
     auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
-
+    
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine)
-        return;
+    if (!engine) return;
 
     std::string modelPath = "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj";
     auto scene = manager->GetGameObject()->GetScene();
@@ -132,7 +119,7 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
             Irufemi::Vector3 rot = {0.0f, std::atan2(-railForward.x, -railForward.z), 0.0f};
             Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(scale, rot, positions[i]);
             previewBatch->AddInstanceWorld(transform);
-
+            
             // モデルが背景に溶け込んで見えにくいため、同時に赤いワイヤー（キューブ）も描画して視認性を上げる
             if (engine->GetDebugPrimitiveRenderer()) {
                 Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
@@ -143,22 +130,19 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
         Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
         for (const auto& pos : positions) {
             Irufemi::Vector3 scale = {2.0f, 2.0f, 2.0f};
-            Irufemi::Matrix4x4 transform =
-                Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, pos);
+            Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, pos);
             engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
         }
     }
 }
 #endif
 
-void PlayBGMHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos,
-                             const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
+void PlayBGMHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data, const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward, const Irufemi::Vector3& railRight) {
     std::string track = "Unknown";
     if (data.parameters.contains("Track")) {
         track = data.parameters["Track"].get<std::string>();
     }
-    Log::OutPutLog(std::cout, "[WaveManager] Playing BGM: " + track +
-                                  " at distance: " + std::to_string(data.triggerDistance) + "\n");
+    Log::OutPutLog(std::cout, "[WaveManager] Playing BGM: " + track + " at distance: " + std::to_string(data.triggerDistance) + "\n");
 
     auto engine = BaseModel::GetIrufemiEngine();
     if (engine) {

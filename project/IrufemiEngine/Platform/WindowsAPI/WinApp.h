@@ -1,10 +1,13 @@
 #pragma once
 
 #include <Windows.h>
-#include <cstdint>
 #include <string>
+#include <cstdint>
 
-enum class DisplayMode { Windowed, Borderless };
+enum class DisplayMode {
+    Windowed,
+    Borderless
+};
 
 // 前方宣言
 class InputManager;
@@ -56,65 +59,47 @@ public:
 
     /** @name ゲッター */
     ///@{
-    HWND GetHwnd() const {
-        return hwnd_;
-    }
+    HWND GetHwnd() const { return hwnd_; }
     /**
      * @brief HInstance を取得する。
      * @return 取得された HInstance
      */
-    HINSTANCE GetHInstance() const {
-        return hInstance_;
-    }
+    HINSTANCE GetHInstance() const { return hInstance_; }
     /**
      * @brief ClientWidth を取得する。
      * @return 取得された ClientWidth
      */
-    int GetClientWidth() const {
-        return clientWidth_;
-    }
+    int GetClientWidth() const { return clientWidth_; }
     /**
      * @brief ClientHeight を取得する。
      * @return 取得された ClientHeight
      */
-    int GetClientHeight() const {
-        return clientHeight_;
-    }
+    int GetClientHeight() const { return clientHeight_; }
     /**
      * @brief IsCursorLocked かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsCursorLocked() const {
-        return cursorLocked_;
-    }
+    bool IsCursorLocked() const { return cursorLocked_; }
     /**
      * @brief D&Dでドロップされたファイルパスを取得する
      */
-    std::string GetDroppedFilePath() const {
-        return droppedFilePath_;
-    }
+    std::string GetDroppedFilePath() const { return droppedFilePath_; }
 
     /**
      * @brief ドロップされたファイルパスをクリアする
      */
-    void ClearDroppedFilePath() {
-        droppedFilePath_.clear();
-    }
+    void ClearDroppedFilePath() { droppedFilePath_.clear(); }
 
     /**
      * @brief ドロップされたファイルパスを設定する（内部用）
      */
-    void SetDroppedFilePath(const std::string& path) {
-        droppedFilePath_ = path;
-    }
+    void SetDroppedFilePath(const std::string& path) { droppedFilePath_ = path; }
     ///@}
 
     /**
      * @brief ディスプレイモードの取得
      */
-    DisplayMode GetDisplayMode() const {
-        return displayMode_;
-    }
+    DisplayMode GetDisplayMode() const { return displayMode_; }
 
     /**
      * @brief ディスプレイモードの変更
@@ -134,9 +119,7 @@ public:
     /**
      * @brief IrufemiEngineのポインタを設定
      */
-    void SetEngine(IrufemiEngine* engine) {
-        engine_ = engine;
-    }
+    void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
 
     /**
      * @brief 静的ウィンドウプロシージャ
@@ -171,9 +154,9 @@ private:
     bool didRegisterClass_ = false;
     InputManager* inputManager_ = nullptr; // InputManagerへのポインタ
     IrufemiEngine* engine_ = nullptr;      // IrufemiEngineへのポインタ
-
+    
     std::string droppedFilePath_ = ""; // 最後にドロップされたファイルのパス
-    bool cursorLocked_ = true;         // カーソル固定状態デフォルト真
+    bool cursorLocked_ = true; // カーソル固定状態デフォルト真
     DisplayMode displayMode_ = DisplayMode::Windowed;
     RECT windowedRect_{}; // ウィンドウモード時のサイズ保存用
 };

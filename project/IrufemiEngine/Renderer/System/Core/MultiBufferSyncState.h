@@ -1,6 +1,6 @@
 #pragma once
-#include "RHI/DirectX12/DirectXCommon.h" // kMaxFramesInFlight
 #include <cstdint>
+#include "RHI/DirectX12/DirectXCommon.h" // kMaxFramesInFlight
 
 /**
  * @class MultiBufferSyncState
@@ -14,7 +14,7 @@ public:
         // 初期状態ではすべてのフレームのバッファ更新が必要
         MarkAsDirty();
     }
-
+    
     virtual ~MultiBufferSyncState() = default;
 
     /**
@@ -41,5 +41,5 @@ public:
     }
 
 protected:
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+    bool isDirtyBuffer_[kMaxFramesInFlight] = { true, true, true };
 };

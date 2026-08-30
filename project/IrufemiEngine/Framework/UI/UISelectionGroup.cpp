@@ -34,7 +34,7 @@ void UISelectionGroup::Update(InputManager* input) {
     if (!isDecided_) {
         // --- 待機中 ---
         isVisible_ = true;
-
+        
         if (!items_.empty() && input) {
             bool isMenuChanged = false;
 
@@ -79,7 +79,8 @@ void UISelectionGroup::Update(InputManager* input) {
             }
 
             // 決定キー (Space または Enter または テンキーのEnter)
-            if (input->IsKeyPressedDIK(0x39 /* Space */) || input->IsKeyPressedDIK(0x1C /* Enter */) ||
+            if (input->IsKeyPressedDIK(0x39 /* Space */) || 
+                input->IsKeyPressedDIK(0x1C /* Enter */) || 
                 input->IsKeyPressedDIK(0x9C /* Numpad Enter */)) {
                 isDecided_ = true;
                 animator_.Reset(); // 決定時にアニメーションをリセット
@@ -94,7 +95,7 @@ void UISelectionGroup::Update(InputManager* input) {
 
         for (int i = 0; i < static_cast<int>(items_.size()); ++i) {
             Irufemi::Vector4 applyColor = (i == selectedIndex_) ? currentActiveColor : inactiveColor_;
-
+            
             if (std::holds_alternative<Sprite*>(items_[i])) {
                 if (auto* sprite = std::get<Sprite*>(items_[i])) {
                     sprite->SetColor(applyColor);
@@ -109,19 +110,18 @@ void UISelectionGroup::Update(InputManager* input) {
     } else {
         // --- 決定後 ---
         transitionDelayTimer_ += 1.0f / 60.0f;
-
+        
         // 決定されたアイテムだけを高速フラッシュ
         isVisible_ = animator_.GetFlashVisibility(40.0f);
-
+        
         for (int i = 0; i < static_cast<int>(items_.size()); ++i) {
             if (i == selectedIndex_) {
                 // 選択されたものはフラッシュ
                 Irufemi::Vector4 applyColor = activeBaseColor_;
                 applyColor.w = isVisible_ ? 1.0f : 0.0f; // フラッシュ用にアルファを切り替え
-
+                
                 if (std::holds_alternative<Sprite*>(items_[i])) {
-                    if (auto* sprite = std::get<Sprite*>(items_[i]))
-                        sprite->SetColor(applyColor);
+                    if (auto* sprite = std::get<Sprite*>(items_[i])) sprite->SetColor(applyColor);
                 } else if (std::holds_alternative<StaticModelObject*>(items_[i])) {
                     if (auto* obj = std::get<StaticModelObject*>(items_[i])) {
                         // isVisible_ でDraw()自体を弾く方式もあるが、StaticModelObjectに透明度を入れて見えなくする
@@ -133,11 +133,9 @@ void UISelectionGroup::Update(InputManager* input) {
                 Irufemi::Vector4 invisibleColor = inactiveColor_;
                 invisibleColor.w = 0.0f;
                 if (std::holds_alternative<Sprite*>(items_[i])) {
-                    if (auto* sprite = std::get<Sprite*>(items_[i]))
-                        sprite->SetColor(invisibleColor);
+                    if (auto* sprite = std::get<Sprite*>(items_[i])) sprite->SetColor(invisibleColor);
                 } else if (std::holds_alternative<StaticModelObject*>(items_[i])) {
-                    if (auto* obj = std::get<StaticModelObject*>(items_[i]))
-                        obj->SetColor(invisibleColor);
+                    if (auto* obj = std::get<StaticModelObject*>(items_[i])) obj->SetColor(invisibleColor);
                 }
             }
         }
@@ -145,8 +143,7 @@ void UISelectionGroup::Update(InputManager* input) {
 }
 
 void UISelectionGroup::Draw() {
-    if (items_.empty())
-        return;
+    if (items_.empty()) return;
 
     for (auto& item : items_) {
         if (std::holds_alternative<Sprite*>(item)) {
@@ -169,3 +166,4 @@ void UISelectionGroup::Draw() {
 bool UISelectionGroup::ShouldTransition() const {
     return isDecided_ && (transitionDelayTimer_ >= kTransitionDelayLimit);
 }
+

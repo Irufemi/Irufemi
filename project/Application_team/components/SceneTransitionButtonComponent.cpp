@@ -1,11 +1,11 @@
 #include "SceneTransitionButtonComponent.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/UI/ButtonComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/Scene/SceneManager.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/UI/ButtonComponent.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Framework/Scene/SceneTransition.h"
 
 void SceneTransitionButtonComponent::OnRegisterProperties() {
@@ -25,15 +25,12 @@ void SceneTransitionButtonComponent::Initialize() {
 }
 
 void SceneTransitionButtonComponent::Update() {
-    if (!button_ || !gameObject_ || !sprite_)
-        return;
+    if (!button_ || !gameObject_ || !sprite_) return;
 
     auto scene = gameObject_->GetScene();
-    if (!scene)
-        return;
+    if (!scene) return;
     auto engine = scene->GetEngine();
-    if (!engine)
-        return;
+    if (!engine) return;
 
     animator_.Update(1.0f / 60.0f);
 
@@ -50,15 +47,15 @@ void SceneTransitionButtonComponent::Update() {
                 // 高速フラッシュ演出
                 bool isVisible = animator_.GetFlashVisibility(40.0f);
                 if (isVisible) {
-                    sprite_->GetSprite()->SetColor({0.5f, 0.5f, 0.5f, 1.0f}); // clickColor (fallback)
+                    sprite_->GetSprite()->SetColor({ 0.5f, 0.5f, 0.5f, 1.0f }); // clickColor (fallback)
                 } else {
                     // 非表示状態（アルファ0）
-                    sprite_->GetSprite()->SetColor({0.5f, 0.5f, 0.5f, 0.0f});
+                    sprite_->GetSprite()->SetColor({ 0.5f, 0.5f, 0.5f, 0.0f });
                 }
             } else {
                 // アニメーションが終わったら元のスケールと色に戻す
                 GetTransform()->SetScale(originalScale_);
-                sprite_->GetSprite()->SetColor({0.5f, 0.5f, 0.5f, 1.0f});
+                sprite_->GetSprite()->SetColor({ 0.5f, 0.5f, 0.5f, 1.0f });
             }
         }
 
@@ -69,18 +66,10 @@ void SceneTransitionButtonComponent::Update() {
             if (!onClickLoadScene_.empty()) {
                 SceneTransition::Type type = SceneTransition::Type::Fade;
                 switch (transitionType_) {
-                case 0:
-                    type = SceneTransition::Type::Fade;
-                    break;
-                case 1:
-                    type = SceneTransition::Type::Dissolve;
-                    break;
-                case 2:
-                    type = SceneTransition::Type::Slide;
-                    break;
-                case 3:
-                    type = SceneTransition::Type::RadialBlur;
-                    break;
+                case 0: type = SceneTransition::Type::Fade; break;
+                case 1: type = SceneTransition::Type::Dissolve; break;
+                case 2: type = SceneTransition::Type::Slide; break;
+                case 3: type = SceneTransition::Type::RadialBlur; break;
                 }
                 engine->GetSceneManager()->LoadScene(onClickLoadScene_, type, transitionDuration_);
             }

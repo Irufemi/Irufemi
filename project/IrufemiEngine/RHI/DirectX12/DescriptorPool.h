@@ -1,14 +1,15 @@
 #pragma once
-#include <cstdint>
 #include <d3d12.h>
-#include <limits>
-#include <mutex>
-#include <queue>
-#include <vector>
 #include <wrl.h>
+#include <vector>
+#include <queue>
+#include <mutex>
+#include <cstdint>
+#include <limits>
 
 class DescriptorPool {
 public:
+
     static constexpr uint32_t kMaxSRVCount = 16384;
     static constexpr uint32_t kInvalid = 0xFFFFFFFFu; // std::numeric_limits<uint32_t>::max() の代用
 
@@ -71,36 +72,27 @@ public:
     /**
      * @brief CreateSRVForStructuredBuffer を実行する。
      */
-    void CreateSRVForStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements,
-                                      UINT structureByteStride);
+    void CreateSRVForStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
 
     /**
      * @brief Heap を取得する。
      * @return 取得された Heap
      */
-    ID3D12DescriptorHeap* GetHeap() const {
-        return heap_.Get();
-    }
+    ID3D12DescriptorHeap* GetHeap() const { return heap_.Get(); }
     /**
      * @brief Capacity を実行する。
      */
-    uint32_t Capacity() const {
-        return kMaxSRVCount;
-    }
+    uint32_t Capacity() const { return kMaxSRVCount; }
     /**
      * @brief BaseIndex を実行する。
      */
-    uint32_t BaseIndex() const {
-        return baseIndex_;
-    }
+    uint32_t BaseIndex() const { return baseIndex_; }
 
 private:
     struct Pending {
         uint64_t fence;
         uint32_t index;
-        bool operator<(const Pending& rhs) const {
-            return fence > rhs.fence;
-        } // フェンス小→大
+        bool operator<(const Pending& rhs) const { return fence > rhs.fence; } // フェンス小→大
     };
 
     Microsoft::WRL::ComPtr<ID3D12Device> device_;

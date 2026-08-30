@@ -5,13 +5,15 @@
 #include "Irufemi.h"
 
 // デストラクタ
-TitleScene::~TitleScene() {}
+TitleScene::~TitleScene() {
+}
 
 // 初期化
 void TitleScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
+    
 }
 
 // 更新
@@ -33,3 +35,4 @@ void TitleScene::DrawDebugTab() {
     BaseScene::DrawDebugTab();
 #endif
 }
+

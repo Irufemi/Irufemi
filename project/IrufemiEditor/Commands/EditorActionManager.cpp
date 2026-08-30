@@ -3,24 +3,23 @@
 #ifdef EditorMode
 #include "Core/EditorManager.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
-#include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject/GameObject.h"
-#include "Framework/Scene/BaseScene.h"
 #include "Framework/Scene/SceneManager.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
 #include "Framework/Scene/SceneSerializer.h"
 
 #include "Commands/EditorCommands.h"
-#include <algorithm>
 #include <filesystem>
+#include <algorithm>
 
 EditorActionManager::EditorActionManager(EditorManager* editor) : editorManager_(editor) {}
 
 void EditorActionManager::PushAndExecute(std::unique_ptr<ICommand> command) {
-    if (!command)
-        return;
+    if (!command) return;
 
     // 操作の実行
     command->Do();
@@ -38,8 +37,7 @@ void EditorActionManager::PushAndExecute(std::unique_ptr<ICommand> command) {
 }
 
 void EditorActionManager::Undo() {
-    if (undoStack_.empty())
-        return;
+    if (undoStack_.empty()) return;
 
     // Undoスタックから取り出してUndo実行
     auto command = std::move(undoStack_.back());
@@ -52,8 +50,7 @@ void EditorActionManager::Undo() {
 }
 
 void EditorActionManager::Redo() {
-    if (redoStack_.empty())
-        return;
+    if (redoStack_.empty()) return;
 
     // Redoスタックから取り出して再度実行
     auto command = std::move(redoStack_.back());
@@ -71,15 +68,12 @@ void EditorActionManager::ClearHistory() {
 }
 
 void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, const Irufemi::Vector3& position) {
-    if (!editorManager_)
-        return;
+    if (!editorManager_) return;
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
-        return;
+    if (!engine || !engine->GetSceneManager()) return;
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
-        return;
+    if (!baseScene) return;
 
     std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(assetPath.c_str()));
     std::string ext = droppedPath.extension().string();
@@ -93,14 +87,14 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
         auto transform = newObj->GetTransform();
         transform->SetPosition(position);
         auto spriteRenderer = newObj->AddComponent<SpriteRendererComponent>();
-        spriteRenderer->SetTexture(assetPath);
+        spriteRenderer->SetTexture(assetPath); 
         newObj->Initialize();
     } else if (ext == ".obj" || ext == ".gltf" || ext == ".fbx" || ext == ".glb") {
         newObj = std::make_shared<GameObject>("Model_" + stemString);
         auto transform = newObj->GetTransform();
         transform->SetPosition(position);
         auto meshRenderer = newObj->AddComponent<MeshRendererComponent>();
-
+        
         // 同名ファイルに対応するため、ファイル名だけでなく相対パスを渡す
         std::string modelName = assetPath;
         std::replace(modelName.begin(), modelName.end(), '\\', '/');
@@ -109,7 +103,7 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
         if (lowerPath.find("resources/model/") == 0) {
             modelName = modelName.substr(16);
         }
-        meshRenderer->LoadModel(modelName);
+        meshRenderer->LoadModel(modelName); 
         newObj->Initialize();
     } else if (ext == ".json" || ext == ".prefab") {
         newObj = SceneSerializer::LoadPrefab(assetPath);
@@ -128,15 +122,12 @@ void EditorActionManager::CreateObjectFromAsset(const std::string& assetPath, co
 }
 
 void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
-    if (!editorManager_)
-        return;
+    if (!editorManager_) return;
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
-        return;
+    if (!engine || !engine->GetSceneManager()) return;
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
-        return;
+    if (!baseScene) return;
 
     std::shared_ptr<GameObject> obj = nullptr;
 
@@ -148,14 +139,10 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
         obj = std::make_shared<GameObject>(typeName);
         obj->GetTransform();
         auto renderer = obj->AddComponent<PrimitiveRendererComponent>();
-        if (typeName == "Cube")
-            renderer->SetShape(Irufemi::PrimitiveType::Cube);
-        else if (typeName == "Sphere")
-            renderer->SetShape(Irufemi::PrimitiveType::Sphere);
-        else if (typeName == "Cylinder")
-            renderer->SetShape(Irufemi::PrimitiveType::Cylinder);
-        else if (typeName == "Plane")
-            renderer->SetShape(Irufemi::PrimitiveType::Plane);
+        if (typeName == "Cube") renderer->SetShape(Irufemi::PrimitiveType::Cube);
+        else if (typeName == "Sphere") renderer->SetShape(Irufemi::PrimitiveType::Sphere);
+        else if (typeName == "Cylinder") renderer->SetShape(Irufemi::PrimitiveType::Cylinder);
+        else if (typeName == "Plane") renderer->SetShape(Irufemi::PrimitiveType::Plane);
         obj->Initialize();
     } else if (typeName == "Model") {
         obj = std::make_shared<GameObject>("Model");
@@ -166,7 +153,7 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
         obj = std::make_shared<GameObject>("Sprite");
         obj->GetTransform();
         auto spriteRenderer = obj->AddComponent<SpriteRendererComponent>();
-        obj->GetComponent<TransformComponent>()->SetPosition({640.0f, 360.0f, 0.0f});
+        obj->GetComponent<TransformComponent>()->SetPosition({ 640.0f, 360.0f, 0.0f });
         obj->Initialize();
     }
 
@@ -178,18 +165,15 @@ void EditorActionManager::CreatePrimitiveObject(const std::string& typeName) {
 }
 
 void EditorActionManager::DuplicateObject(std::shared_ptr<GameObject> target) {
-    if (!target || !editorManager_)
-        return;
+    if (!target || !editorManager_) return;
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
-        return;
+    if (!engine || !engine->GetSceneManager()) return;
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
-        return;
+    if (!baseScene) return;
 
     auto clone = target->Clone();
-
+    
     // クローンの場合は親をセットしてから生成コマンドを発行する
     auto parent = target->GetParent();
     size_t index = (size_t)-1;
@@ -204,15 +188,12 @@ void EditorActionManager::DuplicateObject(std::shared_ptr<GameObject> target) {
 }
 
 void EditorActionManager::DeleteObject(std::shared_ptr<GameObject> target) {
-    if (!target || !editorManager_)
-        return;
+    if (!target || !editorManager_) return;
     auto* engine = editorManager_->GetEngine();
-    if (!engine || !engine->GetSceneManager())
-        return;
+    if (!engine || !engine->GetSceneManager()) return;
 
     auto* baseScene = dynamic_cast<BaseScene*>(engine->GetSceneManager()->GetCurrentScene());
-    if (!baseScene)
-        return;
+    if (!baseScene) return;
 
     // 削除コマンドの発行
     PushAndExecute(std::make_unique<DeleteObjectCommand>(baseScene, target));
