@@ -1,7 +1,8 @@
 ﻿import os
 import sys
 import requests
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 def get_commit_diff(repo, commit_sha, token):
     url = f"https://api.github.com/repos/{repo}/commits/{commit_sha}"
@@ -38,16 +39,12 @@ def main():
         print("Missing required environment variables.")
         sys.exit(1)
 
-    # 1. 差分の取得
     diff_text = get_commit_diff(repo, commit_sha, github_token)
     
     if not diff_text.strip():
         print("No diff found. Exiting.")
         sys.exit(0)
 
-    # 2. Geminiによるレビュー
-    genai.configure(api_key=api_key)
-    
     system_prompt = """あなたは、IrufemiEngine という C++ ゲームエンジンのエキスパート開発者であり、厳格なコードレビュアーです。
 与えられた git diff（Pushされたコミットの差分）を読み、以下のプロジェクトルールに従ってレビューを行ってください。
 指摘事項がある場合は、どのファイルのどの箇所かを含め、修正案とともに日本語で簡潔にまとめてください。
@@ -58,18 +55,14 @@ def main():
    - `IrufemiEngine/` ディレクトリ配下のファイルには、特定のゲームやシーンに依存する処理・アクター・固有データを絶対に含めないこと。
    - ゲーム固有のロジックやキャラクター制御は、必ず `Application/` (または `Application_solo/`) ディレクトリ配下に記述すること。
 2. Modern C++
-   - C++17 または C++20 基準のモダンな構文を積極的に使用すること（例: `std::clamp`, `<filesystem>`, range-based for 等）。
+   - C++17 または C++20 基準のモダンな構文を積極的に使用すること。
 3. Safety (安全性)
-   - メモリリークを防ぐため、生ポインタ（Raw Pointer）の新規使用は極力避け、スマートポインタ（`std::unique_ptr`, `std::shared_ptr` 等）を優先すること。
+   - 生ポインタの新規使用は極力避け、スマートポインタを優先すること。
 4. DirectX
-   - DirectXのCOMオブジェクトを扱う際は、必ず `Microsoft::WRL::ComPtr` を使用すること。
-   - DirectXのAPI呼び出し時は `HRESULT` の戻り値を必ずチェックし、適切なエラーハンドリング（アサート等）を含めること。
+   - DirectXのCOMオブジェクトを扱う際は必ず `Microsoft::WRL::ComPtr` を使用すること。
 5. Coding Standards & Naming (コーディング規約)
    - インクルードガードには `#pragma once` を使用すること。
-   - ヘッダーへの注釈は「Doxygen形式」で記述すること。
-   - メンバ変数に `m_` などのプレフィックスをつけるスタイルは厳禁。代わりにキャメルケースの末尾にアンダーバーをつけること（例：`variableName_`）。
-6. Leverage Existing Systems (既存システムの活用)
-   - 既存の機能で代替できそうな冗長な処理があれば指摘すること。
+   - メンバ変数に `m_` などのプレフィックスをつけるスタイルは厳禁。代わりにキャメルケースの末尾にアンダーバーをつけること。
 
 【出力フォーマット】
 マークダウン形式で、レビューコメントのみを出力してください。"""
@@ -77,14 +70,19 @@ def main():
     prompt = f"以下の git diff をレビューしてください:\n\n```diff\n{diff_text}\n```"
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
-        response = model.generate_content(prompt)
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+            )
+        )
         review_result = response.text
     except Exception as e:
         print(f"Gemini API Error: {e}")
         sys.exit(1)
 
-    # 3. 結果をコミットにコメント
     comment_body = f"## 🤖 Gemini Push Review\n\n{review_result}"
     post_commit_comment(repo, commit_sha, github_token, comment_body)
 

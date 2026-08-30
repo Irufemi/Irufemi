@@ -1,9 +1,47 @@
 import os
 
-content = """import os
+yaml_content = """name: Gemini Push Reviewer
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-genai requests
+
+      - name: Run Reviewer Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_SHA: ${{ github.sha }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          python .github/scripts/push_reviewer.py
+"""
+
+py_content = """import os
 import sys
 import requests
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 def get_commit_diff(repo, commit_sha, token):
     url = f"https://api.github.com/repos/{repo}/commits/{commit_sha}"
@@ -48,8 +86,6 @@ def main():
         sys.exit(0)
 
     # 2. Geminiによるレビュー
-    genai.configure(api_key=api_key)
-    
     system_prompt = '''あなたは、IrufemiEngine という C++ ゲームエンジンのエキスパート開発者であり、厳格なコードレビュアーです。
 与えられた git diff（Pushされたコミットの差分）を読み、以下のプロジェクトルールに従ってレビューを行ってください。
 指摘事項がある場合は、どのファイルのどの箇所かを含め、修正案とともに日本語で簡潔にまとめてください。
@@ -79,8 +115,14 @@ def main():
     prompt = f"以下の git diff をレビューしてください:\\n\\n```diff\\n{diff_text}\\n```"
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
-        response = model.generate_content(prompt)
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+            )
+        )
         review_result = response.text
     except Exception as e:
         print(f"Gemini API Error: {e}")
@@ -94,5 +136,7 @@ if __name__ == '__main__':
     main()
 """
 
+with open(r"F:\school\3_0\WP0\WP0\.github\workflows\gemini-push-review.yml", "w", encoding="utf-8") as f:
+    f.write(yaml_content)
 with open(r"F:\school\3_0\WP0\WP0\.github\scripts\push_reviewer.py", "w", encoding="utf-8") as f:
-    f.write(content)
+    f.write(py_content)
