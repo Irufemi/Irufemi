@@ -1,22 +1,22 @@
-import os
+﻿import os
 import sys
 import requests
 import google.generativeai as genai
 
-def get_pr_diff(repo, pr_number, token):
-    url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
+def get_commit_diff(repo, commit_sha, token):
+    url = f"https://api.github.com/repos/{repo}/commits/{commit_sha}"
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3.diff"
     }
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(f"Failed to fetch PR diff: {response.status_code}")
+        print(f"Failed to fetch commit diff: {response.status_code}")
         sys.exit(1)
     return response.text
 
-def post_comment(repo, pr_number, token, body):
-    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+def post_commit_comment(repo, commit_sha, token, body):
+    url = f"https://api.github.com/repos/{repo}/commits/{commit_sha}/comments"
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json"
@@ -31,15 +31,15 @@ def post_comment(repo, pr_number, token, body):
 def main():
     api_key = os.getenv("GEMINI_API_KEY")
     github_token = os.getenv("GITHUB_TOKEN")
-    pr_number = os.getenv("PR_NUMBER")
+    commit_sha = os.getenv("COMMIT_SHA")
     repo = os.getenv("REPO_NAME")
 
-    if not all([api_key, github_token, pr_number, repo]):
+    if not all([api_key, github_token, commit_sha, repo]):
         print("Missing required environment variables.")
         sys.exit(1)
 
     # 1. 差分の取得
-    diff_text = get_pr_diff(repo, pr_number, github_token)
+    diff_text = get_commit_diff(repo, commit_sha, github_token)
     
     if not diff_text.strip():
         print("No diff found. Exiting.")
@@ -48,9 +48,8 @@ def main():
     # 2. Geminiによるレビュー
     genai.configure(api_key=api_key)
     
-    system_prompt = """
-あなたは、IrufemiEngine という C++ ゲームエンジンのエキスパート開発者であり、厳格なコードレビュアーです。
-与えられた git diff（PRの変更差分）を読み、以下のプロジェクトルールに従ってレビューを行ってください。
+    system_prompt = """あなたは、IrufemiEngine という C++ ゲームエンジンのエキスパート開発者であり、厳格なコードレビュアーです。
+与えられた git diff（Pushされたコミットの差分）を読み、以下のプロジェクトルールに従ってレビューを行ってください。
 指摘事項がある場合は、どのファイルのどの箇所かを含め、修正案とともに日本語で簡潔にまとめてください。
 問題が全くない場合は「LGTM! プロジェクトルールへの違反は見当たりません。」と出力してください。
 
@@ -73,8 +72,7 @@ def main():
    - 既存の機能で代替できそうな冗長な処理があれば指摘すること。
 
 【出力フォーマット】
-マークダウン形式で、レビューコメントのみを出力してください。
-"""
+マークダウン形式で、レビューコメントのみを出力してください。"""
     
     prompt = f"以下の git diff をレビューしてください:\n\n```diff\n{diff_text}\n```"
     
@@ -86,9 +84,9 @@ def main():
         print(f"Gemini API Error: {e}")
         sys.exit(1)
 
-    # 3. 結果をPRにコメント
-    comment_body = f"## 🤖 Gemini PR Review\n\n{review_result}"
-    post_comment(repo, pr_number, github_token, comment_body)
+    # 3. 結果をコミットにコメント
+    comment_body = f"## 🤖 Gemini Push Review\n\n{review_result}"
+    post_commit_comment(repo, commit_sha, github_token, comment_body)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
