@@ -253,12 +253,14 @@ namespace Math {
     }
 
     Matrix4x4 MakeIdentity4x4() {
+        // clang-format off
         return {
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
         };
+        // clang-format on
     }
 
     Matrix4x4 MakeTranslateMatrix(Vector3 translate) {
@@ -302,34 +304,40 @@ namespace Math {
     Matrix4x4 MakeRotateXMatrix(float theta) {
         float c = std::cos(theta);
         float s = std::sin(theta);
+        // clang-format off
         return {
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, c,    s,    0.0f,
             0.0f, -s,   c,    0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
         };
+        // clang-format on
     }
 
     Matrix4x4 MakeRotateYMatrix(float theta) {
         float c = std::cos(theta);
         float s = std::sin(theta);
+        // clang-format off
         return {
             c,    0.0f, -s,   0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
             s,    0.0f, c,    0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
         };
+        // clang-format on
     }
 
     Matrix4x4 MakeRotateZMatrix(float theta) {
         float c = std::cos(theta);
         float s = std::sin(theta);
+        // clang-format off
         return {
             c,    s,    0.0f, 0.0f,
             -s,   c,    0.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
         };
+        // clang-format on
     }
 
     Matrix4x4 MakeRotateXYZMatrix(Vector3 rotate) {
@@ -357,30 +365,36 @@ namespace Math {
         float w = h / aspectRatio;
         float a = farClip / (farClip - nearClip);
         float b = (-nearClip * farClip) / (farClip - nearClip);
+        // clang-format off
         return {
             w,    0.0f, 0.0f, 0.0f,
             0.0f, h,    0.0f, 0.0f,
             0.0f, 0.0f, a,    1.0f,
             0.0f, 0.0f, b,    0.0f
         };
+        // clang-format on
     }
 
     Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) {
+        // clang-format off
         return {
             2.0f / (right - left),           0.0f,                            0.0f,                          0.0f,
             0.0f,                            2.0f / (top - bottom),           0.0f,                          0.0f,
             0.0f,                            0.0f,                            1.0f / (farClip - nearClip),   0.0f,
             (left + right) / (left - right), (top + bottom) / (bottom - top), nearClip / (nearClip - farClip), 1.0f
         };
+        // clang-format on
     }
 
     Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth) {
+        // clang-format off
         return {
             width / 2.0f,          0.0f,           0.0f,                0.0f,
             0.0f,                  -height / 2.0f, 0.0f,                0.0f,
             0.0f,                  0.0f,           maxDepth - minDepth, 0.0f,
             left + width / 2.0f,   top + height / 2.0f, minDepth,       1.0f
         };
+        // clang-format on
     }
 
     Ray ScreenPointToRay(Vector2 mousePos, float screenWidth, float screenHeight, const Matrix4x4& viewProjectionInverse) {
@@ -409,12 +423,14 @@ namespace Math {
         float c = std::cos(angle);
         float s = std::sin(angle);
         Vector3 n = Normalize(axis);
+        // clang-format off
         return {
             n.x * n.x * (1 - c) + c,       n.x * n.y * (1 - c) + n.z * s, n.x * n.z * (1 - c) - n.y * s, 0.0f,
             n.x * n.y * (1 - c) - n.z * s, n.y * n.y * (1 - c) + c,       n.y * n.z * (1 - c) + n.x * s, 0.0f,
             n.x * n.z * (1 - c) + n.y * s, n.y * n.z * (1 - c) - n.x * s, n.z * n.z * (1 - c) + c,       0.0f,
             0.0f,                          0.0f,                          0.0f,                          1.0f
         };
+        // clang-format on
     }
 
     Matrix4x4 DirectionToDirection(Vector3 from, Vector3 to) {
@@ -543,12 +559,14 @@ namespace Math {
         float wy = q.w * q.y;
         float wz = q.w * q.z;
 
+        // clang-format off
         return {
             ww + xx - yy - zz, 2.0f * (xy + wz),   2.0f * (xz - wy),   0.0f,
             2.0f * (xy - wz),   ww - xx + yy - zz, 2.0f * (yz + wx),   0.0f,
             2.0f * (xz + wy),   2.0f * (yz - wx),   ww - xx - yy + zz, 0.0f,
             0.0f,               0.0f,               0.0f,               1.0f
         };
+        // clang-format on
     }
 
     Quaternion Slerp(const Quaternion& q0, const Quaternion& q1, float t) {
@@ -574,12 +592,14 @@ namespace Math {
         float scale0 = std::sin((1.0f - t) * theta) / sinTheta;
         float scale1 = std::sin(t * theta) / sinTheta;
 
+        // clang-format off
         return {
             scale0 * q0.x + scale1 * target.x,
             scale0 * q0.y + scale1 * target.y,
             scale0 * q0.z + scale1 * target.z,
             scale0 * q0.w + scale1 * target.w
         };
+        // clang-format on
     }
 
 
