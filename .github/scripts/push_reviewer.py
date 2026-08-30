@@ -4,15 +4,20 @@ import requests
 from google import genai
 from google.genai import types
 
-def get_commit_diff(repo, commit_sha, token):
-    url = f"https://api.github.com/repos/{repo}/commits/{commit_sha}"
+def get_push_diff(repo, before_sha, commit_sha, token):
+    # 新規ブランチの作成時などは before_sha が 0000000000000000000000000000000000000000 になる
+    if not before_sha or before_sha == '0000000000000000000000000000000000000000':
+        url = f"https://api.github.com/repos/{repo}/commits/{commit_sha}"
+    else:
+        url = f"https://api.github.com/repos/{repo}/compare/{before_sha}...{commit_sha}"
+
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3.diff"
     }
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(f"Failed to fetch commit diff: {response.status_code}")
+        print(f"Failed to fetch diff: {response.status_code}")
         sys.exit(1)
     return response.text
 
@@ -33,20 +38,21 @@ def main():
     api_key = os.getenv("GEMINI_API_KEY")
     github_token = os.getenv("GITHUB_TOKEN")
     commit_sha = os.getenv("COMMIT_SHA")
+    before_sha = os.getenv("BEFORE_SHA")
     repo = os.getenv("REPO_NAME")
 
     if not all([api_key, github_token, commit_sha, repo]):
         print("Missing required environment variables.")
         sys.exit(1)
 
-    diff_text = get_commit_diff(repo, commit_sha, github_token)
+    diff_text = get_push_diff(repo, before_sha, commit_sha, github_token)
     
     if not diff_text.strip():
         print("No diff found. Exiting.")
         sys.exit(0)
 
     system_prompt = """あなたは、IrufemiEngine という C++ ゲームエンジンのエキスパート開発者であり、厳格なコードレビュアーです。
-与えられた git diff（Pushされたコミットの差分）を読み、以下のプロジェクトルールに従ってレビューを行ってください。
+与えられた git diff（Pushされた複数のコミットの全差分）を読み、以下のプロジェクトルールに従ってレビューを行ってください。
 指摘事項がある場合は、どのファイルのどの箇所かを含め、修正案とともに日本語で簡潔にまとめてください。
 問題が全くない場合は「LGTM! プロジェクトルールへの違反は見当たりません。」と出力してください。
 
