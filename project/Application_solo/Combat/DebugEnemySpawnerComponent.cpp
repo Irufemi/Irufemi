@@ -27,8 +27,9 @@ void DebugEnemySpawnerComponent::Start() {
     batchRenderer_->LoadModel(enemyModelPath_);
 
     auto scene = gameObject_->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
 
     enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
         auto enemy = std::make_shared<GameObject>("DebugEnemy");
@@ -69,8 +70,9 @@ void DebugEnemySpawnerComponent::Update() {
     }
 
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
-    if (!input)
+    if (!input) {
         return;
+    }
 
     // '2'キーで敵をスポーン
     if (input->IsKeyPressed('2')) {
@@ -112,12 +114,14 @@ void DebugEnemySpawnerComponent::Update() {
 }
 
 void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
-    if (!enemyPool_)
+    if (!enemyPool_) {
         return;
+    }
 
     auto handle = enemyPool_->Acquire();
-    if (!handle.IsValid())
+    if (!handle.IsValid()) {
         return;
+    }
 
     auto enemy = enemyPool_->Resolve(handle);
     if (enemy) {

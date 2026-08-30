@@ -71,8 +71,9 @@ void Primitive2DBatch::RebuildMesh() {
 }
 
 void Primitive2DBatch::CreateResource() {
-    if (!dx_)
+    if (!dx_) {
         return;
+    }
 
     if (!vertexDataList_.empty()) {
         if (vertexResource_) {
@@ -122,8 +123,9 @@ void Primitive2DBatch::SyncBeforeDraw() {
 }
 
 void Primitive2DBatch::Draw() {
-    if (!drawManager_ || GetInstanceCount() == 0)
+    if (!drawManager_ || GetInstanceCount() == 0) {
         return;
+    }
 
     SyncBeforeDraw();
 
@@ -172,8 +174,9 @@ void Primitive2DBatch::BuildTriangle() {
 }
 
 void Primitive2DBatch::BuildCircle(uint32_t subdiv) {
-    if (subdiv < 3)
+    if (subdiv < 3) {
         subdiv = 3;
+    }
     float radius = 0.5f;
     float pi = 3.141592654f;
 
@@ -199,8 +202,9 @@ void Primitive2DBatch::BuildCircle(uint32_t subdiv) {
 }
 
 void Primitive2DBatch::BuildRing(uint32_t subdiv) {
-    if (subdiv < 3)
+    if (subdiv < 3) {
         subdiv = 3;
+    }
     float outerRadius = 0.5f;
     // Ring の thickness は 0.0 ~ 1.0 の割合（0.5 = 半分が穴）として扱うか、
     // ここで固定値にするか。スケーリング時に太さもスケーリングされる仕様にする。

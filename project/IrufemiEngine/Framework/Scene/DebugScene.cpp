@@ -414,34 +414,48 @@ void DebugScene::Draw() {
     engine_->SetCull(PSOManager::CullMode::Back);
     engine_->ApplyPSO("Object3D");
 
-    if (isActiveObj_)
+    if (isActiveObj_) {
         obj_->Draw();
-    if (isActiveUtashTeapot_)
+    }
+    if (isActiveUtashTeapot_) {
         utashTeapot_->Draw();
-    if (isActiveStanfordBunny_)
+    }
+    if (isActiveStanfordBunny_) {
         stanfordBunny_->Draw();
-    if (isActiveMultiMesh_)
+    }
+    if (isActiveMultiMesh_) {
         multiMesh_->Draw();
-    if (isActiveMultiMaterial_)
+    }
+    if (isActiveMultiMaterial_) {
         multiMaterial_->Draw();
-    if (isActiveSuzanne_)
+    }
+    if (isActiveSuzanne_) {
         suzanne_->Draw();
-    if (isActiveFence_)
+    }
+    if (isActiveFence_) {
         fence_->Draw();
-    if (isActiveTerrain_)
+    }
+    if (isActiveTerrain_) {
         terrain_->Draw();
-    if (isActiveAnimatedCube_)
+    }
+    if (isActiveAnimatedCube_) {
         animatedCube_->Draw();
-    if (isActiveWalk_)
+    }
+    if (isActiveWalk_) {
         walk_->Draw();
-    if (isActiveSneakWalk_)
+    }
+    if (isActiveSneakWalk_) {
         sneakWalk_->Draw();
-    if (isActiveBlendTest_)
+    }
+    if (isActiveBlendTest_) {
         blendTest_->Draw();
-    if (isActivePrimitiveObj_)
+    }
+    if (isActivePrimitiveObj_) {
         primitiveObj_->Draw();
-    if (isActiveSkybox_)
+    }
+    if (isActiveSkybox_) {
         skybox_->Draw();
+    }
 
     if (isActiveLightningCrawl_) {
         lightningCylinder_->SyncBeforeDraw();
@@ -484,10 +498,12 @@ void DebugScene::Draw() {
     engine_->SetDepthWrite(PSOManager::DepthWrite::Disable);
     engine_->ApplyPSO("Sprite");
 
-    if (isActiveSprite_)
+    if (isActiveSprite_) {
         sprite_->Draw();
-    if (isActivePrimitive2DObj_)
+    }
+    if (isActivePrimitive2DObj_) {
         primitive2DObj_->Draw();
+    }
 }
 
 void DebugScene::DrawDebugTab() {
@@ -498,15 +514,18 @@ void DebugScene::DrawDebugTab() {
         static bool s_showAllBones = false;
         static bool s_showAllAxes = false;
         bool changed = false;
-        if (ImGui::Checkbox("Show All Debug Bones", &s_showAllBones))
+        if (ImGui::Checkbox("Show All Debug Bones", &s_showAllBones)) {
             changed = true;
-        if (ImGui::Checkbox("Show All Debug Axes", &s_showAllAxes))
+        }
+        if (ImGui::Checkbox("Show All Debug Axes", &s_showAllAxes)) {
             changed = true;
+        }
 
         if (changed) {
             auto setDebugProps = [](GameObject* go) {
-                if (!go)
+                if (!go) {
                     return;
+                }
                 if (auto comp = go->GetComponent<SkeletonDebugRendererComponent>()) {
                     comp->SetShowBones(s_showAllBones);
                     comp->SetShowAxes(s_showAllAxes);
@@ -524,8 +543,9 @@ void DebugScene::DrawDebugTab() {
         skybox_->Debug();
     }
 
-    if (isActivePrimitiveObj_ && primitiveObj_)
+    if (isActivePrimitiveObj_ && primitiveObj_) {
         primitiveObj_->Debug("Primitive Object (New)");
+    }
 
     if (isActiveVoxelParticle_ && voxelEmitterHandle_.IsValid()) {
         if (ImGui::Begin("Voxel Particle Test")) {
@@ -556,8 +576,9 @@ void DebugScene::DrawDebugTab() {
         ImGui::End();
     }
 
-    if (isActivePrimitive2DObj_ && primitive2DObj_)
+    if (isActivePrimitive2DObj_ && primitive2DObj_) {
         primitive2DObj_->Debug("Primitive2D Test");
+    }
 
     if (isActiveBlendTest_ && blendTest_) {
         if (ImGui::Begin("Blend Test Control")) {

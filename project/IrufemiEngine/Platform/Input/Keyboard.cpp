@@ -144,21 +144,24 @@ static uint8_t LookupVKFromDIK(uint8_t dik) {
         {0x70 /*DIK_KANA*/, VK_KANA},
         {0x73 /*DIK_ROEM_102?*/, VK_OEM_102}, // JISの＼/ろキー相当(環境差あり)
     };
-    if (auto it = kMap.find(dik); it != kMap.end())
+    if (auto it = kMap.find(dik); it != kMap.end()) {
         return it->second;
+    }
     return 0; // 0 は未定義
 }
 
 // DIK -> VK 変換(表引き→フォールバック)
 uint8_t Keyboard::DIKToVK(uint8_t dik) {
-    if (uint8_t vk = LookupVKFromDIK(dik))
+    if (uint8_t vk = LookupVKFromDIK(dik)) {
         return vk;
+    }
 
     // フォールバック：スキャンコード→VK(拡張キー考慮)
     // DIK の拡張系(例: 0xE0 系)は数値が 0x80 以上に出ることが多いので、拡張ビットを与える
     UINT sc = dik;
-    if (dik & 0x80u)
+    if (dik & 0x80u) {
         sc |= 0x100u; // 拡張の保険(必要に応じて調整)
+    }
     UINT vk = MapVirtualKeyEx(sc, MAPVK_VSC_TO_VK_EX, GetKeyboardLayout(0));
     return static_cast<uint8_t>(vk);
 }

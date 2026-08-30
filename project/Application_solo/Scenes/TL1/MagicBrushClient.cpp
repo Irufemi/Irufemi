@@ -52,8 +52,9 @@ Microsoft::WRL::ComPtr<IDxcBlob> MagicBrushClient::GetResultBlob() {
 }
 
 bool MagicBrushClient::StartPythonServer() {
-    if (IsServerRunning())
+    if (IsServerRunning()) {
         return true;
+    }
 
     // サーバープロセスは死んでいるが、前回起動時のログスレッドやパイプが残っている場合に備えて
     // 完全にクリーンアップを行ってから再起動（std::threadの再代入による abort を防ぐ）
@@ -155,8 +156,9 @@ void MagicBrushClient::LogReadThread() {
 
     while (isLogThreadRunning_ && hRead != nullptr) {
         bool success = ReadFile(hRead, chBuf, sizeof(chBuf) - 1, &dwRead, NULL);
-        if (!success || dwRead == 0)
+        if (!success || dwRead == 0) {
             break; // エラーまたはパイプのクローズ
+        }
 
         chBuf[dwRead] = '\0';
         std::string chunk(chBuf);
@@ -190,8 +192,9 @@ void MagicBrushClient::RestartPythonServer() {
 }
 
 bool MagicBrushClient::IsServerRunning() const {
-    if (!pythonProcessHandle_)
+    if (!pythonProcessHandle_) {
         return false;
+    }
     DWORD exitCode = 0;
     if (GetExitCodeProcess((HANDLE)pythonProcessHandle_, &exitCode)) {
         return exitCode == STILL_ACTIVE;
@@ -203,22 +206,23 @@ std::string MagicBrushClient::EscapeJSON(const std::string& input) {
     std::string out;
     out.reserve(input.size());
     for (char c : input) {
-        if (c == '"')
+        if (c == '"') {
             out += "\\\"";
-        else if (c == '\\')
+        } else if (c == '\\') {
             out += "\\\\";
-        else if (c == '\b')
+        } else if (c == '\b') {
             out += "\\b";
-        else if (c == '\f')
+        } else if (c == '\f') {
             out += "\\f";
-        else if (c == '\n')
+        } else if (c == '\n') {
             out += "\\n";
-        else if (c == '\r')
+        } else if (c == '\r') {
             out += "\\r";
-        else if (c == '\t')
+        } else if (c == '\t') {
             out += "\\t";
-        else
+        } else {
             out += c;
+        }
     }
     return out;
 }
@@ -294,8 +298,9 @@ std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const
 
 bool MagicBrushClient::RestoreHistory(size_t index, ShaderManager* shaderManager) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (index >= history_.size())
+    if (index >= history_.size()) {
         return false;
+    }
 
     const auto& item = history_[index];
 
@@ -303,8 +308,9 @@ bool MagicBrushClient::RestoreHistory(size_t index, ShaderManager* shaderManager
     std::string tempHlslPath = "resources/shaders/generated/temp_restored_shader.hlsl";
     std::filesystem::create_directories("resources/shaders/generated");
     std::ofstream ofsHlsl(tempHlslPath);
-    if (!ofsHlsl)
+    if (!ofsHlsl) {
         return false;
+    }
     ofsHlsl << item.hlslCode;
     ofsHlsl.close();
 
@@ -413,8 +419,9 @@ void MagicBrushClient::StartVisualFix(const std::string& referenceImagePath, con
                                       const std::string& currentHlslCode, const std::string& shaderName,
                                       ShaderManager* shaderManager) {
     if (state_ == State::VisualEvaluating || state_ == State::Compiling || state_ == State::Generating ||
-        state_ == State::Fixing)
+        state_ == State::Fixing) {
         return;
+    }
     state_ = State::VisualEvaluating;
 
     if (workerThread_.joinable()) {

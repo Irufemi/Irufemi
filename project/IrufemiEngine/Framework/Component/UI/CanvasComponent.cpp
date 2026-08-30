@@ -9,8 +9,9 @@ void CanvasComponent::OnRegisterProperties() {
 void CanvasComponent::Initialize() {}
 
 static void ApplyAlphaRecursive(GameObject* obj, float alpha) {
-    if (!obj)
+    if (!obj) {
         return;
+    }
 
     // 自身のSpriteRendererがあればAlphaを適用
     auto sprite = obj->GetComponent<SpriteRendererComponent>();
@@ -27,8 +28,9 @@ static void ApplyAlphaRecursive(GameObject* obj, float alpha) {
 }
 
 void CanvasComponent::Update() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     // 全ての子オブジェクトのSpriteのAlphaを一括設定
     ApplyAlphaRecursive(gameObject_, groupAlpha_);

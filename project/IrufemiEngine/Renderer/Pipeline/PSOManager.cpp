@@ -63,13 +63,15 @@ void PSOManager::RegisterShader(const std::string& name, const PipelineStateDesc
 ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, Irufemi::BlendMode blend, DepthWrite depth,
                                         CullMode cull) {
     auto it = shaderRegistry_.find(name);
-    if (it == shaderRegistry_.end())
+    if (it == shaderRegistry_.end()) {
         return nullptr;
+    }
     const PipelineStateDesc& psoDesc = it->second;
 
     Key key{Hash(name, blend, depth, cull)};
-    if (auto cit = cache_.find(key); cit != cache_.end())
+    if (auto cit = cache_.find(key); cit != cache_.end()) {
         return cit->second.Get();
+    }
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
@@ -179,8 +181,9 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, Irufemi::BlendM
     }
 
     ASSERT_IF_FAILED(hr);
-    if (FAILED(hr))
+    if (FAILED(hr)) {
         return nullptr;
+    }
 
     // 新規コンパイルした場合はキャッシュを保存
     if (cachedData.empty() || usedFallback) {
@@ -193,8 +196,9 @@ ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, Irufemi::BlendM
 }
 
 ID3D12PipelineState* PSOManager::GetCopyImage() {
-    if (!copyImageShaders_.vsBlob || !copyImageShaders_.psBlob)
+    if (!copyImageShaders_.vsBlob || !copyImageShaders_.psBlob) {
         return nullptr;
+    }
 
     // キャッシュキー
     constexpr uint64_t kCopyTag = 0x434F5059494D47ull;
@@ -246,8 +250,9 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     IRUFEMI_ASSERT(SUCCEEDED(hr) && "Direct CreateGraphicsPipelineState failed for CopyImage");
 
     if (SUCCEEDED(hr)) {
-        if (cachedData.empty() || usedFallback)
+        if (cachedData.empty() || usedFallback) {
             SaveCachedBlob(cacheFileName, pso.Get());
+        }
         cache_[key] = pso;
         return pso.Get();
     }
@@ -256,8 +261,9 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
 
 void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft::WRL::ComPtr<IDxcBlob>& csBlob,
                                        ID3D12RootSignature* computeRootSig) {
-    if (!csBlob || !computeRootSig)
+    if (!csBlob || !computeRootSig) {
         return;
+    }
     D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = computeRootSig;
     desc.CS = {csBlob->GetBufferPointer(), csBlob->GetBufferSize()};
@@ -468,8 +474,9 @@ uint64_t PSOManager::Hash(const std::string& name, Irufemi::BlendMode b, DepthWr
 std::vector<uint8_t> PSOManager::LoadCachedBlob(const std::string& cacheFileName) const {
     std::string path = kCacheDirectory + cacheFileName;
     std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file.is_open())
+    if (!file.is_open()) {
         return {};
+    }
 
     size_t size = file.tellg();
     file.seekg(0, std::ios::beg);
@@ -481,8 +488,9 @@ std::vector<uint8_t> PSOManager::LoadCachedBlob(const std::string& cacheFileName
 }
 
 void PSOManager::SaveCachedBlob(const std::string& cacheFileName, ID3D12PipelineState* pso) const {
-    if (!pso)
+    if (!pso) {
         return;
+    }
 
     Microsoft::WRL::ComPtr<ID3DBlob> blob;
     if (FAILED(pso->GetCachedBlob(&blob)) || !blob) {

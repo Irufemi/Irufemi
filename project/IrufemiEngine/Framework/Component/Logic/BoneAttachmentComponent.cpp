@@ -13,25 +13,30 @@ BoneAttachmentComponent::~BoneAttachmentComponent() = default;
 void BoneAttachmentComponent::Initialize() {}
 
 void BoneAttachmentComponent::Update() {
-    if (targetName_.empty() || targetBoneName_.empty())
+    if (targetName_.empty() || targetBoneName_.empty()) {
         return;
+    }
 
     auto gameObject = GetGameObject();
-    if (!gameObject)
+    if (!gameObject) {
         return;
+    }
 
     auto transform = GetTransform();
-    if (!transform)
+    if (!transform) {
         return;
+    }
 
     auto scene = gameObject->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
 
     // ターゲットとなるGameObjectを探す
     auto targetObj = scene->FindGameObject(targetName_);
-    if (!targetObj)
+    if (!targetObj) {
         return;
+    }
 
     // ターゲットのSkinnedMeshRendererComponentを探す
     auto renderer = targetObj->GetComponent<SkinnedMeshRendererComponent>();
@@ -74,8 +79,10 @@ nlohmann::json BoneAttachmentComponent::Serialize() {
 }
 
 void BoneAttachmentComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("Target Name"))
+    if (j.contains("Target Name")) {
         targetName_ = j["Target Name"];
-    if (j.contains("Target Bone Name"))
+    }
+    if (j.contains("Target Bone Name")) {
         targetBoneName_ = j["Target Bone Name"];
+    }
 }

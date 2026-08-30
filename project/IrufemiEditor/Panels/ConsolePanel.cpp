@@ -9,8 +9,9 @@ void ConsolePanel::Initialize(EditorManager* editorManager) {
 }
 
 void ConsolePanel::Draw() {
-    if (!editorManager_)
+    if (!editorManager_) {
         return;
+    }
 
     ImGui::Begin("Console");
 

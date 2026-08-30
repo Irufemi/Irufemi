@@ -56,8 +56,9 @@ D3D12_GPU_VIRTUAL_ADDRESS gNullPointLightVA = 0;
 D3D12_GPU_VIRTUAL_ADDRESS gNullSpotLightVA = 0;
 
 void EnsureNullPointLight(DirectXCommon* dx) {
-    if (gNullPointLight)
+    if (gNullPointLight) {
         return;
+    }
     gNullPointLight = dx->CreateBufferResource(sizeof(PointLight));
     PointLight* p = nullptr;
     gNullPointLight->Map(0, nullptr, reinterpret_cast<void**>(&p));
@@ -68,8 +69,9 @@ void EnsureNullPointLight(DirectXCommon* dx) {
 }
 
 void EnsureNullSpotLight(DirectXCommon* dx) {
-    if (gNullSpotLight)
+    if (gNullSpotLight) {
         return;
+    }
     gNullSpotLight = dx->CreateBufferResource(sizeof(SpotLight));
     SpotLight* s = nullptr;
     gNullSpotLight->Map(0, nullptr, reinterpret_cast<void**>(&s));
@@ -414,16 +416,19 @@ void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float del
     cachedDirectionalLight_ = light;
 
     cachedPointLights_.clear();
-    for (auto* pl : pointLights)
+    for (auto* pl : pointLights) {
         cachedPointLights_.push_back(*pl);
+    }
 
     cachedSpotLights_.clear();
-    for (auto* sl : spotLights)
+    for (auto* sl : spotLights) {
         cachedSpotLights_.push_back(*sl);
+    }
 
     cachedAreaLights_.clear();
-    for (auto* al : areaLights)
+    for (auto* al : areaLights) {
         cachedAreaLights_.push_back(*al);
+    }
 
     SyncCachedFrameData();
 }
@@ -470,8 +475,9 @@ void DrawManager::SyncCachedFrameData() {
 
     // 各 StructuredBuffer へ書き込み
     auto copyLights = [](ID3D12Resource* res, const auto& lightVec) {
-        if (!res || lightVec.empty())
+        if (!res || lightVec.empty()) {
             return;
+        }
         using LightType = std::remove_pointer_t<typename std::decay_t<decltype(lightVec)>::value_type>;
         LightType* mapped = nullptr;
         if (SUCCEEDED(res->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
@@ -493,8 +499,9 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
 
 void DrawManager::SubmitSprite(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -505,8 +512,9 @@ void DrawManager::SubmitSprite(const Object2DResource* resource) {
 
 void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -517,8 +525,9 @@ void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
 
 void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     const Object2DResource* resource = packet.resource;
-    if (!resource || !commandList_)
+    if (!resource || !commandList_) {
         return;
+    }
 
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -542,8 +551,9 @@ void DrawManager::SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& pack
 }
 
 void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
-    if (packet.instanceCount == 0 || !packet.resource)
+    if (packet.instanceCount == 0 || !packet.resource) {
         return;
+    }
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     commandList_->IASetVertexBuffers(0, 1, &packet.resource->vertexBufferView_);
@@ -566,8 +576,9 @@ void DrawManager::DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket&
 
 void DrawManager::SubmitText(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -578,8 +589,9 @@ void DrawManager::SubmitText(const Object2DResource* resource) {
 
 void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -590,8 +602,9 @@ void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
 
 void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     const Object2DResource* resource = packet.resource;
-    if (!resource || !commandList_)
+    if (!resource || !commandList_) {
         return;
+    }
 
     if (packet.customPSO) {
         commandList_->SetPipelineState(packet.customPSO);
@@ -670,8 +683,9 @@ void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) 
 
 void DrawManager::DispatchGPUCulling(const RenderPackets::ModelBatchPacket& packet) {
     if (!packet.inputInstancesSrv.ptr || !packet.outputInstancesUav.ptr || !packet.cullingDataAddress ||
-        !packet.indirectCommandBuffer || !packet.indirectCommandUploadBuffer)
+        !packet.indirectCommandBuffer || !packet.indirectCommandUploadBuffer) {
         return;
+    }
 
     // 1. IndirectCommandBufferの初期化 (UploadBuffer からコピー)
     DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
@@ -683,8 +697,9 @@ void DrawManager::DispatchGPUCulling(const RenderPackets::ModelBatchPacket& pack
 
     // 2. Compute Shader の実行
     ID3D12PipelineState* pso = dxCommon_->GetPSOManager()->GetComputePSO("GPUCulling");
-    if (!pso)
+    if (!pso) {
         return;
+    }
 
     commandList_->SetPipelineState(pso);
 
@@ -754,8 +769,9 @@ void DrawManager::SubmitLineInstanced(const LineResource* resource,
                                       const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU,
                                       const UINT& instanceCount, PSOManager::DepthWrite depthWrite) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource || instanceCount == 0)
+    if (!resource || instanceCount == 0) {
         return;
+    }
     using namespace RenderPackets;
     LinePacket p{};
     p.resource = resource;
@@ -769,8 +785,9 @@ void DrawManager::SubmitLineInstanced(const LineResource* resource,
 
 void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
     const LineResource* resource = packet.resource;
-    if (!resource || packet.instanceCount == 0)
+    if (!resource || packet.instanceCount == 0) {
         return;
+    }
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -786,8 +803,9 @@ void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
 
 void DrawManager::SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (packet.indexCount == 0 || packet.instanceCount == 0)
+    if (packet.indexCount == 0 || packet.instanceCount == 0) {
         return;
+    }
     RenderPackets::DebugPrimitivePacket p = packet;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
@@ -796,8 +814,9 @@ void DrawManager::SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket
 }
 
 void DrawManager::DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
-    if (packet.indexCount == 0 || packet.instanceCount == 0)
+    if (packet.indexCount == 0 || packet.instanceCount == 0) {
         return;
+    }
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -812,8 +831,9 @@ void DrawManager::DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& 
 }
 
 void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const ManagedModel* model, uint32_t numVertices) {
-    if (!model || !model->gpuMeshes[0] || !dxCommon_)
+    if (!model || !model->gpuMeshes[0] || !dxCommon_) {
         return;
+    }
 
     // --- コンピュートシェーダーによるスキニング実行 ---
     // PSOをコンピュート用に切り替え
@@ -861,8 +881,9 @@ void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
 
 void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
     if (dxCommon_->GetEngine()->GetScreenCaptureManager() &&
-        dxCommon_->GetEngine()->GetScreenCaptureManager()->IsCaptureWithAlphaRequested())
+        dxCommon_->GetEngine()->GetScreenCaptureManager()->IsCaptureWithAlphaRequested()) {
         return;
+    }
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView);
@@ -878,8 +899,9 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource,
                                    ID3D12Resource* vertexBufferResourceOverride,
                                    D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -901,8 +923,9 @@ void DrawManager::SubmitTransparent3D(const Object3DResource* resource,
                                       ID3D12Resource* vertexBufferResourceOverride,
                                       D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -933,8 +956,9 @@ void DrawManager::SubmitTransparent3D(const Object3DResource* resource,
 void DrawManager::SubmitUI3D(const Object3DResource* resource,
                              const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -950,8 +974,9 @@ void DrawManager::SubmitOutlineMask(const Object3DResource* resource,
                                     const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride,
                                     ID3D12Resource* vertexBufferResourceOverride) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -966,8 +991,9 @@ void DrawManager::SubmitOutlineMask(const Object3DResource* resource,
 
 void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource)
+    if (!resource) {
         return;
+    }
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -980,8 +1006,9 @@ void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
 
 void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) {
     const Object3DResource* resource = packet.resource;
-    if (!resource || !commandList_)
+    if (!resource || !commandList_) {
         return;
+    }
 
     // --- 描画前: UAV -> VBV ---
     if (packet.vertexBufferResourceOverride) {
@@ -1027,14 +1054,16 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
 
 void DrawManager::SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (packet.instanceCount == 0)
+    if (packet.instanceCount == 0) {
         return;
+    }
     gpuParticleQueue_.push_back(packet);
 }
 
 void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
-    if (!commandList_)
+    if (!commandList_) {
         return;
+    }
 
     // IA 設定: VB/Topology
     commandList_->IASetVertexBuffers(0, 1, &packet.vbv);
@@ -1074,8 +1103,9 @@ void DrawManager::SubmitVoxelParticle(uint32_t instanceCount, const D3D12_VERTEX
                                       D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle, ID3D12Resource* particleResource,
                                       ID3D12PipelineState* drawPSO) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (instanceCount == 0)
+    if (instanceCount == 0) {
         return;
+    }
     VoxelParticlePacket p{};
     p.instanceCount = instanceCount;
     p.vbv = vbv;
@@ -1090,8 +1120,9 @@ void DrawManager::SubmitVoxelParticle(uint32_t instanceCount, const D3D12_VERTEX
 }
 
 void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& packet) {
-    if (!commandList_)
+    if (!commandList_) {
         return;
+    }
 
     // リソースバリヤー: UAV -> ShaderResource (読み取り)
     if (packet.particleResource) {
@@ -1133,8 +1164,9 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
 
 void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets,
                                       const std::vector<Irufemi::Vector4>& clearColors) {
-    if (renderTargets.empty())
+    if (renderTargets.empty()) {
         return;
+    }
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvHandles;
     rtvHandles.reserve(renderTargets.size());
@@ -1276,16 +1308,18 @@ void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
 
 void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso,
                                     D3D12_GPU_VIRTUAL_ADDRESS cbvAddress, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
-    if (!renderTexture)
+    if (!renderTexture) {
         return;
+    }
 
     // 1. PSOの設定 (引数が渡された場合はそれを使用、そうでなければデフォルトのCopyImage)
     if (pso) {
         commandList_->SetPipelineState(pso);
     } else {
         ID3D12PipelineState* defaultPso = dxCommon_->GetPSOManager()->GetCopyImage();
-        if (!defaultPso)
+        if (!defaultPso) {
             return;
+        }
         commandList_->SetPipelineState(defaultPso);
     }
 
@@ -1315,8 +1349,9 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
     commandList_->DrawInstanced(3, 1, 0, 0);
 }
 void DrawManager::BindCommonParameters() {
-    if (!commandList_ || !dxCommon_)
+    if (!commandList_ || !dxCommon_) {
         return;
+    }
 
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
@@ -1340,8 +1375,9 @@ void DrawManager::BindCommonParameters() {
 
 void DrawManager::BeginShadowPass() {
     ShadowMap* shadowMap = GetShadowMap();
-    if (!shadowMap)
+    if (!shadowMap) {
         return;
+    }
     isShadowPass_ = true;
 
     // 1. シャドウマップの準備 (バリア遷移、クリア、DSVセット)
@@ -1364,8 +1400,9 @@ void DrawManager::BeginShadowPass() {
 
 void DrawManager::EndShadowPass() {
     ShadowMap* shadowMap = GetShadowMap();
-    if (!shadowMap)
+    if (!shadowMap) {
         return;
+    }
     isShadowPass_ = false;
 
     // 1. バリア遷移を元に戻す (DepthWrite -> SRV)

@@ -38,19 +38,23 @@ void PlayerTargetingComponent::Update() {
     // 死んだオブジェクトなどをキューから削除する
     queuedTargets_.erase(std::remove_if(queuedTargets_.begin(), queuedTargets_.end(),
                                         [](const std::shared_ptr<GameObject>& obj) {
-                                            if (!obj || !obj->GetIsActive())
+                                            if (!obj || !obj->GetIsActive()) {
                                                 return true;
+                                            }
 
                                             // 生死判定
                                             if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
-                                                if (!enemyComp->IsAlive())
+                                                if (!enemyComp->IsAlive()) {
                                                     return true;
+                                                }
                                             } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-                                                if (!bossComp->IsCoreExposed())
+                                                if (!bossComp->IsCoreExposed()) {
                                                     return true;
+                                                }
                                             } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
-                                                if (debrisComp->GetState() != DebrisState::BossOrbiting)
+                                                if (debrisComp->GetState() != DebrisState::BossOrbiting) {
                                                     return true;
+                                                }
                                             }
 
                                             return false;
@@ -88,8 +92,9 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 
     auto engine = BaseModel::GetIrufemiEngine();
     auto cameraManager = engine->GetCameraManager();
-    if (!cameraManager || !cameraManager->GetActiveCamera())
+    if (!cameraManager || !cameraManager->GetActiveCamera()) {
         return;
+    }
     auto camera = cameraManager->GetActiveCamera();
 
     Irufemi::Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
@@ -142,26 +147,31 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
     float bestScore = (std::numeric_limits<float>::max)();
 
     auto scene = gameObject_->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
     auto playerObj = gameObject_;
 
     // 2. ターゲット候補のスコアリングと評価
     for (auto targetComp : TargetableComponent::GetTargets()) {
         auto obj = targetComp->GetGameObject();
-        if (!obj || !obj->GetIsActive())
+        if (!obj || !obj->GetIsActive()) {
             continue;
+        }
 
         bool isTargetable = false;
         if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
-            if (enemyComp->IsAlive())
+            if (enemyComp->IsAlive()) {
                 isTargetable = true;
+            }
         } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-            if (bossComp->IsCoreExposed())
+            if (bossComp->IsCoreExposed()) {
                 isTargetable = true;
+            }
         } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
-            if (debrisComp->GetState() == DebrisState::BossOrbiting)
+            if (debrisComp->GetState() == DebrisState::BossOrbiting) {
                 isTargetable = true;
+            }
         }
 
         if (isTargetable) {
@@ -217,8 +227,9 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 }
 
 void PlayerTargetingComponent::MarkTarget(size_t maxLockOn) {
-    if (queuedTargets_.size() >= maxLockOn)
+    if (queuedTargets_.size() >= maxLockOn) {
         return;
+    }
 
     if (hoverTarget_) {
         queuedTargets_.push_back(hoverTarget_);
@@ -230,8 +241,9 @@ void PlayerTargetingComponent::ClearTargets() {
 }
 
 std::shared_ptr<GameObject> PlayerTargetingComponent::PopTarget() {
-    if (queuedTargets_.empty())
+    if (queuedTargets_.empty()) {
         return nullptr;
+    }
     auto target = queuedTargets_.front();
     queuedTargets_.erase(queuedTargets_.begin());
     return target;

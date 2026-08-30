@@ -50,8 +50,9 @@ void GpuProfiler::Initialize(DirectXCommon* dxCommon) {
 }
 
 void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
-    if (!isInitialized_)
+    if (!isInitialized_) {
         return;
+    }
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     uint32_t startIndex = frameIndex * 2;
@@ -80,8 +81,9 @@ void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
 }
 
 void GpuProfiler::EndFrame(ID3D12GraphicsCommandList* commandList) {
-    if (!isInitialized_)
+    if (!isInitialized_) {
         return;
+    }
 
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
     uint32_t startIndex = frameIndex * 2;

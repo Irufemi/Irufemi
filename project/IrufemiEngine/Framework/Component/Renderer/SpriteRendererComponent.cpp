@@ -77,14 +77,18 @@ nlohmann::json SpriteRendererComponent::Serialize() {
 }
 
 void SpriteRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("texturePath"))
+    if (j.contains("texturePath")) {
         SetTexture(j["texturePath"]);
-    if (j.contains("isTopMost"))
+    }
+    if (j.contains("isTopMost")) {
         isTopMost_ = j["isTopMost"];
-    if (j.contains("isFlipX"))
+    }
+    if (j.contains("isFlipX")) {
         isFlipX_ = j["isFlipX"];
-    if (j.contains("isFlipY"))
+    }
+    if (j.contains("isFlipY")) {
         isFlipY_ = j["isFlipY"];
+    }
     if (j.contains("anchor") && j["anchor"].is_array() && j["anchor"].size() == 2) {
         anchor_[0] = j["anchor"][0];
         anchor_[1] = j["anchor"][1];

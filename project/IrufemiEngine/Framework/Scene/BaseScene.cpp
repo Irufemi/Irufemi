@@ -125,14 +125,16 @@ std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
         if (it != nameIndex_.end()) {
             for (auto& weakObj : it->second) {
                 if (auto obj = weakObj.lock()) {
-                    if (!obj->IsDestroyed())
+                    if (!obj->IsDestroyed()) {
                         return true;
+                    }
                 }
             }
         }
         for (const auto& obj : pendingAdds_) {
-            if (obj && !obj->IsDestroyed() && obj->GetName() == name)
+            if (obj && !obj->IsDestroyed() && obj->GetName() == name) {
                 return true;
+            }
         }
         return false;
     };
@@ -162,8 +164,9 @@ std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
 
 void BaseScene::OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName,
                                         const std::string& newName) {
-    if (!obj)
+    if (!obj) {
         return;
+    }
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
 
     // 古い名前のリストから削除
@@ -328,8 +331,9 @@ void BaseScene::Draw() {
         selectedObj->DrawOutlineMask();
     }
 
-    if (engine_)
+    if (engine_) {
         engine_->GetCollisionManager()->DrawDebug(selectedObj);
+    }
 #elif defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     engine_->GetCollisionManager()->DrawDebug();
 #endif
@@ -351,8 +355,9 @@ void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
 void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) {
     // Insert は直接 gameObjects_ を操作するため、今回はそのまま mutex で保護し直接追加（または仕様に合わせて変更）。
     // 基本的に実行時の並行 Insert は想定しないが、安全のためロック。
-    if (!obj)
+    if (!obj) {
         return;
+    }
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     obj->SetScene(this);
     if (index >= gameObjects_.size()) {
@@ -367,8 +372,9 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
 }
 
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
-    if (!obj)
+    if (!obj) {
         return;
+    }
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     pendingRemoves_.push_back(obj);
 }
@@ -392,8 +398,9 @@ size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
 
 void BaseScene::SubmitFrameData() {
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     CameraForGPU cameraForGpu;
     cameraForGpu.view = activeCam->GetViewMatrix();
@@ -448,14 +455,17 @@ void BaseScene::DrawDebugTab() {
                     }
                 }
                 if (isDebugCameraMode_ && debugCameraController_ && debugCamera_) {
-                    if (ImGui::Button("Top-Down"))
+                    if (ImGui::Button("Top-Down")) {
                         debugCameraController_->SetPreset(OrbitCameraController::Preset::TopDown, debugCamera_.get());
+                    }
                     ImGui::SameLine();
-                    if (ImGui::Button("Diagonal"))
+                    if (ImGui::Button("Diagonal")) {
                         debugCameraController_->SetPreset(OrbitCameraController::Preset::Diagonal, debugCamera_.get());
+                    }
                     ImGui::SameLine();
-                    if (ImGui::Button("Front"))
+                    if (ImGui::Button("Front")) {
                         debugCameraController_->SetPreset(OrbitCameraController::Preset::Front, debugCamera_.get());
+                    }
                     ImGui::SameLine();
                     if (ImGui::Button("Sync to Main")) {
                         Camera* mainCam = engine_->GetCameraManager()->GetCamera("Main");

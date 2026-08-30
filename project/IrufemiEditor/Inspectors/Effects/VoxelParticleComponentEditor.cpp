@@ -11,8 +11,9 @@
 
 void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto voxelComponent = dynamic_cast<VoxelParticleComponent*>(component);
-    if (!voxelComponent)
+    if (!voxelComponent) {
         return;
+    }
 
     if (ImGui::CollapsingHeader("VoxelParticle Component", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ComponentUIHelpers::BeginPropertyTable("VoxelParticleTable")) {
@@ -27,8 +28,9 @@ void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManage
                 voxelComponent->SetOverrideModelName(buf);
             }
             ImGui::PopItemWidth();
-            if (ImGui::IsItemActivated())
+            if (ImGui::IsItemActivated()) {
                 startStr = voxelComponent->GetOverrideModelName();
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 std::string endStr = buf;
                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
@@ -55,8 +57,9 @@ void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManage
             }
             ImGui::PopItemWidth();
             static Irufemi::Vector3Int startRes;
-            if (ImGui::IsItemActivated())
+            if (ImGui::IsItemActivated()) {
                 startRes = resolution;
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 Irufemi::Vector3Int endRes = {res[0], res[1], res[2]};
                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3Int>>(
@@ -82,8 +85,9 @@ void VoxelParticleComponentEditor::Draw(Component* component, EditorActionManage
             }
             ImGui::PopItemWidth();
             static int startPre;
-            if (ImGui::IsItemActivated())
+            if (ImGui::IsItemActivated()) {
                 startPre = voxelComponent->GetPreAllocateCount();
+            }
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 int endPre = preAllocate;
                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<int>>(

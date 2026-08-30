@@ -211,8 +211,9 @@ public:
     ///@{
     void Play(uint32_t emitterIndex = 0) {
         isPlaying_ = true;
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].emit = 1;
+        }
         totalTime_ = 0.0f;
     }
     /**
@@ -220,8 +221,9 @@ public:
      */
     void Stop(uint32_t emitterIndex = 0) {
         isPlaying_ = false;
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].emit = 0;
+        }
     }
     /**
      * @brief Pause を実行する。
@@ -344,8 +346,9 @@ public:
 
     /** @brief 放出速度を設定する */
     void SetVelocity(float velocity, uint32_t emitterIndex = 0) {
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].velocity = velocity;
+        }
     }
     /** @brief 放出方向を設定する */
     void SetDirection(const Irufemi::Vector3& dir, uint32_t emitterIndex = 0) {
@@ -357,8 +360,9 @@ public:
     }
     /** @brief 座標のゆらぎ（Jitter）を設定する */
     void SetJitter(float jitter, uint32_t emitterIndex = 0) {
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].jitter = jitter;
+        }
     }
     /**
      * @brief EnableRandomRotation を設定する。
@@ -366,18 +370,21 @@ public:
      * @param[in] 0 設定する EnableRandomRotation の値
      */
     void SetEnableRandomRotation(bool enable, uint32_t emitterIndex = 0) {
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].enableRandomRotation = enable ? 1 : 0;
+        }
     }
     /** @brief ビルボードモードの設定 (0: なし, 1: 通常ビルボード, 2: 速度方向ビルボード) */
     void SetBillboardMode(uint32_t mode, uint32_t emitterIndex = 0) {
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].billboardMode = mode;
+        }
     }
     /** @brief 粒子の拡散力（Sphere等の放射方向の広がり/強度）を設定 */
     void SetSpread(float spread, uint32_t emitterIndex = 0) {
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].spread = spread;
+        }
     }
 
     /** @brief Trail（軌跡）機能の有効化 */
@@ -389,8 +396,9 @@ public:
     }
     /** @brief 消滅時連鎖（Death Emit）機能の有効化 */
     void SetEnableDeathEmit(bool enable, uint32_t emitterIndex = 0) {
-        if (emitterIndex < emittersData_.size())
+        if (emitterIndex < emittersData_.size()) {
             emittersData_[emitterIndex].enableDeathEmit = enable ? 1 : 0;
+        }
     }
 
     /** @name 描画設定（パイプライン） */

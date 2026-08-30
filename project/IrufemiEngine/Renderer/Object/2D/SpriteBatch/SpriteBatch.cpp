@@ -125,8 +125,9 @@ void SpriteBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     if (instanceCapacity_[frameIndex] < instanceCount) {
         uint32_t doubled = instanceCapacity_[frameIndex] * 2;
         uint32_t newCapacity = instanceCount > doubled ? instanceCount : doubled;
-        if (newCapacity < 64)
+        if (newCapacity < 64) {
             newCapacity = 64;
+        }
 
         if (instanceBuffer_[frameIndex]) {
             instanceBuffer_[frameIndex]->Unmap(0, nullptr);
@@ -168,8 +169,9 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(visibleInstanceCount_);
 
     Camera* camera = cameraManager_->GetActiveCamera();
-    if (!camera)
+    if (!camera) {
         return;
+    }
 
     Irufemi::Matrix4x4 viewProj = camera->GetOrthographicMatrix(); // Sprite uses Orthographic
 
@@ -211,8 +213,9 @@ void SpriteBatch::Draw() {
 }
 
 void SpriteBatch::Draw(bool isTopMost) {
-    if (visibleInstanceCount_ == 0)
+    if (visibleInstanceCount_ == 0) {
         return;
+    }
 
     SyncBeforeDraw();
 

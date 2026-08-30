@@ -328,8 +328,9 @@ std::vector<std::string> TextureManager::GetCubeMapNamesForDebug() const {
 }
 
 void TextureManager::CreateWhiteDummyTexture() {
-    if (whiteTextureHandle_.ptr != 0)
+    if (whiteTextureHandle_.ptr != 0) {
         return;
+    }
     if (!dxCommon_) {
         return;
     }
@@ -349,8 +350,9 @@ void TextureManager::CreateWhiteDummyTexture() {
 }
 
 void TextureManager::CreateWhiteCubeMap() {
-    if (whiteCubeMapHandle_.ptr != 0)
+    if (whiteCubeMapHandle_.ptr != 0) {
         return;
+    }
     if (!dxCommon_) {
         return;
     }
@@ -380,20 +382,24 @@ bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth,
 }
 
 bool TextureManager::IsCurrentSceneInitializing() const {
-    if (!dxCommon_)
+    if (!dxCommon_) {
         return false;
+    }
     auto engine = dxCommon_->GetEngine();
-    if (!engine)
+    if (!engine) {
         return false;
+    }
     auto sceneManager = engine->GetSceneManager();
-    if (!sceneManager)
+    if (!sceneManager) {
         return false;
+    }
     return sceneManager->IsInitializing();
 }
 
 bool TextureManager::IsCubeMap(const std::string& name) const {
-    if (name == "whiteCubeMap")
+    if (name == "whiteCubeMap") {
         return true;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = nameToHandleMap_.find(name);
     if (it != nameToHandleMap_.end() && texturePool_.IsValid(it->second)) {

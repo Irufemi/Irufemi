@@ -4,8 +4,9 @@
 // Bloom Settings
 // ---------------------------------------------------------
 void BloomSettings::ApplyToManager(PostProcessManager* manager) {
-    if (!manager)
+    if (!manager) {
         return;
+    }
     if (enabled) {
         if (!manager->HasActiveMode(PostProcessMode::Bloom)) {
             manager->AddActiveMode(PostProcessMode::Bloom);
@@ -28,14 +29,18 @@ void BloomSettings::Serialize(nlohmann::json& j) const {
 }
 
 void BloomSettings::Deserialize(const nlohmann::json& j) {
-    if (j.contains("enabled"))
+    if (j.contains("enabled")) {
         enabled = j["enabled"];
-    if (j.contains("intensity"))
+    }
+    if (j.contains("intensity")) {
         intensity = j["intensity"];
-    if (j.contains("threshold"))
+    }
+    if (j.contains("threshold")) {
         threshold = j["threshold"];
-    if (j.contains("sigma"))
+    }
+    if (j.contains("sigma")) {
         sigma = j["sigma"];
+    }
 }
 
 std::shared_ptr<IPostProcessSettings> BloomSettings::Clone() const {
@@ -46,8 +51,9 @@ std::shared_ptr<IPostProcessSettings> BloomSettings::Clone() const {
 // Color Grading Settings
 // ---------------------------------------------------------
 void ColorGradingSettings::ApplyToManager(PostProcessManager* manager) {
-    if (!manager)
+    if (!manager) {
         return;
+    }
     if (enabled) {
         if (!manager->HasActiveMode(PostProcessMode::ToneMapping)) {
             manager->AddActiveMode(PostProcessMode::ToneMapping);
@@ -79,16 +85,21 @@ void ColorGradingSettings::Serialize(nlohmann::json& j) const {
 }
 
 void ColorGradingSettings::Deserialize(const nlohmann::json& j) {
-    if (j.contains("enabled"))
+    if (j.contains("enabled")) {
         enabled = j["enabled"];
-    if (j.contains("exposure"))
+    }
+    if (j.contains("exposure")) {
         exposure = j["exposure"];
-    if (j.contains("hue"))
+    }
+    if (j.contains("hue")) {
         hue = j["hue"];
-    if (j.contains("saturation"))
+    }
+    if (j.contains("saturation")) {
         saturation = j["saturation"];
-    if (j.contains("value"))
+    }
+    if (j.contains("value")) {
         value = j["value"];
+    }
 }
 
 std::shared_ptr<IPostProcessSettings> ColorGradingSettings::Clone() const {
@@ -99,8 +110,9 @@ std::shared_ptr<IPostProcessSettings> ColorGradingSettings::Clone() const {
 // Vignette Settings
 // ---------------------------------------------------------
 void VignetteSettings::ApplyToManager(PostProcessManager* manager) {
-    if (!manager)
+    if (!manager) {
         return;
+    }
     if (enabled) {
         if (!manager->HasActiveMode(PostProcessMode::Vignette)) {
             manager->AddActiveMode(PostProcessMode::Vignette);
@@ -121,12 +133,15 @@ void VignetteSettings::Serialize(nlohmann::json& j) const {
 }
 
 void VignetteSettings::Deserialize(const nlohmann::json& j) {
-    if (j.contains("enabled"))
+    if (j.contains("enabled")) {
         enabled = j["enabled"];
-    if (j.contains("radius"))
+    }
+    if (j.contains("radius")) {
         radius = j["radius"];
-    if (j.contains("softness"))
+    }
+    if (j.contains("softness")) {
         softness = j["softness"];
+    }
 }
 
 std::shared_ptr<IPostProcessSettings> VignetteSettings::Clone() const {

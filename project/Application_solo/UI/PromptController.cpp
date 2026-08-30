@@ -25,8 +25,9 @@ void PromptController::Update(InputManager* input) {
         isVisible_ = true;
         float alpha = animator_.GetPulseAlpha(0.6f, 0.4f, 3.0f);
 
-        if (targetObj_)
+        if (targetObj_) {
             targetObj_->SetAlpha(alpha);
+        }
         if (targetSprite_) {
             Irufemi::Vector4 color = targetSprite_->GetColor();
             color.w = alpha;
@@ -48,8 +49,9 @@ void PromptController::Update(InputManager* input) {
         isVisible_ = animator_.GetFlashVisibility(40.0f);
 
         // アルファ値は最大にしておく
-        if (targetObj_)
+        if (targetObj_) {
             targetObj_->SetAlpha(1.0f);
+        }
         if (targetSprite_) {
             Irufemi::Vector4 color = targetSprite_->GetColor();
             color.w = 1.0f;
@@ -59,13 +61,16 @@ void PromptController::Update(InputManager* input) {
 }
 
 void PromptController::Draw() {
-    if (!isVisible_)
+    if (!isVisible_) {
         return;
+    }
 
-    if (targetObj_)
+    if (targetObj_) {
         targetObj_->Draw();
-    if (targetSprite_)
+    }
+    if (targetSprite_) {
         targetSprite_->Draw();
+    }
 }
 
 bool PromptController::ShouldTransition() const {

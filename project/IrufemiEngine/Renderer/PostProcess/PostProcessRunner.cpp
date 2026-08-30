@@ -284,8 +284,9 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
 
             for (int i = 0; i < iterations; ++i) {
                 RenderTexture* kwTex = workspace.kawaseTextures[i];
-                if (!kwTex)
+                if (!kwTex) {
                     break;
+                }
 
                 D3D12_VIEWPORT viewport{};
                 viewport.Width = (FLOAT)kwTex->GetWidth();
@@ -316,8 +317,9 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
 
             for (int i = iterations - 2; i >= 0; --i) {
                 RenderTexture* kwTex = workspace.kawaseTextures[i];
-                if (!kwTex && i != 0)
+                if (!kwTex && i != 0) {
                     continue;
+                }
 
                 bool isFinalUp = (i == 0);
                 D3D12_CPU_DESCRIPTOR_HANDLE upHandle = isFinalUp ? targetHandle : kwTex->GetRtvHandle();

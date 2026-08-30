@@ -194,16 +194,18 @@ public:
      * @param[in] pso 設定する CustomPSO の値
      */
     void SetCustomPSO(ID3D12PipelineState* pso) {
-        if (mesh_.resource)
+        if (mesh_.resource) {
             mesh_.resource->SetCustomPSO(pso);
+        }
     }
     /**
      * @brief CustomCBVAddress を設定する。
      * @param[in] addr 設定する CustomCBVAddress の値
      */
     void SetCustomCBVAddress(D3D12_GPU_VIRTUAL_ADDRESS addr) {
-        if (mesh_.resource)
+        if (mesh_.resource) {
             mesh_.resource->SetCustomCBVAddress(addr);
+        }
     }
 
     /**

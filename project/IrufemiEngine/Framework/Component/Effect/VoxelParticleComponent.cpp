@@ -62,8 +62,9 @@ void VoxelParticleComponent::Emit() {
 
 void VoxelParticleComponent::Explode(const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate,
                                      const Irufemi::Vector3& scale) {
-    if (!isInitialized_)
+    if (!isInitialized_) {
         return;
+    }
 
     IrufemiEngine* engine = nullptr;
     if (auto* go = GetGameObject()) {
@@ -101,24 +102,31 @@ nlohmann::json VoxelParticleComponent::Serialize() {
 }
 
 void VoxelParticleComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("overrideModelName"))
+    if (j.contains("overrideModelName")) {
         overrideModelName_ = j["overrideModelName"];
+    }
     if (j.contains("resolution")) {
         resolution_.x = j["resolution"][0];
         resolution_.y = j["resolution"][1];
         resolution_.z = j["resolution"][2];
     }
-    if (j.contains("preAllocateCount"))
+    if (j.contains("preAllocateCount")) {
         preAllocateCount_ = j["preAllocateCount"];
+    }
 
-    if (j.contains("particleType"))
+    if (j.contains("particleType")) {
         emitterParams_.particleType = j["particleType"];
-    if (j.contains("lifeTime"))
+    }
+    if (j.contains("lifeTime")) {
         emitterParams_.lifeTime = j["lifeTime"];
-    if (j.contains("gravity"))
+    }
+    if (j.contains("gravity")) {
         emitterParams_.gravity = j["gravity"];
-    if (j.contains("dispersion"))
+    }
+    if (j.contains("dispersion")) {
         emitterParams_.dispersion = j["dispersion"];
-    if (j.contains("convergence"))
+    }
+    if (j.contains("convergence")) {
         emitterParams_.convergence = j["convergence"];
+    }
 }

@@ -14,8 +14,9 @@ class CustomBlob : public IDxcBlob {
 public:
     CustomBlob(std::vector<uint8_t>&& data) : data_(std::move(data)) {}
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override {
-        if (!ppv)
+        if (!ppv) {
             return E_POINTER;
+        }
         if (riid == __uuidof(IUnknown) || riid == __uuidof(IDxcBlob)) {
             *ppv = this;
             AddRef();
@@ -29,8 +30,9 @@ public:
     }
     ULONG STDMETHODCALLTYPE Release() override {
         ULONG r = --refCount_;
-        if (r == 0)
+        if (r == 0) {
             delete this;
+        }
         return r;
     }
     LPVOID STDMETHODCALLTYPE GetBufferPointer() override {

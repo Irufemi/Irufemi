@@ -76,14 +76,16 @@ void Line3DBatch::ClearInstances() {
 }
 
 void Line3DBatch::BuildInstanceBuffer(bool force) {
-    if (activeCount_ == 0 && !force)
+    if (activeCount_ == 0 && !force) {
         return;
+    }
 
     CreateOrResizeInstanceBuffer(static_cast<uint32_t>(activeCount_));
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
-    if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex] || !engine_)
+    if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex] || !engine_) {
         return;
+    }
 
     for (size_t i = 0; i < activeCount_; ++i) {
         const auto& inst = instances_[i];
@@ -100,8 +102,9 @@ void Line3DBatch::SyncBeforeDraw() {
 }
 
 void Line3DBatch::Draw() {
-    if (activeCount_ == 0)
+    if (activeCount_ == 0) {
         return;
+    }
     BuildInstanceBuffer();
     baseLineResource_->SyncBeforeDraw();
     drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32(),
@@ -109,8 +112,9 @@ void Line3DBatch::Draw() {
 }
 
 void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
-    if (instanceCount == 0)
+    if (instanceCount == 0) {
         return;
+    }
     uint32_t frameIndex = dx_->GetFrameIndex();
 
     if (instanceCount > instanceCapacity_[frameIndex]) {
@@ -149,8 +153,9 @@ void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 void Line3DBatch::EnsureInstancingSRV() {
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
-    if (!instanceBuffer_[frameIndex])
+    if (!instanceBuffer_[frameIndex]) {
         return;
+    }
 
     if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
         instancingSrvIndex_[frameIndex] = s_srvAllocator_->Allocate();

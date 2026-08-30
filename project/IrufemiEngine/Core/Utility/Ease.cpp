@@ -74,8 +74,9 @@ Irufemi::Vector3 Slerp(const Irufemi::Vector3& v1, const Irufemi::Vector3& v2, f
     auto len = [](const Irufemi::Vector3& v) -> float { return std::sqrt(Dot(v, v)); };
     auto safeNormalize = [](const Irufemi::Vector3& v) -> Irufemi::Vector3 {
         float l = std::sqrt(Dot(v, v));
-        if (l <= 1e-8f)
+        if (l <= 1e-8f) {
             return Irufemi::Vector3{0, 0, 0};
+        }
         return Multiply(1.0f / l, v);
     };
 
@@ -84,13 +85,16 @@ Irufemi::Vector3 Slerp(const Irufemi::Vector3& v1, const Irufemi::Vector3& v2, f
     float l2 = len(v2);
 
     // どちらもゼロ長
-    if (l1 <= 1e-8f && l2 <= 1e-8f)
+    if (l1 <= 1e-8f && l2 <= 1e-8f) {
         return Irufemi::Vector3{0, 0, 0};
+    }
     // 一方がゼロ長：もう片方の方向へ長さだけLerp
-    if (l1 <= 1e-8f)
+    if (l1 <= 1e-8f) {
         return Multiply(std::clamp(t, 0.0f, 1.0f) * l2, safeNormalize(v2));
-    if (l2 <= 1e-8f)
+    }
+    if (l2 <= 1e-8f) {
         return Multiply((1.0f - std::clamp(t, 0.0f, 1.0f)) * l1, safeNormalize(v1));
+    }
 
     // 単位方向
     Irufemi::Vector3 u1 = Multiply(1.0f / l1, v1);

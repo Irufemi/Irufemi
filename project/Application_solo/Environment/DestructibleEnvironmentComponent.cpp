@@ -11,8 +11,9 @@
 #include <iostream>
 
 void DestructibleEnvironmentComponent::Start() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     auto scene = gameObject_->GetScene();
     if (scene) {
@@ -24,8 +25,9 @@ void DestructibleEnvironmentComponent::Start() {
 }
 
 void DestructibleEnvironmentComponent::TakeDamage(int damage) {
-    if (hp_ <= 0)
+    if (hp_ <= 0) {
         return; // 既に破壊されている
+    }
 
     hp_ -= damage;
 

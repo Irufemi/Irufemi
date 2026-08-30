@@ -66,8 +66,9 @@ public:
      * @param[in] 0.0f 設定する Position の値
      */
     void SetPosition(const float& x, const float& y, const float& z = 0.0f) {
-        if (resource_)
+        if (resource_) {
             resource_->transform_.translate = {x, y, z};
+        }
         isDirty_ = true;
     }
     /**
@@ -75,8 +76,9 @@ public:
      * @param[in] rotate 設定する Rotation の値
      */
     void SetRotation(const float& rotate) {
-        if (resource_)
+        if (resource_) {
             resource_->transform_.rotate = {0.0f, 0.0f, rotate};
+        }
         isDirty_ = true;
     }
     /**
@@ -85,8 +87,9 @@ public:
      * @param[in] scaleY 設定する Scale の値
      */
     void SetScale(const float& scaleX, const float& scaleY) {
-        if (resource_)
+        if (resource_) {
             resource_->transform_.scale = {scaleX, scaleY, 1.0f};
+        }
         isDirty_ = true;
     }
     /**
@@ -95,8 +98,9 @@ public:
      */
     void SetColor(const Irufemi::Vector4& color) {
         color_ = color;
-        if (resource_)
+        if (resource_) {
             resource_->GetMaterialData()->color = color;
+        }
         isDirty_ = true;
     }
     /**

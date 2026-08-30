@@ -25,8 +25,9 @@ TelemetrySender::~TelemetrySender() {
 }
 
 void TelemetrySender::Initialize(const std::string& targetIp, uint16_t targetPort) {
-    if (isRunning_)
+    if (isRunning_) {
         return;
+    }
 
     // Winsock初期化
     WSADATA wsaData;
@@ -75,22 +76,25 @@ void TelemetrySender::Finalize() {
 }
 
 void TelemetrySender::SetMetric(const std::string& key, const nlohmann::json& value) {
-    if (!isRunning_)
+    if (!isRunning_) {
         return;
+    }
     std::lock_guard<std::mutex> lock(dataMutex_);
     currentMetrics_[key] = value;
 }
 
 void TelemetrySender::LogEvent(const std::string& message) {
-    if (!isRunning_)
+    if (!isRunning_) {
         return;
+    }
     std::lock_guard<std::mutex> lock(dataMutex_);
     pendingEvents_.push_back(message);
 }
 
 void TelemetrySender::OnFrameEnd() {
-    if (!isRunning_)
+    if (!isRunning_) {
         return;
+    }
 
     {
         std::lock_guard<std::mutex> lock(dataMutex_);
@@ -109,8 +113,9 @@ void TelemetrySender::ThreadLoop() {
             // triggerSend_ が true になるか、終了(isRunning_ == false)になるまで待機
             cv_.wait(lock, [this]() { return triggerSend_.load() || !isRunning_.load(); });
 
-            if (!isRunning_)
+            if (!isRunning_) {
                 break;
+            }
 
             // 送信用のデータをコピー
             metricsToSend = currentMetrics_;
@@ -122,8 +127,9 @@ void TelemetrySender::ThreadLoop() {
         }
 
         // UDPソケットが無効ならスキップ
-        if (networkData_->udpSocket_ == INVALID_SOCKET)
+        if (networkData_->udpSocket_ == INVALID_SOCKET) {
             continue;
+        }
 
         // イベントをメトリクスに追加して送信
         if (!eventsToSend.empty()) {

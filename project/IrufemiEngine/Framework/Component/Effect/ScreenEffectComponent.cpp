@@ -20,8 +20,9 @@ void ScreenEffectComponent::Initialize() {
 
 void ScreenEffectComponent::Play() {
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine || !engine->GetPostProcessManager())
+    if (!engine || !engine->GetPostProcessManager()) {
         return;
+    }
 
     if (!isBaseCached_) {
         // 現在の値をベース（基準）としてキャッシュする
@@ -43,12 +44,14 @@ void ScreenEffectComponent::Play() {
 }
 
 void ScreenEffectComponent::Update() {
-    if (!isPlaying_)
+    if (!isPlaying_) {
         return;
+    }
 
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine || !engine->GetPostProcessManager())
+    if (!engine || !engine->GetPostProcessManager()) {
         return;
+    }
 
     float dt = engine->GetGameDeltaTime();
     currentWeight_ -= dt / duration_;
@@ -164,28 +167,39 @@ void ScreenEffectComponent::Deserialize(const nlohmann::json& j) {
 
     if (j.contains("targetGlitchParams")) {
         auto& gj = j["targetGlitchParams"];
-        if (gj.contains("intensity"))
+        if (gj.contains("intensity")) {
             targetGlitchParams_.intensity = gj["intensity"];
-        if (gj.contains("edgeMaskStrength"))
+        }
+        if (gj.contains("edgeMaskStrength")) {
             targetGlitchParams_.edgeMaskStrength = gj["edgeMaskStrength"];
-        if (gj.contains("probability"))
+        }
+        if (gj.contains("probability")) {
             targetGlitchParams_.probability = gj["probability"];
-        if (gj.contains("blockSizeX"))
+        }
+        if (gj.contains("blockSizeX")) {
             targetGlitchParams_.blockSizeX = gj["blockSizeX"];
-        if (gj.contains("blockSizeY"))
+        }
+        if (gj.contains("blockSizeY")) {
             targetGlitchParams_.blockSizeY = gj["blockSizeY"];
-        if (gj.contains("offsetBase"))
+        }
+        if (gj.contains("offsetBase")) {
             targetGlitchParams_.offsetBase = gj["offsetBase"];
-        if (gj.contains("offsetMax"))
+        }
+        if (gj.contains("offsetMax")) {
             targetGlitchParams_.offsetMax = gj["offsetMax"];
-        if (gj.contains("rgbShiftBase"))
+        }
+        if (gj.contains("rgbShiftBase")) {
             targetGlitchParams_.rgbShiftBase = gj["rgbShiftBase"];
-        if (gj.contains("rgbShiftMax"))
+        }
+        if (gj.contains("rgbShiftMax")) {
             targetGlitchParams_.rgbShiftMax = gj["rgbShiftMax"];
-        if (gj.contains("scanlineFreq"))
+        }
+        if (gj.contains("scanlineFreq")) {
             targetGlitchParams_.scanlineFreq = gj["scanlineFreq"];
-        if (gj.contains("scanlineIntensity"))
+        }
+        if (gj.contains("scanlineIntensity")) {
             targetGlitchParams_.scanlineIntensity = gj["scanlineIntensity"];
+        }
         if (gj.contains("glitchColor")) {
             auto& c = gj["glitchColor"];
             targetGlitchParams_.color = {c[0], c[1], c[2], c[3]};
@@ -200,28 +214,33 @@ void ScreenEffectComponent::Deserialize(const nlohmann::json& j) {
             targetVignetteParams_.color.z = vj["color"][2];
             targetVignetteParams_.color.w = vj["color"][3];
         }
-        if (vj.contains("radius"))
+        if (vj.contains("radius")) {
             targetVignetteParams_.radius = vj["radius"];
-        if (vj.contains("softness"))
+        }
+        if (vj.contains("softness")) {
             targetVignetteParams_.softness = vj["softness"];
+        }
     }
 
     if (j.contains("targetChromaticAberrationParams")) {
         auto& cj = j["targetChromaticAberrationParams"];
-        if (cj.contains("intensity"))
+        if (cj.contains("intensity")) {
             targetChromaticAberrationParams_.intensity = cj["intensity"];
+        }
     }
 
     if (j.contains("targetRadialBlurParams")) {
         auto& rj = j["targetRadialBlurParams"];
-        if (rj.contains("blurWidth"))
+        if (rj.contains("blurWidth")) {
             targetRadialBlurParams_.blurWidth = rj["blurWidth"];
+        }
         if (rj.contains("center") && rj["center"].is_array() && rj["center"].size() == 2) {
             targetRadialBlurParams_.center.x = rj["center"][0];
             targetRadialBlurParams_.center.y = rj["center"][1];
         }
-        if (rj.contains("numSamples"))
+        if (rj.contains("numSamples")) {
             targetRadialBlurParams_.numSamples = rj["numSamples"];
+        }
     }
 }
 

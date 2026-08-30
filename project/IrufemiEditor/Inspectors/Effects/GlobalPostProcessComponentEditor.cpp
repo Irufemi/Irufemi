@@ -52,8 +52,9 @@ void GlobalPostProcessComponentEditor::DrawBoolProperty(const char* label, bool&
 
 void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto* pp = dynamic_cast<GlobalPostProcessComponent*>(component);
-    if (!pp)
+    if (!pp) {
         return;
+    }
 
     const auto& overrides = pp->GetOverrides();
     int indexToRemove = -1;
@@ -63,12 +64,13 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
 
         std::string headerName = setting->GetName();
         std::string icon = "";
-        if (setting->GetMode() == PostProcessMode::Bloom)
+        if (setting->GetMode() == PostProcessMode::Bloom) {
             icon = ICON_FA_SUN " ";
-        else if (setting->GetMode() == PostProcessMode::ToneMapping)
+        } else if (setting->GetMode() == PostProcessMode::ToneMapping) {
             icon = ICON_FA_PALETTE " ";
-        else if (setting->GetMode() == PostProcessMode::Vignette)
+        } else if (setting->GetMode() == PostProcessMode::Vignette) {
             icon = ICON_FA_CAMERA " ";
+        }
 
         headerName = icon + headerName + "##" + std::to_string(i);
 
@@ -128,12 +130,13 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_PLUS " Add Effect", ImVec2(-1, 0))) {
         PostProcessMode mode = PostProcessMode::None;
-        if (selectedEffect == 0)
+        if (selectedEffect == 0) {
             mode = PostProcessMode::Bloom;
-        else if (selectedEffect == 1)
+        } else if (selectedEffect == 1) {
             mode = PostProcessMode::ToneMapping;
-        else if (selectedEffect == 2)
+        } else if (selectedEffect == 2) {
             mode = PostProcessMode::Vignette;
+        }
 
         if (mode != PostProcessMode::None) {
             // 重複チェック

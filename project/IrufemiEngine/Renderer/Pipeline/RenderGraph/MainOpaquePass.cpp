@@ -10,16 +10,21 @@ void MainOpaquePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager
     }
 
     // G-Bufferをレンダーターゲットとして要求
-    if (auto tex = engine->GetMainRenderTexture())
+    if (auto tex = engine->GetMainRenderTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetEffectMaskTexture())
+    }
+    if (auto tex = engine->GetEffectMaskTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetNormalTexture())
+    }
+    if (auto tex = engine->GetNormalTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetMaterialTexture())
+    }
+    if (auto tex = engine->GetMaterialTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (auto tex = engine->GetVelocityTexture())
+    }
+    if (auto tex = engine->GetVelocityTexture()) {
         builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
 
     // 深度バッファを書き込み可能として要求
     if (auto dx = drawManager->GetDxCommon()) {
@@ -39,8 +44,9 @@ void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // Helper lambda to apply PSO efficiently
     auto DrawWithPSO = [&](const auto& queue, auto applyPSOFunc, auto drawFunc) {
-        if (queue.empty())
+        if (queue.empty()) {
             return;
+        }
 
         Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;

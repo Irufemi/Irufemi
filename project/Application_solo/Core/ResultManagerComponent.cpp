@@ -81,8 +81,9 @@ void ResultManagerComponent::Update() {
         auto uiObj = std::make_shared<GameObject>("ReturnText");
         gameObject_->GetScene()->AddGameObject(uiObj);
         auto t = uiObj->GetTransform();
-        if (t)
+        if (t) {
             t->SetPosition({640.0f, 600.0f, 0.0f});
+        }
 
         auto text = uiObj->AddComponent<TextRendererComponent>().get();
         text->SetFontId("toro_glitch");

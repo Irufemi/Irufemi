@@ -77,14 +77,18 @@ void EffectMaskComponent::Deserialize(const nlohmann::json& j) {
         if (p.contains("color2")) {
             customParams_.color2 = {p["color2"][0], p["color2"][1], p["color2"][2], p["color2"][3]};
         }
-        if (p.contains("param1"))
+        if (p.contains("param1")) {
             customParams_.param1 = p["param1"];
-        if (p.contains("param2"))
+        }
+        if (p.contains("param2")) {
             customParams_.param2 = p["param2"];
-        if (p.contains("param3"))
+        }
+        if (p.contains("param3")) {
             customParams_.param3 = p["param3"];
-        if (p.contains("param4"))
+        }
+        if (p.contains("param4")) {
             customParams_.param4 = p["param4"];
+        }
     }
 }
 

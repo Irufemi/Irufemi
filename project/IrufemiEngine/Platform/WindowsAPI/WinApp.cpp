@@ -332,8 +332,9 @@ LONG WINAPI WinApp::ExportDump(EXCEPTION_POINTERS* exception) {
 }
 
 void WinApp::SetDisplayMode(DisplayMode mode) {
-    if (displayMode_ == mode)
+    if (displayMode_ == mode) {
         return;
+    }
 
     if (mode == DisplayMode::Borderless) {
         // Save current windowed rect

@@ -25,8 +25,9 @@
 #include "Physics/CollisionManager.h"
 
 static ColliderComponent* GetColliderFromObj(GameObject* obj) {
-    if (!obj)
+    if (!obj) {
         return nullptr;
+    }
     for (auto& comp : obj->GetComponents()) {
         if (auto col = dynamic_cast<ColliderComponent*>(comp.get())) {
             return col;
@@ -98,10 +99,12 @@ void DebrisComponent::OnDisable() {
 }
 
 void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
-    if (state_ != DebrisState::Thrown)
+    if (state_ != DebrisState::Thrown) {
         return;
-    if (!otherObj)
+    }
+    if (!otherObj) {
         return;
+    }
 
     bool hit = false;
     if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
@@ -188,8 +191,9 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
 }
 
 void DebrisComponent::SetState(DebrisState newState) {
-    if (state_ == newState)
+    if (state_ == newState) {
         return;
+    }
     if (manager_) {
         manager_->UnregisterDebris(this, state_);
     }

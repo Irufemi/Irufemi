@@ -16,11 +16,13 @@
 #include <functional>
 
 std::shared_ptr<Component> ComponentUIHelpers::GetSharedComponent(GameObject* go, Component* comp) {
-    if (!go || !comp)
+    if (!go || !comp) {
         return nullptr;
+    }
     for (auto& c : go->GetComponents()) {
-        if (c.get() == comp)
+        if (c.get() == comp) {
             return c;
+        }
     }
     return nullptr;
 }
@@ -30,12 +32,14 @@ void ComponentUIHelpers::DrawCollisionLayerGUI(Component* comp, EditorActionMana
     auto* go = comp->GetGameObject();
     auto* scene = go ? go->GetScene() : nullptr;
     auto* cm = scene ? scene->GetEngine()->GetCollisionManager() : nullptr;
-    if (!cm)
+    if (!cm) {
         return;
+    }
 
     const auto& layerNames = cm->GetLayerNames();
-    if (layerNames.empty())
+    if (layerNames.empty()) {
         return;
+    }
 
     if (BeginPropertyTable("CollisionLayerTable")) {
         ImGui::TableNextRow();
@@ -66,8 +70,9 @@ void ComponentUIHelpers::DrawCollisionLayerGUI(Component* comp, EditorActionMana
                     uint32_t newLayer = (1u << i);
                     PushInstantUndo(actionManager, layer, newLayer, &layer);
                 }
-                if (isSelected)
+                if (isSelected) {
                     ImGui::SetItemDefaultFocus();
+                }
             }
             ImGui::EndCombo();
         }
@@ -101,10 +106,11 @@ void ComponentUIHelpers::DrawCollisionLayerGUI(Component* comp, EditorActionMana
                 bool isMasked = (mask & (1u << i)) != 0;
                 if (ImGui::Checkbox((std::string("##Mask") + std::to_string(i)).c_str(), &isMasked)) {
                     uint32_t newMask = mask;
-                    if (isMasked)
+                    if (isMasked) {
                         newMask |= (1u << i);
-                    else
+                    } else {
                         newMask &= ~(1u << i);
+                    }
                     PushInstantUndo(actionManager, mask, newMask, &mask);
                 }
             }
@@ -167,16 +173,18 @@ void ComponentUIHelpers::DrawCollisionLayerGUI(Component* comp, EditorActionMana
 
 void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorActionManager* actionManager) {
     const auto& props = component->GetProperties();
-    if (props.empty())
+    if (props.empty()) {
         return;
+    }
 
     ImGui::PushID(component);
     bool headerOpen = ImGui::CollapsingHeader(component->GetComponentName().c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -218,24 +226,27 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         case ComponentPropertyType::Float2: {
                             auto* v = static_cast<Irufemi::Vector2*>(prop.data);
                             auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 2)
+                            if (arr.is_array() && arr.size() >= 2) {
                                 isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
+                            }
                             break;
                         }
                         case ComponentPropertyType::Float3: {
                             auto* v = static_cast<Irufemi::Vector3*>(prop.data);
                             auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 3)
+                            if (arr.is_array() && arr.size() >= 3) {
                                 isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
                                               v->z != arr[2].get<float>());
+                            }
                             break;
                         }
                         case ComponentPropertyType::Float4: {
                             auto* v = static_cast<Irufemi::Vector4*>(prop.data);
                             auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 4)
+                            if (arr.is_array() && arr.size() >= 4) {
                                 isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
                                               v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
+                            }
                             break;
                         }
                         default:
@@ -292,8 +303,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                 }
                             }
                             ImGui::PopStyleColor();
-                            if (ImGui::IsItemHovered())
+                            if (ImGui::IsItemHovered()) {
                                 ImGui::SetTooltip("Reset to Default");
+                            }
                         }
                     }
                 };
@@ -407,8 +419,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         int* ptr = static_cast<int*>(prop.data);
                         if (!prop.enumNames.empty()) {
                             std::vector<const char*> cStrs;
-                            for (const auto& s : prop.enumNames)
+                            for (const auto& s : prop.enumNames) {
                                 cStrs.push_back(s.c_str());
+                            }
                             int oldVal = *ptr;
                             if (ImGui::Combo(hiddenName.c_str(), ptr, cStrs.data(), static_cast<int>(cStrs.size()))) {
                                 PushInstantUndo(actionManager, oldVal, *ptr, ptr);
@@ -502,8 +515,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                         actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
                                             oldVal, *str, [str](const std::string& v) { *str = v; }));
                                     }
-                                    if (isSelected)
+                                    if (isSelected) {
                                         ImGui::SetItemDefaultFocus();
+                                    }
                                 }
                                 ImGui::EndCombo();
                             }
@@ -515,8 +529,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             if (ImGui::InputText(hiddenName.c_str(), buffer, sizeof(buffer))) {
                                 *str = buffer;
                             }
-                            if (ImGui::IsItemActivated())
+                            if (ImGui::IsItemActivated()) {
                                 startStr = *str;
+                            }
                             if (ImGui::IsItemDeactivatedAfterEdit()) {
                                 std::string endStr = *str;
                                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
@@ -534,8 +549,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                 std::transform(lowerPath.begin(), lowerPath.end(), lowerPath.begin(), ::tolower);
 
                                 size_t resPos = lowerPath.find("resources/");
-                                if (resPos != std::string::npos)
+                                if (resPos != std::string::npos) {
                                     droppedPathStr = droppedPathStr.substr(resPos);
+                                }
 
                                 std::string oldVal = *str;
                                 *str = droppedPathStr;
@@ -566,8 +582,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         std::string currentName = "None";
                         if (*ptr != 0 && component->GetGameObject() && component->GetGameObject()->GetScene()) {
                             auto currentObj = component->GetGameObject()->GetScene()->FindGameObjectByID(*ptr);
-                            if (currentObj)
+                            if (currentObj) {
                                 currentName = currentObj->GetName();
+                            }
                         }
 
                         if (ImGui::BeginCombo(hiddenName.c_str(), currentName.c_str())) {
@@ -578,12 +595,14 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                     oldVal, 0, [ptr](const uint64_t& v) { *ptr = v; }));
                             }
                             for (const auto& obj : allObjs) {
-                                if (!obj || obj->IsDestroyed())
+                                if (!obj || obj->IsDestroyed()) {
                                     continue;
+                                }
                                 bool isSelected = (*ptr == obj->GetInstanceID());
                                 std::string displayName = obj->GetName();
-                                if (displayName.empty())
+                                if (displayName.empty()) {
                                     displayName = "Unnamed Object";
+                                }
 
                                 if (ImGui::Selectable(displayName.c_str(), isSelected)) {
                                     uint64_t oldVal = *ptr;
@@ -592,8 +611,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                     actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<uint64_t>>(
                                         oldVal, newVal, [ptr](const uint64_t& v) { *ptr = v; }));
                                 }
-                                if (isSelected)
+                                if (isSelected) {
                                     ImGui::SetItemDefaultFocus();
+                                }
                             }
                             ImGui::EndCombo();
                         }
@@ -645,8 +665,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             newPos = parentT->GetPosition();
                         }
                     }
-                    if (auto t = newChild->GetComponent<TransformComponent>())
+                    if (auto t = newChild->GetComponent<TransformComponent>()) {
                         t->SetPosition(newPos);
+                    }
                     newChild->SetScene(go->GetScene());
                 }
             }
@@ -703,12 +724,14 @@ void ComponentUIHelpers::DrawPropertyResetButton(const char* id, bool isModified
     if (isModified) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
         if (ImGui::Button((std::string(ICON_FA_ARROW_ROTATE_LEFT) + id).c_str(), ImVec2(20, 0))) {
-            if (resetAction)
+            if (resetAction) {
                 resetAction();
+            }
         }
         ImGui::PopStyleColor();
-        if (ImGui::IsItemHovered())
+        if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Reset to Default");
+        }
     }
 }
 #endif // EditorMode

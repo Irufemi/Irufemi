@@ -33,8 +33,9 @@ Object3DResource::~Object3DResource() {
 }
 
 void Object3DResource::CreateResource() {
-    if (!s_dxCommon_)
+    if (!s_dxCommon_) {
         return;
+    }
 
     if (!vertexDataList_.empty()) {
         if (vertexResource_) {
@@ -119,8 +120,9 @@ void Object3DResource::UpdateTransform(const Camera& camera) {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetMaterialVAddress() const {
-    if (materialCbIndex_ == static_cast<uint32_t>(-1))
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
+    }
     return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
         materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
@@ -130,8 +132,9 @@ D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetTransformVAddress() const {
         return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
             *externalTransformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
     }
-    if (transformCbIndex_ == static_cast<uint32_t>(-1))
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
+    }
     return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
         transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }

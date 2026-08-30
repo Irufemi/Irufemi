@@ -49,8 +49,9 @@ Vector2 ClosestPoint(Vector2 point, const Segment2D& segment) {
     Vector2 ap = point - segment.origin;
 
     float sq = Dot(ab, ab);
-    if (sq < 1e-6f)
+    if (sq < 1e-6f) {
         return segment.origin;
+    }
 
     float t = Dot(ap, ab) / sq;
 
@@ -89,8 +90,9 @@ float Length(Vector3 vector) {
 
 Vector3 Normalize(Vector3 vector) {
     float len = Length(vector);
-    if (len < 1e-6f)
+    if (len < 1e-6f) {
         return {0.0f, 0.0f, 0.0f};
+    }
     return vector / len;
 }
 
@@ -104,8 +106,9 @@ Vector3 Project(Vector3 v1, Vector3 v2) {
 
 Vector3 ClosestPoint(Vector3 point, const Segment& segment) {
     float diffSq = Dot(segment.diff, segment.diff);
-    if (diffSq < 1e-6f)
+    if (diffSq < 1e-6f) {
         return segment.origin;
+    }
     Vector3 a = point - segment.origin;
     float t = Dot(a, segment.diff) / diffSq;
     t = Clamp(t, 0.0f, 1.0f);
@@ -114,8 +117,9 @@ Vector3 ClosestPoint(Vector3 point, const Segment& segment) {
 
 Vector3 ClosestPoint(Vector3 point, const Ray& ray) {
     float diffSq = Dot(ray.diff, ray.diff);
-    if (diffSq < 1e-6f)
+    if (diffSq < 1e-6f) {
         return ray.origin;
+    }
     Vector3 a = point - ray.origin;
     float t = Dot(a, ray.diff) / diffSq;
     t = std::max(t, 0.0f);
@@ -124,8 +128,9 @@ Vector3 ClosestPoint(Vector3 point, const Ray& ray) {
 
 Vector3 ClosestPoint(Vector3 point, const Line& line) {
     float diffSq = Dot(line.diff, line.diff);
-    if (diffSq < 1e-6f)
+    if (diffSq < 1e-6f) {
         return line.origin;
+    }
     Vector3 a = point - line.origin;
     float t = Dot(a, line.diff) / diffSq;
     return line.origin + t * line.diff;
@@ -552,15 +557,17 @@ float Norm(const Quaternion& q) {
 
 Quaternion Normalize(const Quaternion& q) {
     float n = Norm(q);
-    if (n < 1e-6f)
+    if (n < 1e-6f) {
         return IdentityQuaternion();
+    }
     return {q.x / n, q.y / n, q.z / n, q.w / n};
 }
 
 Quaternion Inverse(const Quaternion& q) {
     float normSq = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
-    if (normSq < 1e-12f)
+    if (normSq < 1e-12f) {
         return IdentityQuaternion();
+    }
     Quaternion conj = Conjugate(q);
     return {conj.x / normSq, conj.y / normSq, conj.z / normSq, conj.w / normSq};
 }
@@ -703,10 +710,12 @@ Vector3 Perpendicular(Vector3 vector) {
 }
 
 float NormalizeAngle(float angle) {
-    while (angle > PI)
+    while (angle > PI) {
         angle -= 2.0f * PI;
-    while (angle < -PI)
+    }
+    while (angle < -PI) {
         angle += 2.0f * PI;
+    }
     return angle;
 }
 

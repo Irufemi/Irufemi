@@ -67,8 +67,9 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // エイリアシングによるヒープオフセットの決定 (貪欲法)
     for (size_t i = 0; i < lifetimes.size(); ++i) {
-        if (lifetimes[i].firstPass == static_cast<size_t>(-1))
+        if (lifetimes[i].firstPass == static_cast<size_t>(-1)) {
             continue;
+        }
 
         uint64_t requiredSize = lifetimes[i].size;
         uint64_t alignment = lifetimes[i].alignment;
@@ -78,8 +79,9 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         while (!placed) {
             placed = true;
             for (size_t j = 0; j < i; ++j) {
-                if (lifetimes[j].firstPass == static_cast<size_t>(-1))
+                if (lifetimes[j].firstPass == static_cast<size_t>(-1)) {
                     continue;
+                }
 
                 // 寿命が重なるか？
                 bool overlapTime = (lifetimes[i].firstPass <= lifetimes[j].lastPass) &&
@@ -162,8 +164,9 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
         // 通常リソースの Transition バリア
         for (const auto& usage : builder.GetUsages()) {
-            if (usage.passIndex != passIdx || !usage.resource)
+            if (usage.passIndex != passIdx || !usage.resource) {
                 continue;
+            }
 
             auto it = resourceStates_.find(usage.resource);
             D3D12_RESOURCE_STATES currentState =
@@ -184,11 +187,13 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
         // Transient リソースの Transition バリア
         for (const auto& usage : transientUsages) {
-            if (usage.passIndex != passIdx)
+            if (usage.passIndex != passIdx) {
                 continue;
+            }
             auto* res = lifetimes[usage.handle].physicalResource;
-            if (!res)
+            if (!res) {
                 continue;
+            }
 
             auto it = resourceStates_.find(res);
             D3D12_RESOURCE_STATES currentState =
@@ -218,8 +223,9 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // 全パス実行後、要求された最終ステートへの TransitionBarrier を発行
     std::vector<D3D12_RESOURCE_BARRIER> finalBarriers;
     for (const auto& [resource, finalState] : finalResourceStates_) {
-        if (!resource)
+        if (!resource) {
             continue;
+        }
         auto it = resourceStates_.find(resource);
         D3D12_RESOURCE_STATES currentState = (it != resourceStates_.end()) ? it->second : D3D12_RESOURCE_STATE_COMMON;
 

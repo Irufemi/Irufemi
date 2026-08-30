@@ -46,8 +46,9 @@ void Text::SetFontId(const std::string& fontId) {
 }
 
 void Text::GenerateVertices() {
-    if (!fontManager_)
+    if (!fontManager_) {
         return;
+    }
 
     // 文字が存在しない可能性があるため、まずは非同期生成要求をかける
     fontManager_->PrecacheText(fontId_, text_);
@@ -186,8 +187,9 @@ void Text::GenerateVertices() {
     resource_->textureHandle_ = fontManager_->GetAtlasHandle();
 
     // 頂点がなければ終了
-    if (resource_->vertexDataList_.empty())
+    if (resource_->vertexDataList_.empty()) {
         return;
+    }
 
     // GPUリソースの再生成(文字数によって頂点数が可変なため、毎回バッファを作り直すか拡張する)
     resource_->CreateResource();
@@ -201,8 +203,9 @@ void Text::GenerateVertices() {
 }
 
 void Text::Update() {
-    if (!resource_ || !cameraManager_ || !fontManager_)
+    if (!resource_ || !cameraManager_ || !fontManager_) {
         return;
+    }
 
     // AtlasのSRVが変わったか(リビルドされた等)、テキストに変更があった場合は再生成
     ResourceHandle currentAtlas = fontManager_->GetAtlasHandle();
@@ -218,8 +221,9 @@ void Text::Update() {
     }
 
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     if (isDirty_) {
         resource_->UpdateTransform(*activeCam);
@@ -237,11 +241,13 @@ void Text::SyncBeforeDraw() {
 }
 
 void Text::Draw() {
-    if (!resource_ || !drawManager_ || !cameraManager_)
+    if (!resource_ || !drawManager_ || !cameraManager_) {
         return;
+    }
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     bool cameraChanged =
         (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
@@ -253,8 +259,9 @@ void Text::Draw() {
 
     SyncBeforeDraw();
 
-    if (resource_->vertexDataList_.empty())
+    if (resource_->vertexDataList_.empty()) {
         return; // 描画するものがなければスキップ
+    }
 
     // TextRenderer用の描画キューに送信
     if (isTopMost_) {
@@ -265,19 +272,22 @@ void Text::Draw() {
 }
 
 void Text::DrawOutlineMask() {
-    if (!resource_ || !drawManager_ || !cameraManager_)
+    if (!resource_ || !drawManager_ || !cameraManager_) {
         return;
+    }
     Camera* activeCam = cameraManager_->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     if (isDirty_ || isTextDirty_) {
         Update();
     }
     SyncBeforeDraw();
 
-    if (resource_->vertexDataList_.empty())
+    if (resource_->vertexDataList_.empty()) {
         return;
+    }
 
     drawManager_->SubmitTextOutlineMask(resource_.get());
 }

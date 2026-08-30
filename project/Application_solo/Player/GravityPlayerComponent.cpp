@@ -31,8 +31,9 @@
 #include <fstream>
 
 void GravityPlayerComponent::LoadStatusFromJson() {
-    if (statusDataPath_.empty())
+    if (statusDataPath_.empty()) {
         return;
+    }
 
     std::ifstream file(statusDataPath_);
     if (!file.is_open()) {
@@ -80,8 +81,9 @@ void GravityPlayerComponent::Initialize() {
 }
 
 void GravityPlayerComponent::Start() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
     targetingComp_ = gameObject_->GetComponent<PlayerTargetingComponent>();
     healthComp_ = gameObject_->GetComponent<PlayerHealthComponent>();
 
@@ -100,14 +102,16 @@ void GravityPlayerComponent::Update() {
     }
 
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-    if (dt <= 0.0f)
+    if (dt <= 0.0f) {
         return;
+    }
 
     // 無効になったガレキを除外
     orbitingDebris_.erase(std::remove_if(orbitingDebris_.begin(), orbitingDebris_.end(),
                                          [](const std::shared_ptr<GameObject>& obj) {
-                                             if (!obj || !obj->GetIsActive())
+                                             if (!obj || !obj->GetIsActive()) {
                                                  return true;
+                                             }
                                              auto comp = obj->GetComponent<DebrisComponent>();
                                              return !comp || (comp->GetState() != DebrisState::Orbiting &&
                                                               comp->GetState() != DebrisState::Pulled);
@@ -119,8 +123,9 @@ void GravityPlayerComponent::Update() {
     } else {
         if (targetingComp_) {
             size_t maxLockOn = orbitingDebris_.size();
-            if (maxLockOn == 0)
+            if (maxLockOn == 0) {
                 maxLockOn = 1;
+            }
             targetingComp_->SetMaxLockonCount(maxLockOn);
         }
         HandlePullInput();
@@ -131,21 +136,25 @@ void GravityPlayerComponent::Update() {
 
 void GravityPlayerComponent::HandlePullInput() {
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
-    if (!input)
+    if (!input) {
         return;
+    }
 
     // Eキー で引き寄せ (右クリックは廃止)
     if (input->IsKeyPressed('E')) {
-        if (static_cast<int>(orbitingDebris_.size()) >= maxOrbitCount_)
+        if (static_cast<int>(orbitingDebris_.size()) >= maxOrbitCount_) {
             return;
+        }
 
         auto scene = gameObject_->GetScene();
-        if (!scene)
+        if (!scene) {
             return;
+        }
 
         auto transform = GetTransform();
-        if (!transform)
+        if (!transform) {
             return;
+        }
 
         // 1. ロックオン済み、またはホバー中のターゲットを取得
         std::shared_ptr<GameObject> targetToSteal = nullptr;
@@ -155,8 +164,9 @@ void GravityPlayerComponent::HandlePullInput() {
             // A. まずは手動ロックオン済みのキューをチェック
             auto& targets = targetingComp_->GetQueuedTargets();
             for (auto& t : targets) {
-                if (!t)
+                if (!t) {
                     continue;
+                }
                 if (auto debrisComp = t->GetComponent<DebrisComponent>()) {
                     if (debrisComp->GetState() == DebrisState::BossOrbiting) {
                         targetToSteal = t;
@@ -201,8 +211,9 @@ void GravityPlayerComponent::HandlePullInput() {
             return; // ボスから奪った場合はフリーガレキは吸わない
         }
 
-        if (!debrisManager_)
+        if (!debrisManager_) {
             return;
+        }
 
         auto debrisObj = debrisManager_->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_);
         if (debrisObj) {
@@ -218,11 +229,13 @@ void GravityPlayerComponent::HandlePullInput() {
 }
 
 void GravityPlayerComponent::HandleMarkInput() {
-    if (!targetingComp_)
+    if (!targetingComp_) {
         return;
+    }
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
-    if (!input)
+    if (!input) {
         return;
+    }
 
     // Rキーでキャンセル
     if (input->IsKeyDown('R')) {
@@ -232,21 +245,24 @@ void GravityPlayerComponent::HandleMarkInput() {
     // 右クリックでマーキング
     if (input->IsMouseButtonPressed(Mouse::Button::Right)) {
         size_t maxLockOn = orbitingDebris_.size();
-        if (maxLockOn == 0)
+        if (maxLockOn == 0) {
             maxLockOn = 1; // シールド奪取用に最低1つはロック許可
+        }
         targetingComp_->MarkTarget(maxLockOn);
     }
 }
 
 void GravityPlayerComponent::HandleThrowInput() {
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
-    if (!input)
+    if (!input) {
         return;
+    }
 
     // 左クリックで射撃
     if (input->IsMouseButtonPressed(Mouse::Button::Left) || input->IsKeyPressed('Q')) {
-        if (orbitingDebris_.empty())
+        if (orbitingDebris_.empty()) {
             return;
+        }
 
         size_t lockonCount = targetingComp_ ? targetingComp_->GetQueuedTargets().size() : 0;
 
@@ -266,8 +282,9 @@ void GravityPlayerComponent::HandleThrowInput() {
 void GravityPlayerComponent::UpdateThrowing() {
     if (throwRemainingCount_ <= 0 || orbitingDebris_.empty()) {
         isThrowing_ = false;
-        if (targetingComp_)
+        if (targetingComp_) {
             targetingComp_->ClearTargets(); // 弾切れ・または予定数撃ち切りでマークをクリア
+        }
         return;
     }
 

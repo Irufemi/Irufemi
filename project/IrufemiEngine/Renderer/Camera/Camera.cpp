@@ -100,8 +100,9 @@ void Camera::UpdateMatrix() {
 }
 
 Irufemi::Vector2 Camera::ScreenToUIPosition(const Irufemi::Vector2& screenPos) const {
-    if (width_ <= 0.0f || height_ <= 0.0f)
+    if (width_ <= 0.0f || height_ <= 0.0f) {
         return screenPos;
+    }
 
     return {screenPos.x * (right_ / width_), screenPos.y * (bottom_ / height_)};
 }

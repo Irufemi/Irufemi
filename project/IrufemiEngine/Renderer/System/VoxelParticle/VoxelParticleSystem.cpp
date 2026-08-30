@@ -78,8 +78,9 @@ void VoxelParticleSystem::Initialize(const std::string& modelName, const Irufemi
 }
 
 void VoxelParticleSystem::FinishInitialization() {
-    if (status_.load() != LoadingStatus::ReadyToCreateResources)
+    if (status_.load() != LoadingStatus::ReadyToCreateResources) {
         return;
+    }
 
     float voxelW = (voxelModel_->aabbMax.x - voxelModel_->aabbMin.x) / voxelModel_->resolution.x;
     float voxelH = (voxelModel_->aabbMax.y - voxelModel_->aabbMin.y) / voxelModel_->resolution.y;
@@ -91,10 +92,12 @@ void VoxelParticleSystem::FinishInitialization() {
     uint64_t targetVRAM = 100 * 1024 * 1024;
     uint64_t bytesPerInstance = static_cast<uint64_t>(voxelCount_) * sizeof(VoxelParticle);
     maxInstances_ = static_cast<uint32_t>(targetVRAM / bytesPerInstance);
-    if (maxInstances_ == 0)
+    if (maxInstances_ == 0) {
         maxInstances_ = 1;
-    if (maxInstances_ > 32)
+    }
+    if (maxInstances_ > 32) {
         maxInstances_ = 32;
+    }
 
     emittersData_.resize(maxInstances_);
 
@@ -123,8 +126,9 @@ void VoxelParticleSystem::Update(float deltaTime) {
         }
     }
 
-    if (status_.load() != LoadingStatus::Loaded || voxelCount_ == 0)
+    if (status_.load() != LoadingStatus::Loaded || voxelCount_ == 0) {
         return;
+    }
 
     UpdateBuffers();
 
@@ -158,17 +162,21 @@ void VoxelParticleSystem::UpdateBuffers() {
 }
 
 bool VoxelParticleSystem::IsInFrustum(uint32_t index) const {
-    if (!engine_ || index >= maxInstances_)
+    if (!engine_ || index >= maxInstances_) {
         return false;
-    if (emittersData_[index].emit == 0 && emittersData_[index].lifeTime == 0.0f)
+    }
+    if (emittersData_[index].emit == 0 && emittersData_[index].lifeTime == 0.0f) {
         return false;
+    }
 
     auto* camManager = engine_->GetCameraManager();
-    if (!camManager)
+    if (!camManager) {
         return true;
+    }
     Camera* activeCam = camManager->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return true;
+    }
 
     Irufemi::Sphere sphere;
     sphere.center = emittersData_[index].emitPosition;
@@ -178,8 +186,9 @@ bool VoxelParticleSystem::IsInFrustum(uint32_t index) const {
 }
 
 void VoxelParticleSystem::DispatchCompute() {
-    if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_)
+    if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_) {
         return;
+    }
 
     ID3D12GraphicsCommandList* commandList = engine_->GetCommandList();
     auto* dxCommon = engine_->GetDirectXCommon();
@@ -232,10 +241,12 @@ void VoxelParticleSystem::DispatchCompute() {
 }
 
 void VoxelParticleSystem::Draw() {
-    if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_)
+    if (status_.load() != LoadingStatus::Loaded || !voxelBuffer_ || !engine_) {
         return;
-    if (engine_->GetDrawManager()->IsShadowPass())
+    }
+    if (engine_->GetDrawManager()->IsShadowPass()) {
         return;
+    }
 
     auto* dxCommon = engine_->GetDirectXCommon();
     uint32_t frameIndex = dxCommon->GetFrameIndex();
@@ -249,8 +260,9 @@ void VoxelParticleSystem::Draw() {
             }
         }
     }
-    if (!anyActive)
+    if (!anyActive) {
         return;
+    }
 
     engine_->GetDrawManager()->SubmitVoxelParticle(
         voxelCount_ * maxInstances_, cubeVertexBufferView_, cubeIndexBufferView_, cubeIndexCount_,

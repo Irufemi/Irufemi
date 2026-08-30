@@ -47,10 +47,12 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
 
     int count = 1;
     std::string formation = "Center";
-    if (data.parameters.contains("Count"))
+    if (data.parameters.contains("Count")) {
         count = data.parameters["Count"].get<int>();
-    if (data.parameters.contains("Formation"))
+    }
+    if (data.parameters.contains("Formation")) {
         formation = data.parameters["Formation"].get<std::string>();
+    }
 
     for (int i = 0; i < count; ++i) {
         Irufemi::Vector3 currentSpawnPos = spawnPos;
@@ -111,8 +113,9 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
     auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
 
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     std::string modelPath = "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj";
     auto scene = manager->GetGameObject()->GetScene();

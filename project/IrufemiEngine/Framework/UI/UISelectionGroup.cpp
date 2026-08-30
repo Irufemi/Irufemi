@@ -120,8 +120,9 @@ void UISelectionGroup::Update(InputManager* input) {
                 applyColor.w = isVisible_ ? 1.0f : 0.0f; // フラッシュ用にアルファを切り替え
 
                 if (std::holds_alternative<Sprite*>(items_[i])) {
-                    if (auto* sprite = std::get<Sprite*>(items_[i]))
+                    if (auto* sprite = std::get<Sprite*>(items_[i])) {
                         sprite->SetColor(applyColor);
+                    }
                 } else if (std::holds_alternative<StaticModelObject*>(items_[i])) {
                     if (auto* obj = std::get<StaticModelObject*>(items_[i])) {
                         // isVisible_ でDraw()自体を弾く方式もあるが、StaticModelObjectに透明度を入れて見えなくする
@@ -133,11 +134,13 @@ void UISelectionGroup::Update(InputManager* input) {
                 Irufemi::Vector4 invisibleColor = inactiveColor_;
                 invisibleColor.w = 0.0f;
                 if (std::holds_alternative<Sprite*>(items_[i])) {
-                    if (auto* sprite = std::get<Sprite*>(items_[i]))
+                    if (auto* sprite = std::get<Sprite*>(items_[i])) {
                         sprite->SetColor(invisibleColor);
+                    }
                 } else if (std::holds_alternative<StaticModelObject*>(items_[i])) {
-                    if (auto* obj = std::get<StaticModelObject*>(items_[i]))
+                    if (auto* obj = std::get<StaticModelObject*>(items_[i])) {
                         obj->SetColor(invisibleColor);
+                    }
                 }
             }
         }
@@ -145,8 +148,9 @@ void UISelectionGroup::Update(InputManager* input) {
 }
 
 void UISelectionGroup::Draw() {
-    if (items_.empty())
+    if (items_.empty()) {
         return;
+    }
 
     for (auto& item : items_) {
         if (std::holds_alternative<Sprite*>(item)) {

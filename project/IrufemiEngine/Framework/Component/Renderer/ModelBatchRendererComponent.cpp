@@ -36,8 +36,9 @@ void ModelBatchRendererComponent::Update() {
 }
 
 void ModelBatchRendererComponent::Draw() {
-    if (!gameObject_ || !gameObject_->GetIsActive())
+    if (!gameObject_ || !gameObject_->GetIsActive()) {
         return;
+    }
     if (batch_) {
         batch_->Draw();
     }
@@ -59,8 +60,9 @@ Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {
 }
 
 bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!batch_ || !GetTransform())
+    if (!batch_ || !GetTransform()) {
         return false;
+    }
 
     // バッチ全体のAABBや個々のインスタンスとのRaycastは重いため、
     // エディタ等での簡易選択用として親のTransformにのみ当たり判定を付ける
@@ -78,20 +80,23 @@ bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDis
     float lenY = Irufemi::Math::Length(yAxis);
     float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f)
+    if (lenX > 0.0001f) {
         obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
-    else
+    } else {
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};
+    }
 
-    if (lenY > 0.0001f)
+    if (lenY > 0.0001f) {
         obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
-    else
+    } else {
         obb.orientations[1] = {0.0f, 1.0f, 0.0f};
+    }
 
-    if (lenZ > 0.0001f)
+    if (lenZ > 0.0001f) {
         obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
-    else
+    } else {
         obb.orientations[2] = {0.0f, 0.0f, 1.0f};
+    }
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;

@@ -19,14 +19,17 @@ void AudioSourceComponent::OnRegisterProperties() {
 }
 
 void AudioSourceComponent::Initialize() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
     auto scene = gameObject_->GetScene();
-    if (!scene)
+    if (!scene) {
         return;
+    }
     auto engine = scene->GetEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     auto audioManager = engine->GetAudioManager();
     if (audioManager) {

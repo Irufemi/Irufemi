@@ -17,8 +17,9 @@ void ModelBatchRendererComponentEditor::Draw(Component* component, EditorActionM
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -69,8 +70,9 @@ void ModelBatchRendererComponentEditor::Draw(Component* component, EditorActionM
                                 std::function<void(const std::string&)>(
                                     [comp](const std::string& v) { comp->LoadModel(v); }));
                         }
-                        if (isSelected)
+                        if (isSelected) {
                             ImGui::SetItemDefaultFocus();
+                        }
                     }
                     ImGui::EndCombo();
                 }

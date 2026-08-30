@@ -20,8 +20,9 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -225,8 +226,9 @@ void Primitive2DRendererComponentEditor::Draw(Component* component, EditorAction
                                 std::function<void(const std::string&)>(
                                     [comp](const std::string& v) { comp->SetTexture(v); }));
                         }
-                        if (isSelected)
+                        if (isSelected) {
                             ImGui::SetItemDefaultFocus();
+                        }
                     }
                     ImGui::EndCombo();
                 }

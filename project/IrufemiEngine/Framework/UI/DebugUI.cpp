@@ -489,8 +489,9 @@ void DebugUI::TextTransform([[maybe_unused]] Irufemi::Transform& transform, [[ma
 // ObjMaterial
 void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_unused]] const char* unique_id) {
 #ifdef USE_IMGUI
-    if (!material)
+    if (!material) {
         return;
+    }
 
     std::string id_str = unique_id;
 
@@ -595,8 +596,9 @@ void DebugUI::DebugMaterialBy2D([[maybe_unused]] Material* materialData) {
 void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 #ifdef USE_IMGUI
 
-    if (!materialData)
+    if (!materialData) {
         return;
+    }
 
     if (ImGui::CollapsingHeader("particle material")) {
         // 基本プロパティ
@@ -625,12 +627,15 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 
         bool changed = false;
         if (ImGui::TreeNode("UV Transform (affine)")) {
-            if (ImGui::DragFloat2("UV Translate", &tx, 0.01f, -100.0f, 100.0f))
+            if (ImGui::DragFloat2("UV Translate", &tx, 0.01f, -100.0f, 100.0f)) {
                 changed = true;
-            if (ImGui::DragFloat2("UV Scale", &sx, 0.01f, -100.0f, 100.0f))
+            }
+            if (ImGui::DragFloat2("UV Scale", &sx, 0.01f, -100.0f, 100.0f)) {
                 changed = true;
-            if (ImGui::SliderAngle("UV Rotate (deg)", &rot))
+            }
+            if (ImGui::SliderAngle("UV Rotate (deg)", &rot)) {
                 changed = true;
+            }
             ImGui::TextWrapped(
                 "注: 複雑な歪み(shear 等)がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
             ImGui::TreePop();
@@ -736,14 +741,16 @@ void DebugUI::DebugUvTransform([[maybe_unused]] Irufemi::Matrix4x4& uvTransform)
         float rot = std::atan2(uvTransform.m[1][0], uvTransform.m[0][0]);
 
         bool changed = false;
-        if (ImGui::DragFloat2("UVTranslate", &tx, 0.01f))
+        if (ImGui::DragFloat2("UVTranslate", &tx, 0.01f)) {
             changed = true;
+        }
         if (ImGui::DragFloat2("UVScale", &sx, 0.01f)) {
             sy = sx; // XとYを同じ値に保つ
             changed = true;
         }
-        if (ImGui::SliderAngle("UVRotate", &rot))
+        if (ImGui::SliderAngle("UVRotate", &rot)) {
             changed = true;
+        }
 
         if (changed) {
             // Irufemi::Transform 構造を使って行列を再構成
@@ -846,8 +853,9 @@ void DebugUI::DebugPsoSettings([[maybe_unused]] Irufemi::BlendMode* blendMode,
 
 void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
 #ifdef USE_IMGUI
-    if (!engine)
+    if (!engine) {
         return;
+    }
 
     if (ImGui::BeginTabItem("Post Processing")) {
         auto* ppManager = engine->GetPostProcessManager();
@@ -977,8 +985,9 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 } else if (mode == PostProcessMode::Smoothing) {
                     auto& params = ppManager->GetSmoothingParams();
                     if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                        if (params.kernelSize < 1)
+                        if (params.kernelSize < 1) {
                             params.kernelSize = 1;
+                        }
                         if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                             params.kernelSize += 1;
                         }
@@ -987,8 +996,9 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     auto& params = ppManager->GetGaussianParams();
                     ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
                     if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                        if (params.kernelSize < 1)
+                        if (params.kernelSize < 1) {
                             params.kernelSize = 1;
+                        }
                         if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                             params.kernelSize += 1;
                         }
@@ -1027,10 +1037,12 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
                     ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
                     if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 51)) {
-                        if (params.kernelSize < 1)
+                        if (params.kernelSize < 1) {
                             params.kernelSize = 1;
-                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0)
+                        }
+                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                             params.kernelSize += 1;
+                        }
                     }
                 } else if (mode == PostProcessMode::Glitch) {
                     auto& params = ppManager->GetGlitchParams();
@@ -1090,8 +1102,9 @@ void DebugUI::EndEngineDebugWindow() {
 
 void DebugUI::DebugLightning([[maybe_unused]] LightningParams* params) {
 #ifdef USE_IMGUI
-    if (!params)
+    if (!params) {
         return;
+    }
 
     if (ImGui::TreeNode("Lightning Crawl Settings")) {
         ImGui::Separator();
@@ -1130,8 +1143,9 @@ std::wstring GenerateScreenshotPath(const std::wstring& prefix) {
 
 void DebugUI::ScreenCaptureTab(ScreenCaptureManager* captureManager) {
 #ifdef USE_IMGUI
-    if (!captureManager)
+    if (!captureManager) {
         return;
+    }
 
     if (ImGui::BeginTabItem("Screen Capture")) {
         if (ImGui::Button("Capture (Scene Only)")) {

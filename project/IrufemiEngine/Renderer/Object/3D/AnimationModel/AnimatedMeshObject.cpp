@@ -38,8 +38,9 @@ void AnimatedMeshObject::Initialize(const std::string& filename) {
 
 void AnimatedMeshObject::InitializeResources() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel)
+    if (!m || !m->cpuModel) {
         return;
+    }
 
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         transformCbIndex_ = engine_->GetTransformBufferManager()->Allocate();
@@ -79,21 +80,25 @@ void AnimatedMeshObject::InitializeResources() {
 
 void AnimatedMeshObject::Update(const SkeletonPose* externalPose) {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_)
+    if (!m || !engine_) {
         return;
+    }
 
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
-    if (m->status.load() != ManagedModel::LoadingStatus::Loaded)
+    if (m->status.load() != ManagedModel::LoadingStatus::Loaded) {
         return;
+    }
 
     if (meshResources_.empty()) {
         InitializeResources();
     }
-    if (meshResources_.empty())
+    if (meshResources_.empty()) {
         return;
+    }
 
     // ポーズの差し替え
     if (externalPose) {
@@ -151,11 +156,13 @@ void AnimatedMeshObject::SyncBeforeDraw() {
 
 void AnimatedMeshObject::DispatchCompute() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_)
+    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_) {
         return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
@@ -173,19 +180,22 @@ void AnimatedMeshObject::DispatchCompute() {
 
 void AnimatedMeshObject::Draw() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || !engine_ || meshResources_.empty())
+    if (!m || !m->cpuModel || !engine_ || meshResources_.empty()) {
         return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam)
+    if (!activeCam) {
         return;
+    }
 
     if (isCullingEnabled_) {
         float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
         Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
-        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere))
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
             return;
+        }
     }
 
     bool cameraChanged =
@@ -220,8 +230,9 @@ void AnimatedMeshObject::Draw() {
 
 void AnimatedMeshObject::DrawOutlineMask() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty())
+    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) {
         return;
+    }
     uint32_t vertexOffset = 0;
     outlineVbvs_.resize(meshResources_.size());
     for (size_t i = 0; i < meshResources_.size(); ++i) {
@@ -262,8 +273,9 @@ void AnimatedMeshObject::Debug([[maybe_unused]] const char* objName) {
 
 const SkeletonData* AnimatedMeshObject::GetSkeletonData() const {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty())
+    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty()) {
         return nullptr;
+    }
     return &skeletonData_;
 }
 

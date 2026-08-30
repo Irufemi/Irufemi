@@ -19,8 +19,9 @@ void ParticleEmitterComponentEditor::Draw(Component* component, EditorActionMana
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -51,8 +52,9 @@ void ParticleEmitterComponentEditor::Draw(Component* component, EditorActionMana
                         currentIndex = i;
                     }
                 }
-                if (currentIndex == -1)
+                if (currentIndex == -1) {
                     currentIndex = 0;
+                }
 
                 ImGui::TableNextRow();
                 ComponentUIHelpers::DrawPropertyLabel("Texture");
@@ -392,14 +394,17 @@ void ParticleEmitterComponentEditor::Draw(Component* component, EditorActionMana
             ComponentUIHelpers::EndPropertyTable();
         }
 
-        if (ImGui::Button("Test Burst (50)"))
+        if (ImGui::Button("Test Burst (50)")) {
             comp->EmitBurst(50);
+        }
         ImGui::SameLine();
-        if (ImGui::Button("Play"))
+        if (ImGui::Button("Play")) {
             comp->Play();
+        }
         ImGui::SameLine();
-        if (ImGui::Button("Stop"))
+        if (ImGui::Button("Stop")) {
             comp->Stop();
+        }
     }
     ImGui::PopID();
 }

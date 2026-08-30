@@ -27,23 +27,27 @@ void DroneManagerComponent::Start() {
 void DroneManagerComponent::Update() {
     if (!batchRenderer_) {
         batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
-        if (!batchRenderer_)
+        if (!batchRenderer_) {
             return;
+        }
     }
 
     batchRenderer_->ClearInstances();
 
     activeDroneCount_ = static_cast<int>(activeDrones_.size());
-    if (activeDrones_.empty())
+    if (activeDrones_.empty()) {
         return;
+    }
 
     auto bossObj = boss_.lock();
-    if (!bossObj)
+    if (!bossObj) {
         return;
+    }
 
     auto bossTransform = bossObj->GetComponent<TransformComponent>();
-    if (!bossTransform)
+    if (!bossTransform) {
         return;
+    }
 
     Irufemi::Vector3 bossPos = bossTransform->GetWorldPosition();
 
@@ -64,8 +68,9 @@ void DroneManagerComponent::Update() {
         auto& droneObj = activeDrones_[i];
         auto& anim = animDataList_[i];
 
-        if (!droneObj || !droneObj->GetIsActive())
+        if (!droneObj || !droneObj->GetIsActive()) {
             continue;
+        }
 
         // 1. 旋回角度の更新
         anim.orbitAngle += orbitSpeed_ * deltaTime;
@@ -107,8 +112,9 @@ void DroneManagerComponent::Update() {
         batchT.translate = targetPos;
         batchT.rotate = rot;
         batchT.scale = {1.0f, 1.0f, 1.0f}; // Prefabのスケーリングを適用する場合は変更
-        if (t)
+        if (t) {
             batchT.scale = t->GetScale();
+        }
         batchRenderer_->AddInstance(batchT);
     }
 }
@@ -140,8 +146,9 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
         dronePool_ = std::make_unique<ObjectPool<GameObject>>(maxDrones_, factory);
     }
 
-    if (!dronePool_)
+    if (!dronePool_) {
         return;
+    }
 
     float angleStep = (Irufemi::Math::PI * 2.0f) / count;
 
@@ -163,8 +170,9 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
 }
 
 void DroneManagerComponent::RecallAllDrones() {
-    if (!dronePool_)
+    if (!dronePool_) {
         return;
+    }
     for (auto& droneObj : activeDrones_) {
         if (droneObj) {
             droneObj->SetIsActive(false);

@@ -41,8 +41,9 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
     targetCountsCache_.clear();
 
     for (const auto& target : targets) {
-        if (!target)
+        if (!target) {
             continue;
+        }
 
         int occurrenceIndex = targetCountsCache_[target.get()]++;
 
@@ -92,12 +93,14 @@ void LockonMarkerUIComponent::Update() {
 
     for (auto& marker : activeMarkers_) {
         auto target = marker.target.lock();
-        if (!target)
+        if (!target) {
             continue;
+        }
 
         auto transform = target->GetComponent<TransformComponent>();
-        if (!transform)
+        if (!transform) {
             continue;
+        }
 
         // 3D座標から2Dスクリーン座標への手動変換（Zは0.0～1.0の深度）
         Irufemi::Vector3 worldPos = transform->GetWorldPosition();
@@ -128,8 +131,9 @@ void LockonMarkerUIComponent::Update() {
         // アニメーション（イージング）の進行
         if (marker.animationT < 1.0f) {
             marker.animationT += deltaTime * 5.0f; // アニメーション速度 (約0.2秒で完了)
-            if (marker.animationT > 1.0f)
+            if (marker.animationT > 1.0f) {
                 marker.animationT = 1.0f;
+            }
         }
 
         // EaseOutCubic を使ってシュッと縮小するアニメーション

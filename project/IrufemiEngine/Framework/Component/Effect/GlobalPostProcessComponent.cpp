@@ -22,11 +22,13 @@ void GlobalPostProcessComponent::Start() {
 
 void GlobalPostProcessComponent::Update() {
     auto engine = BaseModel::GetIrufemiEngine();
-    if (!engine)
+    if (!engine) {
         return;
+    }
     auto pp = engine->GetPostProcessManager();
-    if (!pp)
+    if (!pp) {
         return;
+    }
 
     for (auto& setting : overrides_) {
         setting->ApplyToManager(pp);

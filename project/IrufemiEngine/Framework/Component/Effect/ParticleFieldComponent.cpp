@@ -62,14 +62,18 @@ nlohmann::json ParticleFieldComponent::Serialize() {
 }
 
 void ParticleFieldComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("type"))
+    if (j.contains("type")) {
         fieldData_.type = j["type"];
-    if (j.contains("strength"))
+    }
+    if (j.contains("strength")) {
         fieldData_.strength = j["strength"];
-    if (j.contains("range"))
+    }
+    if (j.contains("range")) {
         fieldData_.range = j["range"];
-    if (j.contains("falloff"))
+    }
+    if (j.contains("falloff")) {
         fieldData_.falloff = j["falloff"];
+    }
     if (j.contains("direction")) {
         fieldData_.direction.x = j["direction"][0];
         fieldData_.direction.y = j["direction"][1];

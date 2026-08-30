@@ -52,8 +52,9 @@ void RailShooterEnemyComponent::Initialize() {
 }
 
 void RailShooterEnemyComponent::Update() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
 
     // TODO: プレイヤーの進行度をグローバルまたはManagerから取得して比較
     // ここでは単純に isActive になったら前に進むだけの仮実装
@@ -83,8 +84,9 @@ void RailShooterEnemyComponent::Update() {
 }
 
 void RailShooterEnemyComponent::TakeDamage(int damage) {
-    if (!IsAlive())
+    if (!IsAlive()) {
         return;
+    }
 
     hp_ -= damage;
     if (hp_ <= 0) {

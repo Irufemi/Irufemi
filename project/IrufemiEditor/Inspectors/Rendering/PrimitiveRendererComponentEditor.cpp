@@ -20,8 +20,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
 
     bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component"))
+        if (ImGui::MenuItem("Remove Component")) {
             pendingRemove = true;
+        }
         ImGui::EndPopup();
     }
     if (pendingRemove) {
@@ -66,8 +67,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Radius");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Radius", &comp->radius_, 0.1f, 0.1f, 100.0f))
+                if (ImGui::DragFloat("##Radius", &comp->radius_, 0.1f, 0.1f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->radius_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -87,8 +89,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Subdivisions");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::SliderInt("##Subdivisions", &comp->subdivisions_, 3, 64))
+                if (ImGui::SliderInt("##Subdivisions", &comp->subdivisions_, 3, 64)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->subdivisions_,
                                                       std::function<void(const int&)>([comp](const int& v) {
@@ -109,8 +112,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Top Radius");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Top Radius", &comp->topRadius_, 0.1f, 0.0f, 100.0f))
+                if (ImGui::DragFloat("##Top Radius", &comp->topRadius_, 0.1f, 0.0f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->topRadius_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -130,8 +134,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Bottom Radius");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Bottom Radius", &comp->bottomRadius_, 0.1f, 0.0f, 100.0f))
+                if (ImGui::DragFloat("##Bottom Radius", &comp->bottomRadius_, 0.1f, 0.0f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->bottomRadius_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -151,8 +156,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Height");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Height", &comp->height_, 0.1f, 0.1f, 100.0f))
+                if (ImGui::DragFloat("##Height", &comp->height_, 0.1f, 0.1f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->height_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -172,8 +178,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Segments");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::SliderInt("##Segments", &comp->subdivisions_, 3, 64))
+                if (ImGui::SliderInt("##Segments", &comp->subdivisions_, 3, 64)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->subdivisions_,
                                                       std::function<void(const int&)>([comp](const int& v) {
@@ -236,8 +243,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Radius");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Radius", &comp->radius_, 0.1f, 0.1f, 100.0f))
+                if (ImGui::DragFloat("##Radius", &comp->radius_, 0.1f, 0.1f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->radius_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -257,8 +265,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Height");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Height", &comp->height_, 0.1f, 0.1f, 100.0f))
+                if (ImGui::DragFloat("##Height", &comp->height_, 0.1f, 0.1f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->height_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -278,8 +287,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Segments");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::SliderInt("##Segments", &comp->subdivisions_, 3, 64))
+                if (ImGui::SliderInt("##Segments", &comp->subdivisions_, 3, 64)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->subdivisions_,
                                                       std::function<void(const int&)>([comp](const int& v) {
@@ -300,8 +310,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Major Radius");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Major Radius", &comp->torusMajorRadius_, 0.1f, 0.1f, 100.0f))
+                if (ImGui::DragFloat("##Major Radius", &comp->torusMajorRadius_, 0.1f, 0.1f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->torusMajorRadius_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -322,8 +333,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Minor Radius");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Minor Radius", &comp->torusMinorRadius_, 0.05f, 0.01f, 100.0f))
+                if (ImGui::DragFloat("##Minor Radius", &comp->torusMinorRadius_, 0.05f, 0.01f, 100.0f)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->torusMinorRadius_,
                                                       std::function<void(const float&)>([comp](const float& v) {
@@ -344,8 +356,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Major Segments");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::SliderInt("##Major Segments", &comp->torusMajorSegments_, 3, 64))
+                if (ImGui::SliderInt("##Major Segments", &comp->torusMajorSegments_, 3, 64)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->torusMajorSegments_,
                                                       std::function<void(const int&)>([comp](const int& v) {
@@ -365,8 +378,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                 ComponentUIHelpers::DrawPropertyLabel("Minor Segments");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushItemWidth(-1);
-                if (ImGui::SliderInt("##Minor Segments", &comp->torusMinorSegments_, 3, 64))
+                if (ImGui::SliderInt("##Minor Segments", &comp->torusMinorSegments_, 3, 64)) {
                     comp->RebuildMesh();
+                }
                 ImGui::PopItemWidth();
                 ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &comp->torusMinorSegments_,
                                                       std::function<void(const int&)>([comp](const int& v) {
@@ -424,8 +438,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                                     std::function<void(const std::string&)>(
                                         [comp](const std::string& v) { comp->SetTexture(v); }));
                             }
-                            if (isSelected)
+                            if (isSelected) {
                                 ImGui::SetItemDefaultFocus();
+                            }
                         }
                         ImGui::EndCombo();
                     }
@@ -439,8 +454,9 @@ void PrimitiveRendererComponentEditor::Draw(Component* component, EditorActionMa
                         comp->SetTexture(buffer);
                     }
                     ImGui::PopItemWidth();
-                    if (ImGui::IsItemActivated())
+                    if (ImGui::IsItemActivated()) {
                         startTex = mat.texturePath;
+                    }
                     if (ImGui::IsItemDeactivatedAfterEdit()) {
                         std::string endTex = buffer;
                         actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(

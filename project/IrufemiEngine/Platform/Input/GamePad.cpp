@@ -39,11 +39,13 @@ std::pair<float, float> GamePad::RadialNormalize(short x, short y, int dz) {
 // ★ 8方向化
 Stick8 GamePad::Stick8From(short x, short y, int dz, bool invertY, float threshold) {
     auto [nx, ny] = RadialNormalize(x, y, dz);
-    if (invertY)
+    if (invertY) {
         ny = -ny;
+    }
     float mag = std::sqrt(nx * nx + ny * ny);
-    if (mag < threshold)
+    if (mag < threshold) {
         return Stick8::Neutral;
+    }
     float ang = std::atan2(ny, nx); // -π..π
     const float pi = 3.14159265358979323846f;
     int oct = static_cast<int>(std::floor((ang + pi / 8.0f) / (pi / 4.0f))) & 7;
@@ -139,22 +141,30 @@ static Stick8 DPad8FromButtons(WORD w) {
     const bool right = (w & XINPUT_GAMEPAD_DPAD_RIGHT) != 0;
     const bool down = (w & XINPUT_GAMEPAD_DPAD_DOWN) != 0;
     const bool left = (w & XINPUT_GAMEPAD_DPAD_LEFT) != 0;
-    if (up && right)
+    if (up && right) {
         return Stick8::UpRight;
-    if (up && left)
+    }
+    if (up && left) {
         return Stick8::UpLeft;
-    if (down && right)
+    }
+    if (down && right) {
         return Stick8::DownRight;
-    if (down && left)
+    }
+    if (down && left) {
         return Stick8::DownLeft;
-    if (up)
+    }
+    if (up) {
         return Stick8::Up;
-    if (right)
+    }
+    if (right) {
         return Stick8::Right;
-    if (down)
+    }
+    if (down) {
         return Stick8::Down;
-    if (left)
+    }
+    if (left) {
         return Stick8::Left;
+    }
     return Stick8::Neutral;
 }
 Stick8 GamePad::DPad8Now() const {

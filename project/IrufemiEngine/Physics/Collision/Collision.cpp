@@ -91,12 +91,13 @@ CollisionResult GetCollisionResult(const AABB& aabb, const Sphere& sphere) {
             float dy = (std::min)(sphere.center.y - aabb.min.y, aabb.max.y - sphere.center.y);
             float dz = (std::min)(sphere.center.z - aabb.min.z, aabb.max.z - sphere.center.z);
             result.depth = sphere.radius + (std::min)({dx, dy, dz});
-            if (dx <= dy && dx <= dz)
+            if (dx <= dy && dx <= dz) {
                 result.normal = (centerAABB.x > sphere.center.x) ? Vector3{1, 0, 0} : Vector3{-1, 0, 0};
-            else if (dy <= dx && dy <= dz)
+            } else if (dy <= dx && dy <= dz) {
                 result.normal = (centerAABB.y > sphere.center.y) ? Vector3{0, 1, 0} : Vector3{0, -1, 0};
-            else
+            } else {
                 result.normal = (centerAABB.z > sphere.center.z) ? Vector3{0, 0, 1} : Vector3{0, 0, -1};
+            }
         }
     }
     return result;
@@ -105,8 +106,9 @@ CollisionResult GetCollisionResult(const AABB& aabb, const Sphere& sphere) {
 CollisionResult GetCollisionResult(const OBB& a, const OBB& b) {
     CollisionResult result;
     if ((a.size.x == 0.0f && a.size.y == 0.0f && a.size.z == 0.0f) ||
-        (b.size.x == 0.0f && b.size.y == 0.0f && b.size.z == 0.0f))
+        (b.size.x == 0.0f && b.size.y == 0.0f && b.size.z == 0.0f)) {
         return result;
+    }
 
     float R[3][3], AbsR[3][3];
     for (int i = 0; i < 3; i++) {
@@ -126,8 +128,9 @@ CollisionResult GetCollisionResult(const OBB& a, const OBB& b) {
     float bestSign = 1.0f;
 
     auto testAxis = [&](const Vector3& axis, float overlap, float tProj) {
-        if (overlap < 0.0f)
+        if (overlap < 0.0f) {
             return false; // 分離軸が存在した
+        }
         if (overlap < minPenetration) {
             minPenetration = overlap;
             bestAxis = axis;
@@ -141,8 +144,9 @@ CollisionResult GetCollisionResult(const OBB& a, const OBB& b) {
         ra = (i == 0) ? a.size.x : (i == 1) ? a.size.y : a.size.z;
         rb = b.size.x * AbsR[i][0] + b.size.y * AbsR[i][1] + b.size.z * AbsR[i][2];
         float tProj = (i == 0) ? t.x : (i == 1) ? t.y : t.z;
-        if (!testAxis(a.orientations[i], ra + rb - std::abs(tProj), tProj))
+        if (!testAxis(a.orientations[i], ra + rb - std::abs(tProj), tProj)) {
             return result;
+        }
     }
 
     // --- bの各軸 (3本) ---
@@ -150,8 +154,9 @@ CollisionResult GetCollisionResult(const OBB& a, const OBB& b) {
         ra = a.size.x * AbsR[0][i] + a.size.y * AbsR[1][i] + a.size.z * AbsR[2][i];
         rb = (i == 0) ? b.size.x : (i == 1) ? b.size.y : b.size.z;
         float tProj = t.x * R[0][i] + t.y * R[1][i] + t.z * R[2][i];
-        if (!testAxis(b.orientations[i], ra + rb - std::abs(tProj), Math::Dot(tWorld, b.orientations[i])))
+        if (!testAxis(b.orientations[i], ra + rb - std::abs(tProj), Math::Dot(tWorld, b.orientations[i]))) {
             return result;
+        }
     }
 
     // --- aの各軸 x bの各軸 の外積 (9本) ---
@@ -168,8 +173,9 @@ CollisionResult GetCollisionResult(const OBB& a, const OBB& b) {
                      b.size.y * std::abs(Math::Dot(b.orientations[1], axis)) +
                      b.size.z * std::abs(Math::Dot(b.orientations[2], axis));
                 float tProj = Math::Dot(tWorld, axis);
-                if (!testAxis(axis, ra + rb - std::abs(tProj), tProj))
+                if (!testAxis(axis, ra + rb - std::abs(tProj), tProj)) {
                     return result;
+                }
             }
         }
     }
@@ -182,8 +188,9 @@ CollisionResult GetCollisionResult(const OBB& a, const OBB& b) {
 
 CollisionResult GetCollisionResult(const OBB& obb, const Sphere& sphere) {
     CollisionResult result;
-    if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f)
+    if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) {
         return result;
+    }
 
     Vector3 worldRelPos = Math::Subtract(sphere.center, obb.center);
     Vector3 localPos = {Math::Dot(worldRelPos, obb.orientations[0]), Math::Dot(worldRelPos, obb.orientations[1]),
@@ -210,12 +217,13 @@ CollisionResult GetCollisionResult(const OBB& obb, const Sphere& sphere) {
             float dz = obb.size.z - std::abs(localPos.z);
             result.depth = sphere.radius + (std::min)({dx, dy, dz});
             Vector3 localNormal = {0, 0, 0};
-            if (dx <= dy && dx <= dz)
+            if (dx <= dy && dx <= dz) {
                 localNormal.x = (localPos.x < 0) ? 1.0f : -1.0f;
-            else if (dy <= dx && dy <= dz)
+            } else if (dy <= dx && dy <= dz) {
                 localNormal.y = (localPos.y < 0) ? 1.0f : -1.0f;
-            else
+            } else {
                 localNormal.z = (localPos.z < 0) ? 1.0f : -1.0f;
+            }
 
             result.normal = Math::Add(Math::Add(Math::Multiply(localNormal.x, obb.orientations[0]),
                                                 Math::Multiply(localNormal.y, obb.orientations[1])),
@@ -571,8 +579,9 @@ bool IsCollision(const AABB& aabb, const Vector3& point) {
 
 // OBBと球の衝突判定
 bool IsCollision(const OBB& obb, const Sphere& sphere) {
-    if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f)
+    if (obb.size.x == 0.0f && obb.size.y == 0.0f && obb.size.z == 0.0f) {
         return false;
+    }
 
     // 1. 球の中心点をOBBのローカル空間に変換する
     // OBBの中心から球の中心へのベクトル
@@ -640,8 +649,9 @@ bool IsCollision(const OBB& obb, const Ray& ray) {
         // diffがほぼ0(線がこの軸に対して動いていない)場合
         if (std::abs(diffArr[i]) < 1e-6f) {
             // 始点がOBBの外側なら、平行なので一生当たらない
-            if (std::abs(originArr[i]) > sizeArr[i])
+            if (std::abs(originArr[i]) > sizeArr[i]) {
                 return false;
+            }
         } else {
             // 各軸のスラブ(壁)との交差距離tを計算
             float t1 = (-sizeArr[i] - originArr[i]) / diffArr[i];
@@ -678,8 +688,9 @@ bool IsCollision(const OBB& obb, const Line& line) {
 
     for (int i = 0; i < 3; ++i) {
         if (std::abs(diffArr[i]) < 1e-6f) {
-            if (std::abs(originArr[i]) > sizeArr[i])
+            if (std::abs(originArr[i]) > sizeArr[i]) {
                 return false;
+            }
         } else {
             float t1 = (-sizeArr[i] - originArr[i]) / diffArr[i];
             float t2 = (sizeArr[i] - originArr[i]) / diffArr[i];
@@ -694,8 +705,9 @@ bool IsCollision(const OBB& obb, const Line& line) {
 // OBBとOBBの衝突判定
 bool IsCollision(const OBB& a, const OBB& b) {
     if ((a.size.x == 0.0f && a.size.y == 0.0f && a.size.z == 0.0f) ||
-        (b.size.x == 0.0f && b.size.y == 0.0f && b.size.z == 0.0f))
+        (b.size.x == 0.0f && b.size.y == 0.0f && b.size.z == 0.0f)) {
         return false;
+    }
 
     // 2つのOBBの各軸(計6本)と、それらの外積(3x3=9本)の計15本を調べる
 
@@ -728,8 +740,9 @@ bool IsCollision(const OBB& a, const OBB& b) {
 
         ra = sizeA[i];
         rb = sizeB[0] * AbsR[i][0] + sizeB[1] * AbsR[i][1] + sizeB[2] * AbsR[i][2];
-        if (std::abs(tArr[i]) > ra + rb)
+        if (std::abs(tArr[i]) > ra + rb) {
             return false;
+        }
     }
 
     // --- bの各軸 (3本) ---
@@ -737,64 +750,74 @@ bool IsCollision(const OBB& a, const OBB& b) {
         ra = a.size.x * AbsR[0][i] + a.size.y * AbsR[1][i] + a.size.z * AbsR[2][i];
         rb = (i == 0) ? b.size.x : (i == 1) ? b.size.y : b.size.z;
         float tRel = t.x * R[0][i] + t.y * R[1][i] + t.z * R[2][i];
-        if (std::abs(tRel) > ra + rb)
+        if (std::abs(tRel) > ra + rb) {
             return false;
+        }
     }
 
     // --- aの各軸 x bの各軸 の外積 (9本) ---
     // L = A0 x B0
     ra = a.size.y * AbsR[2][0] + a.size.z * AbsR[1][0];
     rb = b.size.y * AbsR[0][2] + b.size.z * AbsR[0][1];
-    if (std::abs(t.z * R[1][0] - t.y * R[2][0]) > ra + rb)
+    if (std::abs(t.z * R[1][0] - t.y * R[2][0]) > ra + rb) {
         return false;
+    }
 
     // L = A0 x B1
     ra = a.size.y * AbsR[2][1] + a.size.z * AbsR[1][1];
     rb = b.size.x * AbsR[0][2] + b.size.z * AbsR[0][0];
-    if (std::abs(t.z * R[1][1] - t.y * R[2][1]) > ra + rb)
+    if (std::abs(t.z * R[1][1] - t.y * R[2][1]) > ra + rb) {
         return false;
+    }
 
     // L = A0 x B2
     ra = a.size.y * AbsR[2][2] + a.size.z * AbsR[1][2];
     rb = b.size.x * AbsR[0][1] + b.size.y * AbsR[0][0];
-    if (std::abs(t.z * R[1][2] - t.y * R[2][2]) > ra + rb)
+    if (std::abs(t.z * R[1][2] - t.y * R[2][2]) > ra + rb) {
         return false;
+    }
 
     // L = A1 x B0
     ra = a.size.x * AbsR[2][0] + a.size.z * AbsR[0][0];
     rb = b.size.y * AbsR[1][2] + b.size.z * AbsR[1][1];
-    if (std::abs(t.x * R[2][0] - t.z * R[0][0]) > ra + rb)
+    if (std::abs(t.x * R[2][0] - t.z * R[0][0]) > ra + rb) {
         return false;
+    }
 
     // L = A1 x B1
     ra = a.size.x * AbsR[2][1] + a.size.z * AbsR[0][1];
     rb = b.size.x * AbsR[1][2] + b.size.z * AbsR[1][0];
-    if (std::abs(t.x * R[2][1] - t.z * R[0][1]) > ra + rb)
+    if (std::abs(t.x * R[2][1] - t.z * R[0][1]) > ra + rb) {
         return false;
+    }
 
     // L = A1 x B2
     ra = a.size.x * AbsR[2][2] + a.size.z * AbsR[0][2];
     rb = b.size.x * AbsR[1][1] + b.size.y * AbsR[1][0];
-    if (std::abs(t.x * R[2][2] - t.z * R[0][2]) > ra + rb)
+    if (std::abs(t.x * R[2][2] - t.z * R[0][2]) > ra + rb) {
         return false;
+    }
 
     // L = A2 x B0
     ra = a.size.x * AbsR[1][0] + a.size.y * AbsR[0][0];
     rb = b.size.y * AbsR[2][2] + b.size.z * AbsR[2][1];
-    if (std::abs(t.y * R[0][0] - t.x * R[1][0]) > ra + rb)
+    if (std::abs(t.y * R[0][0] - t.x * R[1][0]) > ra + rb) {
         return false;
+    }
 
     // L = A2 x B1
     ra = a.size.x * AbsR[1][1] + a.size.y * AbsR[0][1];
     rb = b.size.x * AbsR[2][2] + b.size.z * AbsR[2][0];
-    if (std::abs(t.y * R[0][1] - t.x * R[1][1]) > ra + rb)
+    if (std::abs(t.y * R[0][1] - t.x * R[1][1]) > ra + rb) {
         return false;
+    }
 
     // L = A2 x B2
     ra = a.size.x * AbsR[1][2] + a.size.y * AbsR[0][2];
     rb = b.size.x * AbsR[2][1] + b.size.y * AbsR[2][0];
-    if (std::abs(t.y * R[0][2] - t.x * R[1][2]) > ra + rb)
+    if (std::abs(t.y * R[0][2] - t.x * R[1][2]) > ra + rb) {
         return false;
+    }
 
     // すべての軸で重なっていたら衝突
     return true;
@@ -869,16 +892,19 @@ bool IsCollision(const Ray& ray, const Sphere& sphere, float& outDistance) {
     float c = Math::Dot(m, m) - sphere.radius * sphere.radius;
 
     // 始点がすでに球の中にある場合
-    if (c > 0.0f && b > 0.0f)
+    if (c > 0.0f && b > 0.0f) {
         return false;
+    }
 
     float discr = b * b - c;
-    if (discr < 0.0f)
+    if (discr < 0.0f) {
         return false;
+    }
 
     float t = -b - std::sqrt(discr);
-    if (t < 0.0f)
+    if (t < 0.0f) {
         t = 0.0f; // 内部から開始した場合
+    }
 
     outDistance = t;
     return true;
@@ -903,16 +929,19 @@ bool IsCollision(const Ray& ray, const OBB& obb, float& outDistance) {
             float t1 = (e + size[i]) / f;
             float t2 = (e - size[i]) / f;
 
-            if (t1 > t2)
+            if (t1 > t2) {
                 std::swap(t1, t2);
+            }
 
             tmin = MaxFloat(tmin, t1);
             tmax = MinFloat(tmax, t2);
 
-            if (tmin > tmax)
+            if (tmin > tmax) {
                 return false;
-            if (tmax < 0.0f)
+            }
+            if (tmax < 0.0f) {
                 return false;
+            }
         } else if (-e - size[i] > 0.0f || -e + size[i] < 0.0f) {
             return false;
         }
@@ -1281,8 +1310,9 @@ bool GetOBBSegmentIntersection(const OBB& obb, const Segment& segment, Vector3& 
 
     for (int i = 0; i < 3; ++i) {
         if (std::abs(diffArr[i]) < 1e-6f) {
-            if (std::abs(originArr[i]) > sizeArr[i])
+            if (std::abs(originArr[i]) > sizeArr[i]) {
                 return false;
+            }
         } else {
             float t1 = (-sizeArr[i] - originArr[i]) / diffArr[i];
             float t2 = (sizeArr[i] - originArr[i]) / diffArr[i];

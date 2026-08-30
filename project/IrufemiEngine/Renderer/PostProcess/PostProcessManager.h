@@ -674,13 +674,15 @@ public:
         if (layer == Layer::PreUI) {
             auto it = std::find_if(pendingPreUI_.begin(), pendingPreUI_.end(),
                                    [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
-            if (it != pendingPreUI_.end())
+            if (it != pendingPreUI_.end()) {
                 return;
+            }
         } else {
             auto it = std::find_if(pendingPostUI_.begin(), pendingPostUI_.end(),
                                    [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
-            if (it != pendingPostUI_.end())
+            if (it != pendingPostUI_.end()) {
                 return;
+            }
         }
 
         int priority = (customPriority == -1) ? GetDefaultPriority(mode) : customPriority;
@@ -823,12 +825,14 @@ public:
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.clear();
-        for (auto mode : preUI)
+        for (auto mode : preUI) {
             pendingPreUI_.push_back({mode, GetDefaultPriority(mode)});
+        }
 
         pendingPostUI_.clear();
-        for (auto mode : postUI)
+        for (auto mode : postUI) {
             pendingPostUI_.push_back({mode, GetDefaultPriority(mode) + 9000});
+        }
     }
 
     /** @brief 全てのパラメータをデフォルト状態にリセットする */
@@ -850,19 +854,22 @@ public:
         pendingPostUI_.clear();
         if (mode != Mode::None) {
             int priority = GetDefaultPriority(mode);
-            if (layer == Layer::PreUI)
+            if (layer == Layer::PreUI) {
                 pendingPreUI_.push_back({mode, priority});
-            else
+            } else {
                 pendingPostUI_.push_back({mode, priority + 9000});
+            }
         }
     }
 
     /** @brief 互換性のための取得 (PreUIの先頭を優先して返す) */
     Mode GetMode() const {
-        if (!activePreUI_.empty())
+        if (!activePreUI_.empty()) {
             return activePreUI_.front();
-        if (!activePostUI_.empty())
+        }
+        if (!activePostUI_.empty()) {
             return activePostUI_.front();
+        }
         return Mode::None;
     }
 
@@ -1056,8 +1063,9 @@ public:
      * @param[in] srvIndex 設定する DissolveNoiseIndex の値
      */
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
-        if (index >= 0 && index < 2)
+        if (index >= 0 && index < 2) {
             dissolveNoiseIndex_[index] = srvIndex;
+        }
     }
 
     /**

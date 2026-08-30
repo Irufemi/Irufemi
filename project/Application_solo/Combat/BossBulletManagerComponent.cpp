@@ -34,19 +34,22 @@ void BossBulletManagerComponent::Initialize() {
     virtualManager_->Setup(0, maxBullets_, factory);
 
     bulletDataList_.resize(maxBullets_);
-    while (!activeVirtualIds_.empty())
+    while (!activeVirtualIds_.empty()) {
         activeVirtualIds_.pop();
+    }
 }
 
 void BossBulletManagerComponent::Start() {}
 
 void BossBulletManagerComponent::Update() {
-    if (!virtualManager_)
+    if (!virtualManager_) {
         return;
+    }
 
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-    if (dt <= 0.0f)
+    if (dt <= 0.0f) {
         dt = 1.0f / 60.0f;
+    }
 
     auto& virtualInstances = virtualManager_->GetDenseInstances();
 
@@ -119,8 +122,9 @@ void BossBulletManagerComponent::Update() {
 
                 bool isHit = false;
                 for (auto col : hits) {
-                    if (!col)
+                    if (!col) {
                         continue;
+                    }
                     auto obj = col->GetGameObject();
                     if (obj && obj->GetName() == "Player") {
                         if (auto healthComp = obj->GetComponent<PlayerHealthComponent>()) {
@@ -156,8 +160,9 @@ void BossBulletManagerComponent::OnRegisterProperties() {
 }
 
 void BossBulletManagerComponent::SpawnBullet(const Irufemi::Vector3& position, const Irufemi::Vector3& velocity) {
-    if (!virtualManager_)
+    if (!virtualManager_) {
         return;
+    }
 
     int vid = virtualManager_->AddVirtualInstance(position, {0, 0, 0}, bulletScale_);
     if (vid >= 0 && vid < maxBullets_) {

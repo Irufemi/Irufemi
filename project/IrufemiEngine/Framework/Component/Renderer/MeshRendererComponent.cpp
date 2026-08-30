@@ -61,8 +61,9 @@ void MeshRendererComponent::Update() {
 }
 
 void MeshRendererComponent::Draw() {
-    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive())
+    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) {
         return;
+    }
     // RenderGraph に向けて描画パケットを積む
     if (obj_) {
         obj_->Draw();
@@ -83,11 +84,13 @@ Irufemi::Sphere MeshRendererComponent::GetWorldSphere() const {
 }
 
 bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!obj_ || !GetTransform())
+    if (!obj_ || !GetTransform()) {
         return false;
+    }
     auto cpuModel = obj_->GetCpuModel();
-    if (!cpuModel)
+    if (!cpuModel) {
         return false;
+    }
 
     // ローカルAABBから中心とサイズを取得
     Irufemi::Vector3 localCenter = (cpuModel->boundingBox.min + cpuModel->boundingBox.max) * 0.5f;
@@ -107,20 +110,23 @@ bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance)
     float lenY = Irufemi::Math::Length(yAxis);
     float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f)
+    if (lenX > 0.0001f) {
         obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
-    else
+    } else {
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};
+    }
 
-    if (lenY > 0.0001f)
+    if (lenY > 0.0001f) {
         obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
-    else
+    } else {
         obb.orientations[1] = {0.0f, 1.0f, 0.0f};
+    }
 
-    if (lenZ > 0.0001f)
+    if (lenZ > 0.0001f) {
         obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
-    else
+    } else {
         obb.orientations[2] = {0.0f, 0.0f, 1.0f};
+    }
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;

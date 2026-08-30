@@ -17,8 +17,9 @@
 namespace {
 // UTF-8 -> UTF-16
 std::wstring ToWide(const std::string& s) {
-    if (s.empty())
+    if (s.empty()) {
         return {};
+    }
     int size = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), nullptr, 0);
     std::wstring w(size, L'\0');
     ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), w.data(), size);
@@ -54,8 +55,9 @@ void AudioManager::Initialize() {
 }
 
 void AudioManager::Finalize() {
-    if (finalized_)
-        return;        // 多重 Finalize 防止
+    if (finalized_) {
+        return; // 多重 Finalize 防止
+    }
     finalized_ = true; // 以降の操作は無効化
 
     StopAll(); // すべてのVoiceを安全に停止＆Destroy
@@ -120,8 +122,9 @@ void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std
     }
 
     for (const auto& entry : fs::directory_iterator(folderPath)) {
-        if (!entry.is_regular_file())
+        if (!entry.is_regular_file()) {
             continue;
+        }
 
         std::string ext = entry.path().extension().string();
         if (_stricmp(ext.c_str(), ".wav") != 0 && _stricmp(ext.c_str(), ".mp3") != 0 &&
@@ -151,8 +154,9 @@ void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std
 
 std::vector<std::string> AudioManager::GetSoundNames(const std::string& category) const {
     auto it = categoryMap_.find(category);
-    if (it == categoryMap_.end())
+    if (it == categoryMap_.end()) {
         return {};
+    }
     return it->second;
 }
 
@@ -176,8 +180,9 @@ std::vector<std::string> AudioManager::GetCategories() const {
 
 std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData, bool loop, float volume,
                                                 AudioCategory category) {
-    if (finalized_)
+    if (finalized_) {
         return {};
+    }
     if (!pXAudio2_ || !soundData) {
         return {};
     }
@@ -218,8 +223,9 @@ std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData
 
 void AudioManager::Stop(std::weak_ptr<VoiceInstance>& instance) {
     auto locked = instance.lock();
-    if (!locked)
+    if (!locked) {
         return;
+    }
 
     if (finalized_ || !IsManagedVoice(locked)) {
         return;

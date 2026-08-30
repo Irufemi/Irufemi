@@ -138,7 +138,8 @@ void RenderTexture::InitializeFromResource(DirectXCommon* dxCommon, ID3D12Resour
 // Draw メソッドは DrawManager を使用するように変更済み
 void RenderTexture::Draw(DrawManager* drawManager, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress,
                          D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
-    if (!drawManager)
+    if (!drawManager) {
         return;
+    }
     drawManager->DrawRenderTexture(this, pso, cbvAddress, depthSrvHandle);
 }

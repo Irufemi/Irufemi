@@ -886,8 +886,9 @@ UINT DirectXCommon::GetBackBufferIndex(const Microsoft::WRL::ComPtr<IDXGISwapCha
 }
 
 void DirectXCommon::PreWarmJITCompile() {
-    if (!commandManager_)
+    if (!commandManager_) {
         return;
+    }
 
     commandManager_->ExecuteUploadCommands([&](ID3D12GraphicsCommandList* uploadCommandList) {
         // --- Compute PSO ---
@@ -987,8 +988,9 @@ DirectXCommon::CreateRenderTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> 
 }
 
 void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
-    if (width <= 0 || height <= 0)
+    if (width <= 0 || height <= 0) {
         return;
+    }
 
     // 1. GPUの完了を待つ (Flush)
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -1017,8 +1019,9 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
 }
 
 void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> resource) {
-    if (!resource)
+    if (!resource) {
         return;
+    }
     std::lock_guard<std::mutex> lock(pendingMutex_);
     pendingResources_.push_back({commandManager_->GetGlobalFenceValue() + 1, resource});
 }

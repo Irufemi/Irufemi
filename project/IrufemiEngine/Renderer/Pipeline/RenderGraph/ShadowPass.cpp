@@ -14,15 +14,17 @@ void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     drawManager->BeginShadowPass();
 
     auto DrawShadowsWithPSO = [&](const auto& queue, const std::string& psoName, auto drawFunc) {
-        if (queue.empty())
+        if (queue.empty()) {
             return;
+        }
 
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         bool first = true;
 
         for (const auto& p : queue) {
-            if (!p.castShadows)
+            if (!p.castShadows) {
                 continue;
+            }
 
             if (first || p.cullMode != currentCull) {
                 engine->SetCull(p.cullMode);

@@ -178,8 +178,9 @@ void FontManager::PrecacheText(const std::string& fontId, const std::wstring& te
     impl_->threadPool->Enqueue(impl_->taskGroup, [this, fontId, text]() {
         std::lock_guard<std::mutex> lock(impl_->cacheMutex);
         auto it = impl_->fonts.find(fontId);
-        if (it == impl_->fonts.end())
+        if (it == impl_->fonts.end()) {
             return;
+        }
         msdfgen::FontHandle* font = it->second;
 
         auto& fontCache = impl_->glyphCache[fontId];
@@ -224,8 +225,9 @@ void FontManager::PrecacheText(const std::string& fontId, const std::wstring& te
                     int texWidth = static_cast<int>(width * scale) + Impl::PADDING * 2;
                     int texHeight = static_cast<int>(height * scale) + Impl::PADDING * 2;
 
-                    if (texWidth <= 0 || texHeight <= 0)
+                    if (texWidth <= 0 || texHeight <= 0) {
                         continue;
+                    }
 
                     // オフセット計算 (テクスチャ中央に配置)
                     msdfgen::Vector2 translate(-bounds.l + (Impl::PADDING / scale),

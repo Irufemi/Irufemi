@@ -108,8 +108,9 @@ bool AnimationSerializer::Deserialize(const std::string& filepath, Animation& ou
     }
 
     Header header;
-    if (!ReadHeader(filepath, header))
+    if (!ReadHeader(filepath, header)) {
         return false;
+    }
 
     ifs.seekg(sizeof(Header), std::ios::beg);
     outSourceLastWriteTime = header.sourceLastWriteTime;
@@ -139,10 +140,12 @@ bool AnimationSerializer::ReadHeader(const std::string& filepath, Header& outHea
     }
 
     ReadPOD(ifs, outHeader);
-    if (outHeader.magic != kMagicNumber)
+    if (outHeader.magic != kMagicNumber) {
         return false;
-    if (outHeader.version != kVersion)
+    }
+    if (outHeader.version != kVersion) {
         return false;
+    }
 
     return true;
 }

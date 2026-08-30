@@ -220,8 +220,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         const uint32_t inc =
             dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         auto toIndex = [&](D3D12_GPU_DESCRIPTOR_HANDLE h) -> uint32_t {
-            if (h.ptr == 0)
+            if (h.ptr == 0) {
                 return DescriptorPool::kInvalid;
+            }
             const auto heapStart = srvHeap->GetGPUDescriptorHandleForHeapStart().ptr;
             const uint64_t diff = (h.ptr - heapStart);
             return static_cast<uint32_t>(diff / inc);
@@ -230,13 +231,15 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         std::vector<uint32_t> used;
         // 白テクスチャ
         if (auto white = textureManager_->GetWhiteTextureHandle(); white.ptr != 0) {
-            if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid)
+            if (auto idx = toIndex(white); idx != DescriptorPool::kInvalid) {
                 used.push_back(idx);
+            }
         }
         // 白CubeMap
         if (auto whiteCube = textureManager_->GetWhiteCubeMapHandle(); whiteCube.ptr != 0) {
-            if (auto idx = toIndex(whiteCube); idx != DescriptorPool::kInvalid)
+            if (auto idx = toIndex(whiteCube); idx != DescriptorPool::kInvalid) {
                 used.push_back(idx);
+            }
         }
         // フォントアトラスはTextureManagerに統合されたため、下の GetAllAllocatedSrvHandles に含まれる
         // 深度バッファ SRV
@@ -245,11 +248,13 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         }
         // テクスチャキャッシュ
         for (auto h : textureManager_->GetAllAllocatedSrvHandles()) {
-            if (auto idx = toIndex(h); idx != DescriptorPool::kInvalid)
+            if (auto idx = toIndex(h); idx != DescriptorPool::kInvalid) {
                 used.push_back(idx);
+            }
         }
-        for (uint32_t i = 0; i < srvPool->BaseIndex(); ++i)
+        for (uint32_t i = 0; i < srvPool->BaseIndex(); ++i) {
             used.push_back(i);
+        }
 
         std::sort(used.begin(), used.end());
         used.erase(std::unique(used.begin(), used.end()), used.end());
@@ -482,8 +487,9 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
 }
 
 void IrufemiEngine::Finalize() {
-    if (isFinalized_)
+    if (isFinalized_) {
         return;
+    }
 
     // アプリケーション終了時、シーン破棄前にGPU処理の完了を待つ
     if (dxCommon_) {
@@ -839,8 +845,9 @@ void IrufemiEngine::StartFrame() {
 #if defined(_DEBUG) || defined(EditorMode)
     // ホットリロードの発火チェック
     if (shouldReloadShaders_.exchange(false)) {
-        if (log_)
+        if (log_) {
             Log::OutPutLog(log_->GetLogStream(), "[Shader Hot Reload] Changes detected. Recompiling shaders...\n");
+        }
         if (dxCommon_ && dxCommon_->GetPSOManager() && dxCommon_->GetShaderManager()) {
             // 安全のためにGPU処理を待機（使用中のシェーダーを破棄しないようにする）
             dxCommon_->WaitForGPU();
@@ -853,8 +860,9 @@ void IrufemiEngine::StartFrame() {
             dxCommon_->RegisterAllShaders();
             dxCommon_->GetPSOManager()->PreWarmCommonPSOs();
 
-            if (log_)
+            if (log_) {
                 Log::OutPutLog(log_->GetLogStream(), "[Shader Hot Reload] Compilation finished.\n");
+            }
         }
     }
 #endif
@@ -949,8 +957,9 @@ void IrufemiEngine::EndFrame() {
 }
 
 void IrufemiEngine::OnResize(int32_t width, int32_t height) {
-    if (width <= 0 || height <= 0)
+    if (width <= 0 || height <= 0) {
         return;
+    }
 
     // 1. スワップチェーン、深度バッファのリサイズ
     dxCommon_->ResizeSwapChain(width, height);
@@ -1033,20 +1042,23 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
         if (shaderName == "Object3D") {
             auto* pso = GetPSOManager()->GetPSO("Shadow", Irufemi::BlendMode::kBlendModeNone,
                                                 PSOManager::DepthWrite::Enable, currentCull_);
-            if (pso)
+            if (pso) {
                 drawManager_->BindPSO(pso);
+            }
             return;
         } else if (shaderName == "Skinning") {
             auto* pso = GetPSOManager()->GetPSO("ShadowSkinning", Irufemi::BlendMode::kBlendModeNone,
                                                 PSOManager::DepthWrite::Enable, currentCull_);
-            if (pso)
+            if (pso) {
                 drawManager_->BindPSO(pso);
+            }
             return;
         } else if (shaderName == "Batch") {
             auto* pso = GetPSOManager()->GetPSO("ShadowBatch", Irufemi::BlendMode::kBlendModeNone,
                                                 PSOManager::DepthWrite::Enable, currentCull_);
-            if (pso)
+            if (pso) {
                 drawManager_->BindPSO(pso);
+            }
             return;
         }
         // それ以外はシャドウパスでは描画しない(無視)
@@ -1057,8 +1069,9 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
     if (shaderName == "Skybox") {
         auto* pso = GetPSOManager()->GetPSO("Skybox", Irufemi::BlendMode::kBlendModeNone,
                                             PSOManager::DepthWrite::Disable, PSOManager::CullMode::Front);
-        if (pso)
+        if (pso) {
             drawManager_->BindPSO(pso);
+        }
         return;
     }
 
@@ -1070,8 +1083,9 @@ void IrufemiEngine::ApplyPSO(const std::string& shaderName) {
 }
 
 void IrufemiEngine::BindLightningParams(D3D12_GPU_VIRTUAL_ADDRESS address) {
-    if (address == 0)
+    if (address == 0) {
         return;
+    }
     GetCommandList()->SetGraphicsRootConstantBufferView((UINT)RootSlot::Special, address);
 }
 
@@ -1083,32 +1097,37 @@ bool IrufemiEngine::IsAssetLoading() const {
 }
 
 bool IrufemiEngine::SaveScreenShot(const std::wstring& filePath) {
-    if (screenCaptureManager_)
+    if (screenCaptureManager_) {
         return screenCaptureManager_->RequestCapture(filePath, ScreenCaptureType::SceneOnly);
+    }
     return false;
 }
 
 bool IrufemiEngine::SaveScreenShotWithUI(const std::wstring& filePath) {
-    if (screenCaptureManager_)
+    if (screenCaptureManager_) {
         return screenCaptureManager_->RequestCapture(filePath, ScreenCaptureType::WithUI);
+    }
     return false;
 }
 
 bool IrufemiEngine::SaveScreenShotWithMetadata(const std::wstring& filePath) {
-    if (screenCaptureManager_)
+    if (screenCaptureManager_) {
         return screenCaptureManager_->RequestCaptureWithMetadata(filePath, ScreenCaptureType::SceneOnly);
+    }
     return false;
 }
 
 bool IrufemiEngine::SaveScreenShotWithAlpha(const std::wstring& filePath) {
-    if (screenCaptureManager_)
+    if (screenCaptureManager_) {
         return screenCaptureManager_->RequestCaptureWithAlpha(filePath);
+    }
     return false;
 }
 
 bool IrufemiEngine::SaveScreenShotDepth(const std::wstring& filePath) {
-    if (screenCaptureManager_)
+    if (screenCaptureManager_) {
         return screenCaptureManager_->RequestCaptureDepth(filePath);
+    }
     return false;
 }
 

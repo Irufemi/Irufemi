@@ -41,10 +41,12 @@ void SplineComponent::Draw() {
 }
 
 Irufemi::Vector3 SplineComponent::GetPointAt(float t) const {
-    if (waypoints_.empty())
+    if (waypoints_.empty()) {
         return {0.0f, 0.0f, 0.0f};
-    if (waypoints_.size() == 1)
+    }
+    if (waypoints_.size() == 1) {
         return waypoints_[0];
+    }
 
     t = std::clamp(t, 0.0f, 1.0f);
 
@@ -84,8 +86,9 @@ Irufemi::Vector3 SplineComponent::GetPointAt(float t) const {
 }
 
 Irufemi::Vector3 SplineComponent::GetTangentAt(float t) const {
-    if (waypoints_.size() < 2)
+    if (waypoints_.size() < 2) {
         return {0.0f, 0.0f, 1.0f}; // デフォルトの進行方向
+    }
 
     // 少し先の点を計算して差分から接線を求める (簡易的な近似)
     float delta = 0.01f;
@@ -116,8 +119,9 @@ Irufemi::Vector3 SplineComponent::GetTangentAt(float t) const {
 }
 
 void SplineComponent::UpdateWaypointsFromChildren() {
-    if (!gameObject_)
+    if (!gameObject_) {
         return;
+    }
     auto children = gameObject_->GetChildren();
 
     if (!children.empty()) {
@@ -160,8 +164,9 @@ void SplineComponent::UpdateDistanceTable() {
     distanceLUT_.push_back(0.0f);
     totalLength_ = 0.0f;
 
-    if (waypoints_.size() < 2)
+    if (waypoints_.size() < 2) {
         return;
+    }
 
     int numSamples = (std::max)(10, static_cast<int>(waypoints_.size()) * 20);
     Irufemi::Vector3 prevPos = GetPointAt(0.0f);
@@ -184,10 +189,12 @@ float SplineComponent::GetTotalLength() const {
 }
 
 Irufemi::Vector3 SplineComponent::GetPointAtDistance(float distance) const {
-    if (waypoints_.empty())
+    if (waypoints_.empty()) {
         return {0.0f, 0.0f, 0.0f};
-    if (waypoints_.size() == 1 || distanceLUT_.empty() || totalLength_ <= 0.0f)
+    }
+    if (waypoints_.size() == 1 || distanceLUT_.empty() || totalLength_ <= 0.0f) {
         return waypoints_[0];
+    }
 
     float t = 0.0f;
     if (distance <= 0.0f) {
@@ -209,8 +216,9 @@ Irufemi::Vector3 SplineComponent::GetPointAtDistance(float distance) const {
 }
 
 Irufemi::Vector3 SplineComponent::GetTangentAtDistance(float distance) const {
-    if (waypoints_.size() < 2)
+    if (waypoints_.size() < 2) {
         return {0.0f, 0.0f, 1.0f};
+    }
 
     float delta = 0.01f;
     float d1 = std::clamp(distance, 0.0f, totalLength_);

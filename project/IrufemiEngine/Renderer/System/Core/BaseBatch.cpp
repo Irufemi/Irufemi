@@ -30,14 +30,18 @@ BaseBatch::~BaseBatch() {
                 idx = UINT32_MAX;
             }
         };
-        for (auto& idx : instancingSrvIndex_)
+        for (auto& idx : instancingSrvIndex_) {
             freeIndex(idx);
-        for (auto& idx : outputInstanceSrvIndex_)
+        }
+        for (auto& idx : outputInstanceSrvIndex_) {
             freeIndex(idx);
-        for (auto& idx : outputInstanceUavIndex_)
+        }
+        for (auto& idx : outputInstanceUavIndex_) {
             freeIndex(idx);
-        for (auto& idx : indirectCommandUavIndex_)
+        }
+        for (auto& idx : indirectCommandUavIndex_) {
             freeIndex(idx);
+        }
     }
     if (auto engine = dx_->GetEngine()) {
         if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
@@ -365,8 +369,9 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
                                               frustum->planes[i].normal.z, -frustum->planes[i].distance};
                     }
                 } else {
-                    for (int i = 0; i < 6; ++i)
+                    for (int i = 0; i < 6; ++i) {
                         cullData.planes[i] = {0, 0, 0, -10000.0f};
+                    }
                 }
 
                 std::memcpy(cullDst, &cullData, sizeof(CullingData));
@@ -383,8 +388,9 @@ void BaseBatch::BuildInstanceBuffer(bool force) {
                 Irufemi::Sphere boundingSphere;
                 boundingSphere.center = inst.translate;
                 boundingSphere.radius = modelRadius * maxScale * 1.1f;
-                if (!Irufemi::Collision::IsCollision(*frustum, boundingSphere))
+                if (!Irufemi::Collision::IsCollision(*frustum, boundingSphere)) {
                     continue;
+                }
             }
 
             InstanceData data;
@@ -459,7 +465,8 @@ void BaseBatch::SyncBeforeDraw() {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS BaseBatch::GetMaterialVAddress() const {
-    if (materialCbIndex_ == static_cast<uint32_t>(-1))
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
+    }
     return dx_->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, dx_->GetFrameIndex());
 }

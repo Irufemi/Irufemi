@@ -9,8 +9,9 @@
 SphereColliderComponent::SphereColliderComponent() {}
 
 SphereColliderComponent::~SphereColliderComponent() {
-    if (collisionManager_)
+    if (collisionManager_) {
         collisionManager_->UnregisterCollider(this);
+    }
 }
 
 void SphereColliderComponent::OnRegisterProperties() {
@@ -22,8 +23,9 @@ void SphereColliderComponent::OnRegisterProperties() {
 void SphereColliderComponent::Initialize() {
     if (gameObject_) {
     }
-    if (collisionManager_)
+    if (collisionManager_) {
         collisionManager_->RegisterCollider(this);
+    }
 }
 
 void SphereColliderComponent::Update() {
@@ -87,10 +89,12 @@ void SphereColliderComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("localRadius")) {
         localRadius_ = j["localRadius"];
     }
-    if (j.contains("layer"))
+    if (j.contains("layer")) {
         layer_ = j["layer"];
-    if (j.contains("mask"))
+    }
+    if (j.contains("mask")) {
         mask_ = j["mask"];
+    }
 }
 
 std::shared_ptr<Component> SphereColliderComponent::Clone() {

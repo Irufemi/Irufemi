@@ -17,12 +17,14 @@ void Animator::Initialize(IrufemiEngine* engine) {
 }
 
 void Animator::Play(const std::string& filename, bool loop, float fadeDuration) {
-    if (!engine_ || !engine_->GetAnimationManager())
+    if (!engine_ || !engine_->GetAnimationManager()) {
         return;
+    }
 
     auto newAnim = engine_->GetAnimationManager()->LoadAnimationFile(filename);
-    if (!newAnim)
+    if (!newAnim) {
         return;
+    }
 
     if (currentAnimation_ && fadeDuration > 0.0f && currentAnimationName_ != filename) {
         previousAnimation_ = currentAnimation_;
@@ -45,8 +47,9 @@ void Animator::Play(const std::string& filename, bool loop, float fadeDuration) 
 }
 
 void Animator::Update(SkeletonPose& targetPose) {
-    if (!currentAnimation_ || !engine_)
+    if (!currentAnimation_ || !engine_) {
         return;
+    }
 
     float deltaTime = engine_->GetGameDeltaTime() * playbackSpeed_;
     float prevTime = animationTime_;
@@ -99,11 +102,13 @@ void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skel
                                  Irufemi::Vector3& outDeltaTrans, Irufemi::Quaternion& outDeltaRot) {
     outDeltaTrans = {0.0f, 0.0f, 0.0f};
     outDeltaRot = {0.0f, 0.0f, 0.0f, 1.0f};
-    if (!anim || !skeleton)
+    if (!anim || !skeleton) {
         return;
+    }
 
-    if (anim->nodeAnimations.empty())
+    if (anim->nodeAnimations.empty()) {
         return;
+    }
 
     // ルートノードの探索（parentが存在しないジョイント）
     std::string rootNodeName = "";
@@ -114,12 +119,14 @@ void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skel
         }
     }
 
-    if (rootNodeName.empty())
+    if (rootNodeName.empty()) {
         return;
+    }
 
     auto rootIt = anim->nodeAnimations.find(rootNodeName);
-    if (rootIt == anim->nodeAnimations.end())
+    if (rootIt == anim->nodeAnimations.end()) {
         return;
+    }
 
     const NodeAnimation& rootAnim = rootIt->second;
 

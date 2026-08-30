@@ -76,8 +76,9 @@ void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureMa
 
 void ModelManager::SetRootDirectory(std::string root) {
     std::replace(root.begin(), root.end(), '\\', '/');
-    if (!root.empty() && root.back() == '/')
+    if (!root.empty() && root.back() == '/') {
         root.pop_back();
+    }
     rootDir_ = std::move(root);
 
     // DirectoryWatcherの初期化
@@ -321,14 +322,17 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
 }
 
 bool ModelManager::IsCurrentSceneInitializing() const {
-    if (!dxCommon_)
+    if (!dxCommon_) {
         return false;
+    }
     auto engine = dxCommon_->GetEngine();
-    if (!engine)
+    if (!engine) {
         return false;
+    }
     auto sceneManager = engine->GetSceneManager();
-    if (!sceneManager)
+    if (!sceneManager) {
         return false;
+    }
     return sceneManager->IsInitializing();
 }
 
@@ -342,8 +346,9 @@ void ModelManager::PreloadAllUnder(const std::string& relativeFolder) {
     }
 
     for (auto& entry : fs::recursive_directory_iterator(start)) {
-        if (!entry.is_regular_file())
+        if (!entry.is_regular_file()) {
             continue;
+        }
         auto p = entry.path();
         std::string ext = p.extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(),
@@ -421,8 +426,9 @@ void ModelManager::OnDirectoryChanged() {
         std::lock_guard<std::recursive_mutex> lock(mutex_);
         for (const auto& modelPtr : managedModels_) {
             if (modelPtr && modelPtr->status.load() == ManagedModel::LoadingStatus::Loaded) {
-                if (modelPtr->sourceFilePath.empty())
+                if (modelPtr->sourceFilePath.empty()) {
                     continue;
+                }
 
                 std::error_code ec;
                 if (std::filesystem::exists(modelPtr->sourceFilePath, ec)) {
@@ -455,16 +461,18 @@ std::string ModelManager::NormalizeAndResolve(const std::string& filename) const
     std::string f = filename;
     std::replace(f.begin(), f.end(), '\\', '/');
     std::string f_clean = f;
-    if (f_clean.find("./") == 0)
+    if (f_clean.find("./") == 0) {
         f_clean = f_clean.substr(2);
-    else if (f_clean.find("/") == 0)
+    } else if (f_clean.find("/") == 0) {
         f_clean = f_clean.substr(1);
+    }
 
     std::string root_clean = rootDir_;
-    if (root_clean.find("./") == 0)
+    if (root_clean.find("./") == 0) {
         root_clean = root_clean.substr(2);
-    else if (root_clean.find("/") == 0)
+    } else if (root_clean.find("/") == 0) {
         root_clean = root_clean.substr(1);
+    }
 
     if (StartsWith(f_clean, root_clean + "/")) {
         f = "./" + f_clean;
@@ -483,8 +491,9 @@ bool ModelManager::StartsWith(const std::string& s, const std::string& prefix) {
 
 std::pair<std::string, std::string> ModelManager::SplitDirectoryAndFile(const std::string& full) {
     auto pos = full.find_last_of('/');
-    if (pos == std::string::npos)
+    if (pos == std::string::npos) {
         return {".", full};
+    }
     return {full.substr(0, pos), full.substr(pos + 1)};
 }
 
@@ -547,19 +556,22 @@ bool IntersectRayTriangle(const Irufemi::Vector3& origin, const Irufemi::Vector3
     Irufemi::Vector3 edge2 = Irufemi::Math::Subtract(v2, v0);
     Irufemi::Vector3 h = Irufemi::Math::Cross(direction, edge2);
     float a = Irufemi::Math::Dot(edge1, h);
-    if (a > -kEpsilon && a < kEpsilon)
+    if (a > -kEpsilon && a < kEpsilon) {
         return false; // レイは三角形と平行
+    }
 
     float f = 1.0f / a;
     Irufemi::Vector3 s = Irufemi::Math::Subtract(origin, v0);
     float u = f * Irufemi::Math::Dot(s, h);
-    if (u < 0.0f || u > 1.0f)
+    if (u < 0.0f || u > 1.0f) {
         return false;
+    }
 
     Irufemi::Vector3 q = Irufemi::Math::Cross(s, edge1);
     float v = f * Irufemi::Math::Dot(direction, q);
-    if (v < 0.0f || u + v > 1.0f)
+    if (v < 0.0f || u + v > 1.0f) {
         return false;
+    }
 
     t = f * Irufemi::Math::Dot(edge2, q);
     return (t > kEpsilon);
@@ -573,14 +585,16 @@ Irufemi::Vector3 ClosestPointOnTriangle(const Irufemi::Vector3& p, const Irufemi
     Irufemi::Vector3 ap = p - a;
     float d1 = Irufemi::Math::Dot(ab, ap);
     float d2 = Irufemi::Math::Dot(ac, ap);
-    if (d1 <= 0.0f && d2 <= 0.0f)
+    if (d1 <= 0.0f && d2 <= 0.0f) {
         return a;
+    }
 
     Irufemi::Vector3 bp = p - b;
     float d3 = Irufemi::Math::Dot(ab, bp);
     float d4 = Irufemi::Math::Dot(ac, bp);
-    if (d3 >= 0.0f && d4 <= d3)
+    if (d3 >= 0.0f && d4 <= d3) {
         return b;
+    }
 
     float vc = d1 * d4 - d3 * d2;
     if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
@@ -591,8 +605,9 @@ Irufemi::Vector3 ClosestPointOnTriangle(const Irufemi::Vector3& p, const Irufemi
     Irufemi::Vector3 cp = p - c;
     float d5 = Irufemi::Math::Dot(ab, cp);
     float d6 = Irufemi::Math::Dot(ac, cp);
-    if (d6 >= 0.0f && d5 <= d6)
+    if (d6 >= 0.0f && d5 <= d6) {
         return c;
+    }
 
     float vb = d5 * d2 - d1 * d6;
     if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
@@ -776,10 +791,12 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Irufemi:
 
                                 int ntexX = static_cast<int>(interpolatedUV.x * nwidth) % nwidth;
                                 int ntexY = static_cast<int>(interpolatedUV.y * nheight) % nheight;
-                                if (ntexX < 0)
+                                if (ntexX < 0) {
                                     ntexX += nwidth;
-                                if (ntexY < 0)
+                                }
+                                if (ntexY < 0) {
                                     ntexY += nheight;
+                                }
 
                                 const DirectX::Image* nimage = nimg->GetImage(0, 0, 0);
                                 if (nimage) {
@@ -849,10 +866,12 @@ VoxelizedModel ModelManager::VoxelizeModel(const ObjModel& model, const Irufemi:
 
                                 int texX = static_cast<int>(interpolatedUV.x * width) % width;
                                 int texY = static_cast<int>(interpolatedUV.y * height) % height;
-                                if (texX < 0)
+                                if (texX < 0) {
                                     texX += width;
-                                if (texY < 0)
+                                }
+                                if (texY < 0) {
                                     texY += height;
+                                }
 
                                 // 元のコードに合わせて GetImage(0, 0, 0) からピクセルデータを取得
                                 const DirectX::Image* image = img->GetImage(0, 0, 0);
@@ -896,13 +915,15 @@ std::shared_ptr<VoxelizedModel> ModelManager::GetVoxelizedModel(const std::strin
     ResourceHandle handle = LoadModel(filename);
     ManagedModel* managedModel = Resolve(handle);
 
-    if (!managedModel)
+    if (!managedModel) {
         return nullptr;
+    }
 
     while (true) {
         auto status = managedModel->status.load();
-        if (status == ManagedModel::LoadingStatus::Loaded || status == ManagedModel::LoadingStatus::Failed)
+        if (status == ManagedModel::LoadingStatus::Loaded || status == ManagedModel::LoadingStatus::Failed) {
             break;
+        }
         std::this_thread::yield();
     }
 

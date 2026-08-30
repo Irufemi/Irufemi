@@ -60,37 +60,51 @@ void PostProcessManager::Update(float totalTime) {
     }
 
     // 他のパラメータも同期
-    if (mappedVignette_)
+    if (mappedVignette_) {
         *mappedVignette_ = vignetteParams_;
-    if (mappedSmoothing_)
+    }
+    if (mappedSmoothing_) {
         *mappedSmoothing_ = smoothingParams_;
-    if (mappedGaussian_)
+    }
+    if (mappedGaussian_) {
         *mappedGaussian_ = gaussianParams_;
-    if (mappedRadialBlur_)
+    }
+    if (mappedRadialBlur_) {
         *mappedRadialBlur_ = radialBlurParams_;
-    if (mappedOutline_)
+    }
+    if (mappedOutline_) {
         *mappedOutline_ = outlineParams_;
-    if (mappedDissolve_)
+    }
+    if (mappedDissolve_) {
         *mappedDissolve_ = dissolveParams_;
-    if (mappedHsv_)
+    }
+    if (mappedHsv_) {
         *mappedHsv_ = hsvParams_;
-    if (mappedToneMapping_)
+    }
+    if (mappedToneMapping_) {
         *mappedToneMapping_ = toneMappingParams_;
-    if (mappedFade_)
+    }
+    if (mappedFade_) {
         *mappedFade_ = fadeParams_;
-    if (mappedSlide_)
+    }
+    if (mappedSlide_) {
         *mappedSlide_ = slideParams_;
-    if (mappedBloom_)
+    }
+    if (mappedBloom_) {
         *mappedBloom_ = bloomParams_;
-    if (mappedLightShafts_)
+    }
+    if (mappedLightShafts_) {
         *mappedLightShafts_ = lightShaftsParams_;
+    }
 
     glitchParams_.time = totalTime;
-    if (mappedGlitch_)
+    if (mappedGlitch_) {
         *mappedGlitch_ = glitchParams_;
+    }
 
-    if (mappedDualKawase_)
+    if (mappedDualKawase_) {
         *mappedDualKawase_ = dualKawaseParams_;
+    }
 
     // 統合パラメータの同期
     combinedParams_.vignetteColor = vignetteParams_.color;
@@ -191,8 +205,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList* commandList, 
                                         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass,
                                         ID3D12PipelineState* psoOverride) {
     uint32_t modeIdx = static_cast<uint32_t>(mode);
-    if (!psoOverride && (modeIdx >= psos_.size() || !psos_[modeIdx]))
+    if (!psoOverride && (modeIdx >= psos_.size() || !psos_[modeIdx])) {
         return;
+    }
 
     // レンダーターゲットの設定
     commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
@@ -212,8 +227,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList* commandList, 
     if (!pso) {
         pso = isFinalPass ? finalPsos_[modeIdx].Get() : psos_[modeIdx].Get();
     }
-    if (!pso)
+    if (!pso) {
         return;
+    }
 
     commandList->SetPipelineState(pso);
     commandList->SetGraphicsRootSignature(rootSig_);
@@ -349,8 +365,9 @@ void PostProcessManager::CreatePSOs() {
 
     for (const auto& s : shaders) {
         auto psBlob = shaderManager->GetOrCompile(s.path, options);
-        if (!psBlob)
+        if (!psBlob) {
             continue;
+        }
 
         D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
         desc.pRootSignature = rootSig_;
