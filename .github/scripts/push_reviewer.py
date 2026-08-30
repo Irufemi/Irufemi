@@ -86,21 +86,36 @@ def main():
 【出力フォーマット】
 マークダウン形式で、レビューコメントのみを出力してください。"""
     
+    max_diff_length = 300000
+    if len(diff_text) > max_diff_length:
+        diff_text = diff_text[:max_diff_length] + "\n\n... (Diffが巨大すぎるため、途中から切り捨てられました) ..."
+
     prompt = f"以下の git diff をレビューしてください:\n\n```diff\n{diff_text}\n```"
     
-    try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model='gemini-3.6-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
+    import time
+    max_retries = 3
+    review_result = ""
+    for attempt in range(max_retries):
+        try:
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(
+                model='gemini-3.6-flash',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                )
             )
-        )
-        review_result = response.text
-    except Exception as e:
-        print(f"Gemini API Error: {e}")
-        sys.exit(1)
+            review_result = response.text
+            break
+        except Exception as e:
+            error_str = str(e)
+            print(f"Gemini API Error (Attempt {attempt + 1}/{max_retries}): {error_str}")
+            if "429" in error_str and attempt < max_retries - 1:
+                sleep_time = 15 * (attempt + 1)
+                print(f"Rate limited or quota exceeded. Retrying in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+            else:
+                sys.exit(1)
 
     comment_body = f"## 🤖 Gemini Push Review\n\n{review_result}"
     post_commit_comment(repo, commit_sha, github_token, comment_body)
