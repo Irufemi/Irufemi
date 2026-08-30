@@ -1,10 +1,10 @@
-PROJECT_NAME           = "IrufemiEngine"
+﻿PROJECT_NAME           = "IrufemiEngine"
 PROJECT_NUMBER         = "1.0"
 OUTPUT_DIRECTORY       = "docs"
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = YES
 OUTPUT_LANGUAGE        = Japanese
-INPUT                  = Manual.md project/IrufemiEngine project/Application_solo project/Application
+INPUT                  = Manual.md project/IrufemiEngine project/Application_solo
 FILE_PATTERNS          = *.h *.cpp *.md
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */build/* */bin/* */obj/*

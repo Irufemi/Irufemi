@@ -1,4 +1,4 @@
-name: Clang-Format Auto Fix
+﻿name: Clang-Format Auto Fix
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         run: |
           # ターゲットディレクトリ内の全ての .cpp と .h を検索して上書きフォーマット
           # Ubuntuのネイティブ環境で実行されるため、UTF-8(BOMなし)が保証されます
-          find project/IrufemiEngine project/Application_solo project/Application -type f \( -name '*.cpp' -o -name '*.h' \) -exec clang-format -i {} +
+          find project/IrufemiEngine project/Application_solo -type f \( -name '*.cpp' -o -name '*.h' \) -exec clang-format -i {} +
 
       - name: Check for changes
         id: check_changes
