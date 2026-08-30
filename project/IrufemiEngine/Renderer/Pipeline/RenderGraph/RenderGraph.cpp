@@ -1,6 +1,6 @@
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
-#include "Renderer/DrawManager.h"
 #include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/DrawManager.h"
 #include <algorithm>
 #include <string>
 
@@ -39,7 +39,7 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         uint64_t offset = 0;
         ID3D12Resource* physicalResource = nullptr;
     };
-    
+
     const auto& transientDescs = builder.GetTransientDescs();
     const auto& transientUsages = builder.GetTransientUsages();
     std::vector<TransientResourceLifetime> lifetimes(transientDescs.size());
@@ -59,7 +59,7 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     }
 
     transientPhysicalResources_.resize(transientDescs.size(), nullptr);
-    
+
     // RenderTexture をサイズに合わせて拡張（既存のものは再利用）
     while (transientRenderTextures_.size() < transientDescs.size()) {
         transientRenderTextures_.push_back(std::make_unique<RenderTexture>());
@@ -67,7 +67,8 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // エイリアシングによるヒープオフセットの決定 (貪欲法)
     for (size_t i = 0; i < lifetimes.size(); ++i) {
-        if (lifetimes[i].firstPass == static_cast<size_t>(-1)) continue;
+        if (lifetimes[i].firstPass == static_cast<size_t>(-1))
+            continue;
 
         uint64_t requiredSize = lifetimes[i].size;
         uint64_t alignment = lifetimes[i].alignment;
@@ -77,10 +78,12 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         while (!placed) {
             placed = true;
             for (size_t j = 0; j < i; ++j) {
-                if (lifetimes[j].firstPass == static_cast<size_t>(-1)) continue;
+                if (lifetimes[j].firstPass == static_cast<size_t>(-1))
+                    continue;
 
                 // 寿命が重なるか？
-                bool overlapTime = (lifetimes[i].firstPass <= lifetimes[j].lastPass) && (lifetimes[i].lastPass >= lifetimes[j].firstPass);
+                bool overlapTime = (lifetimes[i].firstPass <= lifetimes[j].lastPass) &&
+                                   (lifetimes[i].lastPass >= lifetimes[j].firstPass);
                 if (overlapTime) {
                     uint64_t startI = bestOffset;
                     uint64_t endI = startI + requiredSize;
@@ -102,14 +105,14 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         if (transientResourceManager_) {
             const auto& tDesc = transientDescs[i];
             lifetimes[i].physicalResource = transientResourceManager_->AcquirePlacedResource(
-                tDesc.desc, bestOffset, D3D12_RESOURCE_STATE_COMMON, tDesc.hasClearValue ? &tDesc.clearValue : nullptr
-            );
+                tDesc.desc, bestOffset, D3D12_RESOURCE_STATE_COMMON, tDesc.hasClearValue ? &tDesc.clearValue : nullptr);
             if (lifetimes[i].physicalResource) {
                 std::wstring wname(tDesc.name.begin(), tDesc.name.end());
                 lifetimes[i].physicalResource->SetName(wname.c_str());
-                
+
                 // RenderTextureラッパーも初期化
-                transientRenderTextures_[i]->InitializeFromResource(drawManager->GetDxCommon(), lifetimes[i].physicalResource, tDesc.desc.Format);
+                transientRenderTextures_[i]->InitializeFromResource(drawManager->GetDxCommon(),
+                                                                    lifetimes[i].physicalResource, tDesc.desc.Format);
             }
         }
         transientPhysicalResources_[i] = lifetimes[i].physicalResource;
@@ -126,7 +129,7 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
                 // 同じオフセット上でアクティブなリソースが本当に切り替わった場合のみエイリアシングバリアを発行
                 if (activeResourceByOffset_[lifetimes[i].offset] != lifetimes[i].physicalResource) {
                     ID3D12Resource* prevResource = activeResourceByOffset_[lifetimes[i].offset];
-                    
+
                     // DX12のDebug LayerとGBVの整合性を保つため、以前のアクティブリソースを
                     // ディアクティベートする前に明示的にCOMMONへ遷移させておく
                     if (prevResource) {
@@ -159,10 +162,12 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
         // 通常リソースの Transition バリア
         for (const auto& usage : builder.GetUsages()) {
-            if (usage.passIndex != passIdx || !usage.resource) continue;
+            if (usage.passIndex != passIdx || !usage.resource)
+                continue;
 
             auto it = resourceStates_.find(usage.resource);
-            D3D12_RESOURCE_STATES currentState = (it != resourceStates_.end()) ? it->second : D3D12_RESOURCE_STATE_COMMON;
+            D3D12_RESOURCE_STATES currentState =
+                (it != resourceStates_.end()) ? it->second : D3D12_RESOURCE_STATE_COMMON;
 
             if (currentState != usage.state) {
                 D3D12_RESOURCE_BARRIER b{};
@@ -179,12 +184,15 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
         // Transient リソースの Transition バリア
         for (const auto& usage : transientUsages) {
-            if (usage.passIndex != passIdx) continue;
+            if (usage.passIndex != passIdx)
+                continue;
             auto* res = lifetimes[usage.handle].physicalResource;
-            if (!res) continue;
+            if (!res)
+                continue;
 
             auto it = resourceStates_.find(res);
-            D3D12_RESOURCE_STATES currentState = (it != resourceStates_.end()) ? it->second : D3D12_RESOURCE_STATE_COMMON;
+            D3D12_RESOURCE_STATES currentState =
+                (it != resourceStates_.end()) ? it->second : D3D12_RESOURCE_STATE_COMMON;
 
             if (currentState != usage.state) {
                 D3D12_RESOURCE_BARRIER b{};
@@ -210,7 +218,8 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     // 全パス実行後、要求された最終ステートへの TransitionBarrier を発行
     std::vector<D3D12_RESOURCE_BARRIER> finalBarriers;
     for (const auto& [resource, finalState] : finalResourceStates_) {
-        if (!resource) continue;
+        if (!resource)
+            continue;
         auto it = resourceStates_.find(resource);
         D3D12_RESOURCE_STATES currentState = (it != resourceStates_.end()) ? it->second : D3D12_RESOURCE_STATE_COMMON;
 

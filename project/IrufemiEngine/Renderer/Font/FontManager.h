@@ -1,12 +1,12 @@
 #pragma once
 
+#include "Core/Math/Vector2.h"
+#include "Core/System/ResourceHandle.h"
+#include "Core/System/TaskGroup.h"
+#include <d3d12.h>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include <d3d12.h>
-#include "Core/Math/Vector2.h"
-#include "Core/System/TaskGroup.h"
-#include "Core/System/ResourceHandle.h"
 
 class IrufemiEngine;
 
@@ -20,9 +20,9 @@ struct GlyphInfo {
     Irufemi::Vector2 uvBottomRight;
     float width;
     float height;
-    float offsetX;    // 描画基準点からのXズレ (Bearing X)
-    float offsetY;    // 描画基準点からのYズレ (Bearing Y)
-    float advanceX;   // 次の文字へのカーソル移動量
+    float offsetX;  // 描画基準点からのXズレ (Bearing X)
+    float offsetY;  // 描画基準点からのYズレ (Bearing Y)
+    float advanceX; // 次の文字へのカーソル移動量
 };
 
 /**
@@ -94,6 +94,6 @@ private:
     // Pimplイディオム：FreeType, msdfgen, stb_rect_pack などの依存を隠蔽する
     struct Impl;
     std::unique_ptr<Impl> impl_;
-    
+
     IrufemiEngine* engine_ = nullptr;
 };

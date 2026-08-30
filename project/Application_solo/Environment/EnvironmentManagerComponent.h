@@ -1,11 +1,11 @@
 #pragma once
-#include "Framework/Component/Component.h"
 #include "Core/Math/Vector3.h"
-#include <vector>
+#include "Framework/Component/Component.h"
 #include <list>
-#include <string>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 
@@ -26,10 +26,14 @@ public:
     void Start() override;
     void Update() override;
     void Draw() override;
-    
-    std::string GetComponentName() const override { return "EnvironmentManagerComponent"; }
+
+    std::string GetComponentName() const override {
+        return "EnvironmentManagerComponent";
+    }
     void OnRegisterProperties() override;
-    bool CanUpdateInEditMode() const override { return true; }
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
 
 private:
     struct SpawnedEnvInfo {

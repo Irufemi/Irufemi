@@ -8,44 +8,44 @@
 /*開発のUIを出そう*/
 
 #ifdef USE_IMGUI
+#include "Core/Utility/FileSystem.h"
+#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include "imgui/imgui.h"
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
-#include "EngineResources/FontAwesome/IconsFontAwesome6.h"
-#include "Core/Utility/FileSystem.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif // USE_IMGUI
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <cmath>
-#include <numbers>
-#include <filesystem>
-#include <numeric> 
-#include "Resource/Texture/TextureManager.h"
-#include "Framework/Scene/SceneManager.h"
-#include "Core/Shape/Sphere.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Transform.h"
+#include "Core/Shape/Sphere.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Scene/SceneManager.h"
+#include "RHI/DirectX12/DescriptorPool.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/Data/AreaLight.h"
 #include "Renderer/Data/DirectionalLight.h"
+#include "Renderer/Data/Material.h"
 #include "Renderer/Data/PointLight.h"
 #include "Renderer/Data/SpotLight.h"
-#include "Renderer/Data/AreaLight.h"
-#include "RHI/DirectX12/DirectXCommon.h"
-#include "RHI/DirectX12/DescriptorPool.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Renderer/Data/Material.h"
-#include "Resource/Model/Data/ObjModel.h"
-#include "Resource/Model/Data/Animation.h"
 #include "Renderer/System/Core/LineResource.h"
-#include "Renderer/System/Core/Object3DResource.h"
 #include "Renderer/System/Core/Object2DResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Resource/Model/Data/Animation.h"
+#include "Resource/Model/Data/ObjModel.h"
+#include "Resource/Texture/TextureManager.h"
+#include <algorithm>
+#include <cmath>
+#include <filesystem>
+#include <numbers>
+#include <numeric>
+#include <string>
+#include <vector>
 
 #include "Core/Math/Math.h"
+#include "Core/System/ThreadPool.h"
 #include "Renderer/Data/LightningParams.h"
 #include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
-#include "Core/System/ThreadPool.h"
 #include "Renderer/ScreenCaptureManager.h"
 #include <chrono>
 #include <iomanip>
@@ -74,14 +74,15 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     if (!std::filesystem::exists(iniFsPath)) {
         // 1. カレントディレクトリ基準での検索（VSからの実行時用）
         std::string presetPath1 = FileSystem::GetEngineRoot() + "/EngineResources/default_imgui.ini";
-        std::filesystem::path presetFsPath = std::filesystem::path(reinterpret_cast<const char8_t*>(presetPath1.c_str()));
-        
+        std::filesystem::path presetFsPath =
+            std::filesystem::path(reinterpret_cast<const char8_t*>(presetPath1.c_str()));
+
         // 2. exeディレクトリ基準での検索（Editorビルドを直接実行した場合用）
         if (!std::filesystem::exists(presetFsPath)) {
             std::string presetPath2 = exeDir + "/../../IrufemiEngine/EngineResources/default_imgui.ini";
             presetFsPath = std::filesystem::path(reinterpret_cast<const char8_t*>(presetPath2.c_str()));
         }
-        
+
         if (std::filesystem::exists(presetFsPath)) {
             std::error_code ec;
             std::filesystem::copy_file(presetFsPath, iniFsPath, ec);
@@ -91,18 +92,18 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     dxCommon_ = dxCommon;
 
     /*開発UIを出そう*/
-    //ImGuiの初期化。詳細はさして重要ではないので開設は省略する。
-    //こういうもんである
+    // ImGuiの初期化。詳細はさして重要ではないので開設は省略する。
+    // こういうもんである
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
 
     ImGuiIO& io = ImGui::GetIO();
-    
+
     // 1. ベースフォント（英数字用）として FiraMono を読み込む
     std::string firaMonoPath = FileSystem::GetEngineRoot() + "/EngineResources/Fira_Mono/FiraMono-Regular.ttf";
     ImFont* baseFont = io.Fonts->AddFontFromFileTTF(firaMonoPath.c_str(), 16.0f);
-    
+
     // フォントファイルが見つからなかった場合（exe単体起動時など）、デフォルトフォントを追加してクラッシュを防ぐ
     if (baseFont == nullptr) {
         io.Fonts->AddFontDefault();
@@ -111,15 +112,17 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     // 2. 日本語フォントを MergeMode (結合モード) で読み込み、FiraMono にない文字を補完する
     ImFontConfig config;
     config.MergeMode = true;
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msgothic.ttc", 16.0f, &config, io.Fonts->GetGlyphRangesJapanese());
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msgothic.ttc", 16.0f, &config,
+                                 io.Fonts->GetGlyphRangesJapanese());
 
     // 3. FontAwesome を MergeMode で読み込む
     ImFontConfig icons_config;
     icons_config.MergeMode = true;
     icons_config.PixelSnapH = true;
     icons_config.GlyphMinAdvanceX = 16.0f; // アイコンの等幅調整
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-    if (baseFont != nullptr) { // FontAwesome はパスが相対なので、もしFiraMonoが見つからない環境なら読み込みをスキップしてもよい
+    static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+    if (baseFont !=
+        nullptr) { // FontAwesome はパスが相対なので、もしFiraMonoが見つからない環境なら読み込みをスキップしてもよい
         std::string faPath = FileSystem::GetEngineRoot() + "/EngineResources/FontAwesome/fa-solid-900.ttf";
         io.Fonts->AddFontFromFileTTF(faPath.c_str(), 16.0f, &icons_config, icons_ranges);
     }
@@ -127,8 +130,8 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
 #ifdef EditorMode
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Dockingを有効にする
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // マルチビューポートを有効にする
-#endif // EditorMode
-    
+#endif                                                  // EditorMode
+
     // 構築した絶対パス(UTF-8)をIniFilenameに設定
     io.IniFilename = absoluteIniPath.c_str();
 
@@ -141,16 +144,10 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     srvIndex_ = srvPool->Allocate();
     IRUFEMI_ASSERT(srvIndex_ != DescriptorPool::kInvalid);
 
-    ImGui_ImplDX12_Init(
-        dxCommon->GetDevice(),
-        kMaxFramesInFlight, // エンジンの最大フレーム実行数に合わせる
-        dxCommon->GetSwapChainDesc().Format, // スワップチェーン作成用にUNORMフォーマットを使用
-        srvHeap,
-        srvPool->GetCPUHandle(srvIndex_),
-        srvPool->GetGPUHandle(srvIndex_)
-    );
-
-
+    ImGui_ImplDX12_Init(dxCommon->GetDevice(),
+                        kMaxFramesInFlight, // エンジンの最大フレーム実行数に合わせる
+                        dxCommon->GetSwapChainDesc().Format, // スワップチェーン作成用にUNORMフォーマットを使用
+                        srvHeap, srvPool->GetCPUHandle(srvIndex_), srvPool->GetGPUHandle(srvIndex_));
 
     // フォントアトラスをビルドし、テクスチャをGPUにアップロードする
     io.Fonts->Build();
@@ -159,34 +156,31 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
 
     // テンプレートライトの初期化
     templatePointLight_ = std::make_unique<PointLight>();
-    templatePointLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    templatePointLight_->position = { 0.0f, 1.0f, 0.0f };
+    templatePointLight_->color = {1.0f, 1.0f, 1.0f, 1.0f};
+    templatePointLight_->position = {0.0f, 1.0f, 0.0f};
     templatePointLight_->intensity = 1.0f;
     templatePointLight_->radius = 10.0f;
     templatePointLight_->decay = 1.0f;
     templatePointLight_->isActive = 1;
 
     templateSpotLight_ = std::make_unique<SpotLight>();
-    templateSpotLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    templateSpotLight_->position = { 0.0f, 1.0f, 0.0f };
+    templateSpotLight_->color = {1.0f, 1.0f, 1.0f, 1.0f};
+    templateSpotLight_->position = {0.0f, 1.0f, 0.0f};
     templateSpotLight_->distance = 10.0f;
-    templateSpotLight_->direction = { 0.0f, -1.0f, 0.0f };
+    templateSpotLight_->direction = {0.0f, -1.0f, 0.0f};
     templateSpotLight_->intensity = 1.0f;
     templateSpotLight_->decay = 1.0f;
     templateSpotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 6.0f);
     templateSpotLight_->isActive = 1;
 
     templateAreaLight_ = std::make_unique<AreaLight>();
-    templateAreaLight_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    templateAreaLight_->position = { 0.0f, 1.0f, 0.0f };
+    templateAreaLight_->color = {1.0f, 1.0f, 1.0f, 1.0f};
+    templateAreaLight_->position = {0.0f, 1.0f, 0.0f};
     templateAreaLight_->intensity = 1.0f;
-    templateAreaLight_->direction = { 0.0f, -1.0f, 0.0f };
+    templateAreaLight_->direction = {0.0f, -1.0f, 0.0f};
     templateAreaLight_->range = 10.0f;
-    templateAreaLight_->size = { 1.0f, 1.0f };
+    templateAreaLight_->size = {1.0f, 1.0f};
     templateAreaLight_->isActive = 1;
-
-
-
 
 #endif // USE_IMGUI
 }
@@ -197,7 +191,7 @@ void DebugUI::FrameStart() {
 
     /*開発のUIを出そう*/
 
-    ///ImGuiを使う
+    /// ImGuiを使う
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
@@ -208,13 +202,12 @@ void DebugUI::FrameStart() {
 void DebugUI::Shutdown() {
 #ifdef USE_IMGUI
 
-
     /*開発のUIを出そう*/
 
-    ///ImGuiの終了処理
+    /// ImGuiの終了処理
 
-    //ImGuiの終了処理。詳細はさして重要ではないので解説は省略する。
-    //こういうもんである。初期化と逆順に行う。
+    // ImGuiの終了処理。詳細はさして重要ではないので解説は省略する。
+    // こういうもんである。初期化と逆順に行う。
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -230,27 +223,22 @@ void DebugUI::Shutdown() {
 
 LRESULT DebugUI::WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
-
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) {
         return TRUE;
     }
 
     return FALSE;
-
 }
 #endif // USE_IMGUI
-
-
 
 void DebugUI::QueueDrawCommands() {
 #ifdef USE_IMGUI
 
-
     /*開発のUIを出そう*/
 
-    ///ImGuiを使う
+    /// ImGuiを使う
 
-    //ImGuiの内部コマンドを生成する
+    // ImGuiの内部コマンドを生成する
     ImGui::Render();
 #endif // USE_IMGUI
 }
@@ -258,20 +246,19 @@ void DebugUI::QueueDrawCommands() {
 void DebugUI::QueuePostDrawCommands() {
 #ifdef USE_IMGUI
 
-
     /*開発のUIを出そう*/
-/*開発のUIを出そう*/
+    /*開発のUIを出そう*/
 
-    ///ImGuiを描画する
+    /// ImGuiを描画する
 
     // レンダーターゲットの設定 (Main Window) - ImGui用にUNORM版RTV(index 2, 3)を使用する
     uint32_t imGuiRtvIndex = dxCommon_->GetCurrentBackBufferIndex() + 2;
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRTVCPUDescriptorHandle(imGuiRtvIndex);
     dxCommon_->GetCommandList()->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
-    ///ImGuiを描画する
+    /// ImGuiを描画する
 
-    //実際のcommandListのImGuiの描画コマンドを積む
+    // 実際のcommandListのImGuiの描画コマンドを積む
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon_->GetCommandList());
 
     // マルチビューポートの更新処理
@@ -283,11 +270,10 @@ void DebugUI::QueuePostDrawCommands() {
 #endif // USE_IMGUI
 }
 
-void DebugUI::DebugLights(
-    [[maybe_unused]] DirectionalLight* directionalLight,
-    [[maybe_unused]] std::vector<std::unique_ptr<PointLight>>& pointLights,
-    [[maybe_unused]] std::vector<std::unique_ptr<SpotLight>>& spotLights,
-    [[maybe_unused]] std::vector<std::unique_ptr<AreaLight>>& areaLights) {
+void DebugUI::DebugLights([[maybe_unused]] DirectionalLight* directionalLight,
+                          [[maybe_unused]] std::vector<std::unique_ptr<PointLight>>& pointLights,
+                          [[maybe_unused]] std::vector<std::unique_ptr<SpotLight>>& spotLights,
+                          [[maybe_unused]] std::vector<std::unique_ptr<AreaLight>>& areaLights) {
 #ifdef USE_IMGUI
     // Lights 統合タブ
     if (ImGui::BeginTabItem("Lights")) {
@@ -440,7 +426,6 @@ void DebugUI::DebugLights(
         ImGui::EndTabItem();
     }
 
-
 #endif
 }
 
@@ -495,7 +480,8 @@ void DebugUI::TextTransform([[maybe_unused]] Irufemi::Transform& transform, [[ma
     if (ImGui::CollapsingHeader(header.c_str())) {
         ImGui::Text("scale: (%.2f, %.2f, %.2f)", transform.scale.x, transform.scale.y, transform.scale.z);
         ImGui::Text("rotate: (%.2f, %.2f, %.2f)", transform.rotate.x, transform.rotate.y, transform.rotate.z);
-        ImGui::Text("translate: (%.2f, %.2f, %.2f)", transform.translate.x, transform.translate.y, transform.translate.z);
+        ImGui::Text("translate: (%.2f, %.2f, %.2f)", transform.translate.x, transform.translate.y,
+                    transform.translate.z);
     }
 #endif // USE_IMGUI
 }
@@ -503,7 +489,8 @@ void DebugUI::TextTransform([[maybe_unused]] Irufemi::Transform& transform, [[ma
 // ObjMaterial
 void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_unused]] const char* unique_id) {
 #ifdef USE_IMGUI
-    if (!material) return;
+    if (!material)
+        return;
 
     std::string id_str = unique_id;
 
@@ -511,7 +498,8 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
     ImGui::Checkbox(("Enable Lighting" + id_str).c_str(), &material->enableLighting);
     ImGui::DragFloat(("Metallic" + id_str).c_str(), &material->metallic, 0.01f, 0.0f, 1.0f);
     ImGui::DragFloat(("Roughness" + id_str).c_str(), &material->roughness, 0.01f, 0.0f, 1.0f);
-    ImGui::DragFloat(("Environment Coefficient" + id_str).c_str(), &material->environmentCoefficient, 0.01f, 0.0f, 1.0f);
+    ImGui::DragFloat(("Environment Coefficient" + id_str).c_str(), &material->environmentCoefficient, 0.01f, 0.0f,
+                     1.0f);
 
     // UV Irufemi::Transform
     if (ImGui::TreeNode(("UV Transform" + id_str).c_str())) {
@@ -521,25 +509,27 @@ void DebugUI::DebugObjMaterial([[maybe_unused]] ObjMaterial* material, [[maybe_u
 #endif // USE_IMGUI
 }
 
-void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int32_t* useClamp, int32_t* enableLighting, const char* unique_id) {
+void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int32_t* useClamp, int32_t* enableLighting,
+                                     const char* unique_id) {
 #ifdef USE_IMGUI
     std::string id = unique_id;
     if (ImGui::TreeNode(("Material Overrides" + id).c_str())) {
         ImGui::DragFloat(("Env Coefficient" + id).c_str(), envCoef, 0.01f, 0.00f, 10.0f);
 
-        const char* lightingItems[] = { "Model Default", "None", "Lambert", "Half-Lambert", "PBR" };
+        const char* lightingItems[] = {"Model Default", "None", "Lambert", "Half-Lambert", "PBR"};
         int currentLighting = *lightingMode + 1; // -1 -> 0
-        if (ImGui::Combo(("Lighting Mode" + id).c_str(), &currentLighting, lightingItems, IM_ARRAYSIZE(lightingItems))) {
+        if (ImGui::Combo(("Lighting Mode" + id).c_str(), &currentLighting, lightingItems,
+                         IM_ARRAYSIZE(lightingItems))) {
             *lightingMode = currentLighting - 1;
         }
 
-        const char* clampItems[] = { "Model Default", "WRAP", "CLAMP" };
+        const char* clampItems[] = {"Model Default", "WRAP", "CLAMP"};
         int currentClamp = *useClamp + 1; // -1 -> 0
         if (ImGui::Combo(("Sampler Mode" + id).c_str(), &currentClamp, clampItems, IM_ARRAYSIZE(clampItems))) {
             *useClamp = currentClamp - 1;
         }
 
-        const char* enableItems[] = { "Model Default", "OFF", "ON" };
+        const char* enableItems[] = {"Model Default", "OFF", "ON"};
         int currentEnable = *enableLighting + 1; // -1 -> 0
         if (ImGui::Combo(("Enable Lighting" + id).c_str(), &currentEnable, enableItems, IM_ARRAYSIZE(enableItems))) {
             *enableLighting = currentEnable - 1;
@@ -550,7 +540,8 @@ void DebugUI::DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int3
 #endif
 }
 
-void DebugUI::DebugAnimationControl([[maybe_unused]] const Animation& animation, [[maybe_unused]] float& currentTime, [[maybe_unused]] const char* unique_id) {
+void DebugUI::DebugAnimationControl([[maybe_unused]] const Animation& animation, [[maybe_unused]] float& currentTime,
+                                    [[maybe_unused]] const char* unique_id) {
 #ifdef USE_IMGUI
     std::string id = unique_id;
     if (ImGui::TreeNode(("Animation Control" + id).c_str())) {
@@ -571,7 +562,7 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
             materialData->enableLighting = enableLighting;
         }
         // lightingMode選択
-        const char* items[] = { "NonLighting", "Lambert", "HalfLambert", "PBR" };
+        const char* items[] = {"NonLighting", "Lambert", "HalfLambert", "PBR"};
         int currentMode = materialData->lightingMode;
         if (ImGui::Combo("LightingMode", &currentMode, items, IM_ARRAYSIZE(items))) {
             materialData->lightingMode = currentMode;
@@ -579,9 +570,9 @@ void DebugUI::DebugMaterialBy3D([[maybe_unused]] Material* materialData) {
         ImGui::DragFloat("Metallic", &materialData->metallic, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Roughness", &materialData->roughness, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Environment Coefficient", &materialData->environmentCoefficient, 0.01f, 0.0f, 1.0f);
-        
+
         ImGui::DragFloat("Alpha Reference", &materialData->alphaReference, 0.01f, 0.0f, 1.0f);
-        const char* clampItems[] = { "WRAP (Default)", "CLAMP (Linear)", "CLAMP (Point)" };
+        const char* clampItems[] = {"WRAP (Default)", "CLAMP (Linear)", "CLAMP (Point)"};
         int currentClamp = materialData->useClampSampler;
         if (ImGui::Combo("Sampler Mode", &currentClamp, clampItems, IM_ARRAYSIZE(clampItems))) {
             materialData->useClampSampler = currentClamp;
@@ -604,7 +595,8 @@ void DebugUI::DebugMaterialBy2D([[maybe_unused]] Material* materialData) {
 void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 #ifdef USE_IMGUI
 
-    if (!materialData) return;
+    if (!materialData)
+        return;
 
     if (ImGui::CollapsingHeader("particle material")) {
         // 基本プロパティ
@@ -633,19 +625,23 @@ void DebugUI::DebugMaterialByParticle([[maybe_unused]] Material* materialData) {
 
         bool changed = false;
         if (ImGui::TreeNode("UV Transform (affine)")) {
-            if (ImGui::DragFloat2("UV Translate", &tx, 0.01f, -100.0f, 100.0f)) changed = true;
-            if (ImGui::DragFloat2("UV Scale", &sx, 0.01f, -100.0f, 100.0f)) changed = true;
-            if (ImGui::SliderAngle("UV Rotate (deg)", &rot)) changed = true;
-            ImGui::TextWrapped("注: 複雑な歪み(shear 等)がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
+            if (ImGui::DragFloat2("UV Translate", &tx, 0.01f, -100.0f, 100.0f))
+                changed = true;
+            if (ImGui::DragFloat2("UV Scale", &sx, 0.01f, -100.0f, 100.0f))
+                changed = true;
+            if (ImGui::SliderAngle("UV Rotate (deg)", &rot))
+                changed = true;
+            ImGui::TextWrapped(
+                "注: 複雑な歪み(shear 等)がある場合は完璧に逆変換できません。一般的な UV 編集用途に最適化しています。");
             ImGui::TreePop();
         }
 
         if (changed) {
             // Irufemi::Transform 構造を使って行列を再構成(function/Math.h の MakeAffineMatrix を利用)
             Irufemi::Transform uvT;
-            uvT.translate = { tx, ty, 0.0f };
-            uvT.scale = { sx, sy, 1.0f };
-            uvT.rotate = { 0.0f, 0.0f, rot }; // rad
+            uvT.translate = {tx, ty, 0.0f};
+            uvT.scale = {sx, sy, 1.0f};
+            uvT.rotate = {0.0f, 0.0f, rot}; // rad
 
             materialData->uvTransform = Irufemi::Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
         }
@@ -658,7 +654,7 @@ void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
         auto textureNames = textureManager_->GetTextureNamesForDebug();
-        
+
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {
@@ -683,7 +679,7 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
 #ifdef USE_IMGUI
     if (textureManager_ && resource) {
         auto textureNames = textureManager_->GetTextureNamesForDebug();
-        
+
         if (!textureNames.empty()) {
             const char* preview = textureNames[selectedTextureIndex].c_str();
             if (ImGui::BeginCombo("Texture", preview)) {
@@ -703,7 +699,6 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
     }
 #endif
 }
-
 
 // DirectionalLight
 void DebugUI::DebugDirectionalLight([[maybe_unused]] DirectionalLight* directionalLightData) {
@@ -741,19 +736,21 @@ void DebugUI::DebugUvTransform([[maybe_unused]] Irufemi::Matrix4x4& uvTransform)
         float rot = std::atan2(uvTransform.m[1][0], uvTransform.m[0][0]);
 
         bool changed = false;
-        if (ImGui::DragFloat2("UVTranslate", &tx, 0.01f)) changed = true;
+        if (ImGui::DragFloat2("UVTranslate", &tx, 0.01f))
+            changed = true;
         if (ImGui::DragFloat2("UVScale", &sx, 0.01f)) {
             sy = sx; // XとYを同じ値に保つ
             changed = true;
         }
-        if (ImGui::SliderAngle("UVRotate", &rot)) changed = true;
+        if (ImGui::SliderAngle("UVRotate", &rot))
+            changed = true;
 
         if (changed) {
             // Irufemi::Transform 構造を使って行列を再構成
             Irufemi::Transform uvT;
-            uvT.translate = { tx, ty, 0.0f };
-            uvT.scale = { sx, sy, 1.0f };
-            uvT.rotate = { 0.0f, 0.0f, rot }; // rad
+            uvT.translate = {tx, ty, 0.0f};
+            uvT.scale = {sx, sy, 1.0f};
+            uvT.rotate = {0.0f, 0.0f, rot}; // rad
             uvTransform = Irufemi::Math::MakeAffineMatrix(uvT.scale, uvT.rotate, uvT.translate);
         }
     }
@@ -770,20 +767,26 @@ void DebugUI::DebugSphereInfo([[maybe_unused]] Irufemi::Sphere& sphere) {
 #endif // USE_IMGUI
 }
 
-
-
 void DebugUI::SceneSelectorTab([[maybe_unused]] SceneManager* sm) {
 #ifdef USE_IMGUI
-    if (!sm) { return; }
+    if (!sm) {
+        return;
+    }
 
     if (ImGui::BeginTabItem("Scene Selector")) {
         const auto names = sm->GetRegisteredKeys();
-        if (names.empty()) { ImGui::EndTabItem(); return; }
+        if (names.empty()) {
+            ImGui::EndTabItem();
+            return;
+        }
 
         // 現在シーンのインデックス
         int currentIdx = 0;
         for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-            if (names[i] == sm->GetCurrent()) { currentIdx = i; break; }
+            if (names[i] == sm->GetCurrent()) {
+                currentIdx = i;
+                break;
+            }
         }
 
         if (ImGui::BeginCombo("Scene", names[currentIdx].c_str())) {
@@ -792,7 +795,9 @@ void DebugUI::SceneSelectorTab([[maybe_unused]] SceneManager* sm) {
                 if (ImGui::Selectable(names[i].c_str(), selected)) {
                     sm->Request(names[i]); // 次フレーム頭で切替
                 }
-                if (selected) { ImGui::SetItemDefaultFocus(); }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
             }
             ImGui::EndCombo();
         }
@@ -801,12 +806,10 @@ void DebugUI::SceneSelectorTab([[maybe_unused]] SceneManager* sm) {
 #endif // USE_IMGUI
 }
 
-
-void DebugUI::DebugPsoSettings(
-    [[maybe_unused]] Irufemi::BlendMode* blendMode,
-    [[maybe_unused]] PSOManager::DepthWrite* depthWrite,
-    [[maybe_unused]] PSOManager::CullMode* cullMode,
-    [[maybe_unused]] const char* unique_id) {
+void DebugUI::DebugPsoSettings([[maybe_unused]] Irufemi::BlendMode* blendMode,
+                               [[maybe_unused]] PSOManager::DepthWrite* depthWrite,
+                               [[maybe_unused]] PSOManager::CullMode* cullMode,
+                               [[maybe_unused]] const char* unique_id) {
 #ifdef USE_IMGUI
     if (!blendMode || !depthWrite || !cullMode) {
         return;
@@ -814,7 +817,7 @@ void DebugUI::DebugPsoSettings(
 
     // Blend Mode
     int blendIdx = static_cast<int>(*blendMode);
-    const char* blendNames[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen" };
+    const char* blendNames[] = {"None", "Normal", "Add", "Subtract", "Multiply", "Screen"};
     std::string blendLabel = "Blend Mode";
     blendLabel += unique_id;
     if (ImGui::Combo(blendLabel.c_str(), &blendIdx, blendNames, IM_ARRAYSIZE(blendNames))) {
@@ -823,7 +826,7 @@ void DebugUI::DebugPsoSettings(
 
     // Depth Write
     int depthIdx = (*depthWrite == PSOManager::DepthWrite::Enable) ? 0 : 1;
-    const char* depthNames[] = { "Enable", "Disable" };
+    const char* depthNames[] = {"Enable", "Disable"};
     std::string depthLabel = "Depth Write";
     depthLabel += unique_id;
     if (ImGui::Combo(depthLabel.c_str(), &depthIdx, depthNames, IM_ARRAYSIZE(depthNames))) {
@@ -832,7 +835,7 @@ void DebugUI::DebugPsoSettings(
 
     // Cull Mode
     int cullIdx = static_cast<int>(*cullMode);
-    const char* cullNames[] = { "Back", "Front", "None" };
+    const char* cullNames[] = {"Back", "Front", "None"};
     std::string cullLabel = "Cull Mode";
     cullLabel += unique_id;
     if (ImGui::Combo(cullLabel.c_str(), &cullIdx, cullNames, IM_ARRAYSIZE(cullNames))) {
@@ -843,13 +846,45 @@ void DebugUI::DebugPsoSettings(
 
 void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
 #ifdef USE_IMGUI
-    if (!engine) return;
+    if (!engine)
+        return;
 
     if (ImGui::BeginTabItem("Post Processing")) {
         auto* ppManager = engine->GetPostProcessManager();
-        if (!ppManager) { ImGui::EndTabItem(); return; }
+        if (!ppManager) {
+            ImGui::EndTabItem();
+            return;
+        }
 
-        const char* modeNames[] = { "None", "Grayscale", "Sepia", "Vignette", "Smoothing", "GaussianFilter", "DepthBasedOutline", "RadialBlur", "Dissolve", "Noise", "HSV", "ToneMapping", "Fade", "Slide", "Bloom", "Glitch", "DualKawaseBlur", "LuminanceBasedOutline", "Pixelation", "Pointillism", "Posterization", "NightVision", "Kaleidoscope", "ChromaticAberration", "DisplacementMap", "DirectionalBlur", "Halftone", "DepthOfField", "LightShafts" };
+        const char* modeNames[] = {"None",
+                                   "Grayscale",
+                                   "Sepia",
+                                   "Vignette",
+                                   "Smoothing",
+                                   "GaussianFilter",
+                                   "DepthBasedOutline",
+                                   "RadialBlur",
+                                   "Dissolve",
+                                   "Noise",
+                                   "HSV",
+                                   "ToneMapping",
+                                   "Fade",
+                                   "Slide",
+                                   "Bloom",
+                                   "Glitch",
+                                   "DualKawaseBlur",
+                                   "LuminanceBasedOutline",
+                                   "Pixelation",
+                                   "Pointillism",
+                                   "Posterization",
+                                   "NightVision",
+                                   "Kaleidoscope",
+                                   "ChromaticAberration",
+                                   "DisplacementMap",
+                                   "DirectionalBlur",
+                                   "Halftone",
+                                   "DepthOfField",
+                                   "LightShafts"};
         auto activeModes = ppManager->GetActiveModes();
 
         if (ImGui::Button("Clear All Effects")) {
@@ -942,7 +977,8 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 } else if (mode == PostProcessMode::Smoothing) {
                     auto& params = ppManager->GetSmoothingParams();
                     if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                        if (params.kernelSize < 1) params.kernelSize = 1;
+                        if (params.kernelSize < 1)
+                            params.kernelSize = 1;
                         if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                             params.kernelSize += 1;
                         }
@@ -951,7 +987,8 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     auto& params = ppManager->GetGaussianParams();
                     ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
                     if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                        if (params.kernelSize < 1) params.kernelSize = 1;
+                        if (params.kernelSize < 1)
+                            params.kernelSize = 1;
                         if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
                             params.kernelSize += 1;
                         }
@@ -970,8 +1007,9 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
                     ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
                     ImGui::ColorEdit4("Background Color", &params.backgroundColor.x);
-                    const char* noiseTypes[] = { "Noise 0", "Noise 1" };
-                    ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes, IM_ARRAYSIZE(noiseTypes));
+                    const char* noiseTypes[] = {"Noise 0", "Noise 1"};
+                    ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes,
+                                 IM_ARRAYSIZE(noiseTypes));
                 } else if (mode == PostProcessMode::Noise) {
                     auto& params = ppManager->GetNoiseParams();
                     ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
@@ -989,8 +1027,10 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                     ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
                     ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
                     if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 51)) {
-                        if (params.kernelSize < 1) params.kernelSize = 1;
-                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) params.kernelSize += 1;
+                        if (params.kernelSize < 1)
+                            params.kernelSize = 1;
+                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0)
+                            params.kernelSize += 1;
                     }
                 } else if (mode == PostProcessMode::Glitch) {
                     auto& params = ppManager->GetGlitchParams();
@@ -998,7 +1038,8 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
                 } else if (mode == PostProcessMode::DualKawaseBlur) {
                     auto& params = ppManager->GetDualKawaseBlurParams();
                     ImGui::DragFloat("Blur Radius Offset", &params.blurRadius, 0.01f, 0.0f, 5.0f);
-                    ImGui::SliderInt("Iteration Count", &params.iterationCount, 1, PostProcessManager::kMaxKawaseIterations);
+                    ImGui::SliderInt("Iteration Count", &params.iterationCount, 1,
+                                     PostProcessManager::kMaxKawaseIterations);
                     ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
                 } else if (mode == PostProcessMode::LuminanceBasedOutline) {
                     auto& params = ppManager->GetLuminanceOutlineParams();
@@ -1049,7 +1090,8 @@ void DebugUI::EndEngineDebugWindow() {
 
 void DebugUI::DebugLightning([[maybe_unused]] LightningParams* params) {
 #ifdef USE_IMGUI
-    if (!params) return;
+    if (!params)
+        return;
 
     if (ImGui::TreeNode("Lightning Crawl Settings")) {
         ImGui::Separator();
@@ -1066,31 +1108,30 @@ void DebugUI::DebugLightning([[maybe_unused]] LightningParams* params) {
         ImGui::DragFloat("Core Intensity", &params->coreIntensity, 0.1f, 0.0f, 100.0f);
         ImGui::DragFloat("Core Threshold", &params->coreThreshold, 0.001f, 0.0f, 1.0f);
         ImGui::DragFloat("Core Scale", &params->coreScale, 0.01f, 0.01f, 20.0f);
-        
+
         ImGui::TreePop();
     }
 #endif
 }
 
-
-
 namespace {
-    std::wstring GenerateScreenshotPath(const std::wstring& prefix) {
-        auto now = std::chrono::system_clock::now();
-        auto time = std::chrono::system_clock::to_time_t(now);
-        struct tm timeinfo;
-        localtime_s(&timeinfo, &time);
-        std::wstringstream wss;
-        wss << L"resources/screenshots/" << prefix << L"_";
-        wss << std::put_time(&timeinfo, L"%Y%m%d_%H%M%S");
-        wss << L".png";
-        return wss.str();
-    }
+std::wstring GenerateScreenshotPath(const std::wstring& prefix) {
+    auto now = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(now);
+    struct tm timeinfo;
+    localtime_s(&timeinfo, &time);
+    std::wstringstream wss;
+    wss << L"resources/screenshots/" << prefix << L"_";
+    wss << std::put_time(&timeinfo, L"%Y%m%d_%H%M%S");
+    wss << L".png";
+    return wss.str();
 }
+} // namespace
 
 void DebugUI::ScreenCaptureTab(ScreenCaptureManager* captureManager) {
 #ifdef USE_IMGUI
-    if (!captureManager) return;
+    if (!captureManager)
+        return;
 
     if (ImGui::BeginTabItem("Screen Capture")) {
         if (ImGui::Button("Capture (Scene Only)")) {

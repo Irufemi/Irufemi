@@ -1,15 +1,15 @@
 ﻿#pragma once
 
 #include "Renderer/System/Core/IRenderable.h"
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
-#include <functional>
 
-#include "Core/Type/Primitive2DType.h"
-#include "Renderer/System/Core/Object2DResource.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector3.h"
+#include "Core/Type/Primitive2DType.h"
+#include "Renderer/System/Core/Object2DResource.h"
 
 // 前方宣言
 class TextureManager;
@@ -31,7 +31,8 @@ public:
      * @param[in] type 初期形状タイプ
      * @param[in] textureName 使用するテクスチャのパス（デフォルトは白テクスチャ推奨）
      */
-    void Initialize(Irufemi::Primitive2DType type = Irufemi::Primitive2DType::Rect, const std::string& textureName = "resources/whiteTexture.png");
+    void Initialize(Irufemi::Primitive2DType type = Irufemi::Primitive2DType::Rect,
+                    const std::string& textureName = "resources/whiteTexture.png");
 
     /**
      * @brief 更新処理
@@ -59,62 +60,86 @@ public:
      * @brief D3D12Resource を取得する。
      * @return 取得された D3D12Resource
      */
-    Object2DResource* GetD3D12Resource() { return resource_.get(); }
+    Object2DResource* GetD3D12Resource() {
+        return resource_.get();
+    }
     /**
      * @brief Shape を取得する。
      * @return 取得された Shape
      */
-    Irufemi::Primitive2DType GetShape() const { return type_; }
+    Irufemi::Primitive2DType GetShape() const {
+        return type_;
+    }
     /**
      * @brief Size を取得する。
      * @return 取得された Size
      */
-    const Irufemi::Vector2& GetSize() const { return size_; }
+    const Irufemi::Vector2& GetSize() const {
+        return size_;
+    }
     /**
      * @brief Pivot を取得する。
      * @return 取得された Pivot
      */
-    const Irufemi::Vector2& GetPivot() const { return pivot_; }
+    const Irufemi::Vector2& GetPivot() const {
+        return pivot_;
+    }
     /**
      * @brief Position を取得する。
      * @return 取得された Position
      */
-    const Irufemi::Vector3& GetPosition() const { return resource_->transform_.translate; }
+    const Irufemi::Vector3& GetPosition() const {
+        return resource_->transform_.translate;
+    }
     /**
      * @brief Rotation を取得する。
      * @return 取得された Rotation
      */
-    const Irufemi::Vector3& GetRotation() const { return resource_->transform_.rotate; }
+    const Irufemi::Vector3& GetRotation() const {
+        return resource_->transform_.rotate;
+    }
     /**
      * @brief Scale を取得する。
      * @return 取得された Scale
      */
-    const Irufemi::Vector3& GetScale() const { return resource_->transform_.scale; }
+    const Irufemi::Vector3& GetScale() const {
+        return resource_->transform_.scale;
+    }
     /**
      * @brief Color を取得する。
      * @return 取得された Color
      */
-    const Irufemi::Vector4& GetColor() const { return resource_->GetMaterialData()->color; }
+    const Irufemi::Vector4& GetColor() const {
+        return resource_->GetMaterialData()->color;
+    }
     /**
      * @brief Subdivision を取得する。
      * @return 取得された Subdivision
      */
-    uint32_t GetSubdivision() const { return subdivision_; }
+    uint32_t GetSubdivision() const {
+        return subdivision_;
+    }
     /**
      * @brief Thickness を取得する。
      * @return 取得された Thickness
      */
-    float GetThickness() const { return thickness_; }
+    float GetThickness() const {
+        return thickness_;
+    }
     /**
      * @brief IsTopMost かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsTopMost() const { return isTopMost_; }
+    bool IsTopMost() const {
+        return isTopMost_;
+    }
     /**
      * @brief TextureHandle を取得する。
      * @return 取得された TextureHandle
      */
-    ResourceHandle GetTextureHandle() const { return resource_ ? resource_->textureHandle_ : ResourceHandle(); }
+    ResourceHandle GetTextureHandle() const {
+        return resource_ ? resource_->textureHandle_ : ResourceHandle();
+    }
 
     // --- プロパティのセッター ---
 
@@ -142,7 +167,9 @@ public:
      * @brief Position を設定する。
      * @param[in] position 設定する Position の値
      */
-    void SetPosition(const Irufemi::Vector2& position) { SetPosition({position.x, position.y, 0.0f}); }
+    void SetPosition(const Irufemi::Vector2& position) {
+        SetPosition({position.x, position.y, 0.0f});
+    }
 
     /**
      * @brief 回転（Z軸のみ想定）を設定する
@@ -157,7 +184,9 @@ public:
      * @brief Scale を設定する。
      * @param[in] scale 設定する Scale の値
      */
-    void SetScale(const Irufemi::Vector2& scale) { SetScale({scale.x, scale.y, 1.0f}); }
+    void SetScale(const Irufemi::Vector2& scale) {
+        SetScale({scale.x, scale.y, 1.0f});
+    }
 
     /**
      * @brief ベースカラーを設定する
@@ -172,7 +201,9 @@ public:
     /**
      * @brief 最前面描画（UIなど）のフラグを設定する
      */
-    void SetTopMost(bool isTopMost) { isTopMost_ = isTopMost; }
+    void SetTopMost(bool isTopMost) {
+        isTopMost_ = isTopMost;
+    }
 
     /**
      * @brief リング形状などでの「太さ（線幅など）」を設定する（ピクセル単位等）
@@ -189,22 +220,30 @@ public:
      * @brief TextureManager を設定する。
      * @param[in] texM 設定する TextureManager の値
      */
-    static void SetTextureManager(TextureManager* texM) { textureManager_ = texM; }
+    static void SetTextureManager(TextureManager* texM) {
+        textureManager_ = texM;
+    }
     /**
      * @brief DrawManager を設定する。
      * @param[in] drawM 設定する DrawManager の値
      */
-    static void SetDrawManager(DrawManager* drawM) { drawManager_ = drawM; }
+    static void SetDrawManager(DrawManager* drawM) {
+        drawManager_ = drawM;
+    }
     /**
      * @brief DebugUI を設定する。
      * @param[in] ui 設定する DebugUI の値
      */
-    static void SetDebugUI(DebugUI* ui) { ui_ = ui; }
+    static void SetDebugUI(DebugUI* ui) {
+        ui_ = ui;
+    }
     /**
      * @brief Engine を設定する。
      * @param[in] engine 設定する Engine の値
      */
-    static void SetEngine(class IrufemiEngine* engine) { engine_ = engine; }
+    static void SetEngine(class IrufemiEngine* engine) {
+        engine_ = engine;
+    }
 
 private:
     /**
@@ -240,13 +279,13 @@ private:
     std::unique_ptr<Object2DResource> resource_ = nullptr;
 
     Irufemi::Primitive2DType type_ = Irufemi::Primitive2DType::Rect;
-    Irufemi::Vector2 size_ = { 100.0f, 100.0f };
-    Irufemi::Vector2 pivot_ = { 0.5f, 0.5f };
-    float thickness_ = 10.0f;     //!< RingやLineでの太さ
-    uint32_t subdivision_ = 64;   //!< 円系の分割数
+    Irufemi::Vector2 size_ = {100.0f, 100.0f};
+    Irufemi::Vector2 pivot_ = {0.5f, 0.5f};
+    float thickness_ = 10.0f;   //!< RingやLineでの太さ
+    uint32_t subdivision_ = 64; //!< 円系の分割数
 
-    bool isTopMost_ = false;      //!< UI用など、最前面描画フラグ
-    bool isMeshDirty_ = true;     //!< メッシュ再構築フラグ
+    bool isTopMost_ = false;       //!< UI用など、最前面描画フラグ
+    bool isMeshDirty_ = true;      //!< メッシュ再構築フラグ
     int selectedTextureIndex_ = 0; //!< デバッグUI用
 
     // 静的マネージャ参照

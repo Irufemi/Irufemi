@@ -1,14 +1,13 @@
 #pragma once
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <wrl.h>
-#include <array>          
-#include <cstddef>        
-#include <memory>
-#include <vector>
 #include "Core/Type/BlendMode.h"
 #include "Renderer/Pipeline/PSOManager.h"
-
+#include <array>
+#include <cstddef>
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <memory>
+#include <vector>
+#include <wrl.h>
 
 // 前方宣言
 class TextureManager;
@@ -20,24 +19,28 @@ class Object3DResource;
 class Object2DResource;
 struct Material;
 struct ObjMaterial;
-namespace Irufemi { struct Transform; }
-namespace Irufemi { struct Matrix4x4; }
+namespace Irufemi {
+struct Transform;
+}
+namespace Irufemi {
+struct Matrix4x4;
+}
 struct DirectionalLight;
 struct PointLight;
 struct SpotLight;
 struct AreaLight;
-namespace Irufemi { struct Sphere; }
+namespace Irufemi {
+struct Sphere;
+}
 struct Animation;
 struct LightningParams;
 
 #ifdef USE_IMGUI
 
-#include "imgui/imgui.h"
 #include "imgui/ImGuizmo.h"
-
+#include "imgui/imgui.h"
 
 #endif // USE_IMGUI
-
 
 /**
  * @class DebugUI
@@ -45,9 +48,8 @@ struct LightningParams;
  * @details 画面上に各種パラメータ（ライト、トランスフォーム、マテリアル等）を調整・確認するためのUIを表示します。
  *          パフォーマンス計測（FPS/フレーム時間）機能も備えています。
  */
-class DebugUI{
+class DebugUI {
 private: // メンバ変数
-
     // ポインタ参照(非所有)
 
     DirectXCommon* dxCommon_ = nullptr;
@@ -62,7 +64,6 @@ private: // メンバ変数
     uint32_t srvIndex_ = 0xFFFFFFFF;
 
 public: // メンバ関数
-
     /** @name 初期化・終了処理 */
     ///@{
     /**
@@ -73,7 +74,9 @@ public: // メンバ関数
     /**
      * @brief TextureManagerをセットする
      */
-    void SetTextureManager(TextureManager* textureManager) { this->textureManager_ = textureManager; }
+    void SetTextureManager(TextureManager* textureManager) {
+        this->textureManager_ = textureManager;
+    }
 
     /**
      * @brief 終了処理
@@ -111,12 +114,9 @@ public: // メンバ関数
     /**
      * @brief ライト全体の編集UIを表示する
      */
-    static void DebugLights(
-        DirectionalLight* directionalLight,
-        std::vector<std::unique_ptr<PointLight>>& pointLights,
-        std::vector<std::unique_ptr<SpotLight>>& spotLights,
-        std::vector<std::unique_ptr<AreaLight>>& areaLights
-    );
+    static void DebugLights(DirectionalLight* directionalLight, std::vector<std::unique_ptr<PointLight>>& pointLights,
+                            std::vector<std::unique_ptr<SpotLight>>& spotLights,
+                            std::vector<std::unique_ptr<AreaLight>>& areaLights);
 
     /**
      * @brief 3Dトランスフォームの編集
@@ -137,7 +137,7 @@ public: // メンバ関数
     /** @name マテリアル・テクスチャのデバッグ */
     ///@{
     static void DebugMaterialBy3D(Material* material);
-    
+
     /**
      * @brief DebugMaterialBy2D を実行する。
      */
@@ -162,7 +162,6 @@ public: // メンバ関数
      */
     void DebugTexture(Object2DResource* resource, int& selectedTextureIndex);
 
-
     /**
      * @brief DebugDirectionalLight を実行する。
      */
@@ -181,14 +180,9 @@ public: // メンバ関数
     /**
      * @brief マテリアルの個別オーバーライド設定を編集するUI
      */
-    static void DebugMaterialOverrides(
-        float* envCoef,
-        int32_t* lightingMode,
-        int32_t* useClamp,
-        int32_t* enableLighting,
-        const char* unique_id = ""
-    );
-    
+    static void DebugMaterialOverrides(float* envCoef, int32_t* lightingMode, int32_t* useClamp,
+                                       int32_t* enableLighting, const char* unique_id = "");
+
     /**
      * @brief 電撃エフェクト調整UI
      */
@@ -232,15 +226,10 @@ public: // メンバ関数
      */
     void EndEngineDebugWindow();
 
-
     /**
      * @brief PSO設定（描画ステート）の編集UI
      */
-    static void DebugPsoSettings(
-        Irufemi::BlendMode* blendMode,
-        PSOManager::DepthWrite* depthWrite,
-        PSOManager::CullMode* cullMode,
-        const char* unique_id = "##PsoSettings"
-    );
+    static void DebugPsoSettings(Irufemi::BlendMode* blendMode, PSOManager::DepthWrite* depthWrite,
+                                 PSOManager::CullMode* cullMode, const char* unique_id = "##PsoSettings");
     ///@}
 };

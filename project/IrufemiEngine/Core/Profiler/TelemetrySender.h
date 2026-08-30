@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
-#include <thread>
-#include <mutex>
 #include <atomic>
 #include <condition_variable>
-#include <vector>
-#include <nlohmann/json.hpp>
 #include <memory>
+#include <mutex>
+#include <nlohmann/json.hpp>
+#include <string>
+#include <thread>
+#include <vector>
 
 /**
  * @class TelemetrySender
@@ -25,7 +25,7 @@ public:
      * @param targetPort 送信先ポート（デフォルト: 8888）
      */
     void Initialize(const std::string& targetIp = "127.0.0.1", uint16_t targetPort = 8888);
-    
+
     /**
      * @brief スレッドを安全に停止し、ソケットを閉じます。
      */
@@ -63,8 +63,8 @@ private:
     std::thread workerThread_;
     std::mutex dataMutex_;
     std::condition_variable cv_;
-    std::atomic<bool> isRunning_{ false };
-    std::atomic<bool> triggerSend_{ false };
+    std::atomic<bool> isRunning_{false};
+    std::atomic<bool> triggerSend_{false};
 
     // メインスレッドから書き込まれるデータ
     nlohmann::json currentMetrics_;
@@ -73,6 +73,6 @@ private:
     // UDP通信用データ (WinSock依存を隠蔽するためPimplを使用)
     struct NetworkData;
     std::unique_ptr<NetworkData> networkData_;
-    
+
     bool isWsaInitialized_ = false;
 };

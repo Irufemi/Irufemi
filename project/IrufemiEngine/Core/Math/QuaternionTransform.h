@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Core/Math/Vector3.h"
 #include "Core/Math/Quaternion.h"
-
+#include "Core/Math/Vector3.h"
 
 namespace Irufemi {
 struct QuaternionTransform {

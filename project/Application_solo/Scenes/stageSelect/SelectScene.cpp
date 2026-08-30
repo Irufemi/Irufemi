@@ -13,7 +13,6 @@ void SelectScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void SelectScene::Update() {
     BaseScene::Update();
-
 }
 
 void SelectScene::Draw() {

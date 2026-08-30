@@ -34,7 +34,7 @@ private:
     std::unique_ptr<Sprite> bgSprite_;
     std::unique_ptr<Sprite> nowLoadingText_;
     std::vector<std::unique_ptr<Primitive2DObject>> dots_;
-    
+
     float animationTimer_ = 0.0f;
     int dotCount_ = 0;
 };

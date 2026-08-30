@@ -1,8 +1,8 @@
 #pragma once
+#include "Core/Shape/Sphere.h"
 #include "Framework/Component/Component.h"
 #include <memory>
 #include <string>
-#include "Core/Shape/Sphere.h"
 
 // 前方宣言
 class StaticModelObject;
@@ -31,12 +31,14 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
-    
+
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override { return true; }
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
 
     /**
      * @brief EnableEffectMask を設定する。
@@ -58,19 +60,25 @@ public:
      * @brief Visible を設定する。
      * @param[in] visible 設定する Visible の値
      */
-    void SetVisible(bool visible) { isVisible_ = visible; }
+    void SetVisible(bool visible) {
+        isVisible_ = visible;
+    }
     /**
      * @brief IsVisible かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsVisible() const { return isVisible_; }
+    bool IsVisible() const {
+        return isVisible_;
+    }
 
     /**
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(obj_.get()); }
-    
+    IRenderable* GetRenderable() override {
+        return reinterpret_cast<IRenderable*>(obj_.get());
+    }
+
     // エディタのRaycast用
     /**
      * @brief WorldSphere を取得する。
@@ -86,7 +94,9 @@ public:
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "MeshRendererComponent"; }
+    std::string GetComponentName() const override {
+        return "MeshRendererComponent";
+    }
     /**
      * @brief Serialize を実行する。
      */
@@ -105,15 +115,17 @@ public:
      * @brief 現在読み込まれているモデル名を取得します。
      * @return モデル名
      */
-    const std::string& GetModelName() const { return modelName_; }
+    const std::string& GetModelName() const {
+        return modelName_;
+    }
 
 #ifdef EditorMode
     friend class MeshRendererComponentEditor;
 #endif
 
 private:
-    std::unique_ptr<StaticModelObject> obj_;                 ///< 実際の描画を担う既存クラス
-    std::string modelName_ = "";           ///< 読み込むモデル名
+    std::unique_ptr<StaticModelObject> obj_; ///< 実際の描画を担う既存クラス
+    std::string modelName_ = "";             ///< 読み込むモデル名
     bool castShadows_ = true;
     bool isVisible_ = true;
 };

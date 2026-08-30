@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Renderer/Camera/Camera.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "Renderer/Camera/Camera.h"
 
 /**
  * @class CameraManager

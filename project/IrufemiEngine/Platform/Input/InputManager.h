@@ -1,10 +1,10 @@
 #pragma once
-#include <memory>
-#include "Platform/Input/Keyboard.h"
-#include "Platform/Input/GamePad.h"
-#include "Platform/Input/Mouse.h"
 #include "Core/Math/Vector2.h"
+#include "Platform/Input/GamePad.h"
 #include "Platform/Input/InputMappingContext.h"
+#include "Platform/Input/Keyboard.h"
+#include "Platform/Input/Mouse.h"
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -60,17 +60,23 @@ public:
 
     /** @name デバイス取得（推奨API） */
     ///@{
-    Keyboard* GetKeyboard() { return keyboard_.get(); }
+    Keyboard* GetKeyboard() {
+        return keyboard_.get();
+    }
     /**
      * @brief GamePad を取得する。
      * @return 取得された GamePad
      */
-    GamePad*  GetGamePad()  { return gamepad_.get(); }
+    GamePad* GetGamePad() {
+        return gamepad_.get();
+    }
     /**
      * @brief Mouse を取得する。
      * @return 取得された Mouse
      */
-    Mouse*    GetMouse()    { return mouse_.get(); }
+    Mouse* GetMouse() {
+        return mouse_.get();
+    }
     ///@}
 
     /** @name キーボード入力（互換用API） */
@@ -130,12 +136,12 @@ public:
      * @brief LeftStickX を取得する。
      * @return 取得された LeftStickX
      */
-    float GetLeftStickX()  const;
+    float GetLeftStickX() const;
     /**
      * @brief LeftStickY を取得する。
      * @return 取得された LeftStickY
      */
-    float GetLeftStickY()  const;
+    float GetLeftStickY() const;
     /**
      * @brief RightStickX を取得する。
      * @return 取得された RightStickX
@@ -151,7 +157,7 @@ public:
      * @brief LeftTrigger を取得する。
      * @return 取得された LeftTrigger
      */
-    float GetLeftTrigger()  const;
+    float GetLeftTrigger() const;
     /**
      * @brief RightTrigger を取得する。
      * @return 取得された RightTrigger
@@ -161,11 +167,11 @@ public:
     /**
      * @brief StartDown を実行する。
      */
-    bool StartDown()     const;
+    bool StartDown() const;
     /**
      * @brief StartPressed を実行する。
      */
-    bool StartPressed()  const;
+    bool StartPressed() const;
     /**
      * @brief StartReleased を実行する。
      */
@@ -174,15 +180,15 @@ public:
     /**
      * @brief DPadUp を実行する。
      */
-    bool DPadUp()    const;
+    bool DPadUp() const;
     /**
      * @brief DPadDown を実行する。
      */
-    bool DPadDown()  const;
+    bool DPadDown() const;
     /**
      * @brief DPadLeft を実行する。
      */
-    bool DPadLeft()  const;
+    bool DPadLeft() const;
     /**
      * @brief DPadRight を実行する。
      */
@@ -190,15 +196,15 @@ public:
     /**
      * @brief DPadUpPressed を実行する。
      */
-    bool DPadUpPressed()    const;
+    bool DPadUpPressed() const;
     /**
      * @brief DPadDownPressed を実行する。
      */
-    bool DPadDownPressed()  const;
+    bool DPadDownPressed() const;
     /**
      * @brief DPadLeftPressed を実行する。
      */
-    bool DPadLeftPressed()  const;
+    bool DPadLeftPressed() const;
     /**
      * @brief DPadRightPressed を実行する。
      */
@@ -207,12 +213,12 @@ public:
 
     /** @name マウス入力（互換用API） */
     ///@{
-    bool IsMouseButtonDown(Mouse::Button button)     const;
+    bool IsMouseButtonDown(Mouse::Button button) const;
     /**
      * @brief IsMouseButtonPressed かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsMouseButtonPressed(Mouse::Button button)  const;
+    bool IsMouseButtonPressed(Mouse::Button button) const;
     /**
      * @brief IsMouseButtonReleased かどうかを判定する。
      * @return 判定結果 (true/false)
@@ -222,21 +228,22 @@ public:
      * @brief MousePosition を取得する。
      * @return 取得された MousePosition
      */
-    const Irufemi::Vector2& GetMousePosition()   const;
+    const Irufemi::Vector2& GetMousePosition() const;
     /**
      * @brief MouseDelta を取得する。
      * @return 取得された MouseDelta
      */
-    const Irufemi::Vector2& GetMouseDelta()      const;
+    const Irufemi::Vector2& GetMouseDelta() const;
     /**
      * @brief MouseWheelDelta を取得する。
      * @return 取得された MouseWheelDelta
      */
-    float GetMouseWheelDelta()          const;
-    
+    float GetMouseWheelDelta() const;
+
     /** @brief エディタ用：仮想的なマウスローカル座標を上書き設定する */
     void SetVirtualMousePosition(const Irufemi::Vector2& pos, bool enable) {
-        if (mouse_) mouse_->SetVirtualPosition(pos, enable);
+        if (mouse_)
+            mouse_->SetVirtualPosition(pos, enable);
     }
     ///@}
 
@@ -245,12 +252,12 @@ private:
     float GetPhysicalInputValue(InputId id) const;
 
     std::unique_ptr<Keyboard> keyboard_{};
-    std::unique_ptr<GamePad>  gamepad_{};
-    std::unique_ptr<Mouse>    mouse_{};
+    std::unique_ptr<GamePad> gamepad_{};
+    std::unique_ptr<Mouse> mouse_{};
     HWND hwnd_ = nullptr;
 
     InputMappingContext mappingContext_{};
-    
+
     // 前フレームと現在のフレームのアクション値を保持（Triggered等の判定用）
     std::unordered_map<std::string, InputActionValue> currentActionValues_{};
     std::unordered_map<std::string, InputActionValue> previousActionValues_{};

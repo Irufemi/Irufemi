@@ -1,6 +1,6 @@
+#include "Core/GameApplication.h"
 #include <Windows.h>
 #include <memory>
-#include "Core/GameApplication.h"
 /**
  * @brief Windowsアプリケーションのエントリーポイント
  * @param hInstance インスタンスハンドル
@@ -10,10 +10,10 @@
  * @return int 終了コード
  * @details この関数からGameApplicationを生成し、ゲームループを開始します。
  */
-#include <stdexcept>
-#include <string>
 #include "Core/Utility/Log.h"
 #include <iostream>
+#include <stdexcept>
+#include <string>
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     try {

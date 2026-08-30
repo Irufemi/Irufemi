@@ -1,6 +1,6 @@
 #include "Renderer/Pipeline/RenderGraph/UIPass.h"
-#include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 
 void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
@@ -13,7 +13,7 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     }
 
     auto cmdList = engine->GetCommandList();
-    
+
     // UI の描画先を設定
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = drawManager->GetDxCommon()->GetDSVCPUDescriptorHandle(0);
@@ -60,8 +60,9 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     cmdList->RSSetScissorRects(1, &scissor);
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
-        if (queue.empty()) return;
-        
+        if (queue.empty())
+            return;
+
         Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
@@ -69,22 +70,23 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         D3D12_GPU_VIRTUAL_ADDRESS currentCustomCBV = 0;
         bool psoApplied = false;
         bool first = true;
-        
+
         for (const auto& p : queue) {
-            bool stateChanged = first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
+            bool stateChanged =
+                first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
             bool psoChanged = (p.customPSO != currentCustomPSO);
-            
+
             if (stateChanged || psoChanged || !psoApplied) {
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
-                
+
                 if (p.customPSO) {
                     engine->GetCommandList()->SetPipelineState(p.customPSO);
                 } else {
                     engine->ApplyPSO(psoName);
                 }
-                
+
                 currentBlend = p.blendMode;
                 currentDepth = p.depthWrite;
                 currentCull = p.cullMode;
@@ -105,12 +107,15 @@ void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // 8. Sprites
     DrawWithPSO(drawManager->GetSpriteQueue(), [&](const auto& p) { drawManager->DrawSprite(p); }, "Sprite");
-    
+
     // 8.01 SpriteBatch
-    DrawWithPSO(drawManager->GetSpriteBatchQueue(), [&](const auto& p) { drawManager->DrawSpriteBatch(p); }, "SpriteBatch");
+    DrawWithPSO(
+        drawManager->GetSpriteBatchQueue(), [&](const auto& p) { drawManager->DrawSpriteBatch(p); }, "SpriteBatch");
 
     // 8.02 Primitive2DBatch
-    DrawWithPSO(drawManager->GetPrimitive2DBatchQueue(), [&](const auto& p) { drawManager->DrawPrimitive2DBatch(p); }, "SpriteBatch");
+    DrawWithPSO(
+        drawManager->GetPrimitive2DBatchQueue(), [&](const auto& p) { drawManager->DrawPrimitive2DBatch(p); },
+        "SpriteBatch");
 
     // 8.1 Texts
     DrawWithPSO(drawManager->GetTextQueue(), [&](const auto& p) { drawManager->DrawText(p); }, "Text");

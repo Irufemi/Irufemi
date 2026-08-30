@@ -1,8 +1,8 @@
 #pragma once
-#include "Framework/Component/Component.h"
-#include <string>
 #include "Core/Math/Vector4.h"
+#include "Framework/Component/Component.h"
 #include "Framework/UI/UIAnimator.h"
+#include <string>
 
 class TransformComponent;
 class SpriteRendererComponent;
@@ -24,12 +24,14 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
-    
+
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "ButtonComponent"; }
+    std::string GetComponentName() const override {
+        return "ButtonComponent";
+    }
     /**
      * @brief OnRegisterProperties を実行する。
      */
@@ -39,34 +41,38 @@ public:
      * @brief IsHovered かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsHovered() const { return isHovered_; }
+    bool IsHovered() const {
+        return isHovered_;
+    }
     /**
      * @brief IsClicked かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsClicked() const { return isClicked_; }
+    bool IsClicked() const {
+        return isClicked_;
+    }
 
 private:
     /**
      * @brief CheckBounds を実行する。
      */
     bool CheckBounds(const Irufemi::Vector2& mousePos);
-    
+
     Irufemi::Vector4 normalColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    Irufemi::Vector4 hoverColor_  = {0.8f, 0.8f, 0.8f, 1.0f};
-    Irufemi::Vector4 clickColor_{ 0.5f, 0.5f, 0.5f, 1.0f };
+    Irufemi::Vector4 hoverColor_ = {0.8f, 0.8f, 0.8f, 1.0f};
+    Irufemi::Vector4 clickColor_{0.5f, 0.5f, 0.5f, 1.0f};
 
     bool enableHoverPulse_ = true; // ホバー時にサイン波で明滅するかどうか
     bool enableIdlePulse_ = true;  // 待機中（ホバーしていない時）も明滅するかどうか
 
     // 当たり判定のスケール調整（画像自体の余白などを省くため）
-    Irufemi::Vector2 hitboxScale_{ 1.0f, 1.0f };
+    Irufemi::Vector2 hitboxScale_{1.0f, 1.0f};
 
     // --- 内部状態 ---
     UIAnimator animator_;
 
     bool isHovered_ = false;
-    bool isClicked_ = false; // クリックされた瞬間
+    bool isClicked_ = false;         // クリックされた瞬間
     bool isPressedOnButton_ = false; // ボタン上で押下中かどうか
     SpriteRendererComponent* sprite_ = nullptr;
 };

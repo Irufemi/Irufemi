@@ -1,6 +1,6 @@
 #pragma once
-#include <Windows.h>
 #include "Core/Math/Vector2.h"
+#include <Windows.h>
 
 /**
  * @class Mouse
@@ -47,9 +47,13 @@ public:
     /** @name カーソル座標・移動量 */
     ///@{
     /** @brief 現在のマウス座標（スクリーン空間、または設定された仮想ローカル空間）を取得 */
-    const Irufemi::Vector2& GetPosition() const { return useVirtualPosition_ ? virtualPosition_ : position_; }
+    const Irufemi::Vector2& GetPosition() const {
+        return useVirtualPosition_ ? virtualPosition_ : position_;
+    }
     /** @brief 前フレームからの移動量を取得 */
-    const Irufemi::Vector2& GetDelta() const { return delta_; }
+    const Irufemi::Vector2& GetDelta() const {
+        return delta_;
+    }
     ///@}
 
     /** @name ホイール操作 */
@@ -57,7 +61,9 @@ public:
     /** @brief ホイールの回転差分を取得 */
     float GetWheelDelta() const;
     /** @brief ホイール差分を設定する（Windows メッセージから呼び出し） */
-    void SetWheelDelta(float delta) { wheelDelta_ = delta; }
+    void SetWheelDelta(float delta) {
+        wheelDelta_ = delta;
+    }
     ///@}
 
     /** @name カーソル制御 */
@@ -68,7 +74,7 @@ public:
      */
     void SetLocked(bool locked);
     ///@}
-    
+
     /** @name 仮想マウス座標制御（エディタ用） */
     ///@{
     /**
@@ -79,7 +85,7 @@ public:
         useVirtualPosition_ = enable;
     }
     ///@}
-    
+
     /**
      * @brief Raw Input からの生移動量を蓄積する
      */
@@ -98,7 +104,7 @@ private:
     Irufemi::Vector2 rawDelta_{}; // Raw Input からの生移動量
     float wheelDelta_ = 0.0f;
     bool isLocked_ = true; // マウスを中央に固定するかどうか
-    
-    bool useVirtualPosition_ = false; // エディタ等からの仮想座標を使用するか
-    Irufemi::Vector2 virtualPosition_{};       // 仮想座標
+
+    bool useVirtualPosition_ = false;    // エディタ等からの仮想座標を使用するか
+    Irufemi::Vector2 virtualPosition_{}; // 仮想座標
 };

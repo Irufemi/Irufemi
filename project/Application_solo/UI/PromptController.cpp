@@ -1,8 +1,8 @@
 #include "UI/PromptController.h"
-#include "Platform/Input/InputManager.h"
-#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Engine/Irufemi.h"
+#include "Platform/Input/InputManager.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 
 PromptController::PromptController() {
     animator_.Reset();
@@ -24,8 +24,9 @@ void PromptController::Update(InputManager* input) {
         // --- 待機中 ---
         isVisible_ = true;
         float alpha = animator_.GetPulseAlpha(0.6f, 0.4f, 3.0f);
-        
-        if (targetObj_) targetObj_->SetAlpha(alpha);
+
+        if (targetObj_)
+            targetObj_->SetAlpha(alpha);
         if (targetSprite_) {
             Irufemi::Vector4 color = targetSprite_->GetColor();
             color.w = alpha;
@@ -42,12 +43,13 @@ void PromptController::Update(InputManager* input) {
         // --- 決定後 ---
         float dt = BaseModel::GetIrufemiEngine()->GetDeltaTime();
         transitionDelayTimer_ += dt;
-        
+
         // 高速フラッシュ
         isVisible_ = animator_.GetFlashVisibility(40.0f);
-        
+
         // アルファ値は最大にしておく
-        if (targetObj_) targetObj_->SetAlpha(1.0f);
+        if (targetObj_)
+            targetObj_->SetAlpha(1.0f);
         if (targetSprite_) {
             Irufemi::Vector4 color = targetSprite_->GetColor();
             color.w = 1.0f;
@@ -57,10 +59,13 @@ void PromptController::Update(InputManager* input) {
 }
 
 void PromptController::Draw() {
-    if (!isVisible_) return;
+    if (!isVisible_)
+        return;
 
-    if (targetObj_) targetObj_->Draw();
-    if (targetSprite_) targetSprite_->Draw();
+    if (targetObj_)
+        targetObj_->Draw();
+    if (targetSprite_)
+        targetSprite_->Draw();
 }
 
 bool PromptController::ShouldTransition() const {

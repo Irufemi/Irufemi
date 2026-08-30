@@ -1,9 +1,9 @@
-﻿#include "Core/Utility/ErrorUtility.h"
-#include "Renderer/Object/Batch/PrimitiveBatch.h"
-#include <cassert>
+﻿#include "Renderer/Object/Batch/PrimitiveBatch.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Resource/Texture/TextureManager.h"
+#include "Core/Utility/ErrorUtility.h"
 #include "Renderer/DrawManager.h"
+#include "Resource/Texture/TextureManager.h"
+#include <cassert>
 
 void PrimitiveBatch::Initialize(Irufemi::PrimitiveType type, const std::string& textureName) {
     type_ = type;
@@ -64,7 +64,9 @@ float PrimitiveBatch::GetBoundingSphereRadius() const {
 }
 
 void PrimitiveBatch::Draw() {
-    if (instances_.empty() && instanceWorlds_.empty()) { return; }
+    if (instances_.empty() && instanceWorlds_.empty()) {
+        return;
+    }
 
     SyncBeforeDraw();
 
@@ -75,18 +77,19 @@ void PrimitiveBatch::Draw() {
         res = &primitiveManager_->GetStandardResource(type_);
     }
 
-    if (!res || !res->vertexResource) return;
+    if (!res || !res->vertexResource)
+        return;
 
     RenderPackets::PrimitiveBatchPacket p{};
     // We need to make sure DrawManager understands PrimitiveBatchPacket
     p.vertexBufferView = res->vertexBufferView;
     p.indexBufferView = res->indexBufferView;
     p.indexCount = res->indexCount;
-    
+
     p.materialAddress = GetMaterialVAddress();
     p.instancingSrvHandleGPU = GetInstancingSrvHandleGPU();
     p.instanceCount = GetInstanceCount();
-    
+
     p.blendMode = GetBlendMode();
     p.depthWrite = GetDepthWrite();
     p.cullMode = GetCullMode();

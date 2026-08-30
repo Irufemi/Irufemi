@@ -37,24 +37,30 @@ public:
      * @brief 描画処理（空実装）
      */
     void Draw() override {}
-    
+
     /**
      * @brief レンダラブルなオブジェクトを取得する（非対応）
      * @return 常にnullptr
      */
-    IRenderable* GetRenderable() override { return nullptr; }
+    IRenderable* GetRenderable() override {
+        return nullptr;
+    }
 
     /**
      * @brief エディタモードでもUpdateを実行するかどうか
      * @return true (エディタ編集中もパーティクルへの影響を可視化するため)
      */
-    bool CanUpdateInEditMode() const override { return true; }
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
 
     /**
      * @brief コンポーネント名の取得
      * @return "ParticleFieldComponent"
      */
-    std::string GetComponentName() const override { return "ParticleFieldComponent"; }
+    std::string GetComponentName() const override {
+        return "ParticleFieldComponent";
+    }
 
     /**
      * @brief インスペクタ用プロパティの登録
@@ -83,10 +89,12 @@ public:
      * @brief フィールドデータへの参照を取得する
      * @return 更新や取得のための ParticleField 構造体への参照
      */
-    ParticleField& GetFieldData() { return fieldData_; }
+    ParticleField& GetFieldData() {
+        return fieldData_;
+    }
 
 private:
     GPUParticleManager::FieldHandle fieldHandle_;
-    
+
     ParticleField fieldData_;
 };

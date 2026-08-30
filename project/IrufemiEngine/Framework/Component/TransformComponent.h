@@ -1,10 +1,10 @@
 #pragma once
-#include "Framework/Component/Component.h"
-#include "Core/Math/Vector3.h"
+#include "Core/Math/MathFunction.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Quaternion.h"
-#include "Core/Math/MathFunction.h"
+#include "Core/Math/Vector3.h"
 #include "Core/System/ComponentPool.h"
+#include "Framework/Component/Component.h"
 
 class TransformComponent : public Component {
 public:
@@ -13,7 +13,7 @@ public:
      */
     void Initialize() override {}
     // Update() は一括更新 (UpdateAll) に移行したため完全に削除し、GameObjectのUpdateループから外す
-    
+
     /**
      * @brief 自身の行列を計算する（Dirtyフラグベースの遅延評価付き）
      * @param force 親が変更された等の理由による強制更新フラグ
@@ -36,45 +36,55 @@ public:
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override { return true; }
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
 
     // --- Getters ---
     /**
      * @brief Position を取得する。
      * @return 取得された Position
      */
-    const Irufemi::Vector3& GetPosition() const { return position_; }
+    const Irufemi::Vector3& GetPosition() const {
+        return position_;
+    }
     /**
      * @brief Rotation (Euler) を取得する。(後方互換用)
      * @return 取得された Rotation
      */
-    Irufemi::Vector3 GetRotation() const { return Irufemi::Math::ToEuler(rotation_); }
+    Irufemi::Vector3 GetRotation() const {
+        return Irufemi::Math::ToEuler(rotation_);
+    }
     /**
      * @brief Rotation (Quaternion) を取得する。
      * @return 取得された Rotation
      */
-    const Irufemi::Quaternion& GetRotationQuat() const { return rotation_; }
+    const Irufemi::Quaternion& GetRotationQuat() const {
+        return rotation_;
+    }
     /**
      * @brief Scale を取得する。
      * @return 取得された Scale
      */
-    const Irufemi::Vector3& GetScale() const { return scale_; }
+    const Irufemi::Vector3& GetScale() const {
+        return scale_;
+    }
 
     /**
      * @brief WorldMatrix を取得する。
      * @return 取得された WorldMatrix
      */
-    const Irufemi::Matrix4x4& GetWorldMatrix() const { 
+    const Irufemi::Matrix4x4& GetWorldMatrix() const {
         CheckAndComputeMatrix();
-        return worldMatrix_; 
+        return worldMatrix_;
     }
     /**
      * @brief LocalMatrix を取得する。
      * @return 取得された LocalMatrix
      */
-    const Irufemi::Matrix4x4& GetLocalMatrix() const { 
+    const Irufemi::Matrix4x4& GetLocalMatrix() const {
         CheckAndComputeMatrix();
-        return localMatrix_; 
+        return localMatrix_;
     }
 
     // ワールド情報の遅延抽出 Getter
@@ -173,8 +183,8 @@ public:
     /**
      * @brief ワールド行列の再計算を強制する（親が変更された時などに使用）
      */
-    void MarkWorldDirty() { 
-        isWorldDirty_ = true; 
+    void MarkWorldDirty() {
+        isWorldDirty_ = true;
     }
 
     /**
@@ -187,7 +197,9 @@ public:
     /**
      * @brief 現在のトランスフォームのバージョン番号を取得する（親が子の更新要否を判定するために使用）
      */
-    uint64_t GetTransformVersion() const { return transformVersion_; }
+    uint64_t GetTransformVersion() const {
+        return transformVersion_;
+    }
 
     /**
      * @brief 子にとっての「親のワールド行列」を取得する（inheritScale_ を考慮）
@@ -209,13 +221,17 @@ public:
      * @brief 親のスケールを継承するかどうかを取得する。
      * @return 継承する場合は true
      */
-    bool GetInheritScale() const { return inheritScale_; }
+    bool GetInheritScale() const {
+        return inheritScale_;
+    }
 
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "TransformComponent"; }
+    std::string GetComponentName() const override {
+        return "TransformComponent";
+    }
     /**
      * @brief Serialize を実行する。
      */
@@ -230,13 +246,11 @@ public:
      */
     std::shared_ptr<Component> Clone() override;
 
-
-
 private:
     // --- Local Irufemi::Transform Data ---
-    Irufemi::Vector3 position_ = { 0.0f, 0.0f, 0.0f };
-    Irufemi::Quaternion rotation_ = { 0.0f, 0.0f, 0.0f, 1.0f }; // Quaternion (x,y,z,w) = Identity
-    Irufemi::Vector3 scale_ = { 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector3 position_ = {0.0f, 0.0f, 0.0f};
+    Irufemi::Quaternion rotation_ = {0.0f, 0.0f, 0.0f, 1.0f}; // Quaternion (x,y,z,w) = Identity
+    Irufemi::Vector3 scale_ = {1.0f, 1.0f, 1.0f};
     bool inheritScale_ = true; // 親のスケールを継承するかどうか
 
     // --- Matrices ---
@@ -244,9 +258,9 @@ private:
     mutable Irufemi::Matrix4x4 worldMatrix_ = Irufemi::Math::MakeIdentity4x4();
 
     // --- World Irufemi::Transform Data (Lazy Evaluated) ---
-    mutable Irufemi::Vector3 worldPosition_ = { 0.0f, 0.0f, 0.0f };
-    mutable Irufemi::Quaternion worldRotation_ = { 0.0f, 0.0f, 0.0f, 1.0f };
-    mutable Irufemi::Vector3 worldScale_ = { 1.0f, 1.0f, 1.0f };
+    mutable Irufemi::Vector3 worldPosition_ = {0.0f, 0.0f, 0.0f};
+    mutable Irufemi::Quaternion worldRotation_ = {0.0f, 0.0f, 0.0f, 1.0f};
+    mutable Irufemi::Vector3 worldScale_ = {1.0f, 1.0f, 1.0f};
 
     // --- Flags & Versioning (Lazy Evaluation) ---
     mutable bool isLocalDirty_ = true;

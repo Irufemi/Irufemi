@@ -24,14 +24,10 @@ public:
      * @param isFinalOutput このランナーの最後がバックバッファへの出力かどうか
      * @return 最後の出力結果が書き込まれた RenderTexture のポインタ（スワップチェーン出力なら nullptr）
      */
-    class RenderTexture* Run(
-        PostProcessManager* manager,
-        ID3D12GraphicsCommandList* commandList,
-        const std::vector<PostProcessManager::Mode>& modes,
-        class RenderTexture* srcTexture,
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
-        const PostProcessManager::PostProcessWorkspace& workspace,
-        bool isFinalOutput = true);
+    class RenderTexture* Run(PostProcessManager* manager, ID3D12GraphicsCommandList* commandList,
+                             const std::vector<PostProcessManager::Mode>& modes, class RenderTexture* srcTexture,
+                             D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+                             const PostProcessManager::PostProcessWorkspace& workspace, bool isFinalOutput = true);
 
 private:
     /**

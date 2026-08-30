@@ -1,21 +1,21 @@
 ﻿#pragma once
 
-#include <Windows.h>
-#include <d3d12.h>
-#include <wrl.h>
-#include <cstdint>
-#include <string>
+#include "Core/Math/Matrix4x4.h"
+#include "Core/Math/Transform.h"
+#include "Core/Math/Vector4.h"
+#include "Core/System/ResourceHandle.h"
+#include "RHI/DirectX12/ConstantBuffer.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Renderer/Data/Material.h"
 #include "Renderer/Data/VertexData.h"
 #include "Renderer/System/Core/MultiBufferSyncState.h"
-#include "Core/Math/Transform.h"
-#include "Core/Math/Matrix4x4.h"
-#include "Core/Math/Vector4.h"
-#include <vector>
+#include <Windows.h>
 #include <array>
-#include "RHI/DirectX12/DirectXCommon.h"
-#include "RHI/DirectX12/ConstantBuffer.h"
-#include "Core/System/ResourceHandle.h"
+#include <cstdint>
+#include <d3d12.h>
+#include <string>
+#include <vector>
+#include <wrl.h>
 
 // 前方宣言
 class Camera;
@@ -27,8 +27,7 @@ class IrufemiEngine;
  * @class Skybox
  * @brief スカイボックスの描画を管理するクラス
  */
-class Skybox : public IRenderable, public MultiBufferSyncState
-{
+class Skybox : public IRenderable, public MultiBufferSyncState {
 public:
 public: // メンバ関数
     // コンストラクタ
@@ -58,35 +57,47 @@ public: // メンバ関数
      * @brief Debug を実行する。
      */
     void Debug();
+
 public: // メンバ関数(セッター/ゲッター)
     // engineセッター
     /**
      * @brief Engine を設定する。
      * @param[in] engine 設定する Engine の値
      */
-    static void SetEngine(IrufemiEngine* engine) { engine_ = engine; }
+    static void SetEngine(IrufemiEngine* engine) {
+        engine_ = engine;
+    }
     // ID3D12Resource関連ゲッター
     /**
      * @brief VertexBufferView を取得する。
      * @return 取得された VertexBufferView
      */
-    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
+    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const {
+        return vertexBufferView_;
+    }
     /**
      * @brief IndexBufferView を取得する。
      * @return 取得された IndexBufferView
      */
-    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
+    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const {
+        return indexBufferView_;
+    }
     /**
      * @brief TextureHandle を取得する。
      * @return 取得された TextureHandle
      */
-    ResourceHandle GetTextureHandle() const { return textureHandle_; }
+    ResourceHandle GetTextureHandle() const {
+        return textureHandle_;
+    }
     // indexのサイズ取得
     /**
      * @brief IndexSize を取得する。
      * @return 取得された IndexSize
      */
-    UINT GetIndexSize() const { return static_cast<UINT>(indexDataList_.size()); }
+    UINT GetIndexSize() const {
+        return static_cast<UINT>(indexDataList_.size());
+    }
+
 private: // メンバ関数(内部ヘルパ)
     // ID3D12Resourceの生成
     /**
@@ -104,28 +115,27 @@ private: // メンバ関数(内部ヘルパ)
      */
     void UnMapResource();
 
-
 private: // メンバ変数(resource)
     /// vertex
     std::vector<VertexData> vertexDataList_{};
     VertexData* vertexData_ = nullptr;
-    //頂点データバッファ
+    // 頂点データバッファ
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
 
     /// index
     std::vector<uint32_t> indexDataList_{};
     uint32_t* indexData_ = nullptr;
-    //頂点インデックスバッファ
+    // 頂点インデックスバッファ
     D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
     Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_ = nullptr;
 
     /// Irufemi::Transform
     // transform(scale,rotate,translate)
     Irufemi::Transform transform_ = {
-        {500.0f,500.0f,500.0f},   //scale
-        {0.0f,0.0f,0.0f},   //rotate
-        {0.0f,0.0f,0.0f}    //translate
+        {500.0f, 500.0f, 500.0f}, // scale
+        {0.0f, 0.0f, 0.0f},       // rotate
+        {0.0f, 0.0f, 0.0f}        // translate
     };
     struct SkyboxTransformationMatrix {
         Irufemi::Matrix4x4 WVP;
@@ -157,7 +167,4 @@ private: // メンバ変数(resource)
     bool isDirty_ = true;
     Irufemi::Matrix4x4 lastViewMatrix_ = {};
     Irufemi::Matrix4x4 lastProjectionMatrix_ = {};
-
 };
-
-

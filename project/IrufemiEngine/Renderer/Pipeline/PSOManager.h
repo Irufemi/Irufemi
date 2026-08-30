@@ -1,12 +1,12 @@
 #pragma once
-#include <d3d12.h>
-#include <dxcapi.h> 
-#include <wrl.h>
-#include <unordered_map>
-#include <cstdint>
-#include <string>
-#include <vector>
 #include "Core/Type/BlendMode.h"
+#include <cstdint>
+#include <d3d12.h>
+#include <dxcapi.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <wrl.h>
 
 /**
  * @class PSOManager
@@ -21,7 +21,7 @@ public:
     /** @enum DepthWrite
      *  @brief 深度情報の扱い
      */
-    enum class DepthWrite { 
+    enum class DepthWrite {
         Enable,  ///< 深度書き込み有効
         Disable, ///< 深度テストのみ（書き込み無効）
         Off      ///< 深度テスト・書き込み共に無効
@@ -30,7 +30,7 @@ public:
     /** @enum CullMode
      *  @brief カリングモード
      */
-    enum class CullMode { 
+    enum class CullMode {
         Back,  ///< 背面カリング
         Front, ///< 前面カリング
         None   ///< カリングなし（両面描画）
@@ -51,31 +51,26 @@ public:
     struct PipelineStateDesc {
         ShaderSet shaders;
         D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        DXGI_FORMAT rtvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合はManagerのデフォルトを使用
-        uint32_t numRenderTargets = 1;               // ★ MRT対応: レンダリングターゲット数
+        DXGI_FORMAT rtvFormat = DXGI_FORMAT_UNKNOWN;  // UNKNOWNの場合はManagerのデフォルトを使用
+        uint32_t numRenderTargets = 1;                // ★ MRT対応: レンダリングターゲット数
         DXGI_FORMAT rtvFormat1 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET1 (Mask)
         DXGI_FORMAT rtvFormat2 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET2 (Normal)
         DXGI_FORMAT rtvFormat3 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET3 (Material)
         DXGI_FORMAT rtvFormat4 = DXGI_FORMAT_UNKNOWN; // ★ MRT対応: SV_TARGET4 (Velocity)
-        DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN; // UNKNOWNの場合、Managerのデフォルトを使用
-        bool isDepthOnly = false;       // シャドウマップなど、RTVを持たないパス用
-        bool disableDepthTest = false;  // バックバッファ書き込みなど、深度テストを無効化する用
-        bool noDSV = false;             // バックバッファなど、DSVを一切バインドしないパス用 (DSVFormat = UNKNOWN を強制する)
-        bool useNullInputLayout = false;// CopyImageなど、頂点バッファを入力としないパス用
+        DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN;  // UNKNOWNの場合、Managerのデフォルトを使用
+        bool isDepthOnly = false;                     // シャドウマップなど、RTVを持たないパス用
+        bool disableDepthTest = false; // バックバッファ書き込みなど、深度テストを無効化する用
+        bool noDSV = false; // バックバッファなど、DSVを一切バインドしないパス用 (DSVFormat = UNKNOWN を強制する)
+        bool useNullInputLayout = false; // CopyImageなど、頂点バッファを入力としないパス用
     };
 
     /**
      * @brief 初期化処理
      * @details デバイスや共通フォーマットを保持します。
      */
-    void Initialize(
-        ID3D12Device* device,
-        ID3D12RootSignature* rootSig,
-        const D3D12_INPUT_LAYOUT_DESC& inputLayout,
-        DXGI_FORMAT rtvFormat,
-        DXGI_FORMAT dsvFormat,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
-    );
+    void Initialize(ID3D12Device* device, ID3D12RootSignature* rootSig, const D3D12_INPUT_LAYOUT_DESC& inputLayout,
+                    DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat,
+                    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
 
     /**
      * @brief シェーダの登録
@@ -100,7 +95,8 @@ public:
      * @param csBlob コンピュートシェーダバイナリ
      * @param computeRootSig コンピュート用ルートシグネチャ
      */
-    void RegisterComputeShader(const std::string& name, const Microsoft::WRL::ComPtr<IDxcBlob>& csBlob, ID3D12RootSignature* computeRootSig);
+    void RegisterComputeShader(const std::string& name, const Microsoft::WRL::ComPtr<IDxcBlob>& csBlob,
+                               ID3D12RootSignature* computeRootSig);
 
     /**
      * @brief 登録済みコンピュートシェーダを用いたPSOの取得
@@ -129,12 +125,12 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Device> device_;
     Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSig_;
     D3D12_INPUT_LAYOUT_DESC inputLayout_{};
-    
+
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements_;
     std::vector<std::string> semanticNames_;
-    DXGI_FORMAT rtvFormat_{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB };
-    DXGI_FORMAT dsvFormat_{ DXGI_FORMAT_D24_UNORM_S8_UINT };
-    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{ D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE };
+    DXGI_FORMAT rtvFormat_{DXGI_FORMAT_R8G8B8A8_UNORM_SRGB};
+    DXGI_FORMAT dsvFormat_{DXGI_FORMAT_D24_UNORM_S8_UINT};
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE};
 
     std::unordered_map<std::string, PipelineStateDesc> shaderRegistry_;
     ShaderSet copyImageShaders_{}; // GetCopyImage用は内部処理として一旦残す
@@ -142,34 +138,35 @@ private:
     /** @brief キャッシュキー構造体 */
     struct Key {
         uint64_t hash;
-        bool operator==(const Key& o) const { return hash == o.hash; }
+        bool operator==(const Key& o) const {
+            return hash == o.hash;
+        }
     };
     /** @brief キャッシュキーのハッシュ関数 */
-    struct KeyHash { size_t operator()(const Key& k)const { return static_cast<size_t>(k.hash); } };
+    struct KeyHash {
+        size_t operator()(const Key& k) const {
+            return static_cast<size_t>(k.hash);
+        }
+    };
 
     std::unordered_map<Key, ComPtr, KeyHash> cache_; ///< PSO キャッシュ
-    std::unordered_map<std::string, std::vector<Key>> cacheKeysByName_; ///< ホットリロードのためのキートラッキング (名前ごとの生成済みキャッシュキー)
+    std::unordered_map<std::string, std::vector<Key>>
+        cacheKeysByName_; ///< ホットリロードのためのキートラッキング (名前ごとの生成済みキャッシュキー)
     std::unordered_map<std::string, ComPtr> computeCache_; ///< Compute PSO キャッシュ
 
     /** @name 内部生成ヘルパー */
     ///@{
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSO(
-        const ShaderSet& shaders,
-        const D3D12_BLEND_DESC& blendDesc,
-        const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-        CullMode cull,
-        bool useNullInputLayout = false) const;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSO(const ShaderSet& shaders, const D3D12_BLEND_DESC& blendDesc,
+                                                          const D3D12_DEPTH_STENCIL_DESC& depthDesc, CullMode cull,
+                                                          bool useNullInputLayout = false) const;
 
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(
-        const ShaderSet& shaders,
-        const D3D12_BLEND_DESC& blendDesc,
-        const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
-        CullMode cull) const;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(const ShaderSet& shaders,
+                                                                      const D3D12_BLEND_DESC& blendDesc,
+                                                                      const D3D12_DEPTH_STENCIL_DESC& depthDesc,
+                                                                      D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
+                                                                      CullMode cull) const;
 
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreateShadowPSO(
-        const ShaderSet& shaders,
-        CullMode cull) const;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreateShadowPSO(const ShaderSet& shaders, CullMode cull) const;
 
     /** @brief Irufemi::BlendMode から D3D12_BLEND_DESC を作成 */
     static D3D12_BLEND_DESC MakeBlend(Irufemi::BlendMode m);

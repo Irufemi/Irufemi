@@ -1,11 +1,11 @@
 #pragma once
 
 #include "RHI/DirectX12/ShaderCompiler.h"
-#include <unordered_map>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <tuple>
+#include <unordered_map>
 
 /**
  * @class ShaderManager
@@ -37,22 +37,18 @@ public:
      * @param[in] profileOverride プロファイルを明示的に指定する場合（nullptrなら自動判定）
      * @return コンパイル済みシェーダーのBlob
      */
-    Microsoft::WRL::ComPtr<IDxcBlob> GetOrCompile(
-        const std::wstring& filePath,
-        const ShaderCompileOptions& options = {},
-        const wchar_t* profileOverride = nullptr,
-        std::string* outErrorLog = nullptr
-    );
+    Microsoft::WRL::ComPtr<IDxcBlob> GetOrCompile(const std::wstring& filePath,
+                                                  const ShaderCompileOptions& options = {},
+                                                  const wchar_t* profileOverride = nullptr,
+                                                  std::string* outErrorLog = nullptr);
 
     /**
      * @brief シェーダーを強制的に再コンパイル（または再読み込み）する
      */
-    Microsoft::WRL::ComPtr<IDxcBlob> ReloadShader(
-        const std::wstring& filePath,
-        const ShaderCompileOptions& options = {},
-        const wchar_t* profileOverride = nullptr,
-        std::string* outErrorLog = nullptr
-    );
+    Microsoft::WRL::ComPtr<IDxcBlob> ReloadShader(const std::wstring& filePath,
+                                                  const ShaderCompileOptions& options = {},
+                                                  const wchar_t* profileOverride = nullptr,
+                                                  std::string* outErrorLog = nullptr);
 
     /**
      * @brief キャッシュをクリアする
@@ -74,8 +70,7 @@ private:
         std::vector<std::pair<std::wstring, std::wstring>> macros;
 
         bool operator<(const ShaderKey& other) const {
-            return std::tie(filePath, entryPoint, macros) < 
-                   std::tie(other.filePath, other.entryPoint, other.macros);
+            return std::tie(filePath, entryPoint, macros) < std::tie(other.filePath, other.entryPoint, other.macros);
         }
     };
 

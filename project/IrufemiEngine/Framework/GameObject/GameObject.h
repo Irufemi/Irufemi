@@ -1,12 +1,12 @@
 #pragma once
-#include <string>
-#include <vector>
+#include "Core/System/ComponentPool.h"
+#include "Framework/Component/Component.h"
 #include <memory>
+#include <nlohmann/json.hpp>
+#include <string>
 #include <typeindex>
 #include <unordered_map>
-#include <nlohmann/json.hpp>
-#include "Framework/Component/Component.h"
-#include "Core/System/ComponentPool.h"
+#include <vector>
 
 class BaseScene;
 
@@ -24,17 +24,23 @@ public:
      * @brief InstanceID を取得する。
      * @return 取得された InstanceID
      */
-    uint64_t GetInstanceID() const { return instanceId_; }
+    uint64_t GetInstanceID() const {
+        return instanceId_;
+    }
     /**
      * @brief Tag を取得する。
      * @return 取得された Tag
      */
-    const std::string& GetTag() const { return tag_; }
+    const std::string& GetTag() const {
+        return tag_;
+    }
     /**
      * @brief Tag を設定する。
      * @param[in] tag 設定する Tag の値
      */
-    void SetTag(const std::string& tag) { tag_ = tag; }
+    void SetTag(const std::string& tag) {
+        tag_ = tag;
+    }
 
     /**
      * @brief ゲームオブジェクトの初期化処理を行う。アタッチされたコンポーネント群のInitializeも呼び出される。
@@ -97,7 +103,7 @@ public:
      * @brief 新しいコンポーネントを追加する
      * @return 追加されたコンポーネントの共有ポインタ
      */
-    template<typename T, typename... Args>
+    template <typename T, typename... Args>
     /**
      * @brief 指定した型の新しいコンポーネントをアタッチして返す。
      * @return アタッチされたコンポーネントのポインタ
@@ -112,16 +118,16 @@ public:
         } else {
             component = std::make_shared<T>(std::forward<Args>(args)...);
         }
-        
+
         component->SetGameObject(this);
-        
+
         components_.push_back(component);
         componentMap_[typeid(T)].push_back(component.get());
-        
+
         if constexpr (std::is_same_v<T, TransformComponent>) {
             transformCache_ = reinterpret_cast<TransformComponent*>(component.get());
         }
-        
+
         component->OnRegisterProperties();
         component->Initialize();
         if (isActive_) {
@@ -138,7 +144,7 @@ public:
     /**
      * @brief 指定した型のコンポーネントを取得する
      */
-    template<typename T>
+    template <typename T>
     /**
      * @brief 指定した型のコンポーネントを取得する。
      * @return 見つかった場合はそのポインタ、無ければnullptr
@@ -155,12 +161,14 @@ public:
      * @brief 自身のアタッチされている TransformComponent を取得するショートカット
      * @return TransformComponent* (GameObjectは必ずTransformを持つため、基本的にはnullptrにならない)
      */
-    class TransformComponent* GetTransform() const { return transformCache_; }
+    class TransformComponent* GetTransform() const {
+        return transformCache_;
+    }
 
     /**
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントを1つ探して取得する
      */
-    template<typename T>
+    template <typename T>
     /**
      * @brief ComponentInChildren を取得する。
      * @return 取得された ComponentInChildren
@@ -180,7 +188,7 @@ public:
     /**
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントをすべて取得する
      */
-    template<typename T>
+    template <typename T>
     /**
      * @brief ComponentsInChildren を取得する。
      * @return 取得された ComponentsInChildren
@@ -199,14 +207,18 @@ public:
     /**
      * @brief アタッチされているすべてのコンポーネントのリストを取得する
      */
-    const std::vector<std::shared_ptr<Component>>& GetComponents() const { return components_; }
+    const std::vector<std::shared_ptr<Component>>& GetComponents() const {
+        return components_;
+    }
 
     // --- アクセッサ ---
     /**
      * @brief Name を取得する。
      * @return 取得された Name
      */
-    const std::string& GetName() const { return name_; }
+    const std::string& GetName() const {
+        return name_;
+    }
     /**
      * @brief Name を設定する。
      * @param[in] name 設定する Name の値
@@ -221,12 +233,16 @@ public:
      * @brief ゲームオブジェクトの有効/無効を切り替える。無効なオブジェクトはUpdateや描画が行われない。
      * @param[in] active trueで有効、falseで無効
      */
-    void SetActive(bool isActive) { SetIsActive(isActive); }
+    void SetActive(bool isActive) {
+        SetIsActive(isActive);
+    }
     /**
      * @brief IsActive を取得する。
      * @return 取得された IsActive
      */
-    bool GetIsActive() const { return isActive_; }
+    bool GetIsActive() const {
+        return isActive_;
+    }
 
     /**
      * @brief Scene を設定する。
@@ -237,7 +253,9 @@ public:
      * @brief Scene を取得する。
      * @return 取得された Scene
      */
-    BaseScene* GetScene() const { return scene_; }
+    BaseScene* GetScene() const {
+        return scene_;
+    }
 
     // --- 親子関係 ---
     /**
@@ -256,12 +274,16 @@ public:
      * @brief Parent を取得する。
      * @return 取得された Parent
      */
-    std::shared_ptr<GameObject> GetParent() const { return parent_.lock(); }
+    std::shared_ptr<GameObject> GetParent() const {
+        return parent_.lock();
+    }
     /**
      * @brief Children を取得する。
      * @return 取得された Children
      */
-    const std::vector<std::shared_ptr<GameObject>>& GetChildren() const { return children_; }
+    const std::vector<std::shared_ptr<GameObject>>& GetChildren() const {
+        return children_;
+    }
     /**
      * @brief Parent を設定する。
      * @param[in] parent 設定する Parent の値
@@ -277,17 +299,23 @@ public:
     /**
      * @brief オブジェクトを破棄状態にする（現在のフレームの終わりに削除される）
      */
-    void Destroy() { isDestroyed_ = true; }
+    void Destroy() {
+        isDestroyed_ = true;
+    }
     /**
      * @brief IsDestroyed かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsDestroyed() const { return isDestroyed_; }
+    bool IsDestroyed() const {
+        return isDestroyed_;
+    }
     /**
      * @brief IsStarted かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsStarted() const { return isStarted_; }
+    bool IsStarted() const {
+        return isStarted_;
+    }
 
     // --- イベント伝達 ---
     /**
@@ -307,50 +335,67 @@ public:
     /**
      * @brief 所属するシーンにプレハブから新しい GameObject を生成して追加する
      */
-    std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath, const Irufemi::Vector3& position = {0,0,0});
+    std::shared_ptr<GameObject> Instantiate(const std::string& prefabPath,
+                                            const Irufemi::Vector3& position = {0, 0, 0});
 
     // --- エディタ用フラグ ---
     /**
      * @brief IsFolder を設定する。
      * @param[in] isFolder 設定する IsFolder の値
      */
-    void SetIsFolder(bool isFolder) { isFolder_ = isFolder; }
+    void SetIsFolder(bool isFolder) {
+        isFolder_ = isFolder;
+    }
     /**
      * @brief IsFolder を取得する。
      * @return 取得された IsFolder
      */
-    bool GetIsFolder() const { return isFolder_; }
+    bool GetIsFolder() const {
+        return isFolder_;
+    }
     /**
      * @brief IsLocked を設定する。
      * @param[in] isLocked 設定する IsLocked の値
      */
-    void SetIsLocked(bool isLocked) { isLocked_ = isLocked; }
+    void SetIsLocked(bool isLocked) {
+        isLocked_ = isLocked;
+    }
     /**
      * @brief IsLocked を取得する。
      * @return 取得された IsLocked
      */
-    bool GetIsLocked() const { return isLocked_; }
+    bool GetIsLocked() const {
+        return isLocked_;
+    }
     /**
      * @brief IsSerializable を設定する。
      * @param[in] isSerializable 設定する IsSerializable の値
      */
-    void SetIsSerializable(bool isSerializable) { isSerializable_ = isSerializable; }
+    void SetIsSerializable(bool isSerializable) {
+        isSerializable_ = isSerializable;
+    }
     /**
      * @brief IsSerializable かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsSerializable() const { return isSerializable_; }
+    bool IsSerializable() const {
+        return isSerializable_;
+    }
 
     /**
      * @brief SourcePrefabPath を設定する。
      * @param[in] path 設定する SourcePrefabPath の値
      */
-    void SetSourcePrefabPath(const std::string& path) { sourcePrefabPath_ = path; }
+    void SetSourcePrefabPath(const std::string& path) {
+        sourcePrefabPath_ = path;
+    }
     /**
      * @brief SourcePrefabPath を取得する。
      * @return 取得された SourcePrefabPath
      */
-    const std::string& GetSourcePrefabPath() const { return sourcePrefabPath_; }
+    const std::string& GetSourcePrefabPath() const {
+        return sourcePrefabPath_;
+    }
 
 private:
     uint64_t instanceId_ = 0;
@@ -365,7 +410,6 @@ private:
     std::string sourcePrefabPath_ = "";
     BaseScene* scene_ = nullptr;
 
-    
     std::weak_ptr<GameObject> parent_;
     std::vector<std::shared_ptr<GameObject>> children_;
 
@@ -374,7 +418,7 @@ private:
     class TransformComponent* transformCache_ = nullptr;
 
 private:
-    template<typename T>
+    template <typename T>
     /**
      * @brief ComponentsInChildrenRecursive を取得する。
      */

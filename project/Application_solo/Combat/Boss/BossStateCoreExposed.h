@@ -8,5 +8,7 @@ public:
     void Exit(BossComponent* boss) override;
     void OnTakeDamage(BossComponent* boss, float damage) override;
 
-    bool IsCoreExposed() const override { return true; }
+    bool IsCoreExposed() const override {
+        return true;
+    }
 };

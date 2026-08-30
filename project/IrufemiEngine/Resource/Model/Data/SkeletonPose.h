@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Core/Math/QuaternionTransform.h"
 #include "Core/Math/Matrix4x4.h"
-#include <vector>
+#include "Core/Math/QuaternionTransform.h"
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 struct SkeletonData;
 struct NodeAnimation;
@@ -26,7 +26,7 @@ struct JointPose {
 struct SkeletonPose {
     const SkeletonData* data = nullptr; // 参照する静的データ
     std::vector<JointPose> jointPoses;
-    
+
     // --- 最適化用キャッシュ ---
     // 最後に適用したアニメーションのアドレス（変更検知用）
     const void* lastAppliedAnimation = nullptr;

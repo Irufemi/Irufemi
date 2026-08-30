@@ -1,13 +1,13 @@
 #pragma once
 
-#include <d3d12.h>
-#include <wrl.h>
-#include <string>
-#include <functional>
-#include <vector>
-#include <mutex>
-#include <atomic>
 #include "Core/System/ThreadPool.h"
+#include <atomic>
+#include <d3d12.h>
+#include <functional>
+#include <mutex>
+#include <string>
+#include <vector>
+#include <wrl.h>
 
 // 前方宣言
 class DirectXCommon;
@@ -48,8 +48,10 @@ public:
     void Update(); // 毎フレームの完了チェックなど
 
     // キャプチャリクエストAPI
-    bool RequestCapture(const std::wstring& filePath, ScreenCaptureType type, std::function<void()> onComplete = nullptr);
-    bool RequestCaptureWithMetadata(const std::wstring& filePath, ScreenCaptureType type, std::function<void()> onComplete = nullptr);
+    bool RequestCapture(const std::wstring& filePath, ScreenCaptureType type,
+                        std::function<void()> onComplete = nullptr);
+    bool RequestCaptureWithMetadata(const std::wstring& filePath, ScreenCaptureType type,
+                                    std::function<void()> onComplete = nullptr);
     bool RequestCaptureWithAlpha(const std::wstring& filePath, std::function<void()> onComplete = nullptr);
     bool RequestCaptureDepth(const std::wstring& filePath, std::function<void()> onComplete = nullptr);
 
@@ -66,7 +68,7 @@ public:
      * @brief OnPostDepthDraw を実行する。
      */
     void OnPostDepthDraw(ID3D12GraphicsCommandList* commandList, ID3D12Resource* depthBuffer);
-    
+
     // スカイボックス等を除外するためのフラグ取得
     /**
      * @brief IsCaptureWithAlphaRequested かどうかを判定する。
@@ -84,7 +86,8 @@ private:
     /**
      * @brief ExecuteCopyTask を実行する。
      */
-    void ExecuteCopyTask(ID3D12Resource* sourceResource, D3D12_RESOURCE_STATES currentState, const ScreenCaptureRequest& req);
+    void ExecuteCopyTask(ID3D12Resource* sourceResource, D3D12_RESOURCE_STATES currentState,
+                         const ScreenCaptureRequest& req);
     /**
      * @brief GenerateMetadataJson を実行する。
      */
@@ -96,14 +99,14 @@ private:
 
     std::mutex requestMutex_;
     std::vector<ScreenCaptureRequest> pendingRequests_;
-    
+
     // キャプチャ中の多重実行を防ぐためのフラグやバッファ管理
-    std::atomic<bool> isEncoding_{ false };
-    
+    std::atomic<bool> isEncoding_{false};
+
     // 中間コピー用バッファ (ヒッチング防止のための一時退避先)
     Microsoft::WRL::ComPtr<ID3D12Resource> colorCopyBuffer_;
     Microsoft::WRL::ComPtr<ID3D12Resource> depthCopyBuffer_;
-    
+
     // 一時的に記録しておくメタデータ内容
     std::string currentMetadataJson_;
 };

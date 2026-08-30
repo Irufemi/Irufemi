@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-//namespace StringUtility
+// namespace StringUtility
 //{
 
 /*ログを出そう*/
@@ -17,16 +17,16 @@ std::wstring ConvertString(const std::string& str);
 std::string ConvertString(const std::wstring& str);
 
 namespace StringUtility {
-    /**
-     * @brief EndsWith を実行する。
-     */
-    bool EndsWith(const std::wstring& str, const std::wstring& suffix);
-    /**
-     * @brief CacheFilePath を取得する。
-     * @return 取得された CacheFilePath
-     */
-    std::string GetCacheFilePath(const std::string& fullPath, const std::string& cacheCategory, const std::string& extension);
-}
+/**
+ * @brief EndsWith を実行する。
+ */
+bool EndsWith(const std::wstring& str, const std::wstring& suffix);
+/**
+ * @brief CacheFilePath を取得する。
+ * @return 取得された CacheFilePath
+ */
+std::string GetCacheFilePath(const std::string& fullPath, const std::string& cacheCategory,
+                             const std::string& extension);
+} // namespace StringUtility
 
 //};
-

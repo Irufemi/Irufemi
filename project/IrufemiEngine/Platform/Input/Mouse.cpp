@@ -1,8 +1,8 @@
 #include "Platform/Input/Mouse.h"
 #include "Core/Math/Math.h"
 #include "Core/Utility/Log.h"
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 #include <string>
 
 void Mouse::Initialize(HWND hwnd) {
@@ -11,7 +11,7 @@ void Mouse::Initialize(HWND hwnd) {
     POINT p;
     GetCursorPos(&p);
     ScreenToClient(hwnd_, &p);
-    position_ = { static_cast<float>(p.x), static_cast<float>(p.y) };
+    position_ = {static_cast<float>(p.x), static_cast<float>(p.y)};
     prevPosition_ = position_;
 
     // 初期状態を適用
@@ -21,8 +21,8 @@ void Mouse::Initialize(HWND hwnd) {
 void Mouse::Clear() {
     std::fill(std::begin(currentButtons_), std::end(currentButtons_), 0);
     std::fill(std::begin(prevButtons_), std::end(prevButtons_), 0);
-    delta_ = { 0.0f, 0.0f };
-    rawDelta_ = { 0.0f, 0.0f };
+    delta_ = {0.0f, 0.0f};
+    rawDelta_ = {0.0f, 0.0f};
     wheelDelta_ = 0.0f;
 }
 
@@ -42,19 +42,19 @@ void Mouse::Update() {
     if (isLocked_) {
         // ロック中: Raw Input で蓄積された移動量(rawDelta_)をそのまま差分として使う
         delta_ = rawDelta_;
-        rawDelta_ = { 0.0f, 0.0f }; // 読み取ったらリセット
+        rawDelta_ = {0.0f, 0.0f}; // 読み取ったらリセット
 
         // カーソルは画面内に ClipCursor で閉じ込められているため、毎フレーム SetCursorPos で
         // 中央に戻す必要はない(Raw Inputは画面外判定を受けない)。
         // 内部座標は論理的に画面中央に固定しておく
         RECT rc;
         GetClientRect(hwnd_, &rc);
-        position_ = { static_cast<float>((rc.right - rc.left) / 2), static_cast<float>((rc.bottom - rc.top) / 2) };
+        position_ = {static_cast<float>((rc.right - rc.left) / 2), static_cast<float>((rc.bottom - rc.top) / 2)};
         prevPosition_ = position_;
 
         // 毎フレームカーソルを画面中央に固定し直すことで、ウィンドウ端でのクリック漏れ（背面ウィンドウの誤クリック）を防ぐ
         if (GetForegroundWindow() == hwnd_) {
-            POINT center = { (rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2 };
+            POINT center = {(rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2};
             ClientToScreen(hwnd_, &center);
             SetCursorPos(center.x, center.y);
 
@@ -66,11 +66,11 @@ void Mouse::Update() {
         // 通常時の挙動: スクリーン座標をクライアント座標に変換して position_ を更新
         ScreenToClient(hwnd_, &p);
         prevPosition_ = position_;
-        position_ = { static_cast<float>(p.x), static_cast<float>(p.y) };
-        delta_ = { position_.x - prevPosition_.x, position_.y - prevPosition_.y };
-        
+        position_ = {static_cast<float>(p.x), static_cast<float>(p.y)};
+        delta_ = {position_.x - prevPosition_.x, position_.y - prevPosition_.y};
+
         // 通常時もRaw Inputの移動量は蓄積され続けるためクリアしておく
-        rawDelta_ = { 0.0f, 0.0f };
+        rawDelta_ = {0.0f, 0.0f};
     }
 
     // ホイールの差分をリセット
@@ -80,34 +80,36 @@ void Mouse::Update() {
 void Mouse::SetLocked(bool locked) {
     if (isLocked_ != locked) {
         isLocked_ = locked;
-        delta_ = { 0.0f, 0.0f };
-        rawDelta_ = { 0.0f, 0.0f };
+        delta_ = {0.0f, 0.0f};
+        rawDelta_ = {0.0f, 0.0f};
 
         if (isLocked_ && hwnd_) {
             // 表示を消す
-            while (ShowCursor(FALSE) >= 0);
+            while (ShowCursor(FALSE) >= 0)
+                ;
 
             // クリッピング設定 (画面外に出てフォーカスを失うのを防ぐ)
             RECT clientRect;
             GetClientRect(hwnd_, &clientRect);
-            POINT topLeft = { clientRect.left, clientRect.top };
-            POINT bottomRight = { clientRect.right, clientRect.bottom };
+            POINT topLeft = {clientRect.left, clientRect.top};
+            POINT bottomRight = {clientRect.right, clientRect.bottom};
             ClientToScreen(hwnd_, &topLeft);
             ClientToScreen(hwnd_, &bottomRight);
-            RECT clipRect = { topLeft.x, topLeft.y, bottomRight.x, bottomRight.y };
+            RECT clipRect = {topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
             ClipCursor(&clipRect);
 
             // ロック開始時のみ、一度だけ中央にカーソルを移動させておく
-            POINT center = { (clientRect.right - clientRect.left) / 2, (clientRect.bottom - clientRect.top) / 2 };
-            position_ = { static_cast<float>(center.x), static_cast<float>(center.y) };
+            POINT center = {(clientRect.right - clientRect.left) / 2, (clientRect.bottom - clientRect.top) / 2};
+            position_ = {static_cast<float>(center.x), static_cast<float>(center.y)};
             prevPosition_ = position_;
 
             ClientToScreen(hwnd_, &center);
             SetCursorPos(center.x, center.y);
         } else {
             // 表示を戻す
-            while (ShowCursor(TRUE) < 0);
-            
+            while (ShowCursor(TRUE) < 0)
+                ;
+
             // クリッピング解除
             ClipCursor(nullptr);
         }

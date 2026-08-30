@@ -1,10 +1,9 @@
 #include "Renderer/System/Core/Object2DResource.h"
 #include "Core/Math/Math.h"
-#include "Renderer/Camera/Camera.h"
-#include "RHI/DirectX12/DirectXCommon.h"
 #include "Core/System/IrufemiEngine.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/Camera/Camera.h"
 #include "Resource/Texture/TextureManager.h"
-
 
 TextureManager* Object2DResource::sTextureManager = nullptr;
 
@@ -102,7 +101,8 @@ void Object2DResource::Unmap() {
 
 void Object2DResource::UpdateTransform(const Camera& camera) {
 
-    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.world =
+        Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // 2D なので正射影行列を掛ける
     transformationMatrix_.WVP = Irufemi::Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
@@ -134,14 +134,14 @@ void Object2DResource::SyncBeforeDraw() {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
-            
+
             // テクスチャのインデックスを解決して反映
             if (sTextureManager) {
                 cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
             } else {
                 cpuMaterialData_.textureIndex = 0;
             }
-            
+
             if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
             }

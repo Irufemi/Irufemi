@@ -1,7 +1,7 @@
 #pragma once
-#include "Framework/Component/Collider/ColliderComponent.h"
-#include "Core/Shape/Sphere.h"
 #include "Core/Math/Vector3.h"
+#include "Core/Shape/Sphere.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
 #include <string>
 
 class TransformComponent;
@@ -64,13 +64,17 @@ public:
      * @brief コンポーネント名の取得
      * @return "SphereColliderComponent"
      */
-    std::string GetComponentName() const override { return "SphereColliderComponent"; }
+    std::string GetComponentName() const override {
+        return "SphereColliderComponent";
+    }
 
     /**
      * @brief コライダーの型を取得
      * @return ColliderType::Sphere
      */
-    ColliderType GetColliderType() const override { return ColliderType::Sphere; }
+    ColliderType GetColliderType() const override {
+        return ColliderType::Sphere;
+    }
 
     /**
      * @brief 衝突判定用のブロードフェーズバウンディングボックスを取得
@@ -88,27 +92,35 @@ public:
      * @brief ローカル空間でのオフセット座標を設定する
      * @param[in] offset ローカル座標系の中心からのズレ
      */
-    void SetLocalOffset(const Irufemi::Vector3& offset) { localOffset_ = offset; }
+    void SetLocalOffset(const Irufemi::Vector3& offset) {
+        localOffset_ = offset;
+    }
 
     /**
      * @brief ローカル空間でのオフセット座標を取得する
      * @return ローカル座標系の中心からのズレ
      */
-    const Irufemi::Vector3& GetLocalOffset() const { return localOffset_; }
+    const Irufemi::Vector3& GetLocalOffset() const {
+        return localOffset_;
+    }
 
     /**
      * @brief ローカル空間での球の半径を設定する
      * @param[in] radius 半径
      */
-    void SetLocalRadius(float radius) { localRadius_ = radius; }
+    void SetLocalRadius(float radius) {
+        localRadius_ = radius;
+    }
 
     /**
      * @brief ローカル空間での球の半径を取得する
      * @return 半径
      */
-    float GetLocalRadius() const { return localRadius_; }
+    float GetLocalRadius() const {
+        return localRadius_;
+    }
 
 private:
-    Irufemi::Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f };
-    float localRadius_   = 1.0f;
+    Irufemi::Vector3 localOffset_ = {0.0f, 0.0f, 0.0f};
+    float localRadius_ = 1.0f;
 };

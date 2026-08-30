@@ -1,39 +1,39 @@
 #include "Framework/Component/ComponentFactory.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
-#include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
-#include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Framework/Component/Renderer/TextRendererComponent.h"
-#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
-#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
-#include "Framework/Component/Renderer/SkeletonDebugRendererComponent.h"
-#include "Framework/Component/Logic/AnimatorComponent.h"
-#include "Framework/Component/Logic/BoneAttachmentComponent.h"
-#include "Framework/Component/Logic/SpawnPointComponent.h"
-#include "Framework/Component/Effect/VoxelParticleComponent.h"
-#include "Framework/Component/Effect/EffectMaskComponent.h"
-#include "Framework/Component/Effect/ScreenEffectComponent.h"
-#include "Framework/Component/Effect/GlobalPostProcessComponent.h"
-#include "Framework/Component/Collider/AABBColliderComponent.h"
-#include "Framework/Component/Collider/SphereColliderComponent.h"
-#include "Framework/Component/Collider/OBBColliderComponent.h"
-#include "Framework/Component/Collider/RaycastComponent.h"
+#include "Core/System/ComponentPool.h"
+#include "Core/Utility/Log.h"
 #include "Framework/Component/Audio/AudioSourceComponent.h"
-#include "Framework/Component/Effect/ParticleEmitterComponent.h"
-#include "Framework/Component/Effect/ParticleFieldComponent.h"
-#include "Framework/Component/UI/ButtonComponent.h"
-#include "Framework/Component/UI/SliderComponent.h"
-#include "Framework/Component/UI/CanvasComponent.h"
 #include "Framework/Component/Camera/CameraComponent.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Framework/Component/Camera/TargetFollowComponent.h"
+#include "Framework/Component/Collider/AABBColliderComponent.h"
+#include "Framework/Component/Collider/OBBColliderComponent.h"
+#include "Framework/Component/Collider/RaycastComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
+#include "Framework/Component/Effect/EffectMaskComponent.h"
+#include "Framework/Component/Effect/GlobalPostProcessComponent.h"
+#include "Framework/Component/Effect/ParticleEmitterComponent.h"
+#include "Framework/Component/Effect/ParticleFieldComponent.h"
+#include "Framework/Component/Effect/ScreenEffectComponent.h"
+#include "Framework/Component/Effect/VoxelParticleComponent.h"
+#include "Framework/Component/Logic/AnimatorComponent.h"
+#include "Framework/Component/Logic/BoneAttachmentComponent.h"
+#include "Framework/Component/Logic/SpawnPointComponent.h"
+#include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Framework/Component/Renderer/Primitive2DRendererComponent.h"
+#include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/Renderer/SkeletonDebugRendererComponent.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/Renderer/TextRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/Component/UI/ButtonComponent.h"
+#include "Framework/Component/UI/CanvasComponent.h"
+#include "Framework/Component/UI/SliderComponent.h"
 #include "Framework/Component/Utility/LifetimeComponent.h"
 #include "Framework/Component/Utility/SplineComponent.h"
 #include "Framework/Component/Utility/SplineNodeComponent.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
-#include "Core/System/ComponentPool.h"
-#include "Core/Utility/Log.h"
 #include <iostream>
 
 std::unordered_map<std::string, ComponentFactory::ComponentRegistration>& ComponentFactory::GetMap() {
@@ -42,7 +42,7 @@ std::unordered_map<std::string, ComponentFactory::ComponentRegistration>& Compon
 }
 
 void ComponentFactory::Register(const std::string& typeName, const char* category, CreatorFunc func) {
-    GetMap()[typeName] = { category, func };
+    GetMap()[typeName] = {category, func};
 }
 
 std::shared_ptr<Component> ComponentFactory::Create(const std::string& typeName) {
@@ -59,7 +59,7 @@ const std::unordered_map<std::string, ComponentFactory::ComponentRegistration>& 
 }
 
 void ComponentFactory::RegisterAllCoreComponents() {
-    Register("TransformComponent", "Core", []() { 
+    Register("TransformComponent", "Core", []() {
         if constexpr (IsPooledComponent<TransformComponent>::value) {
             return std::static_pointer_cast<Component>(ComponentPool<TransformComponent>::GetInstance().Create());
         } else {
@@ -68,12 +68,16 @@ void ComponentFactory::RegisterAllCoreComponents() {
     });
     Register("MeshRendererComponent", "Renderer", []() { return std::make_shared<MeshRendererComponent>(); });
     Register("PrimitiveRendererComponent", "Renderer", []() { return std::make_shared<PrimitiveRendererComponent>(); });
-    Register("Primitive2DRendererComponent", "Renderer", []() { return std::make_shared<Primitive2DRendererComponent>(); });
-    Register("ModelBatchRendererComponent", "Renderer", []() { return std::make_shared<ModelBatchRendererComponent>(); });
+    Register("Primitive2DRendererComponent", "Renderer",
+             []() { return std::make_shared<Primitive2DRendererComponent>(); });
+    Register("ModelBatchRendererComponent", "Renderer",
+             []() { return std::make_shared<ModelBatchRendererComponent>(); });
     Register("SpriteRendererComponent", "Renderer", []() { return std::make_shared<SpriteRendererComponent>(); });
     Register("TextRendererComponent", "Renderer", []() { return std::make_shared<TextRendererComponent>(); });
-    Register("SkinnedMeshRendererComponent", "Renderer", []() { return std::make_shared<SkinnedMeshRendererComponent>(); });
-    Register("SkeletonDebugRendererComponent", "Debug", []() { return std::make_shared<SkeletonDebugRendererComponent>(); });
+    Register("SkinnedMeshRendererComponent", "Renderer",
+             []() { return std::make_shared<SkinnedMeshRendererComponent>(); });
+    Register("SkeletonDebugRendererComponent", "Debug",
+             []() { return std::make_shared<SkeletonDebugRendererComponent>(); });
     Register("AnimatorComponent", "Logic", []() { return std::make_shared<AnimatorComponent>(); });
     Register("BoneAttachmentComponent", "Logic", []() { return std::make_shared<BoneAttachmentComponent>(); });
     Register("SpawnPointComponent", "Logic", []() { return std::make_shared<SpawnPointComponent>(); });
@@ -97,5 +101,6 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("LifetimeComponent", "Utility", []() { return std::make_shared<LifetimeComponent>(); });
     Register("SplineComponent", "Utility", []() { return std::make_shared<SplineComponent>(); });
     Register("SplineNodeComponent", "Utility", []() { return std::make_shared<SplineNodeComponent>(); });
-    Register("VirtualEntityManagerComponent", "Utility", []() { return std::make_shared<VirtualEntityManagerComponent>(); });
+    Register("VirtualEntityManagerComponent", "Utility",
+             []() { return std::make_shared<VirtualEntityManagerComponent>(); });
 }

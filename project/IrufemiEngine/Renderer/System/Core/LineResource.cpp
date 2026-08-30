@@ -1,8 +1,8 @@
 #include "Renderer/System/Core/LineResource.h"
-#include "RHI/DirectX12/DirectXCommon.h"
-#include "Renderer/Camera/Camera.h"
 #include "Core/Math/Math.h"
 #include "Core/System/IrufemiEngine.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/Camera/Camera.h"
 
 LineResource::~LineResource() {
     Unmap();
@@ -19,7 +19,8 @@ LineResource::~LineResource() {
 }
 
 void LineResource::CreateResource() {
-    if (!s_dxCommon_) return;
+    if (!s_dxCommon_)
+        return;
 
     // Irufemi::Line は基本 2 頂点
     if (!vertexResource_) {
@@ -39,11 +40,11 @@ void LineResource::CreateResource() {
 
     if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
         materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
-        
-        cpuMaterialData_.color = {1,1,1,1};
+
+        cpuMaterialData_.color = {1, 1, 1, 1};
         cpuMaterialData_.uvTransform = Irufemi::Math::MakeIdentity4x4();
-        
-        for(uint32_t i=0; i<kMaxFramesInFlight; ++i){
+
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
             engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, i);
         }
 
@@ -58,7 +59,6 @@ void LineResource::Map() {
     if (indexResource_) {
         indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&indexData_));
     }
- 
 }
 
 void LineResource::Unmap() {
@@ -70,26 +70,32 @@ void LineResource::Unmap() {
         indexResource_->Unmap(0, nullptr);
         indexData_ = nullptr;
     }
- 
 }
 
 void LineResource::UpdateTransform(const Camera& camera) {
-    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    transformationMatrix_.WVP = Irufemi::Math::Multiply(transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
+    transformationMatrix_.world =
+        Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.WVP = Irufemi::Math::Multiply(
+        transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
-    transformationMatrix_.WVP = Irufemi::Math::Multiply(transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
+    transformationMatrix_.WVP = Irufemi::Math::Multiply(
+        transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
     MarkAsDirty();
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetMaterialVAddress() const {
-    if (materialCbIndex_ == static_cast<uint32_t>(-1)) return 0;
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    if (materialCbIndex_ == static_cast<uint32_t>(-1))
+        return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
+        materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetTransformVAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1)) return 0;
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    if (transformCbIndex_ == static_cast<uint32_t>(-1))
+        return 0;
+    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
+        transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
 
 void LineResource::SyncBeforeDraw() {
@@ -103,6 +109,5 @@ void LineResource::SyncBeforeDraw() {
                 engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
             }
         }
-
     }
 }

@@ -1,11 +1,11 @@
 #pragma once
 
 #ifdef EditorMode
-#include <memory>
-#include <string>
-#include <deque>
 #include "Core/ICommand.h"
 #include "Core/Math/Vector3.h"
+#include <deque>
+#include <memory>
+#include <string>
 
 class GameObject;
 class EditorManager;

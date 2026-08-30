@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef EditorMode
-#include <unordered_map>
-#include <typeindex>
 #include <memory>
+#include <typeindex>
+#include <unordered_map>
 
 class Component;
 class IComponentEditor;
@@ -30,13 +30,11 @@ public:
      */
     void DrawComponent(Component* component, EditorActionManager* actionManager);
 
-    template<typename TComponent, typename TEditor>
-    void RegisterEditor() {
+    template <typename TComponent, typename TEditor> void RegisterEditor() {
         editors_[typeid(TComponent)] = std::make_unique<TEditor>();
     }
 
 private:
-
     std::unordered_map<std::type_index, std::unique_ptr<IComponentEditor>> editors_;
 };
 #endif // EditorMode

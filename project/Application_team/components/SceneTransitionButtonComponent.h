@@ -1,8 +1,8 @@
 #pragma once
-#include "Framework/Component/Component.h"
-#include <string>
-#include "Framework/UI/UIAnimator.h"
 #include "Core/Math/Vector3.h"
+#include "Framework/Component/Component.h"
+#include "Framework/UI/UIAnimator.h"
+#include <string>
 
 class ButtonComponent;
 class TransformComponent;
@@ -19,16 +19,18 @@ public:
 
     void Initialize() override;
     void Update() override;
-    
-    std::string GetComponentName() const override { return "SceneTransitionButtonComponent"; }
+
+    std::string GetComponentName() const override {
+        return "SceneTransitionButtonComponent";
+    }
     void OnRegisterProperties() override;
 
 private:
     std::string onClickLoadScene_ = ""; // クリック時に自動で遷移するシーン名
     int transitionType_ = 0;            // 0:Fade, 1:Dissolve, 2:Slide, 3:RadialBlur
     float transitionDuration_ = 1.0f;   // トランジションにかける時間
-    float transitionDelay_ = 0.8f;      // シーン遷移開始までの待機時間（デフォルトはアニメと同じ）
-    float clickAnimDuration_ = 0.8f;    // クリックアニメーションの長さ（フラッシュなど）
+    float transitionDelay_ = 0.8f; // シーン遷移開始までの待機時間（デフォルトはアニメと同じ）
+    float clickAnimDuration_ = 0.8f; // クリックアニメーションの長さ（フラッシュなど）
 
     // --- 内部状態 ---
     UIAnimator animator_;

@@ -1,6 +1,6 @@
 #include "Framework/Component/Utility/LifetimeComponent.h"
-#include "Framework/GameObject/GameObject.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Renderer/System/Core/BaseModel.h"
 
 void LifetimeComponent::OnRegisterProperties() {

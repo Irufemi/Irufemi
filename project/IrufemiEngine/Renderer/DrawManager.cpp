@@ -1,85 +1,88 @@
+#include "Renderer/DrawManager.h"
 #include "Core/Utility/ErrorUtility.h"
 #include "Core/Utility/Log.h"
 #include <iostream>
-#include "Renderer/DrawManager.h"
 using namespace RenderPackets;
 
-#include<Windows.h>
+#include <Windows.h>
 #include <cassert>
 
-#include <dxgidebug.h>
 #include "Core/Profiler/GpuProfiler.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "Renderer/Object/Batch/ModelBatch.h"
 #include "Renderer/Object/Batch/PrimitiveBatch.h"
-#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include <dxgidebug.h>
 
 #include "Renderer/Object/Line/LineClass.h"
 #include "Renderer/Object/Skybox/Skybox.h"
-#include "Renderer/System/Core/Object3DResource.h"
 #include "Renderer/System/Core/Object2DResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
 
-#include "Renderer/System/Core/LineResource.h"
-#include "RHI/DirectX12/DirectXCommon.h"
-#include "RHI/DirectX12/DirectXUtils.h"
-#include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
-#include "Renderer/Pipeline/RenderGraph/ComputePass.h"
-#include "Renderer/Pipeline/RenderGraph/ShadowPass.h"
-#include "Renderer/Pipeline/RenderGraph/MainOpaquePass.h"
-#include "Renderer/Pipeline/RenderGraph/MainTransparentPass.h"
-#include "Renderer/Pipeline/RenderGraph/UIPass.h"
-#include "Renderer/Pipeline/RenderGraph/PostUIPass.h"
-#include "Renderer/Pipeline/RenderGraph/TopMostPass.h"
-#include "Renderer/Pipeline/RenderGraph/PostProcessPass.h"
-#include "Renderer/Pipeline/RenderGraph/SelectionOutlinePass.h"
-#include "Resource/Model/ModelManager.h"
+#include "Core/Math/Math.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Renderer/Camera/CameraManager.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/DirectXUtils.h"
+#include "RHI/DirectX12/ShadowMap.h"
 #include "Renderer/Camera/Camera.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Renderer/Data/AreaLight.h"
 #include "Renderer/Data/CameraForGPU.h"
 #include "Renderer/Data/DirectionalLight.h"
 #include "Renderer/Data/PointLight.h"
 #include "Renderer/Data/SpotLight.h"
-#include "Renderer/Data/AreaLight.h"
-#include "Core/Math/Math.h"
+#include "Renderer/Pipeline/RenderGraph/ComputePass.h"
+#include "Renderer/Pipeline/RenderGraph/MainOpaquePass.h"
+#include "Renderer/Pipeline/RenderGraph/MainTransparentPass.h"
+#include "Renderer/Pipeline/RenderGraph/PostProcessPass.h"
+#include "Renderer/Pipeline/RenderGraph/PostUIPass.h"
+#include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
+#include "Renderer/Pipeline/RenderGraph/SelectionOutlinePass.h"
+#include "Renderer/Pipeline/RenderGraph/ShadowPass.h"
+#include "Renderer/Pipeline/RenderGraph/TopMostPass.h"
+#include "Renderer/Pipeline/RenderGraph/UIPass.h"
+#include "Renderer/System/Core/LineResource.h"
 #include "Resource/Model/Data/SkinCluster.h"
-#include "RHI/DirectX12/ShadowMap.h"
+#include "Resource/Model/ModelManager.h"
 #include "Resource/Texture/TextureManager.h"
 
-
 namespace {
-    // cpp内限定のヌルCBV
-    Microsoft::WRL::ComPtr<ID3D12Resource> gNullPointLight;
-    Microsoft::WRL::ComPtr<ID3D12Resource> gNullSpotLight;
-    D3D12_GPU_VIRTUAL_ADDRESS gNullPointLightVA = 0;
-    D3D12_GPU_VIRTUAL_ADDRESS gNullSpotLightVA = 0;
+// cpp内限定のヌルCBV
+Microsoft::WRL::ComPtr<ID3D12Resource> gNullPointLight;
+Microsoft::WRL::ComPtr<ID3D12Resource> gNullSpotLight;
+D3D12_GPU_VIRTUAL_ADDRESS gNullPointLightVA = 0;
+D3D12_GPU_VIRTUAL_ADDRESS gNullSpotLightVA = 0;
 
-    void EnsureNullPointLight(DirectXCommon* dx) {
-        if (gNullPointLight) return;
-        gNullPointLight = dx->CreateBufferResource(sizeof(PointLight));
-        PointLight* p = nullptr;
-        gNullPointLight->Map(0, nullptr, reinterpret_cast<void**>(&p));
-        p->color = { 0,0,0,0 }; p->position = { 0,0,0 }; p->intensity = 0.0f;
-        gNullPointLightVA = gNullPointLight->GetGPUVirtualAddress();
-    }
+void EnsureNullPointLight(DirectXCommon* dx) {
+    if (gNullPointLight)
+        return;
+    gNullPointLight = dx->CreateBufferResource(sizeof(PointLight));
+    PointLight* p = nullptr;
+    gNullPointLight->Map(0, nullptr, reinterpret_cast<void**>(&p));
+    p->color = {0, 0, 0, 0};
+    p->position = {0, 0, 0};
+    p->intensity = 0.0f;
+    gNullPointLightVA = gNullPointLight->GetGPUVirtualAddress();
+}
 
-    void EnsureNullSpotLight(DirectXCommon* dx) {
-        if (gNullSpotLight) return;
-        gNullSpotLight = dx->CreateBufferResource(sizeof(SpotLight));
-        SpotLight* s = nullptr;
-        gNullSpotLight->Map(0, nullptr, reinterpret_cast<void**>(&s));
-        s->color = { 0,0,0,0 };
-        s->position = { 0,0,0 };
-        s->intensity = 0.0f;
-        s->direction = { 0, -1, 0 };
-        s->distance = 0.0f;
-        s->decay = 1.0f;
-        s->cosAngle = 1.0f;
-        gNullSpotLightVA = gNullSpotLight->GetGPUVirtualAddress();
-    }
-} // anonymous
+void EnsureNullSpotLight(DirectXCommon* dx) {
+    if (gNullSpotLight)
+        return;
+    gNullSpotLight = dx->CreateBufferResource(sizeof(SpotLight));
+    SpotLight* s = nullptr;
+    gNullSpotLight->Map(0, nullptr, reinterpret_cast<void**>(&s));
+    s->color = {0, 0, 0, 0};
+    s->position = {0, 0, 0};
+    s->intensity = 0.0f;
+    s->direction = {0, -1, 0};
+    s->distance = 0.0f;
+    s->decay = 1.0f;
+    s->cosAngle = 1.0f;
+    gNullSpotLightVA = gNullSpotLight->GetGPUVirtualAddress();
+}
+} // namespace
 
 DrawManager::DrawManager() {}
 DrawManager::~DrawManager() {}
@@ -90,8 +93,10 @@ void DrawManager::Initialize(IrufemiEngine* engine, DirectXCommon* dx) {
     commandList_ = dx->GetCommandList();
 
     // 定数バッファのサイズ (256バイトアラインメント)
-    const size_t perFrameSize = (sizeof(PerFrameData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
-    const size_t lightCommonSize = (sizeof(LightCommonData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t perFrameSize = (sizeof(PerFrameData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) &
+                                ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
+    const size_t lightCommonSize = (sizeof(LightCommonData) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1) &
+                                   ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1);
     const uint32_t kMaxLights = 1024;
 
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -119,15 +124,18 @@ void DrawManager::Initialize(IrufemiEngine* engine, DirectXCommon* dx) {
         fr.lightSrvHandle = pool->GetGPUHandle(fr.lightSrvBaseIndex);
 
         // StructuredBuffer SRV の作成
-        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 0, fr.pointLightResource.Get(), kMaxLights, sizeof(PointLight));
-        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 1, fr.spotLightResource.Get(), kMaxLights, sizeof(SpotLight));
-        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 2, fr.areaLightResource.Get(), kMaxLights, sizeof(AreaLight));
+        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 0, fr.pointLightResource.Get(), kMaxLights,
+                                           sizeof(PointLight));
+        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 1, fr.spotLightResource.Get(), kMaxLights,
+                                           sizeof(SpotLight));
+        pool->CreateSRVForStructuredBuffer(fr.lightSrvBaseIndex + 2, fr.areaLightResource.Get(), kMaxLights,
+                                           sizeof(AreaLight));
     }
 
     // レンダーグラフの構築
     renderGraph_ = std::make_unique<RenderGraph>();
     renderGraph_->InitializeTransientResourceManager(dxCommon_);
-    
+
     renderGraph_->AddPass(std::make_unique<ComputePass>());
     renderGraph_->AddPass(std::make_unique<ShadowPass>());
     renderGraph_->AddPass(std::make_unique<MainOpaquePass>());
@@ -142,21 +150,23 @@ void DrawManager::Initialize(IrufemiEngine* engine, DirectXCommon* dx) {
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         shadowMaps_[i] = std::make_unique<ShadowMap>();
         shadowMaps_[i]->Initialize(dxCommon_, 2048, 2048);
-        
+
         // RenderGraph にリソースの初期ステートを登録
-        renderGraph_->SetInitialResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        renderGraph_->SetInitialResourceState(shadowMaps_[i]->GetResource(),
+                                              D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 
     // Command Signature for GPU Culling (ExecuteIndirect)
     D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[1] = {};
     argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
-    
+
     D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
     commandSignatureDesc.pArgumentDescs = argumentDescs;
     commandSignatureDesc.NumArgumentDescs = 1;
     commandSignatureDesc.ByteStride = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS); // 20 bytes
 
-    HRESULT hr = dxCommon_->GetDevice()->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&commandSignature_));
+    HRESULT hr = dxCommon_->GetDevice()->CreateCommandSignature(&commandSignatureDesc, nullptr,
+                                                                IID_PPV_ARGS(&commandSignature_));
     ASSERT_IF_FAILED(hr);
 }
 
@@ -164,7 +174,7 @@ void DrawManager::ExecuteComputePasses() {
     for (auto* task : computeTasks_) {
         task->DispatchCompute();
     }
-    
+
     // GPU Culling の実行
     bool dispatchedGPUCulling = false;
     for (const auto& packet : modelBatchQueue_) {
@@ -179,7 +189,7 @@ void DrawManager::ExecuteComputePasses() {
     if (!computeTasks_.empty() || dispatchedGPUCulling) {
         ExecuteUAVBarrier(nullptr);
     }
-    
+
     computeTasks_.clear();
 }
 
@@ -220,7 +230,8 @@ void DrawManager::OnResize(int32_t width, int32_t height) {
         for (int i = 0; i < kMaxFramesInFlight; ++i) {
             if (shadowMaps_[i]) {
                 // フレーム完了時点ではSRV状態になっているため、その状態を登録
-                renderGraph_->SetInitialResourceState(shadowMaps_[i]->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                renderGraph_->SetInitialResourceState(shadowMaps_[i]->GetResource(),
+                                                      D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
             }
         }
     }
@@ -277,26 +288,27 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
 
     /*完璧な画面クリアを目指して*/
 
-    ///TransitionBarrierを張るコード
+    /// TransitionBarrierを張るコード
 
     // TransitionBarrierの設定（Present -> RenderTarget）
-    DirectXUtils::TransitionBarrier(commandList_, backBuffer, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    DirectXUtils::TransitionBarrier(commandList_, backBuffer, D3D12_RESOURCE_STATE_PRESENT,
+                                    D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // レンダーターゲット追跡の更新 (バックバッファ)
     currentRenderTexture_ = nullptr;
 
     /*画面の色を変えよう*/
 
-    ///コマンドを積み込んで確定させる
+    /// コマンドを積み込んで確定させる
 
-    //描画先のRTVを設定する
+    // 描画先のRTVを設定する
     commandList_->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
-    //指定した色で画面全体をクリアする
+    // 指定した色で画面全体をクリアする
     commandList_->ClearRenderTargetView(rtvHandle, clearColor.data(), 0, nullptr);
 
     /*前後関係を正しくしよう*/
 
-    //指定した深度で画面全体をクリアする
+    // 指定した深度で画面全体をクリアする
     commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, clearDepth, clearStencil, 0, nullptr);
 
     // フレーム共通のビューポート/シザーを一度だけ設定（GameResolution基準）
@@ -307,18 +319,18 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     viewport.TopLeftY = 0;
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
-    
+
     D3D12_RECT scissor{};
     scissor.left = 0;
     scissor.right = engine_->GetGameResolutionWidth();
     scissor.top = 0;
     scissor.bottom = engine_->GetGameResolutionHeight();
-    
+
     commandList_->RSSetViewports(1, &viewport);
     commandList_->RSSetScissorRects(1, &scissor);
 
     // フレームで利用するSRVヒープを設定(全描画共通)
-    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    ID3D12DescriptorHeap* descriptorHeaps[] = {dxCommon_->GetSrvDescriptorHeap()};
     commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     // --- フレーム共通CBV/SRVをここで一度だけバインド ---
@@ -341,26 +353,27 @@ void DrawManager::PostDraw() {
         scm->OnPostUIDraw(commandList_, backBuffer);
     }
 
-    //画面に描く処理はすべて終わり、画面に映すので、状態を遷移（RenderTarget -> Present）
-    DirectXUtils::TransitionBarrier(commandList_, backBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+    // 画面に描く処理はすべて終わり、画面に映すので、状態を遷移（RenderTarget -> Present）
+    DirectXUtils::TransitionBarrier(commandList_, backBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                    D3D12_RESOURCE_STATE_PRESENT);
 
     /*画面の色を変えよう*/
 
-    ///コマンドを積み込んで確定させる
+    /// コマンドを積み込んで確定させる
 
     // GPU計測終了
     GpuProfiler::GetInstance().EndFrame(commandList_);
 
-    //コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
+    // コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
     HRESULT hr = commandList_->Close();
     ASSERT_IF_FAILED(hr);
 
-    ///コマンドをキックする
+    /// コマンドをキックする
 
-    //GPUにコマンドリストの実行を行わせる
-    ID3D12CommandList* commandLists[] = { commandList_ };
+    // GPUにコマンドリストの実行を行わせる
+    ID3D12CommandList* commandLists[] = {commandList_};
     dxCommon_->GetCommandQueue()->ExecuteCommandLists(_countof(commandLists), commandLists);
-    //GPUとOSに画面の交換を行うよう通知する
+    // GPUとOSに画面の交換を行うよう通知する
     UINT syncInterval = vSyncEnabled_ ? 1 : 0;
     UINT presentFlags = (dxCommon_->IsTearingSupported() && !vSyncEnabled_) ? DXGI_PRESENT_ALLOW_TEARING : 0;
     hr = dxCommon_->GetSwapChain()->Present(syncInterval, presentFlags);
@@ -380,42 +393,46 @@ void DrawManager::PostDraw() {
         }
     }
 
-
     // 1. フェンスをシグナル (通し番号をインクリメントして記録)
     uint64_t nextValue = dxCommon_->IncrementGlobalFence();
     dxCommon_->GetFenceValue() = nextValue; // このスロットの完了番号として保存
     dxCommon_->GetCommandQueue()->Signal(dxCommon_->GetFence(), nextValue);
- 
+
     // 2. 次のフレームへインデックスを進める
     dxCommon_->AdvanceFrameIndex();
 
     dxCommon_->UpdateFixFPS();
 }
 
-void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Irufemi::Vector2& resolution) {
+void DrawManager::SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light,
+                               const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights,
+                               const std::vector<AreaLight*>& areaLights, const Irufemi::Vector2& resolution) {
     cachedPerFrame_.camera = camera;
     cachedPerFrame_.time = time;
     cachedPerFrame_.deltaTime = deltaTime;
     cachedPerFrame_.resolution = resolution;
     cachedDirectionalLight_ = light;
-    
+
     cachedPointLights_.clear();
-    for (auto* pl : pointLights) cachedPointLights_.push_back(*pl);
-    
+    for (auto* pl : pointLights)
+        cachedPointLights_.push_back(*pl);
+
     cachedSpotLights_.clear();
-    for (auto* sl : spotLights) cachedSpotLights_.push_back(*sl);
-    
+    for (auto* sl : spotLights)
+        cachedSpotLights_.push_back(*sl);
+
     cachedAreaLights_.clear();
-    for (auto* al : areaLights) cachedAreaLights_.push_back(*al);
-    
+    for (auto* al : areaLights)
+        cachedAreaLights_.push_back(*al);
+
     SyncCachedFrameData();
 }
 
 void DrawManager::SyncCachedFrameData() {
     auto& fr = frameResources_[dxCommon_->GetFrameIndex()];
 
-    if (fr.perFrameData) { 
-        *fr.perFrameData = cachedPerFrame_; 
+    if (fr.perFrameData) {
+        *fr.perFrameData = cachedPerFrame_;
         // [Bindless] 環境マップとシャドウマップのインデックスを設定
         fr.perFrameData->envMapIndex = dxCommon_->GetSrvPool()->GetIndexFromGPUHandle(environmentMapHandle_);
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
@@ -432,12 +449,13 @@ void DrawManager::SyncCachedFrameData() {
         // シャドウマップの行列更新
         ShadowMap* shadowMap = shadowMaps_[dxCommon_->GetFrameIndex()].get();
         if (shadowMap) {
-            Irufemi::Vector3 targetPos = useCustomShadowParams_ ? shadowTargetPos_ : cachedPerFrame_.camera.worldPosition;
+            Irufemi::Vector3 targetPos =
+                useCustomShadowParams_ ? shadowTargetPos_ : cachedPerFrame_.camera.worldPosition;
             float orthoSize = useCustomShadowParams_ ? shadowOrthoSize_ : 128.0f;
             shadowMap->UpdateMatrix(cachedDirectionalLight_.direction, targetPos, orthoSize);
             fr.lightCommonData->viewProjection = shadowMap->GetViewProjection();
         }
-        
+
         // [Bindless] ライト用バッファのインデックスを設定
         if (fr.lightSrvBaseIndex != 0xFFFFFFFFu) {
             fr.lightCommonData->pointLightBufferIndex = fr.lightSrvBaseIndex + 0;
@@ -452,7 +470,8 @@ void DrawManager::SyncCachedFrameData() {
 
     // 各 StructuredBuffer へ書き込み
     auto copyLights = [](ID3D12Resource* res, const auto& lightVec) {
-        if (!res || lightVec.empty()) return;
+        if (!res || lightVec.empty())
+            return;
         using LightType = std::remove_pointer_t<typename std::decay_t<decltype(lightVec)>::value_type>;
         LightType* mapped = nullptr;
         if (SUCCEEDED(res->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
@@ -472,11 +491,10 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
     environmentMapHandle_ = envMapHandle;
 }
 
-
-
 void DrawManager::SubmitSprite(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -487,7 +505,8 @@ void DrawManager::SubmitSprite(const Object2DResource* resource) {
 
 void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -498,7 +517,8 @@ void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
 
 void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     const Object2DResource* resource = packet.resource;
-    if (!resource || !commandList_) return;
+    if (!resource || !commandList_)
+        return;
 
     // トポロジ設定
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -522,7 +542,8 @@ void DrawManager::SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& pack
 }
 
 void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
-    if (packet.instanceCount == 0 || !packet.resource) return;
+    if (packet.instanceCount == 0 || !packet.resource)
+        return;
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     commandList_->IASetVertexBuffers(0, 1, &packet.resource->vertexBufferView_);
@@ -545,7 +566,8 @@ void DrawManager::DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket&
 
 void DrawManager::SubmitText(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -556,7 +578,8 @@ void DrawManager::SubmitText(const Object2DResource* resource) {
 
 void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -567,7 +590,8 @@ void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
 
 void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     const Object2DResource* resource = packet.resource;
-    if (!resource || !commandList_) return;
+    if (!resource || !commandList_)
+        return;
 
     if (packet.customPSO) {
         commandList_->SetPipelineState(packet.customPSO);
@@ -578,13 +602,12 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     commandList_->IASetIndexBuffer(&resource->indexBufferView_);
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
-    
+
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->textureHandle_);
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LegacyPSTexture, gpuHandle);
-    
+
     commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
 }
-
 
 void DrawManager::SubmitModelBatch(const ModelBatchPacket& packet) {
     std::lock_guard<std::mutex> lock(queueMutex_);
@@ -593,7 +616,9 @@ void DrawManager::SubmitModelBatch(const ModelBatchPacket& packet) {
 
 void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) {
     const GpuMesh* gpuMesh = packet.gpuMesh;
-    if (!gpuMesh || gpuMesh->vertexCount == 0 || packet.instanceCount == 0) { return; }
+    if (!gpuMesh || gpuMesh->vertexCount == 0 || packet.instanceCount == 0) {
+        return;
+    }
 
     // IA設定 (共有リソースから)
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -613,21 +638,27 @@ void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) 
     // Draw
     if (packet.useGPUCulling && packet.indirectCommandBuffer) {
         // UAV(Compute) から IndirectArgument へのバリア (ComputePassでUAVBarrierはかかっているが、State遷移が必要)
-        DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
-        
+        DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer,
+                                        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+
         // OutputInstancesBuffer も UAV から SRV (NON_PIXEL_SHADER_RESOURCE) への遷移が必要
         if (packet.outputInstancesBuffer) {
-            DirectXUtils::TransitionBarrier(commandList_, packet.outputInstancesBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            DirectXUtils::TransitionBarrier(
+                commandList_, packet.outputInstancesBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+                D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
-
 
         commandList_->ExecuteIndirect(commandSignature_.Get(), 1, packet.indirectCommandBuffer, 0, nullptr, 0);
 
         // 状態を戻す
         if (packet.outputInstancesBuffer) {
-            DirectXUtils::TransitionBarrier(commandList_, packet.outputInstancesBuffer, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+            DirectXUtils::TransitionBarrier(commandList_, packet.outputInstancesBuffer,
+                                            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
+                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+                                            D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         }
-        DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer,
+                                        D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     } else {
         if (gpuMesh->indexCount > 0) {
             commandList_->DrawIndexedInstanced(gpuMesh->indexCount, packet.instanceCount, 0, 0, 0);
@@ -638,19 +669,25 @@ void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) 
 }
 
 void DrawManager::DispatchGPUCulling(const RenderPackets::ModelBatchPacket& packet) {
-    if (!packet.inputInstancesSrv.ptr || !packet.outputInstancesUav.ptr || !packet.cullingDataAddress || !packet.indirectCommandBuffer || !packet.indirectCommandUploadBuffer) return;
+    if (!packet.inputInstancesSrv.ptr || !packet.outputInstancesUav.ptr || !packet.cullingDataAddress ||
+        !packet.indirectCommandBuffer || !packet.indirectCommandUploadBuffer)
+        return;
 
     // 1. IndirectCommandBufferの初期化 (UploadBuffer からコピー)
-    DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST);
-    commandList_->CopyBufferRegion(packet.indirectCommandBuffer, 0, packet.indirectCommandUploadBuffer, 0, sizeof(D3D12_DRAW_INDEXED_ARGUMENTS));
-    DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+                                    D3D12_RESOURCE_STATE_COPY_DEST);
+    commandList_->CopyBufferRegion(packet.indirectCommandBuffer, 0, packet.indirectCommandUploadBuffer, 0,
+                                   sizeof(D3D12_DRAW_INDEXED_ARGUMENTS));
+    DirectXUtils::TransitionBarrier(commandList_, packet.indirectCommandBuffer, D3D12_RESOURCE_STATE_COPY_DEST,
+                                    D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     // 2. Compute Shader の実行
     ID3D12PipelineState* pso = dxCommon_->GetPSOManager()->GetComputePSO("GPUCulling");
-    if (!pso) return;
+    if (!pso)
+        return;
 
     commandList_->SetPipelineState(pso);
-    
+
     // Compute Shader の RootSignature とパラメータバインド
     // (現在は ComputeRootSignature が全体で1つという前提)
     commandList_->SetComputeRootConstantBufferView(4, packet.cullingDataAddress); // b0 (Slot 4)
@@ -669,7 +706,9 @@ void DrawManager::SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket
 }
 
 void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet) {
-    if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
+    if (packet.indexCount == 0 || packet.instanceCount == 0) {
+        return;
+    }
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -677,10 +716,10 @@ void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& 
     commandList_->IASetIndexBuffer(&packet.indexBufferView);
 
     // CBV (PS)
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);          // PS b0
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress); // PS b0
 
     // SRV (PS t0 / VS t0)            // PS t0
-    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU);   // VS t0
+    commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU); // VS t0
 
     // Draw
     commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
@@ -692,7 +731,9 @@ void DrawManager::SubmitPrimitive2DBatch(const RenderPackets::Primitive2DBatchPa
 }
 
 void DrawManager::DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet) {
-    if (packet.indexCount == 0 || packet.instanceCount == 0) { return; }
+    if (packet.indexCount == 0 || packet.instanceCount == 0) {
+        return;
+    }
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -709,9 +750,12 @@ void DrawManager::DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPack
     commandList_->DrawIndexedInstanced(packet.indexCount, packet.instanceCount, 0, 0, 0);
 }
 
-void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount, PSOManager::DepthWrite depthWrite) {
+void DrawManager::SubmitLineInstanced(const LineResource* resource,
+                                      const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU,
+                                      const UINT& instanceCount, PSOManager::DepthWrite depthWrite) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource || instanceCount == 0) return;
+    if (!resource || instanceCount == 0)
+        return;
     using namespace RenderPackets;
     LinePacket p{};
     p.resource = resource;
@@ -725,7 +769,8 @@ void DrawManager::SubmitLineInstanced(const LineResource* resource, const D3D12_
 
 void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
     const LineResource* resource = packet.resource;
-    if (!resource || packet.instanceCount == 0) return;
+    if (!resource || packet.instanceCount == 0)
+        return;
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -741,7 +786,8 @@ void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
 
 void DrawManager::SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (packet.indexCount == 0 || packet.instanceCount == 0) return;
+    if (packet.indexCount == 0 || packet.instanceCount == 0)
+        return;
     RenderPackets::DebugPrimitivePacket p = packet;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
@@ -750,7 +796,8 @@ void DrawManager::SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket
 }
 
 void DrawManager::DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
-    if (packet.indexCount == 0 || packet.instanceCount == 0) return;
+    if (packet.indexCount == 0 || packet.instanceCount == 0)
+        return;
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -765,7 +812,8 @@ void DrawManager::DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& 
 }
 
 void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const ManagedModel* model, uint32_t numVertices) {
-    if (!model || !model->gpuMeshes[0] || !dxCommon_) return;
+    if (!model || !model->gpuMeshes[0] || !dxCommon_)
+        return;
 
     // --- コンピュートシェーダーによるスキニング実行 ---
     // PSOをコンピュート用に切り替え
@@ -776,7 +824,7 @@ void DrawManager::DispatchSkinning(const SkinCluster& skinCluster, const Managed
 
     // Parameterの設定
     uint32_t frameIndex = dxCommon_->GetFrameIndex();
-    
+
     // 0: Palette (t0)
     commandList_->SetComputeRootDescriptorTable(0, skinCluster.paletteSrvHandle[frameIndex].second);
     // 1: Input Vertices (t1) (結合済みの全頂点バッファを使用)
@@ -799,8 +847,7 @@ void DrawManager::ExecuteUAVBarrier(ID3D12Resource* resource) {
 void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
                                const D3D12_INDEX_BUFFER_VIEW& indexBufferView,
                                D3D12_GPU_VIRTUAL_ADDRESS materialAddress,
-                               D3D12_GPU_VIRTUAL_ADDRESS transformationAddress,
-                               const UINT& indexCount) {
+                               D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, const UINT& indexCount) {
     RenderPackets::SkyboxPacket packet;
     packet.vertexBufferView = vertexBufferView;
     packet.indexBufferView = indexBufferView;
@@ -813,20 +860,26 @@ void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
 }
 
 void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
-    if (dxCommon_->GetEngine()->GetScreenCaptureManager() && dxCommon_->GetEngine()->GetScreenCaptureManager()->IsCaptureWithAlphaRequested()) return;
+    if (dxCommon_->GetEngine()->GetScreenCaptureManager() &&
+        dxCommon_->GetEngine()->GetScreenCaptureManager()->IsCaptureWithAlphaRequested())
+        return;
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     commandList_->IASetVertexBuffers(0, 1, &packet.vertexBufferView);
     commandList_->IASetIndexBuffer(&packet.indexBufferView);
-    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress); // b0
+    commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.materialAddress);        // b0
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, packet.transformationAddress); // b0 (VS)
     // // deleted
     commandList_->DrawIndexedInstanced(packet.indexCount, 1, 0, 0, 0);
 }
 
-void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
+void DrawManager::SubmitStandard3D(const Object3DResource* resource,
+                                   const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows,
+                                   ID3D12Resource* vertexBufferResourceOverride,
+                                   D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -843,9 +896,13 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource, const D3D12
     standard3DQueue_.push_back(p);
 }
 
-void DrawManager::SubmitTransparent3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows, ID3D12Resource* vertexBufferResourceOverride, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
+void DrawManager::SubmitTransparent3D(const Object3DResource* resource,
+                                      const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows,
+                                      ID3D12Resource* vertexBufferResourceOverride,
+                                      D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -867,15 +924,17 @@ void DrawManager::SubmitTransparent3D(const Object3DResource* resource, const D3
             float dx = camPos.x - objPos.x;
             float dy = camPos.y - objPos.y;
             float dz = camPos.z - objPos.z;
-            p.distanceToCamera = dx*dx + dy*dy + dz*dz; // 距離の2乗（比較用なら2乗のままで十分）
+            p.distanceToCamera = dx * dx + dy * dy + dz * dz; // 距離の2乗（比較用なら2乗のままで十分）
         }
     }
     transparent3DQueue_.push_back(p);
 }
 
-void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
+void DrawManager::SubmitUI3D(const Object3DResource* resource,
+                             const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -887,9 +946,12 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource, const D3D12_VERTE
     ui3DQueue_.push_back(p);
 }
 
-void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, ID3D12Resource* vertexBufferResourceOverride) {
+void DrawManager::SubmitOutlineMask(const Object3DResource* resource,
+                                    const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride,
+                                    ID3D12Resource* vertexBufferResourceOverride) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     Standard3DPacket p{};
     p.resource = resource;
     p.vertexBufferViewOverride = vertexBufferViewOverride;
@@ -904,7 +966,8 @@ void DrawManager::SubmitOutlineMask(const Object3DResource* resource, const D3D1
 
 void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (!resource) return;
+    if (!resource)
+        return;
     SpritePacket p{};
     p.resource = resource;
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
@@ -917,11 +980,14 @@ void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
 
 void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) {
     const Object3DResource* resource = packet.resource;
-    if (!resource || !commandList_) return;
-    
+    if (!resource || !commandList_)
+        return;
+
     // --- 描画前: UAV -> VBV ---
     if (packet.vertexBufferResourceOverride) {
-        DirectXUtils::TransitionBarrier(commandList_, packet.vertexBufferResourceOverride, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+        DirectXUtils::TransitionBarrier(commandList_, packet.vertexBufferResourceOverride,
+                                        D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+                                        D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
     }
 
     // トポロジ設定
@@ -953,19 +1019,22 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
 
     // --- 描画後: VBV -> UAV に戻す (次フレームのCompute用) ---
     if (packet.vertexBufferResourceOverride) {
-        DirectXUtils::TransitionBarrier(commandList_, packet.vertexBufferResourceOverride, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        DirectXUtils::TransitionBarrier(commandList_, packet.vertexBufferResourceOverride,
+                                        D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+                                        D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     }
 }
 
-
 void DrawManager::SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (packet.instanceCount == 0) return;
+    if (packet.instanceCount == 0)
+        return;
     gpuParticleQueue_.push_back(packet);
 }
 
 void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
-    if (!commandList_) return;
+    if (!commandList_)
+        return;
 
     // IA 設定: VB/Topology
     commandList_->IASetVertexBuffers(0, 1, &packet.vbv);
@@ -985,7 +1054,7 @@ void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet
     // テクスチャ (PS t0)
     // パーティクルデータ (VS t0 -> Slot 5: Instancing)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.particleSrvHandle);
-    
+
     // ソートデータ (VS t1 -> Slot 9: LineInstancing)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.sortListSrvHandle);
 
@@ -998,19 +1067,15 @@ void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet
     }
 }
 
-void DrawManager::SubmitVoxelParticle(
-    uint32_t instanceCount,
-    const D3D12_VERTEX_BUFFER_VIEW& vbv,
-    const D3D12_INDEX_BUFFER_VIEW& ibv,
-    uint32_t indexCount,
-    D3D12_GPU_VIRTUAL_ADDRESS systemCbAddress,
-    D3D12_GPU_DESCRIPTOR_HANDLE emitterHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
-    ID3D12Resource* particleResource,
-    ID3D12PipelineState* drawPSO
-) {
+void DrawManager::SubmitVoxelParticle(uint32_t instanceCount, const D3D12_VERTEX_BUFFER_VIEW& vbv,
+                                      const D3D12_INDEX_BUFFER_VIEW& ibv, uint32_t indexCount,
+                                      D3D12_GPU_VIRTUAL_ADDRESS systemCbAddress,
+                                      D3D12_GPU_DESCRIPTOR_HANDLE emitterHandle,
+                                      D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle, ID3D12Resource* particleResource,
+                                      ID3D12PipelineState* drawPSO) {
     std::lock_guard<std::mutex> lock(queueMutex_);
-    if (instanceCount == 0) return;
+    if (instanceCount == 0)
+        return;
     VoxelParticlePacket p{};
     p.instanceCount = instanceCount;
     p.vbv = vbv;
@@ -1025,11 +1090,14 @@ void DrawManager::SubmitVoxelParticle(
 }
 
 void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& packet) {
-    if (!commandList_) return;
+    if (!commandList_)
+        return;
 
     // リソースバリヤー: UAV -> ShaderResource (読み取り)
     if (packet.particleResource) {
-        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+                                        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+                                            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
     }
 
     // VoxelParticle 専用PSOをバインド
@@ -1056,12 +1124,17 @@ void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& pa
 
     // リソースバリヤー: ShaderResource -> UAV (次のフレームの計算用に戻す)
     if (packet.particleResource) {
-        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        DirectXUtils::TransitionBarrier(commandList_, packet.particleResource,
+                                        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+                                            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+                                        D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     }
 }
 
-void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<Irufemi::Vector4>& clearColors) {
-    if (renderTargets.empty()) return;
+void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets,
+                                      const std::vector<Irufemi::Vector4>& clearColors) {
+    if (renderTargets.empty())
+        return;
 
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvHandles;
     rtvHandles.reserve(renderTargets.size());
@@ -1069,7 +1142,8 @@ void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& r
     // 1. Transition Barrier (SRV -> RenderTarget)
     for (auto* rt : renderTargets) {
         if (rt) {
-            DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+            DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+                                            D3D12_RESOURCE_STATE_RENDER_TARGET);
             rtvHandles.push_back(rt->GetRtvHandle());
         }
     }
@@ -1091,7 +1165,7 @@ void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& r
         if (i < clearColors.size()) {
             commandList_->ClearRenderTargetView(rtvHandles[i], &clearColors[i].x, 0, nullptr);
         } else {
-            const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+            const float clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
             commandList_->ClearRenderTargetView(rtvHandles[i], clearColor, 0, nullptr);
         }
     }
@@ -1099,13 +1173,14 @@ void DrawManager::BeginRenderTextures(const std::vector<class RenderTexture*>& r
 
     // 4. Set Viewport/Scissor (先頭のテクスチャサイズを基準とする)
     auto* baseRt = renderTargets[0];
-    D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(baseRt->GetWidth()), static_cast<float>(baseRt->GetHeight()), 0.0f, 1.0f };
-    D3D12_RECT scissor{ 0, 0, static_cast<long>(baseRt->GetWidth()), static_cast<long>(baseRt->GetHeight()) };
+    D3D12_VIEWPORT viewport{0.0f, 0.0f, static_cast<float>(baseRt->GetWidth()), static_cast<float>(baseRt->GetHeight()),
+                            0.0f, 1.0f};
+    D3D12_RECT scissor{0, 0, static_cast<long>(baseRt->GetWidth()), static_cast<long>(baseRt->GetHeight())};
     commandList_->RSSetViewports(1, &viewport);
     commandList_->RSSetScissorRects(1, &scissor);
 
     // 5. Descriptor Heaps (念のため再設定)
-    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    ID3D12DescriptorHeap* descriptorHeaps[] = {dxCommon_->GetSrvDescriptorHeap()};
     commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 }
 
@@ -1113,16 +1188,20 @@ void DrawManager::EndRenderTextures(const std::vector<class RenderTexture*>& ren
     // 1. Transition Barrier (RenderTarget -> SRV)
     for (auto* rt : renderTargets) {
         if (rt) {
-            DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
     }
 }
 
-void DrawManager::BeginRenderTexture(RenderTexture* rt, const Irufemi::Vector4& clearColor, RenderTexture* rt2, const Irufemi::Vector4& clearColor2) {
+void DrawManager::BeginRenderTexture(RenderTexture* rt, const Irufemi::Vector4& clearColor, RenderTexture* rt2,
+                                     const Irufemi::Vector4& clearColor2) {
     // 1. Transition Barrier (SRV -> RenderTarget)
-    DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+                                    D3D12_RESOURCE_STATE_RENDER_TARGET);
     if (rt2) {
-        DirectXUtils::TransitionBarrier(commandList_, rt2->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        DirectXUtils::TransitionBarrier(commandList_, rt2->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+                                        D3D12_RESOURCE_STATE_RENDER_TARGET);
     }
 
     // レンダーターゲットを追跡
@@ -1130,7 +1209,7 @@ void DrawManager::BeginRenderTexture(RenderTexture* rt, const Irufemi::Vector4& 
     currentRenderTexture2_ = rt2;
 
     // 2. Set Render Target
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] = { rt->GetRtvHandle() };
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] = {rt->GetRtvHandle()};
     uint32_t numRTVs = 1;
     if (rt2) {
         rtvHandles[1] = rt2->GetRtvHandle();
@@ -1148,21 +1227,24 @@ void DrawManager::BeginRenderTexture(RenderTexture* rt, const Irufemi::Vector4& 
     commandList_->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     // 4. Set Viewport/Scissor
-    D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(rt->GetWidth()), static_cast<float>(rt->GetHeight()), 0.0f, 1.0f };
-    D3D12_RECT scissor{ 0, 0, static_cast<long>(rt->GetWidth()), static_cast<long>(rt->GetHeight()) };
+    D3D12_VIEWPORT viewport{0.0f, 0.0f, static_cast<float>(rt->GetWidth()), static_cast<float>(rt->GetHeight()),
+                            0.0f, 1.0f};
+    D3D12_RECT scissor{0, 0, static_cast<long>(rt->GetWidth()), static_cast<long>(rt->GetHeight())};
     commandList_->RSSetViewports(1, &viewport);
     commandList_->RSSetScissorRects(1, &scissor);
 
     // 5. Descriptor Heaps (念のため再設定)
-    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    ID3D12DescriptorHeap* descriptorHeaps[] = {dxCommon_->GetSrvDescriptorHeap()};
     commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 }
 
 void DrawManager::EndRenderTexture(RenderTexture* rt, RenderTexture* rt2) {
     // 1. Transition Barrier (RenderTarget -> SRV)
-    DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    DirectXUtils::TransitionBarrier(commandList_, rt->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     if (rt2) {
-        DirectXUtils::TransitionBarrier(commandList_, rt2->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        DirectXUtils::TransitionBarrier(commandList_, rt2->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     }
 }
 
@@ -1192,15 +1274,18 @@ void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
     currentRenderTexture2_ = nullptr;
 }
 
-void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
-    if (!renderTexture) return;
+void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12PipelineState* pso,
+                                    D3D12_GPU_VIRTUAL_ADDRESS cbvAddress, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle) {
+    if (!renderTexture)
+        return;
 
     // 1. PSOの設定 (引数が渡された場合はそれを使用、そうでなければデフォルトのCopyImage)
     if (pso) {
         commandList_->SetPipelineState(pso);
     } else {
         ID3D12PipelineState* defaultPso = dxCommon_->GetPSOManager()->GetCopyImage();
-        if (!defaultPso) return;
+        if (!defaultPso)
+            return;
         commandList_->SetPipelineState(defaultPso);
     }
 
@@ -1230,7 +1315,8 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
     commandList_->DrawInstanced(3, 1, 0, 0);
 }
 void DrawManager::BindCommonParameters() {
-    if (!commandList_ || !dxCommon_) return;
+    if (!commandList_ || !dxCommon_)
+        return;
 
     commandList_->SetGraphicsRootSignature(dxCommon_->GetRootSignature());
     commandList_->SetComputeRootSignature(dxCommon_->GetComputeRootSignature());
@@ -1246,7 +1332,7 @@ void DrawManager::BindCommonParameters() {
     // レガシー用バインド (HLSL側のBindless完全移行が終わるまで必要)
     // 点光源、スポットライト、面光源を3つのテーブル(Slot 10等)で一括設定
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Lights, fr.lightSrvHandle);
-    
+
     if (ShadowMap* shadowMap = GetShadowMap()) {
         commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::ShadowMap, shadowMap->GetSrvHandle());
     }
@@ -1254,7 +1340,8 @@ void DrawManager::BindCommonParameters() {
 
 void DrawManager::BeginShadowPass() {
     ShadowMap* shadowMap = GetShadowMap();
-    if (!shadowMap) return;
+    if (!shadowMap)
+        return;
     isShadowPass_ = true;
 
     // 1. シャドウマップの準備 (バリア遷移、クリア、DSVセット)
@@ -1268,7 +1355,7 @@ void DrawManager::BeginShadowPass() {
     }
 
     // 3. DescriptorHeap再設定
-    ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon_->GetSrvDescriptorHeap() };
+    ID3D12DescriptorHeap* descriptorHeaps[] = {dxCommon_->GetSrvDescriptorHeap()};
     commandList_->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     // 4. バインド (ライト行列を定数バッファに反映させるため)
@@ -1277,7 +1364,8 @@ void DrawManager::BeginShadowPass() {
 
 void DrawManager::EndShadowPass() {
     ShadowMap* shadowMap = GetShadowMap();
-    if (!shadowMap) return;
+    if (!shadowMap)
+        return;
     isShadowPass_ = false;
 
     // 1. バリア遷移を元に戻す (DepthWrite -> SRV)
@@ -1286,7 +1374,7 @@ void DrawManager::EndShadowPass() {
     // 2. レンダーターゲットを復帰させる
     if (currentRenderTexture_) {
         // 元の RenderTexture があればそれを再設定 (クリアはしない)
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] = { currentRenderTexture_->GetRtvHandle() };
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2] = {currentRenderTexture_->GetRtvHandle()};
         uint32_t numRTVs = 1;
         if (currentRenderTexture2_) {
             rtvHandles[1] = currentRenderTexture2_->GetRtvHandle();
@@ -1296,12 +1384,17 @@ void DrawManager::EndShadowPass() {
         commandList_->OMSetRenderTargets(numRTVs, rtvHandles, false, &dsvHandle);
 
         // ビューポート等も復帰
-        D3D12_VIEWPORT viewport{ 0.0f, 0.0f, static_cast<float>(currentRenderTexture_->GetWidth()), static_cast<float>(currentRenderTexture_->GetHeight()), 0.0f, 1.0f };
-        D3D12_RECT scissor{ 0, 0, static_cast<long>(currentRenderTexture_->GetWidth()), static_cast<long>(currentRenderTexture_->GetHeight()) };
+        D3D12_VIEWPORT viewport{0.0f,
+                                0.0f,
+                                static_cast<float>(currentRenderTexture_->GetWidth()),
+                                static_cast<float>(currentRenderTexture_->GetHeight()),
+                                0.0f,
+                                1.0f};
+        D3D12_RECT scissor{0, 0, static_cast<long>(currentRenderTexture_->GetWidth()),
+                           static_cast<long>(currentRenderTexture_->GetHeight())};
         commandList_->RSSetViewports(1, &viewport);
         commandList_->RSSetScissorRects(1, &scissor);
-    }
-    else {
+    } else {
         // なければバックバッファに戻す
         SetRenderTargetToBackBuffer(true);
     }
@@ -1310,36 +1403,46 @@ void DrawManager::EndShadowPass() {
 void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     if (renderGraph_) {
         // メインレンダリングテクスチャの初期状態を登録 (RenderGraph内で遷移するため)
-        renderGraph_->SetInitialResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        renderGraph_->SetInitialResourceState(engine->GetMainRenderTexture()->GetResource(),
+                                              D3D12_RESOURCE_STATE_RENDER_TARGET);
         if (engine->GetEffectMaskTexture()) {
-            renderGraph_->SetInitialResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetEffectMaskTexture()->GetResource(),
+                                                  D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         if (engine->GetNormalTexture()) {
-            renderGraph_->SetInitialResourceState(engine->GetNormalTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetNormalTexture()->GetResource(),
+                                                  D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         if (engine->GetMaterialTexture()) {
-            renderGraph_->SetInitialResourceState(engine->GetMaterialTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetMaterialTexture()->GetResource(),
+                                                  D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
         if (engine->GetVelocityTexture()) {
-            renderGraph_->SetInitialResourceState(engine->GetVelocityTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+            renderGraph_->SetInitialResourceState(engine->GetVelocityTexture()->GetResource(),
+                                                  D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
-        
+
         // 深度バッファの初期状態も登録 (DepthBasedOutline 等で参照するため)
         renderGraph_->SetInitialResourceState(dxCommon_->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
         // 実行後の最終ステート（SRV）を登録
-        renderGraph_->SetFinalResourceState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        renderGraph_->SetFinalResourceState(engine->GetMainRenderTexture()->GetResource(),
+                                            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         if (engine->GetEffectMaskTexture()) {
-            renderGraph_->SetFinalResourceState(engine->GetEffectMaskTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            renderGraph_->SetFinalResourceState(engine->GetEffectMaskTexture()->GetResource(),
+                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (engine->GetNormalTexture()) {
-            renderGraph_->SetFinalResourceState(engine->GetNormalTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            renderGraph_->SetFinalResourceState(engine->GetNormalTexture()->GetResource(),
+                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (engine->GetMaterialTexture()) {
-            renderGraph_->SetFinalResourceState(engine->GetMaterialTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            renderGraph_->SetFinalResourceState(engine->GetMaterialTexture()->GetResource(),
+                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
         if (engine->GetVelocityTexture()) {
-            renderGraph_->SetFinalResourceState(engine->GetVelocityTexture()->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            renderGraph_->SetFinalResourceState(engine->GetVelocityTexture()->GetResource(),
+                                                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
 
         renderGraph_->Execute(this, engine);
@@ -1355,7 +1458,8 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     if (engine->GetDebugPrimitiveRenderer()) {
         engine->GetDebugPrimitiveRenderer()->ClearInstances();
     }
-    // TODO: engine->GetCollisionManager()->ClearDebugLines() 等、他のグローバルデバッグバッチもここでクリアするアーキテクチャに統一できる
+    // TODO: engine->GetCollisionManager()->ClearDebugLines()
+    // 等、他のグローバルデバッグバッチもここでクリアするアーキテクチャに統一できる
 
     ClearRenderQueues();
 }

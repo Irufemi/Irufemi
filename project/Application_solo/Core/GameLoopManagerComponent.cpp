@@ -1,16 +1,16 @@
 #include "Core/GameLoopManagerComponent.h"
-#include "Framework/GameObject/GameObject.h"
-#include "Framework/Scene/SceneManager.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/TextRendererComponent.h"
-#include "Renderer/Font/FontManager.h"
-#include "Framework/Scene/BaseScene.h"
 #include "Engine/Irufemi.h"
+#include "Framework/Component/Renderer/TextRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Renderer/Font/FontManager.h"
 #include "Scenes/Result/ResultScene.h"
 
-#include "Player/PlayerHealthComponent.h"
 #include "Combat/Boss/BossComponent.h"
 #include "Core/Utility/Log.h"
+#include "Player/PlayerHealthComponent.h"
 #include <iostream>
 
 void GameLoopManagerComponent::Initialize() {
@@ -61,7 +61,8 @@ void GameLoopManagerComponent::Update() {
 }
 
 void GameLoopManagerComponent::OnBossDied() {
-    if (state_ != State::Playing) return;
+    if (state_ != State::Playing)
+        return;
     state_ = State::Finished;
     isClear_ = true;
     if (playerHealth_) {
@@ -71,7 +72,8 @@ void GameLoopManagerComponent::OnBossDied() {
 }
 
 void GameLoopManagerComponent::OnPlayerDied() {
-    if (state_ != State::Playing) return;
+    if (state_ != State::Playing)
+        return;
     state_ = State::Finished;
     isClear_ = false;
     BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);

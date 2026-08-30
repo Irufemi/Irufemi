@@ -1,11 +1,11 @@
 #pragma once
 
-#include <d3d12.h>
-#include <wrl.h>
-#include <cstdint>
-#include <mutex>
 #include <atomic>
+#include <cstdint>
+#include <d3d12.h>
 #include <functional>
+#include <mutex>
+#include <wrl.h>
 
 // 前方宣言
 class DirectXCommon;
@@ -46,7 +46,9 @@ public: // ゲッター・セッター
      * @brief CommandQueue を取得する。
      * @return 取得された CommandQueue
      */
-    ID3D12CommandQueue* GetCommandQueue() const { return commandQueue_.Get(); }
+    ID3D12CommandQueue* GetCommandQueue() const {
+        return commandQueue_.Get();
+    }
     /**
      * @brief CommandAllocator を取得する。
      * @return 取得された CommandAllocator
@@ -56,19 +58,25 @@ public: // ゲッター・セッター
      * @brief CommandList を取得する。
      * @return 取得された CommandList
      */
-    ID3D12GraphicsCommandList* GetCommandList() const { return commandList_.Get(); }
+    ID3D12GraphicsCommandList* GetCommandList() const {
+        return commandList_.Get();
+    }
 
     /**
      * @brief Fence を取得する。
      * @return 取得された Fence
      */
-    ID3D12Fence* GetFence() const { return fence_.Get(); }
+    ID3D12Fence* GetFence() const {
+        return fence_.Get();
+    }
     /**
      * @brief FenceEvent を取得する。
      * @return 取得された FenceEvent
      */
-    HANDLE GetFenceEvent() const { return fenceEvent_; }
-    
+    HANDLE GetFenceEvent() const {
+        return fenceEvent_;
+    }
+
     /**
      * @brief FenceValue を取得する。
      * @return 取得された FenceValue
@@ -80,47 +88,62 @@ public: // ゲッター・セッター
      */
     uint64_t GetFenceValue(uint32_t frameIndex) const;
 
-    
     /**
      * @brief GlobalFenceValue を取得する。
      * @return 取得された GlobalFenceValue
      */
-    uint64_t GetGlobalFenceValue() const { return globalFenceValue_; }
+    uint64_t GetGlobalFenceValue() const {
+        return globalFenceValue_;
+    }
     /**
      * @brief IncrementGlobalFence を実行する。
      */
-    uint64_t IncrementGlobalFence() { return ++globalFenceValue_; }
+    uint64_t IncrementGlobalFence() {
+        return ++globalFenceValue_;
+    }
 
     /**
      * @brief UploadCommandAllocator を取得する。
      * @return 取得された UploadCommandAllocator
      */
-    ID3D12CommandAllocator* GetUploadCommandAllocator() const { return uploadCommandAllocator_.Get(); }
+    ID3D12CommandAllocator* GetUploadCommandAllocator() const {
+        return uploadCommandAllocator_.Get();
+    }
     /**
      * @brief UploadCommandList を取得する。
      * @return 取得された UploadCommandList
      */
-    ID3D12GraphicsCommandList* GetUploadCommandList() const { return uploadCommandList_.Get(); }
+    ID3D12GraphicsCommandList* GetUploadCommandList() const {
+        return uploadCommandList_.Get();
+    }
     /**
      * @brief UploadFence を取得する。
      * @return 取得された UploadFence
      */
-    ID3D12Fence* GetUploadFence() const { return uploadFence_.Get(); }
+    ID3D12Fence* GetUploadFence() const {
+        return uploadFence_.Get();
+    }
     /**
      * @brief UploadFenceValue を取得する。
      * @return 取得された UploadFenceValue
      */
-    uint64_t GetUploadFenceValue() const { return uploadFenceValue_; }
+    uint64_t GetUploadFenceValue() const {
+        return uploadFenceValue_;
+    }
     /**
      * @brief IncrementUploadFenceValue を実行する。
      */
-    void IncrementUploadFenceValue() { uploadFenceValue_++; }
+    void IncrementUploadFenceValue() {
+        uploadFenceValue_++;
+    }
 
     /**
      * @brief UploadMutex を取得する。
      * @return 取得された UploadMutex
      */
-    std::mutex& GetUploadMutex() { return uploadMutex_; }
+    std::mutex& GetUploadMutex() {
+        return uploadMutex_;
+    }
 
 private:
     Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
@@ -133,7 +156,7 @@ private:
     // --- 同期・フェンス系 ---
     Microsoft::WRL::ComPtr<ID3D12Fence> fence_ = nullptr;
     std::vector<uint64_t> fenceValues_;
-    std::atomic<uint64_t> globalFenceValue_{ 0 };
+    std::atomic<uint64_t> globalFenceValue_{0};
     HANDLE fenceEvent_ = nullptr;
 
     // --- 非同期転送（アップロード）系 ---

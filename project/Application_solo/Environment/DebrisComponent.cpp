@@ -1,31 +1,32 @@
 #include "Environment/DebrisComponent.h"
-#include "Framework/GameObject/GameObject.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
-#include "RailMechanics/RailShooterEnemyComponent.h"
 #include "Combat/Boss/BossComponent.h"
-#include "Environment/DebrisManagerComponent.h"
-#include "Effects/EffectManagerComponent.h"
-#include "Core/Math/Random/Random.h"
 #include "Core/Math/MathFunction.h"
-#include "Framework/Component/Collider/SphereColliderComponent.h"
-#include "Renderer/Camera/CameraManager.h"
-#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Core/Math/Random/Random.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Core/Utility/Log.h"
+#include "Effects/EffectManagerComponent.h"
+#include "Environment/DebrisManagerComponent.h"
 #include "Environment/DestructibleEnvironmentComponent.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
-#include "Framework/Scene/BaseScene.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
-#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
-#include <cmath>
-#include <windows.h>
-#include <iostream>
-#include "Core/Utility/Log.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Scene/BaseScene.h"
 #include "Physics/CollisionManager.h"
+#include "Platform/Input/InputManager.h"
+#include "RailMechanics/RailShooterEnemyComponent.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include <cmath>
+#include <iostream>
+#include <windows.h>
 
 static ColliderComponent* GetColliderFromObj(GameObject* obj) {
-    if (!obj) return nullptr;
+    if (!obj)
+        return nullptr;
     for (auto& comp : obj->GetComponents()) {
         if (auto col = dynamic_cast<ColliderComponent*>(comp.get())) {
             return col;
@@ -34,19 +35,42 @@ static ColliderComponent* GetColliderFromObj(GameObject* obj) {
     return nullptr;
 }
 
-
-float DebrisComponent::GetPullSpeed() const { return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f; }
-float DebrisComponent::GetThrowSpeed() const { return manager_ ? manager_->GetDebrisThrowSpeed() : 50.0f; }
-float DebrisComponent::GetOrbitSpeed() const { return manager_ ? manager_->GetDebrisOrbitSpeed() : 2.0f; }
-float DebrisComponent::GetBossDamage() const { return manager_ ? manager_->GetDebrisDamage() : 10.0f; }
-float DebrisComponent::GetEnemyDamage() const { return manager_ ? manager_->GetDebrisEnemyDamage() : 100.0f; }
-float DebrisComponent::GetCameraShakeIntensity() const { return manager_ ? manager_->GetCameraShakeIntensity() : 0.5f; }
-int DebrisComponent::GetCameraShakeDurationFrames() const { return manager_ ? manager_->GetCameraShakeDurationFrames() : 10; }
-Irufemi::Vector4 DebrisComponent::GetPlayerAuraColor() const { return manager_ ? manager_->GetPlayerAuraColor() : Irufemi::Vector4{0.0f, 0.8f, 1.0f, 0.4f}; }
-Irufemi::Vector4 DebrisComponent::GetBossAuraColor() const { return manager_ ? manager_->GetBossAuraColor() : Irufemi::Vector4{0.8f, 0.0f, 0.6f, 0.4f}; }
-float DebrisComponent::GetCatchDistanceSq() const { return manager_ ? manager_->GetCatchDistanceSq() : 2.0f; }
-float DebrisComponent::GetBossShieldRadius() const { return manager_ ? manager_->GetBossShieldRadius() : 8.0f; }
-float DebrisComponent::GetPullYOffset() const { return manager_ ? manager_->GetDebrisPullYOffset() : 2.0f; }
+float DebrisComponent::GetPullSpeed() const {
+    return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f;
+}
+float DebrisComponent::GetThrowSpeed() const {
+    return manager_ ? manager_->GetDebrisThrowSpeed() : 50.0f;
+}
+float DebrisComponent::GetOrbitSpeed() const {
+    return manager_ ? manager_->GetDebrisOrbitSpeed() : 2.0f;
+}
+float DebrisComponent::GetBossDamage() const {
+    return manager_ ? manager_->GetDebrisDamage() : 10.0f;
+}
+float DebrisComponent::GetEnemyDamage() const {
+    return manager_ ? manager_->GetDebrisEnemyDamage() : 100.0f;
+}
+float DebrisComponent::GetCameraShakeIntensity() const {
+    return manager_ ? manager_->GetCameraShakeIntensity() : 0.5f;
+}
+int DebrisComponent::GetCameraShakeDurationFrames() const {
+    return manager_ ? manager_->GetCameraShakeDurationFrames() : 10;
+}
+Irufemi::Vector4 DebrisComponent::GetPlayerAuraColor() const {
+    return manager_ ? manager_->GetPlayerAuraColor() : Irufemi::Vector4{0.0f, 0.8f, 1.0f, 0.4f};
+}
+Irufemi::Vector4 DebrisComponent::GetBossAuraColor() const {
+    return manager_ ? manager_->GetBossAuraColor() : Irufemi::Vector4{0.8f, 0.0f, 0.6f, 0.4f};
+}
+float DebrisComponent::GetCatchDistanceSq() const {
+    return manager_ ? manager_->GetCatchDistanceSq() : 2.0f;
+}
+float DebrisComponent::GetBossShieldRadius() const {
+    return manager_ ? manager_->GetBossShieldRadius() : 8.0f;
+}
+float DebrisComponent::GetPullYOffset() const {
+    return manager_ ? manager_->GetDebrisPullYOffset() : 2.0f;
+}
 
 void DebrisComponent::OnRegisterProperties() {
     RegisterProperty("Hit Effect Key", &hitEffectKey_);
@@ -61,7 +85,7 @@ void DebrisComponent::OnEnable() {
     state_ = DebrisState::Idle;
     targetObject_.reset();
     idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
-    
+
     if (auto transform = GetTransform()) {
         baseIdleY_ = transform->GetPosition().y;
     }
@@ -74,8 +98,10 @@ void DebrisComponent::OnDisable() {
 }
 
 void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
-    if (state_ != DebrisState::Thrown) return;
-    if (!otherObj) return;
+    if (state_ != DebrisState::Thrown)
+        return;
+    if (!otherObj)
+        return;
 
     bool hit = false;
     if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
@@ -92,7 +118,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
                     bossTargetComp->RemoveShield(otherObj->shared_from_this());
                 }
             }
-            
+
             // シールドを消滅させる
             if (debrisComp->manager_) {
                 debrisComp->manager_->MarkForRelease(otherObj->shared_from_this());
@@ -122,7 +148,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     if (hit) {
         if (auto t = GetTransform()) {
             Irufemi::Vector3 hitPos = t->GetWorldPosition();
-            
+
             EffectManagerComponent* effectManager = nullptr;
             if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
                 effectManager = go->GetComponent<EffectManagerComponent>();
@@ -130,7 +156,7 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
             if (effectManager) {
                 effectManager->PlayEffect(hitEffectKey_, hitPos);
             }
-            
+
             if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {
                 VoxelEmitter p{};
                 p.particleType = 5; // DebrisExplosive
@@ -138,29 +164,32 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
                 p.gravity = 5.0f;
                 p.dispersion = 12.0f;
                 p.scale = {0.5f, 0.5f, 0.5f};
-                
-                Irufemi::Vector4 aura = (state_ == DebrisState::BossOrbiting) ? GetBossAuraColor() : GetPlayerAuraColor();
+
+                Irufemi::Vector4 aura =
+                    (state_ == DebrisState::BossOrbiting) ? GetBossAuraColor() : GetPlayerAuraColor();
                 Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
-                p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f, rockColor.z + aura.z * 2.0f, 1.0f};
+                p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f, rockColor.z + aura.z * 2.0f,
+                                1.0f};
                 p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
                 p.dissolveEdgeColor = aura;
 
-                voxelManager->PlayExplosion(explosionModelPath_, hitPos, {0,0,0}, {0,0,0}, {1,1,1}, p, {2,2,2});
+                voxelManager->PlayExplosion(explosionModelPath_, hitPos, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, p, {2, 2, 2});
             }
         }
-          if (manager_) {
-              manager_->MarkForRelease(gameObject_->shared_from_this());
-              if (virtualId_ >= 0) {
-                  manager_->MarkForDestroy(virtualId_, variationIndex_);
-              }
+        if (manager_) {
+            manager_->MarkForRelease(gameObject_->shared_from_this());
+            if (virtualId_ >= 0) {
+                manager_->MarkForDestroy(virtualId_, variationIndex_);
+            }
         } else {
-            gameObject_->SetIsActive(false); 
+            gameObject_->SetIsActive(false);
         }
     }
 }
 
 void DebrisComponent::SetState(DebrisState newState) {
-    if (state_ == newState) return;
+    if (state_ == newState)
+        return;
     if (manager_) {
         manager_->UnregisterDebris(this, state_);
     }
@@ -174,7 +203,7 @@ void DebrisComponent::SetState(DebrisState newState) {
         for (auto& child : gameObject_->GetChildren()) {
             if (child && child->GetName() == "DebrisAura") {
                 bool isActive = false;
-                Irufemi::Vector4 auraColor = { 1.0f, 1.0f, 1.0f, 0.7f };
+                Irufemi::Vector4 auraColor = {1.0f, 1.0f, 1.0f, 0.7f};
 
                 switch (state_) {
                 case DebrisState::Pulled:
@@ -210,7 +239,7 @@ void DebrisComponent::SetState(DebrisState newState) {
             uint32_t neutralLayer = cm->GetLayerMask("Debris_Neutral");
             uint32_t playerLayer = cm->GetLayerMask("Debris_Player");
             uint32_t enemyLayer = cm->GetLayerMask("Debris_Enemy");
-            
+
             uint32_t maskEnemy = cm->GetLayerMask("Enemy");
             uint32_t maskPlayer = cm->GetLayerMask("Player");
             uint32_t maskEnvironment = cm->GetLayerMask("Environment");
@@ -254,8 +283,6 @@ void DebrisComponent::SetState(DebrisState newState) {
     }
 }
 
-
-
 std::shared_ptr<Component> DebrisComponent::Clone() {
     auto clone = std::make_shared<DebrisComponent>();
     clone->CopyPropertiesFrom(this);
@@ -264,6 +291,7 @@ std::shared_ptr<Component> DebrisComponent::Clone() {
     clone->variationIndex_ = this->variationIndex_;
     clone->manager_ = this->manager_;
     clone->targetObject_ = this->targetObject_;
-    // No need to copy internal state variables like idleTimeY_, baseIdleY_ deeply, but doing default member copy is fine since it's a new instance.
+    // No need to copy internal state variables like idleTimeY_, baseIdleY_ deeply, but doing default member copy is
+    // fine since it's a new instance.
     return clone;
 }

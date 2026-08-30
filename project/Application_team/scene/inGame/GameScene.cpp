@@ -3,9 +3,9 @@
 #include "Irufemi.h"
 
 // ECSコンポーネントのインクルード
-#include "Framework/GameObject/GameObject.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/SceneSerializer.h"
 
 // デストラクタ
@@ -16,7 +16,6 @@ void GameScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
 
     // JSONからのロードは SceneManager が自動で行うため、ここでは手動で呼ばない
-    
 }
 
 // 更新
