@@ -1,4 +1,4 @@
-﻿name: Clang-Format Auto Fix
+name: Clang-Format Auto Fix
 
 on:
   push:

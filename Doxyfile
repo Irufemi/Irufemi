@@ -1,4 +1,4 @@
-﻿PROJECT_NAME           = "IrufemiEngine"
+PROJECT_NAME           = "IrufemiEngine"
 PROJECT_NUMBER         = "1.0"
 OUTPUT_DIRECTORY       = "docs"
 CREATE_SUBDIRS         = NO
