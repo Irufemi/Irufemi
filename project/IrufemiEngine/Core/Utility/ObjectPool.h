@@ -1,9 +1,9 @@
 #pragma once
-#include <vector>
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <vector>
 
 /**
  * @class ObjectPool
@@ -12,13 +12,12 @@
  * キャッシュラインに最適化された連続メモリ配置と、Generation(世代)管理による安全な不正アクセス防止機能を持ちます。
  * @tparam T プールで管理するオブジェクトの型
  */
-template <typename T>
-class ObjectPool {
+template <typename T> class ObjectPool {
 public:
     /// @brief プール内のオブジェクトを安全に指し示すためのハンドル
     struct Handle {
-        uint32_t index      = 0xFFFFFFFF; ///< スロットのインデックス
-        uint32_t generation = 0;          ///< 世代（古いハンドルでのアクセスを防ぐ）
+        uint32_t index = 0xFFFFFFFF; ///< スロットのインデックス
+        uint32_t generation = 0;     ///< 世代（古いハンドルでのアクセスを防ぐ）
 
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
         T* debugPtr = nullptr; ///< エディタ上での視認性・デバッグ用のポインタ
@@ -28,9 +27,15 @@ public:
          * @brief IsValid かどうかを判定する。
          * @return 判定結果 (true/false)
          */
-        bool IsValid() const { return index != 0xFFFFFFFF; }
-        bool operator==(const Handle& other) const { return index == other.index && generation == other.generation; }
-        bool operator!=(const Handle& other) const { return !(*this == other); }
+        bool IsValid() const {
+            return index != 0xFFFFFFFF;
+        }
+        bool operator==(const Handle& other) const {
+            return index == other.index && generation == other.generation;
+        }
+        bool operator!=(const Handle& other) const {
+            return !(*this == other);
+        }
     };
 
     /**
@@ -44,10 +49,10 @@ public:
             slots_[i].nextFree = static_cast<uint32_t>(i + 1);
             slots_[i].generation = 1;
             slots_[i].active = false;
-            
+
             if (factory) {
                 // ファクトリが指定されている場合はPrefabなどを事前生成して格納
-                slots_[i].data = factory(); 
+                slots_[i].data = factory();
             } else {
                 slots_[i].data = std::make_shared<T>();
             }
@@ -76,14 +81,14 @@ public:
 
         uint32_t index = headFree_;
         headFree_ = slots_[index].nextFree;
-        
+
         slots_[index].active = true;
         --freeCount_;
 
         Handle h;
         h.index = index;
         h.generation = slots_[index].generation;
-        
+
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
         h.debugPtr = slots_[index].data.get();
 #endif
@@ -95,7 +100,8 @@ public:
      * @param handle 返却するオブジェクトのハンドル
      */
     void Release(Handle handle) {
-        if (!IsValidHandle(handle)) return;
+        if (!IsValidHandle(handle))
+            return;
 
         uint32_t index = handle.index;
         slots_[index].active = false;
@@ -114,7 +120,8 @@ public:
      */
     const std::shared_ptr<T>& Resolve(Handle handle) const {
         static const std::shared_ptr<T> nullPtr = nullptr;
-        if (!IsValidHandle(handle)) return nullPtr;
+        if (!IsValidHandle(handle))
+            return nullPtr;
         return slots_[handle.index].data;
     }
 
@@ -122,12 +129,16 @@ public:
      * @brief FreeCount を取得する。
      * @return 取得された FreeCount
      */
-    size_t GetFreeCount() const { return freeCount_; }
+    size_t GetFreeCount() const {
+        return freeCount_;
+    }
     /**
      * @brief Capacity を取得する。
      * @return 取得された Capacity
      */
-    size_t GetCapacity() const { return slots_.size(); }
+    size_t GetCapacity() const {
+        return slots_.size();
+    }
 
 private:
     /**
@@ -135,20 +146,24 @@ private:
      * @return 判定結果 (true/false)
      */
     bool IsValidHandle(Handle handle) const {
-        if (handle.index >= slots_.size()) return false;
-        if (!slots_[handle.index].active) return false;
-        if (slots_[handle.index].generation != handle.generation) return false; // 世代アンマッチ（古いハンドル）
+        if (handle.index >= slots_.size())
+            return false;
+        if (!slots_[handle.index].active)
+            return false;
+        if (slots_[handle.index].generation != handle.generation)
+            return false; // 世代アンマッチ（古いハンドル）
         return true;
     }
 
     struct Slot {
-        std::shared_ptr<T> data; ///< オブジェクトの実体（既存のFactoryと互換性を持たせるためshared_ptrを採用。アロケーションは起動時のみ）
-        uint32_t nextFree;       ///< 次の空きスロットインデックス（Intrusive Free List用）
-        uint32_t generation;     ///< 現在の世代
-        bool active;             ///< 使用中フラグ
+        std::shared_ptr<T>
+            data; ///< オブジェクトの実体（既存のFactoryと互換性を持たせるためshared_ptrを採用。アロケーションは起動時のみ）
+        uint32_t nextFree;   ///< 次の空きスロットインデックス（Intrusive Free List用）
+        uint32_t generation; ///< 現在の世代
+        bool active;         ///< 使用中フラグ
     };
 
     std::vector<Slot> slots_;
-    uint32_t headFree_ = 0xFFFFFFFF;       ///< フリーリストの先頭インデックス
-    size_t freeCount_ = 0;        ///< 空きスロット数
+    uint32_t headFree_ = 0xFFFFFFFF; ///< フリーリストの先頭インデックス
+    size_t freeCount_ = 0;           ///< 空きスロット数
 };

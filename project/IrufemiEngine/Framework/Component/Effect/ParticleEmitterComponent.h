@@ -1,8 +1,8 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include <string>
-#include <memory>
 #include "Renderer/Object/Particle/ParticleObject.h"
+#include <memory>
+#include <string>
 
 class TransformComponent;
 
@@ -27,24 +27,30 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
-    
+
     /**
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override { return nullptr; }
+    IRenderable* GetRenderable() override {
+        return nullptr;
+    }
 
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override { return true; } // エディタでのプレビュー更新を許可
+    bool CanUpdateInEditMode() const override {
+        return true;
+    } // エディタでのプレビュー更新を許可
 
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "ParticleEmitterComponent"; }
+    std::string GetComponentName() const override {
+        return "ParticleEmitterComponent";
+    }
     /**
      * @brief OnRegisterProperties を実行する。
      */
@@ -76,7 +82,7 @@ public:
      * @brief Stop を実行する。
      */
     void Stop();
-    
+
     /**
      * @brief EmitBurst を実行する。
      */
@@ -87,7 +93,9 @@ public:
      * @brief ParticleObject を取得する。
      * @return 取得された ParticleObject
      */
-    ParticleObject* GetParticleObject() const { return particleObj_.get(); }
+    ParticleObject* GetParticleObject() const {
+        return particleObj_.get();
+    }
 
 private:
     std::unique_ptr<ParticleObject> particleObj_;

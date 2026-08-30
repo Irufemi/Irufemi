@@ -1,35 +1,36 @@
-#include "Core/Utility/ErrorUtility.h"
 #include "Audio/AudioManager.h"
+#include "Core/Utility/ErrorUtility.h"
+#include "Core/Utility/Log.h"
+#include "Framework/Utility/CVar.h"
+#include <Windows.h>
+#include <algorithm> // 文字列を小文字に変換するために使用
 #include <cassert>
 #include <filesystem> // フォルダ内のファイルを探索するために使用
-#include <algorithm>  // 文字列を小文字に変換するために使用
-#include <Windows.h>
 #include <iostream>
-#include "Framework/Utility/CVar.h"
-#include "Core/Utility/Log.h"
 
-#pragma comment (lib,"xaudio2.lib")
+#pragma comment(lib, "xaudio2.lib")
 #pragma comment(lib, "Mf.lib")
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "Mfreadwrite.lib")
 #pragma comment(lib, "mfuuid.lib")
 
 namespace {
-    // UTF-8 -> UTF-16
-    std::wstring ToWide(const std::string& s) {
-        if (s.empty()) return {};
-        int size = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), nullptr, 0);
-        std::wstring w(size, L'\0');
-        ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), w.data(), size);
-        return w;
-    }
-    // パス正規化(キーとして安定化させる)
-    std::string NormalizePath(const std::string& path) {
-        std::filesystem::path p(path);
-        p.make_preferred();
-        return p.generic_string(); // すべて'/'に統一
-    }
+// UTF-8 -> UTF-16
+std::wstring ToWide(const std::string& s) {
+    if (s.empty())
+        return {};
+    int size = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), nullptr, 0);
+    std::wstring w(size, L'\0');
+    ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), (int)s.size(), w.data(), size);
+    return w;
 }
+// パス正規化(キーとして安定化させる)
+std::string NormalizePath(const std::string& path) {
+    std::filesystem::path p(path);
+    p.make_preferred();
+    return p.generic_string(); // すべて'/'に統一
+}
+} // namespace
 
 AudioManager::~AudioManager() {
     Finalize();
@@ -53,8 +54,9 @@ void AudioManager::Initialize() {
 }
 
 void AudioManager::Finalize() {
-    if (finalized_) return;      // 多重 Finalize 防止
-    finalized_ = true;           // 以降の操作は無効化
+    if (finalized_)
+        return;        // 多重 Finalize 防止
+    finalized_ = true; // 以降の操作は無効化
 
     StopAll(); // すべてのVoiceを安全に停止＆Destroy
 
@@ -62,10 +64,10 @@ void AudioManager::Finalize() {
         pMasteringVoice_->DestroyVoice();
         pMasteringVoice_ = nullptr;
     }
-    
+
     // ComPtrが自動で解放するが、明示的にリセット
     pXAudio2_.Reset();
-    
+
     HRESULT hr = MFShutdown();
     ASSERT_IF_FAILED(hr);
 }
@@ -77,12 +79,11 @@ bool AudioManager::IsManagedVoice(std::shared_ptr<VoiceInstance> instance) const
 void AudioManager::Update() {
     // 終了したボイスをリストから削除
     // 削除されると shared_ptr の参照が外れ、VoiceInstance のデストラクタで DestroyVoice される
-    activeVoices_.erase(
-        std::remove_if(activeVoices_.begin(), activeVoices_.end(),
-            [](const std::shared_ptr<VoiceInstance>& instance) {
-                return instance->GetCallback()->IsFinished();
-            }),
-        activeVoices_.end());
+    activeVoices_.erase(std::remove_if(activeVoices_.begin(), activeVoices_.end(),
+                                       [](const std::shared_ptr<VoiceInstance>& instance) {
+                                           return instance->GetCallback()->IsFinished();
+                                       }),
+                        activeVoices_.end());
 
     // マスターボリュームの適用
     if (pMasteringVoice_) {
@@ -96,7 +97,8 @@ void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
     categoryMap_.clear();
     namespace fs = std::filesystem;
     if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
-        Log::OutPutLog(std::cerr, "[AudioManager] Warning: Sound folder not found or is not a directory: " + folderPath + "\n");
+        Log::OutPutLog(std::cerr,
+                       "[AudioManager] Warning: Sound folder not found or is not a directory: " + folderPath + "\n");
         return;
     }
     for (const auto& entry : fs::directory_iterator(folderPath)) {
@@ -112,16 +114,17 @@ void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std
     namespace fs = std::filesystem;
 
     if (!fs::exists(folderPath) || !fs::is_directory(folderPath)) {
-        Log::OutPutLog(std::cerr, "[AudioManager] Warning: Category folder not found or is not a directory: " + folderPath + "\n");
+        Log::OutPutLog(std::cerr,
+                       "[AudioManager] Warning: Category folder not found or is not a directory: " + folderPath + "\n");
         return;
     }
 
     for (const auto& entry : fs::directory_iterator(folderPath)) {
-        if (!entry.is_regular_file()) continue;
+        if (!entry.is_regular_file())
+            continue;
 
         std::string ext = entry.path().extension().string();
-        if (_stricmp(ext.c_str(), ".wav") != 0 && 
-            _stricmp(ext.c_str(), ".mp3") != 0 && 
+        if (_stricmp(ext.c_str(), ".wav") != 0 && _stricmp(ext.c_str(), ".mp3") != 0 &&
             _stricmp(ext.c_str(), ".wma") != 0) {
             continue;
         }
@@ -140,17 +143,16 @@ void AudioManager::LoadSoundsFromFolder(const std::string& folderPath, const std
                 Log::OutPutLog(std::cerr, "[AudioManager] Warning: Failed to load sound file: " + key + "\n");
             }
         }
-
     }
     // カテゴリごとにソート
     auto& names = categoryMap_[category];
     std::sort(names.begin(), names.end());
-
 }
 
 std::vector<std::string> AudioManager::GetSoundNames(const std::string& category) const {
     auto it = categoryMap_.find(category);
-    if (it == categoryMap_.end()) return {};
+    if (it == categoryMap_.end())
+        return {};
     return it->second;
 }
 
@@ -167,22 +169,23 @@ std::vector<std::string> AudioManager::GetCategories() const {
     cats.reserve(categoryMap_.size());
     for (auto const& [cat, _] : categoryMap_) {
         cats.push_back(cat);
-
     }
     std::sort(cats.begin(), cats.end());
     return cats;
 }
 
-std::weak_ptr<VoiceInstance> AudioManager::Play(
-    std::shared_ptr<Sound> soundData, bool loop, float volume, AudioCategory category) {
-    if (finalized_) return {};
+std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData, bool loop, float volume,
+                                                AudioCategory category) {
+    if (finalized_)
+        return {};
     if (!pXAudio2_ || !soundData) {
         return {};
     }
 
     auto callback = std::make_unique<VoiceCallback>();
-    IXAudio2SourceVoice* pSourceVoice{ nullptr };
-    HRESULT hr = pXAudio2_->CreateSourceVoice(&pSourceVoice, soundData->GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO, callback.get());
+    IXAudio2SourceVoice* pSourceVoice{nullptr};
+    HRESULT hr = pXAudio2_->CreateSourceVoice(&pSourceVoice, soundData->GetFormat(), 0, XAUDIO2_DEFAULT_FREQ_RATIO,
+                                              callback.get());
     if (FAILED(hr) || !pSourceVoice) {
         return {};
     }
@@ -191,7 +194,7 @@ std::weak_ptr<VoiceInstance> AudioManager::Play(
     pSourceVoice->SetVolume(volume);
 
     // 再生するオーディオバッファの準備
-    XAUDIO2_BUFFER buffer{ 0 };
+    XAUDIO2_BUFFER buffer{0};
     buffer.pAudioData = soundData->GetData();
     buffer.Flags = XAUDIO2_END_OF_STREAM; // これで再生が最後まで行くとストリームが終了したとみなされる
     buffer.AudioBytes = soundData->GetSize();
@@ -215,7 +218,8 @@ std::weak_ptr<VoiceInstance> AudioManager::Play(
 
 void AudioManager::Stop(std::weak_ptr<VoiceInstance>& instance) {
     auto locked = instance.lock();
-    if (!locked) return;
+    if (!locked)
+        return;
 
     if (finalized_ || !IsManagedVoice(locked)) {
         return;

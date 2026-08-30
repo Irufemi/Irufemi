@@ -2,8 +2,8 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <WinSock2.h>
 #include <iostream>
 
 #pragma comment(lib, "ws2_32.lib")
@@ -18,15 +18,15 @@ TelemetrySender& TelemetrySender::GetInstance() {
     return instance;
 }
 
-TelemetrySender::TelemetrySender() : networkData_(std::make_unique<NetworkData>()) {
-}
+TelemetrySender::TelemetrySender() : networkData_(std::make_unique<NetworkData>()) {}
 
 TelemetrySender::~TelemetrySender() {
     Finalize();
 }
 
 void TelemetrySender::Initialize(const std::string& targetIp, uint16_t targetPort) {
-    if (isRunning_) return;
+    if (isRunning_)
+        return;
 
     // Winsock初期化
     WSADATA wsaData;
@@ -75,20 +75,23 @@ void TelemetrySender::Finalize() {
 }
 
 void TelemetrySender::SetMetric(const std::string& key, const nlohmann::json& value) {
-    if (!isRunning_) return;
+    if (!isRunning_)
+        return;
     std::lock_guard<std::mutex> lock(dataMutex_);
     currentMetrics_[key] = value;
 }
 
 void TelemetrySender::LogEvent(const std::string& message) {
-    if (!isRunning_) return;
+    if (!isRunning_)
+        return;
     std::lock_guard<std::mutex> lock(dataMutex_);
     pendingEvents_.push_back(message);
 }
 
 void TelemetrySender::OnFrameEnd() {
-    if (!isRunning_) return;
-    
+    if (!isRunning_)
+        return;
+
     {
         std::lock_guard<std::mutex> lock(dataMutex_);
         triggerSend_ = true;
@@ -106,19 +109,21 @@ void TelemetrySender::ThreadLoop() {
             // triggerSend_ が true になるか、終了(isRunning_ == false)になるまで待機
             cv_.wait(lock, [this]() { return triggerSend_.load() || !isRunning_.load(); });
 
-            if (!isRunning_) break;
+            if (!isRunning_)
+                break;
 
             // 送信用のデータをコピー
             metricsToSend = currentMetrics_;
             eventsToSend = std::move(pendingEvents_);
-            
+
             // イベントログキューをクリア
             pendingEvents_.clear();
             triggerSend_ = false;
         }
 
         // UDPソケットが無効ならスキップ
-        if (networkData_->udpSocket_ == INVALID_SOCKET) continue;
+        if (networkData_->udpSocket_ == INVALID_SOCKET)
+            continue;
 
         // イベントをメトリクスに追加して送信
         if (!eventsToSend.empty()) {

@@ -10,7 +10,9 @@ public:
     void Initialize() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "ResultManagerComponent"; }
+    std::string GetComponentName() const override {
+        return "ResultManagerComponent";
+    }
 
 private:
     float timer_ = 0.0f;
@@ -19,7 +21,7 @@ private:
     float timeScaleRecoveryDuration_ = 0.5f; // スローモーションから等倍速に戻るまでの時間(イージング時間)
     bool canReturnToTitle_ = false;
     bool hasResetTimeScale_ = false;
-    
+
     // イージング用状態変数
     bool isRecoveringTimeScale_ = false;
     float timeScaleRecoveryTimer_ = 0.0f;

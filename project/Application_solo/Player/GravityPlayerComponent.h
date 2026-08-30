@@ -1,8 +1,8 @@
 #pragma once
 #include "Framework/Component/Component.h"
-#include <vector>
-#include <memory>
 #include <functional>
+#include <memory>
+#include <vector>
 
 class GameObject;
 class PlayerTargetingComponent;
@@ -17,17 +17,22 @@ public:
     GravityPlayerComponent() = default;
     ~GravityPlayerComponent() override = default;
 
-
     void Initialize() override;
     void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "GravityPlayerComponent"; }
+    std::string GetComponentName() const override {
+        return "GravityPlayerComponent";
+    }
 
     void LoadStatusFromJson();
-    
-    std::string GetStatusDataPath() const { return statusDataPath_; }
-    void SetStatusDataPath(const std::string& path) { statusDataPath_ = path; }
+
+    std::string GetStatusDataPath() const {
+        return statusDataPath_;
+    }
+    void SetStatusDataPath(const std::string& path) {
+        statusDataPath_ = path;
+    }
 
 private:
     void HandlePullInput();
@@ -37,8 +42,8 @@ private:
 
 private:
     std::vector<std::shared_ptr<GameObject>> orbitingDebris_; ///< 現在プレイヤーの周囲を回転しているガレキのリスト
-    int maxOrbitCount_ = 5; ///< 最大保持数
-    float pullRadius_ = 100.0f; ///< 引き寄せ検知半径
+    int maxOrbitCount_ = 5;                                   ///< 最大保持数
+    float pullRadius_ = 100.0f;                               ///< 引き寄せ検知半径
 
     PlayerTargetingComponent* targetingComp_ = nullptr;
     class DebrisManagerComponent* debrisManager_ = nullptr;
@@ -54,11 +59,11 @@ private:
 
     float throwInterval_ = 0.15f; // 0.15秒間隔
     int throwRemainingCount_ = 0; // 今回の射撃ループで撃つ弾数
-    
+
     // ノーロック射撃時に、レイキャストが何にも当たらなかった場合の最大飛距離
-    float noLockThrowDistance_ = 1000.0f; 
+    float noLockThrowDistance_ = 1000.0f;
 
     std::string statusDataPath_ = "resources/GameData/PlayerStatus.json";
-    
+
     PlayerHealthComponent* healthComp_ = nullptr;
 };

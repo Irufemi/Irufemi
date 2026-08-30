@@ -1,14 +1,14 @@
 #include "Framework/Component/UI/ButtonComponent.h"
-#include "Framework/Scene/SceneManager.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Framework/Component/Renderer/SpriteRendererComponent.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Framework/Component/Renderer/SpriteRendererComponent.h"
-#include "Core/System/IrufemiEngine.h"
-#include "Platform/Input/InputManager.h"
+#include "Framework/Scene/SceneManager.h"
 #include "Framework/Scene/SceneTransition.h"
-#include "Renderer/Camera/CameraManager.h"
+#include "Platform/Input/InputManager.h"
 #include "Renderer/Camera/Camera.h"
+#include "Renderer/Camera/CameraManager.h"
 
 void ButtonComponent::OnRegisterProperties() {
     RegisterProperty("Normal Color", &normalColor_);
@@ -26,50 +26,55 @@ void ButtonComponent::Initialize() {
 }
 
 bool ButtonComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
-    if (!GetTransform() || !sprite_) return false;
-    
+    if (!GetTransform() || !sprite_)
+        return false;
+
     Irufemi::Vector3 pos = GetTransform()->GetWorldPosition();
     Irufemi::Vector3 scale = GetTransform()->GetWorldScale();
-    
+
     auto* s = sprite_->GetSprite();
-    if (!s) return false;
-    
+    if (!s)
+        return false;
+
     // スプライトのアンカーとサイズを取得
     Irufemi::Vector2 anchor = s->GetAnchor();
     Irufemi::Vector2 baseSize = s->GetSize();
-    
+
     // Hitbox Scale を加味した幅・高さを算出
     // （※sprite_->GetSize() は既に Irufemi::Transform の Scale が適用された描画上のサイズを返すため、
     //  ここでは scale.x/y を二重に掛けないようにする）
     float width = baseSize.x * hitboxScale_.x;
     float height = baseSize.y * hitboxScale_.y;
-    
+
     // アンカー位置を加味して当たり判定矩形を計算
     // （例えば anchor が 0.5 の場合、pos が中心になる）
     float left = pos.x - width * anchor.x;
     float right = pos.x + width * (1.0f - anchor.x);
     float top = pos.y - height * anchor.y;
     float bottom = pos.y + height * (1.0f - anchor.y);
-    
-    return (mousePos.x >= left && mousePos.x <= right &&
-            mousePos.y >= top && mousePos.y <= bottom);
+
+    return (mousePos.x >= left && mousePos.x <= right && mousePos.y >= top && mousePos.y <= bottom);
 }
 
 void ButtonComponent::Update() {
-    if (!sprite_ || !gameObject_) return;
-    
+    if (!sprite_ || !gameObject_)
+        return;
+
     auto scene = gameObject_->GetScene();
-    if (!scene) return;
+    if (!scene)
+        return;
     auto engine = scene->GetEngine();
-    if (!engine) return;
-    
+    if (!engine)
+        return;
+
     auto input = engine->GetInputManager();
     auto cameraManager = engine->GetCameraManager();
-    if (!input || !cameraManager || !cameraManager->GetActiveCamera()) return;
-    
+    if (!input || !cameraManager || !cameraManager->GetActiveCamera())
+        return;
+
     Irufemi::Vector2 mousePos = input->GetMousePosition();
     Irufemi::Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
-    
+
     isHovered_ = CheckBounds(uiPos);
     isClicked_ = false;
 
@@ -97,7 +102,7 @@ void ButtonComponent::Update() {
                 color.w *= animAlpha;
             }
             sprite_->GetSprite()->SetColor(color);
-            
+
             // 離された瞬間（クリック完了）
             if (input->IsMouseButtonReleased(Mouse::Button::Left) && isPressedOnButton_) {
                 isClicked_ = true;

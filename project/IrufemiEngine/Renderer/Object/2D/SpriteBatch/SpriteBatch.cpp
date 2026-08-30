@@ -1,12 +1,12 @@
 ﻿#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
-#include "Renderer/DrawManager.h"
-#include "Resource/Texture/TextureManager.h"
-#include "Renderer/Camera/CameraManager.h"
-#include "Renderer/Camera/Camera.h"
-#include "Core/Math/Math.h"
-#include "Renderer/System/Core/Object2DResource.h"
-#include "RHI/DirectX12/DescriptorPool.h"
 #include "../../../../../externals/DirectXTex/d3dx12.h"
+#include "Core/Math/Math.h"
+#include "RHI/DirectX12/DescriptorPool.h"
+#include "Renderer/Camera/Camera.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Renderer/DrawManager.h"
+#include "Renderer/System/Core/Object2DResource.h"
+#include "Resource/Texture/TextureManager.h"
 
 TextureManager* SpriteBatch::textureManager_ = nullptr;
 DrawManager* SpriteBatch::drawManager_ = nullptr;
@@ -14,8 +14,7 @@ CameraManager* SpriteBatch::cameraManager_ = nullptr;
 DirectXCommon* SpriteBatch::dx_ = nullptr;
 DescriptorPool* SpriteBatch::srvPool_ = nullptr;
 
-SpriteBatch::SpriteBatch() {
-}
+SpriteBatch::SpriteBatch() {}
 
 SpriteBatch::~SpriteBatch() {
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
@@ -33,10 +32,10 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     baseResource_ = std::make_unique<Object2DResource>();
 
     // 頂点データはSpriteと同じ単位矩形
-    baseResource_->vertexDataList_.push_back({ { 0.0f,1.0f,0.0f,1.0f }, { 0.0f,1.0f }, {0.0f,0.0f,-1.0f} });
-    baseResource_->vertexDataList_.push_back({ { 0.0f,0.0f,0.0f,1.0f }, { 0.0f,0.00 }, {0.0f,0.0f,-1.0f} });
-    baseResource_->vertexDataList_.push_back({ { 1.0f,1.0f,0.0f,1.0f }, { 1.0f,1.0f }, {0.0f,0.0f,-1.0f} });
-    baseResource_->vertexDataList_.push_back({ { 1.0f,0.0f,0.0f,1.0f }, { 1.0f,0.0f }, {0.0f,0.0f,-1.0f} });
+    baseResource_->vertexDataList_.push_back({{0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->vertexDataList_.push_back({{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.00}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->vertexDataList_.push_back({{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->vertexDataList_.push_back({{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}});
 
     baseResource_->indexDataList_.push_back(0);
     baseResource_->indexDataList_.push_back(1);
@@ -49,14 +48,16 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     baseResource_->Map();
 
     if (baseResource_->vertexData_) {
-        std::copy(baseResource_->vertexDataList_.begin(), baseResource_->vertexDataList_.end(), baseResource_->vertexData_);
+        std::copy(baseResource_->vertexDataList_.begin(), baseResource_->vertexDataList_.end(),
+                  baseResource_->vertexData_);
     }
     if (baseResource_->indexData_) {
-        std::copy(baseResource_->indexDataList_.begin(), baseResource_->indexDataList_.end(), baseResource_->indexData_);
+        std::copy(baseResource_->indexDataList_.begin(), baseResource_->indexDataList_.end(),
+                  baseResource_->indexData_);
     }
 
     if (baseResource_->GetMaterialData()) {
-        baseResource_->GetMaterialData()->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        baseResource_->GetMaterialData()->color = {1.0f, 1.0f, 1.0f, 1.0f};
         baseResource_->GetMaterialData()->enableLighting = false;
         baseResource_->GetMaterialData()->hasTexture = true;
         baseResource_->GetMaterialData()->lightingMode = 2; // Unlit
@@ -70,12 +71,13 @@ void SpriteBatch::Initialize(const std::string& textureName) {
         baseResource_->textureHandle_ = textureManager_->LoadTexture(textureName);
         uint32_t tw = 0, th = 0;
         if (textureManager_->GetTextureSize(textureName, tw, th)) {
-            textureSize_ = { static_cast<float>(tw), static_cast<float>(th) };
+            textureSize_ = {static_cast<float>(tw), static_cast<float>(th)};
         }
-        
+
         // Bindless用にtextureIndexをマテリアルに設定
         if (baseResource_->GetMaterialData()) {
-            baseResource_->GetMaterialData()->textureIndex = textureManager_->GetSrvIndex(baseResource_->textureHandle_);
+            baseResource_->GetMaterialData()->textureIndex =
+                textureManager_->GetSrvIndex(baseResource_->textureHandle_);
         }
     }
 
@@ -90,16 +92,18 @@ void SpriteBatch::Initialize(const std::string& textureName) {
 }
 
 void SpriteBatch::AddInstance(const Irufemi::Transform& transform, const Irufemi::Vector4& color) {
-    instances_.push_back({ transform, color, {0.5f, 0.5f}, {textureSize_.x * transform.scale.x, textureSize_.y * transform.scale.y} });
+    instances_.push_back(
+        {transform, color, {0.5f, 0.5f}, {textureSize_.x * transform.scale.x, textureSize_.y * transform.scale.y}});
     instanceDirty_ = true;
 }
 
-void SpriteBatch::AddInstance(const Irufemi::Vector2& position, const Irufemi::Vector2& size, float rotation, const Irufemi::Vector4& color, const Irufemi::Vector2& anchor) {
+void SpriteBatch::AddInstance(const Irufemi::Vector2& position, const Irufemi::Vector2& size, float rotation,
+                              const Irufemi::Vector4& color, const Irufemi::Vector2& anchor) {
     Irufemi::Transform tf;
-    tf.translate = { position.x, position.y, 0.0f };
-    tf.scale = { 1.0f, 1.0f, 1.0f };
-    tf.rotate = { 0.0f, 0.0f, rotation };
-    instances_.push_back({ tf, color, anchor, size });
+    tf.translate = {position.x, position.y, 0.0f};
+    tf.scale = {1.0f, 1.0f, 1.0f};
+    tf.rotate = {0.0f, 0.0f, rotation};
+    instances_.push_back({tf, color, anchor, size});
     instanceDirty_ = true;
 }
 
@@ -121,7 +125,8 @@ void SpriteBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
     if (instanceCapacity_[frameIndex] < instanceCount) {
         uint32_t doubled = instanceCapacity_[frameIndex] * 2;
         uint32_t newCapacity = instanceCount > doubled ? instanceCount : doubled;
-        if (newCapacity < 64) newCapacity = 64;
+        if (newCapacity < 64)
+            newCapacity = 64;
 
         if (instanceBuffer_[frameIndex]) {
             instanceBuffer_[frameIndex]->Unmap(0, nullptr);
@@ -131,9 +136,10 @@ void SpriteBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
         auto desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InstanceData) * newCapacity);
 
-        HRESULT hr = dx_->GetDevice()->CreateCommittedResource(
-            &heapProps, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&instanceBuffer_[frameIndex]));
-        
+        HRESULT hr = dx_->GetDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &desc,
+                                                               D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                                                               IID_PPV_ARGS(&instanceBuffer_[frameIndex]));
+
         if (SUCCEEDED(hr)) {
             instanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&instanceData_[frameIndex]));
             instanceCapacity_[frameIndex] = newCapacity;
@@ -145,7 +151,8 @@ void SpriteBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
             srvDesc.Buffer.NumElements = newCapacity;
             srvDesc.Buffer.StructureByteStride = sizeof(InstanceData);
 
-            dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srvDesc, instancingSrvCPU_[frameIndex]);
+            dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srvDesc,
+                                                       instancingSrvCPU_[frameIndex]);
         }
     }
 }
@@ -161,7 +168,8 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
     CreateOrResizeInstanceBuffer(visibleInstanceCount_);
 
     Camera* camera = cameraManager_->GetActiveCamera();
-    if (!camera) return;
+    if (!camera)
+        return;
 
     Irufemi::Matrix4x4 viewProj = camera->GetOrthographicMatrix(); // Sprite uses Orthographic
 
@@ -169,11 +177,12 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
         const auto& inst = instances_[i];
 
         // スケールは元サイズ(size)をベースに掛ける
-        Irufemi::Vector3 scale = { inst.size.x, inst.size.y, 1.0f };
-        
+        Irufemi::Vector3 scale = {inst.size.x, inst.size.y, 1.0f};
+
         // アンカーの適用（0..1の四角形を平行移動させる）
         // 左上が0,0、右下が1,1。アンカーが0.5,0.5なら、-0.5ずらす
-        Irufemi::Matrix4x4 anchorTrans = Irufemi::Math::MakeTranslateMatrix(Irufemi::Vector3{-inst.anchor.x, -inst.anchor.y, 0.0f});
+        Irufemi::Matrix4x4 anchorTrans =
+            Irufemi::Math::MakeTranslateMatrix(Irufemi::Vector3{-inst.anchor.x, -inst.anchor.y, 0.0f});
         Irufemi::Matrix4x4 scaleMat = Irufemi::Math::MakeScaleMatrix(scale);
         Irufemi::Matrix4x4 rotMat = Irufemi::Math::MakeRotateZMatrix(inst.transform.rotate.z);
         Irufemi::Matrix4x4 transMat = Irufemi::Math::MakeTranslateMatrix(inst.transform.translate);
@@ -202,7 +211,8 @@ void SpriteBatch::Draw() {
 }
 
 void SpriteBatch::Draw(bool isTopMost) {
-    if (visibleInstanceCount_ == 0) return;
+    if (visibleInstanceCount_ == 0)
+        return;
 
     SyncBeforeDraw();
 

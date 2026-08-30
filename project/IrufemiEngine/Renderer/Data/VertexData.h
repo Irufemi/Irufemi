@@ -12,5 +12,5 @@ struct VertexData {
     Irufemi::Vector4 position;
     Irufemi::Vector2 texcoord;
     Irufemi::Vector3 normal;
-    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; ///< [追加] 頂点カラー
+    Irufemi::Vector4 color = {1.0f, 1.0f, 1.0f, 1.0f}; ///< [追加] 頂点カラー
 };

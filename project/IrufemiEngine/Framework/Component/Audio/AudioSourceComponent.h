@@ -1,8 +1,8 @@
 #pragma once
-#include "Framework/Component/Component.h"
-#include <string>
-#include <memory>
 #include "Audio/AudioPlayer.h"
+#include "Framework/Component/Component.h"
+#include <memory>
+#include <string>
 
 /**
  * @class AudioSourceComponent
@@ -22,12 +22,14 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
-    
+
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "AudioSourceComponent"; }
+    std::string GetComponentName() const override {
+        return "AudioSourceComponent";
+    }
     /**
      * @brief OnRegisterProperties を実行する。
      */
@@ -61,10 +63,10 @@ public:
 
 private:
     std::string audioPath_ = "audio/BGM/bgm_default.wav"; // デフォルト
-    int audioType_ = static_cast<int>(AudioType::SE); // シリアライズ用
+    int audioType_ = static_cast<int>(AudioType::SE);     // シリアライズ用
     bool playOnAwake_ = false;
     bool loop_ = false;
     float volume_ = 1.0f;
-    
+
     std::unique_ptr<AudioPlayer> player_; ///< 実際の再生を担うObject層のインスタンス
 };

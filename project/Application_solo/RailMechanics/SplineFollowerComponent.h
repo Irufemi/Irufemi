@@ -1,6 +1,6 @@
 #pragma once
-#include "Framework/Component/Component.h"
 #include "Core/Math/Vector3.h"
+#include "Framework/Component/Component.h"
 #include <memory>
 #include <string>
 
@@ -21,17 +21,25 @@ public:
     void Update() override;
     void Draw() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "SplineFollowerComponent"; }
+    std::string GetComponentName() const override {
+        return "SplineFollowerComponent";
+    }
 
-    float GetCurrentDistance() const { return currentDistance_; }
-    SplineComponent* GetCachedPath() const { return cachedPath_; }
-    uint64_t GetTargetPathID() const { return targetPathID_; }
+    float GetCurrentDistance() const {
+        return currentDistance_;
+    }
+    SplineComponent* GetCachedPath() const {
+        return cachedPath_;
+    }
+    uint64_t GetTargetPathID() const {
+        return targetPathID_;
+    }
 
     void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
 private:
-    float currentDistance_ = 0.0f;    ///< ルート（軌道）上の進み具合 (m)
-    float speed_ = 10.0f;             ///< 自動前進するスピード (m/s)
-    uint64_t targetPathID_ = 0;       ///< 追従対象のオブジェクトID
+    float currentDistance_ = 0.0f;          ///< ルート（軌道）上の進み具合 (m)
+    float speed_ = 10.0f;                   ///< 自動前進するスピード (m/s)
+    uint64_t targetPathID_ = 0;             ///< 追従対象のオブジェクトID
     SplineComponent* cachedPath_ = nullptr; ///< キャッシュされた対象のパス
 };

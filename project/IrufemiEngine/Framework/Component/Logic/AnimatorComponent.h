@@ -27,7 +27,7 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
-    
+
     /**
      * @brief OnRegisterProperties を実行する。
      */
@@ -37,18 +37,22 @@ public:
      * @brief Play を実行する。
      */
     void Play(const std::string& animationName, bool loop = true, float fadeDuration = 0.0f);
-    
+
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "AnimatorComponent"; }
-    
+    std::string GetComponentName() const override {
+        return "AnimatorComponent";
+    }
+
     /**
      * @brief RawAnimator を取得する。
      * @return 取得された RawAnimator
      */
-    Animator* GetRawAnimator() { return animator_.get(); }
+    Animator* GetRawAnimator() {
+        return animator_.get();
+    }
 
 private:
     std::unique_ptr<Animator> animator_;

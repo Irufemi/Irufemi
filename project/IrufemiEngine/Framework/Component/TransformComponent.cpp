@@ -1,7 +1,7 @@
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject/GameObject.h"
 #include "Core/Math/MathFunction.h"
 #include "Core/System/ComponentPool.h"
+#include "Framework/GameObject/GameObject.h"
 #include <cmath>
 
 // Setters
@@ -17,7 +17,8 @@ void TransformComponent::SetRotation(const Irufemi::Vector3& rotation) {
 }
 
 void TransformComponent::SetRotationQuat(const Irufemi::Quaternion& rotation) {
-    if (rotation_.x != rotation.x || rotation_.y != rotation.y || rotation_.z != rotation.z || rotation_.w != rotation.w) {
+    if (rotation_.x != rotation.x || rotation_.y != rotation.y || rotation_.z != rotation.z ||
+        rotation_.w != rotation.w) {
         rotation_ = Irufemi::Math::Normalize(rotation);
         MarkLocalDirty();
     }
@@ -39,7 +40,7 @@ Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
                 // 負のスケール時の回転抽出バグを防ぐため、安全に抽出されたWorldRotationQuat等を使用する
                 Irufemi::Vector3 pPos = parentT->GetWorldPosition();
                 Irufemi::Quaternion quat = parentT->GetWorldRotationQuat();
-                Irufemi::Vector3 pScale = { 1.0f, 1.0f, 1.0f };
+                Irufemi::Vector3 pScale = {1.0f, 1.0f, 1.0f};
                 return Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
             }
             return parentT->GetWorldMatrix();
@@ -84,19 +85,25 @@ void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRo
                 CheckAndComputeMatrix();
                 Irufemi::Vector3 wPos = GetWorldPosition();
                 Irufemi::Vector3 wScale = GetWorldScale();
-                
+
                 Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(wScale, worldRotation, wPos);
                 Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
                 Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
-                
+
                 // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
                 float sx = std::copysign(1.0f, scale_.x);
                 float sy = std::copysign(1.0f, scale_.y);
                 float sz = std::copysign(1.0f, scale_.z);
                 Irufemi::Matrix4x4 pureRotMat = localMat;
-                pureRotMat.m[0][0] *= sx; pureRotMat.m[0][1] *= sx; pureRotMat.m[0][2] *= sx;
-                pureRotMat.m[1][0] *= sy; pureRotMat.m[1][1] *= sy; pureRotMat.m[1][2] *= sy;
-                pureRotMat.m[2][0] *= sz; pureRotMat.m[2][1] *= sz; pureRotMat.m[2][2] *= sz;
+                pureRotMat.m[0][0] *= sx;
+                pureRotMat.m[0][1] *= sx;
+                pureRotMat.m[0][2] *= sx;
+                pureRotMat.m[1][0] *= sy;
+                pureRotMat.m[1][1] *= sy;
+                pureRotMat.m[1][2] *= sy;
+                pureRotMat.m[2][0] *= sz;
+                pureRotMat.m[2][1] *= sz;
+                pureRotMat.m[2][2] *= sz;
 
                 rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
                 MarkLocalDirty();
@@ -119,15 +126,15 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
                 CheckAndComputeMatrix();
                 Irufemi::Vector3 wPos = GetWorldPosition();
                 Irufemi::Quaternion wRot = GetWorldRotationQuat();
-                
+
                 Irufemi::Matrix4x4 newWorldMat = Irufemi::Math::MakeAffineMatrix(worldScale, wRot, wPos);
                 Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
                 Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
-                
-                Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
-                Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
-                Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
-                
+
+                Irufemi::Vector3 xaxis = {localMat.m[0][0], localMat.m[0][1], localMat.m[0][2]};
+                Irufemi::Vector3 yaxis = {localMat.m[1][0], localMat.m[1][1], localMat.m[1][2]};
+                Irufemi::Vector3 zaxis = {localMat.m[2][0], localMat.m[2][1], localMat.m[2][2]};
+
                 // worldScale の符号と親の符号から、正確なローカルスケールの符号を逆算する
                 float pSignX = 1.0f;
                 float pSignY = 1.0f;
@@ -138,13 +145,11 @@ void TransformComponent::SetWorldScale(const Irufemi::Vector3& worldScale) {
                     pSignY = std::copysign(1.0f, pScale.y);
                     pSignZ = std::copysign(1.0f, pScale.z);
                 }
-                
-                scale_ = { 
-                    std::copysign(Irufemi::Math::Length(xaxis), worldScale.x * pSignX), 
-                    std::copysign(Irufemi::Math::Length(yaxis), worldScale.y * pSignY), 
-                    std::copysign(Irufemi::Math::Length(zaxis), worldScale.z * pSignZ) 
-                };
-                
+
+                scale_ = {std::copysign(Irufemi::Math::Length(xaxis), worldScale.x * pSignX),
+                          std::copysign(Irufemi::Math::Length(yaxis), worldScale.y * pSignY),
+                          std::copysign(Irufemi::Math::Length(zaxis), worldScale.z * pSignZ)};
+
                 MarkLocalDirty();
                 return;
             }
@@ -168,19 +173,17 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
             }
         }
     }
-    
-    position_ = { localMat.m[3][0], localMat.m[3][1], localMat.m[3][2] };
-    
+
+    position_ = {localMat.m[3][0], localMat.m[3][1], localMat.m[3][2]};
+
     // スケール軸を抽出
-    Irufemi::Vector3 xaxis = { localMat.m[0][0], localMat.m[0][1], localMat.m[0][2] };
-    Irufemi::Vector3 yaxis = { localMat.m[1][0], localMat.m[1][1], localMat.m[1][2] };
-    Irufemi::Vector3 zaxis = { localMat.m[2][0], localMat.m[2][1], localMat.m[2][2] };
+    Irufemi::Vector3 xaxis = {localMat.m[0][0], localMat.m[0][1], localMat.m[0][2]};
+    Irufemi::Vector3 yaxis = {localMat.m[1][0], localMat.m[1][1], localMat.m[1][2]};
+    Irufemi::Vector3 zaxis = {localMat.m[2][0], localMat.m[2][1], localMat.m[2][2]};
 
     // 行列の3x3部分の行列式を計算してフリップ（反転）状態を確認する
-    float det = 
-        xaxis.x * (yaxis.y * zaxis.z - yaxis.z * zaxis.y) -
-        xaxis.y * (yaxis.x * zaxis.z - yaxis.z * zaxis.x) +
-        xaxis.z * (yaxis.x * zaxis.y - yaxis.y * zaxis.x);
+    float det = xaxis.x * (yaxis.y * zaxis.z - yaxis.z * zaxis.y) - xaxis.y * (yaxis.x * zaxis.z - yaxis.z * zaxis.x) +
+                xaxis.z * (yaxis.x * zaxis.y - yaxis.y * zaxis.x);
 
     // 基本は設定前のローカルスケールの符号を維持する
     float sx = std::copysign(1.0f, scale_.x);
@@ -192,20 +195,23 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
     if ((sx * sy * sz) * det < 0.0f) {
         sx = -sx;
     }
-    
+
     Irufemi::Matrix4x4 pureRotMat = localMat;
-    pureRotMat.m[0][0] *= sx; pureRotMat.m[0][1] *= sx; pureRotMat.m[0][2] *= sx;
-    pureRotMat.m[1][0] *= sy; pureRotMat.m[1][1] *= sy; pureRotMat.m[1][2] *= sy;
-    pureRotMat.m[2][0] *= sz; pureRotMat.m[2][1] *= sz; pureRotMat.m[2][2] *= sz;
+    pureRotMat.m[0][0] *= sx;
+    pureRotMat.m[0][1] *= sx;
+    pureRotMat.m[0][2] *= sx;
+    pureRotMat.m[1][0] *= sy;
+    pureRotMat.m[1][1] *= sy;
+    pureRotMat.m[1][2] *= sy;
+    pureRotMat.m[2][0] *= sz;
+    pureRotMat.m[2][1] *= sz;
+    pureRotMat.m[2][2] *= sz;
 
     rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
-    
-    scale_ = { 
-        std::copysign(Irufemi::Math::Length(xaxis), sx), 
-        std::copysign(Irufemi::Math::Length(yaxis), sy), 
-        std::copysign(Irufemi::Math::Length(zaxis), sz) 
-    };
-    
+
+    scale_ = {std::copysign(Irufemi::Math::Length(xaxis), sx), std::copysign(Irufemi::Math::Length(yaxis), sy),
+              std::copysign(Irufemi::Math::Length(zaxis), sz)};
+
     MarkLocalDirty();
 }
 
@@ -218,11 +224,11 @@ void TransformComponent::ExtractWorldTransform() const {
     if (isWorldTransformExtracted_) {
         return;
     }
-    
-    Irufemi::Vector3 xaxis = { worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] };
-    Irufemi::Vector3 yaxis = { worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] };
-    Irufemi::Vector3 zaxis = { worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] };
-    
+
+    Irufemi::Vector3 xaxis = {worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2]};
+    Irufemi::Vector3 yaxis = {worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2]};
+    Irufemi::Vector3 zaxis = {worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2]};
+
     // 親のワールドスケールの符号と自身のローカルスケールの符号から、現在のワールドスケールの符号を決定する
     Irufemi::Vector3 worldSign = scale_;
     if (gameObject_) {
@@ -238,25 +244,29 @@ void TransformComponent::ExtractWorldTransform() const {
             }
         }
     }
-    
-    worldScale_ = { 
-        std::copysign(Irufemi::Math::Length(xaxis), worldSign.x), 
-        std::copysign(Irufemi::Math::Length(yaxis), worldSign.y), 
-        std::copysign(Irufemi::Math::Length(zaxis), worldSign.z) 
-    };
-    
+
+    worldScale_ = {std::copysign(Irufemi::Math::Length(xaxis), worldSign.x),
+                   std::copysign(Irufemi::Math::Length(yaxis), worldSign.y),
+                   std::copysign(Irufemi::Math::Length(zaxis), worldSign.z)};
+
     // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
     float sx = std::copysign(1.0f, worldScale_.x);
     float sy = std::copysign(1.0f, worldScale_.y);
     float sz = std::copysign(1.0f, worldScale_.z);
     Irufemi::Matrix4x4 pureRotMat = worldMatrix_;
-    pureRotMat.m[0][0] *= sx; pureRotMat.m[0][1] *= sx; pureRotMat.m[0][2] *= sx;
-    pureRotMat.m[1][0] *= sy; pureRotMat.m[1][1] *= sy; pureRotMat.m[1][2] *= sy;
-    pureRotMat.m[2][0] *= sz; pureRotMat.m[2][1] *= sz; pureRotMat.m[2][2] *= sz;
-    
+    pureRotMat.m[0][0] *= sx;
+    pureRotMat.m[0][1] *= sx;
+    pureRotMat.m[0][2] *= sx;
+    pureRotMat.m[1][0] *= sy;
+    pureRotMat.m[1][1] *= sy;
+    pureRotMat.m[1][2] *= sy;
+    pureRotMat.m[2][0] *= sz;
+    pureRotMat.m[2][1] *= sz;
+    pureRotMat.m[2][2] *= sz;
+
     worldRotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
-    worldPosition_ = { worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2] };
-    
+    worldPosition_ = {worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2]};
+
     isWorldTransformExtracted_ = true;
 }
 
@@ -285,17 +295,17 @@ const Irufemi::Vector3& TransformComponent::GetWorldScale() const {
 
 Irufemi::Vector3 TransformComponent::GetWorldRight() const {
     CheckAndComputeMatrix();
-    return Irufemi::Math::Normalize(Irufemi::Vector3{ worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2] });
+    return Irufemi::Math::Normalize(Irufemi::Vector3{worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2]});
 }
 
 Irufemi::Vector3 TransformComponent::GetWorldUp() const {
     CheckAndComputeMatrix();
-    return Irufemi::Math::Normalize(Irufemi::Vector3{ worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2] });
+    return Irufemi::Math::Normalize(Irufemi::Vector3{worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2]});
 }
 
 Irufemi::Vector3 TransformComponent::GetWorldForward() const {
     CheckAndComputeMatrix();
-    return Irufemi::Math::Normalize(Irufemi::Vector3{ worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2] });
+    return Irufemi::Math::Normalize(Irufemi::Vector3{worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2]});
 }
 
 void TransformComponent::ComputeMatrix(bool force) const {
@@ -307,7 +317,7 @@ void TransformComponent::ComputeMatrix(bool force) const {
     if (parentT) {
         // 親がDirtyなら計算させる（再帰的）
         parentT->CheckAndComputeMatrix();
-        
+
         uint64_t currentParentVersion = parentT->GetTransformVersion();
         uint64_t currentParentId = currentParent->GetInstanceID();
         if (parentTransformVersionLastComputed_ != currentParentVersion ||
@@ -335,7 +345,7 @@ void TransformComponent::ComputeMatrix(bool force) const {
         isLocalDirty_ = false;
         isWorldDirty_ = true; // ローカルが変わればワールドも必ず変わる
     }
-    
+
     // ワールド行列の計算
     if (isWorldDirty_ || parentChanged || force) {
         if (parentT) {
@@ -350,17 +360,16 @@ void TransformComponent::ComputeMatrix(bool force) const {
 }
 
 void TransformComponent::UpdateAll() {
-    ComponentPool<TransformComponent>::GetInstance().ForEach([](TransformComponent& transform) {
-        transform.ComputeMatrix(false);
-    });
+    ComponentPool<TransformComponent>::GetInstance().ForEach(
+        [](TransformComponent& transform) { transform.ComputeMatrix(false); });
 }
 
 nlohmann::json TransformComponent::Serialize() {
     nlohmann::json j;
-    j["position"] = { position_.x, position_.y, position_.z };
+    j["position"] = {position_.x, position_.y, position_.z};
     Irufemi::Vector3 euler = Irufemi::Math::ToEuler(rotation_);
-    j["rotation"] = { euler.x, euler.y, euler.z };
-    j["scale"]    = { scale_.x, scale_.y, scale_.z };
+    j["rotation"] = {euler.x, euler.y, euler.z};
+    j["scale"] = {scale_.x, scale_.y, scale_.z};
     j["inheritScale"] = inheritScale_;
     return j;
 }

@@ -1,7 +1,7 @@
 #pragma once
-#include <string>
-#include <cstdint>
 #include "Resource/Model/Data/ObjModel.h"
+#include <cstdint>
+#include <string>
 
 class ModelSerializer {
 public:

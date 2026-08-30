@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core/Type/Voxel.h"
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Vector3Int.h"
+#include "Core/Type/Voxel.h"
 #include <vector>
 
 // ボクセル化されたモデル全体を管理する構造体

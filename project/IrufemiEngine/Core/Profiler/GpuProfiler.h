@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <d3d12.h>
 #include <wrl/client.h>
-#include <cstdint>
 
 class DirectXCommon;
 
@@ -37,7 +37,9 @@ public:
     /**
      * @brief 直前に取得完了したGPUフレーム時間（ミリ秒）を返す
      */
-    float GetLastFrameGpuTimeMs() const { return lastGpuTimeMs_; }
+    float GetLastFrameGpuTimeMs() const {
+        return lastGpuTimeMs_;
+    }
 
 private:
     GpuProfiler() = default;
@@ -52,7 +54,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D12Resource> queryResultBuffer_;
 
     DirectXCommon* dxCommon_ = nullptr;
-    
+
     uint64_t gpuFrequency_ = 0;
     float lastGpuTimeMs_ = 0.0f;
     bool isInitialized_ = false;

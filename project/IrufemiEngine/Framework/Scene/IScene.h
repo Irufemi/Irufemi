@@ -6,8 +6,8 @@
 class IrufemiEngine;
 class GameObject;
 #include <memory>
-#include <vector>
 #include <nlohmann/json.hpp>
+#include <vector>
 
 /// <summary>
 /// Scene系クラスに継承する基底クラス
@@ -37,22 +37,26 @@ public:
     /**
      * @brief シーンが保持する GameObject のリストを取得する
      */
-    virtual const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const { 
-        static std::vector<std::shared_ptr<GameObject>> empty; 
-        return empty; 
+    virtual const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const {
+        static std::vector<std::shared_ptr<GameObject>> empty;
+        return empty;
     }
 
     /**
      * @brief エンジンのポインタを取得する
      */
-    virtual IrufemiEngine* GetEngine() const { return nullptr; }
+    virtual IrufemiEngine* GetEngine() const {
+        return nullptr;
+    }
 
     // --- シリアライズ機能 ---
 
     /**
      * @brief シーンの情報をJSONとしてシリアライズする
      */
-    virtual nlohmann::json Serialize() const { return nlohmann::json::object(); }
+    virtual nlohmann::json Serialize() const {
+        return nlohmann::json::object();
+    }
 
     /**
      * @brief JSONからシーンの情報をデシリアライズする
@@ -96,32 +100,39 @@ public:
      */
     virtual void DrawDebugTab() {}
 
-
     // --- スタック管理機能 ---
     // このシーンが下のシーンの更新(Update)をブロックするか（デフォルトはブロックする）
     /**
      * @brief IsUpdateBlocking かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    virtual bool IsUpdateBlocking() const { return true; }
-    
+    virtual bool IsUpdateBlocking() const {
+        return true;
+    }
+
     // このシーンが下のシーンの描画(Draw)をブロックするか（デフォルトはブロックしない）
     /**
      * @brief IsDrawBlocking かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    virtual bool IsDrawBlocking() const { return false; }
-    
+    virtual bool IsDrawBlocking() const {
+        return false;
+    }
+
     // このシーンでマウスカーソルを表示するか（デフォルトは表示する）
     /**
      * @brief IsCursorVisible かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    virtual bool IsCursorVisible() const { return true; }
+    virtual bool IsCursorVisible() const {
+        return true;
+    }
 
     /**
      * @brief このシーンが重なった時に、下のシーンのオーディオ（SE等）をポーズするか
      * @return trueの場合は指定カテゴリをポーズする
      */
-    virtual bool IsAudioBlocking() const { return true; }
+    virtual bool IsAudioBlocking() const {
+        return true;
+    }
 };

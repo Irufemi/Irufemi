@@ -1,7 +1,7 @@
 #pragma once
-#include "Framework/Component/Component.h"
 #include "Core/Math/Vector3.h"
 #include "Core/Utility/ObjectPool.h"
+#include "Framework/Component/Component.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include <memory>
 #include <unordered_map>
@@ -15,7 +15,9 @@ public:
     void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "DebugEnemySpawnerComponent"; }
+    std::string GetComponentName() const override {
+        return "DebugEnemySpawnerComponent";
+    }
 
     void SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation);
 

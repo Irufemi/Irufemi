@@ -1,7 +1,7 @@
 #pragma once
 #include <d3d12.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 // 一時リソースの仮想ハンドル
 typedef uint32_t TransientResourceHandle;
@@ -36,7 +36,9 @@ public:
      * @brief CurrentPassIndex を設定する。
      * @param[in] index 設定する CurrentPassIndex の値
      */
-    void SetCurrentPassIndex(size_t index) { currentPassIndex_ = index; }
+    void SetCurrentPassIndex(size_t index) {
+        currentPassIndex_ = index;
+    }
 
     /**
      * @brief 特定のリソースがこのパスの実行時に指定したステートであることを要求する
@@ -45,14 +47,15 @@ public:
      */
     void RequireState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
         if (resource) {
-            usages_.push_back({ resource, state, currentPassIndex_ });
+            usages_.push_back({resource, state, currentPassIndex_});
         }
     }
 
     /**
      * @brief RenderGraph内で完結する一時テクスチャ（エイリアシング対象）を作成する
      */
-    TransientResourceHandle CreateTransientResource(const std::string& name, const D3D12_RESOURCE_DESC& desc, const D3D12_CLEAR_VALUE* clearValue = nullptr) {
+    TransientResourceHandle CreateTransientResource(const std::string& name, const D3D12_RESOURCE_DESC& desc,
+                                                    const D3D12_CLEAR_VALUE* clearValue = nullptr) {
         TransientResourceHandle handle = static_cast<TransientResourceHandle>(transientDescs_.size());
         TransientResourceDesc tDesc{};
         tDesc.desc = desc;
@@ -72,7 +75,7 @@ public:
      */
     void RequireTransientState(TransientResourceHandle handle, D3D12_RESOURCE_STATES state) {
         if (handle != kInvalidHandle) {
-            transientUsages_.push_back({ handle, state, currentPassIndex_ });
+            transientUsages_.push_back({handle, state, currentPassIndex_});
         }
     }
 
@@ -80,23 +83,29 @@ public:
      * @brief Usages を取得する。
      * @return 取得された Usages
      */
-    const std::vector<ResourceUsage>& GetUsages() const { return usages_; }
+    const std::vector<ResourceUsage>& GetUsages() const {
+        return usages_;
+    }
     /**
      * @brief TransientDescs を取得する。
      * @return 取得された TransientDescs
      */
-    const std::vector<TransientResourceDesc>& GetTransientDescs() const { return transientDescs_; }
+    const std::vector<TransientResourceDesc>& GetTransientDescs() const {
+        return transientDescs_;
+    }
     /**
      * @brief TransientUsages を取得する。
      * @return 取得された TransientUsages
      */
-    const std::vector<TransientResourceUsage>& GetTransientUsages() const { return transientUsages_; }
+    const std::vector<TransientResourceUsage>& GetTransientUsages() const {
+        return transientUsages_;
+    }
 
     /**
      * @brief Clear を実行する。
      */
-    void Clear() { 
-        usages_.clear(); 
+    void Clear() {
+        usages_.clear();
         transientDescs_.clear();
         transientUsages_.clear();
         currentPassIndex_ = 0;

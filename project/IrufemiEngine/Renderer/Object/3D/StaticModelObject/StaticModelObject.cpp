@@ -1,28 +1,27 @@
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h" // リネーム済み
-#include "Core/Utility/ErrorUtility.h"
-#include <filesystem>
-#include <algorithm>
-#include <Windows.h>
 #include "Core/Math/Math.h"
-#include "Resource/Texture/TextureManager.h"
-#include "Renderer/DrawManager.h"
-#include "Framework/UI/DebugUI.h"
-#include "Resource/Model/ModelManager.h"
-#include "RHI/DirectX12/DirectXCommon.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Core/Utility/ErrorUtility.h"
+#include "Framework/UI/DebugUI.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Renderer/Camera/CameraManager.h"
-#include "Resource/Model/AnimationManager.h"
 #include "Renderer/Compute/IComputeTask.h"
+#include "Renderer/DrawManager.h"
+#include "Resource/Model/AnimationManager.h"
+#include "Resource/Model/ModelManager.h"
+#include "Resource/Texture/TextureManager.h"
+#include <Windows.h>
+#include <algorithm>
+#include <filesystem>
 
 // 静的メンバ定義
-
 
 StaticModelObject::~StaticModelObject() {}
 
 void StaticModelObject::CalculateNodeTransforms(const Node& node, const Irufemi::Matrix4x4& parentMatrix) {
     Irufemi::Matrix4x4 globalMatrix = node.localMatrix * parentMatrix;
     nodeGlobalTransforms_[node.name] = globalMatrix;
-    
+
     for (const auto& child : node.children) {
         CalculateNodeTransforms(child, globalMatrix);
     }
@@ -42,7 +41,7 @@ void StaticModelObject::InitializeResources() {
     if (!m || !m->cpuModel) {
         return;
     }
-    
+
     isResourceInitialized_ = true;
 
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
@@ -55,19 +54,19 @@ void StaticModelObject::InitializeResources() {
     meshResources_.clear();
     for (size_t i = 0; i < m->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
-        
+
         // 外部の変換行列リソースを借用（削除：各リソースに固有のTransformを持たせるため）
         // res->SetExternalTransformCbIndex(&transformCbIndex_);
-        
+
         // メッシュ固有の View を設定
         const auto& gpuMesh = m->gpuMeshes[i];
         res->vertexBufferView_ = gpuMesh->vertexBufferView;
         res->indexBufferView_ = gpuMesh->indexBufferView;
         res->indexCount_ = gpuMesh->indexCount;
-        
+
         // マテリアルリソース等の生成
         res->CreateResource();
-        
+
         // 初期テクスチャハンドルを共有データからコピー
         const auto& gpuMaterial = (i < m->gpuMaterials.size()) ? m->gpuMaterials[i] : nullptr;
         if (gpuMaterial) {
@@ -82,7 +81,7 @@ void StaticModelObject::InitializeResources() {
         skeletonData_ = AnimationManager::CreateSkeletonData(m->cpuModel->rootNode);
         skeletonPose_ = AnimationManager::CreateSkeletonPose(&skeletonData_);
         skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeletonData_, *m->cpuModel);
-        
+
         // 静的モデルなのでバインドポーズのままスケルトンを1度更新しておく
         AnimationManager::SkeletonUpdate(skeletonPose_);
     }
@@ -113,9 +112,11 @@ void StaticModelObject::Update() {
     }
 
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_) return;
+    if (!m || !engine_)
+        return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam)
+        return;
 
     // 非同期ロードが終わっていればメッシュを構築する (遅延初期化)
     if (m->status.load() == ManagedModel::LoadingStatus::Loaded && !isResourceInitialized_) {
@@ -123,10 +124,12 @@ void StaticModelObject::Update() {
     }
 
     // まだリソースが準備できていない場合はスキップ
-    if (!isResourceInitialized_) return;
+    if (!isResourceInitialized_)
+        return;
 
     // オブジェクト全体のワールド行列を計算
-    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.world =
+        Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     Irufemi::Matrix4x4 objectWorld = transformationMatrix_.world;
 
     // rootNodeの行列を適用(モデルデータに階層情報があれば)
@@ -137,7 +140,7 @@ void StaticModelObject::Update() {
         } else {
             transformationMatrix_.world = m->cpuModel->rootNode.localMatrix * objectWorld;
         }
-        
+
         // 階層全体のトランスフォームを計算
         nodeGlobalTransforms_.clear();
         CalculateNodeTransforms(m->cpuModel->rootNode, Irufemi::Math::MakeIdentity4x4());
@@ -163,9 +166,12 @@ void StaticModelObject::Update() {
         res->transformationMatrix_.world = meshWorld;
 
         Irufemi::Matrix4x4 worldForNormal = meshWorld;
-        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
-        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
-        res->transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
+        worldForNormal.m[3][0] = 0.0f;
+        worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f;
+        worldForNormal.m[3][3] = 1.0f;
+        res->transformationMatrix_.WorldInverseTranspose =
+            Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
 
         res->MarkAsDirty();
     }
@@ -185,7 +191,7 @@ void StaticModelObject::Update() {
 
 void StaticModelObject::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    
+
     if (CheckAndClearDirty(frameIndex)) {
         // 変換行列の更新 (全メッシュで共有のバッファ)
         if (engine_) {
@@ -193,9 +199,8 @@ void StaticModelObject::SyncBeforeDraw() {
                 engine_->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
         }
-
     }
-    
+
     // 各メッシュのマテリアル等の更新
     for (auto& res : meshResources_) {
         res->SyncBeforeDraw();
@@ -208,8 +213,8 @@ void StaticModelObject::SyncBeforeDraw() {
     }
 }
 
-#include "Physics/Collision/Collision.h"
 #include "Core/Shape/Sphere.h"
+#include "Physics/Collision/Collision.h"
 
 void StaticModelObject::Draw() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
@@ -217,16 +222,18 @@ void StaticModelObject::Draw() {
         return;
     }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam)
+        return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
+    bool cameraChanged =
+        (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+         std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirty_ || cameraChanged) {
         Update();
     }
-    
+
     // --- 【追加】描画直前のバッファ同期 ---
     SyncBeforeDraw();
 
@@ -239,7 +246,7 @@ void StaticModelObject::Draw() {
         worldSphere.center = Irufemi::Math::Transform(modelSphere.center, transformationMatrix_.world);
 
         // スケールの最大値を適用して半径を変換
-        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
         worldSphere.radius = modelSphere.radius * maxScale * 1.1f; // 10% マージン
 
         // 判定
@@ -251,7 +258,8 @@ void StaticModelObject::Draw() {
     // モデル内の全メッシュを描画
     for (auto& res : meshResources_) {
         if (m->cpuModel && !m->cpuModel->skinClusterData.empty()) {
-            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_);
+            engine_->GetDrawManager()->SubmitStandard3D(
+                res.get(), &skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_], castShadows_);
         } else {
             engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
         }
@@ -260,19 +268,22 @@ void StaticModelObject::Draw() {
 
 void StaticModelObject::DrawOutlineMask() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) return;
+    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty())
+        return;
     for (auto& res : meshResources_) {
         engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr);
     }
 }
 void StaticModelObject::DispatchCompute() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_) return;
+    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_)
+        return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam)
+        return;
 
     if (isCullingEnabled_) {
-        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
         Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
@@ -301,7 +312,8 @@ void StaticModelObject::DebugTab() {
         ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
         ui_->DebugTransform(transform_);
         ImGui::ColorEdit4("Color", &color_.x); // インスタンスカラーを編集
-        ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_, &enableLightingOverride_, "##OcOverrides");
+        ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_,
+                                    &enableLightingOverride_, "##OcOverrides");
 
         // ImGuiでマテリアルを編集
         auto m = engine_->GetObjModelManager()->Resolve(modelHandle_);
@@ -328,5 +340,3 @@ void StaticModelObject::DebugTab() {
     }
 #endif
 }
-
-

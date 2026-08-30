@@ -1,7 +1,7 @@
 ﻿#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
-#include "Renderer/Camera/CameraManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Framework/UI/DebugUI.h"
+#include "Renderer/Camera/CameraManager.h"
 #include "Renderer/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 
@@ -12,8 +12,8 @@
 #include "imgui/imgui.h"
 #endif
 
-#include <windows.h>
 #include <string>
+#include <windows.h>
 
 // --- 外部依存マネージャの静的初期化 ---
 TextureManager* Primitive2DObject::textureManager_ = nullptr;
@@ -147,8 +147,6 @@ void Primitive2DObject::SetShape(Irufemi::Primitive2DType type) {
         isMeshDirty_ = true;
     }
 }
-
-
 
 void Primitive2DObject::SetSubdivision(uint32_t subdiv) {
     if (subdivision_ != subdiv) {

@@ -10,9 +10,13 @@ public:
     void OnEnable() override;
     void OnDisable() override;
 
-    std::string GetComponentName() const override { return "TargetableComponent"; }
+    std::string GetComponentName() const override {
+        return "TargetableComponent";
+    }
 
-    static const std::vector<TargetableComponent*>& GetTargets() { return s_targets; }
+    static const std::vector<TargetableComponent*>& GetTargets() {
+        return s_targets;
+    }
 
 private:
     static std::vector<TargetableComponent*> s_targets;

@@ -1,9 +1,9 @@
 #pragma once
-#include <cstdint>
-#include <vector>
-#include <mutex>
-#include <functional>
 #include "Core/System/ResourceHandle.h"
+#include <cstdint>
+#include <functional>
+#include <mutex>
+#include <vector>
 
 /**
  * @struct ResourceSlotMeta
@@ -40,17 +40,21 @@ public:
      * @param maxBytes 最大バイト数
      */
     void SetMemoryBudget(size_t maxBytes);
-    
+
     /**
      * @brief MemoryBudget を取得する。
      * @return 取得された MemoryBudget
      */
-    size_t GetMemoryBudget() const { return maxMemoryBytes_; }
+    size_t GetMemoryBudget() const {
+        return maxMemoryBytes_;
+    }
     /**
      * @brief CurrentMemoryUsage を取得する。
      * @return 取得された CurrentMemoryUsage
      */
-    size_t GetCurrentMemoryUsage() const { return currentMemoryUsage_; }
+    size_t GetCurrentMemoryUsage() const {
+        return currentMemoryUsage_;
+    }
 
     /**
      * @brief 新しいリソーススロットを確保する
@@ -58,13 +62,13 @@ public:
      * @return 割り当てられたハンドル
      */
     ResourceHandle AllocateSlot(size_t memorySize);
-    
+
     /**
      * @brief リソースの参照カウントを減らす（0になっても即座にパージはされない）
      * @param handle 解放するハンドル
      */
     void ReleaseSlot(ResourceHandle handle);
-    
+
     /**
      * @brief リソースの参照カウントを増やす（コンポーネントが保持する時などに呼ぶ）
      * @param handle 保持するハンドル
@@ -112,7 +116,7 @@ private:
     size_t maxMemoryBytes_ = 0;
     size_t currentMemoryUsage_ = 0;
     uint64_t currentTimeCounter_ = 0;
-    
+
     std::vector<ResourceSlotMeta> slots_;
     std::vector<uint32_t> freeIndices_;
     mutable std::mutex mutex_;

@@ -1,8 +1,8 @@
 #include "Framework/Component/Effect/ParticleFieldComponent.h"
+#include "Core/System/IrufemiEngine.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
-#include "Core/System/IrufemiEngine.h"
 ParticleFieldComponent::ParticleFieldComponent() {
     fieldData_.type = 1; // Default to Point Attractor
     fieldData_.strength = 10.0f;
@@ -13,13 +13,15 @@ ParticleFieldComponent::ParticleFieldComponent() {
 }
 
 ParticleFieldComponent::~ParticleFieldComponent() {
-    if (fieldHandle_.IsValid() && GetGameObject() && GetGameObject()->GetScene() && GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
+    if (fieldHandle_.IsValid() && GetGameObject() && GetGameObject()->GetScene() &&
+        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
         GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()->UnregisterField(fieldHandle_);
     }
 }
 
 void ParticleFieldComponent::Initialize() {
-    if (GetGameObject() && GetGameObject()->GetScene() && GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
+    if (GetGameObject() && GetGameObject()->GetScene() &&
+        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
         fieldHandle_ = GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()->RegisterField();
     }
 }
@@ -28,15 +30,15 @@ void ParticleFieldComponent::Update() {
     if (GetTransform()) {
         fieldData_.position = GetTransform()->GetWorldPosition();
     }
-    
-    if (fieldHandle_.IsValid() && GetGameObject() && GetGameObject()->GetScene() && GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
+
+    if (fieldHandle_.IsValid() && GetGameObject() && GetGameObject()->GetScene() &&
+        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
         GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()->UpdateFieldData(fieldHandle_, fieldData_);
     }
 }
 
 void ParticleFieldComponent::OnRegisterProperties() {
-    RegisterProperty("Field Type", (int*)&fieldData_.type)
-        .SetTooltip("0: Directional, 1: Point Attractor, 2: Vortex");
+    RegisterProperty("Field Type", (int*)&fieldData_.type).SetTooltip("0: Directional, 1: Point Attractor, 2: Vortex");
     RegisterProperty("Strength", &fieldData_.strength).SetMinMax(-1000.0f, 1000.0f);
     RegisterProperty("Effect Range", &fieldData_.range).SetMinMax(0.0f, 10000.0f);
     RegisterProperty("Falloff", &fieldData_.falloff).SetMinMax(0.0f, 10.0f);
@@ -60,10 +62,14 @@ nlohmann::json ParticleFieldComponent::Serialize() {
 }
 
 void ParticleFieldComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("type")) fieldData_.type = j["type"];
-    if (j.contains("strength")) fieldData_.strength = j["strength"];
-    if (j.contains("range")) fieldData_.range = j["range"];
-    if (j.contains("falloff")) fieldData_.falloff = j["falloff"];
+    if (j.contains("type"))
+        fieldData_.type = j["type"];
+    if (j.contains("strength"))
+        fieldData_.strength = j["strength"];
+    if (j.contains("range"))
+        fieldData_.range = j["range"];
+    if (j.contains("falloff"))
+        fieldData_.falloff = j["falloff"];
     if (j.contains("direction")) {
         fieldData_.direction.x = j["direction"][0];
         fieldData_.direction.y = j["direction"][1];

@@ -1,10 +1,10 @@
 #pragma once
+#include "Core/Type/BlendMode.h"
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
-#include <unordered_map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
-#include "Core/Type/BlendMode.h"
 
 class GPUParticleManager {
 public:
@@ -31,7 +31,7 @@ public:
      * @brief Debug を実行する。
      */
     void Debug();
-    
+
     /**
      * @brief 現在GPU上に残っているすべてのパーティクルをクリアする（シーン遷移時などに使用）
      */
@@ -40,29 +40,35 @@ public:
     struct EmitterHandle {
         GPUParticleSystem* system = nullptr;
         uint32_t emitterIndex = 0xFFFFFFFF;
+        /**
+         * @brief IsValid かどうかを判定する。
+         * @return 判定結果 (true/false)
+         */
+        bool IsValid() const {
+            return system != nullptr && emitterIndex != 0xFFFFFFFF;
+        }
+    };
+
     /**
-     * @brief IsValid かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief 現在稼働しているパーティクルシステム（テクスチャ）の種類数を取得する。
+     * @return アクティブなシステム数
      */
-    bool IsValid() const { return system != nullptr && emitterIndex != 0xFFFFFFFF; }
-};
+    int GetActiveSystemCount() const {
+        return static_cast<int>(systems_.size());
+    }
 
-/**
- * @brief 現在稼働しているパーティクルシステム（テクスチャ）の種類数を取得する。
- * @return アクティブなシステム数
- */
-int GetActiveSystemCount() const { return static_cast<int>(systems_.size()); }
-
-/**
- * @brief 使用中の全エミッター数を取得する。
- * @return エミッターの総数
- */
-int GetTotalEmittersUsed() const;
+    /**
+     * @brief 使用中の全エミッター数を取得する。
+     * @return エミッターの総数
+     */
+    int GetTotalEmittersUsed() const;
 
     /**
      * @brief 指定したテクスチャ、ブレンドモード、タイムスケール設定に対するシステムを取得し、エミッターを登録する
      */
-    EmitterHandle RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting, PSOManager::DepthWrite depthWrite = PSOManager::DepthWrite::Disable);
+    EmitterHandle RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime,
+                                  bool enableLighting,
+                                  PSOManager::DepthWrite depthWrite = PSOManager::DepthWrite::Disable);
 
     /**
      * @brief 登録したエミッターを解放する
@@ -88,7 +94,9 @@ int GetTotalEmittersUsed() const;
          * @brief IsValid かどうかを判定する。
          * @return 判定結果 (true/false)
          */
-        bool IsValid() const { return index != 0xFFFFFFFF; }
+        bool IsValid() const {
+            return index != 0xFFFFFFFF;
+        }
     };
     /**
      * @brief RegisterField を実行する。
@@ -122,10 +130,8 @@ private:
         PSOManager::DepthWrite depthWrite;
 
         bool operator==(const SystemKey& other) const {
-            return texturePath == other.texturePath && 
-                   blendMode == other.blendMode && 
-                   isUnscaledTime == other.isUnscaledTime &&
-                   enableLighting == other.enableLighting &&
+            return texturePath == other.texturePath && blendMode == other.blendMode &&
+                   isUnscaledTime == other.isUnscaledTime && enableLighting == other.enableLighting &&
                    depthWrite == other.depthWrite;
         }
     };

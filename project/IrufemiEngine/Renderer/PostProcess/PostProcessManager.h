@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector4.h"
-#include "Core/Math/Matrix4x4.h"
 #include "RHI/DirectX12/RenderTexture.h"
 #include <d3d12.h>
 #include <wrl/client.h>
@@ -10,47 +10,47 @@
 // ComPtr の一部のテンプレート展開で IInspectable が必要になる場合がある
 typedef struct IInspectable IInspectable;
 #endif
-#include <memory>
-#include <vector>
+#include <algorithm>
 #include <array>
 #include <cstdint>
-#include <algorithm>
+#include <memory>
 #include <mutex>
+#include <vector>
 
 /**
  * @enum PostProcessMode
  * @brief ポストプロセスの各モードを定義する列挙型
  */
 enum class PostProcessMode {
-    None,               ///< 何も適用しない
-    Grayscale,          ///< グレースケール
-    Sepia,              ///< セピア調
-    Vignette,           ///< ビネット（画面端を暗くする）
-    Smoothing,          ///< 平滑化（ぼかし）
-    GaussianFilter,     ///< ガウスぼかし
-    DepthBasedOutline,  ///< 深度バッファを使用したアウトライン抽出
-    RadialBlur,         ///< 放射状ぼかし
-    Dissolve,           ///< ディゾルブ（ノイズテクスチャによる消失演出）
-    Noise,              ///< ランダムノイズ粒子
-    HSV,                ///< HSV色空間による色調整
-    ToneMapping,        ///< トーンマッピング（ACES）
-    Fade,               ///< フェード（指定色への塗りつぶし）
-    Slide,              ///< スライド（ワイプ演出）
-    Bloom,              ///< ブルーム（高輝度抽出による発光）
-    Glitch,             ///< グリッチ（ノイズや色収差による映像の乱れ）
-    DualKawaseBlur,     ///< カワセブラー（軽量で広範囲なぼかし）
+    None,                  ///< 何も適用しない
+    Grayscale,             ///< グレースケール
+    Sepia,                 ///< セピア調
+    Vignette,              ///< ビネット（画面端を暗くする）
+    Smoothing,             ///< 平滑化（ぼかし）
+    GaussianFilter,        ///< ガウスぼかし
+    DepthBasedOutline,     ///< 深度バッファを使用したアウトライン抽出
+    RadialBlur,            ///< 放射状ぼかし
+    Dissolve,              ///< ディゾルブ（ノイズテクスチャによる消失演出）
+    Noise,                 ///< ランダムノイズ粒子
+    HSV,                   ///< HSV色空間による色調整
+    ToneMapping,           ///< トーンマッピング（ACES）
+    Fade,                  ///< フェード（指定色への塗りつぶし）
+    Slide,                 ///< スライド（ワイプ演出）
+    Bloom,                 ///< ブルーム（高輝度抽出による発光）
+    Glitch,                ///< グリッチ（ノイズや色収差による映像の乱れ）
+    DualKawaseBlur,        ///< カワセブラー（軽量で広範囲なぼかし）
     LuminanceBasedOutline, ///< 輝度ベースのアウトライン抽出（2Dトゥーン調）
-    Pixelation,         ///< ピクセレーション（ドット絵化・モザイク）
-    Pointillism,        ///< 点描画・印象派風フィルタ
-    Posterization,      ///< ポスタリゼーション（トゥーン調階調化）
-    NightVision,        ///< 暗視ゴーグル風エフェクト
-    Kaleidoscope,       ///< 万華鏡・複眼エフェクト
-    ChromaticAberration,///< 色収差
-    DisplacementMap,    ///< 画面の歪み・陽炎
-    DirectionalBlur,    ///< 方向ブラー
-    Halftone,           ///< ハーフトーン（網点・コミック調）
-    DepthOfField,       ///< 被写界深度（DoF）
-    LightShafts,        ///< ゴッドレイ（光の筋）
+    Pixelation,            ///< ピクセレーション（ドット絵化・モザイク）
+    Pointillism,           ///< 点描画・印象派風フィルタ
+    Posterization,         ///< ポスタリゼーション（トゥーン調階調化）
+    NightVision,           ///< 暗視ゴーグル風エフェクト
+    Kaleidoscope,          ///< 万華鏡・複眼エフェクト
+    ChromaticAberration,   ///< 色収差
+    DisplacementMap,       ///< 画面の歪み・陽炎
+    DirectionalBlur,       ///< 方向ブラー
+    Halftone,              ///< ハーフトーン（網点・コミック調）
+    DepthOfField,          ///< 被写界深度（DoF）
+    LightShafts,           ///< ゴッドレイ（光の筋）
 };
 
 class DirectXCommon;
@@ -73,37 +73,38 @@ struct PostProcessModeInfo {
 /**
  * @class PostProcessManager
  * @brief ポストプロセス（画面全体にかけるエフェクト）を管理するクラス。
- * 
+ *
  * マルチパスレンダリングに対応しており、複数のエフェクトをスタックに追加して重ね掛けできます。
- * 
+ *
  * @par 推奨される適用順序:
  * プロの現場でも、以下のような順序で適用することで意図した映像表現になります。
  * 1. 色調補正系 (ToneMapping, Grayscale, Sepia, HSV 等)
  * 2. 空間・ぼかし系 (Smoothing, GaussianFilter, RadialBlur 等)
  * 3. 画面演出系 (Vignette, Noise, Glitch, Dissolve 等)
  * 4. 画面遷移系 (Fade, Slide)
- * 
+ *
  * @par シーンでの使用例:
  * @code
  * // 1. マネージャーの取得
  * auto* pp = engine->GetPostProcessManager();
- * 
+ *
  * // 2. エフェクトのリセットと追加
  * pp->ClearActiveModes();
  * pp->AddActiveMode(PostProcessMode::DepthBasedOutline);
  * pp->AddActiveMode(PostProcessMode::Noise);
- * 
+ *
  * // 3. 各エフェクトのパラメータ調整
  * pp->GetNoiseParams().intensity = 0.2f;
  * @endcode
  */
 enum class EffectLayer {
-    PreUI,  // 3Dシーンや背景にかかる（UIにはかからない）
-    PostUI  // UIを含む画面全体にかかる
+    PreUI, // 3Dシーンや背景にかかる（UIにはかからない）
+    PostUI // UIを含む画面全体にかかる
 };
 
 class PostProcessManager {
     friend class PostProcessRunner;
+
 public:
     using Mode = PostProcessMode;
     using Layer = EffectLayer;
@@ -113,12 +114,12 @@ public:
     static constexpr int32_t kMaxKawaseIterations = 8; // 最大ダウンサンプル回数
 
     struct PostProcessWorkspace {
-        class RenderTexture* workTextures[2] = { nullptr, nullptr };
+        class RenderTexture* workTextures[2] = {nullptr, nullptr};
         class RenderTexture* bloomExtract = nullptr;
         class RenderTexture* bloomBlur = nullptr;
         class RenderTexture* lsExtract = nullptr;
         class RenderTexture* lsBlur = nullptr;
-        class RenderTexture* kawaseTextures[kMaxKawaseIterations] = { nullptr };
+        class RenderTexture* kawaseTextures[kMaxKawaseIterations] = {nullptr};
     };
 
     /**
@@ -126,23 +127,22 @@ public:
      * @brief 個別オブジェクトに適用する詳細エフェクト用パラメータ（汎用構造体）
      */
     struct CustomEffectParams {
-        Irufemi::Vector4 color1 = { 1.0f, 1.0f, 1.0f, 1.0f }; // Edge Color, Slide Color, etc.
-        Irufemi::Vector4 color2 = { 0.0f, 0.0f, 0.0f, 1.0f }; // Background Color
-        float param1 = 0.0f; // Threshold, Intensity, etc.
-        float param2 = 0.0f; // Edge Range, Radius, etc.
-        float param3 = 0.0f; // Noise Type, Softness, etc.
-        float param4 = 0.0f; // Time, Angle, etc.
-        
+        Irufemi::Vector4 color1 = {1.0f, 1.0f, 1.0f, 1.0f}; // Edge Color, Slide Color, etc.
+        Irufemi::Vector4 color2 = {0.0f, 0.0f, 0.0f, 1.0f}; // Background Color
+        float param1 = 0.0f;                                // Threshold, Intensity, etc.
+        float param2 = 0.0f;                                // Edge Range, Radius, etc.
+        float param3 = 0.0f;                                // Noise Type, Softness, etc.
+        float param4 = 0.0f;                                // Time, Angle, etc.
+
         bool operator==(const CustomEffectParams& other) const {
-            return color1 == other.color1 && color2 == other.color2 &&
-                   param1 == other.param1 && param2 == other.param2 &&
-                   param3 == other.param3 && param4 == other.param4;
+            return color1 == other.color1 && color2 == other.color2 && param1 == other.param1 &&
+                   param2 == other.param2 && param3 == other.param3 && param4 == other.param4;
         }
         bool operator!=(const CustomEffectParams& other) const {
             return !(*this == other);
         }
     };
-    
+
     // 定数バッファの最大サイズ（256個まで）
     static constexpr uint32_t kMaxCustomEffectParams = 256;
 
@@ -160,10 +160,10 @@ public:
      * @brief ビネットエフェクト用パラメータ
      */
     struct VignetteParams {
-        Irufemi::Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< ビネットの色 (RGB)
-        float radius = 0.8f;    ///< 減衰の開始半径 (0.0~1.5)
-        float softness = 0.5f;  ///< 減衰の柔らかさ (0.0~1.0)
-        float pad[2];           // 16バイトアライメント用パディング
+        Irufemi::Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f}; ///< ビネットの色 (RGB)
+        float radius = 0.8f;                               ///< 減衰の開始半径 (0.0~1.5)
+        float softness = 0.5f;                             ///< 減衰の柔らかさ (0.0~1.0)
+        float pad[2];                                      // 16バイトアライメント用パディング
     };
 
     /**
@@ -171,8 +171,8 @@ public:
      * @brief 平滑化エフェクト用パラメータ
      */
     struct SmoothingParams {
-        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
-        int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
+        Irufemi::Vector2 direction = {1.0f, 0.0f}; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
+        int32_t kernelSize = 3;                    ///< カーネルサイズ (奇数推奨)
         float pad;
     };
 
@@ -181,9 +181,9 @@ public:
      * @brief ガウスぼかし用パラメータ
      */
     struct GaussianParams {
-        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
-        float sigma = 2.0f;     ///< 標準偏差（ぼけ具合）
-        int32_t kernelSize = 3; ///< カーネルサイズ (奇数推奨)
+        Irufemi::Vector2 direction = {1.0f, 0.0f}; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
+        float sigma = 2.0f;                        ///< 標準偏差（ぼけ具合）
+        int32_t kernelSize = 3;                    ///< カーネルサイズ (奇数推奨)
     };
 
     /**
@@ -191,9 +191,9 @@ public:
      * @brief 放射状ぼかし用パラメータ
      */
     struct RadialBlurParams {
-        Irufemi::Vector2 center = { 0.5f, 0.5f }; ///< ぼかしの中心点 (UV空間 0.0 ~ 1.0)
-        float blurWidth = 0.01f;         ///< ぼかしの幅
-        int32_t numSamples = 10;         ///< サンプル数
+        Irufemi::Vector2 center = {0.5f, 0.5f}; ///< ぼかしの中心点 (UV空間 0.0 ~ 1.0)
+        float blurWidth = 0.01f;                ///< ぼかしの幅
+        int32_t numSamples = 10;                ///< サンプル数
     };
 
     /**
@@ -201,9 +201,9 @@ public:
      * @brief アウトラインエフェクト用パラメータ
      */
     struct OutlineParams {
-        float intensity = 6.0f;         ///< アウトラインの強度
+        float intensity = 6.0f; ///< アウトラインの強度
         float pad[3];
-        Irufemi::Matrix4x4 projectionInverse;    ///< 逆投影行列 (自動でセットされる)
+        Irufemi::Matrix4x4 projectionInverse; ///< 逆投影行列 (自動でセットされる)
     };
 
     /**
@@ -211,9 +211,9 @@ public:
      * @brief 輝度ベースのアウトラインエフェクト用パラメータ
      */
     struct LuminanceOutlineParams {
-        float threshold = 0.5f;                         ///< 輪郭抽出のしきい値
-        float pad[3];                                   // 16バイトアライメント
-        Irufemi::Vector4 outlineColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< アウトラインの色
+        float threshold = 0.5f;                                   ///< 輪郭抽出のしきい値
+        float pad[3];                                             // 16バイトアライメント
+        Irufemi::Vector4 outlineColor = {0.0f, 0.0f, 0.0f, 1.0f}; ///< アウトラインの色
     };
 
     /**
@@ -240,11 +240,11 @@ public:
      * @brief ディゾルブエフェクト用パラメータ
      */
     struct DissolveParams {
-        Irufemi::Vector4 edgeColor = { 1.0f, 1.0f, 1.0f, 1.0f }; ///< 境界線の色 (無彩色化)
-        Irufemi::Vector4 backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< 背景色 (追加)
-        float threshold = 0.0f;                         ///< 消失しきい値 (0.0 ~ 1.0)
-        float edgeRange = 0.03f;                        ///< 境界線の幅
-        int32_t noiseType = 0;                          ///< 使用するノイズテクスチャのインデックス (0 or 1)
+        Irufemi::Vector4 edgeColor = {1.0f, 1.0f, 1.0f, 1.0f};       ///< 境界線の色 (無彩色化)
+        Irufemi::Vector4 backgroundColor = {0.0f, 0.0f, 0.0f, 1.0f}; ///< 背景色 (追加)
+        float threshold = 0.0f;                                      ///< 消失しきい値 (0.0 ~ 1.0)
+        float edgeRange = 0.03f;                                     ///< 境界線の幅
+        int32_t noiseType = 0; ///< 使用するノイズテクスチャのインデックス (0 or 1)
     };
 
     /**
@@ -262,7 +262,7 @@ public:
      * @brief トーンマッピングエフェクト用パラメータ
      */
     struct ToneMappingParams {
-        float exposure = 1.0f;   ///< 露出補正 (0.0 ~ )
+        float exposure = 1.0f; ///< 露出補正 (0.0 ~ )
     };
 
     /**
@@ -270,8 +270,8 @@ public:
      * @brief フェードエフェクト用パラメータ
      */
     struct FadeParams {
-        Irufemi::Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< フェード色
-        float intensity = 0.0f;                      ///< 強度 (0.0 ~ 1.0)
+        Irufemi::Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f}; ///< フェード色
+        float intensity = 0.0f;                            ///< 強度 (0.0 ~ 1.0)
     };
 
     /**
@@ -279,8 +279,8 @@ public:
      * @brief スライドエフェクト用パラメータ
      */
     struct SlideParams {
-        Irufemi::Vector4 color = { 0.0f, 0.0f, 0.0f, 1.0f }; ///< スライドの色
-        float threshold = 0.0f;                      ///< 進行度 (0.0 ~ 1.0)
+        Irufemi::Vector4 color = {0.0f, 0.0f, 0.0f, 1.0f}; ///< スライドの色
+        float threshold = 0.0f;                            ///< 進行度 (0.0 ~ 1.0)
     };
 
     /**
@@ -288,11 +288,11 @@ public:
      * @brief ブルームエフェクト用パラメータ
      */
     struct BloomParams {
-        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
-        float threshold = 0.8f;             ///< 高輝度抽出のしきい値
-        float sigma = 3.0f;                 ///< ぼかしの強さ
-        float intensity = 1.0f;             ///< ブルームの強度
-        int32_t kernelSize = 21;            ///< ぼかしのカーネルサイズ
+        Irufemi::Vector2 direction = {1.0f, 0.0f}; ///< ぼかしの方向 ({1,0}で横, {0,1}で縦)
+        float threshold = 0.8f;                    ///< 高輝度抽出のしきい値
+        float sigma = 3.0f;                        ///< ぼかしの強さ
+        float intensity = 1.0f;                    ///< ブルームの強度
+        int32_t kernelSize = 21;                   ///< ぼかしのカーネルサイズ
     };
 
     /**
@@ -300,22 +300,22 @@ public:
      * @brief グリッチエフェクト用パラメータ
      */
     struct GlitchParams {
-        float intensity = 1.0f; ///< グリッチの強さ
-        float time = 0.0f;      ///< 時間経過（内部で更新される）
+        float intensity = 1.0f;        ///< グリッチの強さ
+        float time = 0.0f;             ///< 時間経過（内部で更新される）
         float edgeMaskStrength = 0.0f; ///< 画面端にかける強さ
         float probability = 0.4f;      ///< グリッチが発生する確率 (0.0 ~ 1.0)
 
-        float blockSizeX = 16.0f;      ///< ブロックの横分割数
-        float blockSizeY = 32.0f;      ///< ブロックの縦分割数
-        float offsetBase = 0.03f;      ///< 基本の横ズレ幅
-        float offsetMax = 0.15f;       ///< グリッチ時の最大横ズレ幅
+        float blockSizeX = 16.0f; ///< ブロックの横分割数
+        float blockSizeY = 32.0f; ///< ブロックの縦分割数
+        float offsetBase = 0.03f; ///< 基本の横ズレ幅
+        float offsetMax = 0.15f;  ///< グリッチ時の最大横ズレ幅
 
-        float rgbShiftBase = 0.01f;    ///< 基本のRGBズレ幅
-        float rgbShiftMax = 0.02f;     ///< グリッチ時の最大RGBズレ幅
-        float scanlineFreq = 800.0f;   ///< スキャンラインの周波数（細かさ）
+        float rgbShiftBase = 0.01f;      ///< 基本のRGBズレ幅
+        float rgbShiftMax = 0.02f;       ///< グリッチ時の最大RGBズレ幅
+        float scanlineFreq = 800.0f;     ///< スキャンラインの周波数（細かさ）
         float scanlineIntensity = 0.05f; ///< スキャンラインの濃さ
 
-        Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 0.0f }; ///< rgb = 色, a = ブレンド強度
+        Irufemi::Vector4 color = {1.0f, 1.0f, 1.0f, 0.0f}; ///< rgb = 色, a = ブレンド強度
     };
 
     /**
@@ -334,7 +334,7 @@ public:
      * @brief ポスタリゼーション（階調化）用パラメータ
      */
     struct PosterizationParams {
-        float colorSteps = 8.0f;    ///< 階調の段数（少ないほどベタ塗りになる）
+        float colorSteps = 8.0f; ///< 階調の段数（少ないほどベタ塗りになる）
     };
 
     /**
@@ -352,7 +352,7 @@ public:
      * @brief 万華鏡エフェクト用パラメータ
      */
     struct KaleidoscopeParams {
-        float segments = 6.0f;  ///< 分割数
+        float segments = 6.0f; ///< 分割数
         float pad[3];
     };
 
@@ -381,9 +381,9 @@ public:
      * @brief 方向ブラーエフェクト用パラメータ
      */
     struct DirectionalBlurParams {
-        Irufemi::Vector2 direction = { 1.0f, 0.0f }; ///< ブラーの方向
-        float strength = 0.05f;             ///< ブラーの強さ
-        int samples = 10;                   ///< サンプル数
+        Irufemi::Vector2 direction = {1.0f, 0.0f}; ///< ブラーの方向
+        float strength = 0.05f;                    ///< ブラーの強さ
+        int samples = 10;                          ///< サンプル数
         // 16バイト境界は { Irufemi::Vector2(8), float(4), int(4) } = 16バイト なのでpad不要
     };
 
@@ -392,9 +392,9 @@ public:
      * @brief ハーフトーンエフェクト用パラメータ
      */
     struct HalftoneParams {
-        float scale = 150.0f;     ///< ドットの細かさ
-        float angle = 0.785398f;  ///< ドットの回転角 (45度 = 約0.785ラジアン)
-        float blend = 1.0f;       ///< 適用強度
+        float scale = 150.0f;    ///< ドットの細かさ
+        float angle = 0.785398f; ///< ドットの回転角 (45度 = 約0.785ラジアン)
+        float blend = 1.0f;      ///< 適用強度
         float pad;
     };
 
@@ -414,13 +414,13 @@ public:
      * @brief ゴッドレイ（光の筋）エフェクト用パラメータ
      */
     struct LightShaftsParams {
-        Irufemi::Vector2 lightScreenPos = { 0.5f, 0.5f }; ///< 光源のスクリーン座標 (0.0~1.0)
-        float density = 1.0f;                    ///< サンプリング密度
-        float decay = 0.95f;                     ///< 減衰率
-        float weight = 0.5f;                     ///< 重み
-        float exposure = 1.0f;                   ///< 露出
-        int32_t samples = 64;                    ///< サンプリング数
-        float pad;                               ///< パディング
+        Irufemi::Vector2 lightScreenPos = {0.5f, 0.5f}; ///< 光源のスクリーン座標 (0.0~1.0)
+        float density = 1.0f;                           ///< サンプリング密度
+        float decay = 0.95f;                            ///< 減衰率
+        float weight = 0.5f;                            ///< 重み
+        float exposure = 1.0f;                          ///< 露出
+        int32_t samples = 64;                           ///< サンプリング数
+        float pad;                                      ///< パディング
     };
 
     /**
@@ -578,8 +578,6 @@ public:
      */
     void Initialize(IrufemiEngine* engine, DirectXCommon* dxCommon, DXGI_FORMAT rtvFormat);
 
-
-
     /**
      * @brief 更新処理
      * @param totalTime 累計時間（ノイズ等のアニメーションに使用）
@@ -593,7 +591,8 @@ public:
      * @param rtvHandle 最終的な出力先（バックバッファ）のRTV
      * @param workspace Transient Resource が割り当てられた作業用領域
      */
-    void Draw(ID3D12GraphicsCommandList* commandList, class RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace, Layer layer = Layer::PreUI);
+    void Draw(ID3D12GraphicsCommandList* commandList, class RenderTexture* srcTexture,
+              D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace, Layer layer = Layer::PreUI);
 
     /**
      * @brief 個別エフェクトの詳細パラメータを登録し、インスタンスID（1〜255）を発行する
@@ -606,7 +605,7 @@ public:
          */
         std::lock_guard<std::mutex> lock(customParamsMutex_);
         if (customEffectParamsList_.size() >= kMaxCustomEffectParams - 1) { // 0 is reserved
-            return kMaxCustomEffectParams - 1; // Fallback to last available
+            return kMaxCustomEffectParams - 1;                              // Fallback to last available
         }
         customEffectParamsList_.push_back(params);
         return static_cast<uint32_t>(customEffectParamsList_.size()); // 1-indexed
@@ -631,7 +630,7 @@ public:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        
+
         // ソート実行
         std::sort(pendingPreUI_.begin(), pendingPreUI_.end());
         std::sort(pendingPostUI_.begin(), pendingPostUI_.end());
@@ -649,8 +648,8 @@ public:
     }
 
     /** @brief 現在アクティブなエフェクトスタックを取得 (レイヤー指定) */
-    const std::vector<Mode>& GetActiveModes(Layer layer = Layer::PreUI) const { 
-        return (layer == Layer::PreUI) ? activePreUI_ : activePostUI_; 
+    const std::vector<Mode>& GetActiveModes(Layer layer = Layer::PreUI) const {
+        return (layer == Layer::PreUI) ? activePreUI_ : activePostUI_;
     }
 
     /** @brief 全てのアクティブなエフェクト（PreUI + PostUI）を取得（互換性用・デバッグ用） */
@@ -664,22 +663,24 @@ public:
     void AddActiveMode(Mode mode, int customPriority = -1) {
         AddActiveMode(mode, Layer::PreUI, customPriority);
     }
-    
+
     void AddActiveMode(Mode mode, Layer layer, int customPriority = -1) {
         /**
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        
+
         // 既に同じモードが存在するかチェック（重複追加を防ぐ）
         if (layer == Layer::PreUI) {
-            auto it = std::find_if(pendingPreUI_.begin(), pendingPreUI_.end(), 
-                [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
-            if (it != pendingPreUI_.end()) return;
+            auto it = std::find_if(pendingPreUI_.begin(), pendingPreUI_.end(),
+                                   [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
+            if (it != pendingPreUI_.end())
+                return;
         } else {
-            auto it = std::find_if(pendingPostUI_.begin(), pendingPostUI_.end(), 
-                [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
-            if (it != pendingPostUI_.end()) return;
+            auto it = std::find_if(pendingPostUI_.begin(), pendingPostUI_.end(),
+                                   [mode](const PostProcessModeInfo& info) { return info.mode == mode; });
+            if (it != pendingPostUI_.end())
+                return;
         }
 
         int priority = (customPriority == -1) ? GetDefaultPriority(mode) : customPriority;
@@ -690,54 +691,71 @@ public:
             pendingPostUI_.push_back({mode, priority + 9000});
         }
     }
-    
+
     // -------------------------------------------------------------
     // 静的ヘルパー関数
     // -------------------------------------------------------------
-    
+
     /**
      * @brief モードのデフォルト実行優先度（Pipeline Order）を取得
      * 小さい数値ほど先に（下層に）描画される
      */
     static int GetDefaultPriority(Mode mode) {
         switch (mode) {
-            // Priority 1000: Pre-HDR 
-            case Mode::DepthBasedOutline: return 1100;
-            case Mode::RadialBlur: return 1200;
-            case Mode::DepthOfField: return 1300;
-            case Mode::LightShafts: return 1400;
-            case Mode::DualKawaseBlur: return 1500;
-            
-            // Priority 2000: HDR Effects
-            case Mode::Bloom: return 2000;
+        // Priority 1000: Pre-HDR
+        case Mode::DepthBasedOutline:
+            return 1100;
+        case Mode::RadialBlur:
+            return 1200;
+        case Mode::DepthOfField:
+            return 1300;
+        case Mode::LightShafts:
+            return 1400;
+        case Mode::DualKawaseBlur:
+            return 1500;
 
-            // Priority 3000: ToneMapping (HDR -> LDR)
-            case Mode::ToneMapping: return 3000;
+        // Priority 2000: HDR Effects
+        case Mode::Bloom:
+            return 2000;
 
-            // Priority 4000: LDR Color Grading
-            case Mode::HSV: return 4000;
-            case Mode::Grayscale: return 4100;
-            case Mode::Sepia: return 4200;
-            case Mode::Posterization: return 4300;
+        // Priority 3000: ToneMapping (HDR -> LDR)
+        case Mode::ToneMapping:
+            return 3000;
 
-            // Priority 5000: LDR Polish (画面演出・オーバーレイ系)
-            case Mode::Vignette: return 5000;
-            case Mode::Noise: return 5100;
-            case Mode::Glitch: return 5200;
-            case Mode::ChromaticAberration: return 5300;
-            case Mode::Pixelation: return 5400;
-            
-            default: return 9999;
+        // Priority 4000: LDR Color Grading
+        case Mode::HSV:
+            return 4000;
+        case Mode::Grayscale:
+            return 4100;
+        case Mode::Sepia:
+            return 4200;
+        case Mode::Posterization:
+            return 4300;
+
+        // Priority 5000: LDR Polish (画面演出・オーバーレイ系)
+        case Mode::Vignette:
+            return 5000;
+        case Mode::Noise:
+            return 5100;
+        case Mode::Glitch:
+            return 5200;
+        case Mode::ChromaticAberration:
+            return 5300;
+        case Mode::Pixelation:
+            return 5400;
+
+        default:
+            return 9999;
         }
     }
-    
+
     /**
      * @brief そのエフェクトが深度バッファを必要とするかどうか
      */
     static bool UsesDepthBuffer(Mode mode) {
         return mode == Mode::DepthBasedOutline || mode == Mode::DepthOfField || mode == Mode::LightShafts;
     }
-    
+
     // -------------------------------------------------------------
     // 初期化・更新・描画
     // -------------------------------------------------------------
@@ -748,10 +766,12 @@ public:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingPreUI_.erase(std::remove_if(pendingPreUI_.begin(), pendingPreUI_.end(), 
-            [mode](const PostProcessModeInfo& info){ return info.mode == mode; }), pendingPreUI_.end());
-        pendingPostUI_.erase(std::remove_if(pendingPostUI_.begin(), pendingPostUI_.end(), 
-            [mode](const PostProcessModeInfo& info){ return info.mode == mode; }), pendingPostUI_.end());
+        pendingPreUI_.erase(std::remove_if(pendingPreUI_.begin(), pendingPreUI_.end(),
+                                           [mode](const PostProcessModeInfo& info) { return info.mode == mode; }),
+                            pendingPreUI_.end());
+        pendingPostUI_.erase(std::remove_if(pendingPostUI_.begin(), pendingPostUI_.end(),
+                                            [mode](const PostProcessModeInfo& info) { return info.mode == mode; }),
+                             pendingPostUI_.end());
     }
 
     /** @brief 全てのエフェクトを解除（クリア） */
@@ -764,9 +784,9 @@ public:
         pendingPostUI_.clear();
     }
 
-    /** 
+    /**
      * @brief ポストプロセスの完全リセット（シーン遷移時用）
-     * 
+     *
      * 保留中および現在アクティブなエフェクトリストをすべてクリアし、
      * 全パラメータをデフォルト状態に戻します。
      * 各シーンの `Initialize()` または `Finalize()` で呼び出すことを推奨します。
@@ -790,7 +810,7 @@ public:
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.clear();
-        for(auto mode : modes) {
+        for (auto mode : modes) {
             pendingPreUI_.push_back({mode, GetDefaultPriority(mode)});
         }
         pendingPostUI_.clear(); // 必要に応じて呼ぶか？
@@ -803,10 +823,12 @@ public:
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.clear();
-        for(auto mode : preUI) pendingPreUI_.push_back({mode, GetDefaultPriority(mode)});
-        
+        for (auto mode : preUI)
+            pendingPreUI_.push_back({mode, GetDefaultPriority(mode)});
+
         pendingPostUI_.clear();
-        for(auto mode : postUI) pendingPostUI_.push_back({mode, GetDefaultPriority(mode) + 9000});
+        for (auto mode : postUI)
+            pendingPostUI_.push_back({mode, GetDefaultPriority(mode) + 9000});
     }
 
     /** @brief 全てのパラメータをデフォルト状態にリセットする */
@@ -817,160 +839,216 @@ public:
         return std::find(activePreUI_.begin(), activePreUI_.end(), mode) != activePreUI_.end() ||
                std::find(activePostUI_.begin(), activePostUI_.end(), mode) != activePostUI_.end();
     }
-    
+
     /** @brief 互換性のための単一セット (既存リストをクリアして1つ追加) */
-    void SetMode(Mode mode, Layer layer = Layer::PreUI) { 
+    void SetMode(Mode mode, Layer layer = Layer::PreUI) {
         /**
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
-        pendingPreUI_.clear(); 
+        pendingPreUI_.clear();
         pendingPostUI_.clear();
         if (mode != Mode::None) {
             int priority = GetDefaultPriority(mode);
-            if (layer == Layer::PreUI) pendingPreUI_.push_back({mode, priority});
-            else pendingPostUI_.push_back({mode, priority + 9000});
+            if (layer == Layer::PreUI)
+                pendingPreUI_.push_back({mode, priority});
+            else
+                pendingPostUI_.push_back({mode, priority + 9000});
         }
     }
 
     /** @brief 互換性のための取得 (PreUIの先頭を優先して返す) */
-    Mode GetMode() const { 
-        if (!activePreUI_.empty()) return activePreUI_.front();
-        if (!activePostUI_.empty()) return activePostUI_.front();
-        return Mode::None; 
+    Mode GetMode() const {
+        if (!activePreUI_.empty())
+            return activePreUI_.front();
+        if (!activePostUI_.empty())
+            return activePostUI_.front();
+        return Mode::None;
     }
-    
+
     // 各エフェクトのパラメータ取得 (シーンからの演出用)
     /**
      * @brief NoiseParams を取得する。
      * @return 取得された NoiseParams
      */
-    NoiseParams& GetNoiseParams() { return noiseParams_; }
+    NoiseParams& GetNoiseParams() {
+        return noiseParams_;
+    }
     /**
      * @brief VignetteParams を取得する。
      * @return 取得された VignetteParams
      */
-    VignetteParams& GetVignetteParams() { return vignetteParams_; }
+    VignetteParams& GetVignetteParams() {
+        return vignetteParams_;
+    }
     /**
      * @brief SmoothingParams を取得する。
      * @return 取得された SmoothingParams
      */
-    SmoothingParams& GetSmoothingParams() { return smoothingParams_; }
+    SmoothingParams& GetSmoothingParams() {
+        return smoothingParams_;
+    }
     /**
      * @brief GaussianParams を取得する。
      * @return 取得された GaussianParams
      */
-    GaussianParams& GetGaussianParams() { return gaussianParams_; }
+    GaussianParams& GetGaussianParams() {
+        return gaussianParams_;
+    }
     /**
      * @brief RadialBlurParams を取得する。
      * @return 取得された RadialBlurParams
      */
-    RadialBlurParams& GetRadialBlurParams() { return radialBlurParams_; }
+    RadialBlurParams& GetRadialBlurParams() {
+        return radialBlurParams_;
+    }
     /**
      * @brief OutlineParams を取得する。
      * @return 取得された OutlineParams
      */
-    OutlineParams& GetOutlineParams() { return outlineParams_; }
+    OutlineParams& GetOutlineParams() {
+        return outlineParams_;
+    }
     /**
      * @brief DissolveParams を取得する。
      * @return 取得された DissolveParams
      */
-    DissolveParams& GetDissolveParams() { return dissolveParams_; }
+    DissolveParams& GetDissolveParams() {
+        return dissolveParams_;
+    }
     /**
      * @brief HSVParams を取得する。
      * @return 取得された HSVParams
      */
-    HSVParams& GetHSVParams() { return hsvParams_; }
+    HSVParams& GetHSVParams() {
+        return hsvParams_;
+    }
     /**
      * @brief ToneMappingParams を取得する。
      * @return 取得された ToneMappingParams
      */
-    ToneMappingParams& GetToneMappingParams() { return toneMappingParams_; }
+    ToneMappingParams& GetToneMappingParams() {
+        return toneMappingParams_;
+    }
     /**
      * @brief FadeParams を取得する。
      * @return 取得された FadeParams
      */
-    FadeParams& GetFadeParams() { return fadeParams_; }
+    FadeParams& GetFadeParams() {
+        return fadeParams_;
+    }
     /**
      * @brief SlideParams を取得する。
      * @return 取得された SlideParams
      */
-    SlideParams& GetSlideParams() { return slideParams_; }
+    SlideParams& GetSlideParams() {
+        return slideParams_;
+    }
     /**
      * @brief BloomParams を取得する。
      * @return 取得された BloomParams
      */
-    BloomParams& GetBloomParams() { return bloomParams_; }
+    BloomParams& GetBloomParams() {
+        return bloomParams_;
+    }
     /**
      * @brief GlitchParams を取得する。
      * @return 取得された GlitchParams
      */
-    GlitchParams& GetGlitchParams() { return glitchParams_; }
+    GlitchParams& GetGlitchParams() {
+        return glitchParams_;
+    }
     /**
      * @brief DualKawaseBlurParams を取得する。
      * @return 取得された DualKawaseBlurParams
      */
-    DualKawaseBlurParams& GetDualKawaseBlurParams() { return dualKawaseParams_; }
+    DualKawaseBlurParams& GetDualKawaseBlurParams() {
+        return dualKawaseParams_;
+    }
     /**
      * @brief LuminanceOutlineParams を取得する。
      * @return 取得された LuminanceOutlineParams
      */
-    LuminanceOutlineParams& GetLuminanceOutlineParams() { return luminanceOutlineParams_; }
+    LuminanceOutlineParams& GetLuminanceOutlineParams() {
+        return luminanceOutlineParams_;
+    }
     /**
      * @brief PixelationParams を取得する。
      * @return 取得された PixelationParams
      */
-    PixelationParams& GetPixelationParams() { return pixelationParams_; }
+    PixelationParams& GetPixelationParams() {
+        return pixelationParams_;
+    }
     /**
      * @brief PointillismParams を取得する。
      * @return 取得された PointillismParams
      */
-    PointillismParams& GetPointillismParams() { return pointillismParams_; }
+    PointillismParams& GetPointillismParams() {
+        return pointillismParams_;
+    }
     /**
      * @brief PosterizationParams を取得する。
      * @return 取得された PosterizationParams
      */
-    PosterizationParams& GetPosterizationParams() { return posterizationParams_; }
+    PosterizationParams& GetPosterizationParams() {
+        return posterizationParams_;
+    }
     /**
      * @brief NightVisionParams を取得する。
      * @return 取得された NightVisionParams
      */
-    NightVisionParams& GetNightVisionParams() { return nightVisionParams_; }
+    NightVisionParams& GetNightVisionParams() {
+        return nightVisionParams_;
+    }
     /**
      * @brief KaleidoscopeParams を取得する。
      * @return 取得された KaleidoscopeParams
      */
-    KaleidoscopeParams& GetKaleidoscopeParams() { return kaleidoscopeParams_; }
+    KaleidoscopeParams& GetKaleidoscopeParams() {
+        return kaleidoscopeParams_;
+    }
     /**
      * @brief ChromaticAberrationParams を取得する。
      * @return 取得された ChromaticAberrationParams
      */
-    ChromaticAberrationParams& GetChromaticAberrationParams() { return chromaticAberrationParams_; }
+    ChromaticAberrationParams& GetChromaticAberrationParams() {
+        return chromaticAberrationParams_;
+    }
     /**
      * @brief DisplacementMapParams を取得する。
      * @return 取得された DisplacementMapParams
      */
-    DisplacementMapParams& GetDisplacementMapParams() { return displacementMapParams_; }
+    DisplacementMapParams& GetDisplacementMapParams() {
+        return displacementMapParams_;
+    }
     /**
      * @brief DirectionalBlurParams を取得する。
      * @return 取得された DirectionalBlurParams
      */
-    DirectionalBlurParams& GetDirectionalBlurParams() { return directionalBlurParams_; }
+    DirectionalBlurParams& GetDirectionalBlurParams() {
+        return directionalBlurParams_;
+    }
     /**
      * @brief HalftoneParams を取得する。
      * @return 取得された HalftoneParams
      */
-    HalftoneParams& GetHalftoneParams() { return halftoneParams_; }
+    HalftoneParams& GetHalftoneParams() {
+        return halftoneParams_;
+    }
     /**
      * @brief DepthOfFieldParams を取得する。
      * @return 取得された DepthOfFieldParams
      */
-    DepthOfFieldParams& GetDepthOfFieldParams() { return dofParams_; }
+    DepthOfFieldParams& GetDepthOfFieldParams() {
+        return dofParams_;
+    }
     /**
      * @brief LightShaftsParams を取得する。
      * @return 取得された LightShaftsParams
      */
-    LightShaftsParams& GetLightShaftsParams() { return lightShaftsParams_; }
+    LightShaftsParams& GetLightShaftsParams() {
+        return lightShaftsParams_;
+    }
 
     /**
      * @brief DissolveNoiseIndex を設定する。
@@ -978,29 +1056,38 @@ public:
      * @param[in] srvIndex 設定する DissolveNoiseIndex の値
      */
     void SetDissolveNoiseIndex(int index, uint32_t srvIndex) {
-        if (index >= 0 && index < 2) dissolveNoiseIndex_[index] = srvIndex;
+        if (index >= 0 && index < 2)
+            dissolveNoiseIndex_[index] = srvIndex;
     }
-    
+
     /**
      * @brief DepthSrvIndex を設定する。
      * @param[in] srvIndex 設定する DepthSrvIndex の値
      */
-    void SetDepthSrvIndex(uint32_t srvIndex) { depthSrvIndex_ = srvIndex; }
+    void SetDepthSrvIndex(uint32_t srvIndex) {
+        depthSrvIndex_ = srvIndex;
+    }
     /**
      * @brief NormalSrvIndex を設定する。
      * @param[in] srvIndex 設定する NormalSrvIndex の値
      */
-    void SetNormalSrvIndex(uint32_t srvIndex) { normalSrvIndex_ = srvIndex; }
+    void SetNormalSrvIndex(uint32_t srvIndex) {
+        normalSrvIndex_ = srvIndex;
+    }
     /**
      * @brief MaterialSrvIndex を設定する。
      * @param[in] srvIndex 設定する MaterialSrvIndex の値
      */
-    void SetMaterialSrvIndex(uint32_t srvIndex) { materialSrvIndex_ = srvIndex; }
+    void SetMaterialSrvIndex(uint32_t srvIndex) {
+        materialSrvIndex_ = srvIndex;
+    }
     /**
      * @brief VelocitySrvIndex を設定する。
      * @param[in] srvIndex 設定する VelocitySrvIndex の値
      */
-    void SetVelocitySrvIndex(uint32_t srvIndex) { velocitySrvIndex_ = srvIndex; }
+    void SetVelocitySrvIndex(uint32_t srvIndex) {
+        velocitySrvIndex_ = srvIndex;
+    }
 
 private:
     /**
@@ -1014,7 +1101,9 @@ private:
     /**
      * @brief DrawSinglePass を実行する。
      */
-    void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass = false, ID3D12PipelineState* psoOverride = nullptr);
+    void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture,
+                        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass = false,
+                        ID3D12PipelineState* psoOverride = nullptr);
     /**
      * @brief CreateBuffer を実行する。
      */
@@ -1027,11 +1116,11 @@ private:
     DXGI_FORMAT rtvFormat_ = DXGI_FORMAT_UNKNOWN;
 
     Mode mode_ = Mode::None; // 互換性用（内部では不使用にする）
-    
+
     std::mutex modesMutex_;
     std::vector<Mode> activePreUI_;
     std::vector<PostProcessModeInfo> pendingPreUI_;
-    
+
     std::vector<Mode> activePostUI_;
     std::vector<PostProcessModeInfo> pendingPostUI_;
 
@@ -1166,7 +1255,7 @@ private:
     uint32_t normalSrvIndex_ = 0;
     uint32_t materialSrvIndex_ = 0;
     uint32_t velocitySrvIndex_ = 0;
-    uint32_t dissolveNoiseIndex_[2]{ 0 };
+    uint32_t dissolveNoiseIndex_[2]{0};
 
     // 状態追跡用は上に移動済み
 };

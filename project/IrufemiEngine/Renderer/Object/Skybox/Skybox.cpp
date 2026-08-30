@@ -1,19 +1,18 @@
 ﻿#include "Renderer/Object/Skybox/Skybox.h"
 #include "Renderer/Camera/CameraManager.h"
 
-#include "Core/System/IrufemiEngine.h"
 #include "Core/Math/Math.h"
+#include "Core/System/IrufemiEngine.h"
 #include "RHI/DirectX12/DirectXCommon.h"
+#include "Renderer/Camera/Camera.h"
 #include "Renderer/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
-#include "Renderer/Camera/Camera.h"
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
 #endif
 #include "Renderer/Object/PrimitiveManager.h"
 
 IrufemiEngine* Skybox::engine_ = nullptr;
-
 
 // コンストラクタ
 Skybox::Skybox() {}
@@ -85,7 +84,8 @@ void Skybox::Initialize(const std::string& textureName) {
 
 void Skybox::Update() {
 
-    Irufemi::Matrix4x4 worldMatrix = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    Irufemi::Matrix4x4 worldMatrix =
+        Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // シェーダー側でgCameraを使用するようになったためWVPの計算を省略
     transformationMatrix_.WVP = Irufemi::Math::MakeIdentity4x4();
     transformationMatrix_.World = worldMatrix;
@@ -100,7 +100,7 @@ void Skybox::Update() {
 
 void Skybox::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    
+
     // [Bindless] テクスチャインデックスの反映
     if (materialBuffer_[frameIndex]) {
         TextureManager* tm = engine_->GetTextureManager();
@@ -110,25 +110,28 @@ void Skybox::SyncBeforeDraw() {
             materialBuffer_[frameIndex]->textureIndex = tm->GetWhiteCubeMapSrvIndex();
         }
     }
-    
+
     if (CheckAndClearDirty(frameIndex)) {
         transformationBuffer_.Update(transformationMatrix_, frameIndex);
     }
 }
 
 void Skybox::Draw() {
-    if (!vertexResource_ || !indexResource_ || !engine_) return;
+    if (!vertexResource_ || !indexResource_ || !engine_)
+        return;
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam)
+        return;
 
     // カメラの行列が変更されたか、オブジェクト自体が変更されたかチェック
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
+    bool cameraChanged =
+        (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+         std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex()] || cameraChanged) {
         Update();
     }
-    
+
     SyncBeforeDraw();
 
     DrawManager* drawManager = engine_->GetDrawManager();
@@ -137,22 +140,28 @@ void Skybox::Draw() {
 
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
     // [Bindless] gpuHandle を渡さない
-    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_, materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(), static_cast<UINT>(indexDataList_.size()));
-
+    drawManager->SubmitSkybox(vertexBufferView_, indexBufferView_,
+                              materialBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(),
+                              transformationBuffer_.GetResource(frameIndex)->GetGPUVirtualAddress(),
+                              static_cast<UINT>(indexDataList_.size()));
 }
 
 void Skybox::Debug() {
 #ifdef USE_IMGUI
-        if (ImGui::CollapsingHeader("Skybox")) {
-            TextureManager* textureManager = engine_->GetTextureManager();
-            auto textureNames = textureManager->GetCubeMapNamesForDebug();
+    if (ImGui::CollapsingHeader("Skybox")) {
+        TextureManager* textureManager = engine_->GetTextureManager();
+        auto textureNames = textureManager->GetCubeMapNamesForDebug();
 
-            if (!textureNames.empty()) {
-            if (ImGui::Combo("Texture", &selectedTextureIndex_, [](void* data, int idx) {
-                auto* names = reinterpret_cast<std::vector<std::string>*>(data);
-                if (idx < 0 || idx >= static_cast<int>(names->size())) return (const char*)nullptr;
-                return (*names)[idx].c_str();
-            }, &textureNames, static_cast<int>(textureNames.size()))) {
+        if (!textureNames.empty()) {
+            if (ImGui::Combo(
+                    "Texture", &selectedTextureIndex_,
+                    [](void* data, int idx) {
+                        auto* names = reinterpret_cast<std::vector<std::string>*>(data);
+                        if (idx < 0 || idx >= static_cast<int>(names->size()))
+                            return (const char*)nullptr;
+                        return (*names)[idx].c_str();
+                    },
+                    &textureNames, static_cast<int>(textureNames.size()))) {
                 // 選択が変更された
                 std::string selectedName = textureNames[selectedTextureIndex_];
                 if (textureHandle_.IsValid()) {
@@ -178,7 +187,8 @@ void Skybox::CreateResource() {
 
     // 頂点・インデックスの静的リソースは単一バッファのまま
     if (!vertexResource_) {
-        vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
+        vertexResource_ =
+            dxCommon->CreateBufferResource(sizeof(VertexData) * static_cast<size_t>(vertexDataList_.size()));
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
         vertexBufferView_.SizeInBytes = sizeof(VertexData) * static_cast<UINT>(vertexDataList_.size());
         vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -233,5 +243,3 @@ void Skybox::UnMapResource() {
         indexData_ = nullptr;
     }
 }
-
-

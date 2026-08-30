@@ -1,5 +1,5 @@
-#include "Core/Utility/ErrorUtility.h"
 #include "RHI/DirectX12/DXCommandManager.h"
+#include "Core/Utility/ErrorUtility.h"
 #include "RHI/DirectX12/DirectXCommon.h" // kMaxFramesInFlight を使用するため
 #include <cassert>
 
@@ -17,12 +17,14 @@ void DXCommandManager::Initialize(ID3D12Device* device) {
     fenceValues_.resize(kMaxFramesInFlight, 0);
 
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-        hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(commandAllocators_[i].GetAddressOf()));
+        hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                             IID_PPV_ARGS(commandAllocators_[i].GetAddressOf()));
         ASSERT_IF_FAILED(hr);
     }
 
     // --- メインのコマンドリスト生成 ---
-    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators_[0].Get(), nullptr, IID_PPV_ARGS(commandList_.GetAddressOf()));
+    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators_[0].Get(), nullptr,
+                                    IID_PPV_ARGS(commandList_.GetAddressOf()));
     ASSERT_IF_FAILED(hr);
     commandList_->Close();
 
@@ -34,10 +36,12 @@ void DXCommandManager::Initialize(ID3D12Device* device) {
     IRUFEMI_ASSERT(fenceEvent_ != nullptr);
 
     // --- 転送専用(Upload)コマンド系の生成 ---
-    hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(uploadCommandAllocator_.GetAddressOf()));
+    hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                         IID_PPV_ARGS(uploadCommandAllocator_.GetAddressOf()));
     ASSERT_IF_FAILED(hr);
-    
-    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, uploadCommandAllocator_.Get(), nullptr, IID_PPV_ARGS(uploadCommandList_.GetAddressOf()));
+
+    hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, uploadCommandAllocator_.Get(), nullptr,
+                                    IID_PPV_ARGS(uploadCommandList_.GetAddressOf()));
     ASSERT_IF_FAILED(hr);
     uploadCommandList_->Close();
 
@@ -61,7 +65,7 @@ void DXCommandManager::Finalize() {
     uploadFence_.Reset();
     uploadCommandList_.Reset();
     uploadCommandAllocator_.Reset();
-    
+
     fence_.Reset();
     commandList_.Reset();
     for (auto& allocator : commandAllocators_) {
@@ -93,7 +97,7 @@ void DXCommandManager::ExecuteUploadCommands(std::function<void(ID3D12GraphicsCo
     commands(uploadCommandList_.Get());
 
     uploadCommandList_->Close();
-    ID3D12CommandList* ppCommandLists[] = { uploadCommandList_.Get() };
+    ID3D12CommandList* ppCommandLists[] = {uploadCommandList_.Get()};
     commandQueue_->ExecuteCommandLists(1, ppCommandLists);
 
     uploadFenceValue_++;

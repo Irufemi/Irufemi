@@ -1,13 +1,13 @@
 #include "RailMechanics/RailShooterPlayerComponent.h"
-#include "Framework/GameObject/GameObject.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
 #define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
 #include <algorithm>
 #include <cmath>
+#include <dinput.h>
 
 void RailShooterPlayerComponent::OnRegisterProperties() {
     RegisterProperty("XYSpeed", &xySpeed_);
@@ -16,7 +16,8 @@ void RailShooterPlayerComponent::OnRegisterProperties() {
 }
 
 void RailShooterPlayerComponent::Update() {
-    if (!gameObject_) return;
+    if (!gameObject_)
+        return;
 
     // 1フレームの経過時間
     float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
@@ -25,23 +26,30 @@ void RailShooterPlayerComponent::Update() {
     }
 
     auto transform = GetTransform();
-    if (!transform) return;
+    if (!transform)
+        return;
 
     // --- キー入力による上下左右の回避運動 ---
     auto* input = BaseModel::GetIrufemiEngine()->GetInputManager();
     Irufemi::Vector3 moveDir = {0.0f, 0.0f, 0.0f};
 
     // WASD または 矢印キーで移動方向を入力 (長押し判定のため IsKeyDownDIK を使用)
-    if (input->IsKeyDownDIK(DIK_W) || input->IsKeyDownDIK(DIK_UP)) moveDir.y += 1.0f;
-    if (input->IsKeyDownDIK(DIK_S) || input->IsKeyDownDIK(DIK_DOWN)) moveDir.y -= 1.0f;
-    if (input->IsKeyDownDIK(DIK_A) || input->IsKeyDownDIK(DIK_LEFT)) moveDir.x -= 1.0f;
-    if (input->IsKeyDownDIK(DIK_D) || input->IsKeyDownDIK(DIK_RIGHT)) moveDir.x += 1.0f;
+    if (input->IsKeyDownDIK(DIK_W) || input->IsKeyDownDIK(DIK_UP))
+        moveDir.y += 1.0f;
+    if (input->IsKeyDownDIK(DIK_S) || input->IsKeyDownDIK(DIK_DOWN))
+        moveDir.y -= 1.0f;
+    if (input->IsKeyDownDIK(DIK_A) || input->IsKeyDownDIK(DIK_LEFT))
+        moveDir.x -= 1.0f;
+    if (input->IsKeyDownDIK(DIK_D) || input->IsKeyDownDIK(DIK_RIGHT))
+        moveDir.x += 1.0f;
 
     // ゲームパッド（左スティック）の入力
     float padX = input->GetLeftStickX();
     float padY = input->GetLeftStickY();
-    if (std::abs(padX) > 0.1f) moveDir.x += padX;
-    if (std::abs(padY) > 0.1f) moveDir.y += padY;
+    if (std::abs(padX) > 0.1f)
+        moveDir.x += padX;
+    if (std::abs(padY) > 0.1f)
+        moveDir.y += padY;
 
     // 斜め移動したときに移動速度が速くならないように、ベクトルの長さを1に抑える
     float len = std::sqrt(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
@@ -56,7 +64,7 @@ void RailShooterPlayerComponent::Update() {
         // 入力がある場合、加速度を足して加速
         currentVelocity_.x += moveDir.x * acceleration_ * deltaTime;
         currentVelocity_.y += moveDir.y * acceleration_ * deltaTime;
-        
+
         // 最高速度でクリップ
         float vLen = std::sqrt(currentVelocity_.x * currentVelocity_.x + currentVelocity_.y * currentVelocity_.y);
         if (vLen > maxSpeed_) {

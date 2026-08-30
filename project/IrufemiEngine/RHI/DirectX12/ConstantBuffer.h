@@ -1,16 +1,15 @@
 #pragma once
 
 #include "Core/Utility/ErrorUtility.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include <array>
+#include <cassert>
+#include <cstdint>
 #include <d3d12.h>
 #include <wrl.h>
-#include <array>
-#include <cstdint>
-#include <cassert>
-#include "RHI/DirectX12/DirectXCommon.h"
 
 // マルチバッファリング対応 汎用定数バッファ管理クラステンプレート
-template <typename T>
-class ConstantBuffer {
+template <typename T> class ConstantBuffer {
 public:
     ConstantBuffer() = default;
     ~ConstantBuffer() {

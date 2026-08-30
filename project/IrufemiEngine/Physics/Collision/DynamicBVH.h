@@ -1,11 +1,10 @@
 #pragma once
 
-#include <vector>
-#include <cstdint>
-#include <utility>
 #include "Core/Math/Geometry/AABB.h"
 #include "Physics/Collision/Collision.h"
-
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 class ColliderComponent;
 
@@ -69,10 +68,10 @@ private:
     int32_t freeListFirst_ = -1;
 
     // --- 内部ヘルパー関数 ---
-    
+
     /// @brief 新しいノードを確保（またはフリーリストから再利用）する
     int32_t AllocateNode();
-    
+
     /// @brief ノードをフリーリストに返却する
     void FreeNode(int32_t nodeId);
 
@@ -92,7 +91,8 @@ private:
     void Refit(int32_t nodeIndex);
 
     /// @brief ペア抽出の再帰処理
-    void ComputePairs(int32_t node0, int32_t node1, std::vector<std::pair<ColliderComponent* , ColliderComponent*>>& outPairs) const;
+    void ComputePairs(int32_t node0, int32_t node1,
+                      std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const;
 
     /// @brief AABB同士の交差判定
     bool Intersects(const AABB& a, const AABB& b) const;

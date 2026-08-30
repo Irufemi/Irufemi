@@ -1,10 +1,10 @@
 #pragma once
+#include "Core/Math/Math.h"
+#include "Core/Math/Transform.h"
+#include "Core/Shape/Sphere.h"
 #include "Framework/Component/Component.h"
 #include <memory>
 #include <string>
-#include "Core/Shape/Sphere.h"
-#include "Core/Math/Math.h"
-#include "Core/Math/Transform.h"
 
 // 前方宣言
 class ModelBatch;
@@ -38,19 +38,21 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
-    
+
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override { return true; }
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
 
     /**
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
     IRenderable* GetRenderable() override;
-    
+
     // エディタのRaycast用
     /**
      * @brief WorldSphere を取得する。
@@ -66,7 +68,9 @@ public:
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "ModelBatchRendererComponent"; }
+    std::string GetComponentName() const override {
+        return "ModelBatchRendererComponent";
+    }
     /**
      * @brief Serialize を実行する。
      */
@@ -80,19 +84,23 @@ public:
      * @brief 現在読み込まれているモデル名を取得します。
      * @return モデル名
      */
-    const std::string& GetModelName() const { return modelName_; }
+    const std::string& GetModelName() const {
+        return modelName_;
+    }
 
     /**
      * @brief バッチ描画するインスタンスを追加します。
      * @param t インスタンスのローカルトランスフォーム（またはワールド）
      */
-    void AddInstance(const Irufemi::Transform& t, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstance(const Irufemi::Transform& t, int32_t effectType = 0, float effectParam = 0.0f,
+                     bool enableMask = false);
 
     /**
      * @brief ワールド行列を直接指定してインスタンスを追加します。
      * @param world ワールド行列
      */
-    void AddInstanceWorld(const Irufemi::Matrix4x4& world, int32_t effectType = 0, float effectParam = 0.0f, bool enableMask = false);
+    void AddInstanceWorld(const Irufemi::Matrix4x4& world, int32_t effectType = 0, float effectParam = 0.0f,
+                          bool enableMask = false);
 
     /**
      * @brief 登録されたインスタンスをすべてクリアします。毎フレーム呼ぶ必要があります。
@@ -109,7 +117,7 @@ public:
 #endif
 
 private:
-    std::unique_ptr<ModelBatch> batch_;           ///< 実際のバッチ描画を担うクラス
-    std::string modelName_ = "plane.obj";          ///< 読み込むモデル名
-    bool useGPUCulling_ = false;                   ///< GPUカリングの有効フラグ
+    std::unique_ptr<ModelBatch> batch_;   ///< 実際のバッチ描画を担うクラス
+    std::string modelName_ = "plane.obj"; ///< 読み込むモデル名
+    bool useGPUCulling_ = false;          ///< GPUカリングの有効フラグ
 };

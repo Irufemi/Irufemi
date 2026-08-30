@@ -1,7 +1,7 @@
 #pragma once
-#include "Renderer/Camera/Camera.h"
-#include "Platform/Input/InputManager.h"
 #include "Core/Math/Vector3.h"
+#include "Platform/Input/InputManager.h"
+#include "Renderer/Camera/Camera.h"
 
 /**
  * @class OrbitCameraController
@@ -16,7 +16,7 @@ public:
      * @param input 入力マネージャ
      */
     void UpdateCameraInput(Camera* camera, InputManager* input);
-    
+
     /**
      * @brief 指定したワールド座標をカメラの中心に収めるよう移動・注視します。
      * @param camera 操作対象のカメラ
@@ -37,9 +37,9 @@ public:
      * @brief プリセットの視点にカメラを設定します。
      */
     enum class Preset {
-        TopDown,     // 見下ろし
-        Diagonal,    // 斜め見下ろし
-        Front        // 正面
+        TopDown,  // 見下ろし
+        Diagonal, // 斜め見下ろし
+        Front     // 正面
     };
     /**
      * @brief Preset を設定する。

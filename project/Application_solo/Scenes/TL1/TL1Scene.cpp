@@ -1,26 +1,26 @@
 #include "Scenes/TL1/TL1Scene.h"
-#include "Scenes/TL1/MagicBrushClient.h"
+#include "Core/Utility/Log.h"
+#include "Core/Utility/StringUtility.h"
 #include "Engine/Irufemi.h"
-#include "RHI/DirectX12/ShaderCompiler.h"
-#include "Renderer/Pipeline/PSOManager.h"
-#include "RHI/DirectX12/DirectXCommon.h"
-#include "RHI/DirectX12/ShaderManager.h"
-#include "RHI/DirectX12/RootSignatureConfig.h"
-#include "Resource/Texture/TextureManager.h"
+#include "Framework/Component/TransformComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Platform/WindowsAPI/WinApp.h"
+#include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/RootSignatureConfig.h"
+#include "RHI/DirectX12/ShaderCompiler.h"
+#include "RHI/DirectX12/ShaderManager.h"
+#include "Renderer/Pipeline/PSOManager.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Scenes/TL1/MagicBrushClient.h"
+#include "Scenes/TL1/TL1LevelLoader.h"
 #include <commdlg.h>
-#include <shlobj.h>
-#include <shobjidl.h>
-#include <iomanip>
-#include <sstream>
 #include <ctime>
 #include <filesystem>
-#include "Core/Utility/StringUtility.h"
-#include "Scenes/TL1/TL1LevelLoader.h"
-#include "Framework/GameObject/GameObject.h"
-#include "Framework/Component/TransformComponent.h"
-#include "Core/Utility/Log.h"
+#include <iomanip>
 #include <iostream>
+#include <shlobj.h>
+#include <shobjidl.h>
+#include <sstream>
 
 #ifdef USE_IMGUI
 
@@ -35,11 +35,12 @@ TL1Scene::~TL1Scene() = default;
 void TL1Scene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);
     magicBrushClient_ = std::make_unique<MagicBrushClient>();
-    
+
     std::string errorLog;
     ShaderCompileOptions options;
     options.entryPoint = L"main";
-    vsBlob_ = engine_->GetDirectXCommon()->GetShaderManager()->GetOrCompile(L"Fullscreen.VS.hlsl", options, L"vs_6_0", &errorLog);
+    vsBlob_ = engine_->GetDirectXCommon()->GetShaderManager()->GetOrCompile(L"Fullscreen.VS.hlsl", options, L"vs_6_0",
+                                                                            &errorLog);
 
     // Pythonサーバーの自動起動
     magicBrushClient_->StartPythonServer();
@@ -53,18 +54,16 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
         auto dummyPlayer = std::make_shared<GameObject>();
         dummyPlayer->SetName("Player");
         dummyPlayer->SetScene(this);
-        
+
         auto transform = dummyPlayer->GetComponent<TransformComponent>();
         transform->SetPosition(playerData.translation);
         transform->SetRotation(playerData.rotation);
 
-        
         this->AddGameObject(dummyPlayer);
-        
-        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Player spawned at (" + 
-            std::to_string(playerData.translation.x) + ", " + 
-            std::to_string(playerData.translation.y) + ", " + 
-            std::to_string(playerData.translation.z) + ")\n");
+
+        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Player spawned at (" + std::to_string(playerData.translation.x) +
+                                      ", " + std::to_string(playerData.translation.y) + ", " +
+                                      std::to_string(playerData.translation.z) + ")\n");
     }
 
     // 敵配置データから敵を配置
@@ -72,20 +71,18 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
         auto dummyEnemy = std::make_shared<GameObject>();
         dummyEnemy->SetName("Enemy");
         dummyEnemy->SetScene(this);
-        
+
         auto transform = dummyEnemy->GetComponent<TransformComponent>();
         transform->SetPosition(enemyData.translation);
         transform->SetRotation(enemyData.rotation);
 
         this->AddGameObject(dummyEnemy);
-        
-        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Enemy spawned at (" + 
-            std::to_string(enemyData.translation.x) + ", " + 
-            std::to_string(enemyData.translation.y) + ", " + 
-            std::to_string(enemyData.translation.z) + ")\n");
+
+        Log::OutPutLog(std::cout, "[TL1Scene] Dummy Enemy spawned at (" + std::to_string(enemyData.translation.x) +
+                                      ", " + std::to_string(enemyData.translation.y) + ", " +
+                                      std::to_string(enemyData.translation.z) + ")\n");
     }
 }
-
 
 /**
  * @brief 更新
@@ -98,7 +95,7 @@ void TL1Scene::Update() {
         if (magicBrushClient_->GetState() == MagicBrushClient::State::Success) {
             auto psBlob = magicBrushClient_->GetResultBlob();
             if (psBlob) {
-                engine_->GetPSOManager()->RegisterShader(shaderName_, { { vsBlob_, psBlob, nullptr } });
+                engine_->GetPSOManager()->RegisterShader(shaderName_, {{vsBlob_, psBlob, nullptr}});
                 isShaderRegistered_ = true;
             }
         }
@@ -115,7 +112,7 @@ void TL1Scene::Draw() {
     if (isShaderRegistered_) {
         engine_->ApplyPSO(shaderName_);
         auto cmd = engine_->GetCommandList();
-        
+
         // 入力されたテクスチャパス(名)があればそれをテクスチャとしてロードしてセット、無ければダミー(白)をセットする
         D3D12_GPU_DESCRIPTOR_HANDLE texHandle = engine_->GetTextureManager()->GetWhiteTextureHandle();
         if (!textureImagePath_.empty()) {
@@ -143,11 +140,11 @@ void TL1Scene::DrawDebugTab() {
         static char refImagePathBuffer[MAX_PATH] = "";
         static char shaderNameBuffer[128] = "";
         static char outDirBuffer[MAX_PATH] = "resources/shaders/generated/";
-        
+
         // 簡易通知メッセージ用の静的変数
         static std::string notificationMsg = "";
         static float notificationTimer = 0.0f;
-        
+
         // D&Dの受け取り
         if (engine_ && engine_->GetWinApp()) {
             std::string dropped = engine_->GetWinApp()->GetDroppedFilePath();
@@ -183,13 +180,13 @@ void TL1Scene::DrawDebugTab() {
         ImGui::Separator();
 
         ImGui::InputText("Prompt", promptBuffer, sizeof(promptBuffer));
-        
+
         // Reference Image (AI参考画像)
         ImGui::InputText("Reference Image", refImagePathBuffer, sizeof(refImagePathBuffer));
         ImGui::SameLine();
         if (ImGui::Button("Browse...")) {
             OPENFILENAMEA ofn;
-            char szFile[MAX_PATH] = { 0 };
+            char szFile[MAX_PATH] = {0};
             ZeroMemory(&ofn, sizeof(ofn));
             ofn.lStructSize = sizeof(ofn);
             ofn.hwndOwner = engine_->GetWinApp() ? engine_->GetWinApp()->GetHwnd() : nullptr;
@@ -202,7 +199,7 @@ void TL1Scene::DrawDebugTab() {
                 strncpy_s(refImagePathBuffer, ofn.lpstrFile, _TRUNCATE);
             }
         }
-        
+
         // Input Texture (C++バインド用)
         static int selectedTextureIndex = 0;
         std::vector<std::string> textureNames = engine_->GetTextureManager()->GetTextureNames();
@@ -212,7 +209,8 @@ void TL1Scene::DrawDebugTab() {
         for (const auto& name : textureNames) {
             comboItems.push_back(name.c_str());
         }
-        if (ImGui::Combo("Input Texture", &selectedTextureIndex, comboItems.data(), static_cast<int>(comboItems.size()))) {
+        if (ImGui::Combo("Input Texture", &selectedTextureIndex, comboItems.data(),
+                         static_cast<int>(comboItems.size()))) {
             if (selectedTextureIndex == 0) {
                 textureImagePath_ = "";
             } else {
@@ -222,7 +220,7 @@ void TL1Scene::DrawDebugTab() {
 
         ImGui::Separator();
         ImGui::Text("Shader Settings");
-        
+
         // Output Directory (出力先フォルダ)
         ImGui::InputText("Output Directory", outDirBuffer, sizeof(outDirBuffer));
         ImGui::SameLine();
@@ -233,7 +231,7 @@ void TL1Scene::DrawDebugTab() {
                 if (SUCCEEDED(pfd->GetOptions(&dwOptions))) {
                     pfd->SetOptions(dwOptions | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR);
                 }
-                
+
                 HWND hwnd = engine_->GetWinApp() ? engine_->GetWinApp()->GetHwnd() : nullptr;
                 if (SUCCEEDED(pfd->Show(hwnd))) {
                     IShellItem* psi = nullptr;
@@ -244,7 +242,7 @@ void TL1Scene::DrawDebugTab() {
                             int size = WideCharToMultiByte(CP_UTF8, 0, pszFilePath, -1, nullptr, 0, nullptr, nullptr);
                             if (size > 0 && size <= MAX_PATH) {
                                 WideCharToMultiByte(CP_UTF8, 0, pszFilePath, -1, outDirBuffer, size, nullptr, nullptr);
-                                
+
                                 // パスの末尾が '/' または '\' でない場合は補完
                                 size_t len = strlen(outDirBuffer);
                                 if (len > 0 && outDirBuffer[len - 1] != '/' && outDirBuffer[len - 1] != '\\') {
@@ -259,7 +257,7 @@ void TL1Scene::DrawDebugTab() {
                 pfd->Release();
             }
         }
-        
+
         ImGui::InputText("Shader Name", shaderNameBuffer, sizeof(shaderNameBuffer));
         ImGui::TextDisabled("(Leave empty to auto-generate name)");
 
@@ -287,13 +285,15 @@ void TL1Scene::DrawDebugTab() {
 
             if (magicBrushClient_) {
                 isShaderRegistered_ = false; // 再登録できるようにフラグをリセット
-                magicBrushClient_->StartGeneration(promptText_, referenceImagePath_, shaderName_, outputDirectory_, engine_->GetDirectXCommon()->GetShaderManager());
+                magicBrushClient_->StartGeneration(promptText_, referenceImagePath_, shaderName_, outputDirectory_,
+                                                   engine_->GetDirectXCommon()->GetShaderManager());
             }
         }
-        
+
         ImGui::SameLine();
         if (ImGui::Button("Evaluate & Fix")) {
-            if (magicBrushClient_ && isShaderRegistered_ && magicBrushClient_->GetState() == MagicBrushClient::State::Success) {
+            if (magicBrushClient_ && isShaderRegistered_ &&
+                magicBrushClient_->GetState() == MagicBrushClient::State::Success) {
                 const auto& history = magicBrushClient_->GetHistory();
                 if (!history.empty()) {
                     std::string currentHlsl = history.back().hlslCode;
@@ -303,22 +303,25 @@ void TL1Scene::DrawDebugTab() {
                     std::error_code ec;
                     std::filesystem::create_directories("resources/screenshots", ec);
                     std::wstring screenshotPath = std::filesystem::absolute(relPath).wstring();
-                    
+
                     auto* captureManager = engine_->GetScreenCaptureManager();
                     if (captureManager) {
                         notificationMsg = "Taking screenshot for AI evaluation...";
-                        captureManager->RequestCapture(screenshotPath, ScreenCaptureType::SceneOnly, [this, currentHlsl, refImg, sName, screenshotPath]() {
-                            std::string u8path = ConvertString(screenshotPath);
-                            magicBrushClient_->StartVisualFix(refImg, u8path, currentHlsl, sName, engine_->GetDirectXCommon()->GetShaderManager());
-                            isShaderRegistered_ = false; // 新しいシェーダーができたら再バインドさせるため
-                        });
+                        captureManager->RequestCapture(
+                            screenshotPath, ScreenCaptureType::SceneOnly,
+                            [this, currentHlsl, refImg, sName, screenshotPath]() {
+                                std::string u8path = ConvertString(screenshotPath);
+                                magicBrushClient_->StartVisualFix(refImg, u8path, currentHlsl, sName,
+                                                                  engine_->GetDirectXCommon()->GetShaderManager());
+                                isShaderRegistered_ = false; // 新しいシェーダーができたら再バインドさせるため
+                            });
                     }
                 }
             } else {
                 notificationMsg = "Generate a shader successfully before evaluating.";
             }
         }
-        
+
         if (!isRunning) {
             ImGui::EndDisabled();
         }
@@ -327,19 +330,32 @@ void TL1Scene::DrawDebugTab() {
             ImGui::Separator();
             auto state = magicBrushClient_->GetState();
             switch (state) {
-                case MagicBrushClient::State::Idle: ImGui::Text("Status: Idle"); break;
-                case MagicBrushClient::State::Generating: ImGui::TextColored(ImVec4(1, 1, 0, 1), "Status: Generating initial HLSL..."); break;
-                case MagicBrushClient::State::Compiling: ImGui::TextColored(ImVec4(1, 1, 0, 1), "Status: Compiling..."); break;
-                case MagicBrushClient::State::Fixing: ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "Status: Fixing Compile Errors..."); break;
-                case MagicBrushClient::State::WaitingForScreenshot: ImGui::TextColored(ImVec4(0.5f, 0.5f, 1, 1), "Status: Waiting for screenshot..."); break;
-                case MagicBrushClient::State::VisualEvaluating: ImGui::TextColored(ImVec4(0, 1, 1, 1), "Status: Visual Evaluating & Fixing..."); break;
-                case MagicBrushClient::State::Success: ImGui::TextColored(ImVec4(0, 1, 0, 1), "Status: Success!"); break;
-                case MagicBrushClient::State::Error: 
-                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "Status: Error");
-                    ImGui::TextWrapped("%s", magicBrushClient_->GetErrorMessage().c_str());
-                    break;
+            case MagicBrushClient::State::Idle:
+                ImGui::Text("Status: Idle");
+                break;
+            case MagicBrushClient::State::Generating:
+                ImGui::TextColored(ImVec4(1, 1, 0, 1), "Status: Generating initial HLSL...");
+                break;
+            case MagicBrushClient::State::Compiling:
+                ImGui::TextColored(ImVec4(1, 1, 0, 1), "Status: Compiling...");
+                break;
+            case MagicBrushClient::State::Fixing:
+                ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "Status: Fixing Compile Errors...");
+                break;
+            case MagicBrushClient::State::WaitingForScreenshot:
+                ImGui::TextColored(ImVec4(0.5f, 0.5f, 1, 1), "Status: Waiting for screenshot...");
+                break;
+            case MagicBrushClient::State::VisualEvaluating:
+                ImGui::TextColored(ImVec4(0, 1, 1, 1), "Status: Visual Evaluating & Fixing...");
+                break;
+            case MagicBrushClient::State::Success:
+                ImGui::TextColored(ImVec4(0, 1, 0, 1), "Status: Success!");
+                break;
+            case MagicBrushClient::State::Error:
+                ImGui::TextColored(ImVec4(1, 0, 0, 1), "Status: Error");
+                ImGui::TextWrapped("%s", magicBrushClient_->GetErrorMessage().c_str());
+                break;
             }
-
 
             ImGui::Separator();
             if (ImGui::CollapsingHeader("Server Console", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -362,11 +378,12 @@ void TL1Scene::DrawDebugTab() {
                     ImGui::TextDisabled("No history yet.");
                 } else {
                     static int selectedHistoryIndex = -1;
-                    
+
                     ImGui::BeginChild("HistoryList", ImVec2(0, 100), true);
                     for (int i = static_cast<int>(history.size()) - 1; i >= 0; --i) {
                         const auto& item = history[i];
-                        std::string label = "[" + std::to_string(i) + "] " + item.shaderName + " (Prompt: " + item.prompt.substr(0, 20) + "...)";
+                        std::string label = "[" + std::to_string(i) + "] " + item.shaderName +
+                                            " (Prompt: " + item.prompt.substr(0, 20) + "...)";
                         if (ImGui::Selectable(label.c_str(), selectedHistoryIndex == i)) {
                             selectedHistoryIndex = i;
                         }
@@ -379,10 +396,11 @@ void TL1Scene::DrawDebugTab() {
                             strncpy_s(promptBuffer, item.prompt.c_str(), _TRUNCATE);
                             strncpy_s(shaderNameBuffer, item.shaderName.c_str(), _TRUNCATE);
                             shaderName_ = item.shaderName; // 実際の適用名も更新
-                            
+
                             // HistoryのHLSLを直接復元して再適用する
                             isShaderRegistered_ = false; // 再バインドを促す
-                            if (magicBrushClient_->RestoreHistory(selectedHistoryIndex, engine_->GetDirectXCommon()->GetShaderManager())) {
+                            if (magicBrushClient_->RestoreHistory(selectedHistoryIndex,
+                                                                  engine_->GetDirectXCommon()->GetShaderManager())) {
                                 notificationMsg = "Restored and compiled shader from history.";
                             } else {
                                 notificationMsg = "Failed to restore shader from history.";
@@ -392,7 +410,6 @@ void TL1Scene::DrawDebugTab() {
                     }
                 }
             }
-
         }
 
         // 通知メッセージの描画とタイマー減算
@@ -402,8 +419,7 @@ void TL1Scene::DrawDebugTab() {
             float alpha = notificationTimer > 1.0f ? 1.0f : notificationTimer;
             ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, alpha), "[System] %s", notificationMsg.c_str());
         }
-
-        }
-        ImGui::End();
+    }
+    ImGui::End();
 #endif
 }

@@ -1,9 +1,10 @@
-#include "Core/Utility/ErrorUtility.h"
 #include "RHI/DirectX12/DXSwapChainManager.h"
-#include <cassert>
+#include "Core/Utility/ErrorUtility.h"
 #include <algorithm>
+#include <cassert>
 
-void DXSwapChainManager::Initialize(ID3D12Device* device, IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd, int32_t width, int32_t height) {
+void DXSwapChainManager::Initialize(ID3D12Device* device, IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue,
+                                    HWND hwnd, int32_t width, int32_t height) {
     descriptorSizeRTV_ = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     descriptorSizeDSV_ = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
@@ -22,12 +23,15 @@ void DXSwapChainManager::Finalize() {
     swapChain_.Reset();
 }
 
-void DXSwapChainManager::CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd, int32_t width, int32_t height) {
+void DXSwapChainManager::CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12CommandQueue* commandQueue, HWND hwnd,
+                                         int32_t width, int32_t height) {
     // Check for tearing support
     Microsoft::WRL::ComPtr<IDXGIFactory5> factory5;
     if (SUCCEEDED(dxgiFactory->QueryInterface(IID_PPV_ARGS(&factory5)))) {
         BOOL allowTearing = FALSE;
-        if (SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing))) && allowTearing) {
+        if (SUCCEEDED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing,
+                                                    sizeof(allowTearing))) &&
+            allowTearing) {
             isTearingSupported_ = true;
         }
     }
@@ -41,15 +45,8 @@ void DXSwapChainManager::CreateSwapChain(IDXGIFactory7* dxgiFactory, ID3D12Comma
     swapChainDesc_.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc_.Flags = isTearingSupported_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
-
-    HRESULT hr = dxgiFactory->CreateSwapChainForHwnd(
-        commandQueue, 
-        hwnd, 
-        &swapChainDesc_, 
-        nullptr, 
-        nullptr, 
-        reinterpret_cast<IDXGISwapChain1**>(swapChain_.GetAddressOf())
-    );
+    HRESULT hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc_, nullptr, nullptr,
+                                                     reinterpret_cast<IDXGISwapChain1**>(swapChain_.GetAddressOf()));
     ASSERT_IF_FAILED(hr);
 
     for (uint32_t i = 0; i < 2; ++i) {
@@ -98,7 +95,8 @@ void DXSwapChainManager::InitializeRenderTargets(ID3D12Device* device) {
     }
 }
 
-Microsoft::WRL::ComPtr<ID3D12Resource> DXSwapChainManager::CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height) {
+Microsoft::WRL::ComPtr<ID3D12Resource>
+DXSwapChainManager::CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height) {
     D3D12_RESOURCE_DESC resourceDesc{};
     resourceDesc.Width = width;
     resourceDesc.Height = height;
@@ -117,14 +115,9 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DXSwapChainManager::CreateDepthStencilTex
     depthClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> resource = nullptr;
-    HRESULT hr = device->CreateCommittedResource(
-        &heapProperties,
-        D3D12_HEAP_FLAG_NONE,
-        &resourceDesc,
-        D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        &depthClearValue,
-        IID_PPV_ARGS(resource.GetAddressOf())
-    );
+    HRESULT hr = device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+                                                 D3D12_RESOURCE_STATE_DEPTH_WRITE, &depthClearValue,
+                                                 IID_PPV_ARGS(resource.GetAddressOf()));
     ASSERT_IF_FAILED(hr);
 
     return resource;
@@ -136,7 +129,8 @@ void DXSwapChainManager::CreateDepthStencil(ID3D12Device* device, int32_t width,
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
     dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+    device->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc,
+                                   dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
 
     // Read-Only DSV
     dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
@@ -153,19 +147,21 @@ void DXSwapChainManager::ReleaseSwapChainResources() {
 }
 
 void DXSwapChainManager::ResizeSwapChain(ID3D12Device* device, int32_t width, int32_t height) {
-    if (width <= 0 || height <= 0) return;
+    if (width <= 0 || height <= 0)
+        return;
 
     ReleaseSwapChainResources();
 
     DXGI_SWAP_CHAIN_DESC1 desc{};
     swapChain_->GetDesc1(&desc);
-    HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format, isTearingSupported_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : desc.Flags);
+    HRESULT hr = swapChain_->ResizeBuffers(desc.BufferCount, width, height, desc.Format,
+                                           isTearingSupported_ ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : desc.Flags);
     ASSERT_IF_FAILED(hr);
 
     for (uint32_t i = 0; i < desc.BufferCount; ++i) {
         hr = swapChain_->GetBuffer(i, IID_PPV_ARGS(swapChainResources_[i].GetAddressOf()));
         ASSERT_IF_FAILED(hr);
-        
+
         device->CreateRenderTargetView(swapChainResources_[i].Get(), &rtvDesc_, rtvHandles_[i]);
 
         D3D12_RENDER_TARGET_VIEW_DESC imGuiRtvDesc = rtvDesc_;
@@ -215,9 +211,10 @@ uint32_t DXSwapChainManager::AllocateRTVIndex() {
 }
 
 void DXSwapChainManager::FreeRTVIndex(uint32_t index, uint64_t currentFenceValue) {
-    if (index == 0xFFFFFFFF) return;
+    if (index == 0xFFFFFFFF)
+        return;
     std::lock_guard<std::mutex> lock(descriptorMutex_);
-    pendingFreeRtvs_.push_back({ currentFenceValue, index });
+    pendingFreeRtvs_.push_back({currentFenceValue, index});
 }
 
 uint32_t DXSwapChainManager::AllocateDSVIndex() {
@@ -232,9 +229,10 @@ uint32_t DXSwapChainManager::AllocateDSVIndex() {
 }
 
 void DXSwapChainManager::FreeDSVIndex(uint32_t index, uint64_t currentFenceValue) {
-    if (index == 0xFFFFFFFF) return;
+    if (index == 0xFFFFFFFF)
+        return;
     std::lock_guard<std::mutex> lock(descriptorMutex_);
-    pendingFreeDsvs_.push_back({ currentFenceValue, index });
+    pendingFreeDsvs_.push_back({currentFenceValue, index});
 }
 
 void DXSwapChainManager::FlushPendingDescriptors(uint64_t completedFenceValue) {
@@ -245,9 +243,9 @@ void DXSwapChainManager::FlushPendingDescriptors(uint64_t completedFenceValue) {
             freeRtvIndices_.push_back(d.index);
         }
     }
-    auto rtvIt = std::remove_if(pendingFreeRtvs_.begin(), pendingFreeRtvs_.end(), [completedFenceValue](const PendingDescriptor& d) {
-        return d.fenceValue <= completedFenceValue;
-    });
+    auto rtvIt = std::remove_if(
+        pendingFreeRtvs_.begin(), pendingFreeRtvs_.end(),
+        [completedFenceValue](const PendingDescriptor& d) { return d.fenceValue <= completedFenceValue; });
     pendingFreeRtvs_.erase(rtvIt, pendingFreeRtvs_.end());
 
     for (const auto& d : pendingFreeDsvs_) {
@@ -255,8 +253,8 @@ void DXSwapChainManager::FlushPendingDescriptors(uint64_t completedFenceValue) {
             freeDsvIndices_.push_back(d.index);
         }
     }
-    auto dsvIt = std::remove_if(pendingFreeDsvs_.begin(), pendingFreeDsvs_.end(), [completedFenceValue](const PendingDescriptor& d) {
-        return d.fenceValue <= completedFenceValue;
-    });
+    auto dsvIt = std::remove_if(
+        pendingFreeDsvs_.begin(), pendingFreeDsvs_.end(),
+        [completedFenceValue](const PendingDescriptor& d) { return d.fenceValue <= completedFenceValue; });
     pendingFreeDsvs_.erase(dsvIt, pendingFreeDsvs_.end());
 }

@@ -1,18 +1,18 @@
-#include "Core/Utility/ErrorUtility.h"
 #include "RHI/DirectX12/ShadowMap.h"
+#include "Core/Math/Math.h"
+#include "Core/Utility/ErrorUtility.h"
+#include "RHI/DirectX12/DescriptorPool.h"
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DirectXUtils.h"
-#include "RHI/DirectX12/DescriptorPool.h"
-#include "Core/Math/Math.h"
 #include <cassert>
 #include <cmath>
 
 namespace {
-    // シャドウマップのパラメータ定数
-    const float kLightDistance = 200.0f;        // ライトの距離
-    const float kNearClip = 0.1f;               // ニアクリップ
-    const float kFarClip = 512.0f;              // ファークリップ
-}
+// シャドウマップのパラメータ定数
+const float kLightDistance = 200.0f; // ライトの距離
+const float kNearClip = 0.1f;        // ニアクリップ
+const float kFarClip = 512.0f;       // ファークリップ
+} // namespace
 
 ShadowMap::~ShadowMap() {
     // SRV の解放
@@ -50,14 +50,10 @@ void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t hei
     clearVal.DepthStencil.Depth = 1.0f;
     clearVal.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-    HRESULT hr = device->CreateCommittedResource(
-        &heapProps,
-        D3D12_HEAP_FLAG_NONE,
-        &resDesc,
-        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初は読み取り可能状態で生成
-        &clearVal,
-        IID_PPV_ARGS(resource_.GetAddressOf())
-    );
+    HRESULT hr =
+        device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc,
+                                        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, // 最初は読み取り可能状態で生成
+                                        &clearVal, IID_PPV_ARGS(resource_.GetAddressOf()));
     ASSERT_IF_FAILED(hr);
 
     // 2. DSV 作成
@@ -122,13 +118,14 @@ void ShadowMap::UpdateMatrix(const Irufemi::Vector3& lightDir, const Irufemi::Ve
     Irufemi::Vector3 lightDirNormalized = Irufemi::Math::Normalize(lightDir);
 
     // 方向が真上または真下の場合は Up ベクトルを変える
-    Irufemi::Vector3 up = { 0, 1, 0 };
+    Irufemi::Vector3 up = {0, 1, 0};
     if (std::abs(lightDirNormalized.y) > 0.999f) {
-        up = { 0, 0, 1 };
+        up = {0, 0, 1};
     }
 
     // ライト位置の計算 (注視点から距離を離す)
-    Irufemi::Vector3 eye = Irufemi::Math::Subtract(targetPos, Irufemi::Math::Multiply(kLightDistance, lightDirNormalized));
+    Irufemi::Vector3 eye =
+        Irufemi::Math::Subtract(targetPos, Irufemi::Math::Multiply(kLightDistance, lightDirNormalized));
 
     // ビュー行列の作成 (手動計算版)
     Irufemi::Vector3 zaxis = Irufemi::Math::Normalize(Irufemi::Math::Subtract(targetPos, eye));
@@ -136,16 +133,26 @@ void ShadowMap::UpdateMatrix(const Irufemi::Vector3& lightDir, const Irufemi::Ve
     Irufemi::Vector3 yaxis = Irufemi::Math::Cross(zaxis, xaxis);
 
     Irufemi::Matrix4x4 view{};
-    view.m[0][0] = xaxis.x; view.m[0][1] = yaxis.x; view.m[0][2] = zaxis.x; view.m[0][3] = 0;
-    view.m[1][0] = xaxis.y; view.m[1][1] = yaxis.y; view.m[1][2] = zaxis.y; view.m[1][3] = 0;
-    view.m[2][0] = xaxis.z; view.m[2][1] = yaxis.z; view.m[2][2] = zaxis.z; view.m[2][3] = 0;
+    view.m[0][0] = xaxis.x;
+    view.m[0][1] = yaxis.x;
+    view.m[0][2] = zaxis.x;
+    view.m[0][3] = 0;
+    view.m[1][0] = xaxis.y;
+    view.m[1][1] = yaxis.y;
+    view.m[1][2] = zaxis.y;
+    view.m[1][3] = 0;
+    view.m[2][0] = xaxis.z;
+    view.m[2][1] = yaxis.z;
+    view.m[2][2] = zaxis.z;
+    view.m[2][3] = 0;
     view.m[3][0] = -Irufemi::Math::Dot(xaxis, eye);
     view.m[3][1] = -Irufemi::Math::Dot(yaxis, eye);
     view.m[3][2] = -Irufemi::Math::Dot(zaxis, eye);
     view.m[3][3] = 1;
 
     // 正投影行列の作成
-    Irufemi::Matrix4x4 proj = Irufemi::Math::MakeOrthographicMatrix(-orthoSize, orthoSize, orthoSize, -orthoSize, kNearClip, kFarClip);
+    Irufemi::Matrix4x4 proj =
+        Irufemi::Math::MakeOrthographicMatrix(-orthoSize, orthoSize, orthoSize, -orthoSize, kNearClip, kFarClip);
 
     // 合成
     viewProjection_ = Irufemi::Math::Multiply(view, proj);

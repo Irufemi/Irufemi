@@ -1,8 +1,8 @@
 #pragma once
+#include "Core/Math/Vector4.h"
 #include "Framework/Component/Component.h"
 #include <functional>
 #include <string>
-#include "Core/Math/Vector4.h"
 
 /**
  * @class PlayerHealthComponent
@@ -17,24 +17,42 @@ public:
     void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "PlayerHealthComponent"; }
+    std::string GetComponentName() const override {
+        return "PlayerHealthComponent";
+    }
 
     std::function<void()> onPlayerDied;
     std::function<void()> onDeathSequenceFinished;
 
     void LoadStatusFromJson();
-    
-    std::string GetStatusDataPath() const { return statusDataPath_; }
-    void SetStatusDataPath(const std::string& path) { statusDataPath_ = path; }
+
+    std::string GetStatusDataPath() const {
+        return statusDataPath_;
+    }
+    void SetStatusDataPath(const std::string& path) {
+        statusDataPath_ = path;
+    }
 
     void TakeDamage(int damage);
-    bool IsInvincible() const { return invincibilityTimer_ > 0.0f; }
-    void SetGodMode(bool godMode) { isGodMode_ = godMode; }
+    bool IsInvincible() const {
+        return invincibilityTimer_ > 0.0f;
+    }
+    void SetGodMode(bool godMode) {
+        isGodMode_ = godMode;
+    }
 
-    int GetHp() const { return hp_; }
-    int GetMaxHp() const { return maxHp_; }
-    bool IsDead() const { return isDead_; }
-    bool IsGodMode() const { return isGodMode_; }
+    int GetHp() const {
+        return hp_;
+    }
+    int GetMaxHp() const {
+        return maxHp_;
+    }
+    bool IsDead() const {
+        return isDead_;
+    }
+    bool IsGodMode() const {
+        return isGodMode_;
+    }
 
 private:
     std::string statusDataPath_ = "resources/GameData/PlayerStatus.json";

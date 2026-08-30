@@ -1,18 +1,20 @@
 #include "Commands/EditorShortcutManager.h"
 
 #ifdef EditorMode
-#include <imgui/imgui.h>
-#include "Core/EditorManager.h"
 #include "Commands/EditorActionManager.h"
+#include "Core/EditorManager.h"
+#include <imgui/imgui.h>
 
 EditorShortcutManager::EditorShortcutManager(EditorManager* editor, EditorActionManager* actionManager)
     : editorManager_(editor), actionManager_(actionManager) {}
 
 void EditorShortcutManager::Update() {
-    if (!editorManager_ || !actionManager_) return;
+    if (!editorManager_ || !actionManager_)
+        return;
 
     // もしImGuiがテキスト入力中ならショートカットを無視する
-    if (ImGui::GetIO().WantTextInput) return;
+    if (ImGui::GetIO().WantTextInput)
+        return;
 
     // Deleteキーでの削除
     if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {

@@ -1,9 +1,9 @@
 #pragma once
+#include <atomic>
+#include <filesystem>
+#include <functional>
 #include <string>
 #include <thread>
-#include <atomic>
-#include <functional>
-#include <filesystem>
 
 /**
  * @class DirectoryWatcher
