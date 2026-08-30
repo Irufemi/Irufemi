@@ -11,3 +11,4 @@ SpaceBeforeParens: ControlStatements
 AlignAfterOpenBracket: Align
 BreakBeforeBraces: Attach
 Standard: c++20
+SortIncludes: Never
