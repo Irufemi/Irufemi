@@ -19,7 +19,7 @@ jobs:
         run: |
           # ターゲットディレクトリ内の全ての .cpp と .h を検索して上書きフォーマット
           # Ubuntuのネイティブ環境で実行されるため、UTF-8(BOMなし)が保証されます
-          find project/IrufemiEngine project/Application_solo -type f \( -name '*.cpp' -o -name '*.h' \) -exec clang-format -i {} +
+          for d in project/IrufemiEngine project/Application_solo project/Application_team; do [ -d "$d" ] && find "$d" -type f \( -name '*.cpp' -o -name '*.h' \) -exec clang-format -i {} +; done
 
       - name: Check for changes
         id: check_changes
@@ -37,3 +37,4 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git commit -am "style: auto format by clang-format"
           git push
+

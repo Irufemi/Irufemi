@@ -4,7 +4,7 @@ OUTPUT_DIRECTORY       = "docs"
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = YES
 OUTPUT_LANGUAGE        = Japanese
-INPUT                  = Manual.md project/IrufemiEngine project/Application_solo
+INPUT                  = Manual.md project/IrufemiEngine project/Application_solo project/Application_team
 FILE_PATTERNS          = *.h *.cpp *.md
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */build/* */bin/* */obj/*
@@ -18,3 +18,4 @@ GENERATE_LATEX         = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = NO
 SOURCE_BROWSER         = YES
+
