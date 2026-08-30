@@ -1,4 +1,4 @@
-name: Static Code Analysis
+﻿name: Static Code Analysis
 
 on:
   push:
@@ -33,3 +33,4 @@ jobs:
       - name: Run MSVC Static Analysis
         run: |
           msbuild ${{ env.SOLUTION_FILE_PATH }} /p:Platform=x64,Configuration=${{ env.CONFIGURATION }},PlatformToolset=v143 /p:RunCodeAnalysis=true /p:CodeAnalysisRuleSet=NativeRecommendedRules.ruleset
+
