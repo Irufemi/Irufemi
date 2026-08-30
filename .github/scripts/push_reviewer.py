@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import requests
 from google import genai
 from google.genai import types
@@ -92,7 +93,6 @@ def main():
 
     prompt = f"以下の git diff をレビューしてください:\n\n```diff\n{diff_text}\n```"
     
-    import time
     max_retries = 3
     review_result = ""
     for attempt in range(max_retries):
@@ -110,7 +110,7 @@ def main():
         except Exception as e:
             error_str = str(e)
             print(f"Gemini API Error (Attempt {attempt + 1}/{max_retries}): {error_str}")
-            if "429" in error_str and attempt < max_retries - 1:
+            if any(code in error_str for code in ["429", "RESOURCE_EXHAUSTED", "Quota exceeded", "503"]) and attempt < max_retries - 1:
                 sleep_time = 15 * (attempt + 1)
                 print(f"Rate limited or quota exceeded. Retrying in {sleep_time} seconds...")
                 time.sleep(sleep_time)
