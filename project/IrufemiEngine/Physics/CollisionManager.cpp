@@ -379,6 +379,8 @@ void CollisionManager::CheckAllCollisions() {
     previousCollisions_ = std::move(currentCollisions);
 }
 
+#include <unordered_set>
+
 void CollisionManager::DrawDebug(GameObject* selectedObject) {
     if (!debugLine_) {
         return;
@@ -386,8 +388,20 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
 
     debugLine_->ClearInstances();
 
+    std::unordered_set<ColliderComponent*> removeSet;
+    {
+        std::lock_guard<std::mutex> pendingLock(pendingMutex_);
+        for (const auto& pr : pendingRemoves_) {
+            removeSet.insert(pr.collider);
+        }
+    }
+
+    std::shared_lock<std::shared_mutex> collidersLock(collidersMutex_);
     for (ColliderComponent* collider : colliders_) {
         if (!collider) {
+            continue;
+        }
+        if (removeSet.find(collider) != removeSet.end()) {
             continue;
         }
         auto go = collider->GetGameObject();
