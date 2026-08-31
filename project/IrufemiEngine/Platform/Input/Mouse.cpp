@@ -66,12 +66,12 @@ void Mouse::Update() {
         // 通常時の挙動: スクリーン座標をクライアント座標に変換して position_ を更新
         ScreenToClient(hwnd_, &p);
         prevPosition_ = position_;
-        
+
         RECT rc;
         GetClientRect(hwnd_, &rc);
         float clientW = static_cast<float>(rc.right - rc.left);
         float clientH = static_cast<float>(rc.bottom - rc.top);
-        
+
         if (clientW > 0.0f && clientH > 0.0f && gameResWidth_ > 0.0f && gameResHeight_ > 0.0f) {
             Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameResWidth_, gameResHeight_);
             
@@ -85,7 +85,7 @@ void Mouse::Update() {
         } else {
             position_ = {static_cast<float>(p.x), static_cast<float>(p.y)};
         }
-        
+
         delta_ = {position_.x - prevPosition_.x, position_.y - prevPosition_.y};
 
         // 通常時もRaw Inputの移動量は蓄積され続けるためクリアしておく

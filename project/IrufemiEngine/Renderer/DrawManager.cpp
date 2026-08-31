@@ -1295,11 +1295,11 @@ void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
     float clientH = dxCommon_->GetViewport().Height;
     float targetAspect = static_cast<float>(engine_->GetGameResolutionWidth()) / engine_->GetGameResolutionHeight();
     float windowAspect = clientW / clientH;
-    
+
     D3D12_VIEWPORT viewport{};
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
-    
+
     if (windowAspect > targetAspect) {
         viewport.Height = clientH;
         viewport.Width = clientH * targetAspect;
