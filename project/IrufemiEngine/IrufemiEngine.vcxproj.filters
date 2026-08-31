@@ -541,13 +541,10 @@
       <Filter>Framework\Component\Collider</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp">
-      <Filter>Framework\Component\Collider</Filter>
-    </ClCompile>
-    <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp">
-      <Filter>Framework\Component\Collider</Filter>
+      <Filter>ソース ファイル\Framework\Component\Collider</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp">
-      <Filter>Framework\Component\Collider</Filter>
+      <Filter>ソース ファイル\Framework\Component\Collider</Filter>
     </ClCompile>
     <ClCompile Include="Framework\Component\ComponentFactory.cpp">
       <Filter>Framework\Component</Filter>
@@ -1191,13 +1188,10 @@
       <Filter>Framework\Component\Collider</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h">
-      <Filter>Framework\Component\Collider</Filter>
-    </ClInclude>
-    <ClInclude Include="Framework\Component\Collider\RaycastComponent.h">
-      <Filter>Framework\Component\Collider</Filter>
+      <Filter>ヘッダー ファイル\Framework\Component\Collider</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Collider\SphereColliderComponent.h">
-      <Filter>Framework\Component\Collider</Filter>
+      <Filter>ヘッダー ファイル\Framework\Component\Collider</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h">
       <Filter>Framework\Component\Renderer</Filter>

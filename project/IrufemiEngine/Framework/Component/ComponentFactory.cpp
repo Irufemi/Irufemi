@@ -18,10 +18,10 @@
 #include "Framework/Component/Collider/AABBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
-#include "Framework/Component/Collider/RaycastComponent.h"
 #include "Framework/Component/Audio/AudioSourceComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/ParticleFieldComponent.h"
+#include "Renderer/Object/Line/LineClass.h"
 #include "Framework/Component/UI/ButtonComponent.h"
 #include "Framework/Component/UI/SliderComponent.h"
 #include "Framework/Component/UI/CanvasComponent.h"
@@ -88,7 +88,6 @@ void ComponentFactory::RegisterAllCoreComponents() {
     Register("AABBColliderComponent", "Collider", []() { return std::make_shared<AABBColliderComponent>(); });
     Register("SphereColliderComponent", "Collider", []() { return std::make_shared<SphereColliderComponent>(); });
     Register("OBBColliderComponent", "Collider", []() { return std::make_shared<OBBColliderComponent>(); });
-    Register("RaycastComponent", "Collider", []() { return std::make_shared<RaycastComponent>(); });
     Register("AudioSourceComponent", "Audio", []() { return std::make_shared<AudioSourceComponent>(); });
     Register("ParticleEmitterComponent", "Effect", []() { return std::make_shared<ParticleEmitterComponent>(); });
     Register("ParticleFieldComponent", "Effect", []() { return std::make_shared<ParticleFieldComponent>(); });

@@ -10,7 +10,6 @@
 #include "Framework/Component/Collider/AABBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
-#include "Framework/Component/Collider/RaycastComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Utility/Log.h"
 #include "Framework/Scene/SceneSerializer.h"

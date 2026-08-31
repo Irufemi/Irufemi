@@ -99,9 +99,6 @@
     <ClCompile Include="Inspectors\Effects\ParticleEmitterComponentEditor.cpp">
       <Filter>Inspectors\Effects</Filter>
     </ClCompile>
-    <ClCompile Include="Inspectors\Physics\RaycastComponentEditor.cpp">
-      <Filter>Inspectors\Physics</Filter>
-    </ClCompile>
     <ClCompile Include="Inspectors\Effects\VoxelParticleComponentEditor.cpp">
       <Filter>Inspectors\Effects</Filter>
     </ClCompile>
@@ -193,9 +190,6 @@
     </ClInclude>
     <ClInclude Include="Inspectors\Effects\ParticleEmitterComponentEditor.h">
       <Filter>Inspectors\Effects</Filter>
-    </ClInclude>
-    <ClInclude Include="Inspectors\Physics\RaycastComponentEditor.h">
-      <Filter>Inspectors\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Inspectors\Effects\VoxelParticleComponentEditor.h">
       <Filter>Inspectors\Effects</Filter>

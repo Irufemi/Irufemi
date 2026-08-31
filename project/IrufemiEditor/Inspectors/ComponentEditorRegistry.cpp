@@ -18,7 +18,6 @@
 #include "Inspectors/Rendering/TextRendererComponentEditor.h"
 #include "Inspectors/Physics/ColliderComponentEditors.h"
 #include "Inspectors/Effects/ParticleEmitterComponentEditor.h"
-#include "Inspectors/Physics/RaycastComponentEditor.h"
 #include "Inspectors/Effects/VoxelParticleComponentEditor.h"
 #include "Inspectors/Effects/EffectMaskComponentEditor.h"
 #include "Inspectors/Effects/GlobalPostProcessComponentEditor.h"
@@ -36,7 +35,6 @@
 #include "Framework/Component/Collider/AABBColliderComponent.h"
 #include "Framework/Component/Collider/OBBColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
-#include "Framework/Component/Collider/RaycastComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Framework/Component/Effect/EffectMaskComponent.h"
@@ -62,7 +60,6 @@ void ComponentEditorRegistry::RegisterAllEditors() {
     RegisterEditor<AABBColliderComponent, AABBColliderComponentEditor>();
     RegisterEditor<OBBColliderComponent, OBBColliderComponentEditor>();
     RegisterEditor<SphereColliderComponent, SphereColliderComponentEditor>();
-    RegisterEditor<RaycastComponent, RaycastComponentEditor>();
     RegisterEditor<ParticleEmitterComponent, ParticleEmitterComponentEditor>();
     RegisterEditor<VoxelParticleComponent, VoxelParticleComponentEditor>();
     RegisterEditor<EffectMaskComponent, EffectMaskComponentEditor>();
