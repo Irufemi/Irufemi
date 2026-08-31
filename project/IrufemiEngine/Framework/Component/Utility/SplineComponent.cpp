@@ -20,6 +20,7 @@ void SplineComponent::Initialize() {
 void SplineComponent::Draw() {
     UpdateWaypointsFromChildren();
 
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     if (drawDebugRail_ && debugLineBatch_ && waypoints_.size() >= 2) {
         debugLineBatch_->ClearInstances();
         const int segments = 100;
@@ -38,6 +39,7 @@ void SplineComponent::Draw() {
         debugLineBatch_->SyncBeforeDraw();
         debugLineBatch_->Draw();
     }
+#endif
 }
 
 Irufemi::Vector3 SplineComponent::GetPointAt(float t) const {
