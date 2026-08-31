@@ -363,8 +363,10 @@ void SceneManager::Update() {
 }
 
 void SceneManager::Draw() {
-    // 完全に新しいシーンへの遷移中で、かつ表示すべき既存シーンが存在しない場合のみ背景描画をスキップする
-    if (IsLoading() && sceneStack_.empty()) {
+    // ロード中（非同期初期化やアセット読み込み中）は新シーンの Update がまだ呼ばれておらず、
+    // 未初期化の行列で描画されてしまう（しろ飛び等の原因になる）ため、背景の描画をスキップする。
+    // （画面はクリアカラーで塗りつぶされ、維持されたトランジションエフェクトで覆われる）
+    if (IsLoading()) {
         return;
     }
 
@@ -444,7 +446,7 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
 
     // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
     if (engine_->GetPostProcessManager()) {
-        engine_->GetPostProcessManager()->Reset();
+        engine_->GetPostProcessManager()->Reset(false);
     }
 
     initFuture_ = std::async(std::launch::async, [this, factory, next]() {

@@ -779,8 +779,8 @@ void IrufemiEngine::Execute() {
         sceneManager_->Update();
         // ローディング画面のアニメーション進行（Update相当）は描画時にまとめて行います
         totalTime_ += deltaTime_;
-        postProcessManager_->Update(gameTime_);
         sceneTransition_->Update(deltaTime_);
+        postProcessManager_->Update(gameTime_);
 
         // 4) ParticleのUpdate (GPU)
         if (gpuParticleManager_) {
@@ -834,6 +834,13 @@ void IrufemiEngine::StartFrame() {
     // 時間の更新
     auto now = std::chrono::steady_clock::now();
     deltaTime_ = std::chrono::duration<float>(now - lastFrameTime_).count();
+
+    // スパイク（極端な処理落ちやロード等でのブロック）による物理演算の破綻やアニメーションのスキップを防ぐ
+    const float kMaxDeltaTime = 0.1f;
+    if (deltaTime_ > kMaxDeltaTime) {
+        deltaTime_ = kMaxDeltaTime;
+    }
+
     totalTime_ = std::chrono::duration<float>(now - startTime_).count();
 
     // ゲーム内時間の更新（タイムスケールを適用）

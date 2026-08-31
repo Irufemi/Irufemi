@@ -219,9 +219,7 @@ uint32_t TextureManager::GetSrvIndex(ResourceHandle handle) const {
 
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle.index < textureResources_.size() && textureResources_[handle.index]) {
-        if (textureResources_[handle.index]->GetStatus() == Texture::LoadingStatus::Loaded) {
-            return textureResources_[handle.index]->GetSrvIndex();
-        }
+        return textureResources_[handle.index]->GetSrvIndex();
     }
     return GetWhiteTextureSrvIndex();
 }

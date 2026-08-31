@@ -22,18 +22,20 @@ void PostProcessManager::Initialize(IrufemiEngine* engine, DirectXCommon* dxComm
     CreatePSOs();
 }
 
-void PostProcessManager::ResetAllParams() {
+void PostProcessManager::ResetAllParams(bool clearPostUI) {
     noiseParams_ = NoiseParams();
     vignetteParams_ = VignetteParams();
     smoothingParams_ = SmoothingParams();
     gaussianParams_ = GaussianParams();
-    radialBlurParams_ = RadialBlurParams();
+    if (clearPostUI) {
+        radialBlurParams_ = RadialBlurParams();
+        dissolveParams_ = DissolveParams();
+        fadeParams_ = FadeParams();
+        slideParams_ = SlideParams();
+    }
     outlineParams_ = OutlineParams();
-    dissolveParams_ = DissolveParams();
     hsvParams_ = HSVParams();
     toneMappingParams_ = ToneMappingParams();
-    fadeParams_ = FadeParams();
-    slideParams_ = SlideParams();
     bloomParams_ = BloomParams();
     glitchParams_ = GlitchParams();
     dualKawaseParams_ = DualKawaseBlurParams();

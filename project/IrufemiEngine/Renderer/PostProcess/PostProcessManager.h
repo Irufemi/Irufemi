@@ -794,16 +794,18 @@ public:
      * 全パラメータをデフォルト状態に戻します。
      * 各シーンの `Initialize()` または `Finalize()` で呼び出すことを推奨します。
      */
-    void Reset() {
+    void Reset(bool clearPostUI = true) {
         /**
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(modesMutex_);
         pendingPreUI_.clear();
         activePreUI_.clear();
-        pendingPostUI_.clear();
-        activePostUI_.clear();
-        ResetAllParams();
+        if (clearPostUI) {
+            pendingPostUI_.clear();
+            activePostUI_.clear();
+        }
+        ResetAllParams(clearPostUI);
     }
 
     /** @brief エフェクトスタックを一括設定 (互換性のため PreUI に設定) */
@@ -837,7 +839,7 @@ public:
     }
 
     /** @brief 全てのパラメータをデフォルト状態にリセットする */
-    void ResetAllParams();
+    void ResetAllParams(bool clearPostUI = true);
 
     /** @brief 指定したエフェクトが現在有効かチェック */
     bool HasActiveMode(Mode mode) const {
