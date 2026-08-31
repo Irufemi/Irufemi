@@ -505,7 +505,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
                 float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
                 Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
-                
+
                 fullViewport.Width = view.viewW;
                 fullViewport.Height = view.viewH;
                 fullViewport.TopLeftX = view.viewX;
@@ -610,7 +610,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
             float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
             Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
-            
+
             fullViewport.Width = view.viewW;
             fullViewport.Height = view.viewH;
             fullViewport.TopLeftX = view.viewX;

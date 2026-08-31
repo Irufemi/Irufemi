@@ -73,14 +73,15 @@ void Mouse::Update() {
         float clientH = static_cast<float>(rc.bottom - rc.top);
 
         if (clientW > 0.0f && clientH > 0.0f && gameResWidth_ > 0.0f && gameResHeight_ > 0.0f) {
-            Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameResWidth_, gameResHeight_);
-            
+            Irufemi::Math::LetterboxInfo view =
+                Irufemi::Math::CalculateLetterbox(clientW, clientH, gameResWidth_, gameResHeight_);
+
             float mouseX = static_cast<float>(p.x);
             float mouseY = static_cast<float>(p.y);
-            
+
             mouseX = std::clamp((mouseX - view.viewX) / view.viewW * gameResWidth_, 0.0f, gameResWidth_);
             mouseY = std::clamp((mouseY - view.viewY) / view.viewH * gameResHeight_, 0.0f, gameResHeight_);
-            
+
             position_ = {mouseX, mouseY};
         } else {
             position_ = {static_cast<float>(p.x), static_cast<float>(p.y)};

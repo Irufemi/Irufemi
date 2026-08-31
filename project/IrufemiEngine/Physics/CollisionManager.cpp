@@ -319,7 +319,8 @@ void CollisionManager::CheckAllCollisions() {
                     if (canMoveA && canMoveB) {
                         // 両方動く場合は半分の距離ずつ押し戻す
                         pushA = Irufemi::Math::Multiply(result.depth * 0.5f, result.normal);
-                        pushB = Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
+                        pushB =
+                            Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
                     } else if (canMoveA) {
                         pushA = Irufemi::Math::Multiply(result.depth, result.normal);
                     } else if (canMoveB) {

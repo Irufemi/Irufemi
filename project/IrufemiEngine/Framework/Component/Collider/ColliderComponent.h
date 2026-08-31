@@ -40,7 +40,7 @@ public:
      * @brief Serialize を実行する。
      */
     virtual nlohmann::json Serialize() override;
-    
+
     /**
      * @brief Deserialize を実行する。
      */

@@ -114,8 +114,8 @@ public:
     void Deserialize(const nlohmann::json& j) override;
     std::shared_ptr<IPostProcessSettings> Clone() const override;
 
-    float intensity = 6.0f;       ///< アウトライン強度
-    int32_t maskMaxRadius = 5;    ///< マスクベースアウトラインの最大探索半径
+    float intensity = 6.0f;    ///< アウトライン強度
+    int32_t maskMaxRadius = 5; ///< マスクベースアウトラインの最大探索半径
 };
 
 // ---------------------------------------------------------
