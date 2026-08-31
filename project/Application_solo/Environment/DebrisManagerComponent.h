@@ -124,6 +124,7 @@ private:
     struct DebrisVariation {
         std::string id;
         std::string modelPath;
+        int maxVirtualCount;
         int maxPoolSize;
         int spawnWeight;
         VirtualEntityManagerComponent* virtualManager = nullptr;

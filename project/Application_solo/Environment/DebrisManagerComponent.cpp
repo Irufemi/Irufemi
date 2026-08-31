@@ -67,6 +67,7 @@ void DebrisManagerComponent::Initialize() {
         DebrisVariation var;
         var.id = v["id"].get<std::string>();
         var.modelPath = v["modelPath"].get<std::string>();
+        var.maxVirtualCount = v["maxVirtualCount"].get<int>();
         var.maxPoolSize = v["maxPoolSize"].get<int>();
         var.spawnWeight = v["spawnWeight"].get<int>();
 
@@ -117,8 +118,8 @@ void DebrisManagerComponent::Initialize() {
             return obj;
         };
 
-        var.virtualManager->Setup(var.maxPoolSize, var.maxPoolSize + 500, debrisFactory);
-        var.animDataList.resize(var.maxPoolSize + 500);
+        var.virtualManager->Setup(var.maxPoolSize, var.maxVirtualCount + 500, debrisFactory);
+        var.animDataList.resize(var.maxVirtualCount + 500);
 
         if (gameObject_) {
             gameObject_->AddChild(var.poolObject);
@@ -193,7 +194,7 @@ void DebrisManagerComponent::Update() {
         }
 
         for (auto& var : variations_) {
-            while (var.activeIds.size() > static_cast<size_t>(var.maxPoolSize)) {
+            while (var.activeIds.size() > static_cast<size_t>(var.maxVirtualCount)) {
                 int oldestId = var.activeIds.front();
                 var.activeIds.pop();
                 var.virtualManager->RemoveVirtualInstance(oldestId);
