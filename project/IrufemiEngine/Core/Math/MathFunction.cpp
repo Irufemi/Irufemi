@@ -710,13 +710,29 @@ Vector3 Perpendicular(Vector3 vector) {
 }
 
 float NormalizeAngle(float angle) {
-    while (angle > PI) {
-        angle -= 2.0f * PI;
-    }
-    while (angle < -PI) {
+    angle = fmod(angle + PI, 2.0f * PI);
+    if (angle < 0.0f) {
         angle += 2.0f * PI;
     }
-    return angle;
+    return angle - PI;
+}
+
+LetterboxInfo CalculateLetterbox(float clientW, float clientH, float gameW, float gameH) {
+    float aspectGame = gameW / gameH;
+    float aspectClient = clientW / clientH;
+    LetterboxInfo info{};
+    if (aspectClient > aspectGame) {
+        info.viewH = clientH;
+        info.viewW = clientH * aspectGame;
+        info.viewX = (clientW - info.viewW) * 0.5f;
+        info.viewY = 0.0f;
+    } else {
+        info.viewW = clientW;
+        info.viewH = clientW / aspectGame;
+        info.viewX = 0.0f;
+        info.viewY = (clientH - info.viewH) * 0.5f;
+    }
+    return info;
 }
 
 } // namespace Math

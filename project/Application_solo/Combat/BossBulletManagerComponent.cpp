@@ -15,7 +15,7 @@
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Effects/EffectManagerComponent.h"
 #include <iostream>
-
+#include <algorithm>
 BossBulletManagerComponent::BossBulletManagerComponent() {}
 
 void BossBulletManagerComponent::Initialize() {

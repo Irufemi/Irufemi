@@ -5,22 +5,22 @@
 #include "Core/Math/MathFunction.h"
 #include <algorithm>
 
-std::vector<VirtualEntityManagerComponent*> VirtualEntityManagerComponent::s_instances_;
+std::vector<VirtualEntityManagerComponent*> VirtualEntityManagerComponent::sInstances_;
 
 VirtualEntityManagerComponent::VirtualEntityManagerComponent() {
-    s_instances_.push_back(this);
+    sInstances_.push_back(this);
 }
 
 VirtualEntityManagerComponent::~VirtualEntityManagerComponent() {
-    auto it = std::find(s_instances_.begin(), s_instances_.end(), this);
-    if (it != s_instances_.end()) {
-        s_instances_.erase(it);
+    auto it = std::find(sInstances_.begin(), sInstances_.end(), this);
+    if (it != sInstances_.end()) {
+        sInstances_.erase(it);
     }
 }
 
 int VirtualEntityManagerComponent::GetTotalActiveVirtualInstances() {
     int total = 0;
-    for (auto* instance : s_instances_) {
+    for (auto* instance : sInstances_) {
         total += instance->activeInstanceCount_;
     }
     return total;

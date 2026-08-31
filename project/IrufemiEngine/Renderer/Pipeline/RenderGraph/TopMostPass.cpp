@@ -1,6 +1,7 @@
 #include "Renderer/Pipeline/RenderGraph/TopMostPass.h"
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Core/Math/MathFunction.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 
 void TopMostPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
@@ -41,20 +42,12 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     float gameW = static_cast<float>(engine->GetGameResolutionWidth());
     float gameH = static_cast<float>(engine->GetGameResolutionHeight());
 
-    float aspectGame = gameW / gameH;
-    float aspectClient = clientW / clientH;
+    Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
 
-    if (aspectClient > aspectGame) {
-        viewport.Height = clientH;
-        viewport.Width = clientH * aspectGame;
-        viewport.TopLeftX = (clientW - viewport.Width) * 0.5f;
-        viewport.TopLeftY = 0.0f;
-    } else {
-        viewport.Width = clientW;
-        viewport.Height = clientW / aspectGame;
-        viewport.TopLeftX = 0.0f;
-        viewport.TopLeftY = (clientH - viewport.Height) * 0.5f;
-    }
+    viewport.Width = view.viewW;
+    viewport.Height = view.viewH;
+    viewport.TopLeftX = view.viewX;
+    viewport.TopLeftY = view.viewY;
 
     scissor.left = static_cast<LONG>(viewport.TopLeftX);
     scissor.right = static_cast<LONG>(viewport.TopLeftX + viewport.Width);

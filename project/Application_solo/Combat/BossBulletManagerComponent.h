@@ -22,6 +22,11 @@ public:
         return "BossBulletManagerComponent";
     }
 
+    void SetTargetPlayerID(uint64_t id) {
+        targetPlayerID_ = id;
+    }
+
+
     /**
      * @brief シーン読み込み時等にIDの付け替えが発生した際のコールバック
      * @param idMap 旧IDと新IDの対応マップ

@@ -2,6 +2,7 @@
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DirectXUtils.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Core/Math/MathFunction.h"
 #include <algorithm>
 #include <cassert>
 
@@ -399,20 +400,12 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
                 float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
 
-                float aspectGame = gameW / gameH;
-                float aspectClient = clientW / clientH;
+                Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
 
-                if (aspectClient > aspectGame) {
-                    fullViewport.Height = clientH;
-                    fullViewport.Width = clientH * aspectGame;
-                    fullViewport.TopLeftX = (clientW - fullViewport.Width) * 0.5f;
-                    fullViewport.TopLeftY = 0.0f;
-                } else {
-                    fullViewport.Width = clientW;
-                    fullViewport.Height = clientW / aspectGame;
-                    fullViewport.TopLeftX = 0.0f;
-                    fullViewport.TopLeftY = (clientH - fullViewport.Height) * 0.5f;
-                }
+                fullViewport.Width = view.viewW;
+                fullViewport.Height = view.viewH;
+                fullViewport.TopLeftX = view.viewX;
+                fullViewport.TopLeftY = view.viewY;
                 fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
                 fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
                 fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
@@ -511,19 +504,12 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                 float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
                 float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
                 float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
-                float aspectGame = gameW / gameH;
-                float aspectClient = clientW / clientH;
-                if (aspectClient > aspectGame) {
-                    fullViewport.Height = clientH;
-                    fullViewport.Width = clientH * aspectGame;
-                    fullViewport.TopLeftX = (clientW - fullViewport.Width) * 0.5f;
-                    fullViewport.TopLeftY = 0.0f;
-                } else {
-                    fullViewport.Width = clientW;
-                    fullViewport.Height = clientW / aspectGame;
-                    fullViewport.TopLeftX = 0.0f;
-                    fullViewport.TopLeftY = (clientH - fullViewport.Height) * 0.5f;
-                }
+                Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
+                
+                fullViewport.Width = view.viewW;
+                fullViewport.Height = view.viewH;
+                fullViewport.TopLeftX = view.viewX;
+                fullViewport.TopLeftY = view.viewY;
                 fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
                 fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
                 fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
@@ -623,19 +609,12 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
             float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
             float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
-            float aspectGame = gameW / gameH;
-            float aspectClient = clientW / clientH;
-            if (aspectClient > aspectGame) {
-                fullViewport.Height = clientH;
-                fullViewport.Width = clientH * aspectGame;
-                fullViewport.TopLeftX = (clientW - fullViewport.Width) * 0.5f;
-                fullViewport.TopLeftY = 0.0f;
-            } else {
-                fullViewport.Width = clientW;
-                fullViewport.Height = clientW / aspectGame;
-                fullViewport.TopLeftX = 0.0f;
-                fullViewport.TopLeftY = (clientH - fullViewport.Height) * 0.5f;
-            }
+            Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
+            
+            fullViewport.Width = view.viewW;
+            fullViewport.Height = view.viewH;
+            fullViewport.TopLeftX = view.viewX;
+            fullViewport.TopLeftY = view.viewY;
             fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
             fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
             fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);

@@ -114,7 +114,10 @@ public:
     static int GetTotalActiveVirtualInstances();
 
 private:
-    static std::vector<VirtualEntityManagerComponent*> s_instances_;
+    /**
+     * @brief コンポーネントの全インスタンスを保持する静的レジストリ
+     */
+    static std::vector<VirtualEntityManagerComponent*> sInstances_;
     std::vector<VirtualInstance> dense_;
     std::vector<int> sparse_;
     std::queue<int> freeIds_;

@@ -145,6 +145,9 @@ private:
     std::unique_ptr<Line3DBatch> debugLine_ = nullptr;
     DebugPrimitiveRenderer* debugPrimitiveRenderer_ = nullptr;
 
+    // --- デバッグ用キャッシュ ---
+    std::vector<ColliderComponent*> debugRemoveList_; ///< DrawDebug時の削除リスト（ヒープ割当回避用）
+
     // レイヤー名（最大32個）
     std::vector<std::string> layerNames_;
     std::string layerConfigFilePath_ = "resources/Config/layers.json";

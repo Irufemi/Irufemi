@@ -73,25 +73,13 @@ void Mouse::Update() {
         float clientH = static_cast<float>(rc.bottom - rc.top);
         
         if (clientW > 0.0f && clientH > 0.0f && gameResWidth_ > 0.0f && gameResHeight_ > 0.0f) {
-            float aspectGame = gameResWidth_ / gameResHeight_;
-            float aspectClient = clientW / clientH;
-            
-            float viewX = 0.0f, viewY = 0.0f, viewW = clientW, viewH = clientH;
-            if (aspectClient > aspectGame) {
-                viewH = clientH;
-                viewW = clientH * aspectGame;
-                viewX = (clientW - viewW) * 0.5f;
-            } else {
-                viewW = clientW;
-                viewH = clientW / aspectGame;
-                viewY = (clientH - viewH) * 0.5f;
-            }
+            Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameResWidth_, gameResHeight_);
             
             float mouseX = static_cast<float>(p.x);
             float mouseY = static_cast<float>(p.y);
             
-            mouseX = (mouseX - viewX) / viewW * gameResWidth_;
-            mouseY = (mouseY - viewY) / viewH * gameResHeight_;
+            mouseX = std::clamp((mouseX - view.viewX) / view.viewW * gameResWidth_, 0.0f, gameResWidth_);
+            mouseY = std::clamp((mouseY - view.viewY) / view.viewH * gameResHeight_, 0.0f, gameResHeight_);
             
             position_ = {mouseX, mouseY};
         } else {

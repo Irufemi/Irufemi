@@ -138,6 +138,14 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
             if (obj) {
                 obj->SetIsActive(false);
                 obj->SetIsSerializable(false); // セーブデータ（InGame.json）への混入を防止
+
+                // プレハブから動的生成されたドローンの弾がプレイヤーを追跡できるようIDを伝播する
+                if (auto playerLock = player_.lock()) {
+                    if (auto bulletMgr = obj->GetComponent<BossBulletManagerComponent>()) {
+                        bulletMgr->SetTargetPlayerID(playerLock->GetInstanceID());
+                    }
+                }
+
                 // プレハブを BossDroneManager (gameObject_) の直接の子として追加する
                 gameObject_->AddChild(obj);
             }

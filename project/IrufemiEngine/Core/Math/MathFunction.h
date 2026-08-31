@@ -311,6 +311,24 @@ Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, f
 Ray ScreenPointToRay(Vector2 mousePos, float screenWidth, float screenHeight, const Matrix4x4& viewProjectionInverse);
 
 /**
+ * @brief レターボックス計算の結果を格納する構造体
+ */
+struct LetterboxInfo {
+    float viewX, viewY;
+    float viewW, viewH;
+};
+
+/**
+ * @brief アスペクト比に基づくレターボックス（黒帯）の矩形情報を計算する
+ * @param clientW クライアント（ウィンドウ）の幅
+ * @param clientH クライアント（ウィンドウ）の高さ
+ * @param gameW ゲームの内部解像度の幅
+ * @param gameH ゲームの内部解像度の高さ
+ * @return 計算されたレターボックス情報
+ */
+LetterboxInfo CalculateLetterbox(float clientW, float clientH, float gameW, float gameH);
+
+/**
  * @brief 任意軸回転行列の作成
  */
 Matrix4x4 MakeRotateAxisAngle(Vector3 axis, float angle);
