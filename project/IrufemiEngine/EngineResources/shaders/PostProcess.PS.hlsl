@@ -106,15 +106,17 @@ PixelShaderOutput main(VertexShaderOutput input) {
     float32_t2 uvStepSize = rcp(float32_t2(width, height));
 
     // マスク情報の復元
-    int customEffect = round(mask.r * 255.0f);
+    int customEffect = (gParams.useMask != 0) ? round(mask.r * 255.0f) : 0;
     float customParam = mask.g;
-    bool isProtected = mask.b > 0.5f;
+    bool isProtected = (gParams.useMask != 0) && (mask.b > 0.5f);
     
     PixelShaderOutput output;
     
     // 0. 全画面でのマスクベースのアウトラインエッジ検出 (AAA Approach)
     // 背景ピクセルであっても、隣接するピクセルがアウトライン対象であれば描画する
-    color.rgb = ApplyMaskBasedOutline(color.rgb, uv, uvStepSize, gMaskTexture, gSamplerPoint);
+    if (gParams.useMask != 0) {
+        color.rgb = ApplyMaskBasedOutline(color.rgb, uv, uvStepSize, gMaskTexture, gSamplerPoint);
+    }
     
     // 1. 個別カスタムエフェクトの適用
     if (customEffect != 0) {

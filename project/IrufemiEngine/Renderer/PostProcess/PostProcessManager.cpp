@@ -197,6 +197,8 @@ void PostProcessManager::Draw(ID3D12GraphicsCommandList* commandList, RenderText
 
     const std::vector<Mode>& modesToDraw = (layer == Layer::PreUI) ? activePreUI_ : activePostUI_;
 
+    combinedParams_.useMask = (layer == Layer::PreUI) ? 1 : 0;
+
     PostProcessRunner runner;
     runner.Run(this, commandList, modesToDraw, srcTexture, rtvHandle, workspace, true);
 }

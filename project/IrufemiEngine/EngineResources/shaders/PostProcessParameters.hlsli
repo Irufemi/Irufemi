@@ -101,6 +101,9 @@ struct DissolveParams {
 
 struct PostProcessParams {
     int32_t effectCount;
+    int32_t useMask;
+    int32_t pad0_0;
+    int32_t pad0_1;
     int4 effects[4];      // C++側の int32_t[16] と完全に一致させるため int4[4] に変更
     
     // Vignette

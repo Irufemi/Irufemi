@@ -429,7 +429,8 @@ public:
      */
     struct CombinedParams {
         int32_t effectCount;
-        int32_t pad0[3]; // HLSLの int4[4] の開始位置（16バイト境界）に合わせるためのパディング
+        int32_t useMask;
+        int32_t pad0[2]; // HLSLの int4[4] の開始位置（16バイト境界）に合わせるためのパディング
         int32_t effects[16];
 
         // Vignette
