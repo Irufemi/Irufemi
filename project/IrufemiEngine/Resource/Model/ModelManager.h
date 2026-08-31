@@ -185,7 +185,7 @@ public:
      * @brief すべてのロードタスクが完了したかを取得
      */
     bool IsAllLoaded() const {
-        return taskGroup_->IsAllDone();
+        return taskGroup_->IsAllDone() && backgroundTaskGroup_->IsAllDone();
     }
 
     /**

@@ -196,7 +196,7 @@ public:
      * @brief すべてのロードタスク（背景タスクを含む）が完了しているかを取得
      */
     bool IsAllLoaded() const {
-        return taskGroup_->IsAllDone();
+        return taskGroup_->IsAllDone() && backgroundTaskGroup_->IsAllDone();
     }
 
     /**
