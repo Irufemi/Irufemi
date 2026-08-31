@@ -27,6 +27,11 @@ public:
      * @brief DrawDebug を実行する。
      */
     void DrawDebug() override;
+
+    /**
+     * @brief プロパティの登録
+     */
+    void OnRegisterProperties() override;
     /**
      * @brief Serialize を実行する。
      */

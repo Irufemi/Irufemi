@@ -42,6 +42,11 @@ public:
     void DrawDebug() override;
 
     /**
+     * @brief プロパティの登録
+     */
+    void OnRegisterProperties() override;
+
+    /**
      * @brief シリアライズ
      * @return OBBのサイズやオフセット情報を含むJSONオブジェクト
      */

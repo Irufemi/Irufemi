@@ -30,6 +30,8 @@ public:
      * @brief Draw を実行する。
      */
     virtual void Draw() override {}
+    
+    virtual void OnRegisterProperties() override;
 
     /// @brief デバッグ用の当たり判定の枠線を描画する
     virtual void DrawDebug() = 0;
@@ -64,6 +66,10 @@ public:
 
     // --- 物理設定 ---
     bool isTrigger_ = false; ///< trueならすり抜ける(判定のみ), falseなら物理的に押し戻す
+    bool isStatic_ = false;  ///< trueなら物理的に押し戻されない（環境オブジェクトなど）
+
+    // --- 押し戻し軸の制限 ---
+    Irufemi::Vector3 pushbackMask_ = {1.0f, 1.0f, 1.0f}; ///< 1.0 なら押し戻し有効, 0.0 なら無効（Z軸スルーなど）
 
     // --- BVH (空間分割) 連携 ---
     int32_t bvhNodeId_ = -1; //!< 自身が登録されている Irufemi::DynamicBVH 内のノードインデックス

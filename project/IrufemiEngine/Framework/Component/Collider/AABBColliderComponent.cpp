@@ -27,6 +27,16 @@ void AABBColliderComponent::Update() {
 
 void AABBColliderComponent::DrawDebug() {}
 
+void AABBColliderComponent::OnRegisterProperties() {
+    ColliderComponent::OnRegisterProperties();
+    RegisterProperty("Local Offset X", &localOffset_.x);
+    RegisterProperty("Local Offset Y", &localOffset_.y);
+    RegisterProperty("Local Offset Z", &localOffset_.z);
+    RegisterProperty("Local Size X", &localSize_.x);
+    RegisterProperty("Local Size Y", &localSize_.y);
+    RegisterProperty("Local Size Z", &localSize_.z);
+}
+
 Irufemi::AABB AABBColliderComponent::GetWorldAABB() const {
     Irufemi::AABB aabb;
     if (GetTransform()) {

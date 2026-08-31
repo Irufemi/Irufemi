@@ -28,6 +28,16 @@ void OBBColliderComponent::Update() {
 
 void OBBColliderComponent::DrawDebug() {}
 
+void OBBColliderComponent::OnRegisterProperties() {
+    ColliderComponent::OnRegisterProperties();
+    RegisterProperty("Local Offset X", &localOffset_.x);
+    RegisterProperty("Local Offset Y", &localOffset_.y);
+    RegisterProperty("Local Offset Z", &localOffset_.z);
+    RegisterProperty("Local Size X", &localSize_.x);
+    RegisterProperty("Local Size Y", &localSize_.y);
+    RegisterProperty("Local Size Z", &localSize_.z);
+}
+
 Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
     Irufemi::OBB obb;
     if (GetTransform()) {
@@ -77,6 +87,7 @@ nlohmann::json OBBColliderComponent::Serialize() {
     j["localSize"] = {localSize_.x, localSize_.y, localSize_.z};
     j["layer"] = layer_;
     j["mask"] = mask_;
+    j["isStatic"] = isStatic_;
     return j;
 }
 
@@ -105,6 +116,9 @@ void OBBColliderComponent::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("mask")) {
         mask_ = j["mask"];
+    }
+    if (j.contains("isStatic")) {
+        isStatic_ = j["isStatic"];
     }
 }
 

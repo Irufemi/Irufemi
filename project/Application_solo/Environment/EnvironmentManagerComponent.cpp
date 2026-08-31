@@ -62,6 +62,10 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
 
         RegisterProperty("IsDestructible_" + name, &setting.isDestructible);
         RegisterProperty("SpawnCount_" + name, &setting.debrisSpawnCount);
+
+        RegisterProperty("PushbackMaskX_" + name, &setting.pushbackMask.x);
+        RegisterProperty("PushbackMaskY_" + name, &setting.pushbackMask.y);
+        RegisterProperty("PushbackMaskZ_" + name, &setting.pushbackMask.z);
     }
 }
 
@@ -122,6 +126,7 @@ void EnvironmentManagerComponent::Start() {
                     if (setting.prefabPath == info.prefabPath) {
                         obb->SetLocalSize(setting.collisionSize);
                         obb->SetLocalOffset(setting.collisionOffset);
+                        obb->pushbackMask_ = setting.pushbackMask;
                         break;
                     }
                 }
@@ -133,9 +138,11 @@ void EnvironmentManagerComponent::Start() {
 void EnvironmentManagerComponent::Update() {
     bool anyChanged = false;
     for (auto& setting : batchCollisionSettings_) {
-        if (setting.collisionSize != setting.previousSize || setting.collisionOffset != setting.previousOffset) {
+        if (setting.collisionSize != setting.previousSize || setting.collisionOffset != setting.previousOffset ||
+            setting.pushbackMask != setting.previousPushbackMask) {
             setting.previousSize = setting.collisionSize;
             setting.previousOffset = setting.collisionOffset;
+            setting.previousPushbackMask = setting.pushbackMask;
             anyChanged = true;
         }
         // placementType is tracked but unused since manual placement defines Irufemi::Transform
@@ -152,6 +159,7 @@ void EnvironmentManagerComponent::Update() {
                         if (setting.prefabPath == info.prefabPath) {
                             obb->SetLocalSize(setting.collisionSize);
                             obb->SetLocalOffset(setting.collisionOffset);
+                            obb->pushbackMask_ = setting.pushbackMask;
                             break;
                         }
                     }

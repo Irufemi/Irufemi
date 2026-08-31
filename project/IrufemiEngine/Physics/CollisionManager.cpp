@@ -168,6 +168,11 @@ void CollisionManager::CheckAllCollisions() {
                 continue;
             }
 
+            // 静的オブジェクト同士の判定は不要（動かないため、計算負荷を削減）
+            if (colA->isStatic_ && colB->isStatic_) {
+                continue;
+            }
+
             // アドレスでソートしてペアを作成 (colA < colB is guaranteed)
             auto pairKey = std::make_pair(colA, colB);
 
@@ -263,20 +268,41 @@ void CollisionManager::CheckAllCollisions() {
                     TransformComponent* transformB =
                         colB->GetGameObject() ? colB->GetGameObject()->GetComponent<TransformComponent>() : nullptr;
 
-                    if (transformA && transformB) {
+                    bool canMoveA = transformA && !colA->isStatic_;
+                    bool canMoveB = transformB && !colB->isStatic_;
+
+                    if (canMoveA && canMoveB) {
                         // 両方動く場合は半分の距離ずつ押し戻す
                         Irufemi::Vector3 pushA = Irufemi::Math::Multiply(result.depth * 0.5f, result.normal);
                         Irufemi::Vector3 pushB =
                             Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
 
+                        pushA.x *= colA->pushbackMask_.x;
+                        pushA.y *= colA->pushbackMask_.y;
+                        pushA.z *= colA->pushbackMask_.z;
+
+                        pushB.x *= colB->pushbackMask_.x;
+                        pushB.y *= colB->pushbackMask_.y;
+                        pushB.z *= colB->pushbackMask_.z;
+
                         transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
                         transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
-                    } else if (transformA) {
+                    } else if (canMoveA) {
                         Irufemi::Vector3 pushA = Irufemi::Math::Multiply(result.depth, result.normal);
+                        
+                        pushA.x *= colA->pushbackMask_.x;
+                        pushA.y *= colA->pushbackMask_.y;
+                        pushA.z *= colA->pushbackMask_.z;
+                        
                         transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
-                    } else if (transformB) {
+                    } else if (canMoveB) {
                         Irufemi::Vector3 pushB =
                             Irufemi::Math::Multiply(result.depth, Irufemi::Math::Multiply(-1.0f, result.normal));
+                            
+                        pushB.x *= colB->pushbackMask_.x;
+                        pushB.y *= colB->pushbackMask_.y;
+                        pushB.z *= colB->pushbackMask_.z;
+                        
                         transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
                     }
                 }

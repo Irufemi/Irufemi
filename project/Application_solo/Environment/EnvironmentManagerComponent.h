@@ -54,6 +54,8 @@ private:
         int previousPlacementType;
         bool isDestructible;
         int debrisSpawnCount;
+        Irufemi::Vector3 pushbackMask = {1.0f, 1.0f, 1.0f};
+        Irufemi::Vector3 previousPushbackMask = {1.0f, 1.0f, 1.0f};
     };
 
     std::string targetPrefabNames_ = "Env_Pillar,Env_Arch,Env_Wall";
