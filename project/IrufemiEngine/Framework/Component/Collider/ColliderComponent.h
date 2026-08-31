@@ -30,7 +30,7 @@ public:
      * @brief Draw を実行する。
      */
     virtual void Draw() override {}
-    
+
     virtual void OnRegisterProperties() override;
 
     /// @brief デバッグ用の当たり判定の枠線を描画する

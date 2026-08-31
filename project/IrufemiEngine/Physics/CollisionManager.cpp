@@ -289,20 +289,20 @@ void CollisionManager::CheckAllCollisions() {
                         transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
                     } else if (canMoveA) {
                         Irufemi::Vector3 pushA = Irufemi::Math::Multiply(result.depth, result.normal);
-                        
+
                         pushA.x *= colA->pushbackMask_.x;
                         pushA.y *= colA->pushbackMask_.y;
                         pushA.z *= colA->pushbackMask_.z;
-                        
+
                         transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
                     } else if (canMoveB) {
                         Irufemi::Vector3 pushB =
                             Irufemi::Math::Multiply(result.depth, Irufemi::Math::Multiply(-1.0f, result.normal));
-                            
+
                         pushB.x *= colB->pushbackMask_.x;
                         pushB.y *= colB->pushbackMask_.y;
                         pushB.z *= colB->pushbackMask_.z;
-                        
+
                         transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
                     }
                 }
