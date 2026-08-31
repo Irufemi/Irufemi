@@ -98,10 +98,10 @@ void CollisionManager::FlushPendingCommands() {
             if (iter->first == collider || iter->second == collider) {
                 ColliderComponent* other = (iter->first == collider) ? iter->second : iter->first;
                 if (other && other->onCollisionExit_) {
-                    other->onCollisionExit_(nullptr);
+                    other->onCollisionExit_(collider);
                 }
                 if (other && other->GetGameObject()) {
-                    other->GetGameObject()->SendCollisionExit(nullptr);
+                    other->GetGameObject()->SendCollisionExit(collider ? collider->GetGameObject() : nullptr);
                 }
                 iter = previousCollisions_.erase(iter);
             } else {
