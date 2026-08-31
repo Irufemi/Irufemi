@@ -313,38 +313,25 @@ void CollisionManager::CheckAllCollisions() {
                     bool canMoveA = transformA && !colA->isStatic_;
                     bool canMoveB = transformB && !colB->isStatic_;
 
+                    Irufemi::Vector3 pushA = {0.0f, 0.0f, 0.0f};
+                    Irufemi::Vector3 pushB = {0.0f, 0.0f, 0.0f};
+
                     if (canMoveA && canMoveB) {
                         // 両方動く場合は半分の距離ずつ押し戻す
-                        Irufemi::Vector3 pushA = Irufemi::Math::Multiply(result.depth * 0.5f, result.normal);
-                        Irufemi::Vector3 pushB =
-                            Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
-
-                        pushA.x *= colA->pushbackMask_.x;
-                        pushA.y *= colA->pushbackMask_.y;
-                        pushA.z *= colA->pushbackMask_.z;
-
-                        pushB.x *= colB->pushbackMask_.x;
-                        pushB.y *= colB->pushbackMask_.y;
-                        pushB.z *= colB->pushbackMask_.z;
-
-                        transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
-                        transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
+                        pushA = Irufemi::Math::Multiply(result.depth * 0.5f, result.normal);
+                        pushB = Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
                     } else if (canMoveA) {
-                        Irufemi::Vector3 pushA = Irufemi::Math::Multiply(result.depth, result.normal);
-
-                        pushA.x *= colA->pushbackMask_.x;
-                        pushA.y *= colA->pushbackMask_.y;
-                        pushA.z *= colA->pushbackMask_.z;
-
-                        transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
+                        pushA = Irufemi::Math::Multiply(result.depth, result.normal);
                     } else if (canMoveB) {
-                        Irufemi::Vector3 pushB =
-                            Irufemi::Math::Multiply(result.depth, Irufemi::Math::Multiply(-1.0f, result.normal));
+                        pushB = Irufemi::Math::Multiply(result.depth, Irufemi::Math::Multiply(-1.0f, result.normal));
+                    }
 
-                        pushB.x *= colB->pushbackMask_.x;
-                        pushB.y *= colB->pushbackMask_.y;
-                        pushB.z *= colB->pushbackMask_.z;
-
+                    if (canMoveA) {
+                        pushA = pushA * colA->pushbackMask_;
+                        transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
+                    }
+                    if (canMoveB) {
+                        pushB = pushB * colB->pushbackMask_;
                         transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
                     }
                 }

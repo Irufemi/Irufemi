@@ -71,15 +71,14 @@ Irufemi::AABB AABBColliderComponent::GetWorldAABB() const {
 }
 
 nlohmann::json AABBColliderComponent::Serialize() {
-    nlohmann::json j;
+    nlohmann::json j = ColliderComponent::Serialize();
     j["localOffset"] = {localOffset_.x, localOffset_.y, localOffset_.z};
     j["localSize"] = {localSize_.x, localSize_.y, localSize_.z};
-    j["layer"] = layer_;
-    j["mask"] = mask_;
     return j;
 }
 
 void AABBColliderComponent::Deserialize(const nlohmann::json& j) {
+    ColliderComponent::Deserialize(j);
     if (j.contains("localOffset")) {
         localOffset_.x = j["localOffset"][0];
         localOffset_.y = j["localOffset"][1];
@@ -89,12 +88,6 @@ void AABBColliderComponent::Deserialize(const nlohmann::json& j) {
         localSize_.x = j["localSize"][0];
         localSize_.y = j["localSize"][1];
         localSize_.z = j["localSize"][2];
-    }
-    if (j.contains("layer")) {
-        layer_ = j["layer"];
-    }
-    if (j.contains("mask")) {
-        mask_ = j["mask"];
     }
 }
 

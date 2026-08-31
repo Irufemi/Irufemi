@@ -1552,6 +1552,8 @@
             },
             {
               "data": {
+                "isStatic": false,
+                "isTrigger": false,
                 "layer": 2,
                 "localOffset": [
                   0.0,
@@ -1559,7 +1561,12 @@
                   0.0
                 ],
                 "localRadius": 0.30000001192092896,
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "SphereColliderComponent"
             },
@@ -1830,6 +1837,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1841,7 +1849,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -1877,6 +1890,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1888,7 +1902,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -1924,6 +1943,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1935,7 +1955,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -1971,6 +1996,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1982,7 +2008,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2018,6 +2049,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2029,7 +2061,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2065,6 +2102,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2076,7 +2114,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2112,6 +2155,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2123,7 +2167,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2159,6 +2208,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2170,7 +2220,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2206,6 +2261,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2217,7 +2273,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2253,6 +2314,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2264,7 +2326,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2300,6 +2367,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2311,7 +2379,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2347,6 +2420,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2358,7 +2432,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2394,6 +2473,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2405,7 +2485,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2441,6 +2526,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2452,7 +2538,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2488,6 +2579,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2499,7 +2591,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2535,6 +2632,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2546,7 +2644,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2582,6 +2685,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2593,7 +2697,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2629,6 +2738,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2640,7 +2750,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2676,6 +2791,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2687,7 +2803,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2723,6 +2844,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2734,7 +2856,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2770,6 +2897,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2781,7 +2909,12 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2817,6 +2950,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2828,7 +2962,12 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2864,6 +3003,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2875,7 +3015,12 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2911,6 +3056,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2922,7 +3068,12 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -2958,6 +3109,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2969,7 +3121,12 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -3005,6 +3162,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.02500000037252903,
@@ -3016,7 +3174,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -3052,6 +3215,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.02500000037252903,
@@ -3063,7 +3227,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -3099,6 +3268,7 @@
             {
               "data": {
                 "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.02500000037252903,
@@ -3110,7 +3280,12 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
             }
@@ -3340,6 +3515,8 @@
         },
         {
           "data": {
+            "isStatic": false,
+            "isTrigger": true,
             "layer": 4,
             "localOffset": [
               0.0,
@@ -3347,7 +3524,12 @@
               0.0
             ],
             "localRadius": 4.599999904632568,
-            "mask": 4294967231
+            "mask": 4294967231,
+            "pushbackMask": [
+              1.0,
+              1.0,
+              1.0
+            ]
           },
           "type": "SphereColliderComponent"
         },

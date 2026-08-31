@@ -73,15 +73,14 @@ Irufemi::AABB SphereColliderComponent::GetBoundingBox() const {
 }
 
 nlohmann::json SphereColliderComponent::Serialize() {
-    nlohmann::json j;
+    nlohmann::json j = ColliderComponent::Serialize();
     j["localOffset"] = {localOffset_.x, localOffset_.y, localOffset_.z};
     j["localRadius"] = localRadius_;
-    j["layer"] = layer_;
-    j["mask"] = mask_;
     return j;
 }
 
 void SphereColliderComponent::Deserialize(const nlohmann::json& j) {
+    ColliderComponent::Deserialize(j);
     if (j.contains("localOffset")) {
         localOffset_.x = j["localOffset"][0];
         localOffset_.y = j["localOffset"][1];
@@ -89,12 +88,6 @@ void SphereColliderComponent::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("localRadius")) {
         localRadius_ = j["localRadius"];
-    }
-    if (j.contains("layer")) {
-        layer_ = j["layer"];
-    }
-    if (j.contains("mask")) {
-        mask_ = j["mask"];
     }
 }
 

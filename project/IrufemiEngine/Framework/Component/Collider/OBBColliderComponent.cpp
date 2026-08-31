@@ -82,16 +82,14 @@ Irufemi::AABB OBBColliderComponent::GetBoundingBox() const {
 }
 
 nlohmann::json OBBColliderComponent::Serialize() {
-    nlohmann::json j;
+    nlohmann::json j = ColliderComponent::Serialize();
     j["localOffset"] = {localOffset_.x, localOffset_.y, localOffset_.z};
     j["localSize"] = {localSize_.x, localSize_.y, localSize_.z};
-    j["layer"] = layer_;
-    j["mask"] = mask_;
-    j["isStatic"] = isStatic_;
     return j;
 }
 
 void OBBColliderComponent::Deserialize(const nlohmann::json& j) {
+    ColliderComponent::Deserialize(j);
     if (j.contains("localOffset")) {
         localOffset_.x = j["localOffset"][0];
         localOffset_.y = j["localOffset"][1];
@@ -110,15 +108,6 @@ void OBBColliderComponent::Deserialize(const nlohmann::json& j) {
         localSize_.x = j["size"][0];
         localSize_.y = j["size"][1];
         localSize_.z = j["size"][2];
-    }
-    if (j.contains("layer")) {
-        layer_ = j["layer"];
-    }
-    if (j.contains("mask")) {
-        mask_ = j["mask"];
-    }
-    if (j.contains("isStatic")) {
-        isStatic_ = j["isStatic"];
     }
 }
 

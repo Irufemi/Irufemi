@@ -31,7 +31,20 @@ public:
      */
     virtual void Draw() override {}
 
+    /**
+     * @brief プロパティの登録を行う
+     */
     virtual void OnRegisterProperties() override;
+
+    /**
+     * @brief Serialize を実行する。
+     */
+    virtual nlohmann::json Serialize() override;
+    
+    /**
+     * @brief Deserialize を実行する。
+     */
+    virtual void Deserialize(const nlohmann::json& j) override;
 
     /// @brief デバッグ用の当たり判定の枠線を描画する
     virtual void DrawDebug() = 0;
