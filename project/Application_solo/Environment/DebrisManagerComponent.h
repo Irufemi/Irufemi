@@ -62,6 +62,9 @@ public:
     // 破壊通知
     void NotifyDestroyed(int virtualId, int variationIndex);
 
+    // プール枯渇時用：一番遠いIdle状態のがれきを強制降格して枠を空ける
+    bool DemoteFarthestIdleDebris(const Irufemi::Vector3& fromPos);
+
     // Debris パラメータのゲッター
     float GetDebrisPullSpeed() const {
         return debrisPullSpeed_;

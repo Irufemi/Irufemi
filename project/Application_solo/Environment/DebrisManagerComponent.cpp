@@ -237,6 +237,12 @@ std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
     auto& var = variations_[0];
     int id = var.virtualManager->AddVirtualInstance({0, 0, 0}, {0, 0, 0}, {0.5f, 0.5f, 0.5f});
     auto obj = var.virtualManager->Promote(id);
+    if (!obj) {
+        if (DemoteFarthestIdleDebris({0.0f, 0.0f, 0.0f})) {
+            obj = var.virtualManager->Promote(id);
+        }
+    }
+
     if (obj) {
         auto comp = obj->GetComponent<DebrisComponent>();
         if (comp) {
@@ -325,6 +331,11 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
 
     if (bestId >= 0 && bestVarIndex >= 0) {
         auto obj = bestPromotedObj ? bestPromotedObj : variations_[bestVarIndex].virtualManager->Promote(bestId);
+        if (!obj) {
+            if (DemoteFarthestIdleDebris(pos)) {
+                obj = variations_[bestVarIndex].virtualManager->Promote(bestId);
+            }
+        }
         if (obj) {
             auto comp = obj->GetComponent<DebrisComponent>();
             if (comp) {
@@ -343,6 +354,45 @@ void DebrisManagerComponent::NotifyDestroyed(int virtualId, int variationIndex) 
     if (variationIndex >= 0 && variationIndex < variations_.size()) {
         variations_[variationIndex].virtualManager->RemoveVirtualInstance(virtualId);
     }
+}
+
+bool DebrisManagerComponent::DemoteFarthestIdleDebris(const Irufemi::Vector3& fromPos) {
+    float maxDistSq = -1.0f;
+    int targetVid = -1;
+    int targetVarIndex = -1;
+
+    for (size_t v = 0; v < variations_.size(); ++v) {
+        auto& virtualInstances = variations_[v].virtualManager->GetDenseInstances();
+        for (const auto& vi : virtualInstances) {
+            if (vi.isPromoted_) {
+                auto obj = variations_[v].virtualManager->Promote(vi.id_);
+                if (obj && obj->GetIsActive()) {
+                    if (auto comp = obj->GetComponent<DebrisComponent>()) {
+                        if (comp->GetState() == DebrisState::Idle) {
+                            if (auto t = obj->GetTransform()) {
+                                Irufemi::Vector3 pos = t->GetWorldPosition();
+                                float dx = pos.x - fromPos.x;
+                                float dy = pos.y - fromPos.y;
+                                float dz = pos.z - fromPos.z;
+                                float distSq = dx * dx + dy * dy + dz * dz;
+                                if (distSq > maxDistSq) {
+                                    maxDistSq = distSq;
+                                    targetVid = vi.id_;
+                                    targetVarIndex = static_cast<int>(v);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (targetVid >= 0 && targetVarIndex >= 0) {
+        variations_[targetVarIndex].virtualManager->Demote(targetVid);
+        return true;
+    }
+    return false;
 }
 
 void DebrisManagerComponent::MarkForDestroy(int virtualId, int variationIndex) {
