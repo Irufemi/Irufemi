@@ -22,6 +22,8 @@ public:
         return "BossBulletManagerComponent";
     }
 
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
+
     /**
      * @brief 指定した座標と速度で弾を発射する
      */
@@ -44,6 +46,7 @@ private:
     float hitRadius_ = 2.0f;
     std::string hitEffectKey_ = "Dust";
     std::string explosionModelPath_ = "resources/model/BossBulletSphere.obj";
+    uint64_t targetPlayerID_ = 0;
 
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
     std::vector<BossBulletData> bulletDataList_;

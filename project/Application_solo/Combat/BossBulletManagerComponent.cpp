@@ -116,9 +116,11 @@ void BossBulletManagerComponent::Update() {
                 std::vector<ColliderComponent*> hits;
                 cm->QueryAABB(aabb, hits);
 
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
                 if (cm->GetIsDrawDebugLinePtr() && *cm->GetIsDrawDebugLinePtr()) {
                     cm->DrawDebugAABB(aabb, {1.0f, 0.0f, 0.0f, 1.0f});
                 }
+#endif
 
                 bool isHit = false;
                 for (auto col : hits) {
@@ -126,7 +128,7 @@ void BossBulletManagerComponent::Update() {
                         continue;
                     }
                     auto obj = col->GetGameObject();
-                    if (obj && obj->GetName() == "Player") {
+                    if (obj && targetPlayerID_ != 0 && obj->GetInstanceID() == targetPlayerID_) {
                         if (auto healthComp = obj->GetComponent<PlayerHealthComponent>()) {
                             if (!healthComp->IsInvincible()) {
                                 healthComp->TakeDamage(1);
@@ -157,6 +159,16 @@ void BossBulletManagerComponent::OnRegisterProperties() {
     RegisterPropertyRange("Hit Radius", &hitRadius_, 0.1f, 10.0f);
     RegisterProperty("Hit Effect Key", &hitEffectKey_);
     RegisterProperty("Explosion Model Path", &explosionModelPath_);
+    RegisterGameObjectRef("Target Player", &targetPlayerID_);
+}
+
+void BossBulletManagerComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
+    if (targetPlayerID_ != 0) {
+        auto it = idMap.find(targetPlayerID_);
+        if (it != idMap.end()) {
+            targetPlayerID_ = it->second;
+        }
+    }
 }
 
 void BossBulletManagerComponent::SpawnBullet(const Irufemi::Vector3& position, const Irufemi::Vector3& velocity) {

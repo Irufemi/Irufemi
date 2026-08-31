@@ -13,6 +13,7 @@ void SplineNodeComponent::OnRegisterProperties() {
 }
 
 void SplineNodeComponent::Draw() {
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     if (!drawDebug_ || !gameObject_) {
         return;
     }
@@ -34,6 +35,7 @@ void SplineNodeComponent::Draw() {
     if (debugRenderer) {
         debugRenderer->AddSphere(transform->GetWorldPosition(), radius_, color_);
     }
+#endif
 }
 
 bool SplineNodeComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {

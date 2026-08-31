@@ -4253,7 +4253,8 @@
                 "Explosion Model Path": "resources/model/BossBulletSphere.obj",
                 "Hit Effect Key": "Dust",
                 "Hit Radius": 1.0,
-                "Max Bullets": 2000
+                "Max Bullets": 2000,
+                "Target Player": 372368188768739661
               },
               "type": "BossBulletManagerComponent"
             }
