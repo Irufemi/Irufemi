@@ -32,8 +32,8 @@ struct VirtualInstance {
  */
 class VirtualEntityManagerComponent : public Component {
 public:
-    VirtualEntityManagerComponent() = default;
-    ~VirtualEntityManagerComponent() override = default;
+    VirtualEntityManagerComponent();
+    ~VirtualEntityManagerComponent() override;
 
     /**
      * @brief Initialize を実行する。
@@ -108,7 +108,13 @@ public:
      */
     void ReleaseGameObject(std::shared_ptr<GameObject> obj);
 
+    /**
+     * @brief 現在アクティブな全ての仮想インスタンスの総数を取得する
+     */
+    static int GetTotalActiveVirtualInstances();
+
 private:
+    static std::vector<VirtualEntityManagerComponent*> s_instances_;
     std::vector<VirtualInstance> dense_;
     std::vector<int> sparse_;
     std::queue<int> freeIds_;

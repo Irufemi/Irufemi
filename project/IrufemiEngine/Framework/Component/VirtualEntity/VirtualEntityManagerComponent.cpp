@@ -5,6 +5,27 @@
 #include "Core/Math/MathFunction.h"
 #include <algorithm>
 
+std::vector<VirtualEntityManagerComponent*> VirtualEntityManagerComponent::s_instances_;
+
+VirtualEntityManagerComponent::VirtualEntityManagerComponent() {
+    s_instances_.push_back(this);
+}
+
+VirtualEntityManagerComponent::~VirtualEntityManagerComponent() {
+    auto it = std::find(s_instances_.begin(), s_instances_.end(), this);
+    if (it != s_instances_.end()) {
+        s_instances_.erase(it);
+    }
+}
+
+int VirtualEntityManagerComponent::GetTotalActiveVirtualInstances() {
+    int total = 0;
+    for (auto* instance : s_instances_) {
+        total += instance->activeInstanceCount_;
+    }
+    return total;
+}
+
 /**
  * @brief 初期化処理
  * @details JSONシリアライズ等で既にアタッチされている場合も考慮し、

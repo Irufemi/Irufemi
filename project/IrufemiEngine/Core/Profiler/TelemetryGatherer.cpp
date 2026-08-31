@@ -5,6 +5,7 @@
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Core/Profiler/GpuProfiler.h"
+#include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 
 void TelemetryGatherer::RegisterMetric(const std::string& name, std::function<float()> fetcher) {
     metrics_.push_back({name, std::move(fetcher)});
@@ -44,6 +45,13 @@ void TelemetryGatherer::Initialize(IrufemiEngine* engine) {
             return static_cast<float>(tp->GetQueuedTaskCount());
         }
         return 0.0f;
+    });
+
+    // ==========================================
+    // Entity Metrics
+    // ==========================================
+    RegisterMetric("System/VirtualEntities_Active", []() -> float {
+        return static_cast<float>(VirtualEntityManagerComponent::GetTotalActiveVirtualInstances());
     });
 
     // ==========================================
