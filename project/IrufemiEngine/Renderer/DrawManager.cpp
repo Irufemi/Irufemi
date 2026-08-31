@@ -1290,14 +1290,28 @@ void DrawManager::SetRenderTargetToBackBuffer(bool useDepth) {
         commandList_->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
     }
 
-    // ビューポートとシザーを元に戻す
+    // ビューポートとシザーをスワップチェーンサイズに合わせてLetterbox計算して戻す
+    float clientW = dxCommon_->GetViewport().Width;
+    float clientH = dxCommon_->GetViewport().Height;
+    float targetAspect = static_cast<float>(engine_->GetGameResolutionWidth()) / engine_->GetGameResolutionHeight();
+    float windowAspect = clientW / clientH;
+    
     D3D12_VIEWPORT viewport{};
-    viewport.Width = static_cast<float>(engine_->GetGameResolutionWidth());
-    viewport.Height = static_cast<float>(engine_->GetGameResolutionHeight());
-    viewport.TopLeftX = 0;
-    viewport.TopLeftY = 0;
     viewport.MinDepth = 0.0f;
     viewport.MaxDepth = 1.0f;
+    
+    if (windowAspect > targetAspect) {
+        viewport.Height = clientH;
+        viewport.Width = clientH * targetAspect;
+        viewport.TopLeftX = (clientW - viewport.Width) / 2.0f;
+        viewport.TopLeftY = 0.0f;
+    } else {
+        viewport.Width = clientW;
+        viewport.Height = clientW / targetAspect;
+        viewport.TopLeftX = 0.0f;
+        viewport.TopLeftY = (clientH - viewport.Height) / 2.0f;
+    }
+
     commandList_->RSSetViewports(1, &viewport);
     commandList_->RSSetScissorRects(1, &dxCommon_->GetScissorRect());
 

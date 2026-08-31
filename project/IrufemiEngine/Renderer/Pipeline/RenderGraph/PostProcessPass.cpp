@@ -189,7 +189,7 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // 最終出力先は常に mainRenderTexture
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
-    ppMgr->Draw(cmdList, ppSrcTex, rtvHandle, workspace, PostProcessManager::Layer::PreUI);
+    ppMgr->Draw(cmdList, ppSrcTex, rtvHandle, workspace, PostProcessManager::Layer::PreUI, false);
 
     // 深度バッファを元の DEPTH_WRITE に戻す
     if (needsProjectionInverse) {

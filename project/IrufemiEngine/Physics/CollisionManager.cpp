@@ -59,14 +59,16 @@ void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
         return;
     }
     std::lock_guard<std::mutex> lock(pendingMutex_);
-    if (std::find(pendingRemoves_.begin(), pendingRemoves_.end(), collider) == pendingRemoves_.end()) {
-        pendingRemoves_.push_back(collider);
+    auto it = std::find_if(pendingRemoves_.begin(), pendingRemoves_.end(),
+                           [collider](const PendingRemove& pr) { return pr.collider == collider; });
+    if (it == pendingRemoves_.end()) {
+        pendingRemoves_.push_back({collider, collider->bvhNodeId_});
     }
 }
 
 void CollisionManager::FlushPendingCommands() {
     std::vector<ColliderComponent*> adds;
-    std::vector<ColliderComponent*> removes;
+    std::vector<PendingRemove> removes;
 
     {
         std::lock_guard<std::mutex> pendingLock(pendingMutex_);
@@ -81,13 +83,14 @@ void CollisionManager::FlushPendingCommands() {
     std::unique_lock<std::shared_mutex> lock(collidersMutex_);
 
     // 削除の適用
-    for (ColliderComponent* collider : removes) {
+    for (const PendingRemove& removeInfo : removes) {
+        ColliderComponent* collider = removeInfo.collider;
         auto it = std::find(colliders_.begin(), colliders_.end(), collider);
         if (it != colliders_.end()) {
             colliders_.erase(it);
-            if (collider->bvhNodeId_ != -1) {
-                dynamicBVH_.Remove(collider->bvhNodeId_);
-                collider->bvhNodeId_ = -1;
+            if (removeInfo.bvhNodeId != -1) {
+                dynamicBVH_.Remove(removeInfo.bvhNodeId);
+                // Note: We cannot set collider->bvhNodeId_ = -1 here because collider might be destroyed
             }
         }
 
@@ -110,7 +113,9 @@ void CollisionManager::FlushPendingCommands() {
     // 追加の適用
     for (ColliderComponent* collider : adds) {
         // まだ削除されていないか（削除キューに入っていなかったか）と重複を確認
-        if (std::find(removes.begin(), removes.end(), collider) == removes.end()) {
+        auto removeIt = std::find_if(removes.begin(), removes.end(),
+                                     [collider](const PendingRemove& pr) { return pr.collider == collider; });
+        if (removeIt == removes.end()) {
             auto it = std::find(colliders_.begin(), colliders_.end(), collider);
             if (it == colliders_.end()) {
                 colliders_.push_back(collider);

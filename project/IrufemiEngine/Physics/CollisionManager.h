@@ -135,7 +135,12 @@ private:
     // --- 遅延登録用キュー ---
     std::mutex pendingMutex_;
     std::vector<ColliderComponent*> pendingAdds_;
-    std::vector<ColliderComponent*> pendingRemoves_;
+
+    struct PendingRemove {
+        ColliderComponent* collider;
+        int bvhNodeId;
+    };
+    std::vector<PendingRemove> pendingRemoves_;
 
     std::unique_ptr<Line3DBatch> debugLine_ = nullptr;
     DebugPrimitiveRenderer* debugPrimitiveRenderer_ = nullptr;

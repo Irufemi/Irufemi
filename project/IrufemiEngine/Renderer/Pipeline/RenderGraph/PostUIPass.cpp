@@ -83,13 +83,15 @@ void PostUIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // 最終出力先の決定
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+    bool isBackBufferTarget = false;
 #ifdef EditorMode
     // EditorMode の場合、最終出力先は mainRenderTexture になる
     rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
 #else
     // 最終出力先はバックバッファ
     rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
+    isBackBufferTarget = true;
 #endif
 
-    ppMgr->Draw(cmdList, ppSrcTex, rtvHandle, workspace, PostProcessManager::Layer::PostUI);
+    ppMgr->Draw(cmdList, ppSrcTex, rtvHandle, workspace, PostProcessManager::Layer::PostUI, isBackBufferTarget);
 }

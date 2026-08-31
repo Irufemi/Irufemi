@@ -246,6 +246,13 @@ public:
             mouse_->SetVirtualPosition(pos, enable);
         }
     }
+
+    /** @brief ゲーム解像度を設定する（マウスのレターボックス計算用） */
+    void SetGameResolution(float width, float height) {
+        if (mouse_) {
+            mouse_->SetGameResolution(width, height);
+        }
+    }
     ///@}
 
 private:

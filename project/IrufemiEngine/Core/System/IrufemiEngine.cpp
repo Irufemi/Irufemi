@@ -265,6 +265,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // 入力
     inputManager_ = std::make_unique<InputManager>();
     inputManager_->Initialize(winApp_->GetHwnd());
+    inputManager_->SetGameResolution(static_cast<float>(gameResWidth_), static_cast<float>(gameResHeight_));
     winApp_->SetInputManager(inputManager_.get());
 
     // UI
@@ -987,6 +988,11 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
     }
     if (velocityTexture_) {
         postProcessManager_->SetVelocitySrvIndex(velocityTexture_->GetSrvIndex());
+    }
+
+    // 3. 入力管理クラスへの解像度通知
+    if (inputManager_) {
+        inputManager_->SetGameResolution(static_cast<float>(gameResWidth_), static_cast<float>(gameResHeight_));
     }
 
     // 4. カメラの解像度更新 (3D空間の歪み防止)

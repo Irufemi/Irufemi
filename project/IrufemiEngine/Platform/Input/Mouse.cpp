@@ -66,7 +66,38 @@ void Mouse::Update() {
         // 通常時の挙動: スクリーン座標をクライアント座標に変換して position_ を更新
         ScreenToClient(hwnd_, &p);
         prevPosition_ = position_;
-        position_ = {static_cast<float>(p.x), static_cast<float>(p.y)};
+        
+        RECT rc;
+        GetClientRect(hwnd_, &rc);
+        float clientW = static_cast<float>(rc.right - rc.left);
+        float clientH = static_cast<float>(rc.bottom - rc.top);
+        
+        if (clientW > 0.0f && clientH > 0.0f && gameResWidth_ > 0.0f && gameResHeight_ > 0.0f) {
+            float aspectGame = gameResWidth_ / gameResHeight_;
+            float aspectClient = clientW / clientH;
+            
+            float viewX = 0.0f, viewY = 0.0f, viewW = clientW, viewH = clientH;
+            if (aspectClient > aspectGame) {
+                viewH = clientH;
+                viewW = clientH * aspectGame;
+                viewX = (clientW - viewW) * 0.5f;
+            } else {
+                viewW = clientW;
+                viewH = clientW / aspectGame;
+                viewY = (clientH - viewH) * 0.5f;
+            }
+            
+            float mouseX = static_cast<float>(p.x);
+            float mouseY = static_cast<float>(p.y);
+            
+            mouseX = (mouseX - viewX) / viewW * gameResWidth_;
+            mouseY = (mouseY - viewY) / viewH * gameResHeight_;
+            
+            position_ = {mouseX, mouseY};
+        } else {
+            position_ = {static_cast<float>(p.x), static_cast<float>(p.y)};
+        }
+        
         delta_ = {position_.x - prevPosition_.x, position_.y - prevPosition_.y};
 
         // 通常時もRaw Inputの移動量は蓄積され続けるためクリアしておく

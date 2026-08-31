@@ -595,7 +595,8 @@ public:
      * @param workspace Transient Resource が割り当てられた作業用領域
      */
     void Draw(ID3D12GraphicsCommandList* commandList, class RenderTexture* srcTexture,
-              D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace, Layer layer = Layer::PreUI);
+              D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, const PostProcessWorkspace& workspace, Layer layer = Layer::PreUI,
+              bool isBackBufferTarget = false);
 
     /**
      * @brief 個別エフェクトの詳細パラメータを登録し、インスタンスID（1〜255）を発行する

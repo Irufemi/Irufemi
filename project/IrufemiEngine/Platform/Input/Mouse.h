@@ -26,6 +26,13 @@ public:
     ///@{
     void Initialize(HWND hwnd);
     /**
+     * @brief ゲーム解像度を設定する（レターボックス計算用）
+     */
+    void SetGameResolution(float width, float height) {
+        gameResWidth_ = width;
+        gameResHeight_ = height;
+    }
+    /**
      * @brief Update を実行する。
      */
     void Update();
@@ -107,4 +114,8 @@ private:
 
     bool useVirtualPosition_ = false;    // エディタ等からの仮想座標を使用するか
     Irufemi::Vector2 virtualPosition_{}; // 仮想座標
+
+    // ゲーム解像度
+    float gameResWidth_ = 1280.0f;
+    float gameResHeight_ = 720.0f;
 };
