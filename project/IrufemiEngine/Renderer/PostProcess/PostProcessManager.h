@@ -201,7 +201,7 @@ public:
      * @brief アウトラインエフェクト用パラメータ
      */
     struct OutlineParams {
-        float intensity = 6.0f; ///< アウトラインの強度
+        float intensity = 6.0f;    ///< アウトラインの強度
         int32_t maskMaxRadius = 5; ///< マスクベースアウトラインの最大探索半径
         float pad[2];
         Irufemi::Matrix4x4 projectionInverse; ///< 逆投影行列 (自動でセットされる)

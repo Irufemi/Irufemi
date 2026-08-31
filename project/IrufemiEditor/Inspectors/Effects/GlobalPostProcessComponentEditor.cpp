@@ -109,7 +109,7 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
                 } else if (setting->GetMode() == PostProcessMode::DepthBasedOutline) {
                     auto* out = static_cast<OutlineSettings*>(setting.get());
                     DrawFloatProperty("Intensity", out->intensity, 6.0f, 0.0f, 20.0f, actionManager);
-                    
+
                     float r = static_cast<float>(out->maskMaxRadius);
                     DrawFloatProperty("Mask Max Radius", r, 5.0f, 1.0f, 15.0f, actionManager);
                     out->maskMaxRadius = static_cast<int32_t>(r);
