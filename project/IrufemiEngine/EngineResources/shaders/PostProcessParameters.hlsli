@@ -141,7 +141,8 @@ struct PostProcessParams {
     // Outline
     float32_t4x4 projectionInverse;
     float32_t outlineIntensity;
-    float32_t3 pad_outline;
+    int32_t maskOutlineMaxRadius;
+    float32_t2 pad_outline;
     
     // RadialBlur
     float32_t2 radialBlurCenter;

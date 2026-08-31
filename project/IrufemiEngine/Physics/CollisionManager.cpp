@@ -37,18 +37,20 @@ void CollisionManager::Clear() {
     colliders_.clear();
     previousCollisions_.clear();
     dynamicBVH_.Clear();
+
+    std::lock_guard<std::mutex> pendingLock(pendingMutex_);
+    pendingAdds_.clear();
+    pendingRemoves_.clear();
 }
 
 void CollisionManager::RegisterCollider(ColliderComponent* collider) {
     if (!collider) {
         return;
     }
-    std::unique_lock<std::shared_mutex> lock(collidersMutex_);
-    // 重複登録防止
-    auto it = std::find(colliders_.begin(), colliders_.end(), collider);
-    if (it == colliders_.end()) {
-        colliders_.push_back(collider);
-        collider->bvhNodeId_ = dynamicBVH_.Insert(collider, collider->GetBoundingBox());
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    // 重複を避ける
+    if (std::find(pendingAdds_.begin(), pendingAdds_.end(), collider) == pendingAdds_.end()) {
+        pendingAdds_.push_back(collider);
     }
 }
 
@@ -56,66 +58,101 @@ void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
     if (!collider) {
         return;
     }
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    if (std::find(pendingRemoves_.begin(), pendingRemoves_.end(), collider) == pendingRemoves_.end()) {
+        pendingRemoves_.push_back(collider);
+    }
+}
+
+void CollisionManager::FlushPendingCommands() {
+    std::vector<ColliderComponent*> adds;
+    std::vector<ColliderComponent*> removes;
+
+    {
+        std::lock_guard<std::mutex> pendingLock(pendingMutex_);
+        adds = std::move(pendingAdds_);
+        removes = std::move(pendingRemoves_);
+    }
+
+    if (adds.empty() && removes.empty()) {
+        return;
+    }
 
     std::unique_lock<std::shared_mutex> lock(collidersMutex_);
 
-    auto it = std::find(colliders_.begin(), colliders_.end(), collider);
-    if (it != colliders_.end()) {
-        colliders_.erase(it);
-        dynamicBVH_.Remove(collider->bvhNodeId_);
-        collider->bvhNodeId_ = -1;
+    // 削除の適用
+    for (ColliderComponent* collider : removes) {
+        auto it = std::find(colliders_.begin(), colliders_.end(), collider);
+        if (it != colliders_.end()) {
+            colliders_.erase(it);
+            if (collider->bvhNodeId_ != -1) {
+                dynamicBVH_.Remove(collider->bvhNodeId_);
+                collider->bvhNodeId_ = -1;
+            }
+        }
+
+        for (auto iter = previousCollisions_.begin(); iter != previousCollisions_.end();) {
+            if (iter->first == collider || iter->second == collider) {
+                ColliderComponent* other = (iter->first == collider) ? iter->second : iter->first;
+                if (other && other->onCollisionExit_) {
+                    other->onCollisionExit_(nullptr);
+                }
+                if (other && other->GetGameObject()) {
+                    other->GetGameObject()->SendCollisionExit(nullptr);
+                }
+                iter = previousCollisions_.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
     }
 
-    // 削除されるコライダーが含まれているペアをpreviousCollisions_から削除し、Exitを呼ぶ
-    for (auto iter = previousCollisions_.begin(); iter != previousCollisions_.end();) {
-        if (iter->first == collider || iter->second == collider) {
-            ColliderComponent* other = (iter->first == collider) ? iter->second : iter->first;
-
-            // 削除される側からExitを呼ぶ（任意）
-            // 既にデストラクタが走っているオブジェクトのメソッドを呼ぶとVTable参照エラー（純粋仮想関数呼び出し等）になるため、
-            // 削除対象(collider)が属するGameObjectへのExit通知は行わない。
-            // また、other側へExit通知を送る際も、colliderが破棄中であることに注意が必要。
-            // 可能であれば、other->GetGameObject()->SendCollisionExit(nullptr) のようにするか、通知自体をスキップする。
-
-            if (other && other->onCollisionExit_) {
-                other->onCollisionExit_(nullptr); // 破棄されるオブジェクトへのアクセスを防ぐためnullptrを渡す
+    // 追加の適用
+    for (ColliderComponent* collider : adds) {
+        // まだ削除されていないか（削除キューに入っていなかったか）と重複を確認
+        if (std::find(removes.begin(), removes.end(), collider) == removes.end()) {
+            auto it = std::find(colliders_.begin(), colliders_.end(), collider);
+            if (it == colliders_.end()) {
+                colliders_.push_back(collider);
+                collider->bvhNodeId_ = dynamicBVH_.Insert(collider, collider->GetBoundingBox());
             }
-            if (other && other->GetGameObject()) {
-                other->GetGameObject()->SendCollisionExit(nullptr);
-            }
-
-            iter = previousCollisions_.erase(iter);
-        } else {
-            ++iter;
         }
     }
 }
 
 void CollisionManager::CheckAllCollisions() {
+    FlushPendingCommands();
+
     std::set<std::pair<ColliderComponent*, ColliderComponent*>> currentCollisions;
 
     // --- BVH Update Phase ---
-    for (ColliderComponent* collider : colliders_) {
-        if (!collider) {
-            continue;
+    {
+        // BVHの更新はツリー構造の変更を伴うため、排他ロック（Unique Lock）を取得する
+        std::unique_lock<std::shared_mutex> lock(collidersMutex_);
+        for (ColliderComponent* collider : colliders_) {
+            if (!collider) {
+                continue;
+            }
+            auto go = collider->GetGameObject();
+            if (!go) {
+                continue;
+            }
+            if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
+                Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
+                                              std::format("{:X}", reinterpret_cast<uintptr_t>(go)) +
+                                              ") in CollisionManager!\n");
+                continue;
+            }
+            if (!go->GetIsActive()) {
+                continue;
+            }
+            dynamicBVH_.Update(collider->bvhNodeId_, collider->GetBoundingBox());
         }
-        auto go = collider->GetGameObject();
-        if (!go) {
-            continue;
-        }
-        if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
-            Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
-                                          std::format("{:X}", reinterpret_cast<uintptr_t>(go)) +
-                                          ") in CollisionManager!\n");
-            continue;
-        }
-        if (!go->GetIsActive()) {
-            continue;
-        }
-        dynamicBVH_.Update(collider->bvhNodeId_, collider->GetBoundingBox());
     }
 
     // --- Broad Phase ---
+    // BVHの更新が終わったため、判定自体はリードロック（Shared Lock）で行う
+    std::shared_lock<std::shared_mutex> sharedLock(collidersMutex_);
     std::vector<ColliderComponent*> potentialHits;
 
     for (size_t i = 0; i < colliders_.size(); ++i) {

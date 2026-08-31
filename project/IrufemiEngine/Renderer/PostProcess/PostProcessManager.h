@@ -202,7 +202,8 @@ public:
      */
     struct OutlineParams {
         float intensity = 6.0f; ///< アウトラインの強度
-        float pad[3];
+        int32_t maskMaxRadius = 5; ///< マスクベースアウトラインの最大探索半径
+        float pad[2];
         Irufemi::Matrix4x4 projectionInverse; ///< 逆投影行列 (自動でセットされる)
     };
 
@@ -472,7 +473,8 @@ public:
         // Outline
         Irufemi::Matrix4x4 projectionInverse;
         float outlineIntensity;
-        float pad_outline[3]; // HLSLの float2(radialBlurCenter) 用に16バイト境界までパディング
+        int32_t maskOutlineMaxRadius;
+        float pad_outline[2]; // HLSLの float2(radialBlurCenter) 用に16バイト境界までパディング
 
         // RadialBlur
         Irufemi::Vector2 radialBlurCenter;

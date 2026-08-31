@@ -1588,6 +1588,31 @@
                 }
               },
               "type": "ScreenEffectComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 372368188768739661,
@@ -1746,6 +1771,31 @@
             "Active Instances (Batch)": 0
           },
           "type": "VirtualEntityManagerComponent"
+        },
+        {
+          "data": {
+            "customEffectType": 6,
+            "customParams": {
+              "color1": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "color2": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "param1": 1.0,
+              "param2": 0.0,
+              "param3": 0.0,
+              "param4": 0.0
+            },
+            "enableEffectMask": true
+          },
+          "type": "EffectMaskComponent"
         }
       ],
       "instanceId": 2738409501711223709,
@@ -3216,6 +3266,31 @@
                 "modelName": "resources/model/sample/suzanne.obj"
               },
               "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 5433160966212677511,
@@ -3377,6 +3452,12 @@
             "Global Intensity Multiplier": 1.0
           },
           "type": "CameraShakeComponent"
+        },
+        {
+          "data": {
+            "overrides": []
+          },
+          "type": "GlobalPostProcessComponent"
         }
       ],
       "instanceId": 1432498776640000749,
@@ -3543,6 +3624,31 @@
                 "Orbit Speed": 1.0
               },
               "type": "DroneManagerComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 12851281749722887849,
@@ -3594,6 +3700,31 @@
                 "Target Player": 372368188768739661
               },
               "type": "BossBulletManagerComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 8075332939169388328,

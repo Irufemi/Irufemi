@@ -95,6 +95,27 @@ public:
 };
 
 // ---------------------------------------------------------
+// Outline Settings
+// ---------------------------------------------------------
+class OutlineSettings : public IPostProcessSettings {
+public:
+    PostProcessMode GetMode() const override {
+        return PostProcessMode::DepthBasedOutline;
+    }
+    const char* GetName() const override {
+        return "Outline";
+    }
+
+    void ApplyToManager(PostProcessManager* manager) override;
+    void Serialize(nlohmann::json& j) const override;
+    void Deserialize(const nlohmann::json& j) override;
+    std::shared_ptr<IPostProcessSettings> Clone() const override;
+
+    float intensity = 6.0f;
+    int32_t maskMaxRadius = 5;
+};
+
+// ---------------------------------------------------------
 // Factory
 // ---------------------------------------------------------
 class PostProcessSettingsFactory {

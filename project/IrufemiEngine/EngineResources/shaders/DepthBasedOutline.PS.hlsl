@@ -59,15 +59,21 @@ PixelShaderOutput main(VertexShaderOutput input) {
     }
 
     // 変化の長さをウェイトとして合成
-    float32_t depthWeight = length(depthDiff);
-    float32_t normalWeight = length(normalDiffX) + length(normalDiffY);
+    // 深度と法線のエッジをそれぞれ適度な係数で合成（バンド・デシネ風に法線を強めに拾う）
+    float32_t depthWeight = length(depthDiff) * 2.0f;
+    float32_t normalWeight = (length(normalDiffX) + length(normalDiffY)) * 1.5f;
+    float32_t edgeVal = depthWeight + normalWeight;
     
-    // 深度と法線のエッジをそれぞれ適度な係数で合成（法線の変化は1.0程度の差が出やすいため微調整）
-    float32_t weight = saturate((depthWeight + normalWeight * 0.5f) * gOutline.intensity);
+    // アメコミ・トゥーン調のパキッとしたインク線を引くため、二値化(smoothstep)する
+    // gOutline.intensity をしきい値の逆数として活用する
+    float edgeThreshold = 0.5f / max(0.001f, gOutline.intensity);
+    
+    // 0.0(線なし) ~ 1.0(インク線)
+    float inkLine = smoothstep(edgeThreshold - 0.05f, edgeThreshold + 0.05f, edgeVal);
 
     PixelShaderOutput output;
-    // エッジ部分を黒く表示するように合成
-    output.color.rgb = (1.0f - weight) * gTexture.Sample(gSampler, input.texcoord).rgb;
+    // エッジ部分を黒（インク色）で乗算合成
+    output.color.rgb = lerp(gTexture.Sample(gSampler, input.texcoord).rgb, float32_t3(0, 0, 0), inkLine);
     output.color.a = 1.0f;
     
     return output;

@@ -149,6 +149,48 @@ std::shared_ptr<IPostProcessSettings> VignetteSettings::Clone() const {
 }
 
 // ---------------------------------------------------------
+// Outline Settings
+// ---------------------------------------------------------
+void OutlineSettings::ApplyToManager(PostProcessManager* manager) {
+    if (!manager) {
+        return;
+    }
+    if (enabled) {
+        if (!manager->HasActiveMode(PostProcessMode::DepthBasedOutline)) {
+            manager->AddActiveMode(PostProcessMode::DepthBasedOutline);
+        }
+        auto& p = manager->GetOutlineParams();
+        p.intensity = intensity;
+        p.maskMaxRadius = maskMaxRadius;
+    } else {
+        manager->RemoveActiveMode(PostProcessMode::DepthBasedOutline);
+    }
+}
+
+void OutlineSettings::Serialize(nlohmann::json& j) const {
+    j["type"] = "Outline";
+    j["enabled"] = enabled;
+    j["intensity"] = intensity;
+    j["maskMaxRadius"] = maskMaxRadius;
+}
+
+void OutlineSettings::Deserialize(const nlohmann::json& j) {
+    if (j.contains("enabled")) {
+        enabled = j["enabled"];
+    }
+    if (j.contains("intensity")) {
+        intensity = j["intensity"];
+    }
+    if (j.contains("maskMaxRadius")) {
+        maskMaxRadius = j["maskMaxRadius"];
+    }
+}
+
+std::shared_ptr<IPostProcessSettings> OutlineSettings::Clone() const {
+    return std::make_shared<OutlineSettings>(*this);
+}
+
+// ---------------------------------------------------------
 // Factory
 // ---------------------------------------------------------
 std::shared_ptr<IPostProcessSettings> PostProcessSettingsFactory::Create(PostProcessMode mode) {
@@ -159,6 +201,8 @@ std::shared_ptr<IPostProcessSettings> PostProcessSettingsFactory::Create(PostPro
         return std::make_shared<ColorGradingSettings>(); // ColorGrading covers ToneMapping and HSV
     case PostProcessMode::Vignette:
         return std::make_shared<VignetteSettings>();
+    case PostProcessMode::DepthBasedOutline:
+        return std::make_shared<OutlineSettings>();
     // Add more effects here in the future
     default:
         return nullptr;

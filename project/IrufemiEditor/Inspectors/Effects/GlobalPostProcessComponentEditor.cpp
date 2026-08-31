@@ -70,6 +70,8 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
             icon = ICON_FA_PALETTE " ";
         } else if (setting->GetMode() == PostProcessMode::Vignette) {
             icon = ICON_FA_CAMERA " ";
+        } else if (setting->GetMode() == PostProcessMode::DepthBasedOutline) {
+            icon = ICON_FA_PENCIL " ";
         }
 
         headerName = icon + headerName + "##" + std::to_string(i);
@@ -104,6 +106,13 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
                     auto* vig = static_cast<VignetteSettings*>(setting.get());
                     DrawFloatProperty("Radius", vig->radius, 0.8f, 0.0f, 1.5f, actionManager);
                     DrawFloatProperty("Softness", vig->softness, 0.5f, 0.0f, 1.0f, actionManager);
+                } else if (setting->GetMode() == PostProcessMode::DepthBasedOutline) {
+                    auto* out = static_cast<OutlineSettings*>(setting.get());
+                    DrawFloatProperty("Intensity", out->intensity, 6.0f, 0.0f, 20.0f, actionManager);
+                    
+                    float r = static_cast<float>(out->maskMaxRadius);
+                    DrawFloatProperty("Mask Max Radius", r, 5.0f, 1.0f, 15.0f, actionManager);
+                    out->maskMaxRadius = static_cast<int32_t>(r);
                 }
                 // 追加のエフェクトはここに記述
 
@@ -122,7 +131,7 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
     ImGui::Spacing();
 
     // エフェクト追加用のドロップダウン
-    const char* effects[] = {"Bloom", "Color Grading", "Vignette"};
+    const char* effects[] = {"Bloom", "Color Grading", "Vignette", "Outline"};
     static int selectedEffect = 0;
 
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 100.0f);
@@ -136,6 +145,8 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
             mode = PostProcessMode::ToneMapping;
         } else if (selectedEffect == 2) {
             mode = PostProcessMode::Vignette;
+        } else if (selectedEffect == 3) {
+            mode = PostProcessMode::DepthBasedOutline;
         }
 
         if (mode != PostProcessMode::None) {

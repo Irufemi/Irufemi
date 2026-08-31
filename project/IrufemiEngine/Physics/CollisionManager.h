@@ -49,6 +49,9 @@ public:
     /// @brief コライダーの登録を解除する
     void UnregisterCollider(ColliderComponent* collider);
 
+    /// @brief 溜まった追加・削除キューを処理する
+    void FlushPendingCommands();
+
     /// @brief 毎フレーム呼ばれ、登録された全ペアの判定を行う
     void CheckAllCollisions();
 
@@ -128,6 +131,12 @@ private:
     /** @brief マルチスレッドからの物理クエリを安全に行うためのRead-Writeロック */
     mutable std::shared_mutex collidersMutex_;
     std::vector<ColliderComponent*> colliders_;
+
+    // --- 遅延登録用キュー ---
+    std::mutex pendingMutex_;
+    std::vector<ColliderComponent*> pendingAdds_;
+    std::vector<ColliderComponent*> pendingRemoves_;
+
     std::unique_ptr<Line3DBatch> debugLine_ = nullptr;
     DebugPrimitiveRenderer* debugPrimitiveRenderer_ = nullptr;
 
