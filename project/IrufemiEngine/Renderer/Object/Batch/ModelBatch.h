@@ -20,13 +20,15 @@ public:
      * @brief ModelManager を設定する。
      * @param[in] mm 設定する ModelManager の値
      */
-    static void SetModelManager(ModelManager* mm) { modelManager_ = mm; }
+    static void SetModelManager(ModelManager* mm) {
+        modelManager_ = mm;
+    }
 
     /**
      * @brief Initialize を実行する。
      */
     void Initialize(const std::string& objFilename);
-    
+
     /**
      * @brief Draw を実行する。
      */

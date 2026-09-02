@@ -4,10 +4,7 @@
 
 class GameLoopManagerComponent : public Component {
 public:
-    enum class State {
-        Playing,
-        Finished
-    };
+    enum class State { Playing, Finished };
 
     GameLoopManagerComponent() = default;
     ~GameLoopManagerComponent() override = default;
@@ -15,7 +12,9 @@ public:
     void Initialize() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "GameLoopManagerComponent"; }
+    std::string GetComponentName() const override {
+        return "GameLoopManagerComponent";
+    }
 
 private:
     void OnBossDied();
@@ -29,6 +28,6 @@ private:
     std::string targetPlayerName_ = "Player";
     std::string targetBossName_ = "Boss";
 
-    class GravityPlayerComponent* player_ = nullptr;
+    class PlayerHealthComponent* playerHealth_ = nullptr;
     class BossComponent* boss_ = nullptr;
 };

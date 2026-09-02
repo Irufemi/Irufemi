@@ -17,16 +17,7 @@ class ShaderManager;
  */
 class MagicBrushClient {
 public:
-    enum class State {
-        Idle,
-        Generating,
-        Compiling,
-        Fixing,
-        Success,
-        WaitingForScreenshot,
-        VisualEvaluating,
-        Error
-    };
+    enum class State { Idle, Generating, Compiling, Fixing, Success, WaitingForScreenshot, VisualEvaluating, Error };
 
     // 履歴管理用構造体
     struct GenerationHistory {
@@ -40,13 +31,17 @@ public:
     /**
      * @brief シェーダー生成リクエストを非同期で開始する
      */
-    void StartGeneration(const std::string& prompt, const std::string& referenceImagePath, const std::string& shaderName, const std::string& outputDirectory, ShaderManager* shaderManager);
-    
+    void StartGeneration(const std::string& prompt, const std::string& referenceImagePath,
+                         const std::string& shaderName, const std::string& outputDirectory,
+                         ShaderManager* shaderManager);
+
     /**
      * @brief スクリーンショット撮影完了後、AIによる視覚的自己修復（フィードバックループ）を開始する
      */
-    void StartVisualFix(const std::string& referenceImagePath, const std::string& screenshotPath, const std::string& currentHlslCode, const std::string& shaderName, ShaderManager* shaderManager);
-    
+    void StartVisualFix(const std::string& referenceImagePath, const std::string& screenshotPath,
+                        const std::string& currentHlslCode, const std::string& shaderName,
+                        ShaderManager* shaderManager);
+
     // サーバープロセス管理
     bool StartPythonServer();
     void StopPythonServer();
@@ -56,7 +51,9 @@ public:
     /**
      * @brief 現在のステータスを取得する
      */
-    State GetState() const { return state_.load(); }
+    State GetState() const {
+        return state_.load();
+    }
 
     /**
      * @brief エラー時のメッセージを取得する
@@ -76,7 +73,9 @@ public:
     /**
      * @brief 生成履歴を取得する
      */
-    const std::vector<GenerationHistory>& GetHistory() const { return history_; }
+    const std::vector<GenerationHistory>& GetHistory() const {
+        return history_;
+    }
 
     /**
      * @brief 指定したインデックスの履歴からHLSLを復元・再コンパイルする
@@ -84,13 +83,15 @@ public:
     bool RestoreHistory(size_t index, ShaderManager* shaderManager);
 
 private:
-    void ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName, std::string outputDirectory, ShaderManager* shaderManager);
-    void VisualFixThread(std::string referenceImagePath, std::string screenshotPath, std::string currentHlslCode, std::string shaderName, ShaderManager* shaderManager);
+    void ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName,
+                       std::string outputDirectory, ShaderManager* shaderManager);
+    void VisualFixThread(std::string referenceImagePath, std::string screenshotPath, std::string currentHlslCode,
+                         std::string shaderName, ShaderManager* shaderManager);
     void LogReadThread();
-    
+
     // HTTPリクエスト（curl.exe をプロセスとして呼び出す簡易実装）
     std::string SendPostRequest(const std::string& endpoint, const std::string& jsonPayload);
-    
+
     // 黒窓を出さずにコマンドを実行して標準出力を取得する
     std::string ExecuteCommandHidden(const std::string& command);
     // JSON用エスケープ
@@ -99,11 +100,11 @@ private:
 private:
     std::thread workerThread_;
     std::atomic<State> state_;
-    
+
     mutable std::mutex mutex_;
     std::string errorMessage_;
     Microsoft::WRL::ComPtr<IDxcBlob> resultBlob_;
-    
+
     // 生成履歴
     std::vector<GenerationHistory> history_;
 
@@ -116,10 +117,10 @@ private:
     void* hChildStd_OUT_Rd_ = nullptr; // HANDLE
     void* hChildStd_OUT_Wr_ = nullptr; // HANDLE
     std::thread logThread_;
-    std::atomic<bool> isLogThreadRunning_{ false };
+    std::atomic<bool> isLogThreadRunning_{false};
     mutable std::mutex logMutex_;
     std::vector<std::string> serverLogs_;
-    
+
     // 試行回数の上限
     const int32_t kMaxFixAttempts = 3;
 };

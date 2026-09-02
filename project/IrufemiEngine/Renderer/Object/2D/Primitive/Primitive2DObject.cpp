@@ -59,8 +59,9 @@ void Primitive2DObject::SyncBeforeDraw() {
 }
 
 void Primitive2DObject::Draw() {
-    if (!resource_ || !drawManager_)
+    if (!resource_ || !drawManager_) {
         return;
+    }
 
     SyncBeforeDraw();
 
@@ -75,8 +76,9 @@ void Primitive2DObject::Draw() {
 
 void Primitive2DObject::Debug(const char* label) {
 #ifdef USE_IMGUI
-    if (!ui_)
+    if (!ui_) {
         return;
+    }
 
     ImGui::Begin(label);
 
@@ -88,14 +90,17 @@ void Primitive2DObject::Debug(const char* label) {
 
     // --- Irufemi::Transform & Size ---
     if (ImGui::CollapsingHeader("Transform & Layout", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImGui::DragFloat2("Size", &size_.x, 1.0f))
+        if (ImGui::DragFloat2("Size", &size_.x, 1.0f)) {
             SetSize(size_);
-        if (ImGui::DragFloat2("Pivot", &pivot_.x, 0.01f, 0.0f, 1.0f))
+        }
+        if (ImGui::DragFloat2("Pivot", &pivot_.x, 0.01f, 0.0f, 1.0f)) {
             SetPivot(pivot_);
+        }
 
         Irufemi::Vector3 pos = GetPosition();
-        if (ImGui::DragFloat3("Position", &pos.x, 1.0f))
+        if (ImGui::DragFloat3("Position", &pos.x, 1.0f)) {
             SetPosition(pos);
+        }
 
         Irufemi::Vector3 rot = GetRotation();
         if (ImGui::DragFloat3("Rotation", &rot.x, 0.01f)) {
@@ -103,14 +108,16 @@ void Primitive2DObject::Debug(const char* label) {
         }
 
         Irufemi::Vector3 scale = GetScale();
-        if (ImGui::DragFloat3("Scale", &scale.x, 0.01f))
+        if (ImGui::DragFloat3("Scale", &scale.x, 0.01f)) {
             SetScale(scale);
+        }
     }
 
     // --- Shape Params ---
     if (type_ == Irufemi::Primitive2DType::Ring || type_ == Irufemi::Primitive2DType::Line) {
-        if (ImGui::DragFloat("Thickness", &thickness_, 1.0f, 1.0f, 1000.0f))
+        if (ImGui::DragFloat("Thickness", &thickness_, 1.0f, 1.0f, 1000.0f)) {
             SetThickness(thickness_);
+        }
     }
     if (type_ == Irufemi::Primitive2DType::Circle || type_ == Irufemi::Primitive2DType::Ring) {
         int sub = static_cast<int>(subdivision_);
@@ -148,8 +155,6 @@ void Primitive2DObject::SetShape(Irufemi::Primitive2DType type) {
     }
 }
 
-
-
 void Primitive2DObject::SetSubdivision(uint32_t subdiv) {
     if (subdivision_ != subdiv) {
         subdivision_ = subdiv;
@@ -168,23 +173,27 @@ void Primitive2DObject::SetPivot(const Irufemi::Vector2& pivot) {
 }
 
 void Primitive2DObject::SetPosition(const Irufemi::Vector3& position) {
-    if (resource_)
+    if (resource_) {
         resource_->transform_.translate = position;
+    }
 }
 
 void Primitive2DObject::SetRotationZ(float rad) {
-    if (resource_)
+    if (resource_) {
         resource_->transform_.rotate.z = rad;
+    }
 }
 
 void Primitive2DObject::SetScale(const Irufemi::Vector3& scale) {
-    if (resource_)
+    if (resource_) {
         resource_->transform_.scale = scale;
+    }
 }
 
 void Primitive2DObject::SetColor(const Irufemi::Vector4& color) {
-    if (resource_)
+    if (resource_) {
         resource_->GetMaterialData()->color = color;
+    }
 }
 
 void Primitive2DObject::SetTexture(const std::string& textureName) {
@@ -213,8 +222,9 @@ void Primitive2DObject::SetThickness(float thickness) {
 // --- Mesh Builders ---
 
 void Primitive2DObject::RebuildMesh() {
-    if (!resource_)
+    if (!resource_) {
         return;
+    }
 
     resource_->vertexDataList_.clear();
     resource_->indexDataList_.clear();
@@ -279,8 +289,9 @@ void Primitive2DObject::BuildTriangle() {
 }
 
 void Primitive2DObject::BuildCircle(uint32_t subdiv) {
-    if (subdiv < 3)
+    if (subdiv < 3) {
         subdiv = 3;
+    }
 
     // サイズはXとYで楕円をサポート
     float radiusX = size_.x * 0.5f;
@@ -317,8 +328,9 @@ void Primitive2DObject::BuildCircle(uint32_t subdiv) {
 }
 
 void Primitive2DObject::BuildRing(uint32_t subdiv) {
-    if (subdiv < 3)
+    if (subdiv < 3) {
         subdiv = 3;
+    }
 
     float outerRadiusX = size_.x * 0.5f;
     float outerRadiusY = size_.y * 0.5f;

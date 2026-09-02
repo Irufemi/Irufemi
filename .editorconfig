@@ -1,0 +1,35 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# 1. 全ファイル共通のグローバルルール
+# 一線級のエンジン(Unreal Engine, Godot等)や大規模OSSでのデファクトスタンダードとして、
+# 「全ファイルBOMなしUTF-8」「末尾の不要な空白削除」「ファイル末尾に空行を挿入」を強制します。
+# これにより、Git上での無駄な差分(Noisy diff)や文字化けをリポジトリ全体で完全に防ぎます。
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# 2. C++ / シェーダーソースコードの設定
+# project配下にあった既存の設定をここに統合します。
+[*.{cpp,h,hpp,hlsl,hlsli}]
+indent_style = space
+indent_size = 4
+# スペルミスをintellisense上での「エラー」として扱う (VS固有設定)
+spelling_error_severity = error
+spelling_checkable_types = identifiers, comments
+spelling_languages = en-us
+spelling_use_default_exclusion_dictionary = true
+spelling_exclusion_path = ./exclusion.dic
+
+# 3. JSON設定
+[*.json]
+indent_style = space
+indent_size = 4
+
+# 4. Markdown設定
+# Markdownは行末にスペースを2つ入れることで改行とする記法があるため、空白削除を除外します。
+[*.md]
+trim_trailing_whitespace = false

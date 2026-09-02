@@ -6,7 +6,9 @@
 // --- TransformComponent ---
 
 void PrimitiveTransform::UpdateTransform(Object3DResource* resource, const Camera& camera) {
-    if (!resource) return;
+    if (!resource) {
+        return;
+    }
 
     // 行列の更新
     // 既存の Object3DResource::UpdateTransform は内部で world 行列を再計算するため、
@@ -64,7 +66,9 @@ void MeshDesc::ChangeMesh(const PrimitiveData& data) {
 // --- MaterialComponent ---
 
 void MaterialDesc::UpdateMaterial(Object3DResource* resource, TextureManager* textureManager) {
-    if (!resource || !resource->GetMaterialData()) return;
+    if (!resource || !resource->GetMaterialData()) {
+        return;
+    }
 
     // マテリアルパラメータの反映
     resource->GetMaterialData()->color = color;
@@ -92,7 +96,8 @@ void MaterialDesc::UpdateMaterial(Object3DResource* resource, TextureManager* te
 
     if (textureManager) {
         resource->textureHandle_ = textureHandle;
-        resource->GetMaterialData()->hasTexture = (textureManager->Resolve(textureHandle).ptr != textureManager->GetWhiteTextureHandle().ptr);
+        resource->GetMaterialData()->hasTexture =
+            (textureManager->Resolve(textureHandle).ptr != textureManager->GetWhiteTextureHandle().ptr);
     } else {
         resource->GetMaterialData()->hasTexture = false;
     }

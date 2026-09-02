@@ -29,8 +29,8 @@ struct FileEntry {
 struct DirectoryNode {
     std::filesystem::path path;
     std::string folderName;
-    std::vector<FileEntry> files;                                 // このフォルダ内のファイル一覧
-    std::vector<std::unique_ptr<DirectoryNode>> subDirectories;   // サブディレクトリ一覧
+    std::vector<FileEntry> files;                               // このフォルダ内のファイル一覧
+    std::vector<std::unique_ptr<DirectoryNode>> subDirectories; // サブディレクトリ一覧
 };
 
 /**

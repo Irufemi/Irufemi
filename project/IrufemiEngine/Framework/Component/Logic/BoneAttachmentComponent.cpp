@@ -13,20 +13,30 @@ BoneAttachmentComponent::~BoneAttachmentComponent() = default;
 void BoneAttachmentComponent::Initialize() {}
 
 void BoneAttachmentComponent::Update() {
-    if (targetName_.empty() || targetBoneName_.empty()) return;
+    if (targetName_.empty() || targetBoneName_.empty()) {
+        return;
+    }
 
     auto gameObject = GetGameObject();
-    if (!gameObject) return;
-    
+    if (!gameObject) {
+        return;
+    }
+
     auto transform = GetTransform();
-    if (!transform) return;
+    if (!transform) {
+        return;
+    }
 
     auto scene = gameObject->GetScene();
-    if (!scene) return;
+    if (!scene) {
+        return;
+    }
 
     // ターゲットとなるGameObjectを探す
     auto targetObj = scene->FindGameObject(targetName_);
-    if (!targetObj) return;
+    if (!targetObj) {
+        return;
+    }
 
     // ターゲットのSkinnedMeshRendererComponentを探す
     auto renderer = targetObj->GetComponent<SkinnedMeshRendererComponent>();
@@ -38,7 +48,7 @@ void BoneAttachmentComponent::Update() {
                 int index = it->second;
                 // ローカルのボーン行列を取得
                 Irufemi::Matrix4x4 localMat = pose->jointPoses[index].skeletonSpaceMatrix;
-                
+
                 // 親のワールド行列と掛けてボーンの最終ワールド行列を算出
                 auto targetTransform = targetObj->GetComponent<TransformComponent>();
                 Irufemi::Matrix4x4 boneWorldMat = localMat;
@@ -69,6 +79,10 @@ nlohmann::json BoneAttachmentComponent::Serialize() {
 }
 
 void BoneAttachmentComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("Target Name")) targetName_ = j["Target Name"];
-    if (j.contains("Target Bone Name")) targetBoneName_ = j["Target Bone Name"];
+    if (j.contains("Target Name")) {
+        targetName_ = j["Target Name"];
+    }
+    if (j.contains("Target Bone Name")) {
+        targetBoneName_ = j["Target Bone Name"];
+    }
 }

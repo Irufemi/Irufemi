@@ -35,17 +35,19 @@ void SceneViewPanel::Initialize(EditorManager* editorManager) {
 }
 
 void SceneViewPanel::Draw() {
-    if (!editorManager_) return;
+    if (!editorManager_) {
+        return;
+    }
 
     ImGui::Begin("Scene");
 
     auto* engine = editorManager_->GetEngine();
     if (engine && engine->GetMainRenderTexture()) {
         auto mainTexture = engine->GetMainRenderTexture();
-        
+
         float targetWidth = 1280.0f;
         float targetHeight = 720.0f;
-        
+
         // パネルの大きさを取得して画像をフィットさせる（16:9を維持する）
         ImVec2 avail = ImGui::GetContentRegionAvail();
         float aspect = targetWidth / targetHeight;
@@ -65,7 +67,7 @@ void SceneViewPanel::Draw() {
         ImGui::SetCursorPos(cursor);
 
         ImGui::Image((ImTextureID)mainTexture->GetImGuiSrvHandleGPU().ptr, size);
-        
+
         ImVec2 minPos = ImGui::GetItemRectMin(); // ImGui::Image() の左上
         ImVec2 maxPos = ImGui::GetItemRectMax(); // ImGui::Image() の右下
 
@@ -81,18 +83,18 @@ void SceneViewPanel::Draw() {
                         Irufemi::Vector2 sizeScaled = sprite->GetSize();
                         Irufemi::Vector2 anchor = sprite->GetAnchor();
                         Irufemi::Vector3 pos = transform->GetWorldPosition();
-                        
+
                         float left = pos.x - sizeScaled.x * anchor.x;
                         float top = pos.y - sizeScaled.y * anchor.y;
                         float right = pos.x + sizeScaled.x * (1.0f - anchor.x);
                         float bottom = pos.y + sizeScaled.y * (1.0f - anchor.y);
-                        
+
                         float scaleX = size.x / targetWidth;
                         float scaleY = size.y / targetHeight;
-                        
+
                         ImVec2 pMin = ImVec2(minPos.x + left * scaleX, minPos.y + top * scaleY);
                         ImVec2 pMax = ImVec2(minPos.x + right * scaleX, minPos.y + bottom * scaleY);
-                        
+
                         ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(255, 165, 0, 255), 0.0f, 0, 2.0f);
                     }
                 }
@@ -101,18 +103,18 @@ void SceneViewPanel::Draw() {
                     Irufemi::Vector3 pos = transform->GetWorldPosition();
                     Irufemi::Vector2 minBounds = textComp->GetLocalBoundsMin();
                     Irufemi::Vector2 maxBounds = textComp->GetLocalBoundsMax();
-                    
+
                     float left = pos.x + minBounds.x * transform->GetWorldScale().x;
                     float right = pos.x + maxBounds.x * transform->GetWorldScale().x;
                     float top = pos.y + minBounds.y * transform->GetWorldScale().y;
                     float bottom = pos.y + maxBounds.y * transform->GetWorldScale().y;
-                    
+
                     float scaleX = size.x / targetWidth;
                     float scaleY = size.y / targetHeight;
-                    
+
                     ImVec2 pMin = ImVec2(minPos.x + left * scaleX, minPos.y + top * scaleY);
                     ImVec2 pMax = ImVec2(minPos.x + right * scaleX, minPos.y + bottom * scaleY);
-                    
+
                     ImGui::GetWindowDrawList()->AddRect(pMin, pMax, IM_COL32(0, 255, 255, 255), 0.0f, 0, 2.0f);
                 }
             }
@@ -127,22 +129,21 @@ void SceneViewPanel::Draw() {
         if (ImGui::IsWindowHovered()) {
             ImVec2 mousePos = ImGui::GetMousePos(); // 画面全体の座標
 
-            if (mousePos.x >= minPos.x && mousePos.x <= maxPos.x &&
-                mousePos.y >= minPos.y && mousePos.y <= maxPos.y) {
-                
-                Irufemi::Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
+            if (mousePos.x >= minPos.x && mousePos.x <= maxPos.x && mousePos.y >= minPos.y && mousePos.y <= maxPos.y) {
+
+                Irufemi::Vector2 localMousePos = {mousePos.x - minPos.x, mousePos.y - minPos.y};
                 float scaleX = targetWidth / size.x;
                 float scaleY = targetHeight / size.y;
-                Irufemi::Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
-                
+                Irufemi::Vector2 scaledVirtualPos = {localMousePos.x * scaleX, localMousePos.y * scaleY};
+
                 engine->GetInputManager()->SetVirtualMousePosition(scaledVirtualPos, true);
-                
+
                 if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
                     cameraController_.UpdateCameraInput(camera, engine->GetInputManager());
                 }
 
                 HandlePicking(mousePos, minPos, maxPos, size);
-                
+
                 // Fキーによるフォーカス機能
                 if (ImGui::IsKeyPressed(ImGuiKey_F)) {
                     if (auto selectedObj = editorManager_->GetSelectedObject()) {
@@ -171,7 +172,7 @@ void SceneViewPanel::Draw() {
 
 void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
     auto* engine = editorManager_->GetEngine();
-    
+
     ImVec2 overlayPos = ImVec2(maxPos.x - 300.0f, minPos.y + 10.0f);
     ImGui::SetCursorScreenPos(overlayPos);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.15f, 0.15f, 0.15f, 0.85f));
@@ -179,7 +180,8 @@ void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
 
-    if (ImGui::BeginChild("SceneToolbar", ImVec2(290.0f, 40.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+    if (ImGui::BeginChild("SceneToolbar", ImVec2(290.0f, 40.0f), true,
+                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6, 4));
 
         // Tools
@@ -188,15 +190,24 @@ void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
         bool isScale = currentGizmoOperation_ == ImGuizmo::SCALE;
         bool isBounds = currentGizmoOperation_ == ImGuizmo::BOUNDS;
 
-        auto DrawToolBtn = [](const char* icon, bool selected, ImGuizmo::OPERATION op, ImGuizmo::OPERATION& currentOp, const char* tooltip) {
-            if (selected) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-            else ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
-            if (ImGui::Button(icon, ImVec2(24, 24))) currentOp = op;
+        auto DrawToolBtn = [](const char* icon, bool selected, ImGuizmo::OPERATION op, ImGuizmo::OPERATION& currentOp,
+                              const char* tooltip) {
+            if (selected) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            }
+            if (ImGui::Button(icon, ImVec2(24, 24))) {
+                currentOp = op;
+            }
             ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tooltip);
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", tooltip);
+            }
         };
 
-        DrawToolBtn(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, isTranslate, ImGuizmo::TRANSLATE, currentGizmoOperation_, "Translate");
+        DrawToolBtn(ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, isTranslate, ImGuizmo::TRANSLATE, currentGizmoOperation_,
+                    "Translate");
         ImGui::SameLine();
         DrawToolBtn(ICON_FA_ROTATE, isRotate, ImGuizmo::ROTATE, currentGizmoOperation_, "Rotate");
         ImGui::SameLine();
@@ -204,7 +215,9 @@ void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
         ImGui::SameLine();
         DrawToolBtn(ICON_FA_VECTOR_SQUARE, isBounds, ImGuizmo::BOUNDS, currentGizmoOperation_, "Bounds");
 
-        ImGui::SameLine(); ImGui::TextDisabled("|"); ImGui::SameLine();
+        ImGui::SameLine();
+        ImGui::TextDisabled("|");
+        ImGui::SameLine();
 
         // Local / World
         const char* modeText = currentGizmoMode_ == ImGuizmo::LOCAL ? "Local" : "World";
@@ -212,20 +225,27 @@ void SceneViewPanel::DrawToolbar(ImVec2 minPos, ImVec2 maxPos) {
             currentGizmoMode_ = (currentGizmoMode_ == ImGuizmo::LOCAL) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
         }
 
-        ImGui::SameLine(); ImGui::TextDisabled("|"); ImGui::SameLine();
+        ImGui::SameLine();
+        ImGui::TextDisabled("|");
+        ImGui::SameLine();
 
         // Collider Draw
         bool* drawCollider = engine->GetCollisionManager()->GetIsDrawDebugLinePtr();
         if (drawCollider) {
             bool isActive = *drawCollider;
-            if (isActive) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-            else ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
-            
+            if (isActive) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+            }
+
             if (ImGui::Button("Col", ImVec2(35, 24))) {
                 *drawCollider = !isActive;
             }
             ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle Collider Debug Draw");
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Toggle Collider Debug Draw");
+            }
         }
 
         ImGui::PopStyleVar();
@@ -242,23 +262,25 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
     auto* engine = editorManager_->GetEngine();
     if (auto selectedObj = editorManager_->GetSelectedObject()) {
         // ロックされている、またはフォルダの場合はギズモを非表示・操作不可にする
-        if (selectedObj->GetIsLocked() || selectedObj->GetIsFolder()) return;
+        if (selectedObj->GetIsLocked() || selectedObj->GetIsFolder()) {
+            return;
+        }
 
         if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
             Irufemi::Matrix4x4 view = camera->GetViewMatrix();
             Irufemi::Matrix4x4 proj = camera->GetPerspectiveFovMatrix();
-            
+
             if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
                 Irufemi::Matrix4x4 world = transform->GetWorldMatrix();
                 bool manipulated = false;
-                
+
                 bool isUsingGizmo = ImGuizmo::IsUsing();
 
                 if (isUsingGizmo && !wasUsingGizmo_) {
                     gizmoStartPos_ = transform->GetPosition();
                     gizmoStartRot_ = transform->GetRotation();
                     gizmoStartScale_ = transform->GetScale();
-                    
+
                     if (currentGizmoOperation_ == ImGuizmo::BOUNDS) {
                         if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
                             gizmoStartColliderOffset_ = aabbCol->GetLocalOffset();
@@ -275,40 +297,26 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                     if (auto aabbCol = selectedObj->GetComponent<AABBColliderComponent>()) {
                         Irufemi::Vector3 offset = aabbCol->GetLocalOffset();
                         Irufemi::Vector3 csize = aabbCol->GetLocalSize();
-                        float bounds[6] = {
-                            offset.x - csize.x, offset.y - csize.y, offset.z - csize.z,
-                            offset.x + csize.x, offset.y + csize.y, offset.z + csize.z
-                        };
-                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
-                            aabbCol->SetLocalOffset({
-                                (bounds[0] + bounds[3]) * 0.5f,
-                                (bounds[1] + bounds[4]) * 0.5f,
-                                (bounds[2] + bounds[5]) * 0.5f
-                            });
-                            aabbCol->SetLocalSize({
-                                (bounds[3] - bounds[0]) * 0.5f,
-                                (bounds[4] - bounds[1]) * 0.5f,
-                                (bounds[5] - bounds[2]) * 0.5f
-                            });
+                        float bounds[6] = {offset.x - csize.x, offset.y - csize.y, offset.z - csize.z,
+                                           offset.x + csize.x, offset.y + csize.y, offset.z + csize.z};
+                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_,
+                                                 currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
+                            aabbCol->SetLocalOffset({(bounds[0] + bounds[3]) * 0.5f, (bounds[1] + bounds[4]) * 0.5f,
+                                                     (bounds[2] + bounds[5]) * 0.5f});
+                            aabbCol->SetLocalSize({(bounds[3] - bounds[0]) * 0.5f, (bounds[4] - bounds[1]) * 0.5f,
+                                                   (bounds[5] - bounds[2]) * 0.5f});
                         }
                     } else if (auto obbCol = selectedObj->GetComponent<OBBColliderComponent>()) {
                         Irufemi::Vector3 offset = obbCol->GetLocalOffset();
                         Irufemi::Vector3 csize = obbCol->GetLocalSize();
-                        float bounds[6] = {
-                            offset.x - csize.x, offset.y - csize.y, offset.z - csize.z,
-                            offset.x + csize.x, offset.y + csize.y, offset.z + csize.z
-                        };
-                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
-                            obbCol->SetLocalOffset({
-                                (bounds[0] + bounds[3]) * 0.5f,
-                                (bounds[1] + bounds[4]) * 0.5f,
-                                (bounds[2] + bounds[5]) * 0.5f
-                            });
-                            obbCol->SetLocalSize({
-                                (bounds[3] - bounds[0]) * 0.5f,
-                                (bounds[4] - bounds[1]) * 0.5f,
-                                (bounds[5] - bounds[2]) * 0.5f
-                            });
+                        float bounds[6] = {offset.x - csize.x, offset.y - csize.y, offset.z - csize.z,
+                                           offset.x + csize.x, offset.y + csize.y, offset.z + csize.z};
+                        if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_,
+                                                 currentGizmoMode_, &world.m[0][0], nullptr, nullptr, bounds)) {
+                            obbCol->SetLocalOffset({(bounds[0] + bounds[3]) * 0.5f, (bounds[1] + bounds[4]) * 0.5f,
+                                                    (bounds[2] + bounds[5]) * 0.5f});
+                            obbCol->SetLocalSize({(bounds[3] - bounds[0]) * 0.5f, (bounds[4] - bounds[1]) * 0.5f,
+                                                  (bounds[5] - bounds[2]) * 0.5f});
                         }
                     } else if (auto sphereCol = selectedObj->GetComponent<SphereColliderComponent>()) {
                         ImGuizmo::OPERATION op = ImGuizmo::SCALE;
@@ -322,7 +330,8 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                         }
                     }
                 } else {
-                    if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_, &world.m[0][0])) {
+                    if (ImGuizmo::Manipulate(&view.m[0][0], &proj.m[0][0], currentGizmoOperation_, currentGizmoMode_,
+                                             &world.m[0][0])) {
                         manipulated = true;
                     }
                 }
@@ -338,37 +347,35 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                                 Irufemi::Vector3 endOffset = aabbCol->GetLocalOffset();
                                 Irufemi::Vector3 endSize = aabbCol->GetLocalSize();
                                 using BoundsPair = std::pair<Irufemi::Vector3, Irufemi::Vector3>;
-                                if (IsNotEqual(endOffset, gizmoStartColliderOffset_) || IsNotEqual(endSize, gizmoStartColliderSize_)) {
+                                if (IsNotEqual(endOffset, gizmoStartColliderOffset_) ||
+                                    IsNotEqual(endSize, gizmoStartColliderSize_)) {
                                     actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<BoundsPair>>(
                                         BoundsPair(gizmoStartColliderOffset_, gizmoStartColliderSize_),
-                                        BoundsPair(endOffset, endSize),
-                                        [aabbCol](const BoundsPair& v) {
+                                        BoundsPair(endOffset, endSize), [aabbCol](const BoundsPair& v) {
                                             aabbCol->SetLocalOffset(v.first);
                                             aabbCol->SetLocalSize(v.second);
-                                        }
-                                    ));
+                                        }));
                                 }
                             } else if (auto obbCol = selectedObj->GetComponent<OBBColliderComponent>()) {
                                 Irufemi::Vector3 endOffset = obbCol->GetLocalOffset();
                                 Irufemi::Vector3 endSize = obbCol->GetLocalSize();
                                 using BoundsPair = std::pair<Irufemi::Vector3, Irufemi::Vector3>;
-                                if (IsNotEqual(endOffset, gizmoStartColliderOffset_) || IsNotEqual(endSize, gizmoStartColliderSize_)) {
+                                if (IsNotEqual(endOffset, gizmoStartColliderOffset_) ||
+                                    IsNotEqual(endSize, gizmoStartColliderSize_)) {
                                     actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<BoundsPair>>(
                                         BoundsPair(gizmoStartColliderOffset_, gizmoStartColliderSize_),
-                                        BoundsPair(endOffset, endSize),
-                                        [obbCol](const BoundsPair& v) {
+                                        BoundsPair(endOffset, endSize), [obbCol](const BoundsPair& v) {
                                             obbCol->SetLocalOffset(v.first);
                                             obbCol->SetLocalSize(v.second);
-                                        }
-                                    ));
+                                        }));
                                 }
                             } else {
                                 Irufemi::Vector3 endScale = transform->GetScale();
                                 if (IsNotEqual(endScale, gizmoStartScale_)) {
-                                    actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
-                                        gizmoStartScale_, endScale,
-                                        [transform](const Irufemi::Vector3& v) { transform->SetScale(v); }
-                                    ));
+                                    actionManager->PushAndExecute(
+                                        std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
+                                            gizmoStartScale_, endScale,
+                                            [transform](const Irufemi::Vector3& v) { transform->SetScale(v); }));
                                 }
                             }
                         } else {
@@ -377,15 +384,18 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                             Irufemi::Vector3 endScale = transform->GetScale();
                             if (IsNotEqual(endPos, gizmoStartPos_)) {
                                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
-                                    gizmoStartPos_, endPos, [transform](const Irufemi::Vector3& v){ transform->SetPosition(v); }));
+                                    gizmoStartPos_, endPos,
+                                    [transform](const Irufemi::Vector3& v) { transform->SetPosition(v); }));
                             }
                             if (IsNotEqual(endRot, gizmoStartRot_)) {
                                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
-                                    gizmoStartRot_, endRot, [transform](const Irufemi::Vector3& v){ transform->SetRotation(v); }));
+                                    gizmoStartRot_, endRot,
+                                    [transform](const Irufemi::Vector3& v) { transform->SetRotation(v); }));
                             }
                             if (IsNotEqual(endScale, gizmoStartScale_)) {
                                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
-                                    gizmoStartScale_, endScale, [transform](const Irufemi::Vector3& v){ transform->SetScale(v); }));
+                                    gizmoStartScale_, endScale,
+                                    [transform](const Irufemi::Vector3& v) { transform->SetScale(v); }));
                             }
                         }
                     }
@@ -395,11 +405,11 @@ void SceneViewPanel::DrawImGuizmo(ImVec2 minPos, ImVec2 size) {
                 if (manipulated) {
                     Irufemi::Vector3 pos, rot, mscale;
                     ImGuizmo::DecomposeMatrixToComponents(&world.m[0][0], &pos.x, &rot.x, &mscale.x);
-                    
+
                     rot.x = rot.x * Irufemi::Math::PI / 180.0f;
                     rot.y = rot.y * Irufemi::Math::PI / 180.0f;
                     rot.z = rot.z * Irufemi::Math::PI / 180.0f;
-                    
+
                     transform->SetPosition(pos);
                     transform->SetRotation(rot);
                     transform->SetScale(mscale);
@@ -413,23 +423,24 @@ void SceneViewPanel::HandleDragAndDrop(ImVec2 minPos, ImVec2 size) {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
             std::string droppedPathStr = static_cast<const char*>(payload->Data);
-            
+
             Irufemi::Vector3 dropPos = {0.0f, 0.0f, 0.0f};
             auto* engine = editorManager_->GetEngine();
             if (engine) {
                 if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
                     ImVec2 mousePos = ImGui::GetMousePos();
-                    Irufemi::Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
+                    Irufemi::Vector2 localMousePos = {mousePos.x - minPos.x, mousePos.y - minPos.y};
                     float targetWidth = camera->GetViewportWidth();
                     float targetHeight = camera->GetViewportHeight();
                     float scaleX = targetWidth / size.x;
                     float scaleY = targetHeight / size.y;
-                    Irufemi::Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
-                    
+                    Irufemi::Vector2 scaledVirtualPos = {localMousePos.x * scaleX, localMousePos.y * scaleY};
+
                     Irufemi::Matrix4x4 viewProj = camera->GetViewProjectionMatrix3D();
                     Irufemi::Matrix4x4 invViewProj = Irufemi::Math::Inverse(viewProj);
-                    Irufemi::Ray ray = Irufemi::Math::ScreenPointToRay(scaledVirtualPos, targetWidth, targetHeight, invViewProj);
-                    
+                    Irufemi::Ray ray =
+                        Irufemi::Math::ScreenPointToRay(scaledVirtualPos, targetWidth, targetHeight, invViewProj);
+
                     if (std::abs(ray.diff.y) > 0.001f) {
                         float t = -ray.origin.y / ray.diff.y;
                         if (t > 0.0f) {
@@ -463,80 +474,87 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
         bool isHit = false;
         GameObject* closestObj = nullptr;
         float closestDist = 1000.0f;
-        
+
         float targetWidth = 1280.0f;
         float targetHeight = 720.0f;
         if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
             targetWidth = camera->GetViewportWidth();
             targetHeight = camera->GetViewportHeight();
         }
-        Irufemi::Vector2 localMousePos = { mousePos.x - minPos.x, mousePos.y - minPos.y };
+        Irufemi::Vector2 localMousePos = {mousePos.x - minPos.x, mousePos.y - minPos.y};
         float scaleX = targetWidth / size.x;
         float scaleY = targetHeight / size.y;
-        Irufemi::Vector2 scaledVirtualPos = { localMousePos.x * scaleX, localMousePos.y * scaleY };
+        Irufemi::Vector2 scaledVirtualPos = {localMousePos.x * scaleX, localMousePos.y * scaleY};
 
         // --- 1. まず 2D (Sprite) のピッキング判定を行う ---
         // --- 1. Sprite や Text などの 2D UI 要素を先に判定 ---
         if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
             auto gameObjects = scene->GetGameObjects();
-            
-            std::function<void(const std::shared_ptr<GameObject>&)> PickUI = [&](const std::shared_ptr<GameObject>& obj) {
-                if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) return;
-                
-                if (auto spriteComp = obj->GetComponent<SpriteRendererComponent>()) {
-                    if (auto transform = obj->GetComponent<TransformComponent>()) {
-                        auto sprite = spriteComp->GetSprite();
-                        if (sprite) {
-                            Irufemi::Vector2 sizeScaled = sprite->GetSize();
-                            Irufemi::Vector2 anchor = sprite->GetAnchor();
-                            Irufemi::Vector3 pos = transform->GetWorldPosition();
-                            
-                            float left = pos.x - sizeScaled.x * anchor.x;
-                            float top = pos.y - sizeScaled.y * anchor.y;
-                            float right = pos.x + sizeScaled.x * (1.0f - anchor.x);
-                            float bottom = pos.y + sizeScaled.y * (1.0f - anchor.y);
-                            
-                            if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
-                                scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
-                                closestObj = obj.get();
-                                isHit = true;
-                                return;
-                            }
-                        }
+
+            std::function<void(const std::shared_ptr<GameObject>&)> PickUI =
+                [&](const std::shared_ptr<GameObject>& obj) {
+                    if (!obj || obj->IsDestroyed() || !obj->GetIsActive()) {
+                        return;
                     }
-                }
-                
-                if (!isHit) {
-                    if (auto textComp = obj->GetComponent<TextRendererComponent>()) {
+
+                    if (auto spriteComp = obj->GetComponent<SpriteRendererComponent>()) {
                         if (auto transform = obj->GetComponent<TransformComponent>()) {
-                            Irufemi::Vector3 pos = transform->GetWorldPosition();
-                            Irufemi::Vector2 minBounds = textComp->GetLocalBoundsMin();
-                            Irufemi::Vector2 maxBounds = textComp->GetLocalBoundsMax();
-                            
-                            float left = pos.x + minBounds.x * transform->GetWorldScale().x;
-                            float right = pos.x + maxBounds.x * transform->GetWorldScale().x;
-                            float top = pos.y + minBounds.y * transform->GetWorldScale().y;
-                            float bottom = pos.y + maxBounds.y * transform->GetWorldScale().y;
-                            
-                            if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
-                                scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
-                                closestObj = obj.get();
-                                isHit = true;
-                                return;
+                            auto sprite = spriteComp->GetSprite();
+                            if (sprite) {
+                                Irufemi::Vector2 sizeScaled = sprite->GetSize();
+                                Irufemi::Vector2 anchor = sprite->GetAnchor();
+                                Irufemi::Vector3 pos = transform->GetWorldPosition();
+
+                                float left = pos.x - sizeScaled.x * anchor.x;
+                                float top = pos.y - sizeScaled.y * anchor.y;
+                                float right = pos.x + sizeScaled.x * (1.0f - anchor.x);
+                                float bottom = pos.y + sizeScaled.y * (1.0f - anchor.y);
+
+                                if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
+                                    scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
+                                    closestObj = obj.get();
+                                    isHit = true;
+                                    return;
+                                }
                             }
                         }
                     }
-                }
-                
-                for (auto it = obj->GetChildren().rbegin(); it != obj->GetChildren().rend(); ++it) {
-                    PickUI(*it);
-                    if (isHit) return;
-                }
-            };
-            
+
+                    if (!isHit) {
+                        if (auto textComp = obj->GetComponent<TextRendererComponent>()) {
+                            if (auto transform = obj->GetComponent<TransformComponent>()) {
+                                Irufemi::Vector3 pos = transform->GetWorldPosition();
+                                Irufemi::Vector2 minBounds = textComp->GetLocalBoundsMin();
+                                Irufemi::Vector2 maxBounds = textComp->GetLocalBoundsMax();
+
+                                float left = pos.x + minBounds.x * transform->GetWorldScale().x;
+                                float right = pos.x + maxBounds.x * transform->GetWorldScale().x;
+                                float top = pos.y + minBounds.y * transform->GetWorldScale().y;
+                                float bottom = pos.y + maxBounds.y * transform->GetWorldScale().y;
+
+                                if (scaledVirtualPos.x >= left && scaledVirtualPos.x <= right &&
+                                    scaledVirtualPos.y >= top && scaledVirtualPos.y <= bottom) {
+                                    closestObj = obj.get();
+                                    isHit = true;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    for (auto it = obj->GetChildren().rbegin(); it != obj->GetChildren().rend(); ++it) {
+                        PickUI(*it);
+                        if (isHit) {
+                            return;
+                        }
+                    }
+                };
+
             for (auto it = gameObjects.rbegin(); it != gameObjects.rend(); ++it) {
                 PickUI(*it);
-                if (isHit) break;
+                if (isHit) {
+                    break;
+                }
             }
         }
 
@@ -553,25 +571,28 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                     closestObj = hit.hitObject;
                     isHit = true;
                 }
-                
+
                 if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
-                    std::function<void(const std::shared_ptr<GameObject>&)> Pick3D = [&](const std::shared_ptr<GameObject>& obj) {
-                        if (!obj || obj.get() == closestObj) return;
-                        
-                        float dist = 0.0f;
-                        for (auto& comp : obj->GetComponents()) {
-                            if (comp->Raycast(ray, dist)) {
-                                if (dist < closestDist) {
-                                    closestDist = dist;
-                                    closestObj = obj.get();
-                                    isHit = true;
+                    std::function<void(const std::shared_ptr<GameObject>&)> Pick3D =
+                        [&](const std::shared_ptr<GameObject>& obj) {
+                            if (!obj || obj.get() == closestObj) {
+                                return;
+                            }
+
+                            float dist = 0.0f;
+                            for (auto& comp : obj->GetComponents()) {
+                                if (comp->Raycast(ray, dist)) {
+                                    if (dist < closestDist) {
+                                        closestDist = dist;
+                                        closestObj = obj.get();
+                                        isHit = true;
+                                    }
                                 }
                             }
-                        }
-                        for (auto& child : obj->GetChildren()) {
-                            Pick3D(child);
-                        }
-                    };
+                            for (auto& child : obj->GetChildren()) {
+                                Pick3D(child);
+                            }
+                        };
 
                     for (auto& obj : scene->GetGameObjects()) {
                         Pick3D(obj);

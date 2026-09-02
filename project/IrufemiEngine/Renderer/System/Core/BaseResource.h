@@ -15,12 +15,16 @@ public:
      * @brief DirectXCommon を設定する。
      * @param[in] dxCommon 設定する DirectXCommon の値
      */
-    static void SetDirectXCommon(DirectXCommon* dxCommon) { s_dxCommon_ = dxCommon; }
+    static void SetDirectXCommon(DirectXCommon* dxCommon) {
+        s_dxCommon_ = dxCommon;
+    }
     /**
      * @brief DirectXCommon を取得する。
      * @return 取得された DirectXCommon
      */
-    static DirectXCommon* GetDirectXCommon() { return s_dxCommon_; }
+    static DirectXCommon* GetDirectXCommon() {
+        return s_dxCommon_;
+    }
 
     /**
      * @brief CreateResource を実行する。

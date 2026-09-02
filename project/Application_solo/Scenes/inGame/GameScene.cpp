@@ -21,8 +21,6 @@ void GameScene::Initialize(IrufemiEngine* engine) {
 // 更新
 void GameScene::Update() {
     BaseScene::Update(); // これにより GameObject 群の Update が呼ばれる
-
-
 }
 
 void GameScene::Draw() {

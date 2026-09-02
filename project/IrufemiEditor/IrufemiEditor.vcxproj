@@ -219,7 +219,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Inspectors\Rendering\TextRendererComponentEditor.cpp" />
     <ClCompile Include="Inspectors\Physics\ColliderComponentEditors.cpp" />
     <ClCompile Include="Inspectors\Effects\ParticleEmitterComponentEditor.cpp" />
-    <ClCompile Include="Inspectors\Physics\RaycastComponentEditor.cpp" />
     <ClCompile Include="Inspectors\Effects\VoxelParticleComponentEditor.cpp" />
     <ClCompile Include="Inspectors\Rendering\ModelBatchRendererComponentEditor.cpp" />
     <ClCompile Include="Inspectors\Camera\CameraComponentEditor.cpp" />
@@ -253,7 +252,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Inspectors\Rendering\TextRendererComponentEditor.h" />
     <ClInclude Include="Inspectors\Physics\ColliderComponentEditors.h" />
     <ClInclude Include="Inspectors\Effects\ParticleEmitterComponentEditor.h" />
-    <ClInclude Include="Inspectors\Physics\RaycastComponentEditor.h" />
     <ClInclude Include="Inspectors\Effects\VoxelParticleComponentEditor.h" />
     <ClInclude Include="Inspectors\Rendering\ModelBatchRendererComponentEditor.h" />
     <ClInclude Include="Inspectors\Camera\CameraComponentEditor.h" />

@@ -310,7 +310,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Component\Collider\AABBColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\ColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\OBBColliderComponent.cpp" />
-    <ClCompile Include="Framework\Component\Collider\RaycastComponent.cpp" />
     <ClCompile Include="Framework\Component\Collider\SphereColliderComponent.cpp" />
     <ClCompile Include="Framework\Component\ComponentFactory.cpp" />
     <ClCompile Include="Framework\Component\Effect\ParticleEmitterComponent.cpp" />
@@ -526,7 +525,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Component\Collider\AABBColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\ColliderComponent.h" />
     <ClInclude Include="Framework\Component\Collider\OBBColliderComponent.h" />
-    <ClInclude Include="Framework\Component\Collider\RaycastComponent.h" />
     <ClInclude Include="Framework\Component\Collider\SphereColliderComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\MeshRendererComponent.h" />
     <ClInclude Include="Framework\Component\Renderer\ModelBatchRendererComponent.h" />

@@ -1,0 +1,40 @@
+name: Clang-Format Auto Fix
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Clang-Format
+        run: |
+          # ターゲットディレクトリ内の全ての .cpp と .h を検索して上書きフォーマット
+          # Ubuntuのネイティブ環境で実行されるため、UTF-8(BOMなし)が保証されます
+          for d in project/IrufemiEngine project/Application_solo project/Application_team project/IrufemiEditor; do [ -d "$d" ] && find "$d" -type f \( -name '*.cpp' -o -name '*.h' \) -exec clang-format -i {} +; done
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and Push changes
+        if: steps.check_changes.outputs.changes_detected == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "style: auto format by clang-format [skip ci]"
+          git push
+

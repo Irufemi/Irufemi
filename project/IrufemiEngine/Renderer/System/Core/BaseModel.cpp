@@ -15,8 +15,11 @@ BaseModel::~BaseModel() {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS BaseModel::GetTransformationGpuAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1) || !engine_) return 0;
-    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    if (transformCbIndex_ == static_cast<uint32_t>(-1) || !engine_) {
+        return 0;
+    }
+    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(
+        transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
 
 std::shared_ptr<ObjModel> BaseModel::GetCpuModel() const {
@@ -62,7 +65,9 @@ ObjMaterial* BaseModel::GetMaterial(size_t meshIndex) {
 }
 
 void BaseModel::UpdateMaterials() {
-    if (!engine_ || !engine_->GetObjModelManager()) return;
+    if (!engine_ || !engine_->GetObjModelManager()) {
+        return;
+    }
     auto m = engine_->GetObjModelManager()->Resolve(modelHandle_);
     if (!m || !m->cpuModel || meshResources_.empty()) {
         return;
@@ -70,10 +75,14 @@ void BaseModel::UpdateMaterials() {
 
     // 全メッシュのマテリアルを更新
     for (size_t i = 0; i < m->cpuModel->meshes.size(); ++i) {
-        if (i >= meshResources_.size()) break;
+        if (i >= meshResources_.size()) {
+            break;
+        }
 
         auto& res = meshResources_[i];
-        if (!res->GetMaterialData()) continue;
+        if (!res->GetMaterialData()) {
+            continue;
+        }
 
         const ObjMaterial* cpuMatPtr = &m->cpuModel->meshes[i].material;
         if (materialOverrides_) {
@@ -90,10 +99,13 @@ void BaseModel::UpdateMaterials() {
         mappedData->color.y = cpuMat.color.y * color_.y;
         mappedData->color.z = cpuMat.color.z * color_.z;
         mappedData->color.w = cpuMat.color.w * color_.w;
-        if (mappedData->color.w <= 0.0f) { mappedData->color.w = 1.0f; }
+        if (mappedData->color.w <= 0.0f) {
+            mappedData->color.w = 1.0f;
+        }
 
         // ライティングの有効状態 (個別上書き優先)
-        int32_t finalEnableLighting = (enableLightingOverride_ != -1) ? (enableLightingOverride_ == 1) : (cpuMat.enableLighting ? 1 : 0);
+        int32_t finalEnableLighting =
+            (enableLightingOverride_ != -1) ? (enableLightingOverride_ == 1) : (cpuMat.enableLighting ? 1 : 0);
         mappedData->enableLighting = finalEnableLighting;
 
         mappedData->uvTransform = cpuMat.uvTransform;
@@ -112,16 +124,17 @@ void BaseModel::UpdateMaterials() {
         }
 
         // サンプラー設定 (個別上書き優先)
-        mappedData->useClampSampler = (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
-        
+        mappedData->useClampSampler =
+            (useClampSamplerOverride_ != -1) ? useClampSamplerOverride_ : cpuMat.useClampSampler;
+
         // アルファテスト用閾値
         mappedData->alphaReference = cpuMat.alphaReference;
-        
+
         // エフェクトマスクとカスタムエフェクトの設定
         mappedData->enableEffectMask = enableEffectMask_ ? 1 : cpuMat.enableEffectMask;
         mappedData->customEffectType = customEffectType_ != 0 ? customEffectType_ : cpuMat.customEffectType;
         mappedData->customEffectParam = customEffectParam_ != 0.0f ? customEffectParam_ : cpuMat.customEffectParam;
-        
+
         // (マテリアルバッファへの転送は SyncBeforeDraw() で行われるため、ここでは SyncMaterialData は呼ばない)
     }
 }

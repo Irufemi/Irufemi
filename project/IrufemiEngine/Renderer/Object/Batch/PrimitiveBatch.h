@@ -28,7 +28,9 @@ public:
      * @brief PrimitiveManager を設定する。
      * @param[in] manager 設定する PrimitiveManager の値
      */
-    static void SetPrimitiveManager(PrimitiveManager* manager) { primitiveManager_ = manager; }
+    static void SetPrimitiveManager(PrimitiveManager* manager) {
+        primitiveManager_ = manager;
+    }
 
     /**
      * @brief Draw を実行する。
@@ -52,9 +54,9 @@ private:
      * @brief EnsureSharedTexture を実行する。
      */
     void EnsureSharedTexture(const std::string& textureName);
-    
+
 private:
     Irufemi::PrimitiveType type_ = Irufemi::PrimitiveType::Sphere;
-    bool isCustomPrimitive_ = false; // リングなどの個別パラメータを使用するか
+    bool isCustomPrimitive_ = false;            // リングなどの個別パラメータを使用するか
     PrimitiveResource customPrimitiveResource_; // カスタム用のリソース
 };

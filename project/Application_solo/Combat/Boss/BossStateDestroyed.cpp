@@ -23,7 +23,7 @@ void BossStateDestroyed::Enter(BossComponent* boss) {
                 }
             }
         }
-        
+
         if (boss->onBossDied) {
             boss->onBossDied();
         }
@@ -31,17 +31,23 @@ void BossStateDestroyed::Enter(BossComponent* boss) {
         // 演出エフェクトが始まったタイミングでボスのモデル描画をすべて切る
         auto renderers = boss->gameObject_->GetComponentsInChildren<MeshRendererComponent>();
         for (auto* r : renderers) {
-            if (r) r->SetVisible(false);
+            if (r) {
+                r->SetVisible(false);
+            }
         }
         auto skinnedRenderers = boss->gameObject_->GetComponentsInChildren<SkinnedMeshRendererComponent>();
         for (auto* r : skinnedRenderers) {
-            if (r) r->SetVisible(false);
+            if (r) {
+                r->SetVisible(false);
+            }
         }
     }
 }
 
 void BossStateDestroyed::Update(BossComponent* boss) {
-    if (hasFinished_) return;
+    if (hasFinished_) {
+        return;
+    }
 
     if (shakeComp_) {
         if (!shakeComp_->IsPlaying()) {
@@ -64,8 +70,6 @@ void BossStateDestroyed::Update(BossComponent* boss) {
     }
 }
 
-void BossStateDestroyed::Exit(BossComponent* boss) {
-}
+void BossStateDestroyed::Exit(BossComponent* boss) {}
 
-void BossStateDestroyed::OnTakeDamage(BossComponent* boss, float damage) {
-}
+void BossStateDestroyed::OnTakeDamage(BossComponent* boss, float damage) {}

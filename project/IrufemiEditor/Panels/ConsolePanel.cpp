@@ -9,7 +9,9 @@ void ConsolePanel::Initialize(EditorManager* editorManager) {
 }
 
 void ConsolePanel::Draw() {
-    if (!editorManager_) return;
+    if (!editorManager_) {
+        return;
+    }
 
     ImGui::Begin("Console");
 
@@ -18,11 +20,11 @@ void ConsolePanel::Draw() {
     }
     ImGui::SameLine();
     ImGui::Checkbox("Auto-scroll", &autoScroll_);
-    
+
     ImGui::Separator();
 
     ImGui::BeginChild("LogRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-    
+
     auto logHistory = Log::GetLogHistory();
     for (const auto& logEntry : logHistory) {
         if (logEntry.isError) {
@@ -39,11 +41,11 @@ void ConsolePanel::Draw() {
     if (autoScroll_ && (logHistory.size() > previousLogSize_ || ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
         ImGui::SetScrollHereY(1.0f);
     }
-    
+
     previousLogSize_ = logHistory.size();
-    
+
     ImGui::EndChild();
-    
+
     ImGui::End();
 }
 #endif // EditorMode

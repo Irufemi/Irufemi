@@ -15,9 +15,11 @@ void ResultScene::Initialize(IrufemiEngine* engine) {
     // GameObject を一つだけ生成して配置します。
     auto managerObj = std::make_shared<GameObject>("ResultManager");
     AddGameObject(managerObj);
-    
+
     auto t = managerObj->GetTransform();
-    if (t) t->SetPosition({ 640.0f, 340.0f, 0.0f });
+    if (t) {
+        t->SetPosition({640.0f, 340.0f, 0.0f});
+    }
 
     // ResultManagerComponent にすべてのロジックを委譲する
     managerObj->AddComponent<ResultManagerComponent>();

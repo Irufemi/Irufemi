@@ -16,8 +16,7 @@
 // これにより、数千体の敵を描画する際でもドローコールが1回（Instancing）に削減され、
 // CPUとGPUのオーバーヘッドが劇的に改善されます（Unreal EngineのHISMやUnityのDOTSに近いアーキテクチャ）。
 
-void DebugEnemySpawnerComponent::Initialize() {
-}
+void DebugEnemySpawnerComponent::Initialize() {}
 
 void DebugEnemySpawnerComponent::OnRegisterProperties() {
     RegisterProperty("Enemy Model Path", &enemyModelPath_);
@@ -28,17 +27,18 @@ void DebugEnemySpawnerComponent::Start() {
     batchRenderer_->LoadModel(enemyModelPath_);
 
     auto scene = gameObject_->GetScene();
-    if (!scene) return;
+    if (!scene) {
+        return;
+    }
 
     enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
         auto enemy = std::make_shared<GameObject>("DebugEnemy");
         scene->AddGameObject(enemy);
-        
+
         auto transform = enemy->GetTransform();
         transform->SetScale({1.2f, 1.2f, 1.2f});
 
         auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-        // プール運用のため、エネミー死亡時は Destroy ではなくプールへ返却する
         enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
             deadObj->SetIsActive(false);
             if (enemyPool_) {
@@ -46,7 +46,6 @@ void DebugEnemySpawnerComponent::Start() {
                 if (it != activeEnemyHandles_.end()) {
                     enemyPool_->Release(it->second);
                     activeEnemyHandles_.erase(it);
-                    if (scene) scene->RemoveGameObject(deadObj->shared_from_this());
                 }
             }
         });
@@ -60,7 +59,7 @@ void DebugEnemySpawnerComponent::Update() {
     if (batchRenderer_) {
         // 毎フレーム、バッチレンダラーのインスタンス（描画キュー）をクリアします。
         batchRenderer_->ClearInstances();
-        
+
         // アクティブなすべての敵のトランスフォームを収集し、一括登録します（Instancing描画）。
         for (const auto& pair : activeEnemyHandles_) {
             GameObject* enemyObj = pair.first;
@@ -71,7 +70,9 @@ void DebugEnemySpawnerComponent::Update() {
     }
 
     auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
-    if (!input) return;
+    if (!input) {
+        return;
+    }
 
     // '2'キーで敵をスポーン
     if (input->IsKeyPressed('2')) {
@@ -89,14 +90,14 @@ void DebugEnemySpawnerComponent::Update() {
                     spawnPos.x += forward.x * 50.0f;
                     spawnPos.y += forward.y * 50.0f;
                     spawnPos.z += forward.z * 50.0f;
-                    
+
                     // プレイヤーの右方向と上方向に少し散らす
                     auto right = transform->GetWorldRight();
                     auto up = transform->GetWorldUp();
-                    
+
                     float randX = Irufemi::Random::GeneratorFloat(-10.0f, 10.0f);
                     float randY = Irufemi::Random::GeneratorFloat(-5.0f, 5.0f);
-                    
+
                     spawnPos.x += right.x * randX + up.x * randY;
                     spawnPos.y += right.y * randX + up.y * randY;
                     spawnPos.z += right.z * randX + up.z * randY;
@@ -113,28 +114,27 @@ void DebugEnemySpawnerComponent::Update() {
 }
 
 void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
-    if (!enemyPool_) return;
+    if (!enemyPool_) {
+        return;
+    }
 
     auto handle = enemyPool_->Acquire();
-    if (!handle.IsValid()) return;
-    
+    if (!handle.IsValid()) {
+        return;
+    }
+
     auto enemy = enemyPool_->Resolve(handle);
     if (enemy) {
-        // マップに登録
         activeEnemyHandles_[enemy.get()] = handle;
-        
-        if (auto scene = gameObject_->GetScene()) {
-            scene->AddGameObject(enemy);
-        }
 
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
             transform->SetWorldPosition(position);
             transform->SetWorldRotation(rotation);
         }
-        
+
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
             // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ想定
-            enemyComp->Initialize(); 
+            enemyComp->Initialize();
         }
 
         enemy->SetIsActive(true);

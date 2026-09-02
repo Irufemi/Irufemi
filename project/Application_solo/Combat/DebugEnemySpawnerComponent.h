@@ -15,7 +15,9 @@ public:
     void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "DebugEnemySpawnerComponent"; }
+    std::string GetComponentName() const override {
+        return "DebugEnemySpawnerComponent";
+    }
 
     void SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation);
 

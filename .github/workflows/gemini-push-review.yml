@@ -1,0 +1,36 @@
+﻿name: Gemini Push Reviewer
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-genai requests
+
+      - name: Run Reviewer Script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_SHA: ${{ github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          python .github/scripts/push_reviewer.py

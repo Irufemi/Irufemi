@@ -38,7 +38,9 @@ void AnimatedMeshObject::Initialize(const std::string& filename) {
 
 void AnimatedMeshObject::InitializeResources() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel) return;
+    if (!m || !m->cpuModel) {
+        return;
+    }
 
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         transformCbIndex_ = engine_->GetTransformBufferManager()->Allocate();
@@ -48,12 +50,12 @@ void AnimatedMeshObject::InitializeResources() {
     for (size_t i = 0; i < m->gpuMeshes.size(); ++i) {
         auto res = std::make_unique<Object3DResource>();
         res->SetExternalTransformCbIndex(&transformCbIndex_);
-        
+
         const auto& gpuMesh = m->gpuMeshes[i];
         res->vertexBufferView_ = gpuMesh->vertexBufferView;
         res->indexBufferView_ = gpuMesh->indexBufferView;
         res->indexCount_ = gpuMesh->indexCount;
-        
+
         res->CreateResource();
 
         const auto& gpuMaterial = (i < m->gpuMaterials.size()) ? m->gpuMaterials[i] : nullptr;
@@ -71,8 +73,6 @@ void AnimatedMeshObject::InitializeResources() {
         if (!m->cpuModel->skinClusterData.empty()) {
             skinCluster_ = engine_->GetAnimationManager()->CreateSkinCluster(skeletonData_, *m->cpuModel);
         }
-
-
     }
 
     Update();
@@ -80,17 +80,25 @@ void AnimatedMeshObject::InitializeResources() {
 
 void AnimatedMeshObject::Update(const SkeletonPose* externalPose) {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_) return;
+    if (!m || !engine_) {
+        return;
+    }
 
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam) {
+        return;
+    }
 
-    if (m->status.load() != ManagedModel::LoadingStatus::Loaded) return;
+    if (m->status.load() != ManagedModel::LoadingStatus::Loaded) {
+        return;
+    }
 
     if (meshResources_.empty()) {
         InitializeResources();
     }
-    if (meshResources_.empty()) return;
+    if (meshResources_.empty()) {
+        return;
+    }
 
     // ポーズの差し替え
     if (externalPose) {
@@ -104,18 +112,20 @@ void AnimatedMeshObject::Update(const SkeletonPose* externalPose) {
     if (!m->cpuModel->skinClusterData.empty()) {
         transformationMatrix_.world = worldMatrix_;
         Irufemi::Matrix4x4 worldForNormal = transformationMatrix_.world;
-        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
-        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+        worldForNormal.m[3][0] = 0.0f;
+        worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f;
+        worldForNormal.m[3][3] = 1.0f;
         transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
     } else {
         transformationMatrix_.world = localMatrix_ * worldMatrix_;
         Irufemi::Matrix4x4 worldForNormal = transformationMatrix_.world;
-        worldForNormal.m[3][0] = 0.0f; worldForNormal.m[3][1] = 0.0f;
-        worldForNormal.m[3][2] = 0.0f; worldForNormal.m[3][3] = 1.0f;
+        worldForNormal.m[3][0] = 0.0f;
+        worldForNormal.m[3][1] = 0.0f;
+        worldForNormal.m[3][2] = 0.0f;
+        worldForNormal.m[3][3] = 1.0f;
         transformationMatrix_.WorldInverseTranspose = Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
     }
-
-
 
     UpdateMaterials();
     isDirty_ = false;
@@ -129,16 +139,14 @@ void AnimatedMeshObject::Update(const SkeletonPose* externalPose) {
 
 void AnimatedMeshObject::SyncBeforeDraw() {
     uint32_t frameIndex = engine_->GetDrawManager()->GetDxCommon()->GetFrameIndex();
-    
+
     if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
         engine_->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
     }
-    
+
     for (auto& res : meshResources_) {
         res->SyncBeforeDraw();
     }
-    
-
 
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
     if (m && m->cpuModel && !m->cpuModel->skinClusterData.empty() && currentPose_) {
@@ -148,17 +156,21 @@ void AnimatedMeshObject::SyncBeforeDraw() {
 
 void AnimatedMeshObject::DispatchCompute() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_) return;
+    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty() || !engine_) {
+        return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam) {
+        return;
+    }
 
     if (isCullingEnabled_) {
-        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
         Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
         if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
-            return; 
+            return;
         }
     }
 
@@ -168,28 +180,33 @@ void AnimatedMeshObject::DispatchCompute() {
 
 void AnimatedMeshObject::Draw() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || !engine_ || meshResources_.empty()) return;
+    if (!m || !m->cpuModel || !engine_ || meshResources_.empty()) {
+        return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam) {
+        return;
+    }
 
     if (isCullingEnabled_) {
-        float maxScale = (std::max)({ transform_.scale.x, transform_.scale.y, transform_.scale.z });
+        float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
         Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
-        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) return;
+        if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
+            return;
+        }
     }
 
-    bool cameraChanged = (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
-                          std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
+    bool cameraChanged =
+        (std::memcmp(&lastViewMatrix_, &activeCam->GetViewMatrix(), sizeof(Irufemi::Matrix4x4)) != 0 ||
+         std::memcmp(&lastProjectionMatrix_, &activeCam->GetPerspectiveFovMatrix(), sizeof(Irufemi::Matrix4x4)) != 0);
 
     if (isDirtyBuffer_[BaseResource::GetDirectXCommon()->GetFrameIndex()] || cameraChanged) {
         Update(currentPose_);
     }
-    
+
     SyncBeforeDraw();
-
-
 
     uint32_t vertexOffset = 0;
     drawVbvs_.resize(meshResources_.size());
@@ -199,9 +216,11 @@ void AnimatedMeshObject::Draw() {
             drawVbvs_[i] = skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_];
             drawVbvs_[i].BufferLocation += vertexOffset * sizeof(VertexData);
             drawVbvs_[i].SizeInBytes = static_cast<UINT>(m->cpuModel->meshes[i].vertices.size() * sizeof(VertexData));
-            
-            engine_->GetDrawManager()->SubmitStandard3D(res.get(), &drawVbvs_[i], castShadows_, skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
-            
+
+            engine_->GetDrawManager()->SubmitStandard3D(
+                res.get(), &drawVbvs_[i], castShadows_,
+                skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
+
             vertexOffset += static_cast<uint32_t>(m->cpuModel->meshes[i].vertices.size());
         } else {
             engine_->GetDrawManager()->SubmitStandard3D(res.get(), nullptr, castShadows_);
@@ -211,7 +230,9 @@ void AnimatedMeshObject::Draw() {
 
 void AnimatedMeshObject::DrawOutlineMask() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) return;
+    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) {
+        return;
+    }
     uint32_t vertexOffset = 0;
     outlineVbvs_.resize(meshResources_.size());
     for (size_t i = 0; i < meshResources_.size(); ++i) {
@@ -219,10 +240,12 @@ void AnimatedMeshObject::DrawOutlineMask() {
         if (!m->cpuModel->skinClusterData.empty()) {
             outlineVbvs_[i] = skinCluster_.skinnedVertexBufferView[lastSkinnedFrameIndex_];
             outlineVbvs_[i].BufferLocation += vertexOffset * sizeof(VertexData);
-            outlineVbvs_[i].SizeInBytes = static_cast<UINT>(m->cpuModel->meshes[i].vertices.size() * sizeof(VertexData));
-            
-            engine_->GetDrawManager()->SubmitOutlineMask(res.get(), &outlineVbvs_[i], skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
-            
+            outlineVbvs_[i].SizeInBytes =
+                static_cast<UINT>(m->cpuModel->meshes[i].vertices.size() * sizeof(VertexData));
+
+            engine_->GetDrawManager()->SubmitOutlineMask(
+                res.get(), &outlineVbvs_[i], skinCluster_.skinnedVertexResource[lastSkinnedFrameIndex_].Get());
+
             vertexOffset += static_cast<uint32_t>(m->cpuModel->meshes[i].vertices.size());
         } else {
             engine_->GetDrawManager()->SubmitOutlineMask(res.get(), nullptr, nullptr);
@@ -233,26 +256,26 @@ void AnimatedMeshObject::DrawOutlineMask() {
 void AnimatedMeshObject::Debug([[maybe_unused]] const char* objName) {
 #if defined USE_IMGUI
     // ポインタアドレスをIDとして含めることで、同じモデルを使用する複数オブジェクトでImGuiのID衝突（およびそれに伴う頂点バッファ崩壊クラッシュ）を防ぐ
-    std::string name = std::string("AnimMesh: ") + objName + "###AnimMesh_" + std::to_string(reinterpret_cast<uintptr_t>(this));
+    std::string name =
+        std::string("AnimMesh: ") + objName + "###AnimMesh_" + std::to_string(reinterpret_cast<uintptr_t>(this));
     ImGui::Begin(name.c_str());
     if (engine_) {
         auto* ui_ = engine_->GetDebugUI();
         ui_->DebugTransform(transform_);
         ImGui::Checkbox("Frustum Culling", &isCullingEnabled_);
-        ImGui::ColorEdit4("Color", &color_.x); 
-        ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_, &enableLightingOverride_, "##AmOverrides");
-        
-
+        ImGui::ColorEdit4("Color", &color_.x);
+        ui_->DebugMaterialOverrides(&environmentCoefficient_, &lightingModeOverride_, &useClampSamplerOverride_,
+                                    &enableLightingOverride_, "##AmOverrides");
     }
     ImGui::End();
 #endif
 }
 
-
-
 const SkeletonData* AnimatedMeshObject::GetSkeletonData() const {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty()) return nullptr;
+    if (!m || !m->cpuModel || m->cpuModel->skinClusterData.empty()) {
+        return nullptr;
+    }
     return &skeletonData_;
 }
 

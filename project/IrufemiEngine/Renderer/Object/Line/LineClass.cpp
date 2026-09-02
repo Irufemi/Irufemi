@@ -33,8 +33,10 @@ void Line3DBatch::Initialize() {
 
     // 基準となる線の頂点データ (0,0,0) -> (1,0,0)
     // VertexData: position, texcoord, normal, color
-    baseLineResource_->vertexData_[0] = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
-    baseLineResource_->vertexData_[1] = { {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
+    baseLineResource_->vertexData_[0] = {
+        {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}};
+    baseLineResource_->vertexData_[1] = {
+        {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}};
 
     baseLineResource_->indexData_[0] = 0;
     baseLineResource_->indexData_[1] = 1;
@@ -52,7 +54,8 @@ void Line3DBatch::Update() {
     }
 }
 
-void Line3DBatch::AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color, float life) {
+void Line3DBatch::AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color,
+                              float life) {
     if (activeCount_ < maxInstances_) {
         auto& instance = instances_[activeCount_];
         instance.start = start;
@@ -73,17 +76,21 @@ void Line3DBatch::ClearInstances() {
 }
 
 void Line3DBatch::BuildInstanceBuffer(bool force) {
-    if (activeCount_ == 0 && !force) return;
+    if (activeCount_ == 0 && !force) {
+        return;
+    }
 
     CreateOrResizeInstanceBuffer(static_cast<uint32_t>(activeCount_));
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
-    if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex] || !engine_) return;
+    if (!instanceBuffer_[frameIndex] || !instanceData_[frameIndex] || !engine_) {
+        return;
+    }
 
     for (size_t i = 0; i < activeCount_; ++i) {
         const auto& inst = instances_[i];
-        instanceData_[frameIndex][i].start = { inst.start.x, inst.start.y, inst.start.z, 1.0f };
-        instanceData_[frameIndex][i].end = { inst.end.x, inst.end.y, inst.end.z, 1.0f };
+        instanceData_[frameIndex][i].start = {inst.start.x, inst.start.y, inst.start.z, 1.0f};
+        instanceData_[frameIndex][i].end = {inst.end.x, inst.end.y, inst.end.z, 1.0f};
         instanceData_[frameIndex][i].color = inst.color;
     }
 }
@@ -95,16 +102,21 @@ void Line3DBatch::SyncBeforeDraw() {
 }
 
 void Line3DBatch::Draw() {
-    if (activeCount_ == 0) return;
+    if (activeCount_ == 0) {
+        return;
+    }
     BuildInstanceBuffer();
     baseLineResource_->SyncBeforeDraw();
-    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32(), depthWrite_);
+    drawManager_->SubmitLineInstanced(baseLineResource_.get(), GetInstancingSrvHandleGPU(), GetInstanceCountU32(),
+                                      depthWrite_);
 }
 
 void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
-    if (instanceCount == 0) return;
+    if (instanceCount == 0) {
+        return;
+    }
     uint32_t frameIndex = dx_->GetFrameIndex();
-    
+
     if (instanceCount > instanceCapacity_[frameIndex]) {
         if (instanceBuffer_[frameIndex]) {
             instanceBuffer_[frameIndex]->Unmap(0, nullptr);
@@ -125,8 +137,7 @@ void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
         resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
         HRESULT hr = dx_->GetDevice()->CreateCommittedResource(
-            &heapProps, D3D12_HEAP_FLAG_NONE, &resDesc,
-            D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+            &heapProps, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
             IID_PPV_ARGS(instanceBuffer_[frameIndex].GetAddressOf()));
         if (FAILED(hr)) {
             instanceBuffer_[frameIndex].Reset();
@@ -142,7 +153,9 @@ void Line3DBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 void Line3DBatch::EnsureInstancingSRV() {
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
-    if (!instanceBuffer_[frameIndex]) return;
+    if (!instanceBuffer_[frameIndex]) {
+        return;
+    }
 
     if (instancingSrvIndex_[frameIndex] == UINT32_MAX) {
         instancingSrvIndex_[frameIndex] = s_srvAllocator_->Allocate();
@@ -159,5 +172,6 @@ void Line3DBatch::EnsureInstancingSRV() {
     srvDesc.Buffer.StructureByteStride = sizeof(InstanceData);
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srvDesc, instancingSrvCPU_[frameIndex]);
+    dx_->GetDevice()->CreateShaderResourceView(instanceBuffer_[frameIndex].Get(), &srvDesc,
+                                               instancingSrvCPU_[frameIndex]);
 }

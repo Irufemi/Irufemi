@@ -74,7 +74,7 @@ private:
     std::vector<RenderPackets::ModelBatchPacket> modelBatchQueue_;
     std::vector<RenderPackets::DebugPrimitivePacket> debugPrimitiveQueue_;
     std::vector<std::function<void()>> postRenderQueue_;
-    
+
     // 最前面UI描画用キュー (PostProcess適用後のバックバッファに直接描画)
     std::vector<RenderPackets::SpritePacket> topMostSpriteQueue_;
     std::vector<RenderPackets::SpriteBatchPacket> topMostSpriteBatchQueue_;
@@ -90,101 +90,141 @@ public:
      * @brief Standard3DQueue を取得する。
      * @return 取得された Standard3DQueue
      */
-    const std::vector<RenderPackets::Standard3DPacket>& GetStandard3DQueue() const { return standard3DQueue_; }
+    const std::vector<RenderPackets::Standard3DPacket>& GetStandard3DQueue() const {
+        return standard3DQueue_;
+    }
     /**
      * @brief Transparent3DQueue を取得する。
      * @return 取得された Transparent3DQueue
      */
-    const std::vector<RenderPackets::Standard3DPacket>& GetTransparent3DQueue() const { return transparent3DQueue_; }
+    const std::vector<RenderPackets::Standard3DPacket>& GetTransparent3DQueue() const {
+        return transparent3DQueue_;
+    }
     /**
      * @brief UI3DQueue を取得する。
      * @return 取得された UI3DQueue
      */
-    const std::vector<RenderPackets::Standard3DPacket>& GetUI3DQueue() const { return ui3DQueue_; }
+    const std::vector<RenderPackets::Standard3DPacket>& GetUI3DQueue() const {
+        return ui3DQueue_;
+    }
     /**
      * @brief SelectionMaskQueue を取得する。
      * @return 取得された SelectionMaskQueue
      */
-    const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const { return selectionMaskQueue_; }
+    const std::vector<RenderPackets::Standard3DPacket>& GetSelectionMaskQueue() const {
+        return selectionMaskQueue_;
+    }
     /**
      * @brief SelectionMaskQueue2D を取得する。
      * @return 取得された SelectionMaskQueue2D
      */
-    const std::vector<RenderPackets::SpritePacket>& GetSelectionMaskQueue2D() const { return selectionMaskQueue2D_; }
+    const std::vector<RenderPackets::SpritePacket>& GetSelectionMaskQueue2D() const {
+        return selectionMaskQueue2D_;
+    }
     /**
      * @brief SpriteQueue を取得する。
      * @return 取得された SpriteQueue
      */
-    const std::vector<RenderPackets::SpritePacket>& GetSpriteQueue() const { return spriteQueue_; }
+    const std::vector<RenderPackets::SpritePacket>& GetSpriteQueue() const {
+        return spriteQueue_;
+    }
     /**
      * @brief SpriteBatchQueue を取得する。
      * @return 取得された SpriteBatchQueue
      */
-    const std::vector<RenderPackets::SpriteBatchPacket>& GetSpriteBatchQueue() const { return spriteBatchQueue_; }
+    const std::vector<RenderPackets::SpriteBatchPacket>& GetSpriteBatchQueue() const {
+        return spriteBatchQueue_;
+    }
 
     /**
      * @brief LineQueue を取得する。
      * @return 取得された LineQueue
      */
-    const std::vector<RenderPackets::LinePacket>& GetLineQueue() const { return lineQueue_; }
+    const std::vector<RenderPackets::LinePacket>& GetLineQueue() const {
+        return lineQueue_;
+    }
     /**
      * @brief GPUParticleQueue を取得する。
      * @return 取得された GPUParticleQueue
      */
-    const std::vector<RenderPackets::GPUParticlePacket>& GetGPUParticleQueue() const { return gpuParticleQueue_; }
+    const std::vector<RenderPackets::GPUParticlePacket>& GetGPUParticleQueue() const {
+        return gpuParticleQueue_;
+    }
     /**
      * @brief VoxelParticleQueue を取得する。
      * @return 取得された VoxelParticleQueue
      */
-    const std::vector<RenderPackets::VoxelParticlePacket>& GetVoxelParticleQueue() const { return voxelParticleQueue_; }
+    const std::vector<RenderPackets::VoxelParticlePacket>& GetVoxelParticleQueue() const {
+        return voxelParticleQueue_;
+    }
     /**
      * @brief SkyboxQueue を取得する。
      * @return 取得された SkyboxQueue
      */
-    const std::vector<RenderPackets::SkyboxPacket>& GetSkyboxQueue() const { return skyboxQueue_; }
+    const std::vector<RenderPackets::SkyboxPacket>& GetSkyboxQueue() const {
+        return skyboxQueue_;
+    }
     /**
      * @brief PrimitiveBatchQueue を取得する。
      * @return 取得された PrimitiveBatchQueue
      */
-    const std::vector<RenderPackets::PrimitiveBatchPacket>& GetPrimitiveBatchQueue() const { return primitiveBatchQueue_; }
+    const std::vector<RenderPackets::PrimitiveBatchPacket>& GetPrimitiveBatchQueue() const {
+        return primitiveBatchQueue_;
+    }
     /**
      * @brief Primitive2DBatchQueue を取得する。
      * @return 取得された Primitive2DBatchQueue
      */
-    const std::vector<RenderPackets::Primitive2DBatchPacket>& GetPrimitive2DBatchQueue() const { return primitive2DBatchQueue_; }
+    const std::vector<RenderPackets::Primitive2DBatchPacket>& GetPrimitive2DBatchQueue() const {
+        return primitive2DBatchQueue_;
+    }
     /**
      * @brief ModelBatchQueue を取得する。
      * @return 取得された ModelBatchQueue
      */
-    const std::vector<RenderPackets::ModelBatchPacket>& GetModelBatchQueue() const { return modelBatchQueue_; }
+    const std::vector<RenderPackets::ModelBatchPacket>& GetModelBatchQueue() const {
+        return modelBatchQueue_;
+    }
     /**
      * @brief DebugPrimitiveQueue を取得する。
      * @return 取得された DebugPrimitiveQueue
      */
-    const std::vector<RenderPackets::DebugPrimitivePacket>& GetDebugPrimitiveQueue() const { return debugPrimitiveQueue_; }
-    const std::vector<std::function<void()>>& GetPostRenderQueue() const { return postRenderQueue_; }
+    const std::vector<RenderPackets::DebugPrimitivePacket>& GetDebugPrimitiveQueue() const {
+        return debugPrimitiveQueue_;
+    }
+    const std::vector<std::function<void()>>& GetPostRenderQueue() const {
+        return postRenderQueue_;
+    }
     /**
      * @brief TopMostSpriteQueue を取得する。
      * @return 取得された TopMostSpriteQueue
      */
-    const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const { return topMostSpriteQueue_; }
+    const std::vector<RenderPackets::SpritePacket>& GetTopMostSpriteQueue() const {
+        return topMostSpriteQueue_;
+    }
     /**
      * @brief TopMostSpriteBatchQueue を取得する。
      * @return 取得された TopMostSpriteBatchQueue
      */
-    const std::vector<RenderPackets::SpriteBatchPacket>& GetTopMostSpriteBatchQueue() const { return topMostSpriteBatchQueue_; }
-    
+    const std::vector<RenderPackets::SpriteBatchPacket>& GetTopMostSpriteBatchQueue() const {
+        return topMostSpriteBatchQueue_;
+    }
+
     // --- Text Queues ---
     /**
      * @brief TextQueue を取得する。
      * @return 取得された TextQueue
      */
-    const std::vector<RenderPackets::SpritePacket>& GetTextQueue() const { return textQueue_; }
+    const std::vector<RenderPackets::SpritePacket>& GetTextQueue() const {
+        return textQueue_;
+    }
     /**
      * @brief TopMostTextQueue を取得する。
      * @return 取得された TopMostTextQueue
      */
-    const std::vector<RenderPackets::SpritePacket>& GetTopMostTextQueue() const { return topMostTextQueue_; }
+    const std::vector<RenderPackets::SpritePacket>& GetTopMostTextQueue() const {
+        return topMostTextQueue_;
+    }
 
     // --- Execute Queues ---
     /**
@@ -221,7 +261,7 @@ public:
 
         D3D12_GPU_DESCRIPTOR_HANDLE lightSrvHandle{};
         uint32_t lightSrvBaseIndex = 0xFFFFFFFFu;
-        
+
         // カメラやライト共通情報を格納するデータ
         struct FrameData {
             D3D12_GPU_VIRTUAL_ADDRESS camera;
@@ -238,8 +278,7 @@ public:
     class RenderTexture* currentRenderTexture_ = nullptr;
     RenderTexture* currentRenderTexture2_ = nullptr;
 
-public: //メンバ関数
-
+public: // メンバ関数
     /** @name 初期化・終了処理 */
     ///@{
     DrawManager();
@@ -257,7 +296,7 @@ public: //メンバ関数
      * @brief OnResize を実行する。
      */
     void OnResize(int32_t width, int32_t height);
-    
+
     /**
      * @brief RenderGraphにリソースの初期ステートを登録する（リサイズ時用）
      */
@@ -288,17 +327,16 @@ public: //メンバ関数
      * @brief IsShadowPass かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsShadowPass() const { return isShadowPass_; }
+    bool IsShadowPass() const {
+        return isShadowPass_;
+    }
 
     /**
      * @brief フレームの描画開始処理
      * @details レンダーターゲットのクリアとビューポートの設定を行います。
      */
-    void PreDraw(
-        std::array<float, 4> clearColor = { 0.1f, 0.25f, 0.5f, 1.0f },
-        float clearDepth = 1.0f,
-        uint8_t clearStencil = 0
-    );
+    void PreDraw(std::array<float, 4> clearColor = {0.1f, 0.25f, 0.5f, 1.0f}, float clearDepth = 1.0f,
+                 uint8_t clearStencil = 0);
 
     /**
      * @brief フレームの描画終了処理
@@ -321,9 +359,11 @@ public: //メンバ関数
     void RegisterComputeTask(IComputeTask* task) {
         computeTasks_.push_back(task);
     }
-    
-    const std::vector<IComputeTask*>& GetComputeTasks() const { return computeTasks_; }
-    
+
+    const std::vector<IComputeTask*>& GetComputeTasks() const {
+        return computeTasks_;
+    }
+
     /**
      * @brief 登録された全Computeタスクを一括実行し、リストをクリアする
      */
@@ -348,7 +388,8 @@ public: //メンバ関数
      * @param[in] renderTargets 出力先の RenderTexture のリスト
      * @param[in] clearColors 各 RenderTexture の背景クリア色
      */
-    void BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets, const std::vector<Irufemi::Vector4>& clearColors);
+    void BeginRenderTextures(const std::vector<class RenderTexture*>& renderTargets,
+                             const std::vector<Irufemi::Vector4>& clearColors);
 
     /**
      * @brief 複数の RenderTexture への描画を終了する
@@ -360,7 +401,9 @@ public: //メンバ関数
      * @param[in] rt 出力先の RenderTexture
      * @param[in] clearColor 背景クリア色
      */
-    void BeginRenderTexture(class RenderTexture* rt, const Irufemi::Vector4& clearColor, class RenderTexture* rt2 = nullptr, const Irufemi::Vector4& clearColor2 = Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f});
+    void BeginRenderTexture(class RenderTexture* rt, const Irufemi::Vector4& clearColor,
+                            class RenderTexture* rt2 = nullptr,
+                            const Irufemi::Vector4& clearColor2 = Irufemi::Vector4{0.0f, 0.0f, 0.0f, 0.0f});
 
     /**
      * @brief RenderTexture への描画を終了する
@@ -381,7 +424,8 @@ public: //メンバ関数
      * @param[in] cbvAddress 追加の定数バッファアドレス（オプション）
      * @param[in] depthSrvHandle 深度テクスチャのハンドル（オプション）
      */
-    void DrawRenderTexture(class RenderTexture* renderTexture, ID3D12PipelineState* pso = nullptr, D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle = { 0 });
+    void DrawRenderTexture(class RenderTexture* renderTexture, ID3D12PipelineState* pso = nullptr,
+                           D3D12_GPU_VIRTUAL_ADDRESS cbvAddress = 0, D3D12_GPU_DESCRIPTOR_HANDLE depthSrvHandle = {0});
     ///@}
 
     /** @name 共通データ設定 */
@@ -389,29 +433,32 @@ public: //メンバ関数
     /**
      * @brief フレーム単位の共通データを定数バッファに書き込む
      */
-    void SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light, const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights, const std::vector<AreaLight*>& areaLights, const Irufemi::Vector2& resolution = {1280.0f, 720.0f});
+    void SetFrameData(const CameraForGPU& camera, float time, float deltaTime, const DirectionalLight& light,
+                      const std::vector<PointLight*>& pointLights, const std::vector<SpotLight*>& spotLights,
+                      const std::vector<AreaLight*>& areaLights,
+                      const Irufemi::Vector2& resolution = {1280.0f, 720.0f});
 
     /**
-     * @brief キャッシュされたフレームデータを用いて現在のフレームバッファを同期する（ポーズなどでSetFrameDataが呼ばれなかった時用）
+     * @brief
+     * キャッシュされたフレームデータを用いて現在のフレームバッファを同期する（ポーズなどでSetFrameDataが呼ばれなかった時用）
      */
     void SyncCachedFrameData();
-    
+
 private:
     PerFrameData cachedPerFrame_{};
     DirectionalLight cachedDirectionalLight_{};
     std::vector<PointLight> cachedPointLights_;
     std::vector<SpotLight> cachedSpotLights_;
     std::vector<AreaLight> cachedAreaLights_;
-    
+
     // シャドウマップのカスタムパラメータ
-    Irufemi::Vector3 shadowTargetPos_{ 0, 0, 0 };
-    float shadowOrthoSize_{ 128.0f };
-    bool useCustomShadowParams_{ false };
+    Irufemi::Vector3 shadowTargetPos_{0, 0, 0};
+    float shadowOrthoSize_{128.0f};
+    bool useCustomShadowParams_{false};
 
     TextureManager* textureManager_ = nullptr; ///< 環境マップフォールバック等に使用するテクスチャマネージャー
-    
-public:
 
+public:
     /**
      * @brief シャドウマップの注視点とサイズをカスタマイズする
      * @param targetPos 注視点（通常はプレイヤーとボスの中心）
@@ -434,7 +481,9 @@ public:
      * @brief テクスチャマネージャーのポインタを設定する
      * @param[in] textureManager 依存注入するテクスチャマネージャーへのポインタ
      */
-    void SetTextureManager(TextureManager* textureManager) { textureManager_ = textureManager; }
+    void SetTextureManager(TextureManager* textureManager) {
+        textureManager_ = textureManager;
+    }
 
     /**
      * @brief 環境マップを設定する
@@ -445,7 +494,9 @@ public:
      * @brief EnvironmentMap を取得する。
      * @return 取得された EnvironmentMap
      */
-    D3D12_GPU_DESCRIPTOR_HANDLE GetEnvironmentMap() const { return environmentMapHandle_; }
+    D3D12_GPU_DESCRIPTOR_HANDLE GetEnvironmentMap() const {
+        return environmentMapHandle_;
+    }
     ///@}
 
     /** @name 各種オブジェクト描画メソッド */
@@ -481,7 +532,9 @@ public:
     /**
      * @brief インスタンス化された線の描画
      */
-    void SubmitLineInstanced(const class LineResource* resource, const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount, PSOManager::DepthWrite depthWrite = PSOManager::DepthWrite::Enable);
+    void SubmitLineInstanced(const class LineResource* resource,
+                             const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU, const UINT& instanceCount,
+                             PSOManager::DepthWrite depthWrite = PSOManager::DepthWrite::Enable);
     /**
      * @brief DrawLineInstanced を実行する。
      */
@@ -500,19 +553,28 @@ public:
      * @brief 標準的な3Dオブジェクトの描画 (Object3d.hlsl)
      * @param vertexBufferViewOverride スキニング等でVBVを差し替えたい場合に指定
      */
-    void SubmitStandard3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true, ID3D12Resource* vertexBufferResourceOverride = nullptr, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV = 0);
+    void SubmitStandard3D(const class Object3DResource* resource,
+                          const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = true,
+                          ID3D12Resource* vertexBufferResourceOverride = nullptr,
+                          D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV = 0);
     /**
      * @brief 半透明・エフェクト用の3D標準描画のキューに追加（距離ソート用）
      */
-    void SubmitTransparent3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, bool castShadows = false, ID3D12Resource* vertexBufferResourceOverride = nullptr, D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV = 0);
+    void SubmitTransparent3D(const class Object3DResource* resource,
+                             const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr,
+                             bool castShadows = false, ID3D12Resource* vertexBufferResourceOverride = nullptr,
+                             D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV = 0);
     /**
      * @brief SubmitUI3D を実行する。
      */
-    void SubmitUI3D(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
+    void SubmitUI3D(const class Object3DResource* resource,
+                    const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr);
     /**
      * @brief SubmitOutlineMask を実行する。
      */
-    void SubmitOutlineMask(const class Object3DResource* resource, const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr, ID3D12Resource* vertexBufferResourceOverride = nullptr);
+    void SubmitOutlineMask(const class Object3DResource* resource,
+                           const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride = nullptr,
+                           ID3D12Resource* vertexBufferResourceOverride = nullptr);
     /**
      * @brief SubmitTextOutlineMask を実行する。
      */
@@ -571,7 +633,9 @@ public:
     /**
      * @brief スカイボックスの描画コマンドを送信する
      */
-    void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView, D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress, const UINT& indexCount);
+    void SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView, const D3D12_INDEX_BUFFER_VIEW& indexBufferView,
+                      D3D12_GPU_VIRTUAL_ADDRESS materialAddress, D3D12_GPU_VIRTUAL_ADDRESS transformationAddress,
+                      const UINT& indexCount);
     /**
      * @brief DrawSkybox を実行する。
      */
@@ -585,19 +649,13 @@ public:
      * @brief DrawGPUParticle を実行する。
      */
     void DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet);
-    
+
     // VoxelParticle 用の描画 (VoxelParticle.hlsl)
-    void SubmitVoxelParticle(
-        uint32_t instanceCount,
-        const D3D12_VERTEX_BUFFER_VIEW& vbv,
-        const D3D12_INDEX_BUFFER_VIEW& ibv,
-        uint32_t indexCount,
-        D3D12_GPU_VIRTUAL_ADDRESS systemCbAddress,
-        D3D12_GPU_DESCRIPTOR_HANDLE emitterHandle,
-        D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle,
-        ID3D12Resource* particleResource,
-        ID3D12PipelineState* drawPSO
-    );
+    void SubmitVoxelParticle(uint32_t instanceCount, const D3D12_VERTEX_BUFFER_VIEW& vbv,
+                             const D3D12_INDEX_BUFFER_VIEW& ibv, uint32_t indexCount,
+                             D3D12_GPU_VIRTUAL_ADDRESS systemCbAddress, D3D12_GPU_DESCRIPTOR_HANDLE emitterHandle,
+                             D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle, ID3D12Resource* particleResource,
+                             ID3D12PipelineState* drawPSO);
     /**
      * @brief DrawVoxelParticle を実行する。
      */
@@ -619,35 +677,47 @@ public:
 
     /** @name 状態取得・ユーティリティ */
     ///@{
-    PerFrameData* GetPerFrameData() const { return frameResources_[dxCommon_->GetFrameIndex()].perFrameData; }
+    PerFrameData* GetPerFrameData() const {
+        return frameResources_[dxCommon_->GetFrameIndex()].perFrameData;
+    }
     /**
      * @brief RenderGraph を取得する。
      * @return 取得された RenderGraph
      */
-    class RenderGraph* GetRenderGraph() const { return renderGraph_.get(); }
+    class RenderGraph* GetRenderGraph() const {
+        return renderGraph_.get();
+    }
     /**
      * @brief DxCommon を取得する。
      * @return 取得された DxCommon
      */
-    DirectXCommon* GetDxCommon() const { return dxCommon_; }
+    DirectXCommon* GetDxCommon() const {
+        return dxCommon_;
+    }
     /**
      * @brief ShadowMap を取得する。
      * @return 取得された ShadowMap
      */
-    ShadowMap* GetShadowMap() const { return shadowMaps_[dxCommon_->GetFrameIndex()].get(); }
+    ShadowMap* GetShadowMap() const {
+        return shadowMaps_[dxCommon_->GetFrameIndex()].get();
+    }
 
     /**
      * @brief VSyncの有効/無効を設定する。
      */
-    void SetVSync(bool enable) { vSyncEnabled_ = enable; }
-    
+    void SetVSync(bool enable) {
+        vSyncEnabled_ = enable;
+    }
+
     /**
      * @brief VSyncが有効か取得する。
      */
-    bool IsVSyncEnabled() const { return vSyncEnabled_; }
+    bool IsVSyncEnabled() const {
+        return vSyncEnabled_;
+    }
     ///@}
 
 private:
     Microsoft::WRL::ComPtr<ID3D12CommandSignature> commandSignature_;
     bool vSyncEnabled_ = true;
-};
+};

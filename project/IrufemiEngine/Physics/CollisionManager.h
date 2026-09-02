@@ -42,12 +42,15 @@ public:
 
     /// @brief 登録されたコライダーをすべてクリアする（シーン切り替え時などに呼ぶ）
     void Clear();
-    
+
     /// @brief コライダーを登録する
     void RegisterCollider(ColliderComponent* collider);
-    
+
     /// @brief コライダーの登録を解除する
     void UnregisterCollider(ColliderComponent* collider);
+
+    /// @brief 溜まった追加・削除キューを処理する
+    void FlushPendingCommands();
 
     /// @brief 毎フレーム呼ばれ、登録された全ペアの判定を行う
     void CheckAllCollisions();
@@ -56,7 +59,9 @@ public:
     void DrawDebug(GameObject* selectedObject = nullptr);
 
     /// @brief デバッグ描画フラグのポインタを取得する（ImGui用）
-    bool* GetIsDrawDebugLinePtr() { return &isDrawDebugLine_; }
+    bool* GetIsDrawDebugLinePtr() {
+        return &isDrawDebugLine_;
+    }
 
     // --- 動的レイヤー管理 ---
     /**
@@ -71,7 +76,9 @@ public:
      * @brief LayerNames を取得する。
      * @return 取得された LayerNames
      */
-    std::vector<std::string>& GetLayerNames() { return layerNames_; }
+    std::vector<std::string>& GetLayerNames() {
+        return layerNames_;
+    }
     /**
      * @brief AddLayer を実行する。
      */
@@ -96,7 +103,8 @@ public:
     /// @param layerMask 判定対象とするレイヤーのビットマスク
     /// @param ignoreObject 判定から除外するオブジェクト（自分自身を無視するためなど）
     /// @return 何かに当たった場合はtrue
-    bool Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+    bool Raycast(const Irufemi::Ray& ray, RaycastHit& hitInfo, float maxDistance = 1000.0f,
+                 uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
 
     /// @brief BVHに対してAABBのクエリを行い、交差するコライダーを取得する
     void QueryAABB(const Irufemi::AABB& aabb, std::vector<ColliderComponent*>& outHits) const;
@@ -106,13 +114,15 @@ public:
      * @param pool 使用するエンジンのThreadPool
      * @return 判定結果とHitInfoのペアを返すstd::future
      */
-    std::future<std::pair<bool, RaycastHit>> RaycastAsync(ThreadPool* pool, const Irufemi::Ray& ray, float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF, GameObject* ignoreObject = nullptr);
+    std::future<std::pair<bool, RaycastHit>> RaycastAsync(ThreadPool* pool, const Irufemi::Ray& ray,
+                                                          float maxDistance = 1000.0f, uint32_t layerMask = 0xFFFFFFFF,
+                                                          GameObject* ignoreObject = nullptr);
 
     /// @brief デバッグ用のレイを描画キューに追加する
-    void DrawDebugRay(const Irufemi::Ray& ray, float distance, const Irufemi::Vector4& color = {1,0,0,1});
+    void DrawDebugRay(const Irufemi::Ray& ray, float distance, const Irufemi::Vector4& color = {1, 0, 0, 1});
 
     /// @brief デバッグ用のAABBを描画キューに追加する
-    void DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color = {1,0,0,1});
+    void DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color = {1, 0, 0, 1});
 
 private:
     CollisionManager(const CollisionManager&) = delete;
@@ -121,9 +131,23 @@ private:
     /** @brief マルチスレッドからの物理クエリを安全に行うためのRead-Writeロック */
     mutable std::shared_mutex collidersMutex_;
     std::vector<ColliderComponent*> colliders_;
+
+    // --- 遅延登録用キュー ---
+    std::mutex pendingMutex_;                     ///< 遅延コマンド操作用ミューテックス
+    std::vector<ColliderComponent*> pendingAdds_; ///< 追加予定のコライダーリスト
+
+    struct PendingRemove {
+        ColliderComponent* collider;
+        int bvhNodeId;
+    };
+    std::vector<PendingRemove> pendingRemoves_; ///< 削除予定のコライダーリスト
+
     std::unique_ptr<Line3DBatch> debugLine_ = nullptr;
     DebugPrimitiveRenderer* debugPrimitiveRenderer_ = nullptr;
-    
+
+    // --- デバッグ用キャッシュ ---
+    std::vector<ColliderComponent*> debugRemoveList_; ///< DrawDebug時の削除リスト（ヒープ割当回避用）
+
     // レイヤー名（最大32個）
     std::vector<std::string> layerNames_;
     std::string layerConfigFilePath_ = "resources/Config/layers.json";

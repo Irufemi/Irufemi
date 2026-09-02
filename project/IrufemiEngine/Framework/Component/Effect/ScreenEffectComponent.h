@@ -16,7 +16,9 @@ public:
     void Initialize() override;
     void Update() override;
 
-    std::string GetComponentName() const override { return "ScreenEffectComponent"; }
+    std::string GetComponentName() const override {
+        return "ScreenEffectComponent";
+    }
 
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& j) override;
@@ -29,16 +31,32 @@ public:
     /// @brief 演出を開始する（Weight を 1.0 にし、時間経過で減衰させる）
     void Play();
 
-    void SetMode(PostProcessMode mode) { mode_ = mode; }
-    PostProcessMode GetMode() const { return mode_; }
+    void SetMode(PostProcessMode mode) {
+        mode_ = mode;
+    }
+    PostProcessMode GetMode() const {
+        return mode_;
+    }
 
-    void SetDuration(float duration) { duration_ = duration; }
-    float GetDuration() const { return duration_; }
+    void SetDuration(float duration) {
+        duration_ = duration;
+    }
+    float GetDuration() const {
+        return duration_;
+    }
 
-    PostProcessManager::GlitchParams& GetTargetGlitchParams() { return targetGlitchParams_; }
-    PostProcessManager::VignetteParams& GetTargetVignetteParams() { return targetVignetteParams_; }
-    PostProcessManager::ChromaticAberrationParams& GetTargetChromaticAberrationParams() { return targetChromaticAberrationParams_; }
-    PostProcessManager::RadialBlurParams& GetTargetRadialBlurParams() { return targetRadialBlurParams_; }
+    PostProcessManager::GlitchParams& GetTargetGlitchParams() {
+        return targetGlitchParams_;
+    }
+    PostProcessManager::VignetteParams& GetTargetVignetteParams() {
+        return targetVignetteParams_;
+    }
+    PostProcessManager::ChromaticAberrationParams& GetTargetChromaticAberrationParams() {
+        return targetChromaticAberrationParams_;
+    }
+    PostProcessManager::RadialBlurParams& GetTargetRadialBlurParams() {
+        return targetRadialBlurParams_;
+    }
 
 private:
     PostProcessMode mode_ = PostProcessMode::None;

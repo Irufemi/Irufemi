@@ -8,13 +8,14 @@
 
 class GameObject;
 class VirtualEntityManagerComponent;
+class DebrisComponent;
+enum class DebrisState;
 
 // がれきのアニメーション用並行データ（Data-Oriented Parallel Array）
 struct DebrisAnimData {
     float baseIdleY_;
     float idleTimeY_;
 };
-
 
 /**
  * @class DebrisManagerComponent
@@ -28,7 +29,9 @@ public:
     void Initialize() override;
     void Update() override;
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "DebrisManagerComponent"; }
+    std::string GetComponentName() const override {
+        return "DebrisManagerComponent";
+    }
 
     /**
      * @brief プールからガレキを1つ取り出す
@@ -45,38 +48,90 @@ public:
      */
     void MarkForRelease(std::shared_ptr<GameObject> debris);
 
+    /**
+     * @brief 仮想ガレキデータの完全削除をキューに積む（Update中の安全な削除用）
+     */
+    void MarkForDestroy(int virtualId, int variationIndex);
+
+    void RegisterDebris(DebrisComponent* debris, DebrisState state);
+    void UnregisterDebris(DebrisComponent* debris, DebrisState state);
+
     // プレイヤーからの引き寄せ処理用：指定座標から一番近い未昇格のがれきを実体化して返す
     std::shared_ptr<GameObject> ExtractNearestIdleDebris(const Irufemi::Vector3& pos, float radius);
 
     // 破壊通知
     void NotifyDestroyed(int virtualId, int variationIndex);
 
-    // Debris パラメータのゲッター
-    float GetDebrisPullSpeed() const { return debrisPullSpeed_; }
-    float GetDebrisThrowSpeed() const { return debrisThrowSpeed_; }
-    float GetDebrisOrbitSpeed() const { return debrisOrbitSpeed_; }
-    float GetDebrisOrbitRadius() const { return debrisOrbitRadius_; }
-    float GetDebrisDamage() const { return debrisDamage_; }
-    float GetDebrisEnemyDamage() const { return debrisEnemyDamage_; }
-    float GetDebrisPullYOffset() const { return debrisPullYOffset_; }
-    float GetCameraShakeIntensity() const { return cameraShakeIntensity_; }
-    int GetCameraShakeDurationFrames() const { return cameraShakeDurationFrames_; }
-    Irufemi::Vector4 GetPlayerAuraColor() const { return playerAuraColor_; }
-    Irufemi::Vector4 GetBossAuraColor() const { return bossAuraColor_; }
-    Irufemi::Vector4 GetIdleAuraColor() const { return idleAuraColor_; }
-    float GetCatchDistanceSq() const { return catchDistanceSq_; }
-    float GetBossShieldRadius() const { return bossShieldRadius_; }
+    /**
+     * @brief プール枯渇時用：一番遠いIdle状態のがれきを強制降格して枠を空ける
+     * @param fromPos 基準となる座標
+     * @return 降格に成功した場合は true
+     */
+    bool DemoteFarthestIdleDebris(const Irufemi::Vector3& fromPos);
 
-    Irufemi::Vector3 GetDebrisBaseScale() const { return debrisBaseScale_; }
-    float GetColliderRadius() const { return colliderRadius_; }
-    Irufemi::Vector3 GetAuraScale() const { return auraScale_; }
-    float GetMaxThrowDistanceSq() const { return maxThrowDistance_ * maxThrowDistance_; }
+    // Debris パラメータのゲッター
+    float GetDebrisPullSpeed() const {
+        return debrisPullSpeed_;
+    }
+    float GetDebrisThrowSpeed() const {
+        return debrisThrowSpeed_;
+    }
+    float GetDebrisOrbitSpeed() const {
+        return debrisOrbitSpeed_;
+    }
+    float GetDebrisOrbitRadius() const {
+        return debrisOrbitRadius_;
+    }
+    float GetDebrisDamage() const {
+        return debrisDamage_;
+    }
+    float GetDebrisEnemyDamage() const {
+        return debrisEnemyDamage_;
+    }
+    float GetDebrisPullYOffset() const {
+        return debrisPullYOffset_;
+    }
+    float GetCameraShakeIntensity() const {
+        return cameraShakeIntensity_;
+    }
+    int GetCameraShakeDurationFrames() const {
+        return cameraShakeDurationFrames_;
+    }
+    Irufemi::Vector4 GetPlayerAuraColor() const {
+        return playerAuraColor_;
+    }
+    Irufemi::Vector4 GetBossAuraColor() const {
+        return bossAuraColor_;
+    }
+    Irufemi::Vector4 GetIdleAuraColor() const {
+        return idleAuraColor_;
+    }
+    float GetCatchDistanceSq() const {
+        return catchDistanceSq_;
+    }
+    float GetBossShieldRadius() const {
+        return bossShieldRadius_;
+    }
+
+    Irufemi::Vector3 GetDebrisBaseScale() const {
+        return debrisBaseScale_;
+    }
+    float GetColliderRadius() const {
+        return colliderRadius_;
+    }
+    Irufemi::Vector3 GetAuraScale() const {
+        return auraScale_;
+    }
+    float GetMaxThrowDistanceSq() const {
+        return maxThrowDistance_ * maxThrowDistance_;
+    }
 
 private:
     // --- Data-Driven Variations ---
     struct DebrisVariation {
         std::string id;
         std::string modelPath;
+        int maxVirtualCount;
         int maxPoolSize;
         int spawnWeight;
         VirtualEntityManagerComponent* virtualManager = nullptr;
@@ -96,16 +151,27 @@ private:
     float debrisPullYOffset_ = 2.0f;
     float cameraShakeIntensity_ = 0.5f;
     int cameraShakeDurationFrames_ = 10;
-    Irufemi::Vector4 playerAuraColor_ = { 0.0f, 0.8f, 1.0f, 0.4f };
-    Irufemi::Vector4 bossAuraColor_ = { 0.8f, 0.0f, 0.6f, 0.4f };
-    Irufemi::Vector4 idleAuraColor_ = { 0.6f, 0.2f, 1.0f, 0.4f };
+    Irufemi::Vector4 playerAuraColor_ = {0.0f, 0.8f, 1.0f, 0.4f};
+    Irufemi::Vector4 bossAuraColor_ = {0.8f, 0.0f, 0.6f, 0.4f};
+    Irufemi::Vector4 idleAuraColor_ = {0.6f, 0.2f, 1.0f, 0.4f};
     float catchDistanceSq_ = 2.0f;
     float bossShieldRadius_ = 8.0f;
 
-    Irufemi::Vector3 debrisBaseScale_ = { 0.5f, 0.5f, 0.5f };
+    Irufemi::Vector3 debrisBaseScale_ = {0.5f, 0.5f, 0.5f};
     float colliderRadius_ = 0.5f;
-    Irufemi::Vector3 auraScale_ = { 2.2f, 2.2f, 2.2f };
+    Irufemi::Vector3 auraScale_ = {2.2f, 2.2f, 2.2f};
     float maxThrowDistance_ = 1500.0f;
 
     std::vector<std::shared_ptr<GameObject>> pendingReleases_;
+    std::vector<std::pair<int, int>> pendingDestroys_;
+
+    void UpdatePulledDebris(float deltaTime);
+    void UpdateOrbitingDebris(float deltaTime);
+    void UpdateBossOrbitingDebris(float deltaTime);
+    void UpdateThrownDebris(float deltaTime);
+
+    std::vector<DebrisComponent*> pulledDebris_;
+    std::vector<DebrisComponent*> orbitingDebris_;
+    std::vector<DebrisComponent*> bossOrbitingDebris_;
+    std::vector<DebrisComponent*> thrownDebris_;
 };

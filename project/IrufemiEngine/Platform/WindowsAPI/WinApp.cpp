@@ -18,8 +18,8 @@
 
 #define ENABLE_ESCAPE_EXIT 0 // 1: 有効, 0: 無効
 
-#pragma comment(lib,"winmm.lib")
-#pragma comment(lib,"Dbghelp.lib")
+#pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "Dbghelp.lib")
 
 WinApp::~WinApp() {
     Finalize();
@@ -35,52 +35,50 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
     // システムタイマーの分解能を上げる
     timeBeginPeriod(1);
 
-
     // ─────────────────────────────────────────────────────
     // 学校資料準拠：WNDCLASS + RegisterClass + CreateWindow
     // ─────────────────────────────────────────────────────
 
     /*ウィンドウを作ろう*/
 
-    ///ウィンドウクラスを登録する
+    /// ウィンドウクラスを登録する
 
     WNDCLASSW wc{};
-    //ウィンドウプロシージャ
+    // ウィンドウプロシージャ
     wc.lpfnWndProc = &WinApp::WndProc;
-    //ウィンドウクラス名(なんでもいい)
+    // ウィンドウクラス名(なんでもいい)
     wc.lpszClassName = className_.c_str();
-    //インスタンスハンドル
+    // インスタンスハンドル
     wc.hInstance = hInstance;
-    //カーソル
+    // カーソル
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 
-    //ウィンドウクラスを登録する
+    // ウィンドウクラスを登録する
     ATOM atom = RegisterClassW(&wc);
-    didRegisterClass_ = (atom != 0);           // 既に登録済みなら 0(解除しない)
+    didRegisterClass_ = (atom != 0); // 既に登録済みなら 0(解除しない)
 
-    ///ウィンドウサイズを決める
+    /// ウィンドウサイズを決める
 
-    //ウィンドウサイズを表す構造体にクライアント領域を入れる
-    RECT wrc = { 0,0,clientWidth_ ,clientHeight_ };
+    // ウィンドウサイズを表す構造体にクライアント領域を入れる
+    RECT wrc = {0, 0, clientWidth_, clientHeight_};
 
-    //クライアント領域をもとに実際のサイズにwrcを変更してもらう
+    // クライアント領域をもとに実際のサイズにwrcを変更してもらう
     AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
-    ///ウィンドウを生成して表示
+    /// ウィンドウを生成して表示
 
-    //ウィンドウの生成
-    hwnd_ = CreateWindowW(
-        wc.lpszClassName,		//利用するクラス名
-        windowTitle_.c_str(),			        //タイトルバーの文字(何でも良い)
-        WS_OVERLAPPEDWINDOW,	//よく見るウィンドウスタイル
-        CW_USEDEFAULT,			//表示X座標(windowsに任せる)
-        CW_USEDEFAULT,			//表示Y座標(windowsに任せる)
-        wrc.right - wrc.left,	//ウィンドウ横幅
-        wrc.bottom - wrc.top,	//ウィンドウ縦幅
-        nullptr,				//親ウィンドウハンドル
-        nullptr,				//メニューハンドル
-        wc.hInstance,			//インスタンスハンドル
-        this					//オプション
+    // ウィンドウの生成
+    hwnd_ = CreateWindowW(wc.lpszClassName,     // 利用するクラス名
+                          windowTitle_.c_str(), // タイトルバーの文字(何でも良い)
+                          WS_OVERLAPPEDWINDOW,  // よく見るウィンドウスタイル
+                          CW_USEDEFAULT,        // 表示X座標(windowsに任せる)
+                          CW_USEDEFAULT,        // 表示Y座標(windowsに任せる)
+                          wrc.right - wrc.left, // ウィンドウ横幅
+                          wrc.bottom - wrc.top, // ウィンドウ縦幅
+                          nullptr,              // 親ウィンドウハンドル
+                          nullptr,              // メニューハンドル
+                          wc.hInstance,         // インスタンスハンドル
+                          this                  // オプション
     );
     if (!hwnd_) {
         return false;
@@ -88,9 +86,9 @@ bool WinApp::Initialize(HINSTANCE hInstance, int width, int height, const std::w
 
     /*ウィンドウを作ろう*/
 
-    ///ウィンドウを生成して表示
+    /// ウィンドウを生成して表示
 
-    //ウィンドウを表示する
+    // ウィンドウを表示する
     ShowWindow(hwnd_, SW_SHOW);
     SetWindowTextW(hwnd_, windowTitle_.c_str());
 
@@ -124,7 +122,6 @@ void WinApp::Finalize() {
         didRegisterClass_ = false;
     }
 }
-
 
 void WinApp::SetCursorLocked(bool lock) {
     cursorLocked_ = lock;
@@ -209,7 +206,8 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
         if (dwSize > 0) {
             std::vector<BYTE> lpb(dwSize);
-            if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, lpb.data(), &dwSize, sizeof(RAWINPUTHEADER)) == dwSize) {
+            if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, lpb.data(), &dwSize,
+                                sizeof(RAWINPUTHEADER)) == dwSize) {
                 RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb.data());
                 if (raw->header.dwType == RIM_TYPEMOUSE) {
                     if (inputManager_) {
@@ -288,11 +286,11 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // 最初のファイルだけ取得
             wchar_t filePathW[MAX_PATH];
             DragQueryFileW(hDrop, 0, filePathW, MAX_PATH);
-            
+
             // ワイド文字からマルチバイト文字(UTF-8想定、またはShiftJIS)に変換
             char filePathA[MAX_PATH];
             WideCharToMultiByte(CP_UTF8, 0, filePathW, -1, filePathA, MAX_PATH, nullptr, nullptr);
-            
+
             droppedFilePath_ = filePathA;
         }
         DragFinish(hDrop);
@@ -308,30 +306,35 @@ LRESULT WinApp::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 LONG WINAPI WinApp::ExportDump(EXCEPTION_POINTERS* exception) {
 
-    //時刻を取得して、時刻を名前に入れたファイルを作成。Dumpディレクトリ以下に出力
+    // 時刻を取得して、時刻を名前に入れたファイルを作成。Dumpディレクトリ以下に出力
     SYSTEMTIME time;
     GetLocalTime(&time);
-    wchar_t filePath[MAX_PATH] = { 0 };
+    wchar_t filePath[MAX_PATH] = {0};
     std::wstring dumpDir = ConvertString(FileSystem::GetDumpPath());
     CreateDirectoryW(dumpDir.c_str(), nullptr);
-    StringCchPrintfW(filePath, MAX_PATH, L"%ls/%04d-%02d%02d-%02d%02d.dmp", dumpDir.c_str(), time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
-    HANDLE dumpFileHandle = CreateFileW(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
-    //processId(このexeのId)とクラッシュ(例外)の発生したthreadIdを取得
+    StringCchPrintfW(filePath, MAX_PATH, L"%ls/%04d-%02d%02d-%02d%02d.dmp", dumpDir.c_str(), time.wYear, time.wMonth,
+                     time.wDay, time.wHour, time.wMinute);
+    HANDLE dumpFileHandle =
+        CreateFileW(filePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+    // processId(このexeのId)とクラッシュ(例外)の発生したthreadIdを取得
     DWORD processId = GetCurrentProcessId();
     DWORD threadId = GetCurrentThreadId();
-    //設定情報を入力
-    MINIDUMP_EXCEPTION_INFORMATION minidumpInformation{ 0 };
+    // 設定情報を入力
+    MINIDUMP_EXCEPTION_INFORMATION minidumpInformation{0};
     minidumpInformation.ThreadId = threadId;
     minidumpInformation.ExceptionPointers = exception;
     minidumpInformation.ClientPointers = TRUE;
-    //Dumpを出力。MiniDumpNormalは最低限の情報を出力するフラグ
-    MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
-    //ほかに関連づけられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
+    // Dumpを出力。MiniDumpNormalは最低限の情報を出力するフラグ
+    MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr,
+                      nullptr);
+    // ほかに関連づけられているSEH例外ハンドラがあれば実行。通常はプロセスを終了する
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
 void WinApp::SetDisplayMode(DisplayMode mode) {
-    if (displayMode_ == mode) return;
+    if (displayMode_ == mode) {
+        return;
+    }
 
     if (mode == DisplayMode::Borderless) {
         // Save current windowed rect
@@ -342,36 +345,29 @@ void WinApp::SetDisplayMode(DisplayMode mode) {
 
         // Get monitor info
         HMONITOR monitor = MonitorFromWindow(hwnd_, MONITOR_DEFAULTTONEAREST);
-        MONITORINFO mi = { sizeof(mi) };
+        MONITORINFO mi = {sizeof(mi)};
         GetMonitorInfoW(monitor, &mi);
 
         // Resize and position window to fill the monitor
-        SetWindowPos(hwnd_, HWND_TOP, 
-            mi.rcMonitor.left, mi.rcMonitor.top,
-            mi.rcMonitor.right - mi.rcMonitor.left,
-            mi.rcMonitor.bottom - mi.rcMonitor.top,
-            SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOOWNERZORDER);
+        SetWindowPos(hwnd_, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left,
+                     mi.rcMonitor.bottom - mi.rcMonitor.top, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOOWNERZORDER);
     } else if (mode == DisplayMode::Windowed) {
         // Change style back to WS_OVERLAPPEDWINDOW
         SetWindowLongW(hwnd_, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
 
         // Restore saved rect (or default if it was empty)
         if (windowedRect_.right - windowedRect_.left > 0) {
-            SetWindowPos(hwnd_, HWND_NOTOPMOST,
-                windowedRect_.left, windowedRect_.top,
-                windowedRect_.right - windowedRect_.left,
-                windowedRect_.bottom - windowedRect_.top,
-                SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOOWNERZORDER);
+            SetWindowPos(hwnd_, HWND_NOTOPMOST, windowedRect_.left, windowedRect_.top,
+                         windowedRect_.right - windowedRect_.left, windowedRect_.bottom - windowedRect_.top,
+                         SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOOWNERZORDER);
         } else {
             // Fallback if windowedRect_ is empty
-            RECT wrc = { 0,0,clientWidth_ ,clientHeight_ };
+            RECT wrc = {0, 0, clientWidth_, clientHeight_};
             AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
-            SetWindowPos(hwnd_, HWND_NOTOPMOST,
-                0, 0,
-                wrc.right - wrc.left, wrc.bottom - wrc.top,
-                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+            SetWindowPos(hwnd_, HWND_NOTOPMOST, 0, 0, wrc.right - wrc.left, wrc.bottom - wrc.top,
+                         SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
         }
     }
-    
+
     displayMode_ = mode;
 }

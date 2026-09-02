@@ -23,35 +23,44 @@ void SliderComponent::Initialize() {
 }
 
 bool SliderComponent::CheckBounds(const Irufemi::Vector2& mousePos) {
-    if (!GetTransform() || !backgroundSprite_) return false;
-    
+    if (!GetTransform() || !backgroundSprite_) {
+        return false;
+    }
+
     Irufemi::Vector3 pos = GetTransform()->GetWorldPosition();
-    
+
     auto* s = backgroundSprite_->GetSprite();
-    if (!s) return false;
-    
+    if (!s) {
+        return false;
+    }
+
     Irufemi::Vector2 anchor = s->GetAnchor();
     Irufemi::Vector2 baseSize = s->GetSize();
-    
+
     float width = baseSize.x * hitboxScale_.x;
     float height = baseSize.y * hitboxScale_.y;
-    
+
     float left = pos.x - width * anchor.x;
     float right = pos.x + width * (1.0f - anchor.x);
     float top = pos.y - height * anchor.y;
     float bottom = pos.y + height * (1.0f - anchor.y);
-    
-    return (mousePos.x >= left && mousePos.x <= right &&
-            mousePos.y >= top && mousePos.y <= bottom);
+
+    return (mousePos.x >= left && mousePos.x <= right && mousePos.y >= top && mousePos.y <= bottom);
 }
 
 void SliderComponent::Update() {
-    if (!backgroundSprite_ || !gameObject_) return;
-    
+    if (!backgroundSprite_ || !gameObject_) {
+        return;
+    }
+
     auto scene = gameObject_->GetScene();
-    if (!scene) return;
+    if (!scene) {
+        return;
+    }
     auto engine = scene->GetEngine();
-    if (!engine) return;
+    if (!engine) {
+        return;
+    }
 
     // ハンドルの探索 (初回のみ、または見つかってない場合)
     if (!handleObject_ && handleObjectID_ != 0) {
@@ -63,14 +72,16 @@ void SliderComponent::Update() {
             }
         }
     }
-    
+
     auto input = engine->GetInputManager();
     auto cameraManager = engine->GetCameraManager();
-    if (!input || !cameraManager || !cameraManager->GetActiveCamera()) return;
-    
+    if (!input || !cameraManager || !cameraManager->GetActiveCamera()) {
+        return;
+    }
+
     Irufemi::Vector2 mousePos = input->GetMousePosition();
     Irufemi::Vector2 uiPos = cameraManager->GetActiveCamera()->ScreenToUIPosition(mousePos);
-    
+
     bool isHovered = CheckBounds(uiPos);
 
     if (input->IsMouseButtonPressed(Mouse::Button::Left)) {
@@ -87,19 +98,19 @@ void SliderComponent::Update() {
         // マウス位置からValueを計算
         Irufemi::Vector3 pos = GetTransform()->GetWorldPosition();
         auto* s = backgroundSprite_->GetSprite();
-        
+
         if (s) {
             Irufemi::Vector2 anchor = s->GetAnchor();
             float width = s->GetSize().x;
-            
+
             float left = pos.x - width * anchor.x;
             float right = pos.x + width * (1.0f - anchor.x);
-            
+
             // X座標の割合を計算し、0.0〜1.0にクランプ
             if (width > 0) {
                 float newValue = (uiPos.x - left) / width;
                 newValue = std::clamp(newValue, 0.0f, 1.0f);
-                
+
                 if (newValue != value_) {
                     value_ = newValue;
                     if (onValueChangedCallback_) {
@@ -120,13 +131,19 @@ void SliderComponent::SetValue(float value) {
 }
 
 void SliderComponent::UpdateHandlePosition() {
-    if (!handleObject_ || !backgroundSprite_ || !GetTransform()) return;
+    if (!handleObject_ || !backgroundSprite_ || !GetTransform()) {
+        return;
+    }
 
     auto handleTransform = handleObject_->GetTransform();
-    if (!handleTransform) return;
+    if (!handleTransform) {
+        return;
+    }
 
     auto* s = backgroundSprite_->GetSprite();
-    if (!s) return;
+    if (!s) {
+        return;
+    }
 
     // スライダー背景のワールド幅を計算
     float width = s->GetSize().x;
@@ -136,7 +153,7 @@ void SliderComponent::UpdateHandlePosition() {
     // value=0 なら左端、value=1 なら右端
     float leftLocal = -width * anchor.x;
     float rightLocal = width * (1.0f - anchor.x);
-    
+
     float targetLocalX = leftLocal + width * value_;
 
     // ハンドルが背景の子オブジェクトである場合、ローカル位置のXを更新する

@@ -39,18 +39,26 @@ public:
     void OnExit() override;
 
     // --- スタック管理用フラグ ---
-    
+
     // オプション画面を開いている間は下のシーンのUpdateを止める（ゲームをポーズする）
-    bool IsUpdateBlocking() const override { return true; }
-    
+    bool IsUpdateBlocking() const override {
+        return true;
+    }
+
     // 背景のゲーム画面は描画し続ける（半透明の背景UIの下に表示させるため）
-    bool IsDrawBlocking() const override { return false; }
-    
+    bool IsDrawBlocking() const override {
+        return false;
+    }
+
     // マウスカーソルは表示する
-    bool IsCursorVisible() const override { return true; }
-    
+    bool IsCursorVisible() const override {
+        return true;
+    }
+
     // ★オーディオ（BGMやUI）はポーズしない！
-    bool IsAudioBlocking() const override { return false; }
+    bool IsAudioBlocking() const override {
+        return false;
+    }
 
 private:
     void BindUIComponents();

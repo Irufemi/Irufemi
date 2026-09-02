@@ -125,7 +125,7 @@
             ],
             "fontId": "toro_glitch",
             "isTopMost": false,
-            "text": "Title"
+            "text": "GravityShooter"
           },
           "type": "TextRendererComponent"
         }

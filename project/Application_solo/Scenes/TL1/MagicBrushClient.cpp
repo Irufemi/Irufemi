@@ -23,7 +23,9 @@ std::vector<std::string> MagicBrushClient::GetServerLogs() const {
     return serverLogs_;
 }
 
-void MagicBrushClient::StartGeneration(const std::string& prompt, const std::string& referenceImagePath, const std::string& shaderName, const std::string& outputDirectory, ShaderManager* shaderManager) {
+void MagicBrushClient::StartGeneration(const std::string& prompt, const std::string& referenceImagePath,
+                                       const std::string& shaderName, const std::string& outputDirectory,
+                                       ShaderManager* shaderManager) {
     if (state_ == State::Generating || state_ == State::Compiling || state_ == State::Fixing) {
         return; // 既に実行中
     }
@@ -35,7 +37,8 @@ void MagicBrushClient::StartGeneration(const std::string& prompt, const std::str
         workerThread_.join();
     }
 
-    workerThread_ = std::thread(&MagicBrushClient::ProcessThread, this, prompt, referenceImagePath, shaderName, outputDirectory, shaderManager);
+    workerThread_ = std::thread(&MagicBrushClient::ProcessThread, this, prompt, referenceImagePath, shaderName,
+                                outputDirectory, shaderManager);
 }
 
 std::string MagicBrushClient::GetErrorMessage() const {
@@ -49,7 +52,9 @@ Microsoft::WRL::ComPtr<IDxcBlob> MagicBrushClient::GetResultBlob() {
 }
 
 bool MagicBrushClient::StartPythonServer() {
-    if (IsServerRunning()) return true;
+    if (IsServerRunning()) {
+        return true;
+    }
 
     // サーバープロセスは死んでいるが、前回起動時のログスレッドやパイプが残っている場合に備えて
     // 完全にクリーンアップを行ってから再起動（std::threadの再代入による abort を防ぐ）
@@ -85,7 +90,7 @@ bool MagicBrushClient::StartPythonServer() {
     char exePathBuf[MAX_PATH];
     GetModuleFileNameA(NULL, exePathBuf, MAX_PATH);
     std::filesystem::path exePath(exePathBuf);
-    
+
     // exeは WP0/generated/outputs/Editor/ にあるため、3階層上がって project/Tools/ShaderGenerator へ
     std::filesystem::path toolsDir = exePath.parent_path() / "../../../project/Tools/ShaderGenerator";
     std::string currentDir = std::filesystem::absolute(toolsDir).string();
@@ -94,17 +99,9 @@ bool MagicBrushClient::StartPythonServer() {
     std::vector<char> cmdBuffer(command.begin(), command.end());
     cmdBuffer.push_back('\0');
 
-    if (!CreateProcessA(
-        nullptr, 
-        cmdBuffer.data(), 
-        nullptr, 
-        nullptr, 
-        TRUE, // パイプハンドルを継承させるためにTRUE
-        CREATE_NO_WINDOW, 
-        nullptr, 
-        currentDir.c_str(), 
-        &si, 
-        &pi)) {
+    if (!CreateProcessA(nullptr, cmdBuffer.data(), nullptr, nullptr,
+                        TRUE, // パイプハンドルを継承させるためにTRUE
+                        CREATE_NO_WINDOW, nullptr, currentDir.c_str(), &si, &pi)) {
         CloseHandle(hOutRead);
         CloseHandle(hOutWrite);
         return false;
@@ -116,7 +113,7 @@ bool MagicBrushClient::StartPythonServer() {
     pythonProcessHandle_ = pi.hProcess;
     pythonThreadHandle_ = pi.hThread;
     pythonProcessId_ = pi.dwProcessId;
-    
+
     // ログ読み取りスレッドを開始
     isLogThreadRunning_ = true;
     logThread_ = std::thread(&MagicBrushClient::LogReadThread, this);
@@ -140,7 +137,6 @@ void MagicBrushClient::StopPythonServer() {
         pythonProcessId_ = 0;
     }
 
-
     isLogThreadRunning_ = false;
     if (hChildStd_OUT_Rd_) {
         CloseHandle((HANDLE)hChildStd_OUT_Rd_);
@@ -155,16 +151,18 @@ void MagicBrushClient::LogReadThread() {
     DWORD dwRead;
     CHAR chBuf[4096];
     std::string currentLine;
-    
+
     HANDLE hRead = (HANDLE)hChildStd_OUT_Rd_;
 
     while (isLogThreadRunning_ && hRead != nullptr) {
         bool success = ReadFile(hRead, chBuf, sizeof(chBuf) - 1, &dwRead, NULL);
-        if (!success || dwRead == 0) break; // エラーまたはパイプのクローズ
-        
+        if (!success || dwRead == 0) {
+            break; // エラーまたはパイプのクローズ
+        }
+
         chBuf[dwRead] = '\0';
         std::string chunk(chBuf);
-        
+
         // chunk を改行で分割してログに追加
         for (char c : chunk) {
             if (c == '\n') {
@@ -175,7 +173,7 @@ void MagicBrushClient::LogReadThread() {
                 localtime_s(&bt, &in_time_t);
                 std::stringstream ss;
                 ss << "[" << std::put_time(&bt, "%H:%M:%S") << "] " << currentLine;
-                
+
                 {
                     std::lock_guard<std::mutex> lock(logMutex_);
                     serverLogs_.push_back(ss.str());
@@ -186,7 +184,6 @@ void MagicBrushClient::LogReadThread() {
             }
         }
     }
-
 }
 
 void MagicBrushClient::RestartPythonServer() {
@@ -195,7 +192,9 @@ void MagicBrushClient::RestartPythonServer() {
 }
 
 bool MagicBrushClient::IsServerRunning() const {
-    if (!pythonProcessHandle_) return false;
+    if (!pythonProcessHandle_) {
+        return false;
+    }
     DWORD exitCode = 0;
     if (GetExitCodeProcess((HANDLE)pythonProcessHandle_, &exitCode)) {
         return exitCode == STILL_ACTIVE;
@@ -207,18 +206,26 @@ std::string MagicBrushClient::EscapeJSON(const std::string& input) {
     std::string out;
     out.reserve(input.size());
     for (char c : input) {
-        if (c == '"') out += "\\\"";
-        else if (c == '\\') out += "\\\\";
-        else if (c == '\b') out += "\\b";
-        else if (c == '\f') out += "\\f";
-        else if (c == '\n') out += "\\n";
-        else if (c == '\r') out += "\\r";
-        else if (c == '\t') out += "\\t";
-        else out += c;
+        if (c == '"') {
+            out += "\\\"";
+        } else if (c == '\\') {
+            out += "\\\\";
+        } else if (c == '\b') {
+            out += "\\b";
+        } else if (c == '\f') {
+            out += "\\f";
+        } else if (c == '\n') {
+            out += "\\n";
+        } else if (c == '\r') {
+            out += "\\r";
+        } else if (c == '\t') {
+            out += "\\t";
+        } else {
+            out += c;
+        }
     }
     return out;
 }
-
 
 std::string MagicBrushClient::ExecuteCommandHidden(const std::string& command) {
     SECURITY_ATTRIBUTES saAttr;
@@ -247,17 +254,8 @@ std::string MagicBrushClient::ExecuteCommandHidden(const std::string& command) {
     std::vector<char> cmdBuffer(command.begin(), command.end());
     cmdBuffer.push_back('\0');
 
-    if (!CreateProcessA(
-        nullptr,
-        cmdBuffer.data(),
-        nullptr,
-        nullptr,
-        TRUE,
-        CREATE_NO_WINDOW,
-        nullptr,
-        nullptr,
-        &si,
-        &pi)) {
+    if (!CreateProcessA(nullptr, cmdBuffer.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si,
+                        &pi)) {
         CloseHandle(hOutRead);
         CloseHandle(hOutWrite);
         return "ERROR: CreateProcess failed.";
@@ -281,7 +279,6 @@ std::string MagicBrushClient::ExecuteCommandHidden(const std::string& command) {
     return result;
 }
 
-
 std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const std::string& jsonPayload) {
     // テンポラリファイルにJSONを書き出す（エスケープ問題を避けるため）
     std::string tempFileName = "magic_brush_temp_req.json";
@@ -293,22 +290,27 @@ std::string MagicBrushClient::SendPostRequest(const std::string& endpoint, const
     ofs.close();
 
     // curl.exe をプロセスとして起動し、標準出力を取得する
-    std::string command = "cmd.exe /c curl -s -X POST -H \"Content-Type: application/json\" -d @" + tempFileName + " http://127.0.0.1:8000" + endpoint;
-    
+    std::string command = "cmd.exe /c curl -s -X POST -H \"Content-Type: application/json\" -d @" + tempFileName +
+                          " http://127.0.0.1:8000" + endpoint;
+
     return ExecuteCommandHidden(command);
 }
 
 bool MagicBrushClient::RestoreHistory(size_t index, ShaderManager* shaderManager) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (index >= history_.size()) return false;
+    if (index >= history_.size()) {
+        return false;
+    }
 
     const auto& item = history_[index];
-    
+
     // 一時ファイルにHLSLを書き出す
     std::string tempHlslPath = "resources/shaders/generated/temp_restored_shader.hlsl";
     std::filesystem::create_directories("resources/shaders/generated");
     std::ofstream ofsHlsl(tempHlslPath);
-    if (!ofsHlsl) return false;
+    if (!ofsHlsl) {
+        return false;
+    }
     ofsHlsl << item.hlslCode;
     ofsHlsl.close();
 
@@ -316,7 +318,7 @@ bool MagicBrushClient::RestoreHistory(size_t index, ShaderManager* shaderManager
     ShaderCompileOptions options;
     options.entryPoint = L"main";
     std::string errorLog;
-    
+
     // ShaderManager でコンパイル (キャッシュが残っている可能性があるので ReloadShader か GetOrCompile か)
     std::wstring tempHlslPathW = ConvertString(tempHlslPath);
     auto blob = shaderManager->ReloadShader(tempHlslPathW, options, L"ps_6_0", &errorLog);
@@ -331,14 +333,16 @@ bool MagicBrushClient::RestoreHistory(size_t index, ShaderManager* shaderManager
     }
 }
 
-void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName, std::string outputDirectory, ShaderManager* shaderManager) {
+void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceImagePath, std::string shaderName,
+                                     std::string outputDirectory, ShaderManager* shaderManager) {
     std::string currentHlsl = "";
-    
+
     // 1. 初回リクエストの作成
-    std::string jsonReq = "{ \"prompt\": \"" + EscapeJSON(prompt) + "\", \"image_path\": \"" + EscapeJSON(referenceImagePath) + "\" }";
-    
+    std::string jsonReq =
+        "{ \"prompt\": \"" + EscapeJSON(prompt) + "\", \"image_path\": \"" + EscapeJSON(referenceImagePath) + "\" }";
+
     std::string hlslCode = SendPostRequest("/generate", jsonReq);
-    
+
     if (hlslCode.find("ERROR:") == 0 || hlslCode.find("Internal Server Error") != std::string::npos) {
         std::lock_guard<std::mutex> lock(mutex_);
         errorMessage_ = "Failed to connect to Python Server or API Error.\n" + hlslCode;
@@ -346,20 +350,19 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
         return;
     }
 
-
     // 修復ループ
     int attempts = 0;
     while (attempts <= kMaxFixAttempts) {
         state_ = State::Compiling;
-        
+
         // 取得したHLSLを一時ファイルに保存（コンパイル用）
         std::error_code ec;
         std::filesystem::create_directories(outputDirectory, ec); // ディレクトリが無ければ作成
-        
+
         std::string filename = outputDirectory + shaderName + ".hlsl";
         // wstringへの変換 (Shift-JIS環境等でも動作する簡易変換)
         std::wstring tempHlslPath(filename.begin(), filename.end());
-        
+
         {
             std::ofstream hlslFile(filename);
             hlslFile << hlslCode;
@@ -368,16 +371,16 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
         std::string errorLog;
         ShaderCompileOptions options;
         options.entryPoint = L"main";
-        
+
         // コンパイル実行（キャッシュ破棄＋再コンパイル）
         auto blob = shaderManager->ReloadShader(tempHlslPath, options, L"ps_6_0", &errorLog);
-        
+
         if (blob) {
             // コンパイル成功
             std::lock_guard<std::mutex> lock(mutex_);
             resultBlob_ = blob;
             state_ = State::Success;
-            
+
             // 成功履歴に保存
             GenerationHistory h;
             h.prompt = prompt;
@@ -386,7 +389,7 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
             history_.push_back(h);
             return;
         }
-        
+
         // コンパイル失敗 -> 修復処理へ
         attempts++;
         if (attempts > kMaxFixAttempts) {
@@ -395,13 +398,14 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
             state_ = State::Error;
             return;
         }
-        
+
         state_ = State::Fixing;
-        
+
         // エラー修復リクエストの作成
-        std::string fixReq = "{ \"error_log\": \"" + EscapeJSON(errorLog) + "\", \"code\": \"" + EscapeJSON(hlslCode) + "\" }";
+        std::string fixReq =
+            "{ \"error_log\": \"" + EscapeJSON(errorLog) + "\", \"code\": \"" + EscapeJSON(hlslCode) + "\" }";
         hlslCode = SendPostRequest("/fix_error", fixReq);
-        
+
         if (hlslCode.find("ERROR:") == 0 || hlslCode.find("Internal Server Error") != std::string::npos) {
             std::lock_guard<std::mutex> lock(mutex_);
             errorMessage_ = "Failed to call /fix_error API.\n" + hlslCode;
@@ -411,24 +415,31 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
     }
 }
 
-
-void MagicBrushClient::StartVisualFix(const std::string& referenceImagePath, const std::string& screenshotPath, const std::string& currentHlslCode, const std::string& shaderName, ShaderManager* shaderManager) {
-    if (state_ == State::VisualEvaluating || state_ == State::Compiling || state_ == State::Generating || state_ == State::Fixing) return;
+void MagicBrushClient::StartVisualFix(const std::string& referenceImagePath, const std::string& screenshotPath,
+                                      const std::string& currentHlslCode, const std::string& shaderName,
+                                      ShaderManager* shaderManager) {
+    if (state_ == State::VisualEvaluating || state_ == State::Compiling || state_ == State::Generating ||
+        state_ == State::Fixing) {
+        return;
+    }
     state_ = State::VisualEvaluating;
-    
+
     if (workerThread_.joinable()) {
         workerThread_.join();
     }
-    workerThread_ = std::thread(&MagicBrushClient::VisualFixThread, this, referenceImagePath, screenshotPath, currentHlslCode, shaderName, shaderManager);
+    workerThread_ = std::thread(&MagicBrushClient::VisualFixThread, this, referenceImagePath, screenshotPath,
+                                currentHlslCode, shaderName, shaderManager);
 }
 
-void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::string screenshotPath, std::string currentHlslCode, std::string shaderName, ShaderManager* shaderManager) {
+void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::string screenshotPath,
+                                       std::string currentHlslCode, std::string shaderName,
+                                       ShaderManager* shaderManager) {
     std::string jsonReq = "{ \"reference_image_path\": \"" + EscapeJSON(referenceImagePath) + "\", " +
-                          "\"current_output_image_path\": \"" + EscapeJSON(screenshotPath) + "\", " +
-                          "\"code\": \"" + EscapeJSON(currentHlslCode) + "\" }";
-    
+                          "\"current_output_image_path\": \"" + EscapeJSON(screenshotPath) + "\", " + "\"code\": \"" +
+                          EscapeJSON(currentHlslCode) + "\" }";
+
     std::string newHlslCode = SendPostRequest("/evaluate_visual", jsonReq);
-    
+
     if (newHlslCode.find("ERROR:") == 0 || newHlslCode.find("Internal Server Error") != std::string::npos) {
         std::lock_guard<std::mutex> lock(mutex_);
         errorMessage_ = "Failed to connect to Python Server or API Error during Visual Fix.\n" + newHlslCode;
@@ -440,7 +451,7 @@ void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::stri
     int attempts = 0;
     while (attempts <= kMaxFixAttempts) {
         state_ = State::Compiling;
-        
+
         std::error_code ec;
         std::filesystem::create_directories("resources/shaders/generated", ec);
         std::string hlslFilePath = "resources/shaders/generated/" + shaderName + ".hlsl";
@@ -449,13 +460,13 @@ void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::stri
             ofs << newHlslCode;
             ofs.close();
         }
-        
+
         ShaderCompileOptions options;
         options.entryPoint = L"main";
         std::string compileError;
         std::wstring hlslFilePathW = ConvertString(hlslFilePath);
         auto blob = shaderManager->ReloadShader(hlslFilePathW, options, L"ps_6_0", &compileError);
-        
+
         if (blob) {
             std::lock_guard<std::mutex> lock(mutex_);
             resultBlob_ = blob;
@@ -468,9 +479,10 @@ void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::stri
             return;
         } else {
             state_ = State::Fixing;
-            std::string fixReq = "{ \"error_log\": \"" + EscapeJSON(compileError) + "\", \"code\": \"" + EscapeJSON(newHlslCode) + "\" }";
+            std::string fixReq = "{ \"error_log\": \"" + EscapeJSON(compileError) + "\", \"code\": \"" +
+                                 EscapeJSON(newHlslCode) + "\" }";
             newHlslCode = SendPostRequest("/fix_error", fixReq);
-            
+
             if (newHlslCode.find("ERROR:") == 0 || newHlslCode.find("Internal Server Error") != std::string::npos) {
                 std::lock_guard<std::mutex> lock(mutex_);
                 errorMessage_ = "Failed during auto-fix.\n" + newHlslCode;
@@ -482,7 +494,7 @@ void MagicBrushClient::VisualFixThread(std::string referenceImagePath, std::stri
     }
 
     std::lock_guard<std::mutex> lock(mutex_);
-    errorMessage_ = "Visual fix failed. Could not resolve compile errors after " + std::to_string(kMaxFixAttempts) + " attempts.";
+    errorMessage_ =
+        "Visual fix failed. Could not resolve compile errors after " + std::to_string(kMaxFixAttempts) + " attempts.";
     state_ = State::Error;
 }
-

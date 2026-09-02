@@ -48,7 +48,6 @@ public:
      */
     static LevelData Load(const std::string& filepath, BaseScene* scene);
 
-
 private:
     /**
      * @brief Blender出力ノードをエンジン標準ノードに変換する

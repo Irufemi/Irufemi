@@ -1,0 +1,36 @@
+name: Static Code Analysis
+
+on:
+  push:
+    branches:
+      - '**'
+
+env:
+  SOLUTION_FILE_PATH: project/Irufemi.sln
+  CONFIGURATION: Release
+
+jobs:
+  analyze:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2.0.0
+
+      - name: Restore NuGet Packages
+        run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
+
+      - name: Run MSVC Static Analysis
+        run: |
+          msbuild ${{ env.SOLUTION_FILE_PATH }} /p:Platform=x64,Configuration=${{ env.CONFIGURATION }},PlatformToolset=v143 /p:RunCodeAnalysis=true /p:CodeAnalysisRuleSet=NativeRecommendedRules.ruleset
+

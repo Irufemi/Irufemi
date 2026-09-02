@@ -5,7 +5,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 
-
 TextureManager* Object2DResource::sTextureManager = nullptr;
 
 Object2DResource::~Object2DResource() {
@@ -33,8 +32,9 @@ Object2DResource::~Object2DResource() {
 }
 
 void Object2DResource::CreateResource() {
-    if (!s_dxCommon_)
+    if (!s_dxCommon_) {
         return;
+    }
 
     if (!vertexDataList_.empty()) {
         if (vertexCapacity_ < vertexDataList_.size()) {
@@ -102,7 +102,8 @@ void Object2DResource::Unmap() {
 
 void Object2DResource::UpdateTransform(const Camera& camera) {
 
-    transformationMatrix_.world = Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+    transformationMatrix_.world =
+        Irufemi::Math::MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     // 2D なので正射影行列を掛ける
     transformationMatrix_.WVP = Irufemi::Math::Multiply(transformationMatrix_.world, camera.GetOrthographicMatrix());
 
@@ -114,15 +115,17 @@ void Object2DResource::UpdateTransform(const Camera& camera) {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetTransformVAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1))
+    if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
+    }
     return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
         transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetMaterialVAddress() const {
-    if (materialCbIndex_ == static_cast<uint32_t>(-1))
+    if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
+    }
     return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
         materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
 }
@@ -134,14 +137,14 @@ void Object2DResource::SyncBeforeDraw() {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
-            
+
             // テクスチャのインデックスを解決して反映
             if (sTextureManager) {
                 cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
             } else {
                 cpuMaterialData_.textureIndex = 0;
             }
-            
+
             if (materialCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetMaterialBufferManager()->Update(materialCbIndex_, cpuMaterialData_, frameIndex);
             }

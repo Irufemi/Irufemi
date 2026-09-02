@@ -1,6 +1,5 @@
 #pragma once
 
-
 namespace Irufemi {
 struct PerFrame {
     float time;

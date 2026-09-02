@@ -18,7 +18,19 @@ public:
     void Update() override;
 
     void OnRegisterProperties() override;
-    std::string GetComponentName() const override { return "BossBulletManagerComponent"; }
+    std::string GetComponentName() const override {
+        return "BossBulletManagerComponent";
+    }
+
+    void SetTargetPlayerID(uint64_t id) {
+        targetPlayerID_ = id;
+    }
+
+    /**
+     * @brief シーン読み込み時等にIDの付け替えが発生した際のコールバック
+     * @param idMap 旧IDと新IDの対応マップ
+     */
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
     /**
      * @brief 指定した座標と速度で弾を発射する
@@ -38,10 +50,12 @@ private:
 
     int maxBullets_ = 2000;
     float defaultLifeTime_ = 5.0f;
-    Irufemi::Vector3 bulletScale_ = { 0.5f, 0.5f, 0.5f };
+    Irufemi::Vector3 bulletScale_ = {0.5f, 0.5f, 0.5f};
     float hitRadius_ = 2.0f;
     std::string hitEffectKey_ = "Dust";
     std::string explosionModelPath_ = "resources/model/BossBulletSphere.obj";
+    /// @brief 攻撃対象となるプレイヤーのGameObject ID
+    uint64_t targetPlayerID_ = 0;
 
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
     std::vector<BossBulletData> bulletDataList_;

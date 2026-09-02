@@ -5,22 +5,13 @@
 #include <array>
 #include <cmath>
 
-
 namespace Irufemi {
 /**
  * @struct Frustum
  * @brief 視錐台を構成する6組の平面を保持する構造体
  */
 struct Frustum {
-    enum PlaneSide {
-        kLeft = 0,
-        kRight,
-        kTop,
-        kBottom,
-        kNear,
-        kFar,
-        kNumPlanes
-    };
+    enum PlaneSide { kLeft = 0, kRight, kTop, kBottom, kNear, kFar, kNumPlanes };
 
     std::array<Plane, kNumPlanes> planes;
 
@@ -70,7 +61,8 @@ struct Frustum {
 
         // 各平面の正規化 (距離を含めて法線の長さで割る)
         for (auto& plane : planes) {
-            float length = std::sqrt(plane.normal.x * plane.normal.x + plane.normal.y * plane.normal.y + plane.normal.z * plane.normal.z);
+            float length = std::sqrt(plane.normal.x * plane.normal.x + plane.normal.y * plane.normal.y +
+                                     plane.normal.z * plane.normal.z);
             if (length > 0.0f) {
                 plane.normal.x /= length;
                 plane.normal.y /= length;

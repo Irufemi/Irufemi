@@ -4,8 +4,7 @@
 #include <cmath>
 #include <algorithm>
 
-Primitive2DBatch::Primitive2DBatch() {
-}
+Primitive2DBatch::Primitive2DBatch() {}
 
 Primitive2DBatch::~Primitive2DBatch() {
     if (auto dxCommon = BaseResource::GetDirectXCommon()) {
@@ -25,7 +24,7 @@ void Primitive2DBatch::Initialize(Irufemi::Primitive2DType type, const std::stri
     if (textureManager_) {
         textureHandle_ = textureManager_->LoadTexture(textureName);
     }
-    
+
     RebuildMesh();
 }
 
@@ -72,7 +71,9 @@ void Primitive2DBatch::RebuildMesh() {
 }
 
 void Primitive2DBatch::CreateResource() {
-    if (!dx_) return;
+    if (!dx_) {
+        return;
+    }
 
     if (!vertexDataList_.empty()) {
         if (vertexResource_) {
@@ -111,7 +112,7 @@ void Primitive2DBatch::SyncBeforeDraw() {
             vertexResource_->Unmap(0, nullptr);
         }
     }
-    
+
     if (indexResource_ && !indexDataList_.empty()) {
         uint32_t* mapped = nullptr;
         if (SUCCEEDED(indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
@@ -122,10 +123,12 @@ void Primitive2DBatch::SyncBeforeDraw() {
 }
 
 void Primitive2DBatch::Draw() {
-    if (!drawManager_ || GetInstanceCount() == 0) return;
+    if (!drawManager_ || GetInstanceCount() == 0) {
+        return;
+    }
 
     SyncBeforeDraw();
-    
+
     RenderPackets::Primitive2DBatchPacket p{};
     p.vertexBufferView = vertexBufferView_;
     p.indexBufferView = indexBufferView_;
@@ -150,12 +153,10 @@ void Primitive2DBatch::BuildRect() {
     float top = -0.5f;
     float bottom = 0.5f;
 
-    vertexDataList_ = {
-        {{left, top, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
-        {{right, top, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
-        {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
-        {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}
-    };
+    vertexDataList_ = {{{left, top, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{right, top, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}};
     indexDataList_ = {0, 1, 2, 2, 1, 3};
 }
 
@@ -166,16 +167,16 @@ void Primitive2DBatch::BuildTriangle() {
     float bottom = 0.5f;
     float centerX = 0.0f;
 
-    vertexDataList_ = {
-        {{centerX, top, 0.0f, 1.0f}, {0.5f, 0.0f}, {0.0f, 0.0f, -1.0f}},
-        {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
-        {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}
-    };
+    vertexDataList_ = {{{centerX, top, 0.0f, 1.0f}, {0.5f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}};
     indexDataList_ = {0, 1, 2};
 }
 
 void Primitive2DBatch::BuildCircle(uint32_t subdiv) {
-    if (subdiv < 3) subdiv = 3;
+    if (subdiv < 3) {
+        subdiv = 3;
+    }
     float radius = 0.5f;
     float pi = 3.141592654f;
 
@@ -185,7 +186,7 @@ void Primitive2DBatch::BuildCircle(uint32_t subdiv) {
         float angle = (static_cast<float>(i) / subdiv) * pi * 2.0f;
         float cosA = std::cos(angle);
         float sinA = std::sin(angle);
-        
+
         float vx = cosA * radius;
         float vy = sinA * radius;
         float u = cosA * 0.5f + 0.5f;
@@ -201,7 +202,9 @@ void Primitive2DBatch::BuildCircle(uint32_t subdiv) {
 }
 
 void Primitive2DBatch::BuildRing(uint32_t subdiv) {
-    if (subdiv < 3) subdiv = 3;
+    if (subdiv < 3) {
+        subdiv = 3;
+    }
     float outerRadius = 0.5f;
     // Ring の thickness は 0.0 ~ 1.0 の割合（0.5 = 半分が穴）として扱うか、
     // ここで固定値にするか。スケーリング時に太さもスケーリングされる仕様にする。
@@ -250,11 +253,9 @@ void Primitive2DBatch::BuildLine() {
     float top = -thick * 0.5f;
     float bottom = thick * 0.5f;
 
-    vertexDataList_ = {
-        {{left, top, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
-        {{right, top, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
-        {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
-        {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}
-    };
+    vertexDataList_ = {{{left, top, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{right, top, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}},
+                       {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}};
     indexDataList_ = {0, 1, 2, 2, 1, 3};
 }

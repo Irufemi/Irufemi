@@ -248,8 +248,10 @@ float32_t3 ApplyDepthBasedOutline(float32_t3 color, float32_t2 uv, float32_t2 uv
             difference.y += vz * wy;
         }
     }
-    float32_t weight = saturate(length(difference) * intensity);
-    return color * (1.0f - weight);
+    float32_t depthWeight = length(difference) * 2.0f;
+    float edgeThreshold = 0.5f / max(0.001f, intensity);
+    float inkLine = smoothstep(edgeThreshold - 0.05f, edgeThreshold + 0.05f, depthWeight);
+    return lerp(color, float32_t3(0, 0, 0), inkLine);
 }
 
 // 12. RadialBlur

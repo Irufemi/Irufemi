@@ -8,14 +8,14 @@
 #include "Engine/Irufemi.h"
 #include "Scenes/Result/ResultScene.h"
 
-#include "Player/GravityPlayerComponent.h"
+#include "Player/PlayerHealthComponent.h"
 #include "Combat/Boss/BossComponent.h"
 #include "Core/Utility/Log.h"
 #include <iostream>
 
 void GameLoopManagerComponent::Initialize() {
     state_ = State::Playing;
-    player_ = nullptr;
+    playerHealth_ = nullptr;
     boss_ = nullptr;
 
     // 事前キャッシュ: ResultScene で使用するテキストのSDF生成をバックグラウンドで事前に行う
@@ -37,13 +37,13 @@ void GameLoopManagerComponent::OnRegisterProperties() {
 
 void GameLoopManagerComponent::Update() {
     if (state_ == State::Playing) {
-        if (!player_ && !targetPlayerName_.empty()) {
+        if (!playerHealth_ && !targetPlayerName_.empty()) {
             auto playerObj = gameObject_->GetScene()->FindGameObject(targetPlayerName_);
             if (playerObj) {
-                player_ = playerObj->GetComponent<GravityPlayerComponent>();
-                if (player_) {
-                    player_->onPlayerDied = [this]() { OnPlayerDied(); };
-                    player_->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
+                playerHealth_ = playerObj->GetComponent<PlayerHealthComponent>();
+                if (playerHealth_) {
+                    playerHealth_->onPlayerDied = [this]() { OnPlayerDied(); };
+                    playerHealth_->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
                 }
             }
         }
@@ -61,17 +61,21 @@ void GameLoopManagerComponent::Update() {
 }
 
 void GameLoopManagerComponent::OnBossDied() {
-    if (state_ != State::Playing) return;
+    if (state_ != State::Playing) {
+        return;
+    }
     state_ = State::Finished;
     isClear_ = true;
-    if (player_) {
-        player_->SetGodMode(true); // ゲームクリア時に被弾しないようにする
+    if (playerHealth_) {
+        playerHealth_->SetGodMode(true); // ゲームクリア時に被弾しないようにする
     }
     BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);
 }
 
 void GameLoopManagerComponent::OnPlayerDied() {
-    if (state_ != State::Playing) return;
+    if (state_ != State::Playing) {
+        return;
+    }
     state_ = State::Finished;
     isClear_ = false;
     BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);

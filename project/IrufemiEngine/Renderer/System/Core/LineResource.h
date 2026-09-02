@@ -50,7 +50,7 @@ public:
     uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
 
     // --- トランスフォーム ---
-    Irufemi::Transform transform_{ {1.0f,1.0f,1.0f}, {0.0f,0.0f,0.0f}, {0.0f,0.0f,0.0f} };
+    Irufemi::Transform transform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
     TransformationMatrix transformationMatrix_{};
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
 
@@ -64,8 +64,6 @@ public:
      * @return 取得された TransformVAddress
      */
     D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
-
-
 
     /**
      * @brief SyncBeforeDraw を実行する。

@@ -4,8 +4,6 @@
 #include <Windows.h>
 #include <cstdio>
 
-
-
 void GPUParticleManager::Initialize() {
     systems_.clear();
 }
@@ -33,8 +31,11 @@ void GPUParticleManager::ClearAllParticles() {
     }
 }
 
-GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath, Irufemi::BlendMode blendMode, bool isUnscaledTime, bool enableLighting, PSOManager::DepthWrite depthWrite) {
-    SystemKey key{ texturePath, blendMode, isUnscaledTime, enableLighting, depthWrite };
+GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath,
+                                                                      Irufemi::BlendMode blendMode, bool isUnscaledTime,
+                                                                      bool enableLighting,
+                                                                      PSOManager::DepthWrite depthWrite) {
+    SystemKey key{texturePath, blendMode, isUnscaledTime, enableLighting, depthWrite};
     auto& ctx = systems_[key];
 
     if (!ctx.system) {
@@ -46,7 +47,7 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
         ctx.system->SetEnableLighting(enableLighting);
         ctx.system->SetDepthWrite(depthWrite);
     }
-    
+
     uint32_t assignedIndex = 0;
     if (!ctx.freeIndices.empty()) {
         assignedIndex = ctx.freeIndices.back();
@@ -58,10 +59,10 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
             ctx.system->emittersData_.resize(assignedIndex + 1);
         }
     }
-    
+
     // Initialize the slot
     ctx.system->emittersData_[assignedIndex] = GPUParticleEmitter();
-    
+
     EmitterHandle handle;
     handle.system = ctx.system.get();
     handle.emitterIndex = assignedIndex;
@@ -69,8 +70,10 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
 }
 
 void GPUParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
-    if (!handle.IsValid()) return;
-    
+    if (!handle.IsValid()) {
+        return;
+    }
+
     // Find the context to add free index
     for (auto& pair : systems_) {
         if (pair.second.system.get() == handle.system) {
@@ -114,18 +117,20 @@ GPUParticleManager::FieldHandle GPUParticleManager::RegisterField() {
             globalFields_.resize(assignedIndex + 1);
         }
     }
-    
+
     // Initialize slot with disabled field (strength = 0)
     globalFields_[assignedIndex] = ParticleField();
-    
+
     FieldHandle handle;
     handle.index = assignedIndex;
     return handle;
 }
 
 void GPUParticleManager::UnregisterField(const FieldHandle& handle) {
-    if (!handle.IsValid()) return;
-    
+    if (!handle.IsValid()) {
+        return;
+    }
+
     if (handle.index < globalFields_.size()) {
         globalFields_[handle.index].strength = 0.0f; // Disable
         freeFieldIndices_.push_back(handle.index);
@@ -156,15 +161,16 @@ void GPUParticleManager::Debug() {
     if (ImGui::BeginTabItem("GPU Particle Manager")) {
         ImGui::TextDisabled("(Global system stats moved to TelemetryMonitor)");
         ImGui::Separator();
-        
+
         ImGui::Spacing();
         ImGui::Text("System Details per Texture");
         for (auto& pair : systems_) {
             const std::string& textureName = pair.first.texturePath;
             auto& context = pair.second;
-            
+
             if (ImGui::TreeNode(textureName.c_str())) {
-                ImGui::Text("Emitters: %d / %d", (int)(context.nextIndex - context.freeIndices.size()), GPUParticleSystem::kMaxEmitters);
+                ImGui::Text("Emitters: %d / %d", (int)(context.nextIndex - context.freeIndices.size()),
+                            GPUParticleSystem::kMaxEmitters);
                 context.system->Debug();
                 ImGui::TreePop();
             }

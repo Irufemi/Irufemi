@@ -29,7 +29,6 @@ class IrufemiEngine;
  */
 class DebugScene : public BaseScene {
 public: // メンバ関数(ゲーム)
-
     /**
      * @brief デストラクタ
      */
@@ -57,9 +56,7 @@ public: // メンバ関数(ゲーム)
     void DrawDebugTab() override;
 
 private: // メンバ関数(内部ヘルパ)
-
 private: // メンバ変数(ゲーム)
-
     std::unique_ptr<Sprite> sprite_ = nullptr;
     bool isActiveSprite_ = false;
 
@@ -119,7 +116,6 @@ private: // メンバ変数(ゲーム)
     // --- ライト ---
     bool isActiveSkybox_ = false;
 
-
     // --- ImGuiデモ ---
     bool isActiveImGuiDemo_ = false;
 
@@ -130,7 +126,6 @@ private: // メンバ変数(ゲーム)
     LightningParams* lightningParamsData_ = nullptr;
 
 private: // メンバ変数(システム)
-
 #ifdef USE_IMGUI
     ImGuizmo::OPERATION gizmoOperation_ = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE gizmoMode_ = ImGuizmo::LOCAL;

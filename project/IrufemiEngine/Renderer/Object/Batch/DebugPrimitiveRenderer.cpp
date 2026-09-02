@@ -51,13 +51,17 @@ void DebugPrimitiveRenderer::CreateSphereResource() {
             float s = std::sin(angle);
 
             Irufemi::Vector3 pos;
-            if (ring == 0) pos = { c, s, 0.0f };
-            else if (ring == 1) pos = { 0.0f, c, s };
-            else pos = { s, 0.0f, c };
-            
+            if (ring == 0) {
+                pos = {c, s, 0.0f};
+            } else if (ring == 1) {
+                pos = {0.0f, c, s};
+            } else {
+                pos = {s, 0.0f, c};
+            }
+
             VertexData vd{};
-            vd.position = { pos.x, pos.y, pos.z, 1.0f };
-            vd.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+            vd.position = {pos.x, pos.y, pos.z, 1.0f};
+            vd.color = {1.0f, 1.0f, 1.0f, 1.0f};
             vertices.push_back(vd);
 
             uint32_t baseIdx = ring * segments;
@@ -96,26 +100,20 @@ void DebugPrimitiveRenderer::CreateSphereResource() {
 void DebugPrimitiveRenderer::CreateCubeResource() {
     std::vector<VertexData> vertices;
     std::vector<uint32_t> indices = {
-        0,1, 1,2, 2,3, 3,0, // Bottom
-        4,5, 5,6, 6,7, 7,4, // Top
-        0,4, 1,5, 2,6, 3,7  // Pillars
+        0, 1, 1, 2, 2, 3, 3, 0, // Bottom
+        4, 5, 5, 6, 6, 7, 7, 4, // Top
+        0, 4, 1, 5, 2, 6, 3, 7  // Pillars
     };
 
     Irufemi::Vector3 positions[8] = {
-        { -0.5f, -0.5f, -0.5f },
-        {  0.5f, -0.5f, -0.5f },
-        {  0.5f, -0.5f,  0.5f },
-        { -0.5f, -0.5f,  0.5f },
-        { -0.5f,  0.5f, -0.5f },
-        {  0.5f,  0.5f, -0.5f },
-        {  0.5f,  0.5f,  0.5f },
-        { -0.5f,  0.5f,  0.5f },
+        {-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, 0.5f}, {-0.5f, -0.5f, 0.5f},
+        {-0.5f, 0.5f, -0.5f},  {0.5f, 0.5f, -0.5f},  {0.5f, 0.5f, 0.5f},  {-0.5f, 0.5f, 0.5f},
     };
 
     for (int i = 0; i < 8; ++i) {
         VertexData vd{};
-        vd.position = { positions[i].x, positions[i].y, positions[i].z, 1.0f };
-        vd.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        vd.position = {positions[i].x, positions[i].y, positions[i].z, 1.0f};
+        vd.color = {1.0f, 1.0f, 1.0f, 1.0f};
         vertices.push_back(vd);
     }
 
@@ -156,7 +154,8 @@ void DebugPrimitiveRenderer::AddSphere(const Irufemi::Vector3& center, float rad
     std::lock_guard<std::mutex> lock(mutex_);
     if (activeSphereCount_ < maxSphereInstances_) {
         auto& instance = sphereInstances_[activeSphereCount_];
-        instance.world = Irufemi::Math::MakeScaleMatrix({radius, radius, radius}) * Irufemi::Math::MakeTranslateMatrix(center);
+        instance.world =
+            Irufemi::Math::MakeScaleMatrix({radius, radius, radius}) * Irufemi::Math::MakeTranslateMatrix(center);
         instance.color = color;
         activeSphereCount_++;
     }
@@ -178,13 +177,13 @@ void DebugPrimitiveRenderer::Update() {
 
 void DebugPrimitiveRenderer::EnsureInstancingSRVs() {
     uint32_t frameIndex = dx_->GetFrameIndex();
-    
+
     // Irufemi::Sphere
     if (sphereSrvIndex_[frameIndex] == UINT32_MAX) {
         sphereSrvIndex_[frameIndex] = srvAllocator_->Allocate();
         sphereSrvGPU_[frameIndex] = srvAllocator_->GetGPUHandle(sphereSrvIndex_[frameIndex]);
     }
-    
+
     // Cube
     if (cubeSrvIndex_[frameIndex] == UINT32_MAX) {
         cubeSrvIndex_[frameIndex] = srvAllocator_->Allocate();
@@ -193,13 +192,17 @@ void DebugPrimitiveRenderer::EnsureInstancingSRVs() {
 }
 
 void DebugPrimitiveRenderer::BuildInstanceBuffer() {
-    if (activeSphereCount_ == 0 && activeCubeCount_ == 0) return;
-    
+    if (activeSphereCount_ == 0 && activeCubeCount_ == 0) {
+        return;
+    }
+
     uint32_t frameIndex = dx_->GetFrameIndex();
     lastUpdateFrameIndex_ = frameIndex;
 
     Camera* activeCam = dx_->GetEngine()->GetCameraManager()->GetActiveCamera();
-    if (!activeCam) return;
+    if (!activeCam) {
+        return;
+    }
 
     // Irufemi::Sphere Buffer
     if (activeSphereCount_ > 0) {
@@ -210,8 +213,9 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
             sphereInstanceCapacity_[frameIndex] = static_cast<uint32_t>(activeSphereCount_);
             size_t size = sizeof(InstanceData) * sphereInstanceCapacity_[frameIndex];
             sphereInstanceBuffer_[frameIndex] = dx_->CreateBufferResource(size);
-            sphereInstanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&sphereInstanceDataMap_[frameIndex]));
-            
+            sphereInstanceBuffer_[frameIndex]->Map(0, nullptr,
+                                                   reinterpret_cast<void**>(&sphereInstanceDataMap_[frameIndex]));
+
             EnsureInstancingSRVs();
             D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
             srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -219,8 +223,9 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
             srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             srvDesc.Buffer.NumElements = sphereInstanceCapacity_[frameIndex];
             srvDesc.Buffer.StructureByteStride = sizeof(InstanceData);
-            
-            dx_->GetDevice()->CreateShaderResourceView(sphereInstanceBuffer_[frameIndex].Get(), &srvDesc, srvAllocator_->GetCPUHandle(sphereSrvIndex_[frameIndex]));
+
+            dx_->GetDevice()->CreateShaderResourceView(sphereInstanceBuffer_[frameIndex].Get(), &srvDesc,
+                                                       srvAllocator_->GetCPUHandle(sphereSrvIndex_[frameIndex]));
         }
 
         for (size_t i = 0; i < activeSphereCount_; ++i) {
@@ -238,8 +243,9 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
             cubeInstanceCapacity_[frameIndex] = static_cast<uint32_t>(activeCubeCount_);
             size_t size = sizeof(InstanceData) * cubeInstanceCapacity_[frameIndex];
             cubeInstanceBuffer_[frameIndex] = dx_->CreateBufferResource(size);
-            cubeInstanceBuffer_[frameIndex]->Map(0, nullptr, reinterpret_cast<void**>(&cubeInstanceDataMap_[frameIndex]));
-            
+            cubeInstanceBuffer_[frameIndex]->Map(0, nullptr,
+                                                 reinterpret_cast<void**>(&cubeInstanceDataMap_[frameIndex]));
+
             EnsureInstancingSRVs();
             D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
             srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -247,8 +253,9 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
             srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             srvDesc.Buffer.NumElements = cubeInstanceCapacity_[frameIndex];
             srvDesc.Buffer.StructureByteStride = sizeof(InstanceData);
-            
-            dx_->GetDevice()->CreateShaderResourceView(cubeInstanceBuffer_[frameIndex].Get(), &srvDesc, srvAllocator_->GetCPUHandle(cubeSrvIndex_[frameIndex]));
+
+            dx_->GetDevice()->CreateShaderResourceView(cubeInstanceBuffer_[frameIndex].Get(), &srvDesc,
+                                                       srvAllocator_->GetCPUHandle(cubeSrvIndex_[frameIndex]));
         }
 
         for (size_t i = 0; i < activeCubeCount_; ++i) {

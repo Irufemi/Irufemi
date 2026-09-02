@@ -20,7 +20,7 @@ void DescriptorPool::Initialize(ID3D12Device* device) {
 
 uint32_t DescriptorPool::Allocate(uint32_t count) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     // 単発確保かつフリーリストがある場合はそこから返す
     if (count == 1 && !freeList_.empty()) {
         uint32_t index = freeList_.back();
@@ -41,15 +41,19 @@ uint32_t DescriptorPool::Allocate(uint32_t count) {
 }
 
 void DescriptorPool::Free(uint32_t index) {
-    if (index == kInvalid) return;
+    if (index == kInvalid) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     freeList_.push_back(index);
 }
 
 void DescriptorPool::FreeAfterFence(uint32_t index, uint64_t safeFence) {
-    if (index == kInvalid) return;
+    if (index == kInvalid) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
-    pending_.push({ safeFence, index });
+    pending_.push({safeFence, index});
 }
 
 void DescriptorPool::GarbageCollect(uint64_t completedFence) {
@@ -101,14 +105,19 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorPool::GetGPUHandle(uint32_t index) const {
 }
 
 uint32_t DescriptorPool::GetIndexFromGPUHandle(D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle) const {
-    if (gpuHandle.ptr == 0) return kInvalid;
+    if (gpuHandle.ptr == 0) {
+        return kInvalid;
+    }
     uint64_t basePtr = heap_->GetGPUDescriptorHandleForHeapStart().ptr;
-    if (gpuHandle.ptr < basePtr) return kInvalid;
+    if (gpuHandle.ptr < basePtr) {
+        return kInvalid;
+    }
     uint32_t offset = static_cast<uint32_t>(gpuHandle.ptr - basePtr);
     return offset / descriptorSize_;
 }
 
-void DescriptorPool::CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format, UINT mipLevels) {
+void DescriptorPool::CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT format,
+                                           UINT mipLevels) {
     IRUFEMI_ASSERT(pResource);
     IRUFEMI_ASSERT(srvIndex < kMaxSRVCount);
 
@@ -121,7 +130,8 @@ void DescriptorPool::CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pR
     device_->CreateShaderResourceView(pResource, &srvDesc, GetCPUHandle(srvIndex));
 }
 
-void DescriptorPool::CreateSRVForStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride) {
+void DescriptorPool::CreateSRVForStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements,
+                                                  UINT structureByteStride) {
     IRUFEMI_ASSERT(pResource);
     IRUFEMI_ASSERT(srvIndex < kMaxSRVCount);
 

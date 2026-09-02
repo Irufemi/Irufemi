@@ -16,10 +16,18 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
     builder.RequireState(mainRenderTex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // G-Bufferをシェーダーリソースとして要求する
-    if (auto tex = engine->GetEffectMaskTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetNormalTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetMaterialTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    if (auto tex = engine->GetVelocityTexture()) builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    if (auto tex = engine->GetEffectMaskTexture()) {
+        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+    if (auto tex = engine->GetNormalTexture()) {
+        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+    if (auto tex = engine->GetMaterialTexture()) {
+        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
+    if (auto tex = engine->GetVelocityTexture()) {
+        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    }
 
     workTextureHandles_.clear();
     bloomExtractHandle_ = kInvalidHandle;
@@ -39,17 +47,28 @@ void PostProcessPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManage
         bool hasKawaseBlur = false;
         bool hasLightShafts = false;
         for (auto mode : activeModes) {
-            if (mode == PostProcessMode::Bloom) hasBloom = true;
-            if (PostProcessManager::UsesDepthBuffer(mode)) usesDepthBuffer = true;
-            if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) hasSeparableBlur = true;
-            if (mode == PostProcessMode::DualKawaseBlur) hasKawaseBlur = true;
-            if (mode == PostProcessMode::LightShafts) hasLightShafts = true;
+            if (mode == PostProcessMode::Bloom) {
+                hasBloom = true;
+            }
+            if (PostProcessManager::UsesDepthBuffer(mode)) {
+                usesDepthBuffer = true;
+            }
+            if (mode == PostProcessMode::Smoothing || mode == PostProcessMode::GaussianFilter) {
+                hasSeparableBlur = true;
+            }
+            if (mode == PostProcessMode::DualKawaseBlur) {
+                hasKawaseBlur = true;
+            }
+            if (mode == PostProcessMode::LightShafts) {
+                hasLightShafts = true;
+            }
         }
 
         if (usesDepthBuffer) {
-            builder.RequireState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+            builder.RequireState(drawManager->GetDxCommon()->GetDepthStencilResource(),
+                                 D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
-        
+
         // ピンポンバッファ用の一時テクスチャ (最大2枚)
         // ポストプロセスの中間計算はリニア空間で行うため、UNORM を指定する
         D3D12_RESOURCE_DESC workDesc = desc;
@@ -112,7 +131,7 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     auto* renderGraph = drawManager->GetRenderGraph();
 
     PostProcessManager::PostProcessWorkspace workspace;
-    
+
     if (!workTextureHandles_.empty()) {
         workspace.workTextures[0] = renderGraph->GetTransientRenderTexture(workTextureHandles_[0]);
         workspace.workTextures[1] = renderGraph->GetTransientRenderTexture(workTextureHandles_[1]);
@@ -153,28 +172,31 @@ void PostProcessPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // CopyResource (mainRenderTex -> ppSrcTex)
     auto ppSrcTex = renderGraph->GetTransientRenderTexture(preUiSrcHandle_);
-    
+
     // RenderGraph によるステート管理のため開始時に COPY_SOURCE に手動で遷移
-    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(),
+                                    D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
     cmdList->CopyResource(ppSrcTex->GetResource(), engine->GetMainRenderTexture()->GetResource());
 
     // バリア遷移
-    DirectXUtils::TransitionBarrier(cmdList, ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    DirectXUtils::TransitionBarrier(cmdList, ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_COPY_DEST,
+                                    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     renderGraph->SetInitialResourceState(ppSrcTex->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    
-    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+    DirectXUtils::TransitionBarrier(cmdList, engine->GetMainRenderTexture()->GetResource(),
+                                    D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // 最終出力先は常に mainRenderTexture
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
-    ppMgr->Draw(cmdList, ppSrcTex, rtvHandle, workspace, PostProcessManager::Layer::PreUI);
+    ppMgr->Draw(cmdList, ppSrcTex, rtvHandle, workspace, PostProcessManager::Layer::PreUI, false);
 
     // 深度バッファを元の DEPTH_WRITE に戻す
     if (needsProjectionInverse) {
-        DirectXUtils::TransitionBarrier(
-            cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
-            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
-        );
-        renderGraph->SetInitialResourceState(drawManager->GetDxCommon()->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        DirectXUtils::TransitionBarrier(cmdList, drawManager->GetDxCommon()->GetDepthStencilResource(),
+                                        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE,
+                                        D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
+        renderGraph->SetInitialResourceState(drawManager->GetDxCommon()->GetDepthStencilResource(),
+                                             D3D12_RESOURCE_STATE_DEPTH_WRITE);
     }
 }

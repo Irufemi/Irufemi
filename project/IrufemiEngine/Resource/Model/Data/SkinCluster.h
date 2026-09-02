@@ -25,21 +25,22 @@ struct SkinCluster {
 
     /** @brief 頂点ごとの影響ボーンインデックスとウェイトを保持するGPUリソース */
     Microsoft::WRL::ComPtr<ID3D12Resource> influenceResource;
-    
+
     /** @brief 上記リソースの頂点バッファビュー */
     D3D12_VERTEX_BUFFER_VIEW influenceBufferView;
-    
+
     /** @brief GPUと同期するためのマップされた頂点影響データのスパン */
     std::span<VertexInfluence> mappedInfluence;
-    
+
     /** @brief スキニング行列パレット用のバッファリソース（フレームバッファごとの配列） */
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> paletteResource;
-    
+
     /** @brief マップされた行列パレットデータのスパン */
     std::array<std::span<WellForGPU>, kMaxFramesInFlight> mappedPalette;
-    
+
     /** @brief 行列パレットのシェーダーリソースビュー（SRV）のCPU/GPUディスクリプタハンドル */
-    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> paletteSrvHandle;
+    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight>
+        paletteSrvHandle;
 
     Microsoft::WRL::ComPtr<ID3D12Resource> inputVertexResource;
     std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> inputVertexSrvHandle;
@@ -50,7 +51,9 @@ struct SkinCluster {
 
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> skinnedVertexResource;
     std::array<D3D12_VERTEX_BUFFER_VIEW, kMaxFramesInFlight> skinnedVertexBufferView;
-    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> skinnedVertexSrvHandle;
+    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight>
+        skinnedVertexSrvHandle;
     std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> influenceSrvHandle;
-    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight> skinnedVertexUavHandle;
+    std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight>
+        skinnedVertexUavHandle;
 };

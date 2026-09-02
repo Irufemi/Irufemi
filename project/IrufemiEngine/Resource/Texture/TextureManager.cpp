@@ -17,9 +17,11 @@
 #include <iostream>
 
 static bool IsImageExtImpl(const std::string& ext) {
-    static const char* exts[] = { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds" };
+    static const char* exts[] = {".png", ".jpg", ".jpeg", ".bmp", ".tga", ".dds"};
     for (auto* e : exts) {
-        if (_stricmp(ext.c_str(), e) == 0) { return true; }
+        if (_stricmp(ext.c_str(), e) == 0) {
+            return true;
+        }
     }
     return false;
 }
@@ -30,7 +32,7 @@ void TextureManager::Initialize(DirectXCommon* dxCommon) {
     Texture::SetDirectXCommon(dxCommon_);
 
     // メモリ予算の設定（RTX 3060 (12GB/8GB) 等に合わせて設定: 2GB）
-    texturePool_.SetMemoryBudget(2048ULL * 1024ULL * 1024ULL); 
+    texturePool_.SetMemoryBudget(2048ULL * 1024ULL * 1024ULL);
 
     // ThreadPoolの生成 (論理コア数分)
     if (!threadPool_) {
@@ -59,13 +61,17 @@ void TextureManager::LoadAllFromFolder(const std::string& folderPath) {
     }
 
     for (auto& entry : std::filesystem::recursive_directory_iterator(folderPath)) {
-        if (!entry.is_regular_file()) { continue; }
+        if (!entry.is_regular_file()) {
+            continue;
+        }
         auto p = entry.path();
         auto ext = p.extension().string();
-        if (!IsImageExtImpl(ext)) { continue; }
+        if (!IsImageExtImpl(ext)) {
+            continue;
+        }
 
         const std::string key = p.generic_string();
-        
+
         // 非同期ロード開始し、ハンドルはプールに入れておく（戻り値は無視）
         ResourceHandle h = LoadTexture(key);
         ReleaseTexture(h); // すぐにReleaseして参照を0にする（プールに残る）
@@ -102,7 +108,7 @@ ResourceHandle TextureManager::LoadTexture(const std::string& name) {
         textureResources_.resize(handle.index + 1);
     }
     textureResources_[handle.index] = std::make_shared<Texture>();
-    
+
     auto& tex = textureResources_[handle.index];
 
     // メタデータ（サイズ）のみ同期的に取得して設定
@@ -127,7 +133,9 @@ ResourceHandle TextureManager::LoadTexture(const std::string& name) {
     return handle;
 }
 
-ResourceHandle TextureManager::RegisterExternalTexture(const std::string& name, Microsoft::WRL::ComPtr<ID3D12Resource> resource, uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle) {
+ResourceHandle TextureManager::RegisterExternalTexture(const std::string& name,
+                                                       Microsoft::WRL::ComPtr<ID3D12Resource> resource,
+                                                       uint32_t srvIndex, D3D12_GPU_DESCRIPTOR_HANDLE srvHandle) {
     std::lock_guard<std::mutex> lock(mutex_);
 
     // 既に同じ名前があれば参照カウントを増やして返す
@@ -171,7 +179,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::Resolve(ResourceHandle handle) const
     if (!texturePool_.IsValid(handle)) {
         return whiteTextureHandle_;
     }
-    
+
     // 使用されたことをプールに通知（LRUアクセス時刻の更新）
     const_cast<TextureManager*>(this)->texturePool_.TouchSlot(handle);
 
@@ -186,7 +194,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::ResolveCubeMap(ResourceHandle handle
     if (!texturePool_.IsValid(handle)) {
         return whiteCubeMapHandle_;
     }
-    
+
     // 使用されたことをプールに通知（LRUアクセス時刻の更新）
     const_cast<TextureManager*>(this)->texturePool_.TouchSlot(handle);
 
@@ -205,15 +213,13 @@ uint32_t TextureManager::GetSrvIndex(ResourceHandle handle) const {
     if (!texturePool_.IsValid(handle)) {
         return GetWhiteTextureSrvIndex();
     }
-    
+
     // 使用されたことをプールに通知（LRUアクセス時刻の更新）
     const_cast<TextureManager*>(this)->texturePool_.TouchSlot(handle);
 
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle.index < textureResources_.size() && textureResources_[handle.index]) {
-        if (textureResources_[handle.index]->GetStatus() == Texture::LoadingStatus::Loaded) {
-            return textureResources_[handle.index]->GetSrvIndex();
-        }
+        return textureResources_[handle.index]->GetSrvIndex();
     }
     return GetWhiteTextureSrvIndex();
 }
@@ -258,7 +264,7 @@ const DirectX::ScratchImage* TextureManager::GetScratchImage(const std::string& 
 
     // キャッシュになければロード (同期的に動く)
     handle = const_cast<TextureManager*>(this)->LoadTexture(name);
-    
+
     std::lock_guard<std::mutex> lock(mutex_);
     return textureResources_[handle.index]->GetScratchImage();
 }
@@ -320,14 +326,18 @@ std::vector<std::string> TextureManager::GetCubeMapNamesForDebug() const {
 }
 
 void TextureManager::CreateWhiteDummyTexture() {
-    if (whiteTextureHandle_.ptr != 0) return;
-    if (!dxCommon_) { return; }
+    if (whiteTextureHandle_.ptr != 0) {
+        return;
+    }
+    if (!dxCommon_) {
+        return;
+    }
 
-    uint32_t whitePixels[4] = { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu };
+    uint32_t whitePixels[4] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
 
     whiteTexture_ = std::make_unique<Texture>();
     whiteTexture_->InitializeFromMemory("white", whitePixels, 2, 2);
-    
+
     whiteTextureResource_ = dxCommon_->CreateTextureResource(whiteTexture_->GetScratchImage()->GetMetadata());
     auto intermediate = dxCommon_->UploadTextureData(whiteTextureResource_, *whiteTexture_->GetScratchImage());
     dxCommon_->ReleaseAfterFence(intermediate);
@@ -338,10 +348,14 @@ void TextureManager::CreateWhiteDummyTexture() {
 }
 
 void TextureManager::CreateWhiteCubeMap() {
-    if (whiteCubeMapHandle_.ptr != 0) return;
-    if (!dxCommon_) { return; }
+    if (whiteCubeMapHandle_.ptr != 0) {
+        return;
+    }
+    if (!dxCommon_) {
+        return;
+    }
 
-    uint32_t whitePixels[6] = { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu };
+    uint32_t whitePixels[6] = {0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu};
 
     whiteCubeMap_ = std::make_unique<Texture>();
     whiteCubeMap_->InitializeCubeFromMemory("whiteCubeMap", whitePixels, 1, 1);
@@ -356,24 +370,34 @@ void TextureManager::CreateWhiteCubeMap() {
 bool TextureManager::GetTextureSize(const std::string& name, uint32_t& outWidth, uint32_t& outHeight) const {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = nameToHandleMap_.find(name);
-    if (it == nameToHandleMap_.end() || !texturePool_.IsValid(it->second)) { return false; }
-    
+    if (it == nameToHandleMap_.end() || !texturePool_.IsValid(it->second)) {
+        return false;
+    }
+
     outWidth = textureResources_[it->second.index]->GetWidth();
     outHeight = textureResources_[it->second.index]->GetHeight();
     return true;
 }
 
 bool TextureManager::IsCurrentSceneInitializing() const {
-    if (!dxCommon_) return false;
+    if (!dxCommon_) {
+        return false;
+    }
     auto engine = dxCommon_->GetEngine();
-    if (!engine) return false;
+    if (!engine) {
+        return false;
+    }
     auto sceneManager = engine->GetSceneManager();
-    if (!sceneManager) return false;
+    if (!sceneManager) {
+        return false;
+    }
     return sceneManager->IsInitializing();
 }
 
 bool TextureManager::IsCubeMap(const std::string& name) const {
-    if (name == "whiteCubeMap") return true;
+    if (name == "whiteCubeMap") {
+        return true;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = nameToHandleMap_.find(name);
     if (it != nameToHandleMap_.end() && texturePool_.IsValid(it->second)) {

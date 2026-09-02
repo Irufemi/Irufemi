@@ -10,8 +10,7 @@ ResourceCachePool::ResourceCachePool(size_t maxMemoryBytes, size_t initialCapaci
     }
 }
 
-ResourceCachePool::~ResourceCachePool() {
-}
+ResourceCachePool::~ResourceCachePool() {}
 
 void ResourceCachePool::SetMemoryBudget(size_t maxBytes) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -20,7 +19,7 @@ void ResourceCachePool::SetMemoryBudget(size_t maxBytes) {
 
 ResourceHandle ResourceCachePool::AllocateSlot(size_t memorySize) {
     std::lock_guard<std::mutex> lock(mutex_);
-    
+
     uint32_t index = 0;
     if (!freeIndices_.empty()) {
         index = freeIndices_.back();
@@ -45,7 +44,9 @@ ResourceHandle ResourceCachePool::AllocateSlot(size_t memorySize) {
 }
 
 void ResourceCachePool::ReleaseSlot(ResourceHandle handle) {
-    if (!handle.IsValid()) return;
+    if (!handle.IsValid()) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle.index < slots_.size() && slots_[handle.index].generation == handle.generation) {
         if (slots_[handle.index].refCount > 0) {
@@ -55,7 +56,9 @@ void ResourceCachePool::ReleaseSlot(ResourceHandle handle) {
 }
 
 void ResourceCachePool::RetainSlot(ResourceHandle handle) {
-    if (!handle.IsValid()) return;
+    if (!handle.IsValid()) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle.index < slots_.size() && slots_[handle.index].generation == handle.generation) {
         slots_[handle.index].refCount++;
@@ -64,7 +67,9 @@ void ResourceCachePool::RetainSlot(ResourceHandle handle) {
 }
 
 void ResourceCachePool::TouchSlot(ResourceHandle handle) {
-    if (!handle.IsValid()) return;
+    if (!handle.IsValid()) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle.index < slots_.size() && slots_[handle.index].generation == handle.generation) {
         slots_[handle.index].lastAccessTime = ++currentTimeCounter_;
@@ -72,14 +77,20 @@ void ResourceCachePool::TouchSlot(ResourceHandle handle) {
 }
 
 bool ResourceCachePool::IsValid(ResourceHandle handle) const {
-    if (!handle.IsValid()) return false;
+    if (!handle.IsValid()) {
+        return false;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
-    if (handle.index >= slots_.size()) return false;
+    if (handle.index >= slots_.size()) {
+        return false;
+    }
     return slots_[handle.index].generation == handle.generation;
 }
 
 void ResourceCachePool::UpdateSlotSize(ResourceHandle handle, size_t newSize) {
-    if (!handle.IsValid()) return;
+    if (!handle.IsValid()) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle.index < slots_.size() && slots_[handle.index].generation == handle.generation) {
         currentMemoryUsage_ -= slots_[handle.index].memorySize;
@@ -89,7 +100,9 @@ void ResourceCachePool::UpdateSlotSize(ResourceHandle handle, size_t newSize) {
 }
 
 void ResourceCachePool::SetLoaded(ResourceHandle handle, bool loaded) {
-    if (!handle.IsValid()) return;
+    if (!handle.IsValid()) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle.index < slots_.size() && slots_[handle.index].generation == handle.generation) {
         slots_[handle.index].isLoaded = loaded;
@@ -97,20 +110,26 @@ void ResourceCachePool::SetLoaded(ResourceHandle handle, bool loaded) {
 }
 
 bool ResourceCachePool::IsLoaded(ResourceHandle handle) const {
-    if (!handle.IsValid()) return false;
+    if (!handle.IsValid()) {
+        return false;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
-    if (handle.index >= slots_.size()) return false;
+    if (handle.index >= slots_.size()) {
+        return false;
+    }
     return slots_[handle.index].generation == handle.generation && slots_[handle.index].isLoaded;
 }
 
 void ResourceCachePool::EnforceMemoryBudget(const ResourcePurgeCallback& purgeCallback) {
-    if (maxMemoryBytes_ == 0 || !purgeCallback) return; 
-    
+    if (maxMemoryBytes_ == 0 || !purgeCallback) {
+        return;
+    }
+
     std::vector<uint32_t> indicesToPurge;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        
+
         // 予算を超えている間ループ
         while (currentMemoryUsage_ > maxMemoryBytes_) {
             uint32_t oldestIndex = 0xFFFFFFFF;
@@ -128,17 +147,17 @@ void ResourceCachePool::EnforceMemoryBudget(const ResourcePurgeCallback& purgeCa
 
             // パージできるものが見つからなければ終了（すべて参照されている）
             if (oldestIndex == 0xFFFFFFFF) {
-                break; 
+                break;
             }
 
             // 古いものをパージ対象にする
             ResourceSlotMeta& targetSlot = slots_[oldestIndex];
             currentMemoryUsage_ -= targetSlot.memorySize;
-            
+
             targetSlot.memorySize = 0;
             targetSlot.isLoaded = false;
             // 世代は次にAllocateされる時に増えるので、ここでは何もしない
-            
+
             freeIndices_.push_back(oldestIndex);
             indicesToPurge.push_back(oldestIndex);
         }
@@ -162,7 +181,7 @@ void ResourceCachePool::ClearAll(const ResourcePurgeCallback& purgeCallback) {
                 slots_[i].isLoaded = false;
                 slots_[i].refCount = 0;
                 freeIndices_.push_back(i);
-                
+
                 indicesToPurge.push_back(i);
             }
         }

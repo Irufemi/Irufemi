@@ -27,6 +27,11 @@ public:
      * @brief DrawDebug を実行する。
      */
     void DrawDebug() override;
+
+    /**
+     * @brief プロパティの登録
+     */
+    void OnRegisterProperties() override;
     /**
      * @brief Serialize を実行する。
      */
@@ -45,17 +50,23 @@ public:
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "AABBColliderComponent"; }
+    std::string GetComponentName() const override {
+        return "AABBColliderComponent";
+    }
     /**
      * @brief ColliderType を取得する。
      * @return 取得された ColliderType
      */
-    ColliderType GetColliderType() const override { return ColliderType::AABB; }
+    ColliderType GetColliderType() const override {
+        return ColliderType::AABB;
+    }
     /**
      * @brief BoundingBox を取得する。
      * @return 取得された BoundingBox
      */
-    Irufemi::AABB GetBoundingBox() const override { return GetWorldAABB(); }
+    Irufemi::AABB GetBoundingBox() const override {
+        return GetWorldAABB();
+    }
 
     /// @brief ワールド空間上での現在のAABBを取得
     Irufemi::AABB GetWorldAABB() const;
@@ -64,27 +75,35 @@ public:
      * @brief ボックスの中心からのズレ（ローカル座標）を設定します
      * @param offset 設定するオフセット値
      */
-    void SetLocalOffset(const Irufemi::Vector3& offset) { localOffset_ = offset; }
+    void SetLocalOffset(const Irufemi::Vector3& offset) {
+        localOffset_ = offset;
+    }
 
     /**
      * @brief ボックスの中心からのズレ（ローカル座標）を取得します
      * @return const Irufemi::Vector3& オフセット値
      */
-    const Irufemi::Vector3& GetLocalOffset() const { return localOffset_; }
+    const Irufemi::Vector3& GetLocalOffset() const {
+        return localOffset_;
+    }
 
     /**
      * @brief ボックスの半幅（Extents）を設定します
      * @param size 設定する半幅
      */
-    void SetLocalSize(const Irufemi::Vector3& size) { localSize_ = size; }
+    void SetLocalSize(const Irufemi::Vector3& size) {
+        localSize_ = size;
+    }
 
     /**
      * @brief ボックスの半幅（Extents）を取得します
      * @return const Irufemi::Vector3& 半幅
      */
-    const Irufemi::Vector3& GetLocalSize() const { return localSize_; }
+    const Irufemi::Vector3& GetLocalSize() const {
+        return localSize_;
+    }
 
 private:
-    Irufemi::Vector3 localOffset_ = { 0.0f, 0.0f, 0.0f }; //!< 中心からのズレ
-    Irufemi::Vector3 localSize_   = { 1.0f, 1.0f, 1.0f }; //!< ボックスの半幅（Extents）
+    Irufemi::Vector3 localOffset_ = {0.0f, 0.0f, 0.0f}; //!< 中心からのズレ
+    Irufemi::Vector3 localSize_ = {1.0f, 1.0f, 1.0f};   //!< ボックスの半幅（Extents）
 };

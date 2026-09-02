@@ -4,7 +4,9 @@
 
 void SkinnedMeshRendererComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto comp = static_cast<SkinnedMeshRendererComponent*>(component);
-    if (!comp) return;
+    if (!comp) {
+        return;
+    }
 
     if (auto rawObj = comp->GetRawObject()) {
         size_t meshCount = rawObj->GetMeshCount();
@@ -13,12 +15,12 @@ void SkinnedMeshRendererComponentEditor::Draw(Component* component, EditorAction
             for (size_t i = 0; i < meshCount; ++i) {
                 std::string slotName = "Element " + std::to_string(i);
                 if (ImGui::TreeNode(slotName.c_str())) {
-                    
+
                     bool hasOverride = comp->HasMaterialOverride(i);
                     bool wasOverride = hasOverride;
 
                     ImGui::Checkbox("Override Material", &hasOverride);
-                    
+
                     if (hasOverride != wasOverride) {
                         if (hasOverride) {
                             // Enable override: clone default material

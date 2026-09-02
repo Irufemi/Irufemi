@@ -13,6 +13,4 @@
 #include "Core/Math/Quaternion.h"
 #include "Core/Math/MathFunction.h"
 
-namespace Irufemi {
-
-} // namespace Irufemi
+namespace Irufemi {} // namespace Irufemi

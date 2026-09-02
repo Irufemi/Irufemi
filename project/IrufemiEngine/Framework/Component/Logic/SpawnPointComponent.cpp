@@ -25,7 +25,11 @@ void SpawnPointComponent::Deserialize(const nlohmann::json& json) {
     Component::Deserialize(json);
     if (json.contains("data")) {
         const auto& data = json["data"];
-        if (data.contains("waveId")) waveId_ = data["waveId"].get<std::string>();
-        if (data.contains("enemyType")) enemyType_ = data["enemyType"].get<std::string>();
+        if (data.contains("waveId")) {
+            waveId_ = data["waveId"].get<std::string>();
+        }
+        if (data.contains("enemyType")) {
+            enemyType_ = data["enemyType"].get<std::string>();
+        }
     }
 }

@@ -32,7 +32,9 @@ public:
      * @brief 決定のトリガーとなるキーコード（VK_SPACE 等）を設定する
      * @param key 仮想キーコード (デフォルト: VK_SPACE)
      */
-    void SetTriggerKey(uint8_t key) { triggerKey_ = key; }
+    void SetTriggerKey(uint8_t key) {
+        triggerKey_ = key;
+    }
 
     /**
      * @brief 更新処理（アニメーション進行、キー入力判定）
@@ -54,7 +56,9 @@ public:
     /**
      * @brief 決定入力がされたかどうかを返す
      */
-    bool IsDecided() const { return isDecided_; }
+    bool IsDecided() const {
+        return isDecided_;
+    }
 
 private:
     StaticModelObject* targetObj_ = nullptr;

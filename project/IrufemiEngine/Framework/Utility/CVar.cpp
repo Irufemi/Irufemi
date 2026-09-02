@@ -53,7 +53,8 @@ void CVarSystem::RegisterBool(const std::string& name, bool defaultValue, const 
     }
 }
 
-void CVarSystem::RegisterString(const std::string& name, const std::string& defaultValue, const std::string& description) {
+void CVarSystem::RegisterString(const std::string& name, const std::string& defaultValue,
+                                const std::string& description) {
     auto& reg = GetRegistry();
     if (reg.find(name) == reg.end()) {
         auto cvar = std::make_unique<CVar>();
@@ -185,7 +186,7 @@ void CVarSystem::Load(const std::string& filepath) {
             } else if (cvar->type == CVar::Type::String && val.is_string()) {
                 cvar->value = val.get<std::string>();
             }
-            
+
             // If callback is already set (unlikely during early load, but just in case)
             if (cvar->onChangeCallback) {
                 cvar->onChangeCallback();

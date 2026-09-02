@@ -18,7 +18,9 @@ public:
     void Start() override;
     void Update() override;
 
-    std::string GetComponentName() const override { return "DroneManagerComponent"; }
+    std::string GetComponentName() const override {
+        return "DroneManagerComponent";
+    }
     void OnRegisterProperties() override;
 
     /**
@@ -34,23 +36,23 @@ public:
 private:
     int maxDrones_ = 50;
     std::unique_ptr<ObjectPool<GameObject>> dronePool_;
-    
+
     struct DroneAnimData {
         float orbitAngle = 0.0f;
         float fireTimer = 0.0f;
     };
-    
+
     std::vector<std::shared_ptr<GameObject>> activeDrones_;
     std::vector<DroneAnimData> animDataList_;
-    
+
     class ModelBatchRendererComponent* batchRenderer_ = nullptr;
     int activeDroneCount_ = 0;
-    
+
     // 定数パラメーター（インスペクターで調整可能にすることも可）
     float orbitRadius_ = 15.0f;
     float orbitSpeed_ = 1.0f;
     float fireInterval_ = 3.0f;
-    
+
     std::weak_ptr<GameObject> boss_;
     std::weak_ptr<GameObject> player_;
     BossBulletManagerComponent* bulletManager_ = nullptr;

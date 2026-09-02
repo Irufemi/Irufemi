@@ -5,7 +5,7 @@
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Renderer/Data/VertexData.h"
-#include "Resource/Model/Data/Node.h"             
+#include "Resource/Model/Data/Node.h"
 #include "Core/Math/Math.h"
 #include "Resource/Model/Data/JointWeightData.h"
 #include "Core/Shape/Sphere.h"
@@ -16,15 +16,15 @@
 
 struct ObjMaterial {
     // Kd
-    Irufemi::Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector4 color = {1.0f, 1.0f, 1.0f, 1.0f};
     // Ka
-    Irufemi::Vector3 ambient = { 0.1f, 0.1f, 0.1f };
+    Irufemi::Vector3 ambient = {0.1f, 0.1f, 0.1f};
     // Ks
-    Irufemi::Vector3 specular = { 1.0f, 1.0f, 1.0f };
-    
-    float roughness = 0.5f;  
+    Irufemi::Vector3 specular = {1.0f, 1.0f, 1.0f};
+
+    float roughness = 0.5f;
     float metallic = 0.0f;
-    float alpha = 1.0f;    
+    float alpha = 1.0f;
 
     bool enableLighting = true;
 
@@ -47,7 +47,7 @@ struct ObjMaterial {
 
     // エフェクトから保護するかどうか
     bool enableEffectMask = false;
-    
+
     // カスタムエフェクトのタイプとパラメータ
     int32_t customEffectType = 0;
     float customEffectParam = 0.0f;

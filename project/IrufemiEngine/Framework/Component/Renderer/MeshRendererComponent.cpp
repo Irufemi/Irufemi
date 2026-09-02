@@ -46,7 +46,6 @@ void MeshRendererComponent::SetCustomEffectParam(float param) {
     }
 }
 
-
 void MeshRendererComponent::Update() {
     // TransformComponent があれば、その座標を StaticModelObject に渡す（同期）
     if (GetTransform() && obj_) {
@@ -62,7 +61,9 @@ void MeshRendererComponent::Update() {
 }
 
 void MeshRendererComponent::Draw() {
-    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) return;
+    if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) {
+        return;
+    }
     // RenderGraph に向けて描画パケットを積む
     if (obj_) {
         obj_->Draw();
@@ -70,7 +71,7 @@ void MeshRendererComponent::Draw() {
 }
 
 Irufemi::Sphere MeshRendererComponent::GetWorldSphere() const {
-    Irufemi::Sphere result = { Irufemi::Vector3{0,0,0}, 1.0f }; // default
+    Irufemi::Sphere result = {Irufemi::Vector3{0, 0, 0}, 1.0f}; // default
     if (GetTransform()) {
         result.center = GetTransform()->GetWorldPosition();
         // StaticModelObject の cpuModel があれば正確な半径を取得
@@ -83,9 +84,13 @@ Irufemi::Sphere MeshRendererComponent::GetWorldSphere() const {
 }
 
 bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
-    if (!obj_ || !GetTransform()) return false;
+    if (!obj_ || !GetTransform()) {
+        return false;
+    }
     auto cpuModel = obj_->GetCpuModel();
-    if (!cpuModel) return false;
+    if (!cpuModel) {
+        return false;
+    }
 
     // ローカルAABBから中心とサイズを取得
     Irufemi::Vector3 localCenter = (cpuModel->boundingBox.min + cpuModel->boundingBox.max) * 0.5f;
@@ -97,22 +102,31 @@ bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance)
     obb.center = Irufemi::Math::Transform(localCenter, wmat);
 
     // ワールド行列の各軸ベクトルを抽出して正規化（回転）＆スケール適用
-    Irufemi::Vector3 xAxis = { wmat.m[0][0], wmat.m[0][1], wmat.m[0][2] };
-    Irufemi::Vector3 yAxis = { wmat.m[1][0], wmat.m[1][1], wmat.m[1][2] };
-    Irufemi::Vector3 zAxis = { wmat.m[2][0], wmat.m[2][1], wmat.m[2][2] };
+    Irufemi::Vector3 xAxis = {wmat.m[0][0], wmat.m[0][1], wmat.m[0][2]};
+    Irufemi::Vector3 yAxis = {wmat.m[1][0], wmat.m[1][1], wmat.m[1][2]};
+    Irufemi::Vector3 zAxis = {wmat.m[2][0], wmat.m[2][1], wmat.m[2][2]};
 
     float lenX = Irufemi::Math::Length(xAxis);
     float lenY = Irufemi::Math::Length(yAxis);
     float lenZ = Irufemi::Math::Length(zAxis);
 
-    if (lenX > 0.0001f) obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
-    else obb.orientations[0] = {1.0f, 0.0f, 0.0f};
+    if (lenX > 0.0001f) {
+        obb.orientations[0] = Irufemi::Math::Normalize(xAxis);
+    } else {
+        obb.orientations[0] = {1.0f, 0.0f, 0.0f};
+    }
 
-    if (lenY > 0.0001f) obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
-    else obb.orientations[1] = {0.0f, 1.0f, 0.0f};
+    if (lenY > 0.0001f) {
+        obb.orientations[1] = Irufemi::Math::Normalize(yAxis);
+    } else {
+        obb.orientations[1] = {0.0f, 1.0f, 0.0f};
+    }
 
-    if (lenZ > 0.0001f) obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
-    else obb.orientations[2] = {0.0f, 0.0f, 1.0f};
+    if (lenZ > 0.0001f) {
+        obb.orientations[2] = Irufemi::Math::Normalize(zAxis);
+    } else {
+        obb.orientations[2] = {0.0f, 0.0f, 1.0f};
+    }
 
     obb.size.x = localHalfSize.x * lenX;
     obb.size.y = localHalfSize.y * lenY;
@@ -120,9 +134,6 @@ bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance)
 
     return Irufemi::Collision::IsCollision(ray, obb, outDistance);
 }
-
-
-
 
 nlohmann::json MeshRendererComponent::Serialize() {
     nlohmann::json j;

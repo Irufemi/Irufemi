@@ -29,13 +29,10 @@ void ShaderCompiler::Initialize() {
  * @param[in] options コンパイルオプション
  * @return コンパイルされたシェーダのBlob
  */
-Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
-    const std::wstring& filePath,
-    const wchar_t* profile,
-    const ShaderCompileOptions& options,
-    const std::vector<std::wstring>& includeDirs,
-    std::string* outErrorLog
-) {
+Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& filePath, const wchar_t* profile,
+                                                         const ShaderCompileOptions& options,
+                                                         const std::vector<std::wstring>& includeDirs,
+                                                         std::string* outErrorLog) {
     // 1. HLSLファイルの読み込み
     // DirectX Shader Compiler doesn't always play nice with forward slashes
     std::wstring osPath = filePath;
@@ -75,17 +72,19 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     // 2. コンパイル引数の構築
     std::vector<LPCWSTR> arguments;
     arguments.push_back(filePath.c_str());
-    arguments.push_back(L"-E"); arguments.push_back(options.entryPoint.c_str());
-    arguments.push_back(L"-T"); arguments.push_back(profile);
+    arguments.push_back(L"-E");
+    arguments.push_back(options.entryPoint.c_str());
+    arguments.push_back(L"-T");
+    arguments.push_back(profile);
     arguments.push_back(L"-Zpr"); // 行優先(Row Major)
 
     // デバッグ設定
     if (options.isDebug) {
-        arguments.push_back(L"-Zi");            // デバッグ情報の生成
-        arguments.push_back(L"-Qembed_debug");   // PDBをBlobに埋め込む
-        arguments.push_back(L"-Od");            // 最適化オフ
+        arguments.push_back(L"-Zi");           // デバッグ情報の生成
+        arguments.push_back(L"-Qembed_debug"); // PDBをBlobに埋め込む
+        arguments.push_back(L"-Od");           // 最適化オフ
     } else {
-        arguments.push_back(L"-O3");            // 最大最適化
+        arguments.push_back(L"-O3"); // 最大最適化
     }
 
     // マクロ定義の追加
@@ -109,13 +108,8 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
 
     // 3. コンパイル実行
     Microsoft::WRL::ComPtr<IDxcResult> shaderResult;
-    hr = dxcCompiler_->Compile(
-        &shaderSourceBuffer,
-        arguments.data(),
-        static_cast<UINT32>(arguments.size()),
-        includeHandler_.Get(),
-        IID_PPV_ARGS(&shaderResult)
-    );
+    hr = dxcCompiler_->Compile(&shaderSourceBuffer, arguments.data(), static_cast<UINT32>(arguments.size()),
+                               includeHandler_.Get(), IID_PPV_ARGS(&shaderResult));
     ASSERT_IF_FAILED(hr);
 
     // 4. エラー・警告の確認
@@ -124,21 +118,21 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
     if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
         // デバッグ出力
         std::string errStr = shaderError->GetStringPointer();
-        
+
         // 呼び出し元でエラーを処理するために返す
         if (outErrorLog) {
             *outErrorLog = errStr;
         }
-        
+
         // どのファイルか分かるようにする
         std::string fileStr = ConvertString(filePath);
         std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
-        
+
         /**
          * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
          */
         Log::OutPutLog(std::cerr, fullErr);
-        
+
         // ログファイルにも出力
         FILE* f;
         fopen_s(&f, "shader_error.txt", "w");
@@ -146,14 +140,13 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
             fprintf(f, "%ws: %s\n", filePath.c_str(), errStr.c_str());
             fclose(f);
         }
-        
+
         // outErrorLog が要求されている場合、アプリケーション側で復帰を試みるため assert を回避する
         if (outErrorLog) {
             *outErrorLog = errStr;
             return nullptr;
         } else {
             IRUFEMI_ASSERT(false && "Shader Compile Error");
-
         }
     }
 
@@ -169,14 +162,25 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(
  * @brief ファイル名からプロファイルを推論する
  */
 std::wstring ShaderCompiler::GetInferredProfile(const std::wstring& filePath) {
-    if (filePath.find(L".VS.") != std::wstring::npos) return L"vs_6_0";
-    if (filePath.find(L".PS.") != std::wstring::npos) return L"ps_6_0";
-    if (filePath.find(L".GS.") != std::wstring::npos) return L"gs_6_0";
-    if (filePath.find(L".CS.") != std::wstring::npos) return L"cs_6_0";
-    if (filePath.find(L".DS.") != std::wstring::npos) return L"ds_6_0";
-    if (filePath.find(L".HS.") != std::wstring::npos) return L"hs_6_0";
-    
+    if (filePath.find(L".VS.") != std::wstring::npos) {
+        return L"vs_6_0";
+    }
+    if (filePath.find(L".PS.") != std::wstring::npos) {
+        return L"ps_6_0";
+    }
+    if (filePath.find(L".GS.") != std::wstring::npos) {
+        return L"gs_6_0";
+    }
+    if (filePath.find(L".CS.") != std::wstring::npos) {
+        return L"cs_6_0";
+    }
+    if (filePath.find(L".DS.") != std::wstring::npos) {
+        return L"ds_6_0";
+    }
+    if (filePath.find(L".HS.") != std::wstring::npos) {
+        return L"hs_6_0";
+    }
+
     // デフォルト
     return L"ps_6_0";
 }
-

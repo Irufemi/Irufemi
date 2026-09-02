@@ -12,7 +12,6 @@
 #include "Core/Math/QuaternionTransform.h"
 #include "Core/Math/NumericalSequence.h"
 
-
 #include "Core/Math/Geometry/AABB.h"
 #include "Core/Math/Geometry/OBB.h"
 #include "Core/Math/Math.h"
@@ -68,8 +67,8 @@
 #include "Audio/AudioManager.h"
 
 // --- Framework (シーン) ---
-//#include "Framework/Scene/SceneManager.h"
-//#include "Framework/Scene/IScene.h"
+// #include "Framework/Scene/SceneManager.h"
+// #include "Framework/Scene/IScene.h"
 
 // --- Debug (デバッグ) ---
 #include "Framework/UI/DebugUI.h"

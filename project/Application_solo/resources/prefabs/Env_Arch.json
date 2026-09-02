@@ -18,6 +18,7 @@
         "layer": 64, 
         "mask": 4294967295,
         "isTrigger": false,
+        "isStatic": true,
         "size": [ 10.0, 10.0, 4.0 ],
         "center": [ 0.0, 5.0, 0.0 ]
       }

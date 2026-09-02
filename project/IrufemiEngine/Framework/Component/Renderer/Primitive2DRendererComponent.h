@@ -31,18 +31,22 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
-    
+
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override { return true; }
-    
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
+
     /**
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(primitive_.get()); }
+    IRenderable* GetRenderable() override {
+        return reinterpret_cast<IRenderable*>(primitive_.get());
+    }
 
 #ifdef EditorMode
     friend class Primitive2DRendererComponentEditor;
@@ -95,54 +99,74 @@ public:
      * @brief Shape を取得する。
      * @return 取得された Shape
      */
-    Irufemi::Primitive2DType GetShape() const { return static_cast<Irufemi::Primitive2DType>(currentTypeIndex_); }
+    Irufemi::Primitive2DType GetShape() const {
+        return static_cast<Irufemi::Primitive2DType>(currentTypeIndex_);
+    }
     /**
      * @brief Color を取得する。
      * @return 取得された Color
      */
-    const Irufemi::Vector4& GetColor() const { return color_; }
+    const Irufemi::Vector4& GetColor() const {
+        return color_;
+    }
     /**
      * @brief Texture を取得する。
      * @return 取得された Texture
      */
-    const std::string& GetTexture() const { return texturePath_; }
+    const std::string& GetTexture() const {
+        return texturePath_;
+    }
     /**
      * @brief Pivot を取得する。
      * @return 取得された Pivot
      */
-    const Irufemi::Vector2& GetPivot() const { return pivot_; }
+    const Irufemi::Vector2& GetPivot() const {
+        return pivot_;
+    }
     /**
      * @brief Size を取得する。
      * @return 取得された Size
      */
-    const Irufemi::Vector2& GetSize() const { return size_; }
+    const Irufemi::Vector2& GetSize() const {
+        return size_;
+    }
     /**
      * @brief Thickness を取得する。
      * @return 取得された Thickness
      */
-    float GetThickness() const { return thickness_; }
+    float GetThickness() const {
+        return thickness_;
+    }
     /**
      * @brief Subdivision を取得する。
      * @return 取得された Subdivision
      */
-    int GetSubdivision() const { return subdivision_; }
+    int GetSubdivision() const {
+        return subdivision_;
+    }
     /**
      * @brief IsTopMost かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool IsTopMost() const { return isTopMost_; }
+    bool IsTopMost() const {
+        return isTopMost_;
+    }
 
     /**
      * @brief Primitive を取得する。
      * @return 取得された Primitive
      */
-    Primitive2DObject* GetPrimitive() const { return primitive_.get(); }
+    Primitive2DObject* GetPrimitive() const {
+        return primitive_.get();
+    }
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "Primitive2DRendererComponent"; }
-    
+    std::string GetComponentName() const override {
+        return "Primitive2DRendererComponent";
+    }
+
     /**
      * @brief Serialize を実行する。
      */
@@ -157,11 +181,11 @@ private:
     int currentTypeIndex_ = 0; // デフォルトは Rect
     std::string texturePath_ = "";
     bool isTopMost_ = false;
-    
+
     // 描画パラメータのバックアップ（Primitive2DObject生成前やSerialize用）
-    Irufemi::Vector2 size_ = { 100.0f, 100.0f };
-    Irufemi::Vector2 pivot_ = { 0.5f, 0.5f };
-    Irufemi::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+    Irufemi::Vector2 size_ = {100.0f, 100.0f};
+    Irufemi::Vector2 pivot_ = {0.5f, 0.5f};
+    Irufemi::Vector4 color_ = {1.0f, 1.0f, 1.0f, 1.0f};
     float thickness_ = 2.0f;
     int subdivision_ = 32;
 };

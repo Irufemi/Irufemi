@@ -29,18 +29,22 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
-    
+
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。
      * @return 判定結果 (true/false)
      */
-    bool CanUpdateInEditMode() const override { return true; }
-    
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
+
     /**
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override { return reinterpret_cast<IRenderable*>(sprite_.get()); }
+    IRenderable* GetRenderable() override {
+        return reinterpret_cast<IRenderable*>(sprite_.get());
+    }
 #ifdef EditorMode
     friend class SpriteRendererComponentEditor;
 #endif
@@ -53,13 +57,17 @@ public:
      * @brief Sprite を取得する。
      * @return 取得された Sprite
      */
-    Sprite* GetSprite() const { return sprite_.get(); }
+    Sprite* GetSprite() const {
+        return sprite_.get();
+    }
 
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
-    std::string GetComponentName() const override { return "SpriteRendererComponent"; }
+    std::string GetComponentName() const override {
+        return "SpriteRendererComponent";
+    }
     /**
      * @brief Serialize を実行する。
      */
@@ -75,7 +83,7 @@ private:
     bool isTopMost_ = false;
     bool isFlipX_ = false;
     bool isFlipY_ = false;
-    float anchor_[2] = { 0.5f, 0.5f };
-    float size_[2] = { 640.0f, 360.0f };
-    Irufemi::Vector4 color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+    float anchor_[2] = {0.5f, 0.5f};
+    float size_[2] = {640.0f, 360.0f};
+    Irufemi::Vector4 color_ = {1.0f, 1.0f, 1.0f, 1.0f};
 };

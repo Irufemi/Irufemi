@@ -1534,7 +1534,6 @@
             },
             {
               "data": {
-                "God Mode": false,
                 "No Lock Throw Dist": 1000.0,
                 "Orbit Angle Max": 6.28000020980835,
                 "Status Data Path": "resources/GameData/PlayerStatus.json"
@@ -1546,6 +1545,15 @@
             },
             {
               "data": {
+                "God Mode": false,
+                "Status Data Path": "resources/GameData/PlayerStatus.json"
+              },
+              "type": "PlayerHealthComponent"
+            },
+            {
+              "data": {
+                "isStatic": false,
+                "isTrigger": false,
                 "layer": 2,
                 "localOffset": [
                   0.0,
@@ -1553,7 +1561,12 @@
                   0.0
                 ],
                 "localRadius": 0.30000001192092896,
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "SphereColliderComponent"
             },
@@ -1582,6 +1595,31 @@
                 }
               },
               "type": "ScreenEffectComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 372368188768739661,
@@ -1740,6 +1778,31 @@
             "Active Instances (Batch)": 0
           },
           "type": "VirtualEntityManagerComponent"
+        },
+        {
+          "data": {
+            "customEffectType": 6,
+            "customParams": {
+              "color1": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "color2": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "param1": 1.0,
+              "param2": 0.0,
+              "param3": 0.0,
+              "param4": 0.0
+            },
+            "enableEffectMask": true
+          },
+          "type": "EffectMaskComponent"
         }
       ],
       "instanceId": 2738409501711223709,
@@ -1773,6 +1836,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1784,34 +1849,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 15,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 2.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 11885677516590899743,
@@ -1844,6 +1889,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1855,34 +1902,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 9,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.5,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 12783448169298074664,
@@ -1915,6 +1942,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1926,34 +1955,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 24,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.05000000074505806,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 15559784441686355999,
@@ -1986,6 +1995,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -1997,34 +2008,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 21,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 1.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 12303246592443928224,
@@ -2057,6 +2048,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2068,34 +2061,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 23,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.029999999329447746,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 3653961546853952424,
@@ -2128,6 +2101,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2139,34 +2114,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 18,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 8.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 16929313141388334964,
@@ -2199,6 +2154,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2210,34 +2167,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 19,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 4.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 7829076546148146147,
@@ -2270,6 +2207,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2281,34 +2220,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 20,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 4.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 6651277885081328326,
@@ -2341,6 +2260,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2352,34 +2273,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 22,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 6.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 7244019588197013818,
@@ -2412,6 +2313,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2423,34 +2326,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 26,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 5.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 9855439171412399657,
@@ -2483,6 +2366,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2494,34 +2379,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 7,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.05000000074505806,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 9820813002461921479,
@@ -2554,6 +2419,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2565,34 +2432,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 6,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 2.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 1016633993462513132,
@@ -2625,6 +2472,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2636,34 +2485,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 15,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 2.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 11996021626221440313,
@@ -2696,6 +2525,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2707,34 +2538,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 9,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.5,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 1950984887873972948,
@@ -2767,6 +2578,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2778,34 +2591,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 24,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.05000000074505806,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 17163880982974725929,
@@ -2838,6 +2631,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2849,34 +2644,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 21,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 1.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 9395930987214003050,
@@ -2909,6 +2684,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2920,34 +2697,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 23,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.029999999329447746,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 8388261763467154917,
@@ -2980,6 +2737,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -2991,34 +2750,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 18,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 8.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 17812838492364818968,
@@ -3051,6 +2790,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -3062,34 +2803,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 19,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 4.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 3806927177791887503,
@@ -3122,6 +2843,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -3133,34 +2856,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 20,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 4.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 540716208983100232,
@@ -3193,6 +2896,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -3204,34 +2909,14 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 22,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 6.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 15984828550388992657,
@@ -3264,6 +2949,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -3275,34 +2962,14 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 0,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 5.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 17915682287821025886,
@@ -3335,6 +3002,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -3346,34 +3015,14 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 7,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.05000000074505806,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 11786694816912988601,
@@ -3406,6 +3055,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -3417,34 +3068,14 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 6,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 2.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 11898017777263555540,
@@ -3477,6 +3108,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.0,
@@ -3488,34 +3121,14 @@
                   0.699999988079071,
                   0.30000001192092896
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 15,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 2.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 3733248130217507626,
@@ -3548,6 +3161,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.02500000037252903,
@@ -3559,34 +3174,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 9,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.5,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 995045504784278724,
@@ -3619,6 +3214,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.02500000037252903,
@@ -3630,34 +3227,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 24,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 0.05000000074505806,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 13530510242956763352,
@@ -3690,6 +3267,8 @@
             },
             {
               "data": {
+                "isStatic": true,
+                "isTrigger": false,
                 "layer": 64,
                 "localOffset": [
                   0.02500000037252903,
@@ -3701,34 +3280,14 @@
                   0.8999999761581421,
                   0.4000000059604645
                 ],
-                "mask": 4294967295
+                "mask": 4294967295,
+                "pushbackMask": [
+                  1.0,
+                  1.0,
+                  1.0
+                ]
               },
               "type": "OBBColliderComponent"
-            },
-            {
-              "data": {
-                "customEffectType": 21,
-                "customParams": {
-                  "color1": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "color2": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "param1": 1.0,
-                  "param2": 0.0,
-                  "param3": 0.0,
-                  "param4": 0.0
-                },
-                "enableEffectMask": true
-              },
-              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 5403363078805797012,
@@ -3794,6 +3353,15 @@
             "IsDestructible_Env_Arch": false,
             "IsDestructible_Env_Pillar": false,
             "IsDestructible_Env_Wall": true,
+            "PushbackMaskX_Env_Arch": 1.0,
+            "PushbackMaskX_Env_Pillar": 1.0,
+            "PushbackMaskX_Env_Wall": 1.0,
+            "PushbackMaskY_Env_Arch": 1.0,
+            "PushbackMaskY_Env_Pillar": 1.0,
+            "PushbackMaskY_Env_Wall": 1.0,
+            "PushbackMaskZ_Env_Arch": 1.0,
+            "PushbackMaskZ_Env_Pillar": 1.0,
+            "PushbackMaskZ_Env_Wall": 1.0,
             "SpawnCount_Env_Arch": 3,
             "SpawnCount_Env_Pillar": 3,
             "SpawnCount_Env_Wall": 3,
@@ -3873,6 +3441,31 @@
                 "modelName": "resources/model/sample/suzanne.obj"
               },
               "type": "MeshRendererComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 5433160966212677511,
@@ -3922,6 +3515,8 @@
         },
         {
           "data": {
+            "isStatic": false,
+            "isTrigger": true,
             "layer": 4,
             "localOffset": [
               0.0,
@@ -3929,7 +3524,12 @@
               0.0
             ],
             "localRadius": 4.599999904632568,
-            "mask": 4294967295
+            "mask": 4294967231,
+            "pushbackMask": [
+              1.0,
+              1.0,
+              1.0
+            ]
           },
           "type": "SphereColliderComponent"
         },
@@ -4034,6 +3634,12 @@
             "Global Intensity Multiplier": 1.0
           },
           "type": "CameraShakeComponent"
+        },
+        {
+          "data": {
+            "overrides": []
+          },
+          "type": "GlobalPostProcessComponent"
         }
       ],
       "instanceId": 1432498776640000749,
@@ -4200,6 +3806,31 @@
                 "Orbit Speed": 1.0
               },
               "type": "DroneManagerComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 12851281749722887849,
@@ -4247,9 +3878,35 @@
                 "Explosion Model Path": "resources/model/BossBulletSphere.obj",
                 "Hit Effect Key": "Dust",
                 "Hit Radius": 1.0,
-                "Max Bullets": 2000
+                "Max Bullets": 2000,
+                "Target Player": 372368188768739661
               },
               "type": "BossBulletManagerComponent"
+            },
+            {
+              "data": {
+                "customEffectType": 6,
+                "customParams": {
+                  "color1": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "color2": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "param1": 1.0,
+                  "param2": 0.0,
+                  "param3": 0.0,
+                  "param4": 0.0
+                },
+                "enableEffectMask": true
+              },
+              "type": "EffectMaskComponent"
             }
           ],
           "instanceId": 8075332939169388328,
@@ -4355,25 +4012,25 @@
           "data": {
             "overrides": [
               {
-                "type": "Bloom",
                 "enabled": true,
                 "intensity": 1.7999999523162842,
                 "sigma": 4.0,
-                "threshold": 0.6000000238418579
+                "threshold": 0.6000000238418579,
+                "type": "Bloom"
               },
               {
-                "type": "ColorGrading",
                 "enabled": true,
                 "exposure": 2.0,
                 "hue": 0.0,
-                "saturation": 0.2,
+                "saturation": 0.20000000298023224,
+                "type": "ColorGrading",
                 "value": -0.10000000149011612
               },
               {
-                "type": "Vignette",
                 "enabled": true,
                 "radius": 0.800000011920929,
-                "softness": 0.5
+                "softness": 0.5,
+                "type": "Vignette"
               }
             ]
           },

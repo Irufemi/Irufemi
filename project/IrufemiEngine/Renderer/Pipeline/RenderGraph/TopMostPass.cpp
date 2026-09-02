@@ -1,6 +1,7 @@
 #include "Renderer/Pipeline/RenderGraph/TopMostPass.h"
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Core/Math/MathFunction.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 
 void TopMostPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
@@ -15,7 +16,8 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = engine->GetMainRenderTexture()->GetRtvHandle();
 #else
     // 実行時はバックバッファに書き込む
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle =
+        drawManager->GetDxCommon()->GetRtvHandles(drawManager->GetDxCommon()->GetCurrentBackBufferIndex());
 #endif
     // 深度バッファは無効化(TopMostのため)
     cmdList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
@@ -29,7 +31,7 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     viewport.Height = static_cast<float>(engine->GetGameResolutionHeight());
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    
+
     scissor.left = 0;
     scissor.right = engine->GetGameResolutionWidth();
     scissor.top = 0;
@@ -40,21 +42,13 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     float gameW = static_cast<float>(engine->GetGameResolutionWidth());
     float gameH = static_cast<float>(engine->GetGameResolutionHeight());
 
-    float aspectGame = gameW / gameH;
-    float aspectClient = clientW / clientH;
+    Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
 
-    if (aspectClient > aspectGame) {
-        viewport.Height = clientH;
-        viewport.Width = clientH * aspectGame;
-        viewport.TopLeftX = (clientW - viewport.Width) * 0.5f;
-        viewport.TopLeftY = 0.0f;
-    } else {
-        viewport.Width = clientW;
-        viewport.Height = clientW / aspectGame;
-        viewport.TopLeftX = 0.0f;
-        viewport.TopLeftY = (clientH - viewport.Height) * 0.5f;
-    }
-    
+    viewport.Width = view.viewW;
+    viewport.Height = view.viewH;
+    viewport.TopLeftX = view.viewX;
+    viewport.TopLeftY = view.viewY;
+
     scissor.left = static_cast<LONG>(viewport.TopLeftX);
     scissor.right = static_cast<LONG>(viewport.TopLeftX + viewport.Width);
     scissor.top = static_cast<LONG>(viewport.TopLeftY);
@@ -68,23 +62,26 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
 
     // キューの描画関数を定義
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, const char* psoName) {
-        if (queue.empty()) return;
-        
+        if (queue.empty()) {
+            return;
+        }
+
         Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
         PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
         PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
         bool psoApplied = false;
         bool first = true;
-        
+
         for (const auto& p : queue) {
-            bool stateChanged = first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
-            
+            bool stateChanged =
+                first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
+
             if (stateChanged || !psoApplied) {
                 engine->SetBlend(p.blendMode);
                 engine->SetDepthWrite(p.depthWrite);
                 engine->SetCull(p.cullMode);
                 engine->ApplyPSO(psoName);
-                
+
                 currentBlend = p.blendMode;
                 currentDepth = p.depthWrite;
                 currentCull = p.cullMode;
@@ -96,11 +93,16 @@ void TopMostPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
     };
 
     // 最前面スプライト
-    DrawWithPSO(drawManager->GetTopMostSpriteQueue(), [&](const auto& p) { drawManager->DrawSprite(p); }, "SpriteForBackBuffer");
+    DrawWithPSO(
+        drawManager->GetTopMostSpriteQueue(), [&](const auto& p) { drawManager->DrawSprite(p); },
+        "SpriteForBackBuffer");
 
     // 最前面スプライトバッチ
-    DrawWithPSO(drawManager->GetTopMostSpriteBatchQueue(), [&](const auto& p) { drawManager->DrawTopMostSpriteBatch(p); }, "SpriteBatchForBackBuffer");
+    DrawWithPSO(
+        drawManager->GetTopMostSpriteBatchQueue(), [&](const auto& p) { drawManager->DrawTopMostSpriteBatch(p); },
+        "SpriteBatchForBackBuffer");
 
     // 最前面テキスト
-    DrawWithPSO(drawManager->GetTopMostTextQueue(), [&](const auto& p) { drawManager->DrawText(p); }, "TextForBackBuffer");
+    DrawWithPSO(
+        drawManager->GetTopMostTextQueue(), [&](const auto& p) { drawManager->DrawText(p); }, "TextForBackBuffer");
 }
