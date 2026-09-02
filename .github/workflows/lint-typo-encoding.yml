@@ -1,0 +1,57 @@
+name: Lint (Typo & Encoding)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check-typo:
+    name: Check Typos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check spelling
+        uses: crate-ci/typos@master
+
+  check-encoding:
+    name: Check UTF-8 Encoding (No BOM)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify BOM-less UTF-8 Encoding
+        run: |
+          python -c "
+          import os
+          import sys
+          import codecs
+
+          has_error = False
+          extensions = ('.cpp', '.h', '.hpp', '.c', '.json', '.md', '.txt', '.yml', '.yaml')
+          
+          for root, _, files in os.walk('.'):
+              if '.git' in root:
+                  continue
+              for file in files:
+                  if file.endswith(extensions):
+                      filepath = os.path.join(root, file)
+                      try:
+                          # Check for BOM
+                          with open(filepath, 'rb') as f:
+                              raw_bytes = f.read(3)
+                              if raw_bytes == codecs.BOM_UTF8:
+                                  print(f'::error file={filepath}::Encoding issue detected: File contains UTF-8 BOM! (Must be BOM-less UTF-8)')
+                                  has_error = True
+                                  continue
+                                  
+                          # Check if valid UTF-8
+                          with codecs.open(filepath, 'r', encoding='utf-8') as f:
+                              f.read()
+                      except UnicodeDecodeError as e:
+                          print(f'::error file={filepath}::Encoding issue detected: Not valid UTF-8! ({e})')
+                          has_error = True
+                          
+          if has_error:
+              sys.exit(1)
+          else:
+              print('All source files are valid BOM-less UTF-8.')
+          "
