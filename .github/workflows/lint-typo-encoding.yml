@@ -44,7 +44,7 @@ jobs:
                                   continue
                                   
                           # Check if valid UTF-8
-                          with codecs.open(filepath, 'r', encoding='utf-8') as f:
+                          with open(filepath, 'r', encoding='utf-8') as f:
                               f.read()
                       except UnicodeDecodeError as e:
                           print(f'::error file={filepath}::Encoding issue detected: Not valid UTF-8! ({e})')

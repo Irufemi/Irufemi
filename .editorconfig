@@ -22,7 +22,7 @@ spelling_error_severity = error
 spelling_checkable_types = identifiers, comments
 spelling_languages = en-us
 spelling_use_default_exclusion_dictionary = true
-spelling_exclusion_path = ./exclusion.dic
+spelling_exclusion_path = ./project/exclusion.dic
 
 # 3. JSON設定
 [*.json]
