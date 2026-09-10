@@ -153,6 +153,37 @@ std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
         nextIndex = std::stoi(match[2].str()) + 1;
     }
 
+    // 既存のオブジェクト名から同一プレフィックスの最大インデックスを走査して試行回数を最小化
+    int maxIndex = nextIndex - 1;
+    std::string prefixTag = prefix + " (";
+    auto ScanMaxIndex = [&](const std::string& name) {
+        if (name.rfind(prefixTag, 0) == 0 && name.back() == ')') {
+            size_t start = prefixTag.length();
+            size_t len = name.length() - start - 1;
+            if (len > 0) {
+                try {
+                    int val = std::stoi(name.substr(start, len));
+                    if (val > maxIndex) {
+                        maxIndex = val;
+                    }
+                } catch (...) {
+                    // 数値変換失敗は無視
+                }
+            }
+        }
+    };
+
+    for (const auto& [name, objList] : nameIndex_) {
+        ScanMaxIndex(name);
+    }
+    for (const auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed()) {
+            ScanMaxIndex(obj->GetName());
+        }
+    }
+
+    nextIndex = maxIndex + 1;
+
     std::string candidate;
     do {
         candidate = prefix + " (" + std::to_string(nextIndex) + ")";
@@ -271,18 +302,51 @@ void BaseScene::Update() {
         }
     }
 
-    // --- GameObject の更新 (マルチスレッド化) ---
-    std::vector<std::future<void>> updateFutures;
-    for (size_t i = 0; i < gameObjects_.size(); ++i) {
-        auto obj = gameObjects_[i];
+    // --- GameObject の更新 (バッチ並列化) ---
+    std::vector<GameObject*> updateTargets;
+    updateTargets.reserve(gameObjects_.size());
+    for (const auto& obj : gameObjects_) {
         if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
-            updateFutures.push_back(
-                engine_->GetThreadPool()->Enqueue([obj, isPlayMode]() { obj->Update(isPlayMode); }));
+            updateTargets.push_back(obj.get());
         }
     }
-    // 全てのスレッドの完了を待機
-    for (auto& future : updateFutures) {
-        future.wait();
+
+    const size_t updateCount = updateTargets.size();
+    if (updateCount > 0) {
+        ThreadPool* threadPool = engine_ ? engine_->GetThreadPool() : nullptr;
+        size_t threadCount = threadPool ? threadPool->GetTotalThreadCount() : 0;
+
+        // オブジェクト数が少数（16個以下）またはスレッドプール無しの場合は直列実行
+        if (threadCount <= 1 || updateCount <= 16) {
+            for (GameObject* obj : updateTargets) {
+                obj->Update(isPlayMode);
+            }
+        } else {
+            // スレッド数に応じて均等にチャンク分割（最大でも threadCount 個のタスクに集約）
+            size_t numTasks = (std::min)(threadCount, (updateCount + 15) / 16);
+            size_t chunkSize = (updateCount + numTasks - 1) / numTasks;
+
+            std::vector<std::future<void>> updateFutures;
+            updateFutures.reserve(numTasks);
+
+            for (size_t taskIdx = 0; taskIdx < numTasks; ++taskIdx) {
+                size_t start = taskIdx * chunkSize;
+                size_t end = (std::min)(start + chunkSize, updateCount);
+                if (start >= end) {
+                    break;
+                }
+
+                updateFutures.push_back(threadPool->Enqueue([&updateTargets, start, end, isPlayMode]() {
+                    for (size_t i = start; i < end; ++i) {
+                        updateTargets[i]->Update(isPlayMode);
+                    }
+                }));
+            }
+
+            for (auto& future : updateFutures) {
+                future.wait();
+            }
+        }
     }
 
     // --- Irufemi::Transform の DOD一括更新 ---
@@ -304,17 +368,49 @@ void BaseScene::Update() {
 }
 
 void BaseScene::Draw() {
-    // --- GameObject の描画 (マルチスレッド化) ---
-    std::vector<std::future<void>> drawFutures;
-    for (size_t i = 0; i < gameObjects_.size(); ++i) {
-        auto obj = gameObjects_[i];
+    // --- GameObject の描画 (バッチ並列化) ---
+    std::vector<GameObject*> drawTargets;
+    drawTargets.reserve(gameObjects_.size());
+    for (const auto& obj : gameObjects_) {
         if (obj && !obj->GetParent()) {
-            drawFutures.push_back(engine_->GetThreadPool()->Enqueue([obj]() { obj->Draw(); }));
+            drawTargets.push_back(obj.get());
         }
     }
-    // 全てのスレッドの完了を待機
-    for (auto& future : drawFutures) {
-        future.wait();
+
+    const size_t drawCount = drawTargets.size();
+    if (drawCount > 0) {
+        ThreadPool* threadPool = engine_ ? engine_->GetThreadPool() : nullptr;
+        size_t threadCount = threadPool ? threadPool->GetTotalThreadCount() : 0;
+
+        if (threadCount <= 1 || drawCount <= 16) {
+            for (GameObject* obj : drawTargets) {
+                obj->Draw();
+            }
+        } else {
+            size_t numTasks = (std::min)(threadCount, (drawCount + 15) / 16);
+            size_t chunkSize = (drawCount + numTasks - 1) / numTasks;
+
+            std::vector<std::future<void>> drawFutures;
+            drawFutures.reserve(numTasks);
+
+            for (size_t taskIdx = 0; taskIdx < numTasks; ++taskIdx) {
+                size_t start = taskIdx * chunkSize;
+                size_t end = (std::min)(start + chunkSize, drawCount);
+                if (start >= end) {
+                    break;
+                }
+
+                drawFutures.push_back(threadPool->Enqueue([&drawTargets, start, end]() {
+                    for (size_t i = start; i < end; ++i) {
+                        drawTargets[i]->Draw();
+                    }
+                }));
+            }
+
+            for (auto& future : drawFutures) {
+                future.wait();
+            }
+        }
     }
 
 #ifdef EditorMode
