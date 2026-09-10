@@ -60,6 +60,17 @@ void MeshRendererComponent::Update() {
     }
 }
 
+void MeshRendererComponent::SyncRenderState() {
+    if (GetTransform() && obj_) {
+        obj_->SetTranslate(GetTransform()->GetWorldPosition());
+        obj_->SetRotate(GetTransform()->GetWorldRotation());
+        obj_->SetScale(GetTransform()->GetWorldScale());
+    }
+    if (obj_) {
+        obj_->Update();
+    }
+}
+
 void MeshRendererComponent::Draw() {
     if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) {
         return;

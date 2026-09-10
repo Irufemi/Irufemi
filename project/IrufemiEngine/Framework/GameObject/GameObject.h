@@ -58,6 +58,12 @@ public:
      * @brief Draw を実行する。
      */
     void Draw();
+
+    /**
+     * @brief 描画ステート・コンピュートタスクの事前構築（ウォームアップ用）。
+     * @details ゲームロジックを進めずに、描画前同期やComputeTask（GPUスキニング等）の予約のみを行います。
+     */
+    void SyncRenderState();
     /**
      * @brief DrawOutlineMask を実行する。
      */

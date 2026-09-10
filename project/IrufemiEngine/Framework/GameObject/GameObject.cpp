@@ -1,5 +1,6 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Framework/Scene/SceneObjectRegistry.h"
 
 #include "Framework/Component/Component.h"
 #include "Framework/Component/ComponentFactory.h"
@@ -142,6 +143,20 @@ void GameObject::Draw() {
     }
 }
 
+void GameObject::SyncRenderState() {
+    if (!isActive_ || isDestroyed_) {
+        return;
+    }
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->SyncRenderState();
+    }
+    for (size_t i = 0; i < children_.size(); ++i) {
+        if (children_[i]) {
+            children_[i]->SyncRenderState();
+        }
+    }
+}
+
 void GameObject::DrawOutlineMask() {
     if (!isActive_) {
         return;
@@ -167,8 +182,13 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
     child->parent_ = shared_from_this();
     children_.push_back(child);
 
-    if (scene_ && !child->GetScene()) {
-        child->SetScene(scene_);
+    if (scene_) {
+        if (!child->GetScene()) {
+            child->SetScene(scene_);
+        }
+        if (auto registry = scene_->GetObjectRegistry()) {
+            registry->Register(child);
+        }
     }
 
     if (auto childTransform = child->GetComponent<TransformComponent>()) {
@@ -192,8 +212,13 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
         children_.insert(children_.begin() + index, child);
     }
 
-    if (scene_ && !child->GetScene()) {
-        child->SetScene(scene_);
+    if (scene_) {
+        if (!child->GetScene()) {
+            child->SetScene(scene_);
+        }
+        if (auto registry = scene_->GetObjectRegistry()) {
+            registry->Register(child);
+        }
     }
 
     if (auto childTransform = child->GetComponent<TransformComponent>()) {
@@ -204,6 +229,12 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
 void GameObject::RemoveChild(std::shared_ptr<GameObject> child) {
     auto it = std::find(children_.begin(), children_.end(), child);
     if (it != children_.end()) {
+        if (scene_) {
+            if (auto registry = scene_->GetObjectRegistry()) {
+                registry->Unregister(*it);
+            }
+        }
+
         (*it)->parent_.reset();
 
         if (auto childTransform = (*it)->GetComponent<TransformComponent>()) {

@@ -31,6 +31,7 @@ public:
      * @brief Draw を実行する。
      */
     void Draw() override;
+    void SyncRenderState() override;
 
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。

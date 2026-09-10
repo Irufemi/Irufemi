@@ -48,6 +48,12 @@ public:
     virtual void Draw() override;
 
     /**
+     * @brief 描画ステート・コンピュートタスクの事前構築（ウォームアップ）。
+     * @details ゲームロジックを進めずに行列計算・GPUスキニング予約・初回フレームデータ提出のみを安全に行います。
+     */
+    virtual void WarmUpRenderState() override;
+
+    /**
      * @brief シーンに GameObject を追加する
      */
     void AddGameObject(std::shared_ptr<GameObject> obj);

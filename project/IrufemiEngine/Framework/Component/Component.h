@@ -116,6 +116,12 @@ public:
     virtual void Draw() {}
 
     /**
+     * @brief 描画ステート・コンピュートタスクの事前構築（ウォームアップ用）
+     * @details ゲームロジックを進めずに、描画前同期やComputeTask（GPUスキニング等）の予約のみを行います。
+     */
+    virtual void SyncRenderState() {}
+
+    /**
      * @brief 紐づく Renderable オブジェクトを取得する
      * @details レンダラー系コンポーネントがこれをオーバーライドすることで、アウトライン描画などを共通化します。
      */

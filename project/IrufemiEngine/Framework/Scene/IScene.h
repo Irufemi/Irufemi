@@ -35,6 +35,12 @@ public:
     virtual void Draw() = 0;
 
     /**
+     * @brief 描画ステート・コンピュートタスクの事前構築（ウォームアップ）。
+     * @details シーン遷移完了時、ゲームロジック（Update）を回さずに行列計算・GPUスキニング予約・カメラデータ提出等のみを安全に行います。
+     */
+    virtual void WarmUpRenderState() {}
+
+    /**
      * @brief シーンが保持する GameObject のリストを取得する
      */
     virtual const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const {

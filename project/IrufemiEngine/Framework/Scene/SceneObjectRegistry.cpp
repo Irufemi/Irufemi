@@ -8,8 +8,21 @@ void SceneObjectRegistry::Register(const std::shared_ptr<GameObject>& obj) {
         return;
     }
     std::lock_guard<std::recursive_mutex> lock(registryMutex_);
-    nameIndex_[obj->GetName()].push_back(obj);
-    idIndex_[obj->GetInstanceID()] = obj;
+
+    auto registerInternal = [this](auto& self, const std::shared_ptr<GameObject>& target) -> void {
+        if (!target) {
+            return;
+        }
+        if (!target->GetName().empty()) {
+            nameIndex_[target->GetName()].push_back(target);
+        }
+        idIndex_[target->GetInstanceID()] = target;
+
+        for (const auto& child : target->GetChildren()) {
+            self(self, child);
+        }
+    };
+    registerInternal(registerInternal, obj);
 }
 
 void SceneObjectRegistry::Unregister(const std::shared_ptr<GameObject>& obj) {
@@ -17,20 +30,31 @@ void SceneObjectRegistry::Unregister(const std::shared_ptr<GameObject>& obj) {
         return;
     }
     std::lock_guard<std::recursive_mutex> lock(registryMutex_);
-    auto nameIt = nameIndex_.find(obj->GetName());
-    if (nameIt != nameIndex_.end()) {
-        auto& list = nameIt->second;
-        list.erase(std::remove_if(list.begin(), list.end(),
-                                  [&obj](const std::weak_ptr<GameObject>& weakPtr) {
-                                      auto locked = weakPtr.lock();
-                                      return !locked || locked == obj;
-                                  }),
-                   list.end());
-        if (list.empty()) {
-            nameIndex_.erase(nameIt);
+
+    auto unregisterInternal = [this](auto& self, const std::shared_ptr<GameObject>& target) -> void {
+        if (!target) {
+            return;
         }
-    }
-    idIndex_.erase(obj->GetInstanceID());
+        auto nameIt = nameIndex_.find(target->GetName());
+        if (nameIt != nameIndex_.end()) {
+            auto& list = nameIt->second;
+            list.erase(std::remove_if(list.begin(), list.end(),
+                                      [&target](const std::weak_ptr<GameObject>& weakPtr) {
+                                          auto locked = weakPtr.lock();
+                                          return !locked || locked == target;
+                                      }),
+                       list.end());
+            if (list.empty()) {
+                nameIndex_.erase(nameIt);
+            }
+        }
+        idIndex_.erase(target->GetInstanceID());
+
+        for (const auto& child : target->GetChildren()) {
+            self(self, child);
+        }
+    };
+    unregisterInternal(unregisterInternal, obj);
 }
 
 void SceneObjectRegistry::Clear() {

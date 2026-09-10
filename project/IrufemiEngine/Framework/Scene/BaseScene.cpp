@@ -300,6 +300,45 @@ void BaseScene::Draw() {
     }
 }
 
+void BaseScene::WarmUpRenderState() {
+    // 1. 遅延登録キューのフラッシュ（ロード済みオブジェクトをリストに確定）
+    {
+        std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
+        for (auto& obj : pendingAdds_) {
+            gameObjects_.push_back(obj);
+            objectRegistry_->Register(obj);
+        }
+        pendingAdds_.clear();
+
+        for (auto& obj : pendingRemoves_) {
+            auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
+            if (it != gameObjects_.end()) {
+                gameObjects_.erase(it);
+                objectRegistry_->Unregister(obj);
+            }
+        }
+        pendingRemoves_.clear();
+    }
+
+    // 2. カメラマネージャーの最新化
+    if (engine_ && engine_->GetCameraManager()) {
+        engine_->GetCameraManager()->Update();
+    }
+
+    // 3. 全Transformのワールド行列を一括計算 (DOD)
+    TransformComponent::UpdateAll();
+
+    // 4. 全GameObjectの描画前ステート同期（スキニングの初期ポーズ計算 & ComputeTask先行登録）
+    for (const auto& obj : gameObjects_) {
+        if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
+            obj->SyncRenderState();
+        }
+    }
+
+    // 5. 初回フレームデータ（カメラ行列、ライト、フォグ等）をレンダラーへ提出
+    SubmitFrameData();
+}
+
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
         std::lock_guard<std::recursive_mutex> lock(sceneMutex_);

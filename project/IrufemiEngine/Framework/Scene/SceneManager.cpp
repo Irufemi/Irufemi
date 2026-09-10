@@ -101,6 +101,7 @@ bool SceneManager::ChangeTo(const Key& next) {
 #endif
 
     item.scene->OnEnter(); // シーン開始
+    item.scene->WarmUpRenderState(); // 初回描画ステートのウォームアップ
 
     sceneStack_.push_back(std::move(item));
     wasLoading_ = false;
@@ -146,6 +147,7 @@ void SceneManager::PushScene(const Key& name) {
 #endif
 
     item.scene->OnEnter(); // 新しいシーン開始
+    item.scene->WarmUpRenderState(); // 初回描画ステートのウォームアップ
 
     sceneStack_.push_back(std::move(item));
 
@@ -285,12 +287,12 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
             // 【重要】フェードイン中 (Opening) は Update() がスキップされるため、
             // そのまま Draw() が呼ばれると、未初期化の定数バッファ（ゼロ行列）や
             // 前シーンのカメラデータが使われてしまい、深刻な点滅・描画崩れが発生する。
-            // これを防ぐため、ロード完了直後に強制的に1回だけ Update() を回し、
-            // 全オブジェクトの初回更新（UpdateAll等）とカメラ設定を済ませる。
+            // これを防ぐため、ゲームロジック（Update）は動かさずに、描画ステート・
+            // GPUスキニング予約・初回フレームデータ提出（WarmUpRenderState）のみを安全に済ませる。
             // ---------------------------------------------------------
             if (!sceneStack_.empty()) {
                 sceneStack_.back().scene->OnEnter(); // ロード完了直後にBGM再生等を開始
-                sceneStack_.back().scene->Update();
+                sceneStack_.back().scene->WarmUpRenderState();
             }
 
             // ロードが完了した瞬間に、フェードインを開始する

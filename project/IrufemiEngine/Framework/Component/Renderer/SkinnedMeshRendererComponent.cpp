@@ -44,6 +44,19 @@ void SkinnedMeshRendererComponent::Update() {
     poseOverride_ = nullptr;
 }
 
+void SkinnedMeshRendererComponent::SyncRenderState() {
+    if (!animatedMesh_) {
+        return;
+    }
+    if (auto transform = GetTransform()) {
+        animatedMesh_->SetTranslate(transform->GetWorldPosition());
+        animatedMesh_->SetRotate(transform->GetWorldRotation());
+        animatedMesh_->SetScale(transform->GetWorldScale());
+    }
+    // バインドポーズで初期ポーズ計算とRegisterComputeTaskを先行実行
+    animatedMesh_->Update(poseOverride_);
+}
+
 void SkinnedMeshRendererComponent::Draw() {
     if (!isVisible_ || !gameObject_ || !gameObject_->GetIsActive()) {
         return;
