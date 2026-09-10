@@ -1,0 +1,10 @@
+[files]
+extend-exclude = [
+    "project/externals/**",
+    "externals/**"
+]
+
+[default.extend-words]
+Irufemi = "Irufemi"
+irufemi = "irufemi"
+WP0 = "WP0"
