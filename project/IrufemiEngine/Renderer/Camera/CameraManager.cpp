@@ -66,3 +66,8 @@ void CameraManager::OnResize(int width, int height) {
         }
     }
 }
+
+void CameraManager::Clear() {
+    cameras_.clear();
+    activeCameraName_.clear();
+}

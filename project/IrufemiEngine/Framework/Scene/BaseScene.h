@@ -143,7 +143,7 @@ public:
     /**
      * @brief シーンの終了処理。リソースの明示的な解放などを行います。
      */
-    virtual void Finalize() override {}
+    virtual void Finalize() override;
 
     /**
      * @brief シーンが最前面でアクティブになった時に呼ばれます。

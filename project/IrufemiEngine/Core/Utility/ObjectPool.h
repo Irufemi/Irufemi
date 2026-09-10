@@ -142,6 +142,21 @@ public:
         return slots_.size();
     }
 
+    /**
+     * @brief プール内の全要素に対して処理を実行する（クリーンアップ・破棄時処理用）
+     * @param func 各要素に対して呼び出される関数オブジェクト
+     */
+    void ForEach(const std::function<void(const std::shared_ptr<T>&)>& func) {
+        if (!func) {
+            return;
+        }
+        for (auto& slot : slots_) {
+            if (slot.data) {
+                func(slot.data);
+            }
+        }
+    }
+
 private:
     /**
      * @brief IsValidHandle かどうかを判定する。

@@ -10,6 +10,8 @@
 #include "Framework/Scene/SceneSerializer.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Physics/CollisionManager.h"
+#include "Renderer/Camera/CameraManager.h"
 
 namespace {
 /**
@@ -80,6 +82,16 @@ bool SceneManager::ChangeTo(const Key& next) {
     // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
     if (engine_->GetPostProcessManager()) {
         engine_->GetPostProcessManager()->Reset();
+    }
+
+    // シーン切り替え時にコリジョンマネージャーの残留コライダーと衝突履歴を安全にクリア
+    if (engine_->GetCollisionManager()) {
+        engine_->GetCollisionManager()->Clear();
+    }
+
+    // シーン切り替え時にカメラマネージャーの残留カメラをクリア
+    if (engine_->GetCameraManager()) {
+        engine_->GetCameraManager()->Clear();
     }
 
     SceneStackItem item;
@@ -449,6 +461,16 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     // シーン切り替え時にポストプロセスの状態とパラメータを自動リセット
     if (engine_->GetPostProcessManager()) {
         engine_->GetPostProcessManager()->Reset(false);
+    }
+
+    // シーン切り替え時にコリジョンマネージャーの残留コライダーと衝突履歴を安全にクリア
+    if (engine_->GetCollisionManager()) {
+        engine_->GetCollisionManager()->Clear();
+    }
+
+    // シーン切り替え時にカメラマネージャーの残留カメラをクリア
+    if (engine_->GetCameraManager()) {
+        engine_->GetCameraManager()->Clear();
     }
 
     initFuture_ = std::async(std::launch::async, [this, factory, next]() {

@@ -16,6 +16,18 @@
 // これにより、数千体の敵を描画する際でもドローコールが1回（Instancing）に削減され、
 // CPUとGPUのオーバーヘッドが劇的に改善されます（Unreal EngineのHISMやUnityのDOTSに近いアーキテクチャ）。
 
+DebugEnemySpawnerComponent::~DebugEnemySpawnerComponent() {
+    if (enemyPool_) {
+        enemyPool_->ForEach([](const std::shared_ptr<GameObject>& enemy) {
+            if (enemy) {
+                if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
+                    enemyComp->SetOnDeathCallback(nullptr);
+                }
+            }
+        });
+    }
+}
+
 void DebugEnemySpawnerComponent::Initialize() {}
 
 void DebugEnemySpawnerComponent::OnRegisterProperties() {

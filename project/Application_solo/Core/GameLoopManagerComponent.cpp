@@ -13,6 +13,17 @@
 #include "Core/Utility/Log.h"
 #include <iostream>
 
+GameLoopManagerComponent::~GameLoopManagerComponent() {
+    if (playerHealth_) {
+        playerHealth_->onPlayerDied = nullptr;
+        playerHealth_->onDeathSequenceFinished = nullptr;
+    }
+    if (boss_) {
+        boss_->onBossDied = nullptr;
+        boss_->onDeathSequenceFinished = nullptr;
+    }
+}
+
 void GameLoopManagerComponent::Initialize() {
     state_ = State::Playing;
     playerHealth_ = nullptr;

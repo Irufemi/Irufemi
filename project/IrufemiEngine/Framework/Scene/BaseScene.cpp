@@ -14,6 +14,8 @@
 #include "Renderer/Data/AreaLight.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Physics/CollisionManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 
 #include "Framework/Scene/SceneSerializer.h"
@@ -32,7 +34,9 @@
 BaseScene::BaseScene() {
     objectRegistry_ = std::make_unique<SceneObjectRegistry>();
 }
-BaseScene::~BaseScene() = default;
+BaseScene::~BaseScene() {
+    ClearGameObjects();
+}
 
 std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
     if (auto obj = objectRegistry_->FindByName(name)) {
@@ -377,6 +381,22 @@ void BaseScene::ClearGameObjects() {
     pendingAdds_.clear();
     pendingRemoves_.clear();
     objectRegistry_->Clear();
+
+    // シーン上の全オブジェクトが消去されたため、エンジン側の物理・描画・パーティクルの残留データを完全にクリア
+    if (engine_) {
+        if (auto cm = engine_->GetCollisionManager()) {
+            cm->Clear();
+        }
+        if (auto dm = engine_->GetDrawManager()) {
+            dm->ClearAllQueues();
+        }
+        if (auto pm = engine_->GetGPUParticleManager()) {
+            pm->ClearAllParticles();
+        }
+        if (auto vm = engine_->GetVoxelParticleManager()) {
+            vm->Clear();
+        }
+    }
 }
 
 size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
@@ -601,3 +621,8 @@ void BaseScene::Deserialize(const nlohmann::json& j) {
         }
     }
 }
+
+void BaseScene::Finalize() {
+    ClearGameObjects();
+}
+

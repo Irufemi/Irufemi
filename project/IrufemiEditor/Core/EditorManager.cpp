@@ -126,6 +126,9 @@ void EditorManager::EnterPlayMode() {
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         baseScene->ClearGameObjects();
     }
+    if (auto cm = engine_->GetCollisionManager()) {
+        cm->Clear();
+    }
 
     // 保存したばかりのバックアップから復元して、完全に初期化し直す
     SceneSerializer::Load(scene, "temp/.temp_playmode");
@@ -168,6 +171,9 @@ void EditorManager::ExitPlayMode() {
 
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         baseScene->ClearGameObjects();
+    }
+    if (auto cm = engine_->GetCollisionManager()) {
+        cm->Clear();
     }
 
     // バックアップから復元
