@@ -495,7 +495,8 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     // --- Input Vertex Buffer の作成 ---
     skinCluster.inputVertexResource = dxCommon_->CreateBufferResource(sizeof(VertexData) * totalVertices);
     VertexData* mappedInputVertices = nullptr;
-    skinCluster.inputVertexResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInputVertices));
+    HRESULT hrInput = skinCluster.inputVertexResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInputVertices));
+    IRUFEMI_ASSERT(SUCCEEDED(hrInput) && "Failed to map input vertex resource.");
     size_t vertexOffset = 0;
     for (const auto& mesh : objModel.meshes) {
         if (!mesh.vertices.empty()) {
@@ -525,7 +526,8 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         skinCluster.paletteResource[i] = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
         WellForGPU* mappedPalette = nullptr;
-        skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPalette));
+        HRESULT hrPalette = skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPalette));
+        IRUFEMI_ASSERT(SUCCEEDED(hrPalette) && "Failed to map palette resource.");
         skinCluster.mappedPalette[i] = {mappedPalette, skeleton.joints.size()};
 
         uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
@@ -548,7 +550,8 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     /// influence用Resourceの作成
     skinCluster.influenceResource = dxCommon_->CreateBufferResource(sizeof(VertexInfluence) * totalVertices);
     VertexInfluence* mappedInfluence = nullptr;
-    skinCluster.influenceResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInfluence));
+    HRESULT hrInfluence = skinCluster.influenceResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedInfluence));
+    IRUFEMI_ASSERT(SUCCEEDED(hrInfluence) && "Failed to map influence resource.");
     std::memset(mappedInfluence, 0, sizeof(VertexInfluence) * totalVertices);
     skinCluster.mappedInfluence = {mappedInfluence, totalVertices};
 
@@ -639,8 +642,9 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
 
     // Skinning Information (CBV)
     skinCluster.skinningInformationResource = dxCommon_->CreateBufferResource(sizeof(SkinningInformation));
-    skinCluster.skinningInformationResource->Map(0, nullptr,
+    HRESULT hrSkinInfo = skinCluster.skinningInformationResource->Map(0, nullptr,
                                                  reinterpret_cast<void**>(&skinCluster.mappedSkinningInformation));
+    IRUFEMI_ASSERT(SUCCEEDED(hrSkinInfo) && "Failed to map skinning information resource.");
     skinCluster.mappedSkinningInformation->numVertices = static_cast<uint32_t>(totalVertices);
 
     return skinCluster;
