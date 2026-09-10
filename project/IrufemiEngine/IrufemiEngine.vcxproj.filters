@@ -519,6 +519,9 @@
     <ClCompile Include="Framework\Scene\BaseScene.cpp">
       <Filter>Framework\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Scene\SceneObjectRegistry.cpp">
+      <Filter>Framework\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Scene\DebugScene.cpp">
       <Filter>Framework\Scene</Filter>
     </ClCompile>
@@ -1119,6 +1122,9 @@
       <Filter>EngineResources\FontAwesome</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Scene\BaseScene.h">
+      <Filter>Framework\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Scene\SceneObjectRegistry.h">
       <Filter>Framework\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Scene\DebugScene.h">

@@ -302,6 +302,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Platform\Input\Mouse.cpp" />
     <ClCompile Include="Platform\WindowsAPI\WinApp.cpp" />
     <ClCompile Include="Framework\Scene\BaseScene.cpp" />
+    <ClCompile Include="Framework\Scene\SceneObjectRegistry.cpp" />
     <ClCompile Include="Framework\Scene\DebugScene.cpp" />
     <ClCompile Include="Framework\Component\Audio\AudioSourceComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
@@ -502,6 +503,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Platform\WindowsAPI\WinApp.h" />
     <ClInclude Include="EngineResources\FontAwesome\IconsFontAwesome6.h" />
     <ClInclude Include="Framework\Scene\BaseScene.h" />
+    <ClInclude Include="Framework\Scene\SceneObjectRegistry.h" />
     <ClInclude Include="Framework\Scene\DebugScene.h" />
     <ClInclude Include="Framework\GameObject\GameObject.h" />
     <ClInclude Include="Framework\Scene\IScene.h" />

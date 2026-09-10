@@ -1,4 +1,5 @@
 #include "Framework/Scene/BaseScene.h"
+#include "Framework/Scene/SceneObjectRegistry.h"
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
@@ -28,196 +29,65 @@
 #include "Framework/UI/DebugUI.h"
 #endif
 
-BaseScene::BaseScene() = default;
+BaseScene::BaseScene() {
+    objectRegistry_ = std::make_unique<SceneObjectRegistry>();
+}
 BaseScene::~BaseScene() = default;
 
 std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
+    if (auto obj = objectRegistry_->FindByName(name)) {
+        return obj;
+    }
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    auto it = nameIndex_.find(name);
-    if (it != nameIndex_.end()) {
-        auto& list = it->second;
-        // 有効な最初のオブジェクトを探しつつ、無効なポインタを遅延削除
-        for (auto listIt = list.begin(); listIt != list.end();) {
-            if (auto obj = listIt->lock()) {
-                if (!obj->IsDestroyed()) {
-                    return obj;
-                } else {
-                    listIt = list.erase(listIt);
-                }
-            } else {
-                listIt = list.erase(listIt);
-            }
+    for (const auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed() && obj->GetName() == name) {
+            return obj;
         }
     }
     return nullptr;
 }
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::string& name) {
-    std::vector<std::shared_ptr<GameObject>> result;
+    auto result = objectRegistry_->FindAllByName(name);
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    auto it = nameIndex_.find(name);
-    if (it != nameIndex_.end()) {
-        auto& list = it->second;
-        for (auto listIt = list.begin(); listIt != list.end();) {
-            if (auto obj = listIt->lock()) {
-                if (!obj->IsDestroyed()) {
-                    result.push_back(obj);
-                    ++listIt;
-                } else {
-                    listIt = list.erase(listIt);
-                }
-            } else {
-                listIt = list.erase(listIt);
-            }
+    for (const auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed() && obj->GetName() == name) {
+            result.push_back(obj);
         }
     }
     return result;
 }
 
 std::shared_ptr<GameObject> BaseScene::FindGameObjectByID(uint64_t instanceId) {
-    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-
-    // O(1)検索
-    auto it = idIndex_.find(instanceId);
-    if (it != idIndex_.end()) {
-        if (auto obj = it->second.lock()) {
-            if (!obj->IsDestroyed()) {
-                return obj;
-            } else {
-                idIndex_.erase(it);
-            }
-        } else {
-            idIndex_.erase(it);
-        }
+    if (auto obj = objectRegistry_->FindById(instanceId)) {
+        return obj;
     }
-
-    // 遅延キュー内の検索（フレーム中に生成された直後の対応）
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     for (const auto& obj : pendingAdds_) {
         if (obj && obj->GetInstanceID() == instanceId && !obj->IsDestroyed()) {
             return obj;
         }
     }
-
     return nullptr;
 }
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const std::string& tag) {
-    std::vector<std::shared_ptr<GameObject>> result;
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    for (auto& obj : gameObjects_) {
-        if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
-            result.push_back(obj);
-        }
-    }
-    for (auto& obj : pendingAdds_) {
-        if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
-            result.push_back(obj);
-        }
-    }
-    return result;
+    std::vector<std::shared_ptr<GameObject>> all;
+    all.reserve(gameObjects_.size() + pendingAdds_.size());
+    all.insert(all.end(), gameObjects_.begin(), gameObjects_.end());
+    all.insert(all.end(), pendingAdds_.begin(), pendingAdds_.end());
+    return objectRegistry_->FindByTag(tag, all);
 }
 
 std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-
-    auto NameExists = [&](const std::string& name) {
-        auto it = nameIndex_.find(name);
-        if (it != nameIndex_.end()) {
-            for (auto& weakObj : it->second) {
-                if (auto obj = weakObj.lock()) {
-                    if (!obj->IsDestroyed()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        for (const auto& obj : pendingAdds_) {
-            if (obj && !obj->IsDestroyed() && obj->GetName() == name) {
-                return true;
-            }
-        }
-        return false;
-    };
-
-    if (!NameExists(baseName)) {
-        return baseName;
-    }
-
-    std::string prefix = baseName;
-    int nextIndex = 1;
-
-    std::regex re("^(.*) \\((\\d+)\\)$");
-    std::smatch match;
-    if (std::regex_match(baseName, match, re)) {
-        prefix = match[1].str();
-        nextIndex = std::stoi(match[2].str()) + 1;
-    }
-
-    // 既存のオブジェクト名から同一プレフィックスの最大インデックスを走査して試行回数を最小化
-    int maxIndex = nextIndex - 1;
-    std::string prefixTag = prefix + " (";
-    auto ScanMaxIndex = [&](const std::string& name) {
-        if (name.rfind(prefixTag, 0) == 0 && name.back() == ')') {
-            size_t start = prefixTag.length();
-            size_t len = name.length() - start - 1;
-            if (len > 0) {
-                try {
-                    int val = std::stoi(name.substr(start, len));
-                    if (val > maxIndex) {
-                        maxIndex = val;
-                    }
-                } catch (...) {
-                    // 数値変換失敗は無視
-                }
-            }
-        }
-    };
-
-    for (const auto& [name, objList] : nameIndex_) {
-        ScanMaxIndex(name);
-    }
-    for (const auto& obj : pendingAdds_) {
-        if (obj && !obj->IsDestroyed()) {
-            ScanMaxIndex(obj->GetName());
-        }
-    }
-
-    nextIndex = maxIndex + 1;
-
-    std::string candidate;
-    do {
-        candidate = prefix + " (" + std::to_string(nextIndex) + ")";
-        nextIndex++;
-    } while (NameExists(candidate));
-
-    return candidate;
+    return objectRegistry_->GenerateUniqueName(baseName, pendingAdds_);
 }
 
 void BaseScene::OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName,
                                         const std::string& newName) {
-    if (!obj) {
-        return;
-    }
-    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-
-    // 古い名前のリストから削除
-    if (!oldName.empty()) {
-        auto itOld = nameIndex_.find(oldName);
-        if (itOld != nameIndex_.end()) {
-            auto& list = itOld->second;
-            list.erase(std::remove_if(list.begin(), list.end(),
-                                      [&obj](const std::weak_ptr<GameObject>& wp) {
-                                          auto p = wp.lock();
-                                          return !p || p == obj;
-                                      }),
-                       list.end());
-        }
-    }
-
-    // 新しい名前のリストに追加
-    if (!newName.empty()) {
-        nameIndex_[newName].push_back(obj);
-    }
+    objectRegistry_->OnNameChanged(obj, oldName, newName);
 }
 
 void BaseScene::Initialize(IrufemiEngine* engine) {
@@ -269,10 +139,7 @@ void BaseScene::Update() {
         std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         for (auto& obj : pendingAdds_) {
             gameObjects_.push_back(obj);
-            if (!obj->GetName().empty()) {
-                nameIndex_[obj->GetName()].push_back(obj);
-            }
-            idIndex_[obj->GetInstanceID()] = obj;
+            objectRegistry_->Register(obj);
         }
         pendingAdds_.clear();
 
@@ -280,14 +147,7 @@ void BaseScene::Update() {
             auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
             if (it != gameObjects_.end()) {
                 gameObjects_.erase(it);
-                auto nameIt = nameIndex_.find(obj->GetName());
-                if (nameIt != nameIndex_.end()) {
-                    auto& list = nameIt->second;
-                    list.erase(std::remove_if(list.begin(), list.end(),
-                                              [&obj](const std::weak_ptr<GameObject>& wp) { return wp.lock() == obj; }),
-                               list.end());
-                }
-                idIndex_.erase(obj->GetInstanceID());
+                objectRegistry_->Unregister(obj);
             }
         }
         pendingRemoves_.clear();
@@ -461,10 +321,7 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
     } else {
         gameObjects_.insert(gameObjects_.begin() + index, obj);
     }
-    if (!obj->GetName().empty()) {
-        nameIndex_[obj->GetName()].push_back(obj);
-    }
-    idIndex_[obj->GetInstanceID()] = obj;
+    objectRegistry_->Register(obj);
 }
 
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
@@ -480,8 +337,7 @@ void BaseScene::ClearGameObjects() {
     gameObjects_.clear();
     pendingAdds_.clear();
     pendingRemoves_.clear();
-    nameIndex_.clear();
-    idIndex_.clear();
+    objectRegistry_->Clear();
 }
 
 size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {

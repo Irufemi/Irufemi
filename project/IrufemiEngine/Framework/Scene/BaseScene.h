@@ -19,6 +19,7 @@ struct SpotLight;
 struct AreaLight;
 class GameObject;
 class Camera;
+class SceneObjectRegistry;
 
 /**
  * @class BaseScene
@@ -191,9 +192,18 @@ protected:
     std::vector<std::shared_ptr<GameObject>> pendingAdds_;
     std::vector<std::shared_ptr<GameObject>> pendingRemoves_;
 
-    // 高速検索(O(1))用インデックス
-    std::unordered_map<std::string, std::vector<std::weak_ptr<GameObject>>> nameIndex_;
-    std::unordered_map<uint64_t, std::weak_ptr<GameObject>> idIndex_;
+    // オブジェクトインデックス管理レジストリ
+    std::unique_ptr<SceneObjectRegistry> objectRegistry_;
+
+public:
+    /**
+     * @brief オブジェクトレジストリを取得する
+     */
+    SceneObjectRegistry* GetObjectRegistry() const {
+        return objectRegistry_.get();
+    }
+
+protected:
 
     // デバッグ用カメラフラグ
     bool isDebugCameraMode_ = false;

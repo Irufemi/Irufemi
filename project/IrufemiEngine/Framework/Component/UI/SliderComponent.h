@@ -18,6 +18,7 @@ public:
     ~SliderComponent() override = default;
 
     void Initialize() override;
+    void Start() override;
     void Update() override;
 
     std::string GetComponentName() const override {
@@ -47,13 +48,12 @@ public:
     /**
      * @brief ハンドル（ツマミ）となるGameObjectのIDを設定
      */
-    void SetHandleObjectID(int id) {
-        handleObjectID_ = id;
-    }
+    void SetHandleObjectID(int id);
 
 private:
     bool CheckBounds(const Irufemi::Vector2& mousePos);
     void UpdateHandlePosition();
+    void ResolveHandleObject();
 
     SpriteRendererComponent* backgroundSprite_ = nullptr;
     GameObject* handleObject_ = nullptr;
