@@ -1,5 +1,7 @@
 #pragma once
 #include "Renderer/Pipeline/RenderGraph/IRenderPass.h"
+#include <cstdint>
+#include <vector>
 
 class MainTransparentPass : public IRenderPass {
 public:
@@ -14,4 +16,15 @@ public:
      * @brief Execute を実行する。
      */
     void Execute(class DrawManager* drawManager, class IrufemiEngine* engine) override;
+
+private:
+    /// @brief 半透明描画のインデックスソート用軽量キー (8 bytes)
+    struct TransparentSortKey {
+        float distanceToCamera;
+        uint32_t packetIndex;
+    };
+
+    /// @brief 毎フレームのヒープアロケーションを防ぐための再利用ソートキーバッファ
+    std::vector<TransparentSortKey> sortKeys_;
 };
+

@@ -138,8 +138,39 @@ void AnimationManager::OnDirectoryChanged() {
     }
 }
 
-// 任意の時刻の値を取得する
-Irufemi::Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time) {
+namespace {
+template <typename TKey>
+size_t FindUpperKeyframeIndex(const std::vector<TKey>& keyframes, float time) {
+    const size_t count = keyframes.size();
+    // 2キーフレームの場合（定数・直線移動の頻出ケース）
+    if (count == 2) {
+        return 1;
+    }
+    // 小さい配列（<= 8）はリニア走査のほうが二分探索よりもキャッシュミス・分岐予測ミスがなく高速
+    if (count <= 8) {
+        for (size_t i = 1; i < count; ++i) {
+            if (time < keyframes[i].time) {
+                return i;
+            }
+        }
+        return count - 1;
+    }
+    // それ以上の要素数では二分探索 O(log K)
+    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
+                               [](const TKey& k, float t) { return k.time < t; });
+    return static_cast<size_t>(std::distance(keyframes.begin(), it));
+}
+
+inline Irufemi::Vector3 InterpolateKeyframeValue(const Irufemi::Vector3& a, const Irufemi::Vector3& b, float t) {
+    return Lerp(a, b, t);
+}
+
+inline Irufemi::Quaternion InterpolateKeyframeValue(const Irufemi::Quaternion& a, const Irufemi::Quaternion& b, float t) {
+    return Irufemi::Math::Slerp(a, b, t);
+}
+
+template <typename TKey>
+auto CalculateKeyframeValueInternal(const std::vector<TKey>& keyframes, float time) {
     IRUFEMI_ASSERT(!keyframes.empty());
     if (keyframes.size() == 1 || time <= keyframes.front().time) {
         return keyframes.front().value;
@@ -148,66 +179,32 @@ Irufemi::Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVect
         return keyframes.back().value;
     }
 
-    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
-                               [](const KeyframeVector3& k, float t) { return k.time < t; });
+    size_t upperIdx = FindUpperKeyframeIndex(keyframes, time);
+    const auto& prev = keyframes[upperIdx - 1];
+    const auto& next = keyframes[upperIdx];
+    float t = (time - prev.time) / (next.time - prev.time);
+    return InterpolateKeyframeValue(prev.value, next.value, t);
+}
+} // namespace
 
-    auto prev = it - 1;
-    float t = (time - prev->time) / (it->time - prev->time);
-    return Lerp(prev->value, it->value, t);
+// 任意の時刻の値を取得する
+Irufemi::Vector3 AnimationManager::CalculateValue(const std::vector<KeyframeVector3>& keyframes, float time) {
+    return CalculateKeyframeValueInternal(keyframes, time);
 }
 
 // 任意の時刻の値を取得する
 Irufemi::Quaternion AnimationManager::CalculateValue(const std::vector<KeyframeQuaternion>& keyframes, float time) {
-    IRUFEMI_ASSERT(!keyframes.empty());
-    if (keyframes.size() == 1 || time <= keyframes.front().time) {
-        return keyframes.front().value;
-    }
-    if (time >= keyframes.back().time) {
-        return keyframes.back().value;
-    }
-
-    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
-                               [](const KeyframeQuaternion& k, float t) { return k.time < t; });
-
-    auto prev = it - 1;
-    float t = (time - prev->time) / (it->time - prev->time);
-    return Irufemi::Math::Slerp(prev->value, it->value, t);
+    return CalculateKeyframeValueInternal(keyframes, time);
 }
 
 // 任意の時刻の値を取得する
 Irufemi::Vector3 AnimationManager::CalculateValue(const AnimationCurve<Irufemi::Vector3>& keyframes, float time) {
-    IRUFEMI_ASSERT(!keyframes.keyframes.empty());
-    if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes.front().time) {
-        return keyframes.keyframes.front().value;
-    }
-    if (time >= keyframes.keyframes.back().time) {
-        return keyframes.keyframes.back().value;
-    }
-
-    auto it = std::lower_bound(keyframes.keyframes.begin(), keyframes.keyframes.end(), time,
-                               [](const KeyframeVector3& k, float t) { return k.time < t; });
-
-    auto prev = it - 1;
-    float t = (time - prev->time) / (it->time - prev->time);
-    return Lerp(prev->value, it->value, t);
+    return CalculateKeyframeValueInternal(keyframes.keyframes, time);
 }
 
 // 任意の時刻の値を取得する
 Irufemi::Quaternion AnimationManager::CalculateValue(const AnimationCurve<Irufemi::Quaternion>& keyframes, float time) {
-    IRUFEMI_ASSERT(!keyframes.keyframes.empty());
-    if (keyframes.keyframes.size() == 1 || time <= keyframes.keyframes.front().time) {
-        return keyframes.keyframes.front().value;
-    }
-    if (time >= keyframes.keyframes.back().time) {
-        return keyframes.keyframes.back().value;
-    }
-
-    auto it = std::lower_bound(keyframes.keyframes.begin(), keyframes.keyframes.end(), time,
-                               [](const KeyframeQuaternion& k, float t) { return k.time < t; });
-
-    auto prev = it - 1;
-    float t = (time - prev->time) / (it->time - prev->time);
-    return Irufemi::Math::Slerp(prev->value, it->value, t);
+    return CalculateKeyframeValueInternal(keyframes.keyframes, time);
 }
 
 // 任意の時刻の値を取得する(オイラー角)

@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include "Core/Math/Transform.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Matrix4x4.h"
@@ -45,7 +45,7 @@ private:
     /**
      * @brief モデル内の各ノードの名前と、そのノードのグローバル行列（ローカル行列の累積）をマッピングするキャッシュ
      */
-    std::map<std::string, Irufemi::Matrix4x4> nodeGlobalTransforms_;
+    std::unordered_map<std::string, Irufemi::Matrix4x4> nodeGlobalTransforms_;
 
     /**
      * @brief ルートノードから再帰的に階層を辿り、各ノードのグローバル行列を計算・キャッシュする
