@@ -1,4 +1,4 @@
-﻿#include "Renderer/System/Core/IRenderable.h"
+#include "Renderer/System/Core/IRenderable.h"
 #pragma once
 
 #include <d3d12.h>

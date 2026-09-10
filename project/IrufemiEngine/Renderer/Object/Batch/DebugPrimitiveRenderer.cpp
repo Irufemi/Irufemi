@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "Renderer/Camera/CameraManager.h"
 #include "Renderer/Camera/Camera.h"
 #include "Renderer/DrawManager.h"

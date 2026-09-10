@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/2D/Text/Text.h"
+#include "Renderer/Object/2D/Text/Text.h"
 #include "Renderer/Font/FontManager.h"
 #include "Renderer/DrawManager.h"
 #include "Renderer/Camera/Camera.h"

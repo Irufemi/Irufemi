@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
+#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
 #include "Renderer/Camera/CameraManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Framework/UI/DebugUI.h"

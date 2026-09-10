@@ -3,7 +3,7 @@
 #include "Framework/UI/DebugUI.h"
 #include <Windows.h>
 
-// #define USE_EDITER
+// #define USE_EDITOR
 
 /*開発のUIを出そう*/
 

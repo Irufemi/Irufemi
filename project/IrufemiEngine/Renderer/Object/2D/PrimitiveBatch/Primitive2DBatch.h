@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Renderer/System/Core/BaseBatch.h"
 #include "Renderer/Object/2D/Primitive/Primitive2DObject.h" // For Primitive2DType

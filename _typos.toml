@@ -1,0 +1,39 @@
+[files]
+extend-exclude = [
+    "project/externals/**",
+    "externals/**",
+    "**/*.otf",
+    "**/*.ttf",
+    "**/*.fbx",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.dds",
+    "**/*.pdf",
+    "**/*.lib",
+    "**/*.glb",
+    "**/*.blend"
+]
+
+[default.extend-words]
+Irufemi = "Irufemi"
+irufemi = "irufemi"
+WP0 = "WP0"
+OT = "OT"
+ot = "ot"
+ND = "ND"
+nd = "nd"
+unexpect = "unexpect"
+mis = "mis"
+shrinked = "shrinked"
+numer = "numer"
+cirle = "cirle"
+ortogonal = "ortogonal"
+localy = "localy"
+Localy = "Localy"
+lod = "lod"
+LOD = "LOD"
+Fo = "Fo"
+BA = "BA"
+ba = "ba"
+SEH = "SEH"
+UE = "UE"

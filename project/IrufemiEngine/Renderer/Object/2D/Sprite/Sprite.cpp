@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 
 #include "Framework/UI/DebugUI.h"

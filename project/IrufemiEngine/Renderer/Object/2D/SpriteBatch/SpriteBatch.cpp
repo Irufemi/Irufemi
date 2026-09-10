@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
+#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
 #include "Renderer/DrawManager.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Renderer/Camera/CameraManager.h"

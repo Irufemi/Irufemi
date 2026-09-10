@@ -1,4 +1,4 @@
-﻿name: Gemini Push Reviewer
+name: Gemini Push Reviewer
 
 on:
   push:

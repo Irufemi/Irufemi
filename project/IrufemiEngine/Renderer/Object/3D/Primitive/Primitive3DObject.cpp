@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include "Renderer/Camera/CameraManager.h"
 
 #include <algorithm>

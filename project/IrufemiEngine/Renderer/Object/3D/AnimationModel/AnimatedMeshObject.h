@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Renderer/System/Core/IRenderable.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Resource/Model/Data/SkeletonData.h"

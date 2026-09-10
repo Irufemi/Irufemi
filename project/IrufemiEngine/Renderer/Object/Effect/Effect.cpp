@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/Effect/Effect.h"
+#include "Renderer/Object/Effect/Effect.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 #include "Framework/UI/DebugUI.h"

@@ -521,12 +521,12 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
     dxCommon_->GetDevice()->CreateShaderResourceView(skinCluster.inputVertexResource.Get(), &inputSrvDesc,
                                                      skinCluster.inputVertexSrvHandle.first);
 
-    /// MatrixPalleteの作成
+    /// MatrixPaletteの作成
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         skinCluster.paletteResource[i] = dxCommon_->CreateBufferResource(sizeof(WellForGPU) * skeleton.joints.size());
-        WellForGPU* mappedPallete = nullptr;
-        skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPallete));
-        skinCluster.mappedPalette[i] = {mappedPallete, skeleton.joints.size()};
+        WellForGPU* mappedPalette = nullptr;
+        skinCluster.paletteResource[i]->Map(0, nullptr, reinterpret_cast<void**>(&mappedPalette));
+        skinCluster.mappedPalette[i] = {mappedPalette, skeleton.joints.size()};
 
         uint32_t paletteSrvIndex = dxCommon_->GetSrvPool()->Allocate();
         IRUFEMI_ASSERT(paletteSrvIndex != DescriptorPool::kInvalid);

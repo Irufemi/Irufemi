@@ -3,7 +3,7 @@
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Quaternion.h"
 
-struct AnimationTrasform {
+struct AnimationTransform {
     Irufemi::Vector3 scale;
     Irufemi::Quaternion rotate;
     Irufemi::Vector3 translate;
