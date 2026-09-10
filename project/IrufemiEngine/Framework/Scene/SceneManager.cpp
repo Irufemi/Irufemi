@@ -112,7 +112,7 @@ bool SceneManager::ChangeTo(const Key& next) {
     }
 #endif
 
-    item.scene->OnEnter(); // シーン開始
+    item.scene->OnEnter();           // シーン開始
     item.scene->WarmUpRenderState(); // 初回描画ステートのウォームアップ
 
     sceneStack_.push_back(std::move(item));
@@ -158,7 +158,7 @@ void SceneManager::PushScene(const Key& name) {
     }
 #endif
 
-    item.scene->OnEnter(); // 新しいシーン開始
+    item.scene->OnEnter();           // 新しいシーン開始
     item.scene->WarmUpRenderState(); // 初回描画ステートのウォームアップ
 
     sceneStack_.push_back(std::move(item));

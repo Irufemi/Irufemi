@@ -139,8 +139,7 @@ void AnimationManager::OnDirectoryChanged() {
 }
 
 namespace {
-template <typename TKey>
-size_t FindUpperKeyframeIndex(const std::vector<TKey>& keyframes, float time) {
+template <typename TKey> size_t FindUpperKeyframeIndex(const std::vector<TKey>& keyframes, float time) {
     const size_t count = keyframes.size();
     // 2キーフレームの場合（定数・直線移動の頻出ケース）
     if (count == 2) {
@@ -156,8 +155,8 @@ size_t FindUpperKeyframeIndex(const std::vector<TKey>& keyframes, float time) {
         return count - 1;
     }
     // それ以上の要素数では二分探索 O(log K)
-    auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
-                               [](const TKey& k, float t) { return k.time < t; });
+    auto it =
+        std::lower_bound(keyframes.begin(), keyframes.end(), time, [](const TKey& k, float t) { return k.time < t; });
     return static_cast<size_t>(std::distance(keyframes.begin(), it));
 }
 
@@ -165,12 +164,12 @@ inline Irufemi::Vector3 InterpolateKeyframeValue(const Irufemi::Vector3& a, cons
     return Lerp(a, b, t);
 }
 
-inline Irufemi::Quaternion InterpolateKeyframeValue(const Irufemi::Quaternion& a, const Irufemi::Quaternion& b, float t) {
+inline Irufemi::Quaternion InterpolateKeyframeValue(const Irufemi::Quaternion& a, const Irufemi::Quaternion& b,
+                                                    float t) {
     return Irufemi::Math::Slerp(a, b, t);
 }
 
-template <typename TKey>
-auto CalculateKeyframeValueInternal(const std::vector<TKey>& keyframes, float time) {
+template <typename TKey> auto CalculateKeyframeValueInternal(const std::vector<TKey>& keyframes, float time) {
     IRUFEMI_ASSERT(!keyframes.empty());
     if (keyframes.size() == 1 || time <= keyframes.front().time) {
         return keyframes.front().value;

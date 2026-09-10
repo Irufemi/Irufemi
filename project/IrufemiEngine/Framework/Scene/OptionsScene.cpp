@@ -82,8 +82,7 @@ void OptionsScene::BindUIComponents() {
     if (auto obj = FindGameObject("Slider_BGM")) {
         if (auto slider = obj->GetComponent<SliderComponent>()) {
             slider->SetValue(Irufemi::CVarSystem::GetFloat("a.MasterVolume")); // 代替としてMasterVolumeを使用
-            slider->SetOnValueChangedCallback(
-                [](float val) { Irufemi::CVarSystem::SetFloat("a.MasterVolume", val); });
+            slider->SetOnValueChangedCallback([](float val) { Irufemi::CVarSystem::SetFloat("a.MasterVolume", val); });
         }
     }
 
