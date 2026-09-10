@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Line/LineClass.h"
 #include "Renderer/Camera/CameraManager.h"
 
 #include "Renderer/Camera/Camera.h"

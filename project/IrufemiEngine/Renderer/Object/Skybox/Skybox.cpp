@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/Skybox/Skybox.h"
+#include "Renderer/Object/Skybox/Skybox.h"
 #include "Renderer/Camera/CameraManager.h"
 
 #include "Core/System/IrufemiEngine.h"

@@ -1,4 +1,4 @@
-﻿#include "Renderer/Object/3D/AnimationModel/AnimatedMeshObject.h"
+#include "Renderer/Object/3D/AnimationModel/AnimatedMeshObject.h"
 #include "Core/Utility/ErrorUtility.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Math/Math.h"

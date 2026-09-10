@@ -1,4 +1,4 @@
-﻿#include "Core/Utility/ErrorUtility.h"
+#include "Core/Utility/ErrorUtility.h"
 #include "Renderer/Object/Batch/PrimitiveBatch.h"
 #include <cassert>
 #include "Core/System/IrufemiEngine.h"
