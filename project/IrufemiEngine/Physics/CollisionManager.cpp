@@ -128,7 +128,7 @@ void CollisionManager::FlushPendingCommands() {
 void CollisionManager::CheckAllCollisions() {
     FlushPendingCommands();
 
-    std::set<std::pair<ColliderComponent*, ColliderComponent*>> currentCollisions;
+    CollisionPairSet currentCollisions;
 
     // --- BVH Update Phase ---
     {
