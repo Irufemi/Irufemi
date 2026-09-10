@@ -642,8 +642,8 @@ SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, co
 
     // Skinning Information (CBV)
     skinCluster.skinningInformationResource = dxCommon_->CreateBufferResource(sizeof(SkinningInformation));
-    HRESULT hrSkinInfo = skinCluster.skinningInformationResource->Map(0, nullptr,
-                                                 reinterpret_cast<void**>(&skinCluster.mappedSkinningInformation));
+    HRESULT hrSkinInfo = skinCluster.skinningInformationResource->Map(
+        0, nullptr, reinterpret_cast<void**>(&skinCluster.mappedSkinningInformation));
     IRUFEMI_ASSERT(SUCCEEDED(hrSkinInfo) && "Failed to map skinning information resource.");
     skinCluster.mappedSkinningInformation->numVertices = static_cast<uint32_t>(totalVertices);
 
