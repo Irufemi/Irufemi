@@ -307,3 +307,88 @@
 このため、メインスレッドがその最中に初めて表示する文字を描画しようとすると、`cacheMutex` の取得待ちで長時間ブロックされ、強烈なFPSスパイク（カクつき）が発生する。
 - **ロックのスコープ最小化**: `cacheMutex` は「キャッシュの検索」と「キャッシュへの登録」時のみロックし、SDFテクスチャの生成処理（`generateMSDF`）およびGPUアップロード（`ExecuteUploadCommands`）中はメインスレッドをブロックしないようにロック粒度を改修する。
 - メリット: ゲーム中に新しいUIテキストやダメージ数値などが初めて画面に描画される際のFPS低下を完全に防止できる。
+
+## 将来の拡張: IrufemiEngine (God Class) の解体と Subsystem パターンの導入
+現在 `IrufemiEngine.cpp` は 1,100行を超え、DirectXデバイス・ウィンドウ・入力・オーディオ・物理・レンダーターゲット・ポストプロセス・シーン管理など、エンジン内のあらゆる機能の生成・初期化・毎フレーム更新・破棄（`Finalize`）を直に手動で管理しており、典型的な **God Class（神クラス）** の状態となっている。
+
+特に `Finalize()` での破棄順序が手作業で直書きされているため、依存関係の順序が狂った際に「破棄済みCOMリソースやマネージャーへの不正アクセスによる終了時クラッシュ」「DirectXの未解放リーク警告」といった致命的な不具合を引き起こすリスクが高い。
+
+商用エンジン（Unreal Engine や Unity 等）の標準的なアーキテクチャに倣い、**Subsystem（サブシステム）パターン** を導入してエンジンコアをスリム化・自律分散化する。
+
+### 1. アーキテクチャ設計 (ISubsystem)
+すべてのエンジンサブシステムが実装すべき共通基底インターフェースを新設する。
+
+```cpp
+namespace Irufemi {
+
+enum class SubsystemPriority : int {
+    CoreWindow   = 0,   // ウィンドウ・OS基盤
+    GraphicsLow  = 100, // DirectX12 デバイス・CommandQueue・スワップチェーン
+    Resource     = 200, // テクスチャ・モデル・シェーダーマネージャー
+    Physics      = 300, // 物理演算・衝突判定
+    Audio        = 400, // サウンドエンジン
+    Input        = 500, // 入力管理
+    Scene        = 600, // シーン・GameObjectマネージャー
+    Editor       = 700  // エディタUI・ツール機能
+};
+
+class ISubsystem {
+public:
+    virtual ~ISubsystem() = default;
+
+    virtual SubsystemPriority GetPriority() const = 0;
+    virtual const char* GetName() const = 0;
+
+    virtual void Initialize() = 0;
+    virtual void Update(float deltaTime) {}
+    virtual void Finalize() = 0;
+};
+
+} // namespace Irufemi
+```
+
+### 2. IrufemiEngine 側のライフサイクル委譲
+`IrufemiEngine` 側は各マネージャーの初期化・破棄ロジックを直書きするのを廃止し、サブシステムのコンテナで統一管理する。
+
+- **初期化 (`Initialize`)**:
+  - 各サブシステムを Priority 順（昇順）にソートして自動初期化。
+- **更新 (`Update`)**:
+  - 毎フレーム、登録されたサブシステムの `Update(deltaTime)` を順次実行。
+- **終了 (`Finalize`)**:
+  - **初期化と完全に逆順（Priority 降順）** で自動的に `Finalize()` を呼び出し破棄。
+  - これにより、「DirectXデバイスが破棄された後にテクスチャが解放されようとしてクラッシュする」といった破棄順序の逆転バグが構造的に 100% 発生しなくなる。
+
+```cpp
+class IrufemiEngine {
+public:
+    template <typename T, typename... Args>
+    T* RegisterSubsystem(Args&&... args) {
+        auto sub = std::make_unique<T>(std::forward<Args>(args)...);
+        T* ptr = sub.get();
+        subsystems_.push_back(std::move(sub));
+        return ptr;
+    }
+
+    template <typename T>
+    T* GetSubsystem() const {
+        for (const auto& sub : subsystems_) {
+            if (auto casted = dynamic_cast<T*>(sub.get())) {
+                return casted;
+            }
+        }
+        return nullptr;
+    }
+
+private:
+    std::vector<std::unique_ptr<ISubsystem>> subsystems_;
+};
+```
+
+### 3. 段階的移行計画 (Phased Migration Plan)
+- **Phase 1 (独立サブシステムの先行分離)**:
+  - 依存が少なく独立性の高い `AudioSubsystem`, `InputSubsystem`, `PhysicsSubsystem` を先行して切り出し、`ISubsystem` の運用実績を作る。
+- **Phase 2 (グラフィックス・リソース層の分離)**:
+  - `GraphicsCoreSubsystem` (Device, SwapChain), `RenderPipelineSubsystem` (RenderGraph, PostProcess), `ResourceManagerSubsystem` を分離。
+- **Phase 3 (IrufemiEngine のファサード化)**:
+  - `IrufemiEngine.cpp` のコード量を 100〜200行程度にスリム化し、単なるブートストラップ（起動エントリーポイント）とサブシステムへのアクセス窓口（Facade パターン）へ純化する。
+
