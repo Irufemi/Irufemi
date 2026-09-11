@@ -221,7 +221,8 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                 (*static_cast<std::string*>(prop.GetRawData()) != prop.defaultValue.get<std::string>());
                             break;
                         case ComponentPropertyType::GameObjectRef:
-                            isModified = (*static_cast<uint64_t*>(prop.GetRawData()) != prop.defaultValue.get<uint64_t>());
+                            isModified =
+                                (*static_cast<uint64_t*>(prop.GetRawData()) != prop.defaultValue.get<uint64_t>());
                             break;
                         case ComponentPropertyType::Float2: {
                             auto* v = static_cast<Irufemi::Vector2*>(prop.GetRawData());
@@ -269,7 +270,8 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                     *static_cast<bool*>(prop.GetRawData()) = prop.defaultValue.get<bool>();
                                     break;
                                 case ComponentPropertyType::String:
-                                    *static_cast<std::string*>(prop.GetRawData()) = prop.defaultValue.get<std::string>();
+                                    *static_cast<std::string*>(prop.GetRawData()) =
+                                        prop.defaultValue.get<std::string>();
                                     break;
                                 case ComponentPropertyType::GameObjectRef:
                                     *static_cast<uint64_t*>(prop.GetRawData()) = prop.defaultValue.get<uint64_t>();
