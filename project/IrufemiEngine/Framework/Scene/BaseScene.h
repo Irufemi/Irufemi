@@ -210,7 +210,6 @@ public:
     }
 
 protected:
-
     // デバッグ用カメラフラグ
     bool isDebugCameraMode_ = false;
     std::string previousActiveCameraName_ = "Main";

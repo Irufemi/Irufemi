@@ -27,4 +27,3 @@ private:
     /// @brief 毎フレームのヒープアロケーションを防ぐための再利用ソートキーバッファ
     std::vector<TransparentSortKey> sortKeys_;
 };
-

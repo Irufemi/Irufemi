@@ -122,8 +122,8 @@ std::shared_ptr<GameObject> SceneObjectRegistry::FindById(uint64_t instanceId) {
     return nullptr;
 }
 
-std::vector<std::shared_ptr<GameObject>> SceneObjectRegistry::FindByTag(
-    const std::string& tag, const std::vector<std::shared_ptr<GameObject>>& allObjects) {
+std::vector<std::shared_ptr<GameObject>>
+SceneObjectRegistry::FindByTag(const std::string& tag, const std::vector<std::shared_ptr<GameObject>>& allObjects) {
     std::vector<std::shared_ptr<GameObject>> result;
     std::lock_guard<std::recursive_mutex> lock(registryMutex_);
     for (const auto& obj : allObjects) {
@@ -156,8 +156,8 @@ void SceneObjectRegistry::OnNameChanged(const std::shared_ptr<GameObject>& obj, 
     nameIndex_[newName].push_back(obj);
 }
 
-std::string SceneObjectRegistry::GenerateUniqueName(
-    const std::string& baseName, const std::vector<std::shared_ptr<GameObject>>& pendingAdds) {
+std::string SceneObjectRegistry::GenerateUniqueName(const std::string& baseName,
+                                                    const std::vector<std::shared_ptr<GameObject>>& pendingAdds) {
     std::lock_guard<std::recursive_mutex> lock(registryMutex_);
 
     auto NameExists = [&](const std::string& name) {

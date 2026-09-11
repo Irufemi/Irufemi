@@ -74,8 +74,7 @@ public:
      * @param[in] oldName 変更前の名前
      * @param[in] newName 変更後の名前
      */
-    void OnNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName,
-                       const std::string& newName);
+    void OnNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName, const std::string& newName);
 
     /**
      * @brief シーン内で一意となる名前を生成する (重複解決の最適化済み)

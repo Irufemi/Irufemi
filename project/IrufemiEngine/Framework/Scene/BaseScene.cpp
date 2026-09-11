@@ -631,4 +631,3 @@ void BaseScene::Deserialize(const nlohmann::json& j) {
 void BaseScene::Finalize() {
     ClearGameObjects();
 }
-

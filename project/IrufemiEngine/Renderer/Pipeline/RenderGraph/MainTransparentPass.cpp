@@ -153,13 +153,12 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
         }
 
         // 8バイトの軽量キー配列のみをソート (Back-to-Front)
-        std::sort(sortKeys_.begin(), sortKeys_.end(),
-                  [](const TransparentSortKey& a, const TransparentSortKey& b) {
-                      return a.distanceToCamera > b.distanceToCamera;
-                  });
+        std::sort(sortKeys_.begin(), sortKeys_.end(), [](const TransparentSortKey& a, const TransparentSortKey& b) {
+            return a.distanceToCamera > b.distanceToCamera;
+        });
 
-        DrawIndexedWithPSO(transparentQueue, sortKeys_,
-                           [&](const auto& p) { drawManager->DrawStandard3D(p); }, false, false);
+        DrawIndexedWithPSO(
+            transparentQueue, sortKeys_, [&](const auto& p) { drawManager->DrawStandard3D(p); }, false, false);
     }
 
     // 全て MRT(2) に対応済みのため、ここでは切り替えずにそのまま描画

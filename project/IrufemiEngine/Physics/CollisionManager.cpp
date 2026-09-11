@@ -97,7 +97,8 @@ void CollisionManager::FlushPendingCommands() {
         for (auto iter = previousCollisions_.begin(); iter != previousCollisions_.end();) {
             if (iter->first == collider || iter->second == collider) {
                 ColliderComponent* other = (iter->first == collider) ? iter->second : iter->first;
-                // Note: collider might already be destroyed, so do not call collider->GetGameObject() or pass dead pointer
+                // Note: collider might already be destroyed, so do not call collider->GetGameObject() or pass dead
+                // pointer
                 if (other && other->onCollisionExit_) {
                     other->onCollisionExit_(nullptr);
                 }
