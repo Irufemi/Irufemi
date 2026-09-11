@@ -133,21 +133,10 @@ void BossBulletManagerComponent::Update() {
                     }
 
                     // 文字列比較は行わず、高速な数値ID比較およびPlayerHealthComponentの所持チェックで判定
-                    bool isTarget = false;
                     auto healthComp = obj->GetComponent<PlayerHealthComponent>();
-
                     if (healthComp != nullptr) {
-                        if (targetPlayerID_ == 0) {
-                            // ターゲットIDの指定がなければ、PlayerHealthComponentを持つオブジェクトを無条件で対象とする
-                            isTarget = true;
-                        } else if (obj->GetInstanceID() == targetPlayerID_) {
-                            // ターゲットIDが指定されている場合は、IDが一致する場合のみ対象とする
-                            isTarget = true;
-                        }
-                    }
-
-                    if (isTarget && healthComp) {
-                        if (!healthComp->IsInvincible()) {
+                        const bool isTarget = (targetPlayerID_ == 0 || obj->GetInstanceID() == targetPlayerID_);
+                        if (isTarget && !healthComp->IsInvincible()) {
                             healthComp->TakeDamage(1);
                             isHit = true;
                             break;
