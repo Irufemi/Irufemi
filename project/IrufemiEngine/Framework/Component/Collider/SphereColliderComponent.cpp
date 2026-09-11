@@ -8,12 +8,6 @@
 
 SphereColliderComponent::SphereColliderComponent() {}
 
-SphereColliderComponent::~SphereColliderComponent() {
-    if (collisionManager_) {
-        collisionManager_->UnregisterCollider(this);
-    }
-}
-
 void SphereColliderComponent::OnRegisterProperties() {
     ColliderComponent::OnRegisterProperties();
     RegisterProperty("Local Offset", &localOffset_);
@@ -22,15 +16,8 @@ void SphereColliderComponent::OnRegisterProperties() {
 }
 
 void SphereColliderComponent::Initialize() {
-    if (gameObject_) {
-    }
     if (collisionManager_) {
         collisionManager_->RegisterCollider(this);
-    }
-}
-
-void SphereColliderComponent::Update() {
-    if (!GetTransform() && gameObject_) {
     }
 }
 

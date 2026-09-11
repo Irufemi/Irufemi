@@ -6,23 +6,10 @@
 
 OBBColliderComponent::OBBColliderComponent() {}
 
-OBBColliderComponent::~OBBColliderComponent() {
-    if (collisionManager_) {
-        collisionManager_->UnregisterCollider(this);
-    }
-}
-
 void OBBColliderComponent::Initialize() {
-    if (gameObject_) {
-    }
     // 初期化時にCollisionManagerに自身を登録する
     if (collisionManager_) {
         collisionManager_->RegisterCollider(this);
-    }
-}
-
-void OBBColliderComponent::Update() {
-    if (!GetTransform() && gameObject_) {
     }
 }
 
