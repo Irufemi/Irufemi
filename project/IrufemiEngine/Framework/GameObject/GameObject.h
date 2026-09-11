@@ -167,6 +167,21 @@ public:
     }
 
     /**
+     * @brief インターフェースや基底クラスを実装しているコンポーネントを動的に検索して取得する
+     * @return 見つかった場合はそのポインタ、無ければnullptr
+     */
+    template <typename T>
+    T* GetComponentByInterface() const {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+        for (const auto& comp : components_) {
+            if (auto target = dynamic_cast<T*>(comp.get())) {
+                return target;
+            }
+        }
+        return nullptr;
+    }
+
+    /**
      * @brief 自身のアタッチされている TransformComponent を取得するショートカット
      * @return TransformComponent* (GameObjectは必ずTransformを持つため、基本的にはnullptrにならない)
      */

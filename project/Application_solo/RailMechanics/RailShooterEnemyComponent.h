@@ -1,11 +1,12 @@
 #pragma once
 #include "Framework/Component/Component.h"
+#include "Combat/IDamageable.h"
 
 /**
  * @class RailShooterEnemyComponent
  * @brief レールシューティング用の敵キャラクター制御コンポーネント
  */
-class RailShooterEnemyComponent : public Component {
+class RailShooterEnemyComponent : public Component, public IDamageable {
 public:
     RailShooterEnemyComponent() = default;
     ~RailShooterEnemyComponent() override = default;
@@ -19,6 +20,9 @@ public:
 
     bool IsAlive() const {
         return hp_ > 0 && isActive_;
+    }
+    void TakeDamage(float damage) override {
+        TakeDamage(static_cast<int>(damage));
     }
     void TakeDamage(int damage);
 
