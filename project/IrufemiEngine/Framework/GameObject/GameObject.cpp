@@ -105,8 +105,24 @@ void GameObject::Update(bool isPlayMode) {
         }
     }
 
-    for (size_t i = 0; i < components_.size(); ++i) {
-        auto& comp = components_[i];
+    // コンポーネント更新
+    size_t compCount = 0;
+    {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+        compCount = components_.size();
+    }
+    for (size_t i = 0; i < compCount; ++i) {
+        std::shared_ptr<Component> comp;
+        {
+            std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+            if (i < components_.size()) {
+                comp = components_[i];
+            }
+        }
+        if (!comp) {
+            continue;
+        }
+
         // PlayModeでない場合は、エディタで更新可能なコンポーネントのみ更新する
         if (!isPlayMode && !comp->CanUpdateInEditMode()) {
             continue;
@@ -120,15 +136,37 @@ void GameObject::Update(bool isPlayMode) {
         comp->Update();
     }
 
-    // 破棄された子オブジェクトをリストから削除 (GC)
+    // 子オブジェクト更新（破棄フラグが立っているものはスキップ、GCは同期フェーズで行う）
+    size_t childCount = 0;
+    {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+        childCount = children_.size();
+    }
+    for (size_t i = 0; i < childCount; ++i) {
+        std::shared_ptr<GameObject> child;
+        {
+            std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+            if (i < children_.size()) {
+                child = children_[i];
+            }
+        }
+        if (child && !child->IsDestroyed()) {
+            child->Update(isPlayMode);
+        }
+    }
+}
+
+void GameObject::CleanupDestroyedChildren() {
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+    for (auto& child : children_) {
+        if (child) {
+            child->CleanupDestroyedChildren();
+        }
+    }
     children_.erase(
         std::remove_if(children_.begin(), children_.end(),
                        [](const std::shared_ptr<GameObject>& child) { return !child || child->IsDestroyed(); }),
         children_.end());
-
-    for (size_t i = 0; i < children_.size(); ++i) {
-        children_[i]->Update(isPlayMode);
-    }
 }
 
 void GameObject::Draw() {
@@ -174,6 +212,8 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+
     // 既に親がいる場合は外す
     if (auto currentParent = child->GetParent()) {
         currentParent->RemoveChild(child);
@@ -201,6 +241,8 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+
     if (auto currentParent = child->GetParent()) {
         currentParent->RemoveChild(child);
     }
@@ -227,6 +269,7 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
 }
 
 void GameObject::RemoveChild(std::shared_ptr<GameObject> child) {
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
     auto it = std::find(children_.begin(), children_.end(), child);
     if (it != children_.end()) {
         if (scene_) {
@@ -267,6 +310,7 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     if (!component) {
         return;
     }
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
@@ -286,6 +330,8 @@ void GameObject::RemoveComponent(Component* component) {
     if (!component) {
         return;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
 
     // TransformComponentは基本として削除不可とする
     if (component == transformCache_) {

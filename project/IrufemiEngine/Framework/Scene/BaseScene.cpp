@@ -222,6 +222,13 @@ void BaseScene::Update() {
         engine_->GetCollisionManager()->CheckAllCollisions();
     }
 
+    // 破棄フラグが立った子オブジェクトを一括削除 (GC)
+    for (const auto& obj : gameObjects_) {
+        if (obj) {
+            obj->CleanupDestroyedChildren();
+        }
+    }
+
     // 破棄フラグが立ったオブジェクトを一括削除 (GC)
     gameObjects_.erase(
         std::remove_if(gameObjects_.begin(), gameObjects_.end(),

@@ -4,6 +4,7 @@
 #include <memory>
 #include <typeindex>
 #include <unordered_map>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include "Framework/Component/Component.h"
 #include "Core/System/ComponentPool.h"
@@ -115,6 +116,7 @@ public:
      * @return アタッチされたコンポーネントのポインタ
      */
     std::shared_ptr<T> AddComponent(Args&&... args) {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
         std::shared_ptr<T> component;
         /**
          * @brief constexpr を実行する。
@@ -156,6 +158,7 @@ public:
      * @return 見つかった場合はそのポインタ、無ければnullptr
      */
     T* GetComponent() const {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
         auto it = componentMap_.find(typeid(T));
         if (it != componentMap_.end() && !it->second.empty()) {
             return static_cast<T*>(it->second.front());
@@ -323,6 +326,12 @@ public:
         return isStarted_;
     }
 
+    /**
+     * @brief 破棄フラグが立った子オブジェクトを再帰的に削除する (GC)
+     * @details マルチスレッドUpdate完了後のメインスレッド同期フェーズで呼び出されます。
+     */
+    void CleanupDestroyedChildren();
+
     // --- イベント伝達 ---
     /**
      * @brief SendCollisionEnter を実行する。
@@ -422,6 +431,7 @@ private:
     std::vector<std::shared_ptr<Component>> components_;
     std::unordered_map<std::type_index, std::vector<Component*>> componentMap_;
     class TransformComponent* transformCache_ = nullptr;
+    mutable std::recursive_mutex structureMutex_; ///< 構造変更（子オブジェクト・コンポーネント着脱）用ミューテックス
 
 private:
     template <typename T>
