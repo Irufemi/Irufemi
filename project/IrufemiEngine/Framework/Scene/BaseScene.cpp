@@ -445,72 +445,71 @@ void BaseScene::SubmitFrameData() {
     }
 }
 
-void BaseScene::DrawDebugTab() {
+void BaseScene::DrawDebugTabItem() {
 #ifdef USE_IMGUI
-    if (ImGui::Begin("Scene Debug")) {
-        if (ImGui::BeginTabBar("SceneTabs")) {
-            if (ImGui::BeginTabItem("Camera & Lights")) {
-                bool prevMode = isDebugCameraMode_;
-                if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
-                    if (isDebugCameraMode_ && !prevMode) {
-                        // デバッグモードON時: 現在のアクティブカメラの名前を記憶し、状態をコピーする
-                        previousActiveCameraName_ = engine_->GetCameraManager()->GetActiveCameraName();
-                        Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-                        if (activeCam && activeCam != debugCamera_.get()) {
-                            debugCamera_->SetTranslate(activeCam->GetTranslate());
-                            debugCamera_->SetRotate(activeCam->GetRotate());
-                            debugCamera_->SetViewMatrix(activeCam->GetViewMatrix());
-                            debugCamera_->SetPerspectiveFovMatrix(activeCam->GetPerspectiveFovMatrix());
-                            debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
-                        }
-                        engine_->GetCameraManager()->SetActiveCamera("Debug");
-                    } else if (!isDebugCameraMode_ && prevMode) {
-                        // デバッグモードOFF時: 記憶しておいたカメラに戻す
-                        if (previousActiveCameraName_.empty() || previousActiveCameraName_ == "Debug") {
-                            previousActiveCameraName_ = "Main";
-                        }
-                        engine_->GetCameraManager()->SetActiveCamera(previousActiveCameraName_);
-                    }
-                }
-                if (isDebugCameraMode_ && debugCameraController_ && debugCamera_) {
-                    if (ImGui::Button("Top-Down")) {
-                        debugCameraController_->SetPreset(OrbitCameraController::Preset::TopDown, debugCamera_.get());
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Diagonal")) {
-                        debugCameraController_->SetPreset(OrbitCameraController::Preset::Diagonal, debugCamera_.get());
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Front")) {
-                        debugCameraController_->SetPreset(OrbitCameraController::Preset::Front, debugCamera_.get());
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Sync to Main")) {
-                        Camera* mainCam = engine_->GetCameraManager()->GetCamera("Main");
-                        if (mainCam) {
-                            debugCamera_->SetTranslate(mainCam->GetTranslate());
-                            debugCamera_->SetRotate(mainCam->GetRotate());
-                            debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
-                        }
-                    }
-                    ImGui::Separator();
-                    ImGui::Text("Debug Camera Controls (Orbit/Pan/Zoom)");
-                    debugCamera_->DrawDebugContents();
-                    // OrbitCameraController は内部状態としての Distance を外部に公開していないため、
-                    // ImGui上から無理やりDistanceをいじるのではなく、マウスのホイール操作で調整させる形にする。
-                } else {
+    if (ImGui::BeginTabBar("SceneSubTabs")) {
+        // --- 1. Camera タブ ---
+        if (ImGui::BeginTabItem("Camera")) {
+            bool prevMode = isDebugCameraMode_;
+            if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
+                if (isDebugCameraMode_ && !prevMode) {
+                    // デバッグモードON時: 現在のアクティブカメラの名前を記憶し、状態をコピーする
+                    previousActiveCameraName_ = engine_->GetCameraManager()->GetActiveCameraName();
                     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-                    if (activeCam) {
-                        activeCam->DrawDebugContents();
+                    if (activeCam && activeCam != debugCamera_.get()) {
+                        debugCamera_->SetTranslate(activeCam->GetTranslate());
+                        debugCamera_->SetRotate(activeCam->GetRotate());
+                        debugCamera_->SetViewMatrix(activeCam->GetViewMatrix());
+                        debugCamera_->SetPerspectiveFovMatrix(activeCam->GetPerspectiveFovMatrix());
+                        debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
+                    }
+                    engine_->GetCameraManager()->SetActiveCamera("Debug");
+                } else if (!isDebugCameraMode_ && prevMode) {
+                    // デバッグモードOFF時: 記憶しておいたカメラに戻す
+                    if (previousActiveCameraName_.empty() || previousActiveCameraName_ == "Debug") {
+                        previousActiveCameraName_ = "Main";
+                    }
+                    engine_->GetCameraManager()->SetActiveCamera(previousActiveCameraName_);
+                }
+            }
+            if (isDebugCameraMode_ && debugCameraController_ && debugCamera_) {
+                if (ImGui::Button("Top-Down")) {
+                    debugCameraController_->SetPreset(OrbitCameraController::Preset::TopDown, debugCamera_.get());
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Diagonal")) {
+                    debugCameraController_->SetPreset(OrbitCameraController::Preset::Diagonal, debugCamera_.get());
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Front")) {
+                    debugCameraController_->SetPreset(OrbitCameraController::Preset::Front, debugCamera_.get());
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Sync to Main")) {
+                    Camera* mainCam = engine_->GetCameraManager()->GetCamera("Main");
+                    if (mainCam) {
+                        debugCamera_->SetTranslate(mainCam->GetTranslate());
+                        debugCamera_->SetRotate(mainCam->GetRotate());
+                        debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
                     }
                 }
-                ImGui::EndTabItem();
+                ImGui::Separator();
+                ImGui::Text("Debug Camera Controls (Orbit/Pan/Zoom)");
+                debugCamera_->DrawDebugContents();
+            } else {
+                Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+                if (activeCam) {
+                    activeCam->DrawDebugContents();
+                }
             }
-            DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
-            ImGui::EndTabBar();
+            ImGui::EndTabItem();
         }
+
+        // --- 2. Lights タブ (内部で BeginTabItem("Lights") を実行) ---
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+
+        ImGui::EndTabBar();
     }
-    ImGui::End();
 #endif
 }
 

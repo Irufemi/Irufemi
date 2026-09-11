@@ -24,6 +24,7 @@
 // 分離したエディタパネル群
 #include "Core/IEditorPanel.h"
 #include "Panels/ConsolePanel.h"
+#include "Panels/EngineSettingsPanel.h"
 #include "Panels/HierarchyPanel.h"
 #include "Panels/InspectorPanel.h"
 #include "Panels/ProjectBrowserPanel.h"
@@ -58,6 +59,7 @@ void EditorManager::OnInitialize(IrufemiEngine* engine) {
     panels_.push_back(std::make_unique<SceneViewPanel>());
     panels_.push_back(std::make_unique<HierarchyPanel>());
     panels_.push_back(std::make_unique<InspectorPanel>());
+    panels_.push_back(std::make_unique<EngineSettingsPanel>());
     panels_.push_back(std::make_unique<ProjectBrowserPanel>());
     panels_.push_back(std::make_unique<ConsolePanel>());
 
@@ -322,10 +324,11 @@ void EditorManager::OnDrawUI() {
         ImGuiID dock_id_bottom =
             ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.30f, nullptr, &dock_main_id);
 
-        ImGui::DockBuilderDockWindow("SceneView", dock_main_id);
+        ImGui::DockBuilderDockWindow("Scene", dock_main_id);
         ImGui::DockBuilderDockWindow("Hierarchy", dock_id_left);
         ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
-        ImGui::DockBuilderDockWindow("ProjectBrowser", dock_id_bottom);
+        ImGui::DockBuilderDockWindow("Engine Settings", dock_id_right);
+        ImGui::DockBuilderDockWindow("Project", dock_id_bottom);
         ImGui::DockBuilderDockWindow("Console", dock_id_bottom);
 
         ImGui::DockBuilderFinish(dockspaceId);
@@ -425,6 +428,10 @@ void EditorManager::OnDrawUI() {
         }
 
         if (ImGui::BeginMenu("Window")) {
+            for (auto& panel : panels_) {
+                ImGui::MenuItem(panel->GetName(), nullptr, &panel->GetIsOpen());
+            }
+            ImGui::Separator();
             ImGui::MenuItem("Performance", nullptr, &showPerformancePanel);
             ImGui::Separator();
             if (ImGui::BeginMenu("Layout")) {
@@ -555,7 +562,9 @@ void EditorManager::OnDrawUI() {
 
     // 2. 各種エディタパネルの描画
     for (auto& panel : panels_) {
-        panel->Draw();
+        if (panel->IsOpen()) {
+            panel->Draw();
+        }
     }
 
     // 3. パフォーマンスパネルの描画

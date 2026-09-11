@@ -23,9 +23,3 @@ void SelectScene::Update() {
 void SelectScene::Draw() {
     BaseScene::Draw();
 }
-
-void SelectScene::DrawDebugTab() {
-#if defined USE_IMGUI
-    BaseScene::DrawDebugTab();
-#endif
-}

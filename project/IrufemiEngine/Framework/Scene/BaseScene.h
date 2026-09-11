@@ -175,9 +175,9 @@ public:
     // --- デバッグ機能 ---
 
     /**
-     * @brief 共通のデバッグタブ描画。
+     * @brief 共通のデバッグタブ描画（Camera & Lights）。
      */
-    virtual void DrawDebugTab() override;
+    virtual void DrawDebugTabItem() override;
 
     // --- シリアライズ機能 ---
     /**

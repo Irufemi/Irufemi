@@ -22,6 +22,39 @@ public:
      * @brief パネルの描画
      */
     virtual void Draw() = 0;
+
+    /**
+     * @brief パネル名を取得する
+     * @return パネル名の文字列ポインタ
+     */
+    virtual const char* GetName() const = 0;
+
+    /**
+     * @brief パネルの表示フラグへの参照を取得する（ImGui::MenuItem等のバインド用）
+     * @return 表示フラグへの参照
+     */
+    bool& GetIsOpen() {
+        return isOpen_;
+    }
+
+    /**
+     * @brief パネルが開いているか判定する
+     * @return 開いている場合 true
+     */
+    bool IsOpen() const {
+        return isOpen_;
+    }
+
+    /**
+     * @brief パネルの開閉状態を設定する
+     * @param[in] open 開く場合 true
+     */
+    void SetOpen(bool open) {
+        isOpen_ = open;
+    }
+
+protected:
+    bool isOpen_ = true;
 };
 
 #endif // EditorMode

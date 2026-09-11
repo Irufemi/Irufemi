@@ -24,7 +24,7 @@ void HierarchyPanel::Draw() {
         return;
     }
 
-    ImGui::Begin("Hierarchy");
+    ImGui::Begin(GetName(), &isOpen_);
 
     auto* engine = editorManager_->GetEngine();
     if (engine && engine->GetSceneManager()) {

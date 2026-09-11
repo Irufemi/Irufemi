@@ -100,11 +100,18 @@ public:
     virtual void OnResume() {}
 
     // --- デバッグ機能 ---
-    // エンジン共通のデバッグウィンドウにタブを追加する
     /**
-     * @brief DrawDebugTab を実行する。
+     * @brief 統合デバッガー内にシーン固有のデバッグタブを描画する
+     * @details ImGui::BeginTabBar の内側から呼ばれ、ImGui::BeginTabItem() を使用して描画します。
+     *          基底（BaseScene）では共通の「Camera & Lights」調整タブが描画されます。
      */
-    virtual void DrawDebugTab() {}
+    virtual void DrawDebugTabItem() {}
+
+    /**
+     * @brief シーン固有の独立デバッグウィンドウを描画する
+     * @details 独立した別ウィンドウとしてImGui描画を行いたい場合に使用します。
+     */
+    virtual void DrawStandaloneDebugWindows() {}
 
     // --- スタック管理機能 ---
     // このシーンが下のシーンの更新(Update)をブロックするか（デフォルトはブロックする）

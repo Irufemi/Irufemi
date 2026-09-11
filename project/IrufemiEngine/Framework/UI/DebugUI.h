@@ -218,13 +218,21 @@ public: // メンバ関数
 
     /**
      * @brief 統合デバッグウィンドウの開始
+     * @param[in,out] pOpen ウィンドウの開閉フラグ（nullptrの場合は閉じるボタンなし）
      */
-    bool BeginEngineDebugWindow();
+    bool BeginEngineDebugWindow(bool* pOpen = nullptr);
 
     /**
      * @brief 統合デバッグウィンドウの終了
      */
     void EndEngineDebugWindow();
+
+    /**
+     * @brief エンジン共通の各種デバッグタブ（PostProcess, Scene, Display, Capture, GPUParticle等）を描画する
+     * @details タブバー上でマウスホイールを回転することで、前後のタブ（ページ）への切り替えに対応します。
+     * @param[in] engine エンジンのポインタ
+     */
+    void DrawCommonEngineTabs(IrufemiEngine* engine);
 
     /**
      * @brief PSO設定（描画ステート）の編集UI

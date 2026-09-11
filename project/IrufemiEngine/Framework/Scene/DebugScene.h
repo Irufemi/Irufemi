@@ -51,9 +51,14 @@ public: // メンバ関数(ゲーム)
     void Draw() override;
 
     /**
-     * @brief デバッグタブの描画処理
+     * @brief デバッグタブの描画処理（タブ埋め込み）
      */
-    void DrawDebugTab() override;
+    void DrawDebugTabItem() override;
+
+    /**
+     * @brief シーン独自の独立デバッグウィンドウ描画処理
+     */
+    void DrawStandaloneDebugWindows() override;
 
 private: // メンバ関数(内部ヘルパ)
 private: // メンバ変数(ゲーム)

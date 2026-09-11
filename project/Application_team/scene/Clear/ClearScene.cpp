@@ -23,9 +23,3 @@ void ClearScene::Update() {
 void ClearScene::Draw() {
     BaseScene::Draw();
 }
-
-void ClearScene::DrawDebugTab() {
-#if defined USE_IMGUI
-    BaseScene::DrawDebugTab();
-#endif
-}

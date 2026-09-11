@@ -127,9 +127,9 @@ void TL1Scene::Draw() {
 }
 
 /**
- * @brief UIの描画（デバッグタブ）
+ * @brief シーン固有の独立デバッグウィンドウ描画
  */
-void TL1Scene::DrawDebugTab() {
+void TL1Scene::DrawStandaloneDebugWindows() {
 #ifdef USE_IMGUI
     if (ImGui::Begin("AI Magic Brush")) {
         ImGui::Text("AI Shader Generator Interface");
