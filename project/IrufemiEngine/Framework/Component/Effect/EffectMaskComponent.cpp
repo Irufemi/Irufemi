@@ -11,6 +11,11 @@ EffectMaskComponent::~EffectMaskComponent() {}
 void EffectMaskComponent::Initialize() {
     if (gameObject_) {
         cachedRenderer_ = gameObject_->GetComponent<MeshRendererComponent>();
+        if (auto* scene = gameObject_->GetScene()) {
+            if (auto* engine = scene->GetEngine()) {
+                cachedPostProcessManager_ = engine->GetPostProcessManager();
+            }
+        }
     }
 }
 
@@ -20,12 +25,15 @@ void EffectMaskComponent::Update() {
     }
 
     if (enableEffectMask_ && customEffectType_ > 0) {
-        if (gameObject_ && gameObject_->GetScene()) {
-            auto* engine = gameObject_->GetScene()->GetEngine();
-            if (engine && engine->GetPostProcessManager()) {
-                uint32_t id = engine->GetPostProcessManager()->RegisterCustomEffectParams(customParams_);
-                cachedEffectParam_ = static_cast<float>(id) / 255.0f;
+        if (!cachedPostProcessManager_ && gameObject_ && gameObject_->GetScene()) {
+            if (auto* engine = gameObject_->GetScene()->GetEngine()) {
+                cachedPostProcessManager_ = engine->GetPostProcessManager();
             }
+        }
+
+        if (cachedPostProcessManager_) {
+            uint32_t id = cachedPostProcessManager_->RegisterCustomEffectParams(customParams_);
+            cachedEffectParam_ = static_cast<float>(id) / 255.0f;
         }
     } else {
         cachedEffectParam_ = 0.0f;
@@ -36,10 +44,6 @@ void EffectMaskComponent::Update() {
         cachedRenderer_->SetCustomEffectType(customEffectType_);
         cachedRenderer_->SetCustomEffectParam(cachedEffectParam_);
     }
-}
-
-void EffectMaskComponent::ApplyToRenderer() {
-    // Deprecated. Handled in Update().
 }
 
 nlohmann::json EffectMaskComponent::Serialize() {

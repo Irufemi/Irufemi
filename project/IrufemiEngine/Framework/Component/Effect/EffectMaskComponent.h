@@ -107,15 +107,11 @@ public:
     }
 
 private:
-    /**
-     * @brief ApplyToRenderer を実行する。
-     */
-    void ApplyToRenderer();
-
     bool enableEffectMask_ = true;
     int32_t customEffectType_ = 0;
     float cachedEffectParam_ = 0.0f;
     PostProcessManager::CustomEffectParams customParams_;
 
     MeshRendererComponent* cachedRenderer_ = nullptr;
+    PostProcessManager* cachedPostProcessManager_ = nullptr;
 };
