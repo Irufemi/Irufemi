@@ -509,8 +509,8 @@ void BaseScene::DrawDebugTab() {
             DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
             ImGui::EndTabBar();
         }
-        ImGui::End();
     }
+    ImGui::End();
 #endif
 }
 
