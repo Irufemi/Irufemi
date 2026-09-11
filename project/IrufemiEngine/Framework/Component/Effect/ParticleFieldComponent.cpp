@@ -13,16 +13,17 @@ ParticleFieldComponent::ParticleFieldComponent() {
 }
 
 ParticleFieldComponent::~ParticleFieldComponent() {
-    if (fieldHandle_.IsValid() && GetGameObject() && GetGameObject()->GetScene() &&
-        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
-        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()->UnregisterField(fieldHandle_);
+    if (fieldHandle_.IsValid() && gpuParticleManager_) {
+        gpuParticleManager_->UnregisterField(fieldHandle_);
     }
 }
 
 void ParticleFieldComponent::Initialize() {
-    if (GetGameObject() && GetGameObject()->GetScene() &&
-        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
-        fieldHandle_ = GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()->RegisterField();
+    if (auto engine = GetEngine()) {
+        gpuParticleManager_ = engine->GetGPUParticleManager();
+    }
+    if (gpuParticleManager_) {
+        fieldHandle_ = gpuParticleManager_->RegisterField();
     }
 }
 
@@ -31,9 +32,14 @@ void ParticleFieldComponent::Update() {
         fieldData_.position = GetTransform()->GetWorldPosition();
     }
 
-    if (fieldHandle_.IsValid() && GetGameObject() && GetGameObject()->GetScene() &&
-        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()) {
-        GetGameObject()->GetScene()->GetEngine()->GetGPUParticleManager()->UpdateFieldData(fieldHandle_, fieldData_);
+    if (!gpuParticleManager_) {
+        if (auto engine = GetEngine()) {
+            gpuParticleManager_ = engine->GetGPUParticleManager();
+        }
+    }
+
+    if (fieldHandle_.IsValid() && gpuParticleManager_) {
+        gpuParticleManager_->UpdateFieldData(fieldHandle_, fieldData_);
     }
 }
 

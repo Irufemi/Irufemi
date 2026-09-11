@@ -5,6 +5,8 @@
 #include <variant>
 
 class GameObject;
+class BaseScene;
+class IrufemiEngine;
 #include "Renderer/System/Core/IRenderable.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector3.h"
@@ -477,6 +479,18 @@ public:
      * @return TransformComponent*
      */
     class TransformComponent* GetTransform() const;
+
+    /**
+     * @brief 所属するシーンを取得するショートカット
+     * @return BaseScene* 所属シーンへのポインタ（未所属ならnullptr）
+     */
+    BaseScene* GetScene() const;
+
+    /**
+     * @brief エンジンコアインスタンスを取得するショートカット
+     * @return IrufemiEngine* エンジンへのポインタ（未所属ならnullptr）
+     */
+    IrufemiEngine* GetEngine() const;
 
 protected:
     GameObject* gameObject_ = nullptr;          ///< 親GameObjectへのポインタ

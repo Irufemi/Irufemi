@@ -95,6 +95,7 @@ public:
 
 private:
     GPUParticleManager::FieldHandle fieldHandle_;
+    GPUParticleManager* gpuParticleManager_ = nullptr;
 
     ParticleField fieldData_;
 };
