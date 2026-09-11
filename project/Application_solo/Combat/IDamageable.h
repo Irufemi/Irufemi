@@ -1,11 +1,6 @@
 #pragma once
 
-enum class DamageableType {
-    Enemy,
-    Boss,
-    Environment,
-    Player
-};
+enum class DamageableType { Enemy, Boss, Environment, Player };
 
 /**
  * @class IDamageable

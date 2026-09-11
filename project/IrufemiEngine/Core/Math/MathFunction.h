@@ -438,12 +438,8 @@ Quaternion ExtractRotationSafe(const Matrix4x4& mat, const Vector3& scaleSign);
  * @param[out] outRotation 抽出された回転クォータニオン（正規化済み）
  * @param[out] outScale 抽出されたスケール（符号付き）
  */
-void DecomposeAffineMatrixSafe(
-    const Matrix4x4& mat,
-    const Vector3& scaleSignHint,
-    Vector3& outPosition,
-    Quaternion& outRotation,
-    Vector3& outScale);
+void DecomposeAffineMatrixSafe(const Matrix4x4& mat, const Vector3& scaleSignHint, Vector3& outPosition,
+                               Quaternion& outRotation, Vector3& outScale);
 
 /** @} */
 #pragma endregion

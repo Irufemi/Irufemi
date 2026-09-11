@@ -34,18 +34,9 @@ enum class ComponentPropertyType {
 /**
  * @brief コンポーネントプロパティの型安全なデータポインタ保持用バリアント
  */
-using ComponentPropertyData = std::variant<
-    std::monostate,
-    float*,
-    int*,
-    bool*,
-    std::string*,
-    uint64_t*,
-    Irufemi::Vector2*,
-    Irufemi::Vector3*,
-    Irufemi::Vector4*,
-    std::vector<Irufemi::Vector3>*
->;
+using ComponentPropertyData =
+    std::variant<std::monostate, float*, int*, bool*, std::string*, uint64_t*, Irufemi::Vector2*, Irufemi::Vector3*,
+                 Irufemi::Vector4*, std::vector<Irufemi::Vector3>*>;
 
 struct ComponentProperty {
     std::string name;
@@ -60,8 +51,7 @@ struct ComponentProperty {
     /**
      * @brief 指定した型のポインタを安全に取得する。型が一致しない場合は nullptr を返す。
      */
-    template <typename T>
-    T* GetData() const {
+    template <typename T> T* GetData() const {
         if (auto* ptr = std::get_if<T*>(&data)) {
             return *ptr;
         }
@@ -72,14 +62,16 @@ struct ComponentProperty {
      * @brief 内部ポインタを void* として取得する（後方互換・UI描画用）
      */
     void* GetRawData() const {
-        return std::visit([](auto&& ptr) -> void* {
-            using T = std::decay_t<decltype(ptr)>;
-            if constexpr (std::is_same_v<T, std::monostate>) {
-                return nullptr;
-            } else {
-                return static_cast<void*>(ptr);
-            }
-        }, data);
+        return std::visit(
+            [](auto&& ptr) -> void* {
+                using T = std::decay_t<decltype(ptr)>;
+                if constexpr (std::is_same_v<T, std::monostate>) {
+                    return nullptr;
+                } else {
+                    return static_cast<void*>(ptr);
+                }
+            },
+            data);
     }
 
     /**
@@ -331,14 +323,16 @@ public:
      * @brief RegisterHeader を実行する。
      */
     ComponentProperty& RegisterHeader(const std::string& name) {
-        properties_.push_back({name, ComponentPropertyType::Header, ComponentPropertyData{}, 0.0f, 0.0f, {}, "", nullptr});
+        properties_.push_back(
+            {name, ComponentPropertyType::Header, ComponentPropertyData{}, 0.0f, 0.0f, {}, "", nullptr});
         return properties_.back();
     }
     /**
      * @brief RegisterSeparator を実行する。
      */
     ComponentProperty& RegisterSeparator() {
-        properties_.push_back({"", ComponentPropertyType::Separator, ComponentPropertyData{}, 0.0f, 0.0f, {}, "", nullptr});
+        properties_.push_back(
+            {"", ComponentPropertyType::Separator, ComponentPropertyData{}, 0.0f, 0.0f, {}, "", nullptr});
         return properties_.back();
     }
 
@@ -348,34 +342,52 @@ public:
     virtual nlohmann::json Serialize() {
         nlohmann::json j = nlohmann::json::object();
         for (const auto& prop : properties_) {
-            std::visit([&](auto&& ptr) {
-                using T = std::decay_t<decltype(ptr)>;
-                if constexpr (std::is_same_v<T, float*>) {
-                    if (ptr) j[prop.name] = *ptr;
-                } else if constexpr (std::is_same_v<T, int*>) {
-                    if (ptr) j[prop.name] = *ptr;
-                } else if constexpr (std::is_same_v<T, bool*>) {
-                    if (ptr) j[prop.name] = *ptr;
-                } else if constexpr (std::is_same_v<T, std::string*>) {
-                    if (ptr) j[prop.name] = *ptr;
-                } else if constexpr (std::is_same_v<T, uint64_t*>) {
-                    if (ptr) j[prop.name] = *ptr;
-                } else if constexpr (std::is_same_v<T, Irufemi::Vector2*>) {
-                    if (ptr) j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
-                } else if constexpr (std::is_same_v<T, Irufemi::Vector3*>) {
-                    if (ptr) j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
-                } else if constexpr (std::is_same_v<T, Irufemi::Vector4*>) {
-                    if (ptr) j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
-                } else if constexpr (std::is_same_v<T, std::vector<Irufemi::Vector3>*>) {
-                    if (ptr) {
-                        nlohmann::json jArray = nlohmann::json::array();
-                        for (const auto& v : *ptr) {
-                            jArray.push_back(Irufemi::JsonUtility::ToJson(v));
+            std::visit(
+                [&](auto&& ptr) {
+                    using T = std::decay_t<decltype(ptr)>;
+                    if constexpr (std::is_same_v<T, float*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
                         }
-                        j[prop.name] = jArray;
+                    } else if constexpr (std::is_same_v<T, int*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, bool*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, std::string*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, uint64_t*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector2*>) {
+                        if (ptr) {
+                            j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector3*>) {
+                        if (ptr) {
+                            j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector4*>) {
+                        if (ptr) {
+                            j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, std::vector<Irufemi::Vector3>*>) {
+                        if (ptr) {
+                            nlohmann::json jArray = nlohmann::json::array();
+                            for (const auto& v : *ptr) {
+                                jArray.push_back(Irufemi::JsonUtility::ToJson(v));
+                            }
+                            j[prop.name] = jArray;
+                        }
                     }
-                }
-            }, prop.data);
+                },
+                prop.data);
         }
         return j;
     }
@@ -388,36 +400,54 @@ public:
             if (!j.contains(prop.name)) {
                 continue;
             }
-            std::visit([&](auto&& ptr) {
-                using T = std::decay_t<decltype(ptr)>;
-                if constexpr (std::is_same_v<T, float*>) {
-                    if (ptr) *ptr = j[prop.name].get<float>();
-                } else if constexpr (std::is_same_v<T, int*>) {
-                    if (ptr) *ptr = j[prop.name].get<int>();
-                } else if constexpr (std::is_same_v<T, bool*>) {
-                    if (ptr) *ptr = j[prop.name].get<bool>();
-                } else if constexpr (std::is_same_v<T, std::string*>) {
-                    if (ptr) *ptr = j[prop.name].get<std::string>();
-                } else if constexpr (std::is_same_v<T, uint64_t*>) {
-                    if (ptr) *ptr = j[prop.name].get<uint64_t>();
-                } else if constexpr (std::is_same_v<T, Irufemi::Vector2*>) {
-                    if (ptr) *ptr = Irufemi::JsonUtility::ToVector2(j[prop.name], *ptr);
-                } else if constexpr (std::is_same_v<T, Irufemi::Vector3*>) {
-                    if (ptr) *ptr = Irufemi::JsonUtility::ToVector3(j[prop.name], *ptr);
-                } else if constexpr (std::is_same_v<T, Irufemi::Vector4*>) {
-                    if (ptr) *ptr = Irufemi::JsonUtility::ToVector4(j[prop.name], *ptr);
-                } else if constexpr (std::is_same_v<T, std::vector<Irufemi::Vector3>*>) {
-                    if (ptr) {
-                        auto arr = j[prop.name];
-                        if (arr.is_array()) {
-                            ptr->clear();
-                            for (const auto& item : arr) {
-                                ptr->push_back(Irufemi::JsonUtility::ToVector3(item));
+            std::visit(
+                [&](auto&& ptr) {
+                    using T = std::decay_t<decltype(ptr)>;
+                    if constexpr (std::is_same_v<T, float*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<float>();
+                        }
+                    } else if constexpr (std::is_same_v<T, int*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<int>();
+                        }
+                    } else if constexpr (std::is_same_v<T, bool*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<bool>();
+                        }
+                    } else if constexpr (std::is_same_v<T, std::string*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<std::string>();
+                        }
+                    } else if constexpr (std::is_same_v<T, uint64_t*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<uint64_t>();
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector2*>) {
+                        if (ptr) {
+                            *ptr = Irufemi::JsonUtility::ToVector2(j[prop.name], *ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector3*>) {
+                        if (ptr) {
+                            *ptr = Irufemi::JsonUtility::ToVector3(j[prop.name], *ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector4*>) {
+                        if (ptr) {
+                            *ptr = Irufemi::JsonUtility::ToVector4(j[prop.name], *ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, std::vector<Irufemi::Vector3>*>) {
+                        if (ptr) {
+                            auto arr = j[prop.name];
+                            if (arr.is_array()) {
+                                ptr->clear();
+                                for (const auto& item : arr) {
+                                    ptr->push_back(Irufemi::JsonUtility::ToVector3(item));
+                                }
                             }
                         }
                     }
-                }
-            }, prop.data);
+                },
+                prop.data);
         }
     }
 
@@ -434,15 +464,17 @@ public:
             if (dst.data.index() != src.data.index()) {
                 continue;
             }
-            std::visit([](auto&& dstPtr, auto&& srcPtr) {
-                using DstT = std::decay_t<decltype(dstPtr)>;
-                using SrcT = std::decay_t<decltype(srcPtr)>;
-                if constexpr (std::is_same_v<DstT, SrcT> && !std::is_same_v<DstT, std::monostate>) {
-                    if (dstPtr && srcPtr) {
-                        *dstPtr = *srcPtr;
+            std::visit(
+                [](auto&& dstPtr, auto&& srcPtr) {
+                    using DstT = std::decay_t<decltype(dstPtr)>;
+                    using SrcT = std::decay_t<decltype(srcPtr)>;
+                    if constexpr (std::is_same_v<DstT, SrcT> && !std::is_same_v<DstT, std::monostate>) {
+                        if (dstPtr && srcPtr) {
+                            *dstPtr = *srcPtr;
+                        }
                     }
-                }
-            }, dst.data, src.data);
+                },
+                dst.data, src.data);
         }
     }
 

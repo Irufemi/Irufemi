@@ -719,12 +719,8 @@ Quaternion ExtractRotationSafe(const Matrix4x4& mat, const Vector3& scaleSign) {
     return Normalize(ToQuaternionFromMatrix(pureRotMat));
 }
 
-void DecomposeAffineMatrixSafe(
-    const Matrix4x4& mat,
-    const Vector3& scaleSignHint,
-    Vector3& outPosition,
-    Quaternion& outRotation,
-    Vector3& outScale) {
+void DecomposeAffineMatrixSafe(const Matrix4x4& mat, const Vector3& scaleSignHint, Vector3& outPosition,
+                               Quaternion& outRotation, Vector3& outScale) {
 
     outPosition = {mat.m[3][0], mat.m[3][1], mat.m[3][2]};
 
@@ -733,8 +729,7 @@ void DecomposeAffineMatrixSafe(
     Vector3 zaxis = {mat.m[2][0], mat.m[2][1], mat.m[2][2]};
 
     // 3x3 行列式で反転状態を確認
-    float det = xaxis.x * (yaxis.y * zaxis.z - yaxis.z * zaxis.y) -
-                xaxis.y * (yaxis.x * zaxis.z - yaxis.z * zaxis.x) +
+    float det = xaxis.x * (yaxis.y * zaxis.z - yaxis.z * zaxis.y) - xaxis.y * (yaxis.x * zaxis.z - yaxis.z * zaxis.x) +
                 xaxis.z * (yaxis.x * zaxis.y - yaxis.y * zaxis.x);
 
     float sx = std::copysign(1.0f, scaleSignHint.x);
@@ -746,11 +741,7 @@ void DecomposeAffineMatrixSafe(
         sx = -sx;
     }
 
-    outScale = {
-        std::copysign(Length(xaxis), sx),
-        std::copysign(Length(yaxis), sy),
-        std::copysign(Length(zaxis), sz)
-    };
+    outScale = {std::copysign(Length(xaxis), sx), std::copysign(Length(yaxis), sy), std::copysign(Length(zaxis), sz)};
 
     Vector3 finalSign = {sx, sy, sz};
     outRotation = ExtractRotationSafe(mat, finalSign);
