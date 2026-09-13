@@ -7,6 +7,11 @@ SpriteRendererComponent::SpriteRendererComponent() {}
 SpriteRendererComponent::~SpriteRendererComponent() {}
 
 void SpriteRendererComponent::Initialize() {
+    OnAwake();
+    OnSpawned();
+}
+
+void SpriteRendererComponent::OnAwake() {
     if (!sprite_) {
         sprite_ = std::make_unique<Sprite>();
         sprite_->Initialize(texturePath_);
@@ -26,12 +31,13 @@ void SpriteRendererComponent::Initialize() {
         size_[0] = sprite_->GetSize().x;
         size_[1] = sprite_->GetSize().y;
     }
-
-    if (gameObject_) {
-    }
 }
 
-void SpriteRendererComponent::Update() {
+void SpriteRendererComponent::OnSpawned() {
+    SyncRenderState();
+}
+
+void SpriteRendererComponent::SyncRenderState() {
     if (GetTransform() && sprite_) {
         // SpriteはZ位置も保持できるが基本は2D
         sprite_->SetPosition(GetTransform()->GetWorldPosition().x, GetTransform()->GetWorldPosition().y,
@@ -41,11 +47,12 @@ void SpriteRendererComponent::Update() {
 
         // TransformのScaleは、SpriteのBaseサイズに対するスケーリングとして扱う
         sprite_->SetSize(size_[0] * GetTransform()->GetWorldScale().x, size_[1] * GetTransform()->GetWorldScale().y);
-    }
-
-    if (sprite_) {
         sprite_->Update();
     }
+}
+
+void SpriteRendererComponent::Update() {
+    SyncRenderState();
 }
 
 void SpriteRendererComponent::Draw() {

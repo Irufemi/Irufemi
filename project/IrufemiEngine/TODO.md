@@ -39,7 +39,11 @@
             - `OnAwake()`: `StaticModelObject` / `AnimatedMeshObject` の内部生成とモデルロード。
             - `OnSpawned()`: `SyncRenderState()` を呼び出し、スポーン直後の原点チラつきバグを根本防止。
             - `Initialize()`: 後方互換レイヤーとして `OnAwake()` / `OnSpawned()` を呼ぶよう整流化。
-        - [ ] 2D・UI・パーティクル系コンポーネント (`SpriteRendererComponent`, `TextRendererComponent`, `ParticleEmitterComponent` 等) の移行。
+        - [x] 2D・テキスト・パーティクル系コンポーネント (`SpriteRendererComponent`, `TextRendererComponent`, `ParticleEmitterComponent`):
+            - `OnAwake()`: `Sprite` / `Text` / `ParticleObject` の内部生成および初期プロパティ適用。
+            - `OnSpawned()`: 初期Transformおよび描画・放出ステートの即時同期（`SyncRenderState()`）。
+            - `Initialize()`: 後方互換レイヤーとして `OnAwake()` / `OnSpawned()` を呼ぶよう整流化。
+        - [ ] 他の補助系コンポーネント（`LifetimeComponent`, UIコンポーネント等）の移行。
 
 ### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
 - [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**
