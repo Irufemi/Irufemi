@@ -28,8 +28,11 @@ GameObject::GameObject(const std::string& name)
 }
 
 GameObject::~GameObject() {
+    // デストラクタ内でのOnDestroy呼び出し（shared_from_this等によるbad_weak_ptrリスク）は避け、
+    // 未破棄の場合のみ警告ログを出力する（破棄はBaseSceneや明示的なDestroyで完結させる）
     if (lifeState_ != GameObjectLifeState::Destroyed) {
-        Destroy();
+        Log::OutPutLog(std::cerr,
+                       "[GameObject] Warning: GameObject '" + name_ + "' was destructed without calling Destroy().\n");
     }
 }
 

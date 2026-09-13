@@ -159,43 +159,15 @@ public:
      * @return アタッチされたコンポーネントのポインタ
      */
     std::shared_ptr<T> AddComponent(Args&&... args) {
-        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
         std::shared_ptr<T> component;
-        /**
-         * @brief constexpr を実行する。
-         */
         if constexpr (IsPooledComponent<T>::value) {
             component = ComponentPool<T>::GetInstance().Create(std::forward<Args>(args)...);
         } else {
             component = std::make_shared<T>(std::forward<Args>(args)...);
         }
 
-        component->SetGameObject(this);
-
-        components_.push_back(component);
-        componentMap_[typeid(T)].push_back(component.get());
-
-        if constexpr (std::is_same_v<T, TransformComponent>) {
-            transformCache_ = reinterpret_cast<TransformComponent*>(component.get());
-        }
-
-        component->OnRegisterProperties();
-        if (lifeState_ >= GameObjectLifeState::Awake) {
-            component->OnAwake();
-        }
-        if (!component->IsInitialized()) {
-            component->Initialize();
-            component->SetInitialized(true);
-        }
-        if (lifeState_ >= GameObjectLifeState::Spawned) {
-            component->OnSpawned();
-        }
-        if (isActive_) {
-            component->OnEnable();
-        }
-        if (lifeState_ >= GameObjectLifeState::Started) {
-            component->Start();
-        }
+        // 実際の登録処理およびライフサイクル通知は非テンプレート版へ委譲
+        AddComponent(std::static_pointer_cast<Component>(component));
         return component;
     }
 
