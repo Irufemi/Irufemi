@@ -32,6 +32,10 @@ int VirtualEntityManagerComponent::GetTotalActiveVirtualInstances() {
  *          VirtualEntityManagerが必要とするGPUカリング設定を確実にオーバーライドします。
  */
 void VirtualEntityManagerComponent::Initialize() {
+    OnAwake();
+}
+
+void VirtualEntityManagerComponent::OnAwake() {
     batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
     if (!batchRenderer_) {
         batchRenderer_ = gameObject_->AddComponent<ModelBatchRendererComponent>().get();

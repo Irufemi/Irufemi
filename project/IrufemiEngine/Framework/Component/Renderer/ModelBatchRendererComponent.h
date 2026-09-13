@@ -31,6 +31,10 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief 生成時の自己完結初期化（ModelBatchの生成）を行います
+     */
+    void OnAwake() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;

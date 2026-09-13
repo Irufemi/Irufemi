@@ -13,26 +13,33 @@ PrimitiveRendererComponent::PrimitiveRendererComponent() {}
 PrimitiveRendererComponent::~PrimitiveRendererComponent() {}
 
 void PrimitiveRendererComponent::Initialize() {
+    OnAwake();
+    OnSpawned();
+}
+
+void PrimitiveRendererComponent::OnAwake() {
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive3DObject>();
         // 設定された形状（デフォルトはCube）で初期化
         primitive_->Initialize(static_cast<Irufemi::PrimitiveType>(currentTypeIndex_));
     }
-
-    if (gameObject_) {
-    }
 }
 
-void PrimitiveRendererComponent::Update() {
+void PrimitiveRendererComponent::OnSpawned() {
+    SyncRenderState();
+}
+
+void PrimitiveRendererComponent::SyncRenderState() {
     if (GetTransform() && primitive_) {
         primitive_->SetPosition(GetTransform()->GetWorldPosition());
         primitive_->SetRotate(GetTransform()->GetWorldRotation());
         primitive_->SetScale(GetTransform()->GetWorldScale());
-    }
-
-    if (primitive_) {
         primitive_->Update();
     }
+}
+
+void PrimitiveRendererComponent::Update() {
+    SyncRenderState();
 }
 
 void PrimitiveRendererComponent::Draw() {

@@ -24,6 +24,15 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief 生成時の自己完結初期化（Primitive2DObjectの生成）を行います
+     */
+    void OnAwake() override;
+    /**
+     * @brief ワールド座標・Transform確定時の描画ステート同期を行います
+     */
+    void OnSpawned() override;
+    void SyncRenderState() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;

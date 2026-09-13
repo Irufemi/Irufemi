@@ -392,6 +392,16 @@ void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
 
 void BaseScene::ClearGameObjects() {
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
+    for (auto& obj : gameObjects_) {
+        if (obj && !obj->IsDestroyed()) {
+            obj->Destroy();
+        }
+    }
+    for (auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed()) {
+            obj->Destroy();
+        }
+    }
     gameObjects_.clear();
     pendingAdds_.clear();
     pendingRemoves_.clear();

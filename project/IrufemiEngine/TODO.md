@@ -48,6 +48,28 @@
             - `AnimatorComponent`: `OnSpawned()` でエンジン取得・初期化、`Start()` でデフォルトアニメーション再生開始に整流化。
             - `LifetimeComponent`: `OnSpawned()` および `OnEnable()` で寿命タイマーを自動リセットし、オブジェクトプール再利用時の手動初期化を不要化。
             - `CameraShakeComponent` / `ButtonComponent` / `SliderComponent`: 同一オブジェクト内のコンポーネント参照解決を `OnAwake()` に移譲。
+        - [x] 残存エンジンコンポーネントの完全移行 (エンジンコア内コンポーネント100%達成):
+            - `ParticleFieldComponent`: `Start()` で `GPUParticleManager::RegisterField`、`OnDestroy()` で登録解除を行い、動的スポーン時の登録失敗と解放漏れを根絶。
+            - `PrimitiveRendererComponent` / `Primitive2DRendererComponent`: `OnAwake()` でプリミティブオブジェクト生成、`OnSpawned()` で初期Transform同期（チラつき防止）。
+            - `ModelBatchRendererComponent`: `OnAwake()` で `ModelBatch` 生成とGPUカリング設定。
+            - `SkeletonDebugRendererComponent`: `OnAwake()` でボーン八面体メッシュ・軸描画バッチを生成・初期化。
+            - `SplineComponent`: `OnAwake()` でデバッグ描画バッチ初期化と距離テーブル構築。
+            - `VirtualEntityManagerComponent`: `OnAwake()` で同一オブジェクトの `ModelBatchRendererComponent` を取得・設定。
+            - `EffectMaskComponent`: `OnAwake()` で自メッシュレンダラー取得、`OnSpawned()` で `PostProcessManager` キャッシュに責務分離。
+            - `TargetFollowComponent`: `Start()` でターゲットTransformを事前解決し、動的検索コストを削減。
+            - `ScreenEffectComponent`: `OnDestroy()` を実装し、オブジェクト破棄時のアクティブポストプロセス解除を保証。
+            - `AudioSourceComponent`: `OnSpawned()` での初期化保証と、`OnDisable()` / `OnDestroy()` での停止（`Stop()`）処理を統合。
+            - `GlobalPostProcessComponent`: `OnDisable()` / `OnDestroy()` でマネージャー側のエフェクトスタックを確実にリセット（`Reset()`）。
+            - `GameObject`:
+                - `SetIsActive()`: 子オブジェクト（`children_`）へアクティブ状態を再帰伝播し、パーツや付属コライダーのゴースト化を防止。
+                - `Destroy()`: アクティブ状態のまま破棄される場合の「`OnDisable()` ➔ `OnDestroy()`」順序を厳格化。
+                - `RemoveComponent()`: 削除前に `OnDisable()` および `OnDestroy()` を明示的に発行し、マネージャーからの登録解除漏れ（ダングリング参照・当たり判定幽霊化）を根絶。
+                - `Awake()`: 各コンポーネントの `OnAwake()` 直後に未実行の `Initialize()` を呼び出し、一括Awake時の後方互換を完全保証。
+                - `AddChild()` / `InsertChild()`: 親の `isActive_` が false の場合に子を非アクティブ化し、親が Awake 状態の場合に子へ `Awake()` を確実に伝播。
+            - `BaseScene`:
+                - `ClearGameObjects()`: シーン破棄・クリア時に全オブジェクトの `Destroy()` を明示的に実行し、コンポーネントの確実なライフサイクル終了を保証。
+            - `SceneTransitionButtonComponent`: 同一オブジェクトのコンポーネント取得を `OnAwake()` に移行。
+            - `PlayerTargetingComponent`: `Start()` での `LockonMarkerUIComponent` 未取得時フォールバック解決を追加。
 
 ### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
 - [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**

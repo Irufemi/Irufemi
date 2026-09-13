@@ -17,6 +17,7 @@ public:
     SceneTransitionButtonComponent() = default;
     ~SceneTransitionButtonComponent() override = default;
 
+    void OnAwake() override;
     void Initialize() override;
     void Update() override;
 

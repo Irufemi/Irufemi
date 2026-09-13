@@ -13,17 +13,28 @@ ParticleFieldComponent::ParticleFieldComponent() {
 }
 
 ParticleFieldComponent::~ParticleFieldComponent() {
-    if (fieldHandle_.IsValid() && gpuParticleManager_) {
-        gpuParticleManager_->UnregisterField(fieldHandle_);
-    }
+    OnDestroy();
 }
 
 void ParticleFieldComponent::Initialize() {
-    if (auto engine = GetEngine()) {
-        gpuParticleManager_ = engine->GetGPUParticleManager();
+    Start();
+}
+
+void ParticleFieldComponent::Start() {
+    if (!fieldHandle_.IsValid()) {
+        if (auto engine = GetEngine()) {
+            gpuParticleManager_ = engine->GetGPUParticleManager();
+        }
+        if (gpuParticleManager_) {
+            fieldHandle_ = gpuParticleManager_->RegisterField();
+        }
     }
-    if (gpuParticleManager_) {
-        fieldHandle_ = gpuParticleManager_->RegisterField();
+}
+
+void ParticleFieldComponent::OnDestroy() {
+    if (fieldHandle_.IsValid() && gpuParticleManager_) {
+        gpuParticleManager_->UnregisterField(fieldHandle_);
+        fieldHandle_ = {};
     }
 }
 

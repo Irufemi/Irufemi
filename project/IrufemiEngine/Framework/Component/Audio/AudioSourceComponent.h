@@ -19,9 +19,17 @@ public:
      */
     void Initialize() override;
     /**
-     * @brief ゲーム開始時の処理（シーンバインド後の確実なオーディオ初期化）
+     * @brief スポーン時の処理（シーンバインド後の確実なオーディオ初期化）
+     */
+    void OnSpawned() override;
+    /**
+     * @brief ゲーム開始時の処理
      */
     void Start() override;
+    /**
+     * @brief コンポーネント無効化時の処理
+     */
+    void OnDisable() override;
     /**
      * @brief コンポーネント破棄時の処理
      */

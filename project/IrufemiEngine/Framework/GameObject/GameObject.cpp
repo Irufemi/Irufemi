@@ -50,6 +50,12 @@ void GameObject::SetIsActive(bool isActive) {
             comp->OnDisable();
         }
     }
+
+    for (size_t i = 0; i < children_.size(); ++i) {
+        if (children_[i]) {
+            children_[i]->SetIsActive(isActive);
+        }
+    }
 }
 
 void GameObject::Awake() {
@@ -60,6 +66,10 @@ void GameObject::Awake() {
 
     for (size_t i = 0; i < components_.size(); ++i) {
         components_[i]->OnAwake();
+        if (!components_[i]->IsInitialized()) {
+            components_[i]->Initialize();
+            components_[i]->SetInitialized(true);
+        }
     }
     for (size_t i = 0; i < children_.size(); ++i) {
         if (children_[i]) {
@@ -129,6 +139,12 @@ void GameObject::Start() {
 void GameObject::Destroy() {
     if (lifeState_ == GameObjectLifeState::Destroyed) {
         return;
+    }
+    if (isActive_) {
+        for (size_t i = 0; i < components_.size(); ++i) {
+            components_[i]->OnDisable();
+        }
+        isActive_ = false;
     }
     isDestroyed_ = true;
     lifeState_ = GameObjectLifeState::Destroyed;
@@ -308,6 +324,11 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
         childTransform->MarkWorldDirty();
     }
 
+    // 親が非アクティブなら子も非アクティブ化
+    if (!isActive_) {
+        child->SetIsActive(false);
+    }
+
     // 親のライフサイクル状態を子へ伝播
     if (lifeState_ >= GameObjectLifeState::Started) {
         if (!child->IsStarted()) {
@@ -316,6 +337,10 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
     } else if (lifeState_ >= GameObjectLifeState::Spawned) {
         if (!child->IsSpawned()) {
             child->NotifySpawned();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Awake) {
+        if (child->GetLifeState() < GameObjectLifeState::Awake) {
+            child->Awake();
         }
     }
 }
@@ -351,6 +376,11 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
         childTransform->MarkWorldDirty();
     }
 
+    // 親が非アクティブなら子も非アクティブ化
+    if (!isActive_) {
+        child->SetIsActive(false);
+    }
+
     // 親のライフサイクル状態を子へ伝播
     if (lifeState_ >= GameObjectLifeState::Started) {
         if (!child->IsStarted()) {
@@ -359,6 +389,10 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
     } else if (lifeState_ >= GameObjectLifeState::Spawned) {
         if (!child->IsSpawned()) {
             child->NotifySpawned();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Awake) {
+        if (child->GetLifeState() < GameObjectLifeState::Awake) {
+            child->Awake();
         }
     }
 }
@@ -444,6 +478,12 @@ void GameObject::RemoveComponent(Component* component) {
     if (component == transformCache_) {
         return;
     }
+
+    // 削除前にライフサイクルを適切に終了
+    if (isActive_) {
+        component->OnDisable();
+    }
+    component->OnDestroy();
 
     // componentMap_からの削除
     auto typeIt = componentMap_.find(typeid(*component));

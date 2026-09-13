@@ -23,6 +23,10 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief ゲーム開始・シーン参加時に追従対象オブジェクトを事前キャッシュします
+     */
+    void Start() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;

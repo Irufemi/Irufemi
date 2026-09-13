@@ -7,11 +7,16 @@
 ScreenEffectComponent::ScreenEffectComponent() {}
 
 ScreenEffectComponent::~ScreenEffectComponent() {
+    OnDestroy();
+}
+
+void ScreenEffectComponent::OnDestroy() {
     if (isPlaying_) {
         auto engine = BaseModel::GetIrufemiEngine();
         if (engine && engine->GetPostProcessManager()) {
             engine->GetPostProcessManager()->RemoveActiveMode(mode_);
         }
+        isPlaying_ = false;
     }
 }
 

@@ -12,6 +12,10 @@ void SplineComponent::OnRegisterProperties() {
 }
 
 void SplineComponent::Initialize() {
+    OnAwake();
+}
+
+void SplineComponent::OnAwake() {
     debugLineBatch_ = std::make_unique<Line3DBatch>();
     debugLineBatch_->Initialize();
     UpdateDistanceTable();

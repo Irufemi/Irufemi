@@ -20,6 +20,14 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief 生成時の同一オブジェクト内MeshRenderer取得を行います
+     */
+    void OnAwake() override;
+    /**
+     * @brief シーン参加時のPostProcessManagerキャッシュを行います
+     */
+    void OnSpawned() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;

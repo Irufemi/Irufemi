@@ -22,10 +22,20 @@ void AudioSourceComponent::Initialize() {
     InitializeAudio();
 }
 
+void AudioSourceComponent::OnSpawned() {
+    if (!player_) {
+        InitializeAudio();
+    }
+}
+
 void AudioSourceComponent::Start() {
     if (!player_) {
         InitializeAudio();
     }
+}
+
+void AudioSourceComponent::OnDisable() {
+    Stop();
 }
 
 void AudioSourceComponent::OnDestroy() {

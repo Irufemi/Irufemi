@@ -9,8 +9,18 @@ EffectMaskComponent::EffectMaskComponent() {}
 EffectMaskComponent::~EffectMaskComponent() {}
 
 void EffectMaskComponent::Initialize() {
+    OnAwake();
+    OnSpawned();
+}
+
+void EffectMaskComponent::OnAwake() {
     if (gameObject_) {
         cachedRenderer_ = gameObject_->GetComponent<MeshRendererComponent>();
+    }
+}
+
+void EffectMaskComponent::OnSpawned() {
+    if (gameObject_) {
         if (auto* scene = gameObject_->GetScene()) {
             if (auto* engine = scene->GetEngine()) {
                 cachedPostProcessManager_ = engine->GetPostProcessManager();

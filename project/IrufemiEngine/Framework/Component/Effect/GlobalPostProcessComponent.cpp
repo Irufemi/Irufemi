@@ -35,6 +35,19 @@ void GlobalPostProcessComponent::Update() {
     }
 }
 
+void GlobalPostProcessComponent::OnDisable() {
+    auto engine = BaseModel::GetIrufemiEngine();
+    if (engine) {
+        if (auto pp = engine->GetPostProcessManager()) {
+            pp->Reset();
+        }
+    }
+}
+
+void GlobalPostProcessComponent::OnDestroy() {
+    OnDisable();
+}
+
 std::shared_ptr<Component> GlobalPostProcessComponent::Clone() {
     auto clone = std::make_shared<GlobalPostProcessComponent>();
     for (const auto& setting : overrides_) {

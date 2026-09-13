@@ -23,9 +23,19 @@ public:
 
     /**
      * @brief コンポーネントの初期化
-     * @details GPUParticleManagerに新しいフォースフィールドを登録し、ハンドルを取得します。
+     * @details 後方互換性のためのラッパーです。
      */
     void Initialize() override;
+
+    /**
+     * @brief ゲーム開始・シーン参加時のフィールド登録を行います
+     */
+    void Start() override;
+
+    /**
+     * @brief 破棄時にGPUParticleManagerから登録解除します
+     */
+    void OnDestroy() override;
 
     /**
      * @brief 毎フレームの更新処理

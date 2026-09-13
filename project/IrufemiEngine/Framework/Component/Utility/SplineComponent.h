@@ -90,6 +90,10 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief 生成時の自己完結初期化（Line3DBatchの初期化・距離テーブル更新）を行います
+     */
+    void OnAwake() override;
+    /**
      * @brief Draw を実行する。
      */
     void Draw() override;

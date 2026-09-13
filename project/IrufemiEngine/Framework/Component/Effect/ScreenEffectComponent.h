@@ -15,6 +15,7 @@ public:
 
     void Initialize() override;
     void Update() override;
+    void OnDestroy() override;
 
     std::string GetComponentName() const override {
         return "ScreenEffectComponent";
