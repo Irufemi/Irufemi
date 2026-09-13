@@ -94,6 +94,9 @@ bool SceneManager::ChangeTo(const Key& next) {
         engine_->GetCameraManager()->Clear();
     }
 
+    // シーン切り替え時にプレハブキャッシュをクリア（古いシーンのプレハブ残留によるメモリリーク防止）
+    SceneSerializer::ClearCache();
+
     SceneStackItem item;
     item.name = next;
     item.scene = it->second();
@@ -472,6 +475,9 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
     if (engine_->GetCameraManager()) {
         engine_->GetCameraManager()->Clear();
     }
+
+    // シーン切り替え時にプレハブキャッシュをクリア（古いシーンのプレハブ残留によるメモリリーク防止）
+    SceneSerializer::ClearCache();
 
     initFuture_ = std::async(std::launch::async, [this, factory, next]() {
         // 新しいシーンを生成

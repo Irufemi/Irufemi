@@ -20,23 +20,28 @@ bool SceneSerializer::Save(IScene* scene, const std::string& sceneName) {
         return false;
     }
 
-    // シーン自身にシリアライズを委譲する
-    nlohmann::json root = scene->Serialize();
+    try {
+        // シーン自身にシリアライズを委譲する
+        nlohmann::json root = scene->Serialize();
 
-    std::string pathStr = GetSceneFilePath(scene, sceneName);
-    fs::path path(pathStr);
+        std::string pathStr = GetSceneFilePath(scene, sceneName);
+        fs::path path(pathStr);
 
-    // ディレクトリが存在しない場合は作成する
-    fs::path dir = path.parent_path();
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
+        // ディレクトリが存在しない場合は作成する
+        fs::path dir = path.parent_path();
+        if (!fs::exists(dir)) {
+            fs::create_directories(dir);
+        }
 
-    std::ofstream file(path);
-    if (file.is_open()) {
-        file << root.dump(2); // 4から2に減らして軽量化
-        file.close();
-        return true;
+        std::ofstream file(path);
+        if (file.is_open()) {
+            file << root.dump(2); // 4から2に減らして軽量化
+            file.close();
+            return true;
+        }
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[SceneSerializer] Exception during Save: " + std::string(e.what()) + "\n");
+        return false;
     }
 
     return false;
@@ -84,20 +89,25 @@ bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::str
         return false;
     }
 
-    // 単一のオブジェクトをシリアライズ
-    nlohmann::json root = obj->Serialize();
+    try {
+        // 単一のオブジェクトをシリアライズ
+        nlohmann::json root = obj->Serialize();
 
-    fs::path path(filepath);
-    fs::path dir = path.parent_path();
-    if (!dir.empty() && !fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
+        fs::path path(filepath);
+        fs::path dir = path.parent_path();
+        if (!dir.empty() && !fs::exists(dir)) {
+            fs::create_directories(dir);
+        }
 
-    std::ofstream file(path);
-    if (file.is_open()) {
-        file << root.dump(2);
-        file.close();
-        return true;
+        std::ofstream file(path);
+        if (file.is_open()) {
+            file << root.dump(2);
+            file.close();
+            return true;
+        }
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[SceneSerializer] Exception during SavePrefab: " + std::string(e.what()) + "\n");
+        return false;
     }
 
     return false;
