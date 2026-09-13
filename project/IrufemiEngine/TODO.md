@@ -35,10 +35,11 @@
         - `CameraComponent`: `OnDestroy()` による `CameraManager` からの登録解除を実装し、動的破棄時のダングリング参照を防止。
         - `EffectManagerComponent` / `DestructibleEnvironmentComponent`: エフェクト発生・瓦礫スポーン時の座標設定を `SetWorldPosition` に統一し、階層構造下での位置ズレを防止。
     - [ ] **レンダラー系コンポーネントの順次移行**:
-        - `OnAwake()`: プロパティの登録、自オブジェクト内の `GetComponent<TransformComponent>()` などの自己完結処理。
-        - `OnSpawned()`: シーン（`GetScene()`）やワールド座標が確定した直後のセットアップ。
-        - `Start()`: 外部マネージャーへの登録や、他オブジェクトの検索・バインドなどゲーム世界への参加処理。
-        - `OnDestroy()`: 各種マネージャーからの登録解除処理。
+        - [x] `MeshRendererComponent` / `SkinnedMeshRendererComponent`:
+            - `OnAwake()`: `StaticModelObject` / `AnimatedMeshObject` の内部生成とモデルロード。
+            - `OnSpawned()`: `SyncRenderState()` を呼び出し、スポーン直後の原点チラつきバグを根本防止。
+            - `Initialize()`: 後方互換レイヤーとして `OnAwake()` / `OnSpawned()` を呼ぶよう整流化。
+        - [ ] 2D・UI・パーティクル系コンポーネント (`SpriteRendererComponent`, `TextRendererComponent`, `ParticleEmitterComponent` 等) の移行。
 
 ### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
 - [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**

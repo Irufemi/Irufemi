@@ -14,9 +14,21 @@ SkinnedMeshRendererComponent::SkinnedMeshRendererComponent() {
 SkinnedMeshRendererComponent::~SkinnedMeshRendererComponent() {}
 
 void SkinnedMeshRendererComponent::Initialize() {
+    OnAwake();
+    OnSpawned();
+}
+
+void SkinnedMeshRendererComponent::OnAwake() {
+    if (!animatedMesh_) {
+        animatedMesh_ = std::make_unique<AnimatedMeshObject>();
+    }
     if (!modelFilename_.empty()) {
         LoadModel(modelFilename_);
     }
+}
+
+void SkinnedMeshRendererComponent::OnSpawned() {
+    SyncRenderState();
 }
 
 void SkinnedMeshRendererComponent::LoadModel(const std::string& filename) {

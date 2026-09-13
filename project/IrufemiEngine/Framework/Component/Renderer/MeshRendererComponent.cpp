@@ -12,20 +12,28 @@ MeshRendererComponent::~MeshRendererComponent() {}
 
 void MeshRendererComponent::LoadModel(const std::string& filename) {
     modelName_ = filename;
-    if (obj_) {
-        obj_->Initialize(modelName_);
+    if (!obj_) {
+        obj_ = std::make_unique<StaticModelObject>();
     }
+    obj_->Initialize(modelName_);
 }
 
 void MeshRendererComponent::Initialize() {
+    OnAwake();
+    OnSpawned();
+}
+
+void MeshRendererComponent::OnAwake() {
     if (!obj_) {
         obj_ = std::make_unique<StaticModelObject>();
-        obj_->Initialize(modelName_);
+        if (!modelName_.empty()) {
+            obj_->Initialize(modelName_);
+        }
     }
+}
 
-    // 親の GameObject から TransformComponent を探して保持しておく
-    if (gameObject_) {
-    }
+void MeshRendererComponent::OnSpawned() {
+    SyncRenderState();
 }
 
 void MeshRendererComponent::SetEnableEffectMask(bool enable) {
