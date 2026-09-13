@@ -40,4 +40,3 @@ struct OBB {
     }
 };
 } // namespace Irufemi
-

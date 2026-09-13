@@ -109,20 +109,48 @@ void WriteMaterial(std::ofstream& ofs, const ObjMaterial& mat) {
 }
 
 bool ReadMaterial(std::ifstream& ifs, ObjMaterial& mat, uint64_t fileSize) {
-    if (!ReadPOD(ifs, mat.color)) return false;
-    if (!ReadPOD(ifs, mat.ambient)) return false;
-    if (!ReadPOD(ifs, mat.specular)) return false;
-    if (!ReadPOD(ifs, mat.roughness)) return false;
-    if (!ReadPOD(ifs, mat.metallic)) return false;
-    if (!ReadPOD(ifs, mat.alpha)) return false;
-    if (!ReadPOD(ifs, mat.enableLighting)) return false;
-    if (!ReadPOD(ifs, mat.lightingMode)) return false;
-    if (!ReadPOD(ifs, mat.useClampSampler)) return false;
-    if (!ReadPOD(ifs, mat.environmentCoefficient)) return false;
-    if (!ReadPOD(ifs, mat.alphaReference)) return false;
-    if (!ReadPOD(ifs, mat.uvTransform)) return false;
-    if (!ReadString(ifs, mat.textureFilePath, fileSize)) return false;
-    if (!ReadString(ifs, mat.normalMapFilePath, fileSize)) return false;
+    if (!ReadPOD(ifs, mat.color)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.ambient)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.specular)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.roughness)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.metallic)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.alpha)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.enableLighting)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.lightingMode)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.useClampSampler)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.environmentCoefficient)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.alphaReference)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, mat.uvTransform)) {
+        return false;
+    }
+    if (!ReadString(ifs, mat.textureFilePath, fileSize)) {
+        return false;
+    }
+    if (!ReadString(ifs, mat.normalMapFilePath, fileSize)) {
+        return false;
+    }
     return true;
 }
 
@@ -139,12 +167,20 @@ void WriteNode(std::ofstream& ofs, const Node& node) {
 }
 
 bool ReadNode(std::ifstream& ifs, Node& node, uint64_t fileSize) {
-    if (!ReadPOD(ifs, node.transform)) return false;
-    if (!ReadPOD(ifs, node.localMatrix)) return false;
-    if (!ReadString(ifs, node.name, fileSize)) return false;
+    if (!ReadPOD(ifs, node.transform)) {
+        return false;
+    }
+    if (!ReadPOD(ifs, node.localMatrix)) {
+        return false;
+    }
+    if (!ReadString(ifs, node.name, fileSize)) {
+        return false;
+    }
 
     uint32_t childrenCount = 0;
-    if (!ReadPOD(ifs, childrenCount)) return false;
+    if (!ReadPOD(ifs, childrenCount)) {
+        return false;
+    }
 
     auto currentPos = ifs.tellg();
     if (currentPos == std::streampos(-1) || static_cast<uint64_t>(currentPos) > fileSize) {

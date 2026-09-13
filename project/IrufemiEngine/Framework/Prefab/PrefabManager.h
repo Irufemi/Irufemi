@@ -11,7 +11,8 @@ class GameObject;
 /**
  * @class PrefabManager
  * @brief プレハブアセットのロード、キャッシュ管理、およびインスタンス生成を担当するマネージャークラス
- * @details SceneSerializer からプレハブ管理の責務を分離し、シーン遷移時のメモリ解放やテンプレートのクローン生成を一元管理します。
+ * @details SceneSerializer
+ * からプレハブ管理の責務を分離し、シーン遷移時のメモリ解放やテンプレートのクローン生成を一元管理します。
  */
 class PrefabManager {
 public:

@@ -89,7 +89,8 @@ inline bool LoadFromFile(const std::string& filepath, nlohmann::json& outJson) {
         file.close();
         return true;
     } catch (const std::exception& e) {
-        Log::OutPutLog(std::cerr, "[JsonUtility] LoadFromFile failed (" + filepath + "): " + std::string(e.what()) + "\n");
+        Log::OutPutLog(std::cerr,
+                       "[JsonUtility] LoadFromFile failed (" + filepath + "): " + std::string(e.what()) + "\n");
         return false;
     }
 }
@@ -122,11 +123,11 @@ inline bool SaveToFile(const std::string& filepath, const nlohmann::json& json, 
         file.close();
         return true;
     } catch (const std::exception& e) {
-        Log::OutPutLog(std::cerr, "[JsonUtility] SaveToFile failed (" + filepath + "): " + std::string(e.what()) + "\n");
+        Log::OutPutLog(std::cerr,
+                       "[JsonUtility] SaveToFile failed (" + filepath + "): " + std::string(e.what()) + "\n");
         return false;
     }
 }
 
 } // namespace JsonUtility
 } // namespace Irufemi
-
