@@ -1,4 +1,5 @@
 #include "Framework/Scene/BaseScene.h"
+#include "Framework/Scene/SceneObjectRegistry.h"
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
@@ -13,6 +14,8 @@
 #include "Renderer/Data/AreaLight.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Physics/CollisionManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 
 #include "Framework/Scene/SceneSerializer.h"
@@ -28,165 +31,67 @@
 #include "Framework/UI/DebugUI.h"
 #endif
 
-BaseScene::BaseScene() = default;
-BaseScene::~BaseScene() = default;
+BaseScene::BaseScene() {
+    objectRegistry_ = std::make_unique<SceneObjectRegistry>();
+}
+BaseScene::~BaseScene() {
+    ClearGameObjects();
+}
 
 std::shared_ptr<GameObject> BaseScene::FindGameObject(const std::string& name) {
+    if (auto obj = objectRegistry_->FindByName(name)) {
+        return obj;
+    }
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    auto it = nameIndex_.find(name);
-    if (it != nameIndex_.end()) {
-        auto& list = it->second;
-        // 有効な最初のオブジェクトを探しつつ、無効なポインタを遅延削除
-        for (auto listIt = list.begin(); listIt != list.end();) {
-            if (auto obj = listIt->lock()) {
-                if (!obj->IsDestroyed()) {
-                    return obj;
-                } else {
-                    listIt = list.erase(listIt);
-                }
-            } else {
-                listIt = list.erase(listIt);
-            }
+    for (const auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed() && obj->GetName() == name) {
+            return obj;
         }
     }
     return nullptr;
 }
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjects(const std::string& name) {
-    std::vector<std::shared_ptr<GameObject>> result;
+    auto result = objectRegistry_->FindAllByName(name);
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    auto it = nameIndex_.find(name);
-    if (it != nameIndex_.end()) {
-        auto& list = it->second;
-        for (auto listIt = list.begin(); listIt != list.end();) {
-            if (auto obj = listIt->lock()) {
-                if (!obj->IsDestroyed()) {
-                    result.push_back(obj);
-                    ++listIt;
-                } else {
-                    listIt = list.erase(listIt);
-                }
-            } else {
-                listIt = list.erase(listIt);
-            }
+    for (const auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed() && obj->GetName() == name) {
+            result.push_back(obj);
         }
     }
     return result;
 }
 
 std::shared_ptr<GameObject> BaseScene::FindGameObjectByID(uint64_t instanceId) {
-    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-
-    // O(1)検索
-    auto it = idIndex_.find(instanceId);
-    if (it != idIndex_.end()) {
-        if (auto obj = it->second.lock()) {
-            if (!obj->IsDestroyed()) {
-                return obj;
-            } else {
-                idIndex_.erase(it);
-            }
-        } else {
-            idIndex_.erase(it);
-        }
+    if (auto obj = objectRegistry_->FindById(instanceId)) {
+        return obj;
     }
-
-    // 遅延キュー内の検索（フレーム中に生成された直後の対応）
+    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
     for (const auto& obj : pendingAdds_) {
         if (obj && obj->GetInstanceID() == instanceId && !obj->IsDestroyed()) {
             return obj;
         }
     }
-
     return nullptr;
 }
 
 std::vector<std::shared_ptr<GameObject>> BaseScene::FindGameObjectsWithTag(const std::string& tag) {
-    std::vector<std::shared_ptr<GameObject>> result;
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    for (auto& obj : gameObjects_) {
-        if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
-            result.push_back(obj);
-        }
-    }
-    for (auto& obj : pendingAdds_) {
-        if (obj && !obj->IsDestroyed() && obj->GetTag() == tag) {
-            result.push_back(obj);
-        }
-    }
-    return result;
+    std::vector<std::shared_ptr<GameObject>> all;
+    all.reserve(gameObjects_.size() + pendingAdds_.size());
+    all.insert(all.end(), gameObjects_.begin(), gameObjects_.end());
+    all.insert(all.end(), pendingAdds_.begin(), pendingAdds_.end());
+    return objectRegistry_->FindByTag(tag, all);
 }
 
 std::string BaseScene::GetUniqueObjectName(const std::string& baseName) {
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-
-    auto NameExists = [&](const std::string& name) {
-        auto it = nameIndex_.find(name);
-        if (it != nameIndex_.end()) {
-            for (auto& weakObj : it->second) {
-                if (auto obj = weakObj.lock()) {
-                    if (!obj->IsDestroyed()) {
-                        return true;
-                    }
-                }
-            }
-        }
-        for (const auto& obj : pendingAdds_) {
-            if (obj && !obj->IsDestroyed() && obj->GetName() == name) {
-                return true;
-            }
-        }
-        return false;
-    };
-
-    if (!NameExists(baseName)) {
-        return baseName;
-    }
-
-    std::string prefix = baseName;
-    int nextIndex = 1;
-
-    std::regex re("^(.*) \\((\\d+)\\)$");
-    std::smatch match;
-    if (std::regex_match(baseName, match, re)) {
-        prefix = match[1].str();
-        nextIndex = std::stoi(match[2].str()) + 1;
-    }
-
-    std::string candidate;
-    do {
-        candidate = prefix + " (" + std::to_string(nextIndex) + ")";
-        nextIndex++;
-    } while (NameExists(candidate));
-
-    return candidate;
+    return objectRegistry_->GenerateUniqueName(baseName, pendingAdds_);
 }
 
 void BaseScene::OnGameObjectNameChanged(const std::shared_ptr<GameObject>& obj, const std::string& oldName,
                                         const std::string& newName) {
-    if (!obj) {
-        return;
-    }
-    std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-
-    // 古い名前のリストから削除
-    if (!oldName.empty()) {
-        auto itOld = nameIndex_.find(oldName);
-        if (itOld != nameIndex_.end()) {
-            auto& list = itOld->second;
-            list.erase(std::remove_if(list.begin(), list.end(),
-                                      [&obj](const std::weak_ptr<GameObject>& wp) {
-                                          auto p = wp.lock();
-                                          return !p || p == obj;
-                                      }),
-                       list.end());
-        }
-    }
-
-    // 新しい名前のリストに追加
-    if (!newName.empty()) {
-        nameIndex_[newName].push_back(obj);
-    }
+    objectRegistry_->OnNameChanged(obj, oldName, newName);
 }
 
 void BaseScene::Initialize(IrufemiEngine* engine) {
@@ -238,10 +143,10 @@ void BaseScene::Update() {
         std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         for (auto& obj : pendingAdds_) {
             gameObjects_.push_back(obj);
-            if (!obj->GetName().empty()) {
-                nameIndex_[obj->GetName()].push_back(obj);
+            objectRegistry_->Register(obj);
+            if (obj && !obj->IsSpawned()) {
+                obj->NotifySpawned();
             }
-            idIndex_[obj->GetInstanceID()] = obj;
         }
         pendingAdds_.clear();
 
@@ -249,14 +154,7 @@ void BaseScene::Update() {
             auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
             if (it != gameObjects_.end()) {
                 gameObjects_.erase(it);
-                auto nameIt = nameIndex_.find(obj->GetName());
-                if (nameIt != nameIndex_.end()) {
-                    auto& list = nameIt->second;
-                    list.erase(std::remove_if(list.begin(), list.end(),
-                                              [&obj](const std::weak_ptr<GameObject>& wp) { return wp.lock() == obj; }),
-                               list.end());
-                }
-                idIndex_.erase(obj->GetInstanceID());
+                objectRegistry_->Unregister(obj);
             }
         }
         pendingRemoves_.clear();
@@ -271,18 +169,51 @@ void BaseScene::Update() {
         }
     }
 
-    // --- GameObject の更新 (マルチスレッド化) ---
-    std::vector<std::future<void>> updateFutures;
-    for (size_t i = 0; i < gameObjects_.size(); ++i) {
-        auto obj = gameObjects_[i];
+    // --- GameObject の更新 (バッチ並列化) ---
+    std::vector<GameObject*> updateTargets;
+    updateTargets.reserve(gameObjects_.size());
+    for (const auto& obj : gameObjects_) {
         if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
-            updateFutures.push_back(
-                engine_->GetThreadPool()->Enqueue([obj, isPlayMode]() { obj->Update(isPlayMode); }));
+            updateTargets.push_back(obj.get());
         }
     }
-    // 全てのスレッドの完了を待機
-    for (auto& future : updateFutures) {
-        future.wait();
+
+    const size_t updateCount = updateTargets.size();
+    if (updateCount > 0) {
+        ThreadPool* threadPool = engine_ ? engine_->GetThreadPool() : nullptr;
+        size_t threadCount = threadPool ? threadPool->GetTotalThreadCount() : 0;
+
+        // オブジェクト数が少数（16個以下）またはスレッドプール無しの場合は直列実行
+        if (threadCount <= 1 || updateCount <= 16) {
+            for (GameObject* obj : updateTargets) {
+                obj->Update(isPlayMode);
+            }
+        } else {
+            // スレッド数に応じて均等にチャンク分割（最大でも threadCount 個のタスクに集約）
+            size_t numTasks = (std::min)(threadCount, (updateCount + 15) / 16);
+            size_t chunkSize = (updateCount + numTasks - 1) / numTasks;
+
+            std::vector<std::future<void>> updateFutures;
+            updateFutures.reserve(numTasks);
+
+            for (size_t taskIdx = 0; taskIdx < numTasks; ++taskIdx) {
+                size_t start = taskIdx * chunkSize;
+                size_t end = (std::min)(start + chunkSize, updateCount);
+                if (start >= end) {
+                    break;
+                }
+
+                updateFutures.push_back(threadPool->Enqueue([&updateTargets, start, end, isPlayMode]() {
+                    for (size_t i = start; i < end; ++i) {
+                        updateTargets[i]->Update(isPlayMode);
+                    }
+                }));
+            }
+
+            for (auto& future : updateFutures) {
+                future.wait();
+            }
+        }
     }
 
     // --- Irufemi::Transform の DOD一括更新 ---
@@ -292,6 +223,13 @@ void BaseScene::Update() {
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
     if (isPlayMode && engine_) {
         engine_->GetCollisionManager()->CheckAllCollisions();
+    }
+
+    // 破棄フラグが立った子オブジェクトを一括削除 (GC)
+    for (const auto& obj : gameObjects_) {
+        if (obj) {
+            obj->CleanupDestroyedChildren();
+        }
     }
 
     // 破棄フラグが立ったオブジェクトを一括削除 (GC)
@@ -304,17 +242,49 @@ void BaseScene::Update() {
 }
 
 void BaseScene::Draw() {
-    // --- GameObject の描画 (マルチスレッド化) ---
-    std::vector<std::future<void>> drawFutures;
-    for (size_t i = 0; i < gameObjects_.size(); ++i) {
-        auto obj = gameObjects_[i];
+    // --- GameObject の描画 (バッチ並列化) ---
+    std::vector<GameObject*> drawTargets;
+    drawTargets.reserve(gameObjects_.size());
+    for (const auto& obj : gameObjects_) {
         if (obj && !obj->GetParent()) {
-            drawFutures.push_back(engine_->GetThreadPool()->Enqueue([obj]() { obj->Draw(); }));
+            drawTargets.push_back(obj.get());
         }
     }
-    // 全てのスレッドの完了を待機
-    for (auto& future : drawFutures) {
-        future.wait();
+
+    const size_t drawCount = drawTargets.size();
+    if (drawCount > 0) {
+        ThreadPool* threadPool = engine_ ? engine_->GetThreadPool() : nullptr;
+        size_t threadCount = threadPool ? threadPool->GetTotalThreadCount() : 0;
+
+        if (threadCount <= 1 || drawCount <= 16) {
+            for (GameObject* obj : drawTargets) {
+                obj->Draw();
+            }
+        } else {
+            size_t numTasks = (std::min)(threadCount, (drawCount + 15) / 16);
+            size_t chunkSize = (drawCount + numTasks - 1) / numTasks;
+
+            std::vector<std::future<void>> drawFutures;
+            drawFutures.reserve(numTasks);
+
+            for (size_t taskIdx = 0; taskIdx < numTasks; ++taskIdx) {
+                size_t start = taskIdx * chunkSize;
+                size_t end = (std::min)(start + chunkSize, drawCount);
+                if (start >= end) {
+                    break;
+                }
+
+                drawFutures.push_back(threadPool->Enqueue([&drawTargets, start, end]() {
+                    for (size_t i = start; i < end; ++i) {
+                        drawTargets[i]->Draw();
+                    }
+                }));
+            }
+
+            for (auto& future : drawFutures) {
+                future.wait();
+            }
+        }
     }
 
 #ifdef EditorMode
@@ -344,11 +314,53 @@ void BaseScene::Draw() {
     }
 }
 
+void BaseScene::WarmUpRenderState() {
+    // 1. 遅延登録キューのフラッシュ（ロード済みオブジェクトをリストに確定）
+    {
+        std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
+        for (auto& obj : pendingAdds_) {
+            gameObjects_.push_back(obj);
+            objectRegistry_->Register(obj);
+        }
+        pendingAdds_.clear();
+
+        for (auto& obj : pendingRemoves_) {
+            auto it = std::find(gameObjects_.begin(), gameObjects_.end(), obj);
+            if (it != gameObjects_.end()) {
+                gameObjects_.erase(it);
+                objectRegistry_->Unregister(obj);
+            }
+        }
+        pendingRemoves_.clear();
+    }
+
+    // 2. カメラマネージャーの最新化
+    if (engine_ && engine_->GetCameraManager()) {
+        engine_->GetCameraManager()->Update();
+    }
+
+    // 3. 全Transformのワールド行列を一括計算 (DOD)
+    TransformComponent::UpdateAll();
+
+    // 4. 全GameObjectの描画前ステート同期（スキニングの初期ポーズ計算 & ComputeTask先行登録）
+    for (const auto& obj : gameObjects_) {
+        if (obj && !obj->GetParent() && !obj->IsDestroyed()) {
+            obj->SyncRenderState();
+        }
+    }
+
+    // 5. 初回フレームデータ（カメラ行列、ライト、フォグ等）をレンダラーへ提出
+    SubmitFrameData();
+}
+
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
         std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         obj->SetScene(this);
-        pendingAdds_.push_back(obj);
+        if (std::find(pendingAdds_.begin(), pendingAdds_.end(), obj) == pendingAdds_.end() &&
+            std::find(gameObjects_.begin(), gameObjects_.end(), obj) == gameObjects_.end()) {
+            pendingAdds_.push_back(obj);
+        }
     }
 }
 
@@ -365,10 +377,7 @@ void BaseScene::InsertGameObject(std::shared_ptr<GameObject> obj, size_t index) 
     } else {
         gameObjects_.insert(gameObjects_.begin() + index, obj);
     }
-    if (!obj->GetName().empty()) {
-        nameIndex_[obj->GetName()].push_back(obj);
-    }
-    idIndex_[obj->GetInstanceID()] = obj;
+    objectRegistry_->Register(obj);
 }
 
 void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
@@ -376,16 +385,43 @@ void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
         return;
     }
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    pendingRemoves_.push_back(obj);
+    if (std::find(pendingRemoves_.begin(), pendingRemoves_.end(), obj) == pendingRemoves_.end()) {
+        pendingRemoves_.push_back(obj);
+    }
 }
 
 void BaseScene::ClearGameObjects() {
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
+    for (auto& obj : gameObjects_) {
+        if (obj && !obj->IsDestroyed()) {
+            obj->Destroy();
+        }
+    }
+    for (auto& obj : pendingAdds_) {
+        if (obj && !obj->IsDestroyed()) {
+            obj->Destroy();
+        }
+    }
     gameObjects_.clear();
     pendingAdds_.clear();
     pendingRemoves_.clear();
-    nameIndex_.clear();
-    idIndex_.clear();
+    objectRegistry_->Clear();
+
+    // シーン上の全オブジェクトが消去されたため、エンジン側の物理・描画・パーティクルの残留データを完全にクリア
+    if (engine_) {
+        if (auto cm = engine_->GetCollisionManager()) {
+            cm->Clear();
+        }
+        if (auto dm = engine_->GetDrawManager()) {
+            dm->ClearAllQueues();
+        }
+        if (auto pm = engine_->GetGPUParticleManager()) {
+            pm->ClearAllParticles();
+        }
+        if (auto vm = engine_->GetVoxelParticleManager()) {
+            vm->Clear();
+        }
+    }
 }
 
 size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
@@ -427,71 +463,70 @@ void BaseScene::SubmitFrameData() {
     }
 }
 
-void BaseScene::DrawDebugTab() {
+void BaseScene::DrawDebugTabItem() {
 #ifdef USE_IMGUI
-    if (ImGui::Begin("Scene Debug")) {
-        if (ImGui::BeginTabBar("SceneTabs")) {
-            if (ImGui::BeginTabItem("Camera & Lights")) {
-                bool prevMode = isDebugCameraMode_;
-                if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
-                    if (isDebugCameraMode_ && !prevMode) {
-                        // デバッグモードON時: 現在のアクティブカメラの名前を記憶し、状態をコピーする
-                        previousActiveCameraName_ = engine_->GetCameraManager()->GetActiveCameraName();
-                        Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-                        if (activeCam && activeCam != debugCamera_.get()) {
-                            debugCamera_->SetTranslate(activeCam->GetTranslate());
-                            debugCamera_->SetRotate(activeCam->GetRotate());
-                            debugCamera_->SetViewMatrix(activeCam->GetViewMatrix());
-                            debugCamera_->SetPerspectiveFovMatrix(activeCam->GetPerspectiveFovMatrix());
-                            debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
-                        }
-                        engine_->GetCameraManager()->SetActiveCamera("Debug");
-                    } else if (!isDebugCameraMode_ && prevMode) {
-                        // デバッグモードOFF時: 記憶しておいたカメラに戻す
-                        if (previousActiveCameraName_.empty() || previousActiveCameraName_ == "Debug") {
-                            previousActiveCameraName_ = "Main";
-                        }
-                        engine_->GetCameraManager()->SetActiveCamera(previousActiveCameraName_);
-                    }
-                }
-                if (isDebugCameraMode_ && debugCameraController_ && debugCamera_) {
-                    if (ImGui::Button("Top-Down")) {
-                        debugCameraController_->SetPreset(OrbitCameraController::Preset::TopDown, debugCamera_.get());
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Diagonal")) {
-                        debugCameraController_->SetPreset(OrbitCameraController::Preset::Diagonal, debugCamera_.get());
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Front")) {
-                        debugCameraController_->SetPreset(OrbitCameraController::Preset::Front, debugCamera_.get());
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Sync to Main")) {
-                        Camera* mainCam = engine_->GetCameraManager()->GetCamera("Main");
-                        if (mainCam) {
-                            debugCamera_->SetTranslate(mainCam->GetTranslate());
-                            debugCamera_->SetRotate(mainCam->GetRotate());
-                            debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
-                        }
-                    }
-                    ImGui::Separator();
-                    ImGui::Text("Debug Camera Controls (Orbit/Pan/Zoom)");
-                    debugCamera_->DrawDebugContents();
-                    // OrbitCameraController は内部状態としての Distance を外部に公開していないため、
-                    // ImGui上から無理やりDistanceをいじるのではなく、マウスのホイール操作で調整させる形にする。
-                } else {
+    if (ImGui::BeginTabBar("SceneSubTabs")) {
+        // --- 1. Camera タブ ---
+        if (ImGui::BeginTabItem("Camera")) {
+            bool prevMode = isDebugCameraMode_;
+            if (ImGui::Checkbox("Debug Camera Mode", &isDebugCameraMode_)) {
+                if (isDebugCameraMode_ && !prevMode) {
+                    // デバッグモードON時: 現在のアクティブカメラの名前を記憶し、状態をコピーする
+                    previousActiveCameraName_ = engine_->GetCameraManager()->GetActiveCameraName();
                     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
-                    if (activeCam) {
-                        activeCam->DrawDebugContents();
+                    if (activeCam && activeCam != debugCamera_.get()) {
+                        debugCamera_->SetTranslate(activeCam->GetTranslate());
+                        debugCamera_->SetRotate(activeCam->GetRotate());
+                        debugCamera_->SetViewMatrix(activeCam->GetViewMatrix());
+                        debugCamera_->SetPerspectiveFovMatrix(activeCam->GetPerspectiveFovMatrix());
+                        debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
+                    }
+                    engine_->GetCameraManager()->SetActiveCamera("Debug");
+                } else if (!isDebugCameraMode_ && prevMode) {
+                    // デバッグモードOFF時: 記憶しておいたカメラに戻す
+                    if (previousActiveCameraName_.empty() || previousActiveCameraName_ == "Debug") {
+                        previousActiveCameraName_ = "Main";
+                    }
+                    engine_->GetCameraManager()->SetActiveCamera(previousActiveCameraName_);
+                }
+            }
+            if (isDebugCameraMode_ && debugCameraController_ && debugCamera_) {
+                if (ImGui::Button("Top-Down")) {
+                    debugCameraController_->SetPreset(OrbitCameraController::Preset::TopDown, debugCamera_.get());
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Diagonal")) {
+                    debugCameraController_->SetPreset(OrbitCameraController::Preset::Diagonal, debugCamera_.get());
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Front")) {
+                    debugCameraController_->SetPreset(OrbitCameraController::Preset::Front, debugCamera_.get());
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Sync to Main")) {
+                    Camera* mainCam = engine_->GetCameraManager()->GetCamera("Main");
+                    if (mainCam) {
+                        debugCamera_->SetTranslate(mainCam->GetTranslate());
+                        debugCamera_->SetRotate(mainCam->GetRotate());
+                        debugCameraController_->SyncTargetFromCamera(debugCamera_.get());
                     }
                 }
-                ImGui::EndTabItem();
+                ImGui::Separator();
+                ImGui::Text("Debug Camera Controls (Orbit/Pan/Zoom)");
+                debugCamera_->DrawDebugContents();
+            } else {
+                Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+                if (activeCam) {
+                    activeCam->DrawDebugContents();
+                }
             }
-            DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
-            ImGui::EndTabBar();
+            ImGui::EndTabItem();
         }
-        ImGui::End();
+
+        // --- 2. Lights タブ (内部で BeginTabItem("Lights") を実行) ---
+        DebugUI::DebugLights(directionalLight_.get(), pointLights_, spotLights_, areaLights_);
+
+        ImGui::EndTabBar();
     }
 #endif
 }
@@ -609,4 +644,8 @@ void BaseScene::Deserialize(const nlohmann::json& j) {
             AddGameObject(obj);
         }
     }
+}
+
+void BaseScene::Finalize() {
+    ClearGameObjects();
 }

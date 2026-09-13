@@ -23,7 +23,7 @@ void PlayerTargetingComponent::Initialize() {
     // UIコンポーネントを検索
     auto scene = gameObject_->GetScene();
     if (scene) {
-        for (auto obj : scene->GetGameObjects()) {
+        for (const auto& obj : scene->GetGameObjects()) {
             if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
                 lockonMarkerUI_ = ui;
                 break;
@@ -32,7 +32,18 @@ void PlayerTargetingComponent::Initialize() {
     }
 }
 
-void PlayerTargetingComponent::Start() {}
+void PlayerTargetingComponent::Start() {
+    if (!lockonMarkerUI_ && gameObject_) {
+        if (auto scene = gameObject_->GetScene()) {
+            for (const auto& obj : scene->GetGameObjects()) {
+                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
+                    lockonMarkerUI_ = ui;
+                    break;
+                }
+            }
+        }
+    }
+}
 
 void PlayerTargetingComponent::Update() {
     // 死んだオブジェクトなどをキューから削除する

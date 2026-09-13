@@ -11,6 +11,9 @@ class ConsolePanel : public IEditorPanel {
 public:
     void Initialize(EditorManager* editorManager) override;
     void Draw() override;
+    const char* GetName() const override {
+        return "Console";
+    }
 
 private:
     EditorManager* editorManager_ = nullptr;

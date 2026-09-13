@@ -17,8 +17,44 @@ void SliderComponent::OnRegisterProperties() {
 }
 
 void SliderComponent::Initialize() {
+    OnAwake();
+}
+
+void SliderComponent::OnAwake() {
     if (gameObject_) {
         backgroundSprite_ = gameObject_->GetComponent<SpriteRendererComponent>();
+    }
+}
+
+void SliderComponent::Start() {
+    ResolveHandleObject();
+}
+
+void SliderComponent::SetHandleObjectID(int id) {
+    handleObjectID_ = id;
+    ResolveHandleObject();
+}
+
+void SliderComponent::ResolveHandleObject() {
+    if (handleObjectID_ == 0 || !gameObject_) {
+        handleObject_ = nullptr;
+        return;
+    }
+
+    // シーンの高速ハッシュ検索を試みる
+    if (auto scene = gameObject_->GetScene()) {
+        if (auto obj = scene->FindGameObjectByID(static_cast<uint64_t>(handleObjectID_))) {
+            handleObject_ = obj.get();
+            return;
+        }
+    }
+
+    // フォールバックとして子オブジェクトから検索
+    for (auto& child : gameObject_->GetChildren()) {
+        if (child && child->GetInstanceID() == static_cast<uint64_t>(handleObjectID_)) {
+            handleObject_ = child.get();
+            return;
+        }
     }
 }
 
@@ -60,17 +96,6 @@ void SliderComponent::Update() {
     auto engine = scene->GetEngine();
     if (!engine) {
         return;
-    }
-
-    // ハンドルの探索 (初回のみ、または見つかってない場合)
-    if (!handleObject_ && handleObjectID_ != 0) {
-        // 子オブジェクトから検索
-        for (auto& child : gameObject_->GetChildren()) {
-            if (child->GetInstanceID() == (uint64_t)handleObjectID_) {
-                handleObject_ = child.get();
-                break;
-            }
-        }
     }
 
     auto input = engine->GetInputManager();

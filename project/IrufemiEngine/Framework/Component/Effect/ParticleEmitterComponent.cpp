@@ -17,7 +17,20 @@ void ParticleEmitterComponent::OnRegisterProperties() {
 }
 
 void ParticleEmitterComponent::Initialize() {
-    particleObj_->Initialize();
+    OnAwake();
+    OnSpawned();
+}
+
+void ParticleEmitterComponent::OnAwake() {
+    if (particleObj_) {
+        particleObj_->Initialize();
+    }
+}
+
+void ParticleEmitterComponent::OnSpawned() {
+    if (particleObj_ && GetTransform()) {
+        particleObj_->SetPosition(GetTransform()->GetWorldPosition());
+    }
 }
 
 void ParticleEmitterComponent::Update() {

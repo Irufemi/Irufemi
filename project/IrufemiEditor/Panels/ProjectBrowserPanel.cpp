@@ -154,7 +154,7 @@ void ProjectBrowserPanel::Draw() {
         RefreshCache();
     }
 
-    ImGui::Begin("Project");
+    ImGui::Begin(GetName(), &isOpen_);
 
     // Refreshボタンを追加
     if (ImGui::Button(ICON_FA_ROTATE_RIGHT " Refresh")) {

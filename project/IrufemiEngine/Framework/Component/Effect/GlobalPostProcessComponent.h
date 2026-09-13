@@ -15,6 +15,8 @@ public:
 
     void Start() override;
     void Update() override;
+    void OnDisable() override;
+    void OnDestroy() override;
     void OnRegisterProperties() override;
 
     bool CanUpdateInEditMode() const override {

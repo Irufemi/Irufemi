@@ -13,16 +13,8 @@ class TransformComponent;
 class AABBColliderComponent : public ColliderComponent {
 public:
     AABBColliderComponent();
-    ~AABBColliderComponent() override;
+    ~AABBColliderComponent() override = default;
 
-    /**
-     * @brief Initialize を実行する。
-     */
-    void Initialize() override;
-    /**
-     * @brief Update を実行する。
-     */
-    void Update() override;
     /**
      * @brief DrawDebug を実行する。
      */

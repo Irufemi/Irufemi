@@ -6,6 +6,71 @@
 ## 🚀 次期アップデート計画 (Ongoing & Future Tasks)
 より「ツール」として使いやすく、商用水準のパフォーマンスを発揮するための拡張機能群です。
 
+### 🏗️ GameObject＆プレハブ・ライフサイクル抜本的改革 (Lifecycle & Prefab Architecture Revamp)
+- [x] **Phase 1: JsonUtility への安全なファイルI/O集約**
+    - [x] `JsonUtility::LoadFromFile` および `SaveToFile`（自動ディレクトリ作成、例外保護、パースエラーログ完備）の実装。
+    - [x] `SceneSerializer` の `Save`, `Load`, `SavePrefab`, `GetPrefabJson` を `JsonUtility` 呼び出しに置き換え、ボイラープレートを排除。
+- [x] **Phase 2: PrefabManager の新設とアセット保持責務の完全分離**
+    - [x] `Framework/Prefab/PrefabManager` を新設し、JSON/テンプレートキャッシュおよびディープコピー生成を一元管理。
+    - [x] `SceneSerializer` から静的キャッシュを撤廃し、純粋なシリアライザへと特化。既存の `LoadPrefab` 呼び出しは `PrefabManager` へ委譲し100%後方互換を維持。
+    - [x] `SceneManager` のシーン遷移（同期・非同期）と連動したプレハブキャッシュの自動解放。
+- [x] **Phase 3: GameObjectLifeState の導入と初期化・破棄の多重実行防止**
+    - [x] `GameObjectLifeState` (`Constructed`, `Awake`, `Spawned`, `Started`, `Destroyed`) の確立。
+    - [x] `Component` 基底クラスに `OnAwake()`, `OnSpawned()`, `OnDestroy()` 仮想メソッドと `isInitialized_` フラグを追加。
+    - [x] `GameObject::Initialize()`, `Start()` に二重実行防止ガードを実装。
+    - [x] `GameObject::Deserialize()` での初期化フェーズ整流化により、シーンロード時のコンポーネント二重初期化バグを根絶。
+    - [x] デストラクタおよび `Destroy()` での `OnDestroy()` 確実呼び出しによるメモリ/マネージャー解放リーク防止。
+- [x] **Phase 4: 遅延スポーンキュー (Deferred Spawn) での OnSpawned() 自動通知**
+    - [x] `BaseScene::Update` 冒頭での `pendingAdds_` フラッシュ時に、シーン・座標確定通知 `NotifySpawned()` を自動発行。
+- [ ] **Phase 5: 各コンポーネントの OnAwake / Start 分離移行**
+    - [x] **コライダー系コンポーネント (`ColliderComponent`, `Sphere`, `AABB`, `OBB`)**:
+        - 派生クラスの重複 `Initialize()` を全廃し、基底 `ColliderComponent` の `Start()` / `OnDestroy()` / `OnEnable()` / `OnDisable()` に登録・解除を一元化。
+        - `CollisionManager::FlushPendingCommands` での追加・削除相殺バグを修正し、オブジェクトプール等での多重有効化/無効化時のコライダー消失を根絶。
+        - `CheckAllCollisions` におけるTriggerコライダーの片方向レイヤーマスク検知のサポート。
+        - `DebrisManagerComponent` でのワールド座標設定の整合性修正。
+    - [x] **動的スポーン・親子階層および他コンポーネントのライフサイクル整流化**:
+        - `GameObject::AddChild` / `InsertChild`: 親オブジェクトがすでに `Spawned` / `Started` の場合、後から動的に追加された子階層へ `NotifySpawned()` / `Start()` を自動伝播。
+        - `BaseScene`: `AddGameObject` / `RemoveGameObject` において、`pendingAdds_` や `gameObjects_` への二重登録ガードを実装。
+        - `AudioSourceComponent`: 遅延初期化 (`InitializeAudio`) と `Start()` / `OnDestroy()` を実装し、シーンバインド前に動的生成された場合の不鳴バグと解放漏れを解消。
+        - `CameraComponent`: `OnDestroy()` による `CameraManager` からの登録解除を実装し、動的破棄時のダングリング参照を防止。
+        - `EffectManagerComponent` / `DestructibleEnvironmentComponent`: エフェクト発生・瓦礫スポーン時の座標設定を `SetWorldPosition` に統一し、階層構造下での位置ズレを防止。
+    - [x] **主要コンポーネントの順次ライフサイクル移行 (完了)**:
+        - [x] `MeshRendererComponent` / `SkinnedMeshRendererComponent`:
+            - `OnAwake()`: `StaticModelObject` / `AnimatedMeshObject` の内部生成とモデルロード。
+            - `OnSpawned()`: `SyncRenderState()` を呼び出し、スポーン直後の原点チラつきバグを根本防止。
+            - `Initialize()`: 後方互換レイヤーとして `OnAwake()` / `OnSpawned()` を呼ぶよう整流化。
+        - [x] 2D・テキスト・パーティクル系コンポーネント (`SpriteRendererComponent`, `TextRendererComponent`, `ParticleEmitterComponent`):
+            - `OnAwake()`: `Sprite` / `Text` / `ParticleObject` の内部生成および初期プロパティ適用。
+            - `OnSpawned()`: 初期Transformおよび描画・放出ステートの即時同期（`SyncRenderState()`）。
+            - `Initialize()`: 後方互換レイヤーとして `OnAwake()` / `OnSpawned()` を呼ぶよう整流化。
+        - [x] ロジック・エフェクト・UI系コンポーネント (`VoxelParticleComponent`, `AnimatorComponent`, `LifetimeComponent`, `CameraShakeComponent`, `ButtonComponent`, `SliderComponent`):
+            - `VoxelParticleComponent`: `OnAwake()` でモデル名キャッシュ、`Start()` で `ReservePool` を実行し、動的生成時のメモリ予約漏れを防止。
+            - `AnimatorComponent`: `OnSpawned()` でエンジン取得・初期化、`Start()` でデフォルトアニメーション再生開始に整流化。
+            - `LifetimeComponent`: `OnSpawned()` および `OnEnable()` で寿命タイマーを自動リセットし、オブジェクトプール再利用時の手動初期化を不要化。
+            - `CameraShakeComponent` / `ButtonComponent` / `SliderComponent`: 同一オブジェクト内のコンポーネント参照解決を `OnAwake()` に移譲。
+        - [x] 残存エンジンコンポーネントの完全移行 (エンジンコア内コンポーネント100%達成):
+            - `ParticleFieldComponent`: `Start()` で `GPUParticleManager::RegisterField`、`OnDestroy()` で登録解除を行い、動的スポーン時の登録失敗と解放漏れを根絶。
+            - `PrimitiveRendererComponent` / `Primitive2DRendererComponent`: `OnAwake()` でプリミティブオブジェクト生成、`OnSpawned()` で初期Transform同期（チラつき防止）。
+            - `ModelBatchRendererComponent`: `OnAwake()` で `ModelBatch` 生成とGPUカリング設定。
+            - `SkeletonDebugRendererComponent`: `OnAwake()` でボーン八面体メッシュ・軸描画バッチを生成・初期化。
+            - `SplineComponent`: `OnAwake()` でデバッグ描画バッチ初期化と距離テーブル構築。
+            - `VirtualEntityManagerComponent`: `OnAwake()` で同一オブジェクトの `ModelBatchRendererComponent` を取得・設定。
+            - `EffectMaskComponent`: `OnAwake()` で自メッシュレンダラー取得、`OnSpawned()` で `PostProcessManager` キャッシュに責務分離。
+            - `TargetFollowComponent`: `Start()` でターゲットTransformを事前解決し、動的検索コストを削減。
+            - `ScreenEffectComponent`: `OnDestroy()` を実装し、オブジェクト破棄時のアクティブポストプロセス解除を保証。
+            - `AudioSourceComponent`: `OnSpawned()` での初期化保証と、`OnDisable()` / `OnDestroy()` での停止（`Stop()`）処理を統合。
+            - `GlobalPostProcessComponent`: `OnDisable()` / `OnDestroy()` でマネージャー側のエフェクトスタックを確実にリセット（`Reset()`）。
+            - `GameObject`:
+                - `SetIsActive()`: 子オブジェクト（`children_`）へアクティブ状態を再帰伝播し、パーツや付属コライダーのゴースト化を防止。
+                - `Destroy()`: アクティブ状態のまま破棄される場合の「`OnDisable()` ➔ `OnDestroy()`」順序を厳格化。
+                - `RemoveComponent()`: 削除前に `OnDisable()` および `OnDestroy()` を明示的に発行し、マネージャーからの登録解除漏れ（ダングリング参照・当たり判定幽霊化）を根絶。
+                - `Awake()`: 各コンポーネントの `OnAwake()` 直後に未実行の `Initialize()` を呼び出し、一括Awake時の後方互換を完全保証。
+                - `AddChild()` / `InsertChild()`: 親の `isActive_` が false の場合に子を非アクティブ化し、親が Awake 状態の場合に子へ `Awake()` を確実に伝播。
+            - `BaseScene`:
+                - `ClearGameObjects()`: シーン破棄・クリア時に全オブジェクトの `Destroy()` を明示的に実行し、コンポーネントの確実なライフサイクル終了を保証。
+            - `SceneTransitionButtonComponent`: 同一オブジェクトのコンポーネント取得を `OnAwake()` に移行。
+            - `PlayerTargetingComponent`: `Start()` での `LockonMarkerUIComponent` 未取得時フォールバック解決を追加。
+
 ### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
 - [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**
     - [x] `AnimationModel` の解体と `AnimatedMeshObject` (描画特化)・`Animator` (ロジック特化) への分離。
@@ -307,3 +372,88 @@
 このため、メインスレッドがその最中に初めて表示する文字を描画しようとすると、`cacheMutex` の取得待ちで長時間ブロックされ、強烈なFPSスパイク（カクつき）が発生する。
 - **ロックのスコープ最小化**: `cacheMutex` は「キャッシュの検索」と「キャッシュへの登録」時のみロックし、SDFテクスチャの生成処理（`generateMSDF`）およびGPUアップロード（`ExecuteUploadCommands`）中はメインスレッドをブロックしないようにロック粒度を改修する。
 - メリット: ゲーム中に新しいUIテキストやダメージ数値などが初めて画面に描画される際のFPS低下を完全に防止できる。
+
+## 将来の拡張: IrufemiEngine (God Class) の解体と Subsystem パターンの導入
+現在 `IrufemiEngine.cpp` は 1,100行を超え、DirectXデバイス・ウィンドウ・入力・オーディオ・物理・レンダーターゲット・ポストプロセス・シーン管理など、エンジン内のあらゆる機能の生成・初期化・毎フレーム更新・破棄（`Finalize`）を直に手動で管理しており、典型的な **God Class（神クラス）** の状態となっている。
+
+特に `Finalize()` での破棄順序が手作業で直書きされているため、依存関係の順序が狂った際に「破棄済みCOMリソースやマネージャーへの不正アクセスによる終了時クラッシュ」「DirectXの未解放リーク警告」といった致命的な不具合を引き起こすリスクが高い。
+
+商用エンジン（Unreal Engine や Unity 等）の標準的なアーキテクチャに倣い、**Subsystem（サブシステム）パターン** を導入してエンジンコアをスリム化・自律分散化する。
+
+### 1. アーキテクチャ設計 (ISubsystem)
+すべてのエンジンサブシステムが実装すべき共通基底インターフェースを新設する。
+
+```cpp
+namespace Irufemi {
+
+enum class SubsystemPriority : int {
+    CoreWindow   = 0,   // ウィンドウ・OS基盤
+    GraphicsLow  = 100, // DirectX12 デバイス・CommandQueue・スワップチェーン
+    Resource     = 200, // テクスチャ・モデル・シェーダーマネージャー
+    Physics      = 300, // 物理演算・衝突判定
+    Audio        = 400, // サウンドエンジン
+    Input        = 500, // 入力管理
+    Scene        = 600, // シーン・GameObjectマネージャー
+    Editor       = 700  // エディタUI・ツール機能
+};
+
+class ISubsystem {
+public:
+    virtual ~ISubsystem() = default;
+
+    virtual SubsystemPriority GetPriority() const = 0;
+    virtual const char* GetName() const = 0;
+
+    virtual void Initialize() = 0;
+    virtual void Update(float deltaTime) {}
+    virtual void Finalize() = 0;
+};
+
+} // namespace Irufemi
+```
+
+### 2. IrufemiEngine 側のライフサイクル委譲
+`IrufemiEngine` 側は各マネージャーの初期化・破棄ロジックを直書きするのを廃止し、サブシステムのコンテナで統一管理する。
+
+- **初期化 (`Initialize`)**:
+  - 各サブシステムを Priority 順（昇順）にソートして自動初期化。
+- **更新 (`Update`)**:
+  - 毎フレーム、登録されたサブシステムの `Update(deltaTime)` を順次実行。
+- **終了 (`Finalize`)**:
+  - **初期化と完全に逆順（Priority 降順）** で自動的に `Finalize()` を呼び出し破棄。
+  - これにより、「DirectXデバイスが破棄された後にテクスチャが解放されようとしてクラッシュする」といった破棄順序の逆転バグが構造的に 100% 発生しなくなる。
+
+```cpp
+class IrufemiEngine {
+public:
+    template <typename T, typename... Args>
+    T* RegisterSubsystem(Args&&... args) {
+        auto sub = std::make_unique<T>(std::forward<Args>(args)...);
+        T* ptr = sub.get();
+        subsystems_.push_back(std::move(sub));
+        return ptr;
+    }
+
+    template <typename T>
+    T* GetSubsystem() const {
+        for (const auto& sub : subsystems_) {
+            if (auto casted = dynamic_cast<T*>(sub.get())) {
+                return casted;
+            }
+        }
+        return nullptr;
+    }
+
+private:
+    std::vector<std::unique_ptr<ISubsystem>> subsystems_;
+};
+```
+
+### 3. 段階的移行計画 (Phased Migration Plan)
+- **Phase 1 (独立サブシステムの先行分離)**:
+  - 依存が少なく独立性の高い `AudioSubsystem`, `InputSubsystem`, `PhysicsSubsystem` を先行して切り出し、`ISubsystem` の運用実績を作る。
+- **Phase 2 (グラフィックス・リソース層の分離)**:
+  - `GraphicsCoreSubsystem` (Device, SwapChain), `RenderPipelineSubsystem` (RenderGraph, PostProcess), `ResourceManagerSubsystem` を分離。
+- **Phase 3 (IrufemiEngine のファサード化)**:
+  - `IrufemiEngine.cpp` のコード量を 100〜200行程度にスリム化し、単なるブートストラップ（起動エントリーポイント）とサブシステムへのアクセス窓口（Facade パターン）へ純化する。
+

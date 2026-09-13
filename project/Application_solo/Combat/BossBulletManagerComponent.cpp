@@ -128,13 +128,18 @@ void BossBulletManagerComponent::Update() {
                         continue;
                     }
                     auto obj = col->GetGameObject();
-                    if (obj && targetPlayerID_ != 0 && obj->GetInstanceID() == targetPlayerID_) {
-                        if (auto healthComp = obj->GetComponent<PlayerHealthComponent>()) {
-                            if (!healthComp->IsInvincible()) {
-                                healthComp->TakeDamage(1);
-                                isHit = true;
-                                break;
-                            }
+                    if (!obj) {
+                        continue;
+                    }
+
+                    // 文字列比較は行わず、高速な数値ID比較およびPlayerHealthComponentの所持チェックで判定
+                    auto healthComp = obj->GetComponent<PlayerHealthComponent>();
+                    if (healthComp != nullptr) {
+                        const bool isTarget = (targetPlayerID_ == 0 || obj->GetInstanceID() == targetPlayerID_);
+                        if (isTarget && !healthComp->IsInvincible()) {
+                            healthComp->TakeDamage(1);
+                            isHit = true;
+                            break;
                         }
                     }
                 }

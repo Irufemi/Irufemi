@@ -9,6 +9,7 @@
 
 #ifdef USE_IMGUI
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
@@ -43,6 +44,10 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 
 #include "Core/Math/Math.h"
 #include "Renderer/Data/LightningParams.h"
+#include "Framework/Utility/CVar.h"
+#include "Framework/Scene/IScene.h"
+#include "Renderer/ScreenCaptureManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
 #include "Core/System/ThreadPool.h"
@@ -781,32 +786,36 @@ void DebugUI::SceneSelectorTab([[maybe_unused]] SceneManager* sm) {
     }
 
     if (ImGui::BeginTabItem("Scene Selector")) {
-        const auto names = sm->GetRegisteredKeys();
-        if (names.empty()) {
-            ImGui::EndTabItem();
-            return;
-        }
-
-        // 現在シーンのインデックス
-        int currentIdx = 0;
-        for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-            if (names[i] == sm->GetCurrent()) {
-                currentIdx = i;
-                break;
+        if (ImGui::BeginChild("SceneSelectorScroll", ImVec2(0, 0), false)) {
+            const auto names = sm->GetRegisteredKeys();
+            if (names.empty()) {
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+                return;
             }
-        }
 
-        if (ImGui::BeginCombo("Scene", names[currentIdx].c_str())) {
+            // 現在シーンのインデックス
+            int currentIdx = 0;
             for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-                bool selected = (i == currentIdx);
-                if (ImGui::Selectable(names[i].c_str(), selected)) {
-                    sm->Request(names[i]); // 次フレーム頭で切替
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
+                if (names[i] == sm->GetCurrent()) {
+                    currentIdx = i;
+                    break;
                 }
             }
-            ImGui::EndCombo();
+
+            if (ImGui::BeginCombo("Scene", names[currentIdx].c_str())) {
+                for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+                    bool selected = (i == currentIdx);
+                    if (ImGui::Selectable(names[i].c_str(), selected)) {
+                        sm->Request(names[i]); // 次フレーム頭で切替
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::EndChild();
         }
         ImGui::EndTabItem();
     }
@@ -858,244 +867,240 @@ void DebugUI::PostProcessTab([[maybe_unused]] IrufemiEngine* engine) {
     }
 
     if (ImGui::BeginTabItem("Post Processing")) {
-        auto* ppManager = engine->GetPostProcessManager();
-        if (!ppManager) {
-            ImGui::EndTabItem();
-            return;
-        }
+        if (ImGui::BeginChild("PostProcessScroll", ImVec2(0, 0), false)) {
+            auto* ppManager = engine->GetPostProcessManager();
+            if (!ppManager) {
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+                return;
+            }
 
-        const char* modeNames[] = {"None",
-                                   "Grayscale",
-                                   "Sepia",
-                                   "Vignette",
-                                   "Smoothing",
-                                   "GaussianFilter",
-                                   "DepthBasedOutline",
-                                   "RadialBlur",
-                                   "Dissolve",
-                                   "Noise",
-                                   "HSV",
-                                   "ToneMapping",
-                                   "Fade",
-                                   "Slide",
-                                   "Bloom",
-                                   "Glitch",
-                                   "DualKawaseBlur",
-                                   "LuminanceBasedOutline",
-                                   "Pixelation",
-                                   "Pointillism",
-                                   "Posterization",
-                                   "NightVision",
-                                   "Kaleidoscope",
-                                   "ChromaticAberration",
-                                   "DisplacementMap",
-                                   "DirectionalBlur",
-                                   "Halftone",
-                                   "DepthOfField",
-                                   "LightShafts"};
-        auto activeModes = ppManager->GetActiveModes();
+            const char* modeNames[] = {"None",
+                                       "Grayscale",
+                                       "Sepia",
+                                       "Vignette",
+                                       "Smoothing",
+                                       "GaussianFilter",
+                                       "DepthBasedOutline",
+                                       "RadialBlur",
+                                       "Dissolve",
+                                       "Noise",
+                                       "HSV",
+                                       "ToneMapping",
+                                       "Fade",
+                                       "Slide",
+                                       "Bloom",
+                                       "Glitch",
+                                       "DualKawaseBlur",
+                                       "LuminanceBasedOutline",
+                                       "Pixelation",
+                                       "Pointillism",
+                                       "Posterization",
+                                       "NightVision",
+                                       "Kaleidoscope",
+                                       "ChromaticAberration",
+                                       "DisplacementMap",
+                                       "DirectionalBlur",
+                                       "Halftone",
+                                       "DepthOfField",
+                                       "LightShafts"};
+            auto activeModes = ppManager->GetActiveModes();
 
-        if (ImGui::Button("Clear All Effects")) {
-            ppManager->ClearActiveModes();
-            activeModes.clear();
-        }
+            if (ImGui::Button("Clear All Effects")) {
+                ppManager->ClearActiveModes();
+                activeModes.clear();
+            }
 
-        ImGui::Separator();
-        ImGui::Text("Available Effects:");
+            ImGui::Separator();
+            ImGui::Text("Available Effects:");
 
-        // エフェクト選択
-        ImGui::PushID("AvailableEffects");
-        for (int i = 1; i < (int)IM_ARRAYSIZE(modeNames); ++i) { // None 以外を表示
-            PostProcessMode m = static_cast<PostProcessMode>(i);
-            bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
+            // エフェクト選択
+            ImGui::PushID("AvailableEffects");
+            for (int i = 1; i < (int)IM_ARRAYSIZE(modeNames); ++i) { // None 以外を表示
+                PostProcessMode m = static_cast<PostProcessMode>(i);
+                bool isEnabled = std::find(activeModes.begin(), activeModes.end(), m) != activeModes.end();
 
-            if (ImGui::Checkbox(modeNames[i], &isEnabled)) {
-                if (isEnabled) {
-                    ppManager->AddActiveMode(m);
-                } else {
-                    activeModes.erase(std::remove(activeModes.begin(), activeModes.end(), m), activeModes.end());
-                    ppManager->SetActiveModes(activeModes);
+                if (ImGui::Checkbox(modeNames[i], &isEnabled)) {
+                    if (isEnabled) {
+                        ppManager->AddActiveMode(m);
+                    } else {
+                        activeModes.erase(std::remove(activeModes.begin(), activeModes.end(), m), activeModes.end());
+                        ppManager->SetActiveModes(activeModes);
+                    }
                 }
             }
-        }
-        ImGui::PopID();
+            ImGui::PopID();
 
-        ImGui::Separator();
-        ImGui::Text("Active Stack (Draw Order):");
-        if (activeModes.empty()) {
-            ImGui::TextDisabled("(No effects active - Clean Copy)");
-        } else {
-            for (size_t i = 0; i < activeModes.size(); ++i) {
-                ImGui::BulletText("%d: %s", static_cast<int>(i + 1), modeNames[static_cast<int>(activeModes[i])]);
-            }
-        }
-
-        ImGui::Separator();
-        ImGui::Text("Parameters:");
-
-        // 有効な全てのエフェクトのパラメータを表示
-        ImGui::PushID("Parameters");
-        for (auto mode : activeModes) {
-            if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
-                if (mode == PostProcessMode::ChromaticAberration) {
-                    auto& params = ppManager->GetChromaticAberrationParams();
-                    ImGui::DragFloat("Intensity", &params.intensity, 0.001f, 0.0f, 1.0f);
-                } else if (mode == PostProcessMode::DisplacementMap) {
-                    auto& params = ppManager->GetDisplacementMapParams();
-                    ImGui::DragFloat("Intensity", &params.intensity, 0.001f, 0.0f, 1.0f);
-                    ImGui::DragFloat("Time Scale", &params.timeScale, 0.01f, 0.0f, 10.0f);
-                } else if (mode == PostProcessMode::DirectionalBlur) {
-                    auto& params = ppManager->GetDirectionalBlurParams();
-                    ImGui::DragFloat2("Direction", &params.direction.x, 0.01f, -1.0f, 1.0f);
-                    ImGui::DragFloat("Strength", &params.strength, 0.001f, 0.0f, 1.0f);
-                    ImGui::SliderInt("Samples", &params.samples, 2, 32);
-                } else if (mode == PostProcessMode::Halftone) {
-                    auto& params = ppManager->GetHalftoneParams();
-                    ImGui::DragFloat("Scale", &params.scale, 1.0f, 10.0f, 500.0f);
-                    // ImGui::SliderAngle handles radians automatically
-                    float angleDeg = params.angle * (180.0f / 3.14159265f);
-                    if (ImGui::SliderFloat("Angle", &angleDeg, -180.0f, 180.0f)) {
-                        params.angle = angleDeg * (3.14159265f / 180.0f);
-                    }
-                    ImGui::DragFloat("Blend", &params.blend, 0.01f, 0.0f, 1.0f);
-                } else if (mode == PostProcessMode::DepthOfField) {
-                    auto& params = ppManager->GetDepthOfFieldParams();
-                    ImGui::DragFloat("Focus Distance", &params.focusDistance, 0.1f, 0.0f, 1000.0f);
-                    ImGui::DragFloat("Focus Range", &params.focusRange, 0.1f, 0.1f, 500.0f);
-                    ImGui::DragFloat("Blur Size", &params.blurSize, 0.1f, 0.0f, 50.0f);
-                    ImGui::SliderInt("Samples", &params.samples, 4, 64);
-                } else if (mode == PostProcessMode::LightShafts) {
-                    auto& params = ppManager->GetLightShaftsParams();
-                    ImGui::DragFloat2("Light Screen Pos", &params.lightScreenPos.x, 0.01f, -1.0f, 2.0f);
-                    ImGui::DragFloat("Density", &params.density, 0.01f, 0.0f, 5.0f);
-                    ImGui::DragFloat("Decay", &params.decay, 0.001f, 0.8f, 1.0f);
-                    ImGui::DragFloat("Weight", &params.weight, 0.01f, 0.0f, 2.0f);
-                    ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 5.0f);
-                    ImGui::SliderInt("Samples", &params.samples, 8, 128);
-                } else if (mode == PostProcessMode::Kaleidoscope) {
-                    auto& params = ppManager->GetKaleidoscopeParams();
-                    ImGui::DragFloat("Segments", &params.segments, 0.1f, 1.0f, 32.0f);
-                } else if (mode == PostProcessMode::NightVision) {
-                    auto& params = ppManager->GetNightVisionParams();
-                    ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 2.0f);
-                } else if (mode == PostProcessMode::Vignette) {
-                    auto& params = ppManager->GetVignetteParams();
-                    ImGui::DragFloat("Vignette Radius", &params.radius, 0.01f, 0.0f, 2.0f);
-                    ImGui::DragFloat("Vignette Softness", &params.softness, 0.01f, 0.0f, 2.0f);
-                } else if (mode == PostProcessMode::Smoothing) {
-                    auto& params = ppManager->GetSmoothingParams();
-                    if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                        if (params.kernelSize < 1) {
-                            params.kernelSize = 1;
-                        }
-                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                            params.kernelSize += 1;
-                        }
-                    }
-                } else if (mode == PostProcessMode::GaussianFilter) {
-                    auto& params = ppManager->GetGaussianParams();
-                    ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
-                    if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
-                        if (params.kernelSize < 1) {
-                            params.kernelSize = 1;
-                        }
-                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                            params.kernelSize += 1;
-                        }
-                    }
-                } else if (mode == PostProcessMode::DepthBasedOutline) {
-                    auto& params = ppManager->GetOutlineParams();
-                    ImGui::DragFloat("Outline Intensity", &params.intensity, 0.1f, 0.0f, 20.0f);
-                } else if (mode == PostProcessMode::RadialBlur) {
-                    auto& params = ppManager->GetRadialBlurParams();
-                    ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
-                    ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
-                    ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
-                } else if (mode == PostProcessMode::Dissolve) {
-                    auto& params = ppManager->GetDissolveParams();
-                    ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
-                    ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
-                    ImGui::ColorEdit4("Background Color", &params.backgroundColor.x);
-                    const char* noiseTypes[] = {"Noise 0", "Noise 1"};
-                    ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes,
-                                 IM_ARRAYSIZE(noiseTypes));
-                } else if (mode == PostProcessMode::Noise) {
-                    auto& params = ppManager->GetNoiseParams();
-                    ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
-                } else if (mode == PostProcessMode::HSV) {
-                    auto& params = ppManager->GetHSVParams();
-                    ImGui::DragFloat("HueOffset", &params.hue, 0.001f, -1.0f, 1.0f);
-                    ImGui::DragFloat("SaturationOffset", &params.saturation, 0.001f, -1.0f, 1.0f);
-                    ImGui::DragFloat("ValueOffset", &params.value, 0.001f, -1.0f, 1.0f);
-                } else if (mode == PostProcessMode::ToneMapping) {
-                    auto& params = ppManager->GetToneMappingParams();
-                    ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 10.0f);
-                } else if (mode == PostProcessMode::Bloom) {
-                    auto& params = ppManager->GetBloomParams();
-                    ImGui::DragFloat("Threshold", &params.threshold, 0.01f, 0.0f, 5.0f);
-                    ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
-                    ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
-                    if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 51)) {
-                        if (params.kernelSize < 1) {
-                            params.kernelSize = 1;
-                        }
-                        if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
-                            params.kernelSize += 1;
-                        }
-                    }
-                } else if (mode == PostProcessMode::Glitch) {
-                    auto& params = ppManager->GetGlitchParams();
-                    ImGui::SliderFloat("Glitch Intensity", &params.intensity, 0.0f, 5.0f);
-                } else if (mode == PostProcessMode::DualKawaseBlur) {
-                    auto& params = ppManager->GetDualKawaseBlurParams();
-                    ImGui::DragFloat("Blur Radius Offset", &params.blurRadius, 0.01f, 0.0f, 5.0f);
-                    ImGui::SliderInt("Iteration Count", &params.iterationCount, 1,
-                                     PostProcessManager::kMaxKawaseIterations);
-                    ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
-                } else if (mode == PostProcessMode::LuminanceBasedOutline) {
-                    auto& params = ppManager->GetLuminanceOutlineParams();
-                    ImGui::DragFloat("Threshold", &params.threshold, 0.01f, 0.0f, 1.0f);
-                    ImGui::ColorEdit4("Outline Color", &params.outlineColor.x);
-                } else if (mode == PostProcessMode::Pixelation) {
-                    auto& params = ppManager->GetPixelationParams();
-                    ImGui::DragFloat("Pixel Size", &params.pixelSize, 0.1f, 1.0f, 64.0f);
-                } else if (mode == PostProcessMode::Pointillism) {
-                    auto& params = ppManager->GetPointillismParams();
-                    ImGui::DragFloat("Stroke Size", &params.strokeSize, 0.1f, 1.0f, 50.0f);
-                    ImGui::DragFloat("Color Steps", &params.colorSteps, 0.1f, 2.0f, 32.0f);
-                } else if (mode == PostProcessMode::Posterization) {
-                    auto& params = ppManager->GetPosterizationParams();
-                    ImGui::DragFloat("Color Steps", &params.colorSteps, 0.1f, 2.0f, 32.0f);
+            ImGui::Separator();
+            ImGui::Text("Active Stack (Draw Order):");
+            if (activeModes.empty()) {
+                ImGui::TextDisabled("(No effects active - Clean Copy)");
+            } else {
+                for (size_t i = 0; i < activeModes.size(); ++i) {
+                    ImGui::BulletText("%d: %s", static_cast<int>(i + 1), modeNames[static_cast<int>(activeModes[i])]);
                 }
-                ImGui::TreePop();
             }
+
+            ImGui::Separator();
+            ImGui::Text("Parameters:");
+
+            // 有効な全てのエフェクトのパラメータを表示
+            ImGui::PushID("Parameters");
+            for (auto mode : activeModes) {
+                if (ImGui::TreeNode(modeNames[static_cast<int>(mode)])) {
+                    if (mode == PostProcessMode::ChromaticAberration) {
+                        auto& params = ppManager->GetChromaticAberrationParams();
+                        ImGui::DragFloat("Intensity", &params.intensity, 0.001f, 0.0f, 1.0f);
+                    } else if (mode == PostProcessMode::DisplacementMap) {
+                        auto& params = ppManager->GetDisplacementMapParams();
+                        ImGui::DragFloat("Intensity", &params.intensity, 0.001f, 0.0f, 1.0f);
+                        ImGui::DragFloat("Time Scale", &params.timeScale, 0.01f, 0.0f, 10.0f);
+                    } else if (mode == PostProcessMode::DirectionalBlur) {
+                        auto& params = ppManager->GetDirectionalBlurParams();
+                        ImGui::DragFloat2("Direction", &params.direction.x, 0.01f, -1.0f, 1.0f);
+                        ImGui::DragFloat("Strength", &params.strength, 0.001f, 0.0f, 1.0f);
+                        ImGui::SliderInt("Samples", &params.samples, 2, 32);
+                    } else if (mode == PostProcessMode::Halftone) {
+                        auto& params = ppManager->GetHalftoneParams();
+                        ImGui::DragFloat("Scale", &params.scale, 1.0f, 10.0f, 500.0f);
+                        // ImGui::SliderAngle handles radians automatically
+                        float angleDeg = params.angle * (180.0f / 3.14159265f);
+                        if (ImGui::SliderFloat("Angle", &angleDeg, -180.0f, 180.0f)) {
+                            params.angle = angleDeg * (3.14159265f / 180.0f);
+                        }
+                        ImGui::DragFloat("Blend", &params.blend, 0.01f, 0.0f, 1.0f);
+                    } else if (mode == PostProcessMode::DepthOfField) {
+                        auto& params = ppManager->GetDepthOfFieldParams();
+                        ImGui::DragFloat("Focus Distance", &params.focusDistance, 0.1f, 0.0f, 1000.0f);
+                        ImGui::DragFloat("Focus Range", &params.focusRange, 0.1f, 0.1f, 500.0f);
+                        ImGui::DragFloat("Blur Size", &params.blurSize, 0.1f, 0.0f, 50.0f);
+                        ImGui::SliderInt("Samples", &params.samples, 4, 64);
+                    } else if (mode == PostProcessMode::LightShafts) {
+                        auto& params = ppManager->GetLightShaftsParams();
+                        ImGui::DragFloat2("Light Screen Pos", &params.lightScreenPos.x, 0.01f, -1.0f, 2.0f);
+                        ImGui::DragFloat("Density", &params.density, 0.01f, 0.0f, 5.0f);
+                        ImGui::DragFloat("Decay", &params.decay, 0.001f, 0.8f, 1.0f);
+                        ImGui::DragFloat("Weight", &params.weight, 0.01f, 0.0f, 2.0f);
+                        ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 5.0f);
+                        ImGui::SliderInt("Samples", &params.samples, 8, 128);
+                    } else if (mode == PostProcessMode::Kaleidoscope) {
+                        auto& params = ppManager->GetKaleidoscopeParams();
+                        ImGui::DragFloat("Segments", &params.segments, 0.1f, 1.0f, 32.0f);
+                    } else if (mode == PostProcessMode::NightVision) {
+                        auto& params = ppManager->GetNightVisionParams();
+                        ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 2.0f);
+                    } else if (mode == PostProcessMode::Vignette) {
+                        auto& params = ppManager->GetVignetteParams();
+                        ImGui::DragFloat("Vignette Radius", &params.radius, 0.01f, 0.0f, 2.0f);
+                        ImGui::DragFloat("Vignette Softness", &params.softness, 0.01f, 0.0f, 2.0f);
+                    } else if (mode == PostProcessMode::Smoothing) {
+                        auto& params = ppManager->GetSmoothingParams();
+                        if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                            if (params.kernelSize < 1) {
+                                params.kernelSize = 1;
+                            }
+                            if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                                params.kernelSize += 1;
+                            }
+                        }
+                    } else if (mode == PostProcessMode::GaussianFilter) {
+                        auto& params = ppManager->GetGaussianParams();
+                        ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+                        if (ImGui::SliderInt("Kernel Size", reinterpret_cast<int*>(&params.kernelSize), 1, 31)) {
+                            if (params.kernelSize < 1) {
+                                params.kernelSize = 1;
+                            }
+                            if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                                params.kernelSize += 1;
+                            }
+                        }
+                    } else if (mode == PostProcessMode::DepthBasedOutline) {
+                        auto& params = ppManager->GetOutlineParams();
+                        ImGui::DragFloat("Outline Intensity", &params.intensity, 0.1f, 0.0f, 20.0f);
+                    } else if (mode == PostProcessMode::RadialBlur) {
+                        auto& params = ppManager->GetRadialBlurParams();
+                        ImGui::DragFloat2("Center", &params.center.x, 0.01f, 0.0f, 1.0f);
+                        ImGui::DragFloat("Blur Width", &params.blurWidth, 0.001f, 0.0f, 0.1f);
+                        ImGui::SliderInt("Samples", reinterpret_cast<int*>(&params.numSamples), 1, 100);
+                    } else if (mode == PostProcessMode::Dissolve) {
+                        auto& params = ppManager->GetDissolveParams();
+                        ImGui::SliderFloat("Threshold", &params.threshold, 0.0f, 1.0f);
+                        ImGui::SliderFloat("Edge Range", &params.edgeRange, 0.0f, 0.2f);
+                        ImGui::ColorEdit4("Edge Color", &params.edgeColor.x);
+                        ImGui::ColorEdit4("Background Color", &params.backgroundColor.x);
+                        const char* noiseTypes[] = {"Noise 0", "Noise 1"};
+                        ImGui::Combo("Noise Type", reinterpret_cast<int*>(&params.noiseType), noiseTypes,
+                                     IM_ARRAYSIZE(noiseTypes));
+                    } else if (mode == PostProcessMode::Noise) {
+                        auto& params = ppManager->GetNoiseParams();
+                        ImGui::SliderFloat("Noise Intensity", &params.intensity, 0.0f, 1.0f);
+                    } else if (mode == PostProcessMode::HSV) {
+                        auto& params = ppManager->GetHSVParams();
+                        ImGui::DragFloat("HueOffset", &params.hue, 0.001f, -1.0f, 1.0f);
+                        ImGui::DragFloat("SaturationOffset", &params.saturation, 0.001f, -1.0f, 1.0f);
+                        ImGui::DragFloat("ValueOffset", &params.value, 0.001f, -1.0f, 1.0f);
+                    } else if (mode == PostProcessMode::ToneMapping) {
+                        auto& params = ppManager->GetToneMappingParams();
+                        ImGui::DragFloat("Exposure", &params.exposure, 0.01f, 0.0f, 10.0f);
+                    } else if (mode == PostProcessMode::Bloom) {
+                        auto& params = ppManager->GetBloomParams();
+                        ImGui::DragFloat("Threshold", &params.threshold, 0.01f, 0.0f, 5.0f);
+                        ImGui::DragFloat("Sigma", &params.sigma, 0.01f, 0.01f, 10.0f);
+                        ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
+                        if (ImGui::SliderInt("Kernel Size", &params.kernelSize, 1, 51)) {
+                            if (params.kernelSize < 1) {
+                                params.kernelSize = 1;
+                            }
+                            if (params.kernelSize > 1 && params.kernelSize % 2 == 0) {
+                                params.kernelSize += 1;
+                            }
+                        }
+                    } else if (mode == PostProcessMode::Glitch) {
+                        auto& params = ppManager->GetGlitchParams();
+                        ImGui::SliderFloat("Glitch Intensity", &params.intensity, 0.0f, 5.0f);
+                    } else if (mode == PostProcessMode::DualKawaseBlur) {
+                        auto& params = ppManager->GetDualKawaseBlurParams();
+                        ImGui::DragFloat("Blur Radius Offset", &params.blurRadius, 0.01f, 0.0f, 5.0f);
+                        ImGui::SliderInt("Iteration Count", &params.iterationCount, 1,
+                                         PostProcessManager::kMaxKawaseIterations);
+                        ImGui::DragFloat("Intensity", &params.intensity, 0.01f, 0.0f, 10.0f);
+                    } else if (mode == PostProcessMode::LuminanceBasedOutline) {
+                        auto& params = ppManager->GetLuminanceOutlineParams();
+                        ImGui::DragFloat("Threshold", &params.threshold, 0.01f, 0.0f, 1.0f);
+                        ImGui::ColorEdit4("Outline Color", &params.outlineColor.x);
+                    } else if (mode == PostProcessMode::Pixelation) {
+                        auto& params = ppManager->GetPixelationParams();
+                        ImGui::DragFloat("Pixel Size", &params.pixelSize, 0.1f, 1.0f, 64.0f);
+                    } else if (mode == PostProcessMode::Pointillism) {
+                        auto& params = ppManager->GetPointillismParams();
+                        ImGui::DragFloat("Stroke Size", &params.strokeSize, 0.1f, 1.0f, 50.0f);
+                        ImGui::DragFloat("Color Steps", &params.colorSteps, 0.1f, 2.0f, 32.0f);
+                    } else if (mode == PostProcessMode::Posterization) {
+                        auto& params = ppManager->GetPosterizationParams();
+                        ImGui::DragFloat("Color Steps", &params.colorSteps, 0.1f, 2.0f, 32.0f);
+                    }
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::PopID();
+            ImGui::EndChild();
         }
-        ImGui::PopID();
         ImGui::EndTabItem();
     }
 #endif // USE_IMGUI
 }
 
-bool DebugUI::BeginEngineDebugWindow() {
+bool DebugUI::BeginEngineDebugWindow(bool* pOpen) {
 #ifdef USE_IMGUI
-    if (!ImGui::Begin("Engine")) {
-        ImGui::End();
-        return false;
-    }
-    if (!ImGui::BeginTabBar("EngineTabs")) {
-        ImGui::End();
-        return false;
-    }
-    return true;
+    return ImGui::Begin("Engine Debugger", pOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 #else
+    (void)pOpen;
     return false;
 #endif
 }
 
 void DebugUI::EndEngineDebugWindow() {
 #ifdef USE_IMGUI
-    ImGui::EndTabBar();
     ImGui::End();
 #endif
 }
@@ -1148,19 +1153,112 @@ void DebugUI::ScreenCaptureTab(ScreenCaptureManager* captureManager) {
     }
 
     if (ImGui::BeginTabItem("Screen Capture")) {
-        if (ImGui::Button("Capture (Scene Only)")) {
-            captureManager->RequestCapture(GenerateScreenshotPath(L"scene"), ScreenCaptureType::SceneOnly);
-        }
-        if (ImGui::Button("Capture (With UI)")) {
-            captureManager->RequestCapture(GenerateScreenshotPath(L"ui"), ScreenCaptureType::WithUI);
-        }
-        if (ImGui::Button("Capture (Alpha)")) {
-            captureManager->RequestCaptureWithAlpha(GenerateScreenshotPath(L"alpha"));
-        }
-        if (ImGui::Button("Capture (Depth)")) {
-            captureManager->RequestCaptureDepth(GenerateScreenshotPath(L"depth"));
+        if (ImGui::BeginChild("ScreenCaptureScroll", ImVec2(0, 0), false)) {
+            if (ImGui::Button("Capture (Scene Only)")) {
+                captureManager->RequestCapture(GenerateScreenshotPath(L"scene"), ScreenCaptureType::SceneOnly);
+            }
+            if (ImGui::Button("Capture (With UI)")) {
+                captureManager->RequestCapture(GenerateScreenshotPath(L"ui"), ScreenCaptureType::WithUI);
+            }
+            if (ImGui::Button("Capture (Alpha)")) {
+                captureManager->RequestCaptureWithAlpha(GenerateScreenshotPath(L"alpha"));
+            }
+            if (ImGui::Button("Capture (Depth)")) {
+                captureManager->RequestCaptureDepth(GenerateScreenshotPath(L"depth"));
+            }
+            ImGui::EndChild();
         }
         ImGui::EndTabItem();
+    }
+#endif
+}
+
+void DebugUI::DrawCommonEngineTabs([[maybe_unused]] IrufemiEngine* engine) {
+#ifdef USE_IMGUI
+    if (!engine) {
+        return;
+    }
+
+    if (ImGui::BeginTabBar("EngineCommonTabs", ImGuiTabBarFlags_Reorderable)) {
+        // --- 一線級エンジン基準: タブバー見出し領域の上でのみ 1 ノッチずつ確実にタブを切り替える ---
+        ImGuiTabBar* tabBar = ImGui::GetCurrentTabBar();
+        if (tabBar && ImGui::IsMouseHoveringRect(tabBar->BarRect.Min, tabBar->BarRect.Max)) {
+            float wheel = ImGui::GetIO().MouseWheel;
+            if (wheel != 0.0f) {
+                // 現在アクティブなタブのインデックスを探す
+                int currentIdx = -1;
+                for (int i = 0; i < tabBar->Tabs.Size; ++i) {
+                    if (tabBar->Tabs[i].ID == tabBar->SelectedTabId) {
+                        currentIdx = i;
+                        break;
+                    }
+                }
+                if (currentIdx != -1) {
+                    // 下ホイールで次(+1)、上ホイールで前(-1)へ1個だけ移動（端で安全に停止）
+                    int nextIdx = currentIdx + (wheel < 0.0f ? 1 : -1);
+                    if (nextIdx >= 0 && nextIdx < tabBar->Tabs.Size) {
+                        ImGui::TabBarQueueFocus(tabBar, &tabBar->Tabs[nextIdx]);
+                    }
+                }
+            }
+        }
+
+        // --- 各タブの描画（クリック操作を妨害しない標準仕様） ---
+        // 1. Scene Selector タブ (関数内で BeginTabItem("Scene Selector") を実行)
+        if (engine->GetSceneManager()) {
+            SceneSelectorTab(engine->GetSceneManager());
+        }
+
+        // 2. Post Processing タブ (関数内で BeginTabItem("Post Processing") を実行)
+        PostProcessTab(engine);
+
+        // 3. Camera & Lights / Scene Debug タブ
+        if (ImGui::BeginTabItem("Scene")) {
+            if (ImGui::BeginChild("SceneScroll", ImVec2(0, 0), false)) {
+                if (engine->GetSceneManager()) {
+                    if (auto* currentScene = engine->GetSceneManager()->GetCurrentScene()) {
+                        currentScene->DrawDebugTabItem();
+                    } else {
+                        ImGui::TextDisabled("No active scene.");
+                    }
+                }
+                ImGui::EndChild();
+            }
+            ImGui::EndTabItem();
+        }
+
+        // 4. Display / System タブ
+        if (ImGui::BeginTabItem("Display")) {
+            if (ImGui::BeginChild("DisplayScroll", ImVec2(0, 0), false)) {
+                int displayModeInt = Irufemi::CVarSystem::GetInt("r.DisplayMode");
+                if (ImGui::Combo("Mode", &displayModeInt, "Windowed\0Borderless\0")) {
+                    Irufemi::CVarSystem::SetInt("r.DisplayMode", displayModeInt);
+                }
+                bool vSync = Irufemi::CVarSystem::GetBool("r.VSync");
+                if (ImGui::Checkbox("VSync", &vSync)) {
+                    Irufemi::CVarSystem::SetBool("r.VSync", vSync);
+                }
+                if (engine->GetDirectXCommon() && engine->GetDirectXCommon()->IsTearingSupported()) {
+                    ImGui::TextColored(ImVec4(0, 1, 0, 1), "Tearing (VRR) is Supported.");
+                } else {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "Tearing (VRR) is NOT Supported.");
+                }
+                ImGui::EndChild();
+            }
+            ImGui::EndTabItem();
+        }
+
+        // 5. Screen Capture タブ (関数内で BeginTabItem("Screen Capture") を実行)
+        if (engine->GetScreenCaptureManager()) {
+            ScreenCaptureTab(engine->GetScreenCaptureManager());
+        }
+
+        // 6. GPU Particle タブ (関数内で BeginTabItem("GPU Particle Manager") を実行)
+        if (engine->GetGPUParticleManager()) {
+            engine->GetGPUParticleManager()->Debug();
+        }
+
+        ImGui::EndTabBar();
     }
 #endif
 }

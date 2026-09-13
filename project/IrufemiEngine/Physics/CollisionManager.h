@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <set>
+#include <unordered_set>
 #include <memory>
 #include <string>
 #include <nlohmann/json.hpp>
@@ -163,7 +163,18 @@ private:
     std::vector<DebugRayInfo> debugRays_;
 
     // 前フレームの衝突ペアを保持（Enter / Stay / Exit 用）
-    std::set<std::pair<ColliderComponent*, ColliderComponent*>> previousCollisions_;
+    struct ColliderPairHash {
+        size_t operator()(const std::pair<ColliderComponent*, ColliderComponent*>& pair) const noexcept {
+            uint64_t a = reinterpret_cast<uintptr_t>(pair.first);
+            uint64_t b = reinterpret_cast<uintptr_t>(pair.second);
+            // 64-bit 整数ミックスハッシュ (SplitMix64)
+            uint64_t h = a ^ (b + 0x517cc1b727220a95ULL + (a << 6) + (a >> 2));
+            return static_cast<size_t>(h);
+        }
+    };
+    using CollisionPairSet = std::unordered_set<std::pair<ColliderComponent*, ColliderComponent*>, ColliderPairHash>;
+
+    CollisionPairSet previousCollisions_;
 
     Irufemi::DynamicBVH dynamicBVH_;
 };

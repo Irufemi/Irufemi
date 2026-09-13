@@ -19,6 +19,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <atomic>
 #include "Renderer/Compute/IComputeTask.h"
 #include "Renderer/Data/RenderPackets.h"
 
@@ -52,11 +53,59 @@ struct GpuMaterial;
  *          ライト情報の管理や、RenderTexture を用いたポストプロセス実行の制御も行います。
  */
 class DrawManager {
-private:
 public:
+    /**
+     * @brief スレッドごとのローカル描画キュー構造体
+     * @details 各スレッドが独立してキューイングを行い、描画実行前にメインキューへ一括マージされます。
+     */
+    struct LocalRenderQueues {
+        std::vector<RenderPackets::Standard3DPacket> standard3DQueue;
+        std::vector<RenderPackets::Standard3DPacket> transparent3DQueue;
+        std::vector<RenderPackets::Standard3DPacket> ui3DQueue;
+        std::vector<RenderPackets::Standard3DPacket> selectionMaskQueue;
+        std::vector<RenderPackets::SpritePacket> selectionMaskQueue2D;
+        std::vector<RenderPackets::SpritePacket> spriteQueue;
+        std::vector<RenderPackets::SpriteBatchPacket> spriteBatchQueue;
+        std::vector<RenderPackets::LinePacket> lineQueue;
+        std::vector<RenderPackets::GPUParticlePacket> gpuParticleQueue;
+        std::vector<RenderPackets::VoxelParticlePacket> voxelParticleQueue;
+        std::vector<RenderPackets::SkyboxPacket> skyboxQueue;
+        std::vector<RenderPackets::PrimitiveBatchPacket> primitiveBatchQueue;
+        std::vector<RenderPackets::Primitive2DBatchPacket> primitive2DBatchQueue;
+        std::vector<RenderPackets::ModelBatchPacket> modelBatchQueue;
+        std::vector<RenderPackets::DebugPrimitivePacket> debugPrimitiveQueue;
+        std::vector<std::function<void()>> postRenderQueue;
+        std::vector<RenderPackets::SpritePacket> topMostSpriteQueue;
+        std::vector<RenderPackets::SpriteBatchPacket> topMostSpriteBatchQueue;
+        std::vector<RenderPackets::SpritePacket> textQueue;
+        std::vector<RenderPackets::SpritePacket> topMostTextQueue;
+
+        void Clear() {
+            standard3DQueue.clear();
+            transparent3DQueue.clear();
+            ui3DQueue.clear();
+            selectionMaskQueue.clear();
+            selectionMaskQueue2D.clear();
+            spriteQueue.clear();
+            spriteBatchQueue.clear();
+            lineQueue.clear();
+            gpuParticleQueue.clear();
+            voxelParticleQueue.clear();
+            skyboxQueue.clear();
+            primitiveBatchQueue.clear();
+            primitive2DBatchQueue.clear();
+            modelBatchQueue.clear();
+            debugPrimitiveQueue.clear();
+            postRenderQueue.clear();
+            topMostSpriteQueue.clear();
+            topMostSpriteBatchQueue.clear();
+            textQueue.clear();
+            topMostTextQueue.clear();
+        }
+    };
+
 private:
-    // --- Render Queues ---
-    std::mutex queueMutex_;
+    // --- Render Queues (メインスレッド統合用キュー) ---
     std::vector<RenderPackets::Standard3DPacket> standard3DQueue_;
     std::vector<RenderPackets::Standard3DPacket> transparent3DQueue_; // 半透明・エフェクト用キュー
     std::vector<RenderPackets::Standard3DPacket> ui3DQueue_;
@@ -80,6 +129,11 @@ private:
     std::vector<RenderPackets::SpriteBatchPacket> topMostSpriteBatchQueue_;
     std::vector<RenderPackets::SpritePacket> textQueue_;
     std::vector<RenderPackets::SpritePacket> topMostTextQueue_;
+
+    // --- スレッドローカルキュー管理 ---
+    std::mutex registryMutex_; ///< スレッドローカルキュー登録用ミューテックス
+    std::vector<LocalRenderQueues*> registeredQueues_; ///< 登録された全スレッドローカルキューのポインタ一覧
+    std::shared_ptr<std::atomic<bool>> isAlive_; ///< DrawManager生存フラグ（スレッド終了時の安全判定）
 
     // レンダーグラフ
     std::unique_ptr<class RenderGraph> renderGraph_;
@@ -369,10 +423,29 @@ public: // メンバ関数
      */
     void ExecuteComputePasses();
 
+    /**
+     * @brief 現在のスレッドに対応するローカル描画キューを取得する
+     * @return スレッドローカルな LocalRenderQueues への参照
+     */
+    LocalRenderQueues& GetLocalQueues();
+
+    /**
+     * @brief スレッドローカルキューをDrawManagerに登録する
+     */
+    void RegisterThreadQueues(LocalRenderQueues* queues);
+
+    /**
+     * @brief スレッドローカルキューの登録を解除する
+     */
+    void UnregisterThreadQueues(LocalRenderQueues* queues);
+
+    /**
+     * @brief 全スレッドのローカルキューをメインキューへ一括マージする
+     */
+    void MergeThreadLocalQueues();
+
     // カスタム描画コールバック用キュー
-    void SubmitPostRender(std::function<void()> drawFunc) {
-        postRenderQueue_.push_back(drawFunc);
-    }
+    void SubmitPostRender(std::function<void()> drawFunc);
     ///@}
 
     /** @name GPU Culling */

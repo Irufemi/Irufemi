@@ -206,6 +206,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Panels\ProjectBrowserPanel.cpp" />
     <ClCompile Include="Panels\SceneViewPanel.cpp" />
     <ClCompile Include="Panels\ConsolePanel.cpp" />
+    <ClCompile Include="Panels\EngineSettingsPanel.cpp" />
 
     <ClCompile Include="UI\ComponentUIHelpers.cpp" />
     <ClCompile Include="Inspectors\Rendering\SkinnedMeshRendererComponentEditor.cpp" />
@@ -239,6 +240,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Panels\ProjectBrowserPanel.h" />
     <ClInclude Include="Panels\SceneViewPanel.h" />
     <ClInclude Include="Panels\ConsolePanel.h" />
+    <ClInclude Include="Panels\EngineSettingsPanel.h" />
 
     <ClInclude Include="UI\ComponentUIHelpers.h" />
     <ClInclude Include="Inspectors\Rendering\SkinnedMeshRendererComponentEditor.h" />

@@ -422,6 +422,25 @@ Quaternion ToQuaternionFromEuler(Vector3 euler);
  */
 Quaternion ToQuaternionFromMatrix(const Matrix4x4& m);
 
+/**
+ * @brief スケール付きアフィン変換行列から、各軸のスケール符号ヒントを考慮して純粋な回転クォータニオンを安全に抽出する
+ * @param[in] mat 変換行列
+ * @param[in] scaleSign 各軸のスケール符号（x, y, z の正負）
+ * @return 正規化された回転クォータニオン
+ */
+Quaternion ExtractRotationSafe(const Matrix4x4& mat, const Vector3& scaleSign);
+
+/**
+ * @brief アフィン変換行列から、スケール（符号付き）、回転（安全なクォータニオン）、位置を分解・抽出する
+ * @param[in] mat 分解対象の変換行列
+ * @param[in] scaleSignHint 各軸の符号ヒント（反転判定用）
+ * @param[out] outPosition 抽出された位置
+ * @param[out] outRotation 抽出された回転クォータニオン（正規化済み）
+ * @param[out] outScale 抽出されたスケール（符号付き）
+ */
+void DecomposeAffineMatrixSafe(const Matrix4x4& mat, const Vector3& scaleSignHint, Vector3& outPosition,
+                               Quaternion& outRotation, Vector3& outScale);
+
 /** @} */
 #pragma endregion
 

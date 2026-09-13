@@ -19,6 +19,7 @@ struct SpotLight;
 struct AreaLight;
 class GameObject;
 class Camera;
+class SceneObjectRegistry;
 
 /**
  * @class BaseScene
@@ -45,6 +46,12 @@ public:
      * @brief 毎フレームの描画処理。継承先から呼び出すと GameObject の Draw が自動実行されます。
      */
     virtual void Draw() override;
+
+    /**
+     * @brief 描画ステート・コンピュートタスクの事前構築（ウォームアップ）。
+     * @details ゲームロジックを進めずに行列計算・GPUスキニング予約・初回フレームデータ提出のみを安全に行います。
+     */
+    virtual void WarmUpRenderState() override;
 
     /**
      * @brief シーンに GameObject を追加する
@@ -136,7 +143,7 @@ public:
     /**
      * @brief シーンの終了処理。リソースの明示的な解放などを行います。
      */
-    virtual void Finalize() override {}
+    virtual void Finalize() override;
 
     /**
      * @brief シーンが最前面でアクティブになった時に呼ばれます。
@@ -168,9 +175,9 @@ public:
     // --- デバッグ機能 ---
 
     /**
-     * @brief 共通のデバッグタブ描画。
+     * @brief 共通のデバッグタブ描画（Camera & Lights）。
      */
-    virtual void DrawDebugTab() override;
+    virtual void DrawDebugTabItem() override;
 
     // --- シリアライズ機能 ---
     /**
@@ -191,10 +198,18 @@ protected:
     std::vector<std::shared_ptr<GameObject>> pendingAdds_;
     std::vector<std::shared_ptr<GameObject>> pendingRemoves_;
 
-    // 高速検索(O(1))用インデックス
-    std::unordered_map<std::string, std::vector<std::weak_ptr<GameObject>>> nameIndex_;
-    std::unordered_map<uint64_t, std::weak_ptr<GameObject>> idIndex_;
+    // オブジェクトインデックス管理レジストリ
+    std::unique_ptr<SceneObjectRegistry> objectRegistry_;
 
+public:
+    /**
+     * @brief オブジェクトレジストリを取得する
+     */
+    SceneObjectRegistry* GetObjectRegistry() const {
+        return objectRegistry_.get();
+    }
+
+protected:
     // デバッグ用カメラフラグ
     bool isDebugCameraMode_ = false;
     std::string previousActiveCameraName_ = "Main";

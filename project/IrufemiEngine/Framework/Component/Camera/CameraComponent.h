@@ -18,9 +18,21 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief 生成時の自己完結初期化（Cameraオブジェクトの生成）を行います
+     */
+    void OnAwake() override;
+    /**
+     * @brief ゲーム開始・シーン参加時の処理（CameraManagerへの登録）を行います
+     */
+    void Start() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;
+    /**
+     * @brief 破棄時の処理を行います（CameraManagerからの登録解除）
+     */
+    void OnDestroy() override;
 
     /**
      * @brief ComponentName を取得する。

@@ -64,67 +64,102 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     cmdList->OMSetRenderTargets(2, rtvHandles, false, &readOnlyDsvHandle);
     cmdList->SetGraphicsRootDescriptorTable(static_cast<UINT>(RootSlot::DepthMap), dxCommon->GetDepthSRVGPUHandle());
 
+    Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
+    PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
+    ID3D12PipelineState* currentCustomPSO = nullptr;
+    D3D12_GPU_VIRTUAL_ADDRESS currentCustomCBV = 0;
+    bool psoApplied = false;
+    bool first = true;
+
+    auto ResetPSOState = [&]() {
+        currentBlend = Irufemi::BlendMode::kBlendModeNormal;
+        currentDepth = PSOManager::DepthWrite::Enable;
+        currentCull = PSOManager::CullMode::Back;
+        currentCustomPSO = nullptr;
+        currentCustomCBV = 0;
+        psoApplied = false;
+        first = true;
+    };
+
+    auto ApplyAndDrawPacket = [&](const auto& p, auto drawFunc, bool isParticle, bool isLine, bool isDebugPrimitive) {
+        bool stateChanged =
+            first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
+        bool psoChanged = (p.customPSO != currentCustomPSO);
+
+        if (stateChanged || psoChanged || !psoApplied) {
+            engine->SetBlend(p.blendMode);
+            engine->SetDepthWrite(p.depthWrite);
+            engine->SetCull(p.cullMode);
+
+            if (p.customPSO) {
+                drawManager->BindPSO(p.customPSO);
+            } else {
+                if (isParticle) {
+                    engine->ApplyPSO("Particle");
+                } else if (isLine) {
+                    engine->ApplyPSO("LineBatch");
+                } else if (isDebugPrimitive) {
+                    engine->ApplyPSO("DebugPrimitive");
+                }
+            }
+
+            currentBlend = p.blendMode;
+            currentDepth = p.depthWrite;
+            currentCull = p.cullMode;
+            currentCustomPSO = p.customPSO;
+            currentCustomCBV = 0; // Force re-bind
+            psoApplied = true;
+            first = false;
+        }
+
+        if (p.customCBVAddress != 0 && p.customCBVAddress != currentCustomCBV) {
+            engine->BindLightningParams(p.customCBVAddress);
+            currentCustomCBV = p.customCBVAddress;
+        }
+
+        drawFunc(p);
+    };
+
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false,
                            bool isDebugPrimitive = false) {
         if (queue.empty()) {
             return;
         }
-
-        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
-        PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
-        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
-        ID3D12PipelineState* currentCustomPSO = nullptr;
-        D3D12_GPU_VIRTUAL_ADDRESS currentCustomCBV = 0;
-        bool psoApplied = false;
-        bool first = true;
-
+        ResetPSOState();
         for (const auto& p : queue) {
-            bool stateChanged =
-                first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
-            bool psoChanged = (p.customPSO != currentCustomPSO);
+            ApplyAndDrawPacket(p, drawFunc, isParticle, isLine, isDebugPrimitive);
+        }
+    };
 
-            if (stateChanged || psoChanged || !psoApplied) {
-                engine->SetBlend(p.blendMode);
-                engine->SetDepthWrite(p.depthWrite);
-                engine->SetCull(p.cullMode);
-
-                if (p.customPSO) {
-                    drawManager->BindPSO(p.customPSO);
-                } else {
-                    if (isParticle) {
-                        engine->ApplyPSO("Particle");
-                    } else if (isLine) {
-                        engine->ApplyPSO("LineBatch");
-                    } else if (isDebugPrimitive) {
-                        engine->ApplyPSO("DebugPrimitive");
-                    }
-                }
-
-                currentBlend = p.blendMode;
-                currentDepth = p.depthWrite;
-                currentCull = p.cullMode;
-                currentCustomPSO = p.customPSO;
-                currentCustomCBV = 0; // Force re-bind
-                psoApplied = true;
-                first = false;
-            }
-
-            if (p.customCBVAddress != 0 && p.customCBVAddress != currentCustomCBV) {
-                engine->BindLightningParams(p.customCBVAddress);
-                currentCustomCBV = p.customCBVAddress;
-            }
-
-            drawFunc(p);
+    auto DrawIndexedWithPSO = [&](const auto& queue, const auto& sortKeys, auto drawFunc, bool isParticle = false,
+                                  bool isLine = false, bool isDebugPrimitive = false) {
+        if (sortKeys.empty()) {
+            return;
+        }
+        ResetPSOState();
+        for (const auto& key : sortKeys) {
+            ApplyAndDrawPacket(queue[key.packetIndex], drawFunc, isParticle, isLine, isDebugPrimitive);
         }
     };
 
     // 3. Transparent 3D (エフェクト・半透明) - MRT(2)が必要
-    auto transparentQueue = drawManager->GetTransparent3DQueue(); // コピーしてソート
-    std::sort(transparentQueue.begin(), transparentQueue.end(),
-              [](const RenderPackets::Standard3DPacket& a, const RenderPackets::Standard3DPacket& b) {
-                  return a.distanceToCamera > b.distanceToCamera; // 遠いものから描画 (Back-to-Front)
-              });
-    DrawWithPSO(transparentQueue, [&](const auto& p) { drawManager->DrawStandard3D(p); }, false, false);
+    const auto& transparentQueue = drawManager->GetTransparent3DQueue(); // コピーを撤廃し参照渡し
+    if (!transparentQueue.empty()) {
+        sortKeys_.clear();
+        sortKeys_.reserve(transparentQueue.size());
+        for (uint32_t i = 0; i < static_cast<uint32_t>(transparentQueue.size()); ++i) {
+            sortKeys_.push_back({transparentQueue[i].distanceToCamera, i});
+        }
+
+        // 8バイトの軽量キー配列のみをソート (Back-to-Front)
+        std::sort(sortKeys_.begin(), sortKeys_.end(), [](const TransparentSortKey& a, const TransparentSortKey& b) {
+            return a.distanceToCamera > b.distanceToCamera;
+        });
+
+        DrawIndexedWithPSO(
+            transparentQueue, sortKeys_, [&](const auto& p) { drawManager->DrawStandard3D(p); }, false, false);
+    }
 
     // 全て MRT(2) に対応済みのため、ここでは切り替えずにそのまま描画
     DrawWithPSO(

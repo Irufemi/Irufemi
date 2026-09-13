@@ -7,6 +7,7 @@
 #include <numbers>
 #include <algorithm>
 #include <utility>
+#include <unordered_map>
 
 const PrimitiveData& PrimitiveManager::GetPrimitiveData(Irufemi::PrimitiveType type) {
     auto it = cpuCache_.find(type);
@@ -79,8 +80,8 @@ const PrimitiveResource& PrimitiveManager::GetStandardResource(Irufemi::Primitiv
     const auto& data = GetPrimitiveData(type);
     PrimitiveResource resource;
     CreateGPUResource(data, resource);
-    gpuCache_[type] = std::move(resource);
-    return gpuCache_[type];
+    auto [insertedIt, _] = gpuCache_.insert_or_assign(type, std::move(resource));
+    return insertedIt->second;
 }
 
 const PrimitiveResource& PrimitiveManager::GetCylinderResource(bool hasTop, bool hasBottom) {
@@ -93,8 +94,8 @@ const PrimitiveResource& PrimitiveManager::GetCylinderResource(bool hasTop, bool
     PrimitiveData data = CreateCylinder(0.5f, 1.0f, 32, hasTop, hasBottom);
     PrimitiveResource resource;
     CreateGPUResource(data, resource);
-    cylinderGpuCache_[key] = std::move(resource);
-    return cylinderGpuCache_[key];
+    auto [insertedIt, _] = cylinderGpuCache_.insert_or_assign(key, std::move(resource));
+    return insertedIt->second;
 }
 
 void PrimitiveManager::CreateGPUResource(const PrimitiveData& data, PrimitiveResource& resource) {
@@ -620,7 +621,7 @@ PrimitiveData PrimitiveManager::CreateIcoSphere(float radius, uint32_t subdivisi
                                           {1, 5, 9},  {5, 11, 4}, {11, 10, 2}, {10, 7, 6}, {7, 1, 8},
                                           {3, 9, 4},  {3, 4, 2},  {3, 2, 6},   {3, 6, 8},  {3, 8, 9},
                                           {4, 9, 5},  {2, 4, 11}, {6, 2, 10},  {8, 6, 7},  {9, 8, 1}};
-    auto getMiddle = [&](uint32_t p1, uint32_t p2, std::map<uint64_t, uint32_t>& cache) {
+    auto getMiddle = [&](uint32_t p1, uint32_t p2, std::unordered_map<uint64_t, uint32_t>& cache) {
         uint64_t key = (static_cast<uint64_t>((std::min)(p1, p2)) << 32) | (std::max)(p1, p2);
         if (cache.count(key)) {
             return cache[key];
@@ -633,7 +634,7 @@ PrimitiveData PrimitiveManager::CreateIcoSphere(float radius, uint32_t subdivisi
     };
     for (uint32_t i = 0; i < subdivision; ++i) {
         std::vector<IcoTriangle> next;
-        std::map<uint64_t, uint32_t> cache;
+        std::unordered_map<uint64_t, uint32_t> cache;
         for (auto& tri : triangles) {
             uint32_t a = getMiddle(tri.v1, tri.v2, cache), b = getMiddle(tri.v2, tri.v3, cache),
                      c = getMiddle(tri.v3, tri.v1, cache);

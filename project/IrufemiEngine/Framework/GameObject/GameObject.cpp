@@ -1,5 +1,6 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
+#include "Framework/Scene/SceneObjectRegistry.h"
 
 #include "Framework/Component/Component.h"
 #include "Framework/Component/ComponentFactory.h"
@@ -26,6 +27,15 @@ GameObject::GameObject(const std::string& name)
     AddComponent<TransformComponent>();
 }
 
+GameObject::~GameObject() {
+    // デストラクタ内でのOnDestroy呼び出し（shared_from_this等によるbad_weak_ptrリスク）は避け、
+    // 未破棄の場合のみ警告ログを出力する（破棄はBaseSceneや明示的なDestroyで完結させる）
+    if (lifeState_ != GameObjectLifeState::Destroyed) {
+        Log::OutPutLog(std::cerr,
+                       "[GameObject] Warning: GameObject '" + name_ + "' was destructed without calling Destroy().\n");
+    }
+}
+
 // GetTransform() is now inline in GameObject.h
 
 void GameObject::SetIsActive(bool isActive) {
@@ -43,21 +53,79 @@ void GameObject::SetIsActive(bool isActive) {
             comp->OnDisable();
         }
     }
+
+    for (const auto& child : children_) {
+        if (child) {
+            child->SetIsActive(isActive);
+        }
+    }
+}
+
+void GameObject::Awake() {
+    if (lifeState_ >= GameObjectLifeState::Awake) {
+        return;
+    }
+    lifeState_ = GameObjectLifeState::Awake;
+
+    for (const auto& comp : components_) {
+        comp->OnAwake();
+        if (!comp->IsInitialized()) {
+            comp->Initialize();
+            comp->SetInitialized(true);
+        }
+    }
+    for (const auto& child : children_) {
+        if (child) {
+            child->Awake();
+        }
+    }
 }
 
 void GameObject::Initialize() {
-    for (auto& comp : components_) {
-        comp->Initialize();
+    if (lifeState_ >= GameObjectLifeState::Awake) {
+        return;
     }
-    for (auto& child : children_) {
-        child->Initialize();
+    Awake();
+    for (const auto& comp : components_) {
+        if (!comp->IsInitialized()) {
+            comp->Initialize();
+            comp->SetInitialized(true);
+        }
+    }
+    for (const auto& child : children_) {
+        if (child) {
+            child->Initialize();
+        }
+    }
+}
+
+void GameObject::NotifySpawned() {
+    if (lifeState_ >= GameObjectLifeState::Spawned) {
+        return;
+    }
+    if (lifeState_ < GameObjectLifeState::Awake) {
+        Initialize();
+    }
+    lifeState_ = GameObjectLifeState::Spawned;
+
+    for (const auto& comp : components_) {
+        comp->OnSpawned();
+    }
+    for (const auto& child : children_) {
+        if (child) {
+            child->NotifySpawned();
+        }
     }
 }
 
 void GameObject::Start() {
-    if (isStarted_) {
+    if (lifeState_ >= GameObjectLifeState::Started) {
         return;
     }
+    if (lifeState_ < GameObjectLifeState::Spawned) {
+        NotifySpawned();
+    }
+    lifeState_ = GameObjectLifeState::Started;
     isStarted_ = true;
 
     // Use index-based loop to allow components to add components/children during Start
@@ -65,7 +133,32 @@ void GameObject::Start() {
         components_[i]->Start();
     }
     for (size_t i = 0; i < children_.size(); ++i) {
-        children_[i]->Start();
+        if (children_[i]) {
+            children_[i]->Start();
+        }
+    }
+}
+
+void GameObject::Destroy() {
+    if (lifeState_ == GameObjectLifeState::Destroyed) {
+        return;
+    }
+    if (isActive_) {
+        for (const auto& comp : components_) {
+            comp->OnDisable();
+        }
+        isActive_ = false;
+    }
+    isDestroyed_ = true;
+    lifeState_ = GameObjectLifeState::Destroyed;
+
+    for (const auto& comp : components_) {
+        comp->OnDestroy();
+    }
+    for (const auto& child : children_) {
+        if (child) {
+            child->Destroy();
+        }
     }
 }
 
@@ -104,8 +197,24 @@ void GameObject::Update(bool isPlayMode) {
         }
     }
 
-    for (size_t i = 0; i < components_.size(); ++i) {
-        auto& comp = components_[i];
+    // コンポーネント更新
+    size_t compCount = 0;
+    {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+        compCount = components_.size();
+    }
+    for (size_t i = 0; i < compCount; ++i) {
+        std::shared_ptr<Component> comp;
+        {
+            std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+            if (i < components_.size()) {
+                comp = components_[i];
+            }
+        }
+        if (!comp) {
+            continue;
+        }
+
         // PlayModeでない場合は、エディタで更新可能なコンポーネントのみ更新する
         if (!isPlayMode && !comp->CanUpdateInEditMode()) {
             continue;
@@ -119,15 +228,37 @@ void GameObject::Update(bool isPlayMode) {
         comp->Update();
     }
 
-    // 破棄された子オブジェクトをリストから削除 (GC)
+    // 子オブジェクト更新（破棄フラグが立っているものはスキップ、GCは同期フェーズで行う）
+    size_t childCount = 0;
+    {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+        childCount = children_.size();
+    }
+    for (size_t i = 0; i < childCount; ++i) {
+        std::shared_ptr<GameObject> child;
+        {
+            std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+            if (i < children_.size()) {
+                child = children_[i];
+            }
+        }
+        if (child && !child->IsDestroyed()) {
+            child->Update(isPlayMode);
+        }
+    }
+}
+
+void GameObject::CleanupDestroyedChildren() {
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+    for (auto& child : children_) {
+        if (child) {
+            child->CleanupDestroyedChildren();
+        }
+    }
     children_.erase(
         std::remove_if(children_.begin(), children_.end(),
                        [](const std::shared_ptr<GameObject>& child) { return !child || child->IsDestroyed(); }),
         children_.end());
-
-    for (size_t i = 0; i < children_.size(); ++i) {
-        children_[i]->Update(isPlayMode);
-    }
 }
 
 void GameObject::Draw() {
@@ -139,6 +270,20 @@ void GameObject::Draw() {
     }
     for (size_t i = 0; i < children_.size(); ++i) {
         children_[i]->Draw();
+    }
+}
+
+void GameObject::SyncRenderState() {
+    if (!isActive_ || isDestroyed_) {
+        return;
+    }
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->SyncRenderState();
+    }
+    for (size_t i = 0; i < children_.size(); ++i) {
+        if (children_[i]) {
+            children_[i]->SyncRenderState();
+        }
     }
 }
 
@@ -159,6 +304,8 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+
     // 既に親がいる場合は外す
     if (auto currentParent = child->GetParent()) {
         currentParent->RemoveChild(child);
@@ -167,12 +314,37 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
     child->parent_ = shared_from_this();
     children_.push_back(child);
 
-    if (scene_ && !child->GetScene()) {
-        child->SetScene(scene_);
+    if (scene_) {
+        if (!child->GetScene()) {
+            child->SetScene(scene_);
+        }
+        if (auto registry = scene_->GetObjectRegistry()) {
+            registry->Register(child);
+        }
     }
 
     if (auto childTransform = child->GetComponent<TransformComponent>()) {
         childTransform->MarkWorldDirty();
+    }
+
+    // 親が非アクティブなら子も非アクティブ化
+    if (!isActive_) {
+        child->SetIsActive(false);
+    }
+
+    // 親のライフサイクル状態を子へ伝播
+    if (lifeState_ >= GameObjectLifeState::Started) {
+        if (!child->IsStarted()) {
+            child->Start();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Spawned) {
+        if (!child->IsSpawned()) {
+            child->NotifySpawned();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Awake) {
+        if (child->GetLifeState() < GameObjectLifeState::Awake) {
+            child->Awake();
+        }
     }
 }
 
@@ -180,6 +352,8 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
     if (!child) {
         return;
     }
+
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
 
     if (auto currentParent = child->GetParent()) {
         currentParent->RemoveChild(child);
@@ -192,18 +366,50 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
         children_.insert(children_.begin() + index, child);
     }
 
-    if (scene_ && !child->GetScene()) {
-        child->SetScene(scene_);
+    if (scene_) {
+        if (!child->GetScene()) {
+            child->SetScene(scene_);
+        }
+        if (auto registry = scene_->GetObjectRegistry()) {
+            registry->Register(child);
+        }
     }
 
     if (auto childTransform = child->GetComponent<TransformComponent>()) {
         childTransform->MarkWorldDirty();
     }
+
+    // 親が非アクティブなら子も非アクティブ化
+    if (!isActive_) {
+        child->SetIsActive(false);
+    }
+
+    // 親のライフサイクル状態を子へ伝播
+    if (lifeState_ >= GameObjectLifeState::Started) {
+        if (!child->IsStarted()) {
+            child->Start();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Spawned) {
+        if (!child->IsSpawned()) {
+            child->NotifySpawned();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Awake) {
+        if (child->GetLifeState() < GameObjectLifeState::Awake) {
+            child->Awake();
+        }
+    }
 }
 
 void GameObject::RemoveChild(std::shared_ptr<GameObject> child) {
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
     auto it = std::find(children_.begin(), children_.end(), child);
     if (it != children_.end()) {
+        if (scene_) {
+            if (auto registry = scene_->GetObjectRegistry()) {
+                registry->Unregister(*it);
+            }
+        }
+
         (*it)->parent_.reset();
 
         if (auto childTransform = (*it)->GetComponent<TransformComponent>()) {
@@ -236,6 +442,7 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     if (!component) {
         return;
     }
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
@@ -245,9 +452,21 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     }
 
     component->OnRegisterProperties();
-    component->Initialize();
+    if (lifeState_ >= GameObjectLifeState::Awake) {
+        component->OnAwake();
+    }
+    if (!component->IsInitialized()) {
+        component->Initialize();
+        component->SetInitialized(true);
+    }
+    if (lifeState_ >= GameObjectLifeState::Spawned) {
+        component->OnSpawned();
+    }
     if (isActive_) {
         component->OnEnable();
+    }
+    if (lifeState_ >= GameObjectLifeState::Started) {
+        component->Start();
     }
 }
 
@@ -256,10 +475,18 @@ void GameObject::RemoveComponent(Component* component) {
         return;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+
     // TransformComponentは基本として削除不可とする
     if (component == transformCache_) {
         return;
     }
+
+    // 削除前にライフサイクルを適切に終了
+    if (isActive_) {
+        component->OnDisable();
+    }
+    component->OnDestroy();
 
     // componentMap_からの削除
     auto typeIt = componentMap_.find(typeid(*component));
@@ -562,8 +789,13 @@ void GameObject::Deserialize(const nlohmann::json& j) {
 
         // 全てのコンポーネントがリストに登録されてから一斉にInitializeを呼ぶ
         // これにより、Initialize内でGetComponentした際に他のコンポーネントが見つかるようになる
+        lifeState_ = GameObjectLifeState::Awake;
         for (auto& comp : loadedComps) {
-            comp->Initialize();
+            comp->OnAwake();
+            if (!comp->IsInitialized()) {
+                comp->Initialize();
+                comp->SetInitialized(true);
+            }
         }
         if (isActive_) {
             for (auto& comp : loadedComps) {

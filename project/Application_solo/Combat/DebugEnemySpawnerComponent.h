@@ -9,7 +9,7 @@
 class DebugEnemySpawnerComponent : public Component {
 public:
     DebugEnemySpawnerComponent() = default;
-    ~DebugEnemySpawnerComponent() override = default;
+    ~DebugEnemySpawnerComponent() override;
 
     void Initialize() override;
     void Start() override;

@@ -21,23 +21,11 @@ public:
     /**
      * @brief デストラクタ
      */
-    ~OBBColliderComponent() override;
-
-    /**
-     * @brief コンポーネントの初期化
-     * @details アタッチされているGameObjectからTransformComponentを取得しキャッシュします。
-     */
-    void Initialize() override;
-
-    /**
-     * @brief 毎フレームの更新処理
-     * @details ローカル情報とTransformを合成してワールド空間上のOBBを更新し、衝突マネージャに登録します。
-     */
-    void Update() override;
+    ~OBBColliderComponent() override = default;
 
     /**
      * @brief デバッグ描画
-     * @details 衝突領域をワイヤーフレームなどで可視化します。
+     * @details 衝突領域をワイヤーフレーム等で可視化します。
      */
     void DrawDebug() override;
 

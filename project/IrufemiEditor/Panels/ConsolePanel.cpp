@@ -13,7 +13,7 @@ void ConsolePanel::Draw() {
         return;
     }
 
-    ImGui::Begin("Console");
+    ImGui::Begin(GetName(), &isOpen_);
 
     if (ImGui::Button("Clear")) {
         Log::ClearLogHistory();

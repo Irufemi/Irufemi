@@ -506,10 +506,14 @@ void DebugScene::Draw() {
     }
 }
 
-void DebugScene::DrawDebugTab() {
+void DebugScene::DrawDebugTabItem() {
 #ifdef USE_IMGUI
-    BaseScene::DrawDebugTab();
+    BaseScene::DrawDebugTabItem();
+#endif
+}
 
+void DebugScene::DrawStandaloneDebugWindows() {
+#ifdef USE_IMGUI
     if (ImGui::Begin("DebugScene Global Settings")) {
         static bool s_showAllBones = false;
         static bool s_showAllAxes = false;

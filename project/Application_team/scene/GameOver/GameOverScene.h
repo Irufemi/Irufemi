@@ -15,5 +15,4 @@ public: // メンバ関数(システム)
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
     void Draw() override;
-    void DrawDebugTab() override;
 };

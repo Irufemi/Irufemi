@@ -97,11 +97,13 @@ void CollisionManager::FlushPendingCommands() {
         for (auto iter = previousCollisions_.begin(); iter != previousCollisions_.end();) {
             if (iter->first == collider || iter->second == collider) {
                 ColliderComponent* other = (iter->first == collider) ? iter->second : iter->first;
+                // Note: collider might already be destroyed, so do not call collider->GetGameObject() or pass dead
+                // pointer
                 if (other && other->onCollisionExit_) {
-                    other->onCollisionExit_(collider);
+                    other->onCollisionExit_(nullptr);
                 }
                 if (other && other->GetGameObject()) {
-                    other->GetGameObject()->SendCollisionExit(collider ? collider->GetGameObject() : nullptr);
+                    other->GetGameObject()->SendCollisionExit(nullptr);
                 }
                 iter = previousCollisions_.erase(iter);
             } else {
@@ -112,15 +114,13 @@ void CollisionManager::FlushPendingCommands() {
 
     // 追加の適用
     for (ColliderComponent* collider : adds) {
-        // まだ削除されていないか（削除キューに入っていなかったか）と重複を確認
-        auto removeIt = std::find_if(removes.begin(), removes.end(),
-                                     [collider](const PendingRemove& pr) { return pr.collider == collider; });
-        if (removeIt == removes.end()) {
-            auto it = std::find(colliders_.begin(), colliders_.end(), collider);
-            if (it == colliders_.end()) {
-                colliders_.push_back(collider);
-                collider->bvhNodeId_ = dynamicBVH_.Insert(collider, collider->GetBoundingBox());
-            }
+        if (!collider) {
+            continue;
+        }
+        auto it = std::find(colliders_.begin(), colliders_.end(), collider);
+        if (it == colliders_.end()) {
+            colliders_.push_back(collider);
+            collider->bvhNodeId_ = dynamicBVH_.Insert(collider, collider->GetBoundingBox());
         }
     }
 }
@@ -128,7 +128,7 @@ void CollisionManager::FlushPendingCommands() {
 void CollisionManager::CheckAllCollisions() {
     FlushPendingCommands();
 
-    std::set<std::pair<ColliderComponent*, ColliderComponent*>> currentCollisions;
+    CollisionPairSet currentCollisions;
 
     // --- BVH Update Phase ---
     {
@@ -205,9 +205,19 @@ void CollisionManager::CheckAllCollisions() {
                 continue;
             }
 
-            // フィルタリング
-            if ((colA->mask_ & colB->layer_) == 0 || (colB->mask_ & colA->layer_) == 0) {
-                continue;
+            // フィルタリング:
+            // どちらかが Trigger の場合は、相手をマスクしている側がいれば検知可能とする
+            bool colAHitsB = (colA->mask_ & colB->layer_) != 0;
+            bool colBHitsA = (colB->mask_ & colA->layer_) != 0;
+
+            if (colA->isTrigger_ || colB->isTrigger_) {
+                if (!colAHitsB && !colBHitsA) {
+                    continue;
+                }
+            } else {
+                if (!colAHitsB || !colBHitsA) {
+                    continue;
+                }
             }
 
             // 静的オブジェクト同士の判定は不要（動かないため、計算負荷を削減）

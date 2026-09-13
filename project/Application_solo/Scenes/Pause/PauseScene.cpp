@@ -18,9 +18,3 @@ void PauseScene::Update() {
 void PauseScene::Draw() {
     BaseScene::Draw();
 }
-
-void PauseScene::DrawDebugTab() {
-#if defined USE_IMGUI
-    BaseScene::DrawDebugTab();
-#endif
-}

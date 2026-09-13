@@ -90,22 +90,7 @@ void TransformComponent::SetWorldRotationQuat(const Irufemi::Quaternion& worldRo
                 Irufemi::Matrix4x4 invMat = Irufemi::Math::Inverse(GetParentMatrixForChild());
                 Irufemi::Matrix4x4 localMat = Irufemi::Math::Multiply(newWorldMat, invMat);
 
-                // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
-                float sx = std::copysign(1.0f, scale_.x);
-                float sy = std::copysign(1.0f, scale_.y);
-                float sz = std::copysign(1.0f, scale_.z);
-                Irufemi::Matrix4x4 pureRotMat = localMat;
-                pureRotMat.m[0][0] *= sx;
-                pureRotMat.m[0][1] *= sx;
-                pureRotMat.m[0][2] *= sx;
-                pureRotMat.m[1][0] *= sy;
-                pureRotMat.m[1][1] *= sy;
-                pureRotMat.m[1][2] *= sy;
-                pureRotMat.m[2][0] *= sz;
-                pureRotMat.m[2][1] *= sz;
-                pureRotMat.m[2][2] *= sz;
-
-                rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
+                rotation_ = Irufemi::Math::ExtractRotationSafe(localMat, scale_);
                 MarkLocalDirty();
                 return;
             }
@@ -174,44 +159,7 @@ void TransformComponent::SetWorldMatrix(const Irufemi::Matrix4x4& worldMatrix) {
         }
     }
 
-    position_ = {localMat.m[3][0], localMat.m[3][1], localMat.m[3][2]};
-
-    // スケール軸を抽出
-    Irufemi::Vector3 xaxis = {localMat.m[0][0], localMat.m[0][1], localMat.m[0][2]};
-    Irufemi::Vector3 yaxis = {localMat.m[1][0], localMat.m[1][1], localMat.m[1][2]};
-    Irufemi::Vector3 zaxis = {localMat.m[2][0], localMat.m[2][1], localMat.m[2][2]};
-
-    // 行列の3x3部分の行列式を計算してフリップ（反転）状態を確認する
-    float det = xaxis.x * (yaxis.y * zaxis.z - yaxis.z * zaxis.y) - xaxis.y * (yaxis.x * zaxis.z - yaxis.z * zaxis.x) +
-                xaxis.z * (yaxis.x * zaxis.y - yaxis.y * zaxis.x);
-
-    // 基本は設定前のローカルスケールの符号を維持する
-    float sx = std::copysign(1.0f, scale_.x);
-    float sy = std::copysign(1.0f, scale_.y);
-    float sz = std::copysign(1.0f, scale_.z);
-
-    // しかし、入力された行列のフリップ状態が既存のスケールのフリップ状態と異なる場合、
-    // 回転抽出が破綻（NaN等）するのを防ぐため、X軸の符号を強制的に反転させる
-    if ((sx * sy * sz) * det < 0.0f) {
-        sx = -sx;
-    }
-
-    Irufemi::Matrix4x4 pureRotMat = localMat;
-    pureRotMat.m[0][0] *= sx;
-    pureRotMat.m[0][1] *= sx;
-    pureRotMat.m[0][2] *= sx;
-    pureRotMat.m[1][0] *= sy;
-    pureRotMat.m[1][1] *= sy;
-    pureRotMat.m[1][2] *= sy;
-    pureRotMat.m[2][0] *= sz;
-    pureRotMat.m[2][1] *= sz;
-    pureRotMat.m[2][2] *= sz;
-
-    rotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
-
-    scale_ = {std::copysign(Irufemi::Math::Length(xaxis), sx), std::copysign(Irufemi::Math::Length(yaxis), sy),
-              std::copysign(Irufemi::Math::Length(zaxis), sz)};
-
+    Irufemi::Math::DecomposeAffineMatrixSafe(localMat, scale_, position_, rotation_, scale_);
     MarkLocalDirty();
 }
 
@@ -224,10 +172,6 @@ void TransformComponent::ExtractWorldTransform() const {
     if (isWorldTransformExtracted_) {
         return;
     }
-
-    Irufemi::Vector3 xaxis = {worldMatrix_.m[0][0], worldMatrix_.m[0][1], worldMatrix_.m[0][2]};
-    Irufemi::Vector3 yaxis = {worldMatrix_.m[1][0], worldMatrix_.m[1][1], worldMatrix_.m[1][2]};
-    Irufemi::Vector3 zaxis = {worldMatrix_.m[2][0], worldMatrix_.m[2][1], worldMatrix_.m[2][2]};
 
     // 親のワールドスケールの符号と自身のローカルスケールの符号から、現在のワールドスケールの符号を決定する
     Irufemi::Vector3 worldSign = scale_;
@@ -245,28 +189,7 @@ void TransformComponent::ExtractWorldTransform() const {
         }
     }
 
-    worldScale_ = {std::copysign(Irufemi::Math::Length(xaxis), worldSign.x),
-                   std::copysign(Irufemi::Math::Length(yaxis), worldSign.y),
-                   std::copysign(Irufemi::Math::Length(zaxis), worldSign.z)};
-
-    // マイナススケール（反転）による回転抽出の破綻を防ぐため、符号を除去した純粋な回転行列を作る
-    float sx = std::copysign(1.0f, worldScale_.x);
-    float sy = std::copysign(1.0f, worldScale_.y);
-    float sz = std::copysign(1.0f, worldScale_.z);
-    Irufemi::Matrix4x4 pureRotMat = worldMatrix_;
-    pureRotMat.m[0][0] *= sx;
-    pureRotMat.m[0][1] *= sx;
-    pureRotMat.m[0][2] *= sx;
-    pureRotMat.m[1][0] *= sy;
-    pureRotMat.m[1][1] *= sy;
-    pureRotMat.m[1][2] *= sy;
-    pureRotMat.m[2][0] *= sz;
-    pureRotMat.m[2][1] *= sz;
-    pureRotMat.m[2][2] *= sz;
-
-    worldRotation_ = Irufemi::Math::Normalize(Irufemi::Math::ToQuaternionFromMatrix(pureRotMat));
-    worldPosition_ = {worldMatrix_.m[3][0], worldMatrix_.m[3][1], worldMatrix_.m[3][2]};
-
+    Irufemi::Math::DecomposeAffineMatrixSafe(worldMatrix_, worldSign, worldPosition_, worldRotation_, worldScale_);
     isWorldTransformExtracted_ = true;
 }
 

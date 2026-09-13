@@ -26,11 +26,3 @@ void GameScene::Update() {
 void GameScene::Draw() {
     BaseScene::Draw(); // これにより GameObject 群の Draw が呼ばれる
 }
-
-void GameScene::DrawDebugTab() {
-#if defined USE_IMGUI
-    BaseScene::DrawDebugTab();
-
-    // InspectorはEditorManager側に移管するため、ここでの描画は削除
-#endif
-}

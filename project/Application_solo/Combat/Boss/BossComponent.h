@@ -1,5 +1,6 @@
 #pragma once
 #include "Framework/Component/Component.h"
+#include "Combat/IDamageable.h"
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Combat/Boss/IBossState.h"
@@ -14,7 +15,7 @@ class EnemyBeamComponent;
 class DroneManagerComponent;
 class BossBulletManagerComponent;
 
-class BossComponent : public Component {
+class BossComponent : public Component, public IDamageable {
 public:
     BossComponent();
     ~BossComponent() override = default;
@@ -53,7 +54,11 @@ public:
     /**
      * @brief ボスにダメージを与える
      */
-    void TakeDamage(float damage);
+    void TakeDamage(float damage) override;
+
+    DamageableType GetDamageableType() const override {
+        return DamageableType::Boss;
+    }
 
     /**
      * @brief ステートの切り替え

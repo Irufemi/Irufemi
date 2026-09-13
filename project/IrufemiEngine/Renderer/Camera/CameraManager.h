@@ -62,6 +62,11 @@ public:
      */
     void OnResize(int width, int height);
 
+    /**
+     * @brief 登録されているすべてのカメラをクリアします（シーン遷移時用）
+     */
+    void Clear();
+
 private:
     std::unordered_map<std::string, std::shared_ptr<Camera>> cameras_;
     std::string activeCameraName_;

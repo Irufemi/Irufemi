@@ -87,14 +87,18 @@ void RailShooterEnemyComponent::TakeDamage(int damage) {
     if (!IsAlive()) {
         return;
     }
+    if (!gameObject_ || gameObject_->IsDestroyed()) {
+        return;
+    }
 
     hp_ -= damage;
     if (hp_ <= 0) {
         hp_ = 0;
         isActive_ = false;
         if (gameObject_) {
-            if (onDeathCallback_) {
-                onDeathCallback_(gameObject_);
+            auto callback = onDeathCallback_;
+            if (callback) {
+                callback(gameObject_);
             } else {
                 gameObject_->SetIsActive(false); // 表示・更新を停止
                 gameObject_->Destroy();          // シーンから完全に削除する

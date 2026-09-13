@@ -52,6 +52,18 @@ void AudioManager::Initialize() {
     // マスターボイスの生成
     hr = pXAudio2_->CreateMasteringVoice(&pMasteringVoice_);
     ASSERT_IF_FAILED(hr);
+
+    // マスターボリュームの変更時コールバックを登録（初期値もSetOnChangeCallbackにより即時適用される）
+    cachedMasterVolume_ = -1.0f;
+    Irufemi::CVarSystem::SetOnChangeCallback("a.MasterVolume", [this]() {
+        if (pMasteringVoice_) {
+            float masterVol = Irufemi::CVarSystem::GetFloat("a.MasterVolume");
+            if (masterVol != cachedMasterVolume_) {
+                cachedMasterVolume_ = masterVol;
+                pMasteringVoice_->SetVolume(masterVol);
+            }
+        }
+    });
 }
 
 void AudioManager::Finalize() {
@@ -59,6 +71,9 @@ void AudioManager::Finalize() {
         return; // 多重 Finalize 防止
     }
     finalized_ = true; // 以降の操作は無効化
+
+    // CVarコールバックの解除（ダングリング参照防止）
+    Irufemi::CVarSystem::SetOnChangeCallback("a.MasterVolume", nullptr);
 
     StopAll(); // すべてのVoiceを安全に停止＆Destroy
 
@@ -86,12 +101,6 @@ void AudioManager::Update() {
                                            return instance->GetCallback()->IsFinished();
                                        }),
                         activeVoices_.end());
-
-    // マスターボリュームの適用
-    if (pMasteringVoice_) {
-        float masterVol = Irufemi::CVarSystem::GetFloat("a.MasterVolume");
-        pMasteringVoice_->SetVolume(masterVol);
-    }
 }
 
 void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {

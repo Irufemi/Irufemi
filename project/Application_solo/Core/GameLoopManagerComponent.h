@@ -7,7 +7,7 @@ public:
     enum class State { Playing, Finished };
 
     GameLoopManagerComponent() = default;
-    ~GameLoopManagerComponent() override = default;
+    ~GameLoopManagerComponent() override;
 
     void Initialize() override;
     void Update() override;

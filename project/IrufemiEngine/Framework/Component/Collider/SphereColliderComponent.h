@@ -21,21 +21,9 @@ public:
     /**
      * @brief デストラクタ
      */
-    ~SphereColliderComponent() override;
+    ~SphereColliderComponent() override = default;
 
     void OnRegisterProperties() override;
-
-    /**
-     * @brief コンポーネントの初期化
-     * @details アタッチされているGameObjectからTransformComponentを取得しキャッシュします。
-     */
-    void Initialize() override;
-
-    /**
-     * @brief 毎フレームの更新処理
-     * @details ローカル情報とTransformを合成してワールド空間上のSphereを更新し、衝突マネージャに登録します。
-     */
-    void Update() override;
 
     /**
      * @brief デバッグ描画

@@ -1,5 +1,6 @@
 #pragma once
 #include "Framework/Component/Component.h"
+#include "Combat/IDamageable.h"
 #include <string>
 
 class DebrisManagerComponent;
@@ -10,7 +11,7 @@ class DebrisManagerComponent;
  * @details
  * EnvironmentManagerComponentによって動的に付与され、瓦礫がヒットした際のダメージ判定と破壊イベント（瓦礫の飛散）を管理します。
  */
-class DestructibleEnvironmentComponent : public Component {
+class DestructibleEnvironmentComponent : public Component, public IDamageable {
 public:
     DestructibleEnvironmentComponent() = default;
     ~DestructibleEnvironmentComponent() override = default;
@@ -30,7 +31,14 @@ public:
     }
 
     // ダメージ処理
+    void TakeDamage(float damage) override {
+        TakeDamage(static_cast<int>(damage));
+    }
     void TakeDamage(int damage);
+
+    DamageableType GetDamageableType() const override {
+        return DamageableType::Environment;
+    }
 
 private:
     int hp_ = 1;

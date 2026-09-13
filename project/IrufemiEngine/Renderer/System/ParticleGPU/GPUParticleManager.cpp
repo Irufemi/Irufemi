@@ -159,21 +159,24 @@ int GPUParticleManager::GetTotalEmittersUsed() const {
 void GPUParticleManager::Debug() {
 #if defined(USE_IMGUI)
     if (ImGui::BeginTabItem("GPU Particle Manager")) {
-        ImGui::TextDisabled("(Global system stats moved to TelemetryMonitor)");
-        ImGui::Separator();
+        if (ImGui::BeginChild("GPUParticleScroll", ImVec2(0, 0), false)) {
+            ImGui::TextDisabled("(Global system stats moved to TelemetryMonitor)");
+            ImGui::Separator();
 
-        ImGui::Spacing();
-        ImGui::Text("System Details per Texture");
-        for (auto& pair : systems_) {
-            const std::string& textureName = pair.first.texturePath;
-            auto& context = pair.second;
+            ImGui::Spacing();
+            ImGui::Text("System Details per Texture");
+            for (auto& pair : systems_) {
+                const std::string& textureName = pair.first.texturePath;
+                auto& context = pair.second;
 
-            if (ImGui::TreeNode(textureName.c_str())) {
-                ImGui::Text("Emitters: %d / %d", (int)(context.nextIndex - context.freeIndices.size()),
-                            GPUParticleSystem::kMaxEmitters);
-                context.system->Debug();
-                ImGui::TreePop();
+                if (ImGui::TreeNode(textureName.c_str())) {
+                    ImGui::Text("Emitters: %d / %d", (int)(context.nextIndex - context.freeIndices.size()),
+                                GPUParticleSystem::kMaxEmitters);
+                    context.system->Debug();
+                    ImGui::TreePop();
+                }
             }
+            ImGui::EndChild();
         }
         ImGui::EndTabItem();
     }

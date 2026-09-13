@@ -739,38 +739,25 @@ void IrufemiEngine::Execute() {
 
 // ImGui
 #ifdef USE_IMGUI
-        if (ui_->BeginEngineDebugWindow()) {
-            if (ImGui::BeginTabItem("Display")) {
-                int displayModeInt = Irufemi::CVarSystem::GetInt("r.DisplayMode");
-                if (ImGui::Combo("Mode", &displayModeInt, "Windowed\0Borderless\0")) {
-                    Irufemi::CVarSystem::SetInt("r.DisplayMode", displayModeInt);
-                }
-                bool vSync = Irufemi::CVarSystem::GetBool("r.VSync");
-                if (ImGui::Checkbox("VSync", &vSync)) {
-                    Irufemi::CVarSystem::SetBool("r.VSync", vSync);
-                }
-                if (dxCommon_->IsTearingSupported()) {
-                    ImGui::TextColored(ImVec4(0, 1, 0, 1), "Tearing (VRR) is Supported.");
-                } else {
-                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "Tearing (VRR) is NOT Supported.");
-                }
-                ImGui::EndTabItem();
-            }
-            ui_->SceneSelectorTab(sceneManager_.get());
-
-            ui_->PostProcessTab(this);
-
-            ui_->ScreenCaptureTab(screenCaptureManager_.get());
-            // デバッグ機能の追加
-            if (gpuParticleManager_) {
-                gpuParticleManager_->Debug();
-            }
-            ui_->EndEngineDebugWindow();
+#ifndef EditorMode
+        // Standalone時のみ表示する統合デバッグUI（EditorMode時はEngineSettingsPanelがあるため二重表示しない）
+        // F1 キーで統合デバッガーの表示/非表示をトグル
+        static bool showEngineDebugger = true;
+        if (inputManager_ && inputManager_->IsKeyPressed(VK_F1)) {
+            showEngineDebugger = !showEngineDebugger;
         }
 
-        // Scene側のデバッグUIは独立したウィンドウ(Begin)を持つため、Engineウィンドウの外で呼ぶ
+        if (showEngineDebugger && ui_->BeginEngineDebugWindow(&showEngineDebugger)) {
+            // 共通デバッグタブ（SceneSelector, PostProcess, Scene, Display, ScreenCapture, GPUParticle 等）
+            ui_->DrawCommonEngineTabs(this);
+
+            ui_->EndEngineDebugWindow();
+        }
+#endif // !EditorMode
+
+        // シーン固有の独立ウィンドウ描画（TL1Scene や テスト窓など）
         if (auto* scene = sceneManager_->GetCurrentScene()) {
-            scene->DrawDebugTab();
+            scene->DrawStandaloneDebugWindows();
         }
 #endif // USE_IMGUI
 

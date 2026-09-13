@@ -29,6 +29,14 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief スポーン時にタイマーをリセットします
+     */
+    void OnSpawned() override;
+    /**
+     * @brief 有効化時にタイマーをリセットします（オブジェクトプール再利用対応）
+     */
+    void OnEnable() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;

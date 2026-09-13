@@ -2,8 +2,11 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 class GameObject;
+class BaseScene;
+class IrufemiEngine;
 #include "Renderer/System/Core/IRenderable.h"
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector3.h"
@@ -28,15 +31,48 @@ enum class ComponentPropertyType {
     GameObjectRef
 };
 
+/**
+ * @brief コンポーネントプロパティの型安全なデータポインタ保持用バリアント
+ */
+using ComponentPropertyData =
+    std::variant<std::monostate, float*, int*, bool*, std::string*, uint64_t*, Irufemi::Vector2*, Irufemi::Vector3*,
+                 Irufemi::Vector4*, std::vector<Irufemi::Vector3>*>;
+
 struct ComponentProperty {
     std::string name;
     ComponentPropertyType type;
-    void* data;
+    ComponentPropertyData data;
     float minVal = 0.0f;
     float maxVal = 0.0f;
     std::vector<std::string> enumNames;
     std::string tooltip = "";
     nlohmann::json defaultValue;
+
+    /**
+     * @brief 指定した型のポインタを安全に取得する。型が一致しない場合は nullptr を返す。
+     */
+    template <typename T> T* GetData() const {
+        if (auto* ptr = std::get_if<T*>(&data)) {
+            return *ptr;
+        }
+        return nullptr;
+    }
+
+    /**
+     * @brief 内部ポインタを void* として取得する（後方互換・UI描画用）
+     */
+    void* GetRawData() const {
+        return std::visit(
+            [](auto&& ptr) -> void* {
+                using T = std::decay_t<decltype(ptr)>;
+                if constexpr (std::is_same_v<T, std::monostate>) {
+                    return nullptr;
+                } else {
+                    return static_cast<void*>(ptr);
+                }
+            },
+            data);
+    }
 
     /**
      * @brief Tooltip を設定する。
@@ -69,14 +105,33 @@ public:
     virtual ~Component() = default;
 
     /**
-     * @brief コンポーネントの初期化
+     * @brief [Phase 1: Awake] 自己完結の初期化
+     * @details プロパティの初期設定や、同一GameObject内のコンポーネント取得(GetComponent)を行う。
+     *          ※ 他オブジェクトや外部マネージャーへのアクセスは避ける。
+     */
+    virtual void OnAwake() {}
+
+    /**
+     * @brief コンポーネントの初期化 (従来の初期化メソッド、後方互換用)
      */
     virtual void Initialize() {}
+
+    /**
+     * @brief [Phase 2: Spawned] シーン・座標確定時の通知
+     * @details GameObjectがシーンに配置され、Transform(座標・回転)が確定した瞬間に呼ばれる。
+     */
+    virtual void OnSpawned() {}
 
     /**
      * @brief 開始処理 (最初のUpdateの直前に一度だけ呼ばれる)
      */
     virtual void Start() {}
+
+    /**
+     * @brief [Phase 4: Destroy] 離脱・後始末
+     * @details 各種マネージャーからの登録解除や内部リソースの解放を行う。
+     */
+    virtual void OnDestroy() {}
 
     /**
      * @brief コンポーネントが有効化された時に呼ばれる
@@ -114,6 +169,12 @@ public:
      * @brief 描画処理（レンダラー系コンポーネントでオーバーライド）
      */
     virtual void Draw() {}
+
+    /**
+     * @brief 描画ステート・コンピュートタスクの事前構築（ウォームアップ用）
+     * @details ゲームロジックを進めずに、描画前同期やComputeTask（GPUスキニング等）の予約のみを行います。
+     */
+    virtual void SyncRenderState() {}
 
     /**
      * @brief 紐づく Renderable オブジェクトを取得する
@@ -281,14 +342,16 @@ public:
      * @brief RegisterHeader を実行する。
      */
     ComponentProperty& RegisterHeader(const std::string& name) {
-        properties_.push_back({name, ComponentPropertyType::Header, nullptr, 0.0f, 0.0f, {}, "", nullptr});
+        properties_.push_back(
+            {name, ComponentPropertyType::Header, ComponentPropertyData{}, 0.0f, 0.0f, {}, "", nullptr});
         return properties_.back();
     }
     /**
      * @brief RegisterSeparator を実行する。
      */
     ComponentProperty& RegisterSeparator() {
-        properties_.push_back({"", ComponentPropertyType::Separator, nullptr, 0.0f, 0.0f, {}, "", nullptr});
+        properties_.push_back(
+            {"", ComponentPropertyType::Separator, ComponentPropertyData{}, 0.0f, 0.0f, {}, "", nullptr});
         return properties_.back();
     }
 
@@ -298,51 +361,52 @@ public:
     virtual nlohmann::json Serialize() {
         nlohmann::json j = nlohmann::json::object();
         for (const auto& prop : properties_) {
-            switch (prop.type) {
-            case ComponentPropertyType::Float:
-                j[prop.name] = *static_cast<float*>(prop.data);
-                break;
-            case ComponentPropertyType::Enum:
-            case ComponentPropertyType::Int:
-                j[prop.name] = *static_cast<int*>(prop.data);
-                break;
-            case ComponentPropertyType::Bool:
-                j[prop.name] = *static_cast<bool*>(prop.data);
-                break;
-            case ComponentPropertyType::String:
-                j[prop.name] = *static_cast<std::string*>(prop.data);
-                break;
-            case ComponentPropertyType::GameObjectRef:
-                j[prop.name] = *static_cast<uint64_t*>(prop.data);
-                break;
-            case ComponentPropertyType::Float2: {
-                auto* v = static_cast<Irufemi::Vector2*>(prop.data);
-                j[prop.name] = Irufemi::JsonUtility::ToJson(*v);
-                break;
-            }
-            case ComponentPropertyType::Float3: {
-                auto* v = static_cast<Irufemi::Vector3*>(prop.data);
-                j[prop.name] = Irufemi::JsonUtility::ToJson(*v);
-                break;
-            }
-            case ComponentPropertyType::Float4: {
-                auto* v = static_cast<Irufemi::Vector4*>(prop.data);
-                j[prop.name] = Irufemi::JsonUtility::ToJson(*v);
-                break;
-            }
-            case ComponentPropertyType::Float3Array: {
-                auto* arr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
-                nlohmann::json jArray = nlohmann::json::array();
-                for (const auto& v : *arr) {
-                    jArray.push_back(Irufemi::JsonUtility::ToJson(v));
-                }
-                j[prop.name] = jArray;
-                break;
-            }
-            case ComponentPropertyType::Header:
-            case ComponentPropertyType::Separator:
-                break;
-            }
+            std::visit(
+                [&](auto&& ptr) {
+                    using T = std::decay_t<decltype(ptr)>;
+                    if constexpr (std::is_same_v<T, float*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, int*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, bool*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, std::string*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, uint64_t*>) {
+                        if (ptr) {
+                            j[prop.name] = *ptr;
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector2*>) {
+                        if (ptr) {
+                            j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector3*>) {
+                        if (ptr) {
+                            j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector4*>) {
+                        if (ptr) {
+                            j[prop.name] = Irufemi::JsonUtility::ToJson(*ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, std::vector<Irufemi::Vector3>*>) {
+                        if (ptr) {
+                            nlohmann::json jArray = nlohmann::json::array();
+                            for (const auto& v : *ptr) {
+                                jArray.push_back(Irufemi::JsonUtility::ToJson(v));
+                            }
+                            j[prop.name] = jArray;
+                        }
+                    }
+                },
+                prop.data);
         }
         return j;
     }
@@ -355,53 +419,54 @@ public:
             if (!j.contains(prop.name)) {
                 continue;
             }
-            switch (prop.type) {
-            case ComponentPropertyType::Float:
-                *static_cast<float*>(prop.data) = j[prop.name].get<float>();
-                break;
-            case ComponentPropertyType::Enum:
-            case ComponentPropertyType::Int:
-                *static_cast<int*>(prop.data) = j[prop.name].get<int>();
-                break;
-            case ComponentPropertyType::Bool:
-                *static_cast<bool*>(prop.data) = j[prop.name].get<bool>();
-                break;
-            case ComponentPropertyType::String:
-                *static_cast<std::string*>(prop.data) = j[prop.name].get<std::string>();
-                break;
-            case ComponentPropertyType::GameObjectRef:
-                *static_cast<uint64_t*>(prop.data) = j[prop.name].get<uint64_t>();
-                break;
-            case ComponentPropertyType::Float2: {
-                auto* v = static_cast<Irufemi::Vector2*>(prop.data);
-                *v = Irufemi::JsonUtility::ToVector2(j[prop.name], *v);
-                break;
-            }
-            case ComponentPropertyType::Float3: {
-                auto* v = static_cast<Irufemi::Vector3*>(prop.data);
-                *v = Irufemi::JsonUtility::ToVector3(j[prop.name], *v);
-                break;
-            }
-            case ComponentPropertyType::Float4: {
-                auto* v = static_cast<Irufemi::Vector4*>(prop.data);
-                *v = Irufemi::JsonUtility::ToVector4(j[prop.name], *v);
-                break;
-            }
-            case ComponentPropertyType::Float3Array: {
-                auto* vecArr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
-                auto arr = j[prop.name];
-                if (arr.is_array()) {
-                    vecArr->clear();
-                    for (const auto& item : arr) {
-                        vecArr->push_back(Irufemi::JsonUtility::ToVector3(item));
+            std::visit(
+                [&](auto&& ptr) {
+                    using T = std::decay_t<decltype(ptr)>;
+                    if constexpr (std::is_same_v<T, float*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<float>();
+                        }
+                    } else if constexpr (std::is_same_v<T, int*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<int>();
+                        }
+                    } else if constexpr (std::is_same_v<T, bool*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<bool>();
+                        }
+                    } else if constexpr (std::is_same_v<T, std::string*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<std::string>();
+                        }
+                    } else if constexpr (std::is_same_v<T, uint64_t*>) {
+                        if (ptr) {
+                            *ptr = j[prop.name].get<uint64_t>();
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector2*>) {
+                        if (ptr) {
+                            *ptr = Irufemi::JsonUtility::ToVector2(j[prop.name], *ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector3*>) {
+                        if (ptr) {
+                            *ptr = Irufemi::JsonUtility::ToVector3(j[prop.name], *ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, Irufemi::Vector4*>) {
+                        if (ptr) {
+                            *ptr = Irufemi::JsonUtility::ToVector4(j[prop.name], *ptr);
+                        }
+                    } else if constexpr (std::is_same_v<T, std::vector<Irufemi::Vector3>*>) {
+                        if (ptr) {
+                            auto arr = j[prop.name];
+                            if (arr.is_array()) {
+                                ptr->clear();
+                                for (const auto& item : arr) {
+                                    ptr->push_back(Irufemi::JsonUtility::ToVector3(item));
+                                }
+                            }
+                        }
                     }
-                }
-                break;
-            }
-            case ComponentPropertyType::Header:
-            case ComponentPropertyType::Separator:
-                break;
-            }
+                },
+                prop.data);
         }
     }
 
@@ -409,52 +474,26 @@ public:
      * @brief コンポーネントのプロパティを別のコンポーネントからコピーする (ディープコピー用)
      */
     virtual void CopyPropertiesFrom(const Component* other) {
-        if (!other) {
-            return;
-        }
-        if (properties_.size() != other->properties_.size()) {
+        if (!other || properties_.size() != other->properties_.size()) {
             return;
         }
         for (size_t i = 0; i < properties_.size(); ++i) {
             auto& dst = properties_[i];
             const auto& src = other->properties_[i];
-            if (dst.type != src.type) {
+            if (dst.data.index() != src.data.index()) {
                 continue;
             }
-            switch (dst.type) {
-            case ComponentPropertyType::Float:
-                *static_cast<float*>(dst.data) = *static_cast<float*>(src.data);
-                break;
-            case ComponentPropertyType::Int:
-            case ComponentPropertyType::Enum:
-                *static_cast<int*>(dst.data) = *static_cast<int*>(src.data);
-                break;
-            case ComponentPropertyType::Bool:
-                *static_cast<bool*>(dst.data) = *static_cast<bool*>(src.data);
-                break;
-            case ComponentPropertyType::String:
-                *static_cast<std::string*>(dst.data) = *static_cast<std::string*>(src.data);
-                break;
-            case ComponentPropertyType::GameObjectRef:
-                *static_cast<uint64_t*>(dst.data) = *static_cast<uint64_t*>(src.data);
-                break;
-            case ComponentPropertyType::Float2:
-                *static_cast<Irufemi::Vector2*>(dst.data) = *static_cast<Irufemi::Vector2*>(src.data);
-                break;
-            case ComponentPropertyType::Float3:
-                *static_cast<Irufemi::Vector3*>(dst.data) = *static_cast<Irufemi::Vector3*>(src.data);
-                break;
-            case ComponentPropertyType::Float4:
-                *static_cast<Irufemi::Vector4*>(dst.data) = *static_cast<Irufemi::Vector4*>(src.data);
-                break;
-            case ComponentPropertyType::Float3Array:
-                *static_cast<std::vector<Irufemi::Vector3>*>(dst.data) =
-                    *static_cast<std::vector<Irufemi::Vector3>*>(src.data);
-                break;
-            case ComponentPropertyType::Header:
-            case ComponentPropertyType::Separator:
-                break;
-            }
+            std::visit(
+                [](auto&& dstPtr, auto&& srcPtr) {
+                    using DstT = std::decay_t<decltype(dstPtr)>;
+                    using SrcT = std::decay_t<decltype(srcPtr)>;
+                    if constexpr (std::is_same_v<DstT, SrcT> && !std::is_same_v<DstT, std::monostate>) {
+                        if (dstPtr && srcPtr) {
+                            *dstPtr = *srcPtr;
+                        }
+                    }
+                },
+                dst.data, src.data);
         }
     }
 
@@ -492,7 +531,34 @@ public:
      */
     class TransformComponent* GetTransform() const;
 
+    /**
+     * @brief 所属するシーンを取得するショートカット
+     * @return BaseScene* 所属シーンへのポインタ（未所属ならnullptr）
+     */
+    BaseScene* GetScene() const;
+
+    /**
+     * @brief エンジンコアインスタンスを取得するショートカット
+     * @return IrufemiEngine* エンジンへのポインタ（未所属ならnullptr）
+     */
+    IrufemiEngine* GetEngine() const;
+
+    /**
+     * @brief 初期化済みかどうかを取得する
+     */
+    bool IsInitialized() const {
+        return isInitialized_;
+    }
+
+    /**
+     * @brief 初期化済みフラグを設定する
+     */
+    void SetInitialized(bool initialized) {
+        isInitialized_ = initialized;
+    }
+
 protected:
     GameObject* gameObject_ = nullptr;          ///< 親GameObjectへのポインタ
     std::vector<ComponentProperty> properties_; ///< 自動シリアライズ・UI化用のプロパティリスト
+    bool isInitialized_ = false;                ///< 初期化済みフラグ
 };

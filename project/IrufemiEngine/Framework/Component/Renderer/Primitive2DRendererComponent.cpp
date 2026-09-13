@@ -7,6 +7,11 @@ Primitive2DRendererComponent::Primitive2DRendererComponent() {}
 Primitive2DRendererComponent::~Primitive2DRendererComponent() {}
 
 void Primitive2DRendererComponent::Initialize() {
+    OnAwake();
+    OnSpawned();
+}
+
+void Primitive2DRendererComponent::OnAwake() {
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive2DObject>();
         primitive_->Initialize(static_cast<Irufemi::Primitive2DType>(currentTypeIndex_));
@@ -22,12 +27,13 @@ void Primitive2DRendererComponent::Initialize() {
         primitive_->SetSubdivision(subdivision_);
         primitive_->SetTopMost(isTopMost_);
     }
-
-    if (gameObject_) {
-    }
 }
 
-void Primitive2DRendererComponent::Update() {
+void Primitive2DRendererComponent::OnSpawned() {
+    SyncRenderState();
+}
+
+void Primitive2DRendererComponent::SyncRenderState() {
     if (GetTransform() && primitive_) {
         // Primitive2DObjectは主に画面空間での描画を想定しているため、
         // Transformのx, yをポジションとし、zをソート順等の奥行きとして渡す
@@ -40,11 +46,12 @@ void Primitive2DRendererComponent::Update() {
         Irufemi::Vector2 finalSize = {size_.x * GetTransform()->GetWorldScale().x,
                                       size_.y * GetTransform()->GetWorldScale().y};
         primitive_->SetSize(finalSize);
-    }
-
-    if (primitive_) {
         primitive_->Update();
     }
+}
+
+void Primitive2DRendererComponent::Update() {
+    SyncRenderState();
 }
 
 void Primitive2DRendererComponent::Draw() {

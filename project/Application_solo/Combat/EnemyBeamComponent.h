@@ -3,8 +3,8 @@
 #include "Core/Math/Transform.h"
 #include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include "Renderer/Data/LightningParams.h"
+#include "RHI/DirectX12/ConstantBuffer.h"
 #include <memory>
-#include <wrl.h>
 
 /**
  * @class EnemyBeamComponent
@@ -73,10 +73,27 @@ private:
     std::shared_ptr<Primitive3DObject> attackCylinder_ = nullptr;      // 内側の極太レーザーコア
     std::shared_ptr<Primitive3DObject> attackCylinderOuter_ = nullptr; // 外側の電撃オーラ
 
-    // シェーダーパラメータ
-    Microsoft::WRL::ComPtr<ID3D12Resource> beamParamsResource_;
-    LightningParams* beamParamsData_ = nullptr;
+    // シェーダーパラメータ定数バッファ
+    ConstantBuffer<LightningParams> beamParamsBuffer_;
+    LightningParams beamParamsData_{};
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> auraParamsResource_;
-    LightningParams* auraParamsData_ = nullptr;
+    ConstantBuffer<LightningParams> auraParamsBuffer_;
+    LightningParams auraParamsData_{};
+
+    /**
+     * @brief インスペクターやプロパティの変更を定数バッファデータへ同期する
+     */
+    void UpdateParameters();
+
+    /**
+     * @brief チャージ状態のアニメーション・ビルボード更新
+     * @param deltaTime 経過時間
+     */
+    void UpdateCharging(float deltaTime);
+
+    /**
+     * @brief 発射状態のビーム伸長・回転・拡縮更新
+     * @param deltaTime 経過時間
+     */
+    void UpdateFiring(float deltaTime);
 };

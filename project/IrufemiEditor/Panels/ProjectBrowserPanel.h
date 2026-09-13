@@ -44,6 +44,9 @@ public:
 
     void Initialize(EditorManager* editorManager) override;
     void Draw() override;
+    const char* GetName() const override {
+        return "Project";
+    }
 
     /**
      * @brief ファイルシステムをスキャンし、キャッシュを最新状態に更新する

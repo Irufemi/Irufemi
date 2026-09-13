@@ -2,7 +2,7 @@
 
 #include "Audio/Sound.h"
 #include "Audio/VoiceInstance.h"
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -27,16 +27,19 @@ private:
     IXAudio2MasteringVoice* pMasteringVoice_{nullptr}; ///< IUnknownを継承しないため生ポインタ管理
 
     // ロードした音声データをファイル名をキーにして保持するマップ
-    std::map<std::string, std::shared_ptr<Sound>> soundRegistry_;
+    std::unordered_map<std::string, std::shared_ptr<Sound>> soundRegistry_;
 
     // 再生中の VoiceInstance を一元管理
     std::vector<std::shared_ptr<VoiceInstance>> activeVoices_;
 
-    // カテゴリ名 → その中にあるファイル名リスト(ソート済み)
-    std::map<std::string, std::vector<std::string>> categoryMap_;
+    // カテゴリ名 → その中にあるファイル名リスト
+    std::unordered_map<std::string, std::vector<std::string>> categoryMap_;
 
     // ファイナライズ済みフラグ
     bool finalized_{false};
+
+    // マスターボリュームのキャッシュ（不要なSetVolume呼び出し防止用）
+    float cachedMasterVolume_{-1.0f};
 
     /**
      * @brief 管理対象のボイスかどうか判定する

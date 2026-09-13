@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <cstdint>
 #include <optional>
 #include "Core/Math/Matrix4x4.h"
@@ -29,6 +29,6 @@ struct JointData {
  */
 struct SkeletonData {
     int32_t root;
-    std::map<std::string, int32_t> jointMap;
+    std::unordered_map<std::string, int32_t> jointMap;
     std::vector<JointData> joints;
 };

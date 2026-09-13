@@ -12,7 +12,7 @@
 #include "Core/Math/Geometry/AABB.h"
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 struct ObjMaterial {
     // Kd
@@ -75,7 +75,7 @@ struct ObjModel {
     Node rootNode; // 追加: シーン階層ルート
 
     /** @brief スキンクラスター（ボーンウェイト）データのマップ */
-    std::map<std::string, JointWeightData> skinClusterData;
+    std::unordered_map<std::string, JointWeightData> skinClusterData;
 
     /** @brief モデル全体の境界球（高速なカリング用） */
     Irufemi::Sphere boundingSphere; // 追加: モデル全体の境界球

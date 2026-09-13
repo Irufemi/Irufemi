@@ -302,6 +302,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Platform\Input\Mouse.cpp" />
     <ClCompile Include="Platform\WindowsAPI\WinApp.cpp" />
     <ClCompile Include="Framework\Scene\BaseScene.cpp" />
+    <ClCompile Include="Framework\Scene\SceneObjectRegistry.cpp" />
     <ClCompile Include="Framework\Scene\DebugScene.cpp" />
     <ClCompile Include="Framework\Component\Audio\AudioSourceComponent.cpp" />
     <ClCompile Include="Framework\Component\Camera\CameraComponent.cpp" />
@@ -334,6 +335,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Scene\IScene.cpp" />
     <ClCompile Include="Framework\Scene\SceneManager.cpp" />
     <ClCompile Include="Framework\Scene\SceneSerializer.cpp" />
+    <ClCompile Include="Framework\Prefab\PrefabManager.cpp" />
     <ClCompile Include="Framework\Scene\SceneTransition.cpp" />
     <ClCompile Include="Framework\Scene\OptionsScene.cpp" />
     <ClCompile Include="Framework\UI\UIAnimator.cpp" />
@@ -502,12 +504,14 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Platform\WindowsAPI\WinApp.h" />
     <ClInclude Include="EngineResources\FontAwesome\IconsFontAwesome6.h" />
     <ClInclude Include="Framework\Scene\BaseScene.h" />
+    <ClInclude Include="Framework\Scene\SceneObjectRegistry.h" />
     <ClInclude Include="Framework\Scene\DebugScene.h" />
     <ClInclude Include="Framework\GameObject\GameObject.h" />
     <ClInclude Include="Framework\Scene\IScene.h" />
     <ClInclude Include="Core\System\ILoadingScreen.h" />
     <ClInclude Include="Framework\Scene\SceneManager.h" />
     <ClInclude Include="Framework\Scene\SceneSerializer.h" />
+    <ClInclude Include="Framework\Prefab\PrefabManager.h" />
     <ClInclude Include="Framework\Scene\SceneTransition.h" />
     <ClInclude Include="Framework\Scene\OptionsScene.h" />
     <ClInclude Include="Framework\UI\UIAnimator.h" />

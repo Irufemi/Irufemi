@@ -86,8 +86,110 @@ void EnsureNullSpotLight(DirectXCommon* dx) {
 }
 } // namespace
 
-DrawManager::DrawManager() {}
-DrawManager::~DrawManager() {}
+DrawManager::DrawManager() {
+    isAlive_ = std::make_shared<std::atomic<bool>>(true);
+}
+
+DrawManager::~DrawManager() {
+    if (isAlive_) {
+        isAlive_->store(false);
+    }
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    registeredQueues_.clear();
+}
+
+DrawManager::LocalRenderQueues& DrawManager::GetLocalQueues() {
+    struct ThreadLocalWrapper {
+        LocalRenderQueues queues;
+        DrawManager* registeredManager = nullptr;
+        std::weak_ptr<std::atomic<bool>> aliveToken;
+
+        ~ThreadLocalWrapper() {
+            if (auto token = aliveToken.lock()) {
+                if (token->load() && registeredManager) {
+                    registeredManager->UnregisterThreadQueues(&queues);
+                }
+            }
+        }
+    };
+
+    thread_local ThreadLocalWrapper wrapper;
+    if (wrapper.registeredManager != this) {
+        if (auto token = wrapper.aliveToken.lock()) {
+            if (token->load() && wrapper.registeredManager) {
+                wrapper.registeredManager->UnregisterThreadQueues(&wrapper.queues);
+            }
+        }
+        RegisterThreadQueues(&wrapper.queues);
+        wrapper.registeredManager = this;
+        wrapper.aliveToken = isAlive_;
+    }
+    return wrapper.queues;
+}
+
+void DrawManager::RegisterThreadQueues(LocalRenderQueues* queues) {
+    if (!queues) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    if (std::find(registeredQueues_.begin(), registeredQueues_.end(), queues) == registeredQueues_.end()) {
+        registeredQueues_.push_back(queues);
+    }
+}
+
+void DrawManager::UnregisterThreadQueues(LocalRenderQueues* queues) {
+    if (!queues) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    auto it = std::find(registeredQueues_.begin(), registeredQueues_.end(), queues);
+    if (it != registeredQueues_.end()) {
+        registeredQueues_.erase(it);
+    }
+}
+
+void DrawManager::MergeThreadLocalQueues() {
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    for (auto* lq : registeredQueues_) {
+        if (!lq) {
+            continue;
+        }
+
+        auto mergeVec = [](auto& dst, auto& src) {
+            if (!src.empty()) {
+                dst.insert(dst.end(), std::make_move_iterator(src.begin()), std::make_move_iterator(src.end()));
+                src.clear();
+            }
+        };
+
+        mergeVec(standard3DQueue_, lq->standard3DQueue);
+        mergeVec(transparent3DQueue_, lq->transparent3DQueue);
+        mergeVec(ui3DQueue_, lq->ui3DQueue);
+        mergeVec(selectionMaskQueue_, lq->selectionMaskQueue);
+        mergeVec(selectionMaskQueue2D_, lq->selectionMaskQueue2D);
+        mergeVec(spriteQueue_, lq->spriteQueue);
+        mergeVec(spriteBatchQueue_, lq->spriteBatchQueue);
+        mergeVec(lineQueue_, lq->lineQueue);
+        mergeVec(gpuParticleQueue_, lq->gpuParticleQueue);
+        mergeVec(voxelParticleQueue_, lq->voxelParticleQueue);
+        mergeVec(skyboxQueue_, lq->skyboxQueue);
+        mergeVec(primitiveBatchQueue_, lq->primitiveBatchQueue);
+        mergeVec(primitive2DBatchQueue_, lq->primitive2DBatchQueue);
+        mergeVec(modelBatchQueue_, lq->modelBatchQueue);
+        mergeVec(debugPrimitiveQueue_, lq->debugPrimitiveQueue);
+        mergeVec(postRenderQueue_, lq->postRenderQueue);
+        mergeVec(topMostSpriteQueue_, lq->topMostSpriteQueue);
+        mergeVec(topMostSpriteBatchQueue_, lq->topMostSpriteBatchQueue);
+        mergeVec(textQueue_, lq->textQueue);
+        mergeVec(topMostTextQueue_, lq->topMostTextQueue);
+    }
+}
+
+void DrawManager::SubmitPostRender(std::function<void()> drawFunc) {
+    if (drawFunc) {
+        GetLocalQueues().postRenderQueue.push_back(std::move(drawFunc));
+    }
+}
 
 void DrawManager::Initialize(IrufemiEngine* engine, DirectXCommon* dx) {
     engine_ = engine;
@@ -498,7 +600,6 @@ void DrawManager::SetEnvironmentMap(D3D12_GPU_DESCRIPTOR_HANDLE envMapHandle) {
 }
 
 void DrawManager::SubmitSprite(const Object2DResource* resource) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -507,11 +608,10 @@ void DrawManager::SubmitSprite(const Object2DResource* resource) {
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    spriteQueue_.push_back(p);
+    GetLocalQueues().spriteQueue.push_back(p);
 }
 
 void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -520,7 +620,7 @@ void DrawManager::SubmitTopMostSprite(const Object2DResource* resource) {
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    topMostSpriteQueue_.push_back(p);
+    GetLocalQueues().topMostSpriteQueue.push_back(p);
 }
 
 void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
@@ -546,8 +646,7 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
 }
 
 void DrawManager::SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
-    spriteBatchQueue_.push_back(packet);
+    GetLocalQueues().spriteBatchQueue.push_back(packet);
 }
 
 void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
@@ -566,8 +665,7 @@ void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet
 }
 
 void DrawManager::SubmitTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
-    topMostSpriteBatchQueue_.push_back(packet);
+    GetLocalQueues().topMostSpriteBatchQueue.push_back(packet);
 }
 
 void DrawManager::DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
@@ -575,7 +673,6 @@ void DrawManager::DrawTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket&
 }
 
 void DrawManager::SubmitText(const Object2DResource* resource) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -584,11 +681,10 @@ void DrawManager::SubmitText(const Object2DResource* resource) {
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    textQueue_.push_back(p);
+    GetLocalQueues().textQueue.push_back(p);
 }
 
 void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -597,7 +693,7 @@ void DrawManager::SubmitTopMostText(const Object2DResource* resource) {
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    topMostTextQueue_.push_back(p);
+    GetLocalQueues().topMostTextQueue.push_back(p);
 }
 
 void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
@@ -623,8 +719,7 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
 }
 
 void DrawManager::SubmitModelBatch(const ModelBatchPacket& packet) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
-    modelBatchQueue_.push_back(packet);
+    GetLocalQueues().modelBatchQueue.push_back(packet);
 }
 
 void DrawManager::DrawModelBatch(const RenderPackets::ModelBatchPacket& packet) {
@@ -716,8 +811,7 @@ void DrawManager::DispatchGPUCulling(const RenderPackets::ModelBatchPacket& pack
 }
 
 void DrawManager::SubmitPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
-    primitiveBatchQueue_.push_back(packet);
+    GetLocalQueues().primitiveBatchQueue.push_back(packet);
 }
 
 void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& packet) {
@@ -741,8 +835,7 @@ void DrawManager::DrawPrimitiveBatch(const RenderPackets::PrimitiveBatchPacket& 
 }
 
 void DrawManager::SubmitPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
-    primitive2DBatchQueue_.push_back(packet);
+    GetLocalQueues().primitive2DBatchQueue.push_back(packet);
 }
 
 void DrawManager::DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPacket& packet) {
@@ -768,7 +861,6 @@ void DrawManager::DrawPrimitive2DBatch(const RenderPackets::Primitive2DBatchPack
 void DrawManager::SubmitLineInstanced(const LineResource* resource,
                                       const D3D12_GPU_DESCRIPTOR_HANDLE& instancingSrvHandleGPU,
                                       const UINT& instanceCount, PSOManager::DepthWrite depthWrite) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource || instanceCount == 0) {
         return;
     }
@@ -780,7 +872,7 @@ void DrawManager::SubmitLineInstanced(const LineResource* resource,
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = depthWrite;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    lineQueue_.push_back(p);
+    GetLocalQueues().lineQueue.push_back(p);
 }
 
 void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
@@ -802,7 +894,6 @@ void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
 }
 
 void DrawManager::SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (packet.indexCount == 0 || packet.instanceCount == 0) {
         return;
     }
@@ -810,7 +901,7 @@ void DrawManager::SubmitDebugPrimitive(const RenderPackets::DebugPrimitivePacket
     p.blendMode = dxCommon_->GetEngine()->currentBlend_;
     p.depthWrite = dxCommon_->GetEngine()->currentDepth_;
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
-    debugPrimitiveQueue_.push_back(p);
+    GetLocalQueues().debugPrimitiveQueue.push_back(p);
 }
 
 void DrawManager::DrawDebugPrimitive(const RenderPackets::DebugPrimitivePacket& packet) {
@@ -876,7 +967,7 @@ void DrawManager::SubmitSkybox(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
     packet.indexCount = indexCount;
     // packet.textureHandle is removed
 
-    skyboxQueue_.push_back(packet);
+    GetLocalQueues().skyboxQueue.push_back(packet);
 }
 
 void DrawManager::DrawSkybox(const RenderPackets::SkyboxPacket& packet) {
@@ -898,7 +989,6 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource,
                                    const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows,
                                    ID3D12Resource* vertexBufferResourceOverride,
                                    D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -915,14 +1005,13 @@ void DrawManager::SubmitStandard3D(const Object3DResource* resource,
     p.overrideMaterialCBV = overrideMaterialCBV;
     p.castShadows = castShadows;
     p.distanceToCamera = 0.0f; // Standardの場合は不要
-    standard3DQueue_.push_back(p);
+    GetLocalQueues().standard3DQueue.push_back(p);
 }
 
 void DrawManager::SubmitTransparent3D(const Object3DResource* resource,
                                       const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride, bool castShadows,
                                       ID3D12Resource* vertexBufferResourceOverride,
                                       D3D12_GPU_VIRTUAL_ADDRESS overrideMaterialCBV) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -950,12 +1039,11 @@ void DrawManager::SubmitTransparent3D(const Object3DResource* resource,
             p.distanceToCamera = dx * dx + dy * dy + dz * dz; // 距離の2乗（比較用なら2乗のままで十分）
         }
     }
-    transparent3DQueue_.push_back(p);
+    GetLocalQueues().transparent3DQueue.push_back(p);
 }
 
 void DrawManager::SubmitUI3D(const Object3DResource* resource,
                              const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -967,13 +1055,12 @@ void DrawManager::SubmitUI3D(const Object3DResource* resource,
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
-    ui3DQueue_.push_back(p);
+    GetLocalQueues().ui3DQueue.push_back(p);
 }
 
 void DrawManager::SubmitOutlineMask(const Object3DResource* resource,
                                     const D3D12_VERTEX_BUFFER_VIEW* vertexBufferViewOverride,
                                     ID3D12Resource* vertexBufferResourceOverride) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -986,11 +1073,10 @@ void DrawManager::SubmitOutlineMask(const Object3DResource* resource,
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
-    selectionMaskQueue_.push_back(p);
+    GetLocalQueues().selectionMaskQueue.push_back(p);
 }
 
 void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (!resource) {
         return;
     }
@@ -1001,7 +1087,7 @@ void DrawManager::SubmitTextOutlineMask(const Object2DResource* resource) {
     p.cullMode = dxCommon_->GetEngine()->currentCull_;
     p.customPSO = resource->GetCustomPSO();
     p.customCBVAddress = resource->GetCustomCBVAddress();
-    selectionMaskQueue2D_.push_back(p);
+    GetLocalQueues().selectionMaskQueue2D.push_back(p);
 }
 
 void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) {
@@ -1053,11 +1139,10 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
 }
 
 void DrawManager::SubmitGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (packet.instanceCount == 0) {
         return;
     }
-    gpuParticleQueue_.push_back(packet);
+    GetLocalQueues().gpuParticleQueue.push_back(packet);
 }
 
 void DrawManager::DrawGPUParticle(const RenderPackets::GPUParticlePacket& packet) {
@@ -1102,7 +1187,6 @@ void DrawManager::SubmitVoxelParticle(uint32_t instanceCount, const D3D12_VERTEX
                                       D3D12_GPU_DESCRIPTOR_HANDLE emitterHandle,
                                       D3D12_GPU_DESCRIPTOR_HANDLE particleDataHandle, ID3D12Resource* particleResource,
                                       ID3D12PipelineState* drawPSO) {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     if (instanceCount == 0) {
         return;
     }
@@ -1116,7 +1200,7 @@ void DrawManager::SubmitVoxelParticle(uint32_t instanceCount, const D3D12_VERTEX
     p.particleDataHandle = particleDataHandle;
     p.particleResource = particleResource;
     p.drawPSO = drawPSO;
-    voxelParticleQueue_.push_back(p);
+    GetLocalQueues().voxelParticleQueue.push_back(p);
 }
 
 void DrawManager::DrawVoxelParticle(const RenderPackets::VoxelParticlePacket& packet) {
@@ -1452,6 +1536,9 @@ void DrawManager::EndShadowPass() {
 }
 
 void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
+    // 全スレッドのローカル描画キューをメインキューへ一括マージ
+    MergeThreadLocalQueues();
+
     if (renderGraph_) {
         // メインレンダリングテクスチャの初期状態を登録 (RenderGraph内で遷移するため)
         renderGraph_->SetInitialResourceState(engine->GetMainRenderTexture()->GetResource(),
@@ -1516,7 +1603,6 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
 }
 
 void DrawManager::ClearRenderQueues() {
-    std::lock_guard<std::mutex> lock(queueMutex_);
     standard3DQueue_.clear();
     transparent3DQueue_.clear();
     ui3DQueue_.clear();
@@ -1538,4 +1624,12 @@ void DrawManager::ClearRenderQueues() {
     topMostTextQueue_.clear();
     topMostSpriteQueue_.clear();
     topMostSpriteBatchQueue_.clear();
+
+    // 登録された各スレッドのローカルキューも安全のためクリア
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    for (auto* lq : registeredQueues_) {
+        if (lq) {
+            lq->Clear();
+        }
+    }
 }

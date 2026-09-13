@@ -20,6 +20,7 @@ public:
      * @brief Initialize を実行する。
      */
     void Initialize() override;
+    void OnAwake() override;
     /**
      * @brief Update を実行する。
      */

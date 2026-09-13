@@ -6,7 +6,18 @@
 #include "Renderer/System/Core/BaseModel.h"
 
 CameraComponent::CameraComponent() = default;
-CameraComponent::~CameraComponent() = default;
+CameraComponent::~CameraComponent() {
+    OnDestroy();
+}
+
+void CameraComponent::OnDestroy() {
+    if (gameObject_) {
+        auto* engine = BaseModel::GetIrufemiEngine();
+        if (engine && engine->GetCameraManager()) {
+            engine->GetCameraManager()->RemoveCamera(gameObject_->GetName());
+        }
+    }
+}
 
 void CameraComponent::OnRegisterProperties() {
     RegisterProperty("FOV", &fovAngleY_);
@@ -16,20 +27,29 @@ void CameraComponent::OnRegisterProperties() {
 }
 
 void CameraComponent::Initialize() {
-    camera_ = std::make_shared<Camera>();
+    OnAwake();
+    Start();
+}
 
-    auto* engine = BaseModel::GetIrufemiEngine();
-    int clientWidth = engine ? engine->GetGameResolutionWidth() : 1280;
-    int clientHeight = engine ? engine->GetGameResolutionHeight() : 720;
-    camera_->Initialize(clientWidth, clientHeight);
+void CameraComponent::OnAwake() {
+    if (!camera_) {
+        camera_ = std::make_shared<Camera>();
 
-    // プロパティ値を適用
-    camera_->SetFovY(fovAngleY_);
-    camera_->SetFarClip(farZ_);
+        auto* engine = BaseModel::GetIrufemiEngine();
+        int clientWidth = engine ? engine->GetGameResolutionWidth() : 1280;
+        int clientHeight = engine ? engine->GetGameResolutionHeight() : 720;
+        camera_->Initialize(clientWidth, clientHeight);
 
-    // カメラマネージャに登録
+        // プロパティ値を適用
+        camera_->SetFovY(fovAngleY_);
+        camera_->SetFarClip(farZ_);
+    }
+}
+
+void CameraComponent::Start() {
     if (gameObject_) {
-        if (engine && engine->GetCameraManager()) {
+        auto* engine = BaseModel::GetIrufemiEngine();
+        if (engine && engine->GetCameraManager() && camera_) {
             engine->GetCameraManager()->AddCamera(gameObject_->GetName(), camera_);
             if (makeActive_) {
                 engine->GetCameraManager()->SetActiveCamera(gameObject_->GetName());

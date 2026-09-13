@@ -207,24 +207,25 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         bool isModified = false;
                         switch (prop.type) {
                         case ComponentPropertyType::Float:
-                            isModified = (*static_cast<float*>(prop.data) != prop.defaultValue.get<float>());
+                            isModified = (*static_cast<float*>(prop.GetRawData()) != prop.defaultValue.get<float>());
                             break;
                         case ComponentPropertyType::Enum:
                         case ComponentPropertyType::Int:
-                            isModified = (*static_cast<int*>(prop.data) != prop.defaultValue.get<int>());
+                            isModified = (*static_cast<int*>(prop.GetRawData()) != prop.defaultValue.get<int>());
                             break;
                         case ComponentPropertyType::Bool:
-                            isModified = (*static_cast<bool*>(prop.data) != prop.defaultValue.get<bool>());
+                            isModified = (*static_cast<bool*>(prop.GetRawData()) != prop.defaultValue.get<bool>());
                             break;
                         case ComponentPropertyType::String:
                             isModified =
-                                (*static_cast<std::string*>(prop.data) != prop.defaultValue.get<std::string>());
+                                (*static_cast<std::string*>(prop.GetRawData()) != prop.defaultValue.get<std::string>());
                             break;
                         case ComponentPropertyType::GameObjectRef:
-                            isModified = (*static_cast<uint64_t*>(prop.data) != prop.defaultValue.get<uint64_t>());
+                            isModified =
+                                (*static_cast<uint64_t*>(prop.GetRawData()) != prop.defaultValue.get<uint64_t>());
                             break;
                         case ComponentPropertyType::Float2: {
-                            auto* v = static_cast<Irufemi::Vector2*>(prop.data);
+                            auto* v = static_cast<Irufemi::Vector2*>(prop.GetRawData());
                             auto arr = prop.defaultValue;
                             if (arr.is_array() && arr.size() >= 2) {
                                 isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
@@ -232,7 +233,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             break;
                         }
                         case ComponentPropertyType::Float3: {
-                            auto* v = static_cast<Irufemi::Vector3*>(prop.data);
+                            auto* v = static_cast<Irufemi::Vector3*>(prop.GetRawData());
                             auto arr = prop.defaultValue;
                             if (arr.is_array() && arr.size() >= 3) {
                                 isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
@@ -241,7 +242,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             break;
                         }
                         case ComponentPropertyType::Float4: {
-                            auto* v = static_cast<Irufemi::Vector4*>(prop.data);
+                            auto* v = static_cast<Irufemi::Vector4*>(prop.GetRawData());
                             auto arr = prop.defaultValue;
                             if (arr.is_array() && arr.size() >= 4) {
                                 isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
@@ -259,30 +260,31 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                               ImVec2(20, 0))) {
                                 switch (prop.type) {
                                 case ComponentPropertyType::Float:
-                                    *static_cast<float*>(prop.data) = prop.defaultValue.get<float>();
+                                    *static_cast<float*>(prop.GetRawData()) = prop.defaultValue.get<float>();
                                     break;
                                 case ComponentPropertyType::Enum:
                                 case ComponentPropertyType::Int:
-                                    *static_cast<int*>(prop.data) = prop.defaultValue.get<int>();
+                                    *static_cast<int*>(prop.GetRawData()) = prop.defaultValue.get<int>();
                                     break;
                                 case ComponentPropertyType::Bool:
-                                    *static_cast<bool*>(prop.data) = prop.defaultValue.get<bool>();
+                                    *static_cast<bool*>(prop.GetRawData()) = prop.defaultValue.get<bool>();
                                     break;
                                 case ComponentPropertyType::String:
-                                    *static_cast<std::string*>(prop.data) = prop.defaultValue.get<std::string>();
+                                    *static_cast<std::string*>(prop.GetRawData()) =
+                                        prop.defaultValue.get<std::string>();
                                     break;
                                 case ComponentPropertyType::GameObjectRef:
-                                    *static_cast<uint64_t*>(prop.data) = prop.defaultValue.get<uint64_t>();
+                                    *static_cast<uint64_t*>(prop.GetRawData()) = prop.defaultValue.get<uint64_t>();
                                     break;
                                 case ComponentPropertyType::Float2: {
-                                    auto* v = static_cast<Irufemi::Vector2*>(prop.data);
+                                    auto* v = static_cast<Irufemi::Vector2*>(prop.GetRawData());
                                     auto arr = prop.defaultValue;
                                     v->x = arr[0].get<float>();
                                     v->y = arr[1].get<float>();
                                     break;
                                 }
                                 case ComponentPropertyType::Float3: {
-                                    auto* v = static_cast<Irufemi::Vector3*>(prop.data);
+                                    auto* v = static_cast<Irufemi::Vector3*>(prop.GetRawData());
                                     auto arr = prop.defaultValue;
                                     v->x = arr[0].get<float>();
                                     v->y = arr[1].get<float>();
@@ -290,7 +292,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                     break;
                                 }
                                 case ComponentPropertyType::Float4: {
-                                    auto* v = static_cast<Irufemi::Vector4*>(prop.data);
+                                    auto* v = static_cast<Irufemi::Vector4*>(prop.GetRawData());
                                     auto arr = prop.defaultValue;
                                     v->x = arr[0].get<float>();
                                     v->y = arr[1].get<float>();
@@ -340,7 +342,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     }
 
                     ImGui::TableSetColumnIndex(1);
-                    auto* arr = static_cast<std::vector<Irufemi::Vector3>*>(prop.data);
+                    auto* arr = static_cast<std::vector<Irufemi::Vector3>*>(prop.GetRawData());
                     int size = static_cast<int>(arr->size());
                     ImGui::PushItemWidth(-1);
                     if (ImGui::InputInt(("##Size" + prop.name).c_str(), &size)) {
@@ -406,7 +408,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
 
                     switch (prop.type) {
                     case ComponentPropertyType::Float: {
-                        float* ptr = static_cast<float*>(prop.data);
+                        float* ptr = static_cast<float*>(prop.GetRawData());
                         if (prop.minVal != prop.maxVal) {
                             ImGui::SliderFloat(hiddenName.c_str(), ptr, prop.minVal, prop.maxVal);
                         } else {
@@ -416,7 +418,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         break;
                     }
                     case ComponentPropertyType::Enum: {
-                        int* ptr = static_cast<int*>(prop.data);
+                        int* ptr = static_cast<int*>(prop.GetRawData());
                         if (!prop.enumNames.empty()) {
                             std::vector<const char*> cStrs;
                             for (const auto& s : prop.enumNames) {
@@ -430,7 +432,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         break;
                     }
                     case ComponentPropertyType::Int: {
-                        int* ptr = static_cast<int*>(prop.data);
+                        int* ptr = static_cast<int*>(prop.GetRawData());
                         if (prop.minVal != prop.maxVal) {
                             ImGui::SliderInt(hiddenName.c_str(), ptr, static_cast<int>(prop.minVal),
                                              static_cast<int>(prop.maxVal));
@@ -441,7 +443,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         break;
                     }
                     case ComponentPropertyType::Bool: {
-                        bool* ptr = static_cast<bool*>(prop.data);
+                        bool* ptr = static_cast<bool*>(prop.GetRawData());
                         bool oldVal = *ptr;
                         if (ImGui::Checkbox(hiddenName.c_str(), ptr)) {
                             PushInstantUndo(actionManager, oldVal, *ptr, ptr);
@@ -449,19 +451,19 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         break;
                     }
                     case ComponentPropertyType::Float2: {
-                        Irufemi::Vector2* ptr = reinterpret_cast<Irufemi::Vector2*>(prop.data);
+                        Irufemi::Vector2* ptr = reinterpret_cast<Irufemi::Vector2*>(prop.GetRawData());
                         ImGui::DragFloat2(hiddenName.c_str(), &ptr->x, 0.1f);
                         CheckUndoRedoDrag(actionManager, ptr);
                         break;
                     }
                     case ComponentPropertyType::Float3: {
-                        Irufemi::Vector3* ptr = reinterpret_cast<Irufemi::Vector3*>(prop.data);
+                        Irufemi::Vector3* ptr = reinterpret_cast<Irufemi::Vector3*>(prop.GetRawData());
                         ImGui::DragFloat3(hiddenName.c_str(), &ptr->x, 0.1f);
                         CheckUndoRedoDrag(actionManager, ptr);
                         break;
                     }
                     case ComponentPropertyType::Float4: {
-                        Irufemi::Vector4* ptr = reinterpret_cast<Irufemi::Vector4*>(prop.data);
+                        Irufemi::Vector4* ptr = reinterpret_cast<Irufemi::Vector4*>(prop.GetRawData());
                         if (prop.name.find("Color") != std::string::npos ||
                             prop.name.find("color") != std::string::npos) {
                             ImGui::ColorEdit4(hiddenName.c_str(), &ptr->x);
@@ -472,7 +474,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         break;
                     }
                     case ComponentPropertyType::String: {
-                        auto* str = static_cast<std::string*>(prop.data);
+                        auto* str = static_cast<std::string*>(prop.GetRawData());
                         std::string lowerName = prop.name;
                         std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
 
@@ -563,7 +565,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         break;
                     }
                     case ComponentPropertyType::GameObjectRef: {
-                        uint64_t* ptr = static_cast<uint64_t*>(prop.data);
+                        uint64_t* ptr = static_cast<uint64_t*>(prop.GetRawData());
                         std::vector<std::shared_ptr<GameObject>> allObjs;
                         if (component->GetGameObject() && component->GetGameObject()->GetScene()) {
                             auto rootObjs = component->GetGameObject()->GetScene()->GetGameObjects();

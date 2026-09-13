@@ -20,6 +20,10 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief シーン参加時にAnimatorの初期化を行います
+     */
+    void OnSpawned() override;
+    /**
      * @brief Start を実行する。
      */
     void Start() override;

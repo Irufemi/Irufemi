@@ -57,6 +57,11 @@ public:
         throwDirection_ = dir;
     }
 
+    /**
+     * @brief ボスシールドとして破壊された際の解除・消滅処理を行う
+     */
+    void DestroyAsShield();
+
     void SetVirtualId(int id) {
         virtualId_ = id;
     }

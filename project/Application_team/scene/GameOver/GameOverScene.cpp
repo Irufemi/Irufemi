@@ -23,9 +23,3 @@ void GameOverScene::Update() {
 void GameOverScene::Draw() {
     BaseScene::Draw();
 }
-
-void GameOverScene::DrawDebugTab() {
-#if defined USE_IMGUI
-    BaseScene::DrawDebugTab();
-#endif
-}

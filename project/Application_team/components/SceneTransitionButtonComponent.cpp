@@ -17,11 +17,15 @@ void SceneTransitionButtonComponent::OnRegisterProperties() {
     RegisterProperty("Click Anim Duration", &clickAnimDuration_);
 }
 
-void SceneTransitionButtonComponent::Initialize() {
+void SceneTransitionButtonComponent::OnAwake() {
     if (gameObject_) {
         button_ = gameObject_->GetComponent<ButtonComponent>();
         sprite_ = gameObject_->GetComponent<SpriteRendererComponent>();
     }
+}
+
+void SceneTransitionButtonComponent::Initialize() {
+    OnAwake();
 }
 
 void SceneTransitionButtonComponent::Update() {

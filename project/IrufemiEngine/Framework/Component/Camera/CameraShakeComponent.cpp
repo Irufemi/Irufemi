@@ -19,6 +19,10 @@ void CameraShakeComponent::OnRegisterProperties() {
 }
 
 void CameraShakeComponent::Initialize() {
+    OnAwake();
+}
+
+void CameraShakeComponent::OnAwake() {
     if (gameObject_) {
         cameraComp_ = gameObject_->GetComponent<CameraComponent>();
     }

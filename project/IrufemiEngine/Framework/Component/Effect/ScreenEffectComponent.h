@@ -15,6 +15,7 @@ public:
 
     void Initialize() override;
     void Update() override;
+    void OnDestroy() override;
 
     std::string GetComponentName() const override {
         return "ScreenEffectComponent";
@@ -78,7 +79,13 @@ private:
     PostProcessManager::RadialBlurParams baseRadialBlurParams_;
     bool isBaseCached_ = false;
 
-    float LerpFloat(float a, float b, float t) const {
-        return a + (b - a) * t;
-    }
+    /// @brief エフェクトのパラメータ補間を適用する
+    void ApplyEffectParams(PostProcessManager* ppm, float t);
+    void UpdateGlitchParams(PostProcessManager* ppm, float t);
+    void UpdateVignetteParams(PostProcessManager* ppm, float t);
+    void UpdateChromaticAberrationParams(PostProcessManager* ppm, float t);
+    void UpdateRadialBlurParams(PostProcessManager* ppm, float t);
+
+    /// @brief エフェクト終了時にベースパラメータへ復元する
+    void RestoreBaseParams(PostProcessManager* ppm);
 };

@@ -19,6 +19,14 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief 生成時のモデル名キャッシュを行います
+     */
+    void OnAwake() override;
+    /**
+     * @brief ゲーム開始・シーン参加時のVoxelParticleManagerプール予約を行います
+     */
+    void Start() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;

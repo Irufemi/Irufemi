@@ -17,16 +17,19 @@ void ModelBatchRendererComponent::LoadModel(const std::string& filename) {
 }
 
 void ModelBatchRendererComponent::Initialize() {
-    batch_ = std::make_unique<ModelBatch>();
+    OnAwake();
+}
+
+void ModelBatchRendererComponent::OnAwake() {
+    if (!batch_) {
+        batch_ = std::make_unique<ModelBatch>();
+    }
     if (!modelName_.empty()) {
         batch_->Initialize(modelName_);
     }
 
     // キャッシュされたGPUカリング設定を反映
     batch_->SetUseGPUCulling(useGPUCulling_);
-
-    if (gameObject_) {
-    }
 }
 
 void ModelBatchRendererComponent::Update() {

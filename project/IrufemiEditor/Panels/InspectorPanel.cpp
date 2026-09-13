@@ -25,7 +25,7 @@ void InspectorPanel::Draw() {
         return;
     }
 
-    ImGui::Begin("Inspector");
+    ImGui::Begin(GetName(), &isOpen_);
 
     if (auto selected = editorManager_->GetSelectedObject()) {
         bool isLocked = selected->GetIsLocked();

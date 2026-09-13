@@ -153,7 +153,9 @@ void CVarSystem::SetOnChangeCallback(const std::string& name, std::function<void
     if (reg.find(name) != reg.end()) {
         reg[name]->onChangeCallback = std::move(callback);
         // Call it immediately once when registered so current values apply
-        reg[name]->onChangeCallback();
+        if (reg[name]->onChangeCallback) {
+            reg[name]->onChangeCallback();
+        }
     }
 }
 

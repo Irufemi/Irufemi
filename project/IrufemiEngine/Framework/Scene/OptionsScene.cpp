@@ -60,30 +60,39 @@ void OptionsScene::BindUIComponents() {
         }
     };
 
-    for (auto& obj : gameObjects_) {
-        auto name = obj->GetName();
+    // Apply ボタン
+    if (auto obj = FindGameObject("Button_Apply")) {
+        if (auto btn = obj->GetComponent<ButtonComponent>()) {
+            // ToDo: Apply logic
+        }
+    }
 
-        if (name == "Button_Apply") {
-            if (auto btn = obj->GetComponent<ButtonComponent>()) {
-                // ToDo: Apply logic
-            }
-        } else if (name == "Button_Cancel" || name == "Button_Close") {
-            if (auto btn = obj->GetComponent<ButtonComponent>()) {
-                closeBtn_ = btn;
-            }
-        } else if (name == "Slider_BGM") {
-            if (auto slider = obj->GetComponent<SliderComponent>()) {
-                slider->SetValue(Irufemi::CVarSystem::GetFloat("a.MasterVolume")); // 代替としてMasterVolumeを使用
-                slider->SetOnValueChangedCallback(
-                    [](float val) { Irufemi::CVarSystem::SetFloat("a.MasterVolume", val); });
-            }
-        } else if (name == "Slider_SE") {
-            if (auto slider = obj->GetComponent<SliderComponent>()) {
-                slider->SetValue(1.0f); // ダミー
-                slider->SetOnValueChangedCallback([](float val) {
-                    // SE用音量の保存先があれば設定
-                });
-            }
+    // Close / Cancel ボタン
+    if (auto obj = FindGameObject("Button_Cancel")) {
+        if (auto btn = obj->GetComponent<ButtonComponent>()) {
+            closeBtn_ = btn;
+        }
+    } else if (auto objClose = FindGameObject("Button_Close")) {
+        if (auto btn = objClose->GetComponent<ButtonComponent>()) {
+            closeBtn_ = btn;
+        }
+    }
+
+    // BGM スライダー
+    if (auto obj = FindGameObject("Slider_BGM")) {
+        if (auto slider = obj->GetComponent<SliderComponent>()) {
+            slider->SetValue(Irufemi::CVarSystem::GetFloat("a.MasterVolume")); // 代替としてMasterVolumeを使用
+            slider->SetOnValueChangedCallback([](float val) { Irufemi::CVarSystem::SetFloat("a.MasterVolume", val); });
+        }
+    }
+
+    // SE スライダー
+    if (auto obj = FindGameObject("Slider_SE")) {
+        if (auto slider = obj->GetComponent<SliderComponent>()) {
+            slider->SetValue(1.0f); // ダミー
+            slider->SetOnValueChangedCallback([](float val) {
+                // SE用音量の保存先があれば設定
+            });
         }
     }
 }

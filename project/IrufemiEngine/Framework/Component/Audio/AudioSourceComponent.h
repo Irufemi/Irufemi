@@ -19,6 +19,22 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief スポーン時の処理（シーンバインド後の確実なオーディオ初期化）
+     */
+    void OnSpawned() override;
+    /**
+     * @brief ゲーム開始時の処理
+     */
+    void Start() override;
+    /**
+     * @brief コンポーネント無効化時の処理
+     */
+    void OnDisable() override;
+    /**
+     * @brief コンポーネント破棄時の処理
+     */
+    void OnDestroy() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;
@@ -62,6 +78,8 @@ public:
     void SetAudioType(AudioType type);
 
 private:
+    void InitializeAudio();
+
     std::string audioPath_ = "audio/BGM/bgm_default.wav"; // デフォルト
     int audioType_ = static_cast<int>(AudioType::SE);     // シリアライズ用
     bool playOnAwake_ = false;

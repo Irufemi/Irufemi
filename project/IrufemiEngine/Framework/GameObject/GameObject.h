@@ -4,11 +4,23 @@
 #include <memory>
 #include <typeindex>
 #include <unordered_map>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include "Framework/Component/Component.h"
 #include "Core/System/ComponentPool.h"
 
 class BaseScene;
+
+/**
+ * @brief GameObjectのライフサイクル状態
+ */
+enum class GameObjectLifeState : uint8_t {
+    Constructed = 0, ///< インスタンス生成直後（コンストラクタ実行中）
+    Awake,           ///< コンポーネント構築・プロパティ登録完了
+    Spawned,         ///< シーン配置・Transform設定完了
+    Started,         ///< 初回Update直前のStart実行完了
+    Destroyed        ///< 破棄済み
+};
 
 /**
  * @class GameObject
@@ -18,7 +30,28 @@ class GameObject : public std::enable_shared_from_this<GameObject> {
 public:
     GameObject();
     GameObject(const std::string& name);
-    ~GameObject() = default;
+    ~GameObject();
+
+    /**
+     * @brief 現在のライフサイクル状態を取得する
+     */
+    GameObjectLifeState GetLifeState() const {
+        return lifeState_;
+    }
+
+    /**
+     * @brief Awake済みかどうかを判定する
+     */
+    bool IsAwake() const {
+        return lifeState_ >= GameObjectLifeState::Awake;
+    }
+
+    /**
+     * @brief Spawned（シーン配置済み）かどうかを判定する
+     */
+    bool IsSpawned() const {
+        return lifeState_ >= GameObjectLifeState::Spawned;
+    }
 
     /**
      * @brief InstanceID を取得する。
@@ -43,9 +76,20 @@ public:
     }
 
     /**
-     * @brief ゲームオブジェクトの初期化処理を行う。アタッチされたコンポーネント群のInitializeも呼び出される。
+     * @brief 自己完結の初期化処理を行う（Phase 1: Awake）。同一GameObject内のコンポーネント取得を行う。
+     */
+    void Awake();
+
+    /**
+     * @brief ゲームオブジェクトの初期化処理を行う。多重呼び出しは自動的にガードされます。
      */
     void Initialize();
+
+    /**
+     * @brief シーン配置およびTransform確定時の通知を行う（Phase 2: Spawned）。
+     */
+    void NotifySpawned();
+
     /**
      * @brief ゲームオブジェクトの開始処理。最初のUpdateが呼ばれる直前に1度だけ実行される。
      */
@@ -58,6 +102,12 @@ public:
      * @brief Draw を実行する。
      */
     void Draw();
+
+    /**
+     * @brief 描画ステート・コンピュートタスクの事前構築（ウォームアップ用）。
+     * @details ゲームロジックを進めずに、描画前同期やComputeTask（GPUスキニング等）の予約のみを行います。
+     */
+    void SyncRenderState();
     /**
      * @brief DrawOutlineMask を実行する。
      */
@@ -110,29 +160,14 @@ public:
      */
     std::shared_ptr<T> AddComponent(Args&&... args) {
         std::shared_ptr<T> component;
-        /**
-         * @brief constexpr を実行する。
-         */
         if constexpr (IsPooledComponent<T>::value) {
             component = ComponentPool<T>::GetInstance().Create(std::forward<Args>(args)...);
         } else {
             component = std::make_shared<T>(std::forward<Args>(args)...);
         }
 
-        component->SetGameObject(this);
-
-        components_.push_back(component);
-        componentMap_[typeid(T)].push_back(component.get());
-
-        if constexpr (std::is_same_v<T, TransformComponent>) {
-            transformCache_ = reinterpret_cast<TransformComponent*>(component.get());
-        }
-
-        component->OnRegisterProperties();
-        component->Initialize();
-        if (isActive_) {
-            component->OnEnable();
-        }
+        // 実際の登録処理およびライフサイクル通知は非テンプレート版へ委譲
+        AddComponent(std::static_pointer_cast<Component>(component));
         return component;
     }
 
@@ -150,9 +185,24 @@ public:
      * @return 見つかった場合はそのポインタ、無ければnullptr
      */
     T* GetComponent() const {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
         auto it = componentMap_.find(typeid(T));
         if (it != componentMap_.end() && !it->second.empty()) {
             return static_cast<T*>(it->second.front());
+        }
+        return nullptr;
+    }
+
+    /**
+     * @brief インターフェースや基底クラスを実装しているコンポーネントを動的に検索して取得する
+     * @return 見つかった場合はそのポインタ、無ければnullptr
+     */
+    template <typename T> T* GetComponentByInterface() const {
+        std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+        for (const auto& comp : components_) {
+            if (auto target = dynamic_cast<T*>(comp.get())) {
+                return target;
+            }
         }
         return nullptr;
     }
@@ -297,17 +347,15 @@ public:
 
     // --- ライフサイクル ---
     /**
-     * @brief オブジェクトを破棄状態にする（現在のフレームの終わりに削除される）
+     * @brief オブジェクトを破棄状態にする（OnDestroyを呼び出し、現在のフレームの終わりに削除される）
      */
-    void Destroy() {
-        isDestroyed_ = true;
-    }
+    void Destroy();
     /**
      * @brief IsDestroyed かどうかを判定する。
      * @return 判定結果 (true/false)
      */
     bool IsDestroyed() const {
-        return isDestroyed_;
+        return isDestroyed_ || lifeState_ == GameObjectLifeState::Destroyed;
     }
     /**
      * @brief IsStarted かどうかを判定する。
@@ -316,6 +364,12 @@ public:
     bool IsStarted() const {
         return isStarted_;
     }
+
+    /**
+     * @brief 破棄フラグが立った子オブジェクトを再帰的に削除する (GC)
+     * @details マルチスレッドUpdate完了後のメインスレッド同期フェーズで呼び出されます。
+     */
+    void CleanupDestroyedChildren();
 
     // --- イベント伝達 ---
     /**
@@ -404,6 +458,7 @@ private:
     bool isActive_ = true;
     bool isStarted_ = false;
     bool isDestroyed_ = false;
+    GameObjectLifeState lifeState_ = GameObjectLifeState::Constructed;
     bool isFolder_ = false;
     bool isLocked_ = false;
     bool isSerializable_ = false; // デフォルトはfalse（動的生成とみなす）
@@ -416,6 +471,7 @@ private:
     std::vector<std::shared_ptr<Component>> components_;
     std::unordered_map<std::type_index, std::vector<Component*>> componentMap_;
     class TransformComponent* transformCache_ = nullptr;
+    mutable std::recursive_mutex structureMutex_; ///< 構造変更（子オブジェクト・コンポーネント着脱）用ミューテックス
 
 private:
     template <typename T>

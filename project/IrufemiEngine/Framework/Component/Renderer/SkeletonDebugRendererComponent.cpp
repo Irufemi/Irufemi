@@ -18,6 +18,10 @@ SkeletonDebugRendererComponent::SkeletonDebugRendererComponent() {
 SkeletonDebugRendererComponent::~SkeletonDebugRendererComponent() {}
 
 void SkeletonDebugRendererComponent::Initialize() {
+    OnAwake();
+}
+
+void SkeletonDebugRendererComponent::OnAwake() {
     boneMeshes_->Initialize(Irufemi::PrimitiveType::Octahedron, "resources/whiteTexture.png");
     boneMeshes_->SetDepthWrite(PSOManager::DepthWrite::Off);
 

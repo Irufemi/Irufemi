@@ -1,7 +1,30 @@
 #include "Framework/Component/Collider/ColliderComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include "Physics/CollisionManager.h"
 
 ColliderComponent::~ColliderComponent() {
+    OnDestroy();
+}
+
+void ColliderComponent::Start() {
+    if (collisionManager_ && gameObject_ && gameObject_->GetIsActive()) {
+        collisionManager_->RegisterCollider(this);
+    }
+}
+
+void ColliderComponent::OnDestroy() {
+    if (collisionManager_) {
+        collisionManager_->UnregisterCollider(this);
+    }
+}
+
+void ColliderComponent::OnEnable() {
+    if (collisionManager_) {
+        collisionManager_->RegisterCollider(this);
+    }
+}
+
+void ColliderComponent::OnDisable() {
     if (collisionManager_) {
         collisionManager_->UnregisterCollider(this);
     }

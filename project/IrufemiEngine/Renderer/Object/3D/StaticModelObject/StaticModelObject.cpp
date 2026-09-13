@@ -156,9 +156,10 @@ void StaticModelObject::Update() {
 
         if (m->cpuModel && m->cpuModel->skinClusterData.empty()) {
             // 非スキニング時のみ、ノード階層を考慮する
-            std::string nodeName = m->cpuModel->meshes[i].nodeName;
-            if (nodeGlobalTransforms_.find(nodeName) != nodeGlobalTransforms_.end()) {
-                meshWorld = nodeGlobalTransforms_[nodeName] * objectWorld;
+            const std::string& nodeName = m->cpuModel->meshes[i].nodeName;
+            auto it = nodeGlobalTransforms_.find(nodeName);
+            if (it != nodeGlobalTransforms_.end()) {
+                meshWorld = it->second * objectWorld;
             } else {
                 meshWorld = transformationMatrix_.world; // fallback
             }

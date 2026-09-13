@@ -20,6 +20,14 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief 生成時の同一オブジェクト内MeshRenderer取得を行います
+     */
+    void OnAwake() override;
+    /**
+     * @brief シーン参加時のPostProcessManagerキャッシュを行います
+     */
+    void OnSpawned() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;
@@ -107,15 +115,11 @@ public:
     }
 
 private:
-    /**
-     * @brief ApplyToRenderer を実行する。
-     */
-    void ApplyToRenderer();
-
     bool enableEffectMask_ = true;
     int32_t customEffectType_ = 0;
     float cachedEffectParam_ = 0.0f;
     PostProcessManager::CustomEffectParams customParams_;
 
     MeshRendererComponent* cachedRenderer_ = nullptr;
+    PostProcessManager* cachedPostProcessManager_ = nullptr;
 };

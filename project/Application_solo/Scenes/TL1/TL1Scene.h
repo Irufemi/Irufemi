@@ -21,7 +21,7 @@ public: // メンバ関数
     void Initialize(IrufemiEngine* engine) override;
     void Update() override;
     void Draw() override;
-    void DrawDebugTab() override;
+    void DrawStandaloneDebugWindows() override;
 
 private: // メンバ変数
     std::string promptText_ = "";

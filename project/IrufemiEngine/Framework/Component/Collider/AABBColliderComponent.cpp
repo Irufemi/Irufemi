@@ -5,26 +5,6 @@
 
 AABBColliderComponent::AABBColliderComponent() {}
 
-AABBColliderComponent::~AABBColliderComponent() {
-    if (collisionManager_) {
-        collisionManager_->UnregisterCollider(this);
-    }
-}
-
-void AABBColliderComponent::Initialize() {
-    if (gameObject_) {
-    }
-    // 初期化時にCollisionManagerに自身を登録する
-    if (collisionManager_) {
-        collisionManager_->RegisterCollider(this);
-    }
-}
-
-void AABBColliderComponent::Update() {
-    if (!GetTransform() && gameObject_) {
-    }
-}
-
 void AABBColliderComponent::DrawDebug() {}
 
 void AABBColliderComponent::OnRegisterProperties() {

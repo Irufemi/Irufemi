@@ -27,9 +27,3 @@ void TitleScene::Update() {
 void TitleScene::Draw() {
     BaseScene::Draw();
 }
-
-void TitleScene::DrawDebugTab() {
-#if defined USE_IMGUI
-    BaseScene::DrawDebugTab();
-#endif
-}

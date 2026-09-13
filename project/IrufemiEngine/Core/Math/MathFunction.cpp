@@ -700,6 +700,53 @@ Quaternion ToQuaternionFromMatrix(const Matrix4x4& m) {
     return Normalize(q);
 }
 
+Quaternion ExtractRotationSafe(const Matrix4x4& mat, const Vector3& scaleSign) {
+    float sx = std::copysign(1.0f, scaleSign.x);
+    float sy = std::copysign(1.0f, scaleSign.y);
+    float sz = std::copysign(1.0f, scaleSign.z);
+
+    Matrix4x4 pureRotMat = mat;
+    pureRotMat.m[0][0] *= sx;
+    pureRotMat.m[0][1] *= sx;
+    pureRotMat.m[0][2] *= sx;
+    pureRotMat.m[1][0] *= sy;
+    pureRotMat.m[1][1] *= sy;
+    pureRotMat.m[1][2] *= sy;
+    pureRotMat.m[2][0] *= sz;
+    pureRotMat.m[2][1] *= sz;
+    pureRotMat.m[2][2] *= sz;
+
+    return Normalize(ToQuaternionFromMatrix(pureRotMat));
+}
+
+void DecomposeAffineMatrixSafe(const Matrix4x4& mat, const Vector3& scaleSignHint, Vector3& outPosition,
+                               Quaternion& outRotation, Vector3& outScale) {
+
+    outPosition = {mat.m[3][0], mat.m[3][1], mat.m[3][2]};
+
+    Vector3 xaxis = {mat.m[0][0], mat.m[0][1], mat.m[0][2]};
+    Vector3 yaxis = {mat.m[1][0], mat.m[1][1], mat.m[1][2]};
+    Vector3 zaxis = {mat.m[2][0], mat.m[2][1], mat.m[2][2]};
+
+    // 3x3 行列式で反転状態を確認
+    float det = xaxis.x * (yaxis.y * zaxis.z - yaxis.z * zaxis.y) - xaxis.y * (yaxis.x * zaxis.z - yaxis.z * zaxis.x) +
+                xaxis.z * (yaxis.x * zaxis.y - yaxis.y * zaxis.x);
+
+    float sx = std::copysign(1.0f, scaleSignHint.x);
+    float sy = std::copysign(1.0f, scaleSignHint.y);
+    float sz = std::copysign(1.0f, scaleSignHint.z);
+
+    // 行列のフリップ状態とヒント符号の不整合がある場合、X軸の符号を反転して回転抽出の破綻を防ぐ
+    if ((sx * sy * sz) * det < 0.0f) {
+        sx = -sx;
+    }
+
+    outScale = {std::copysign(Length(xaxis), sx), std::copysign(Length(yaxis), sy), std::copysign(Length(zaxis), sz)};
+
+    Vector3 finalSign = {sx, sy, sz};
+    outRotation = ExtractRotationSafe(mat, finalSign);
+}
+
 #pragma endregion
 
 Vector3 Perpendicular(Vector3 vector) {

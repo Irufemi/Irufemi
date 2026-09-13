@@ -16,6 +16,17 @@ void TargetFollowComponent::Initialize() {
     targetTransform_ = nullptr;
 }
 
+void TargetFollowComponent::Start() {
+    targetTransform_ = nullptr;
+    if (gameObject_ && targetObjectID_ != 0) {
+        if (auto scene = gameObject_->GetScene()) {
+            if (auto targetObj = scene->FindGameObjectByID(targetObjectID_)) {
+                targetTransform_ = targetObj->GetComponent<TransformComponent>();
+            }
+        }
+    }
+}
+
 void TargetFollowComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
     if (targetObjectID_ != 0) {
         auto it = idMap.find(targetObjectID_);

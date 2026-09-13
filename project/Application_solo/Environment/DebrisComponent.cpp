@@ -4,7 +4,7 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
-#include "RailMechanics/RailShooterEnemyComponent.h"
+#include "Combat/IDamageable.h"
 #include "Combat/Boss/BossComponent.h"
 #include "Environment/DebrisManagerComponent.h"
 #include "Effects/EffectManagerComponent.h"
@@ -13,7 +13,6 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Renderer/Camera/CameraManager.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
-#include "Environment/DestructibleEnvironmentComponent.h"
 #include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/Renderer/PrimitiveRendererComponent.h"
@@ -98,6 +97,31 @@ void DebrisComponent::OnDisable() {
     }
 }
 
+void DebrisComponent::DestroyAsShield() {
+    if (state_ != DebrisState::BossOrbiting) {
+        return;
+    }
+
+    // Bossからシールドを解除する
+    if (auto bossTarget = targetObject_.lock()) {
+        if (auto bossTargetComp = bossTarget->GetComponent<BossComponent>()) {
+            if (gameObject_) {
+                bossTargetComp->RemoveShield(gameObject_->shared_from_this());
+            }
+        }
+    }
+
+    // シールドを消滅させる
+    if (manager_ && gameObject_) {
+        manager_->MarkForRelease(gameObject_->shared_from_this());
+        if (virtualId_ >= 0) {
+            manager_->MarkForDestroy(virtualId_, variationIndex_);
+        }
+    } else if (gameObject_) {
+        gameObject_->SetIsActive(false);
+    }
+}
+
 void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     if (state_ != DebrisState::Thrown) {
         return;
@@ -107,34 +131,24 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     }
 
     bool hit = false;
-    if (auto enemyComp = otherObj->GetComponent<RailShooterEnemyComponent>()) {
-        enemyComp->TakeDamage(static_cast<int>(GetEnemyDamage()));
-        hit = true;
-    } else if (auto bossComp = otherObj->GetComponent<BossComponent>()) {
-        bossComp->TakeDamage(GetBossDamage());
-        hit = true;
-    } else if (auto debrisComp = otherObj->GetComponent<DebrisComponent>()) {
+    if (auto debrisComp = otherObj->GetComponent<DebrisComponent>()) {
         if (debrisComp->GetState() == DebrisState::BossOrbiting) {
-            // Bossからシールドを解除する
-            if (auto bossTarget = debrisComp->GetTarget().lock()) {
-                if (auto bossTargetComp = bossTarget->GetComponent<BossComponent>()) {
-                    bossTargetComp->RemoveShield(otherObj->shared_from_this());
-                }
-            }
-
-            // シールドを消滅させる
-            if (debrisComp->manager_) {
-                debrisComp->manager_->MarkForRelease(otherObj->shared_from_this());
-                if (debrisComp->virtualId_ >= 0) {
-                    debrisComp->manager_->MarkForDestroy(debrisComp->virtualId_, debrisComp->variationIndex_);
-                }
-            } else {
-                otherObj->SetIsActive(false);
-            }
+            debrisComp->DestroyAsShield();
             hit = true;
         }
-    } else if (auto destructible = otherObj->GetComponent<DestructibleEnvironmentComponent>()) {
-        destructible->TakeDamage(1);
+    } else if (auto damageable = otherObj->GetComponentByInterface<IDamageable>()) {
+        float damage = GetEnemyDamage();
+        switch (damageable->GetDamageableType()) {
+        case DamageableType::Boss:
+            damage = GetBossDamage();
+            break;
+        case DamageableType::Environment:
+            damage = 1.0f;
+            break;
+        default:
+            break;
+        }
+        damageable->TakeDamage(damage);
         hit = true;
     } else if (auto collider = GetColliderFromObj(otherObj)) {
         auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();

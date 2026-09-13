@@ -13,7 +13,14 @@ TextRendererComponent::TextRendererComponent() {}
 TextRendererComponent::~TextRendererComponent() {}
 
 void TextRendererComponent::Initialize() {
-    textObj_ = std::make_unique<Text>();
+    OnAwake();
+    OnSpawned();
+}
+
+void TextRendererComponent::OnAwake() {
+    if (!textObj_) {
+        textObj_ = std::make_unique<Text>();
+    }
     textObj_->Initialize(fontId_);
     textObj_->SetText(text_);
     textObj_->SetBaseScale(baseScale_);
@@ -21,6 +28,22 @@ void TextRendererComponent::Initialize() {
     textObj_->SetTopMost(isTopMost_);
     textObj_->SetAlignment(alignment_);
     // ロード画面中に生成を終わらせるため、初期化時に強制アップデート（非同期タスク待ち・頂点生成）
+    textObj_->Update();
+}
+
+void TextRendererComponent::OnSpawned() {
+    SyncRenderState();
+}
+
+void TextRendererComponent::SyncRenderState() {
+    if (!GetTransform() || !textObj_) {
+        return;
+    }
+    // Transformの変更をTextオブジェクトに反映
+    textObj_->SetPosition(GetTransform()->GetWorldPosition().x, GetTransform()->GetWorldPosition().y,
+                          GetTransform()->GetWorldPosition().z);
+    textObj_->SetRotation(GetTransform()->GetWorldRotation().z); // 2DなのでZ軸回転
+    textObj_->SetScale(GetTransform()->GetWorldScale().x, GetTransform()->GetWorldScale().y);
     textObj_->Update();
 }
 
@@ -51,13 +74,7 @@ void TextRendererComponent::Update() {
         SetAlignment(newAlign);
     }
 
-    // Transformの変更をTextオブジェクトに反映
-    textObj_->SetPosition(GetTransform()->GetWorldPosition().x, GetTransform()->GetWorldPosition().y,
-                          GetTransform()->GetWorldPosition().z);
-    textObj_->SetRotation(GetTransform()->GetWorldRotation().z); // 2DなのでZ軸回転
-    textObj_->SetScale(GetTransform()->GetWorldScale().x, GetTransform()->GetWorldScale().y);
-
-    textObj_->Update();
+    SyncRenderState();
 }
 
 void TextRendererComponent::Draw() {

@@ -39,7 +39,7 @@ void SceneViewPanel::Draw() {
         return;
     }
 
-    ImGui::Begin("Scene");
+    ImGui::Begin(GetName(), &isOpen_);
 
     auto* engine = editorManager_->GetEngine();
     if (engine && engine->GetMainRenderTexture()) {
