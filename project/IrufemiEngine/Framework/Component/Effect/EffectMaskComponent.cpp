@@ -20,12 +20,8 @@ void EffectMaskComponent::OnAwake() {
 }
 
 void EffectMaskComponent::OnSpawned() {
-    if (gameObject_) {
-        if (auto* scene = gameObject_->GetScene()) {
-            if (auto* engine = scene->GetEngine()) {
-                cachedPostProcessManager_ = engine->GetPostProcessManager();
-            }
-        }
+    if (auto* engine = GetEngine()) {
+        cachedPostProcessManager_ = engine->GetPostProcessManager();
     }
 }
 
@@ -35,8 +31,8 @@ void EffectMaskComponent::Update() {
     }
 
     if (enableEffectMask_ && customEffectType_ > 0) {
-        if (!cachedPostProcessManager_ && gameObject_ && gameObject_->GetScene()) {
-            if (auto* engine = gameObject_->GetScene()->GetEngine()) {
+        if (!cachedPostProcessManager_) {
+            if (auto* engine = GetEngine()) {
                 cachedPostProcessManager_ = engine->GetPostProcessManager();
             }
         }

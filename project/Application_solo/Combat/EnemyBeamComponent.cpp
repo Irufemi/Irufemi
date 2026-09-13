@@ -36,7 +36,7 @@ void EnemyBeamComponent::OnRegisterProperties() {
 }
 
 void EnemyBeamComponent::Initialize() {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return;
     }
@@ -133,7 +133,7 @@ void EnemyBeamComponent::UpdateParameters() {
     auraParamsData_.intensity = auraIntensity_;
     auraParamsData_.speed = auraSpeed_;
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (engine && engine->GetDirectXCommon()) {
         uint32_t frameIndex = engine->GetDirectXCommon()->GetCurrentBackBufferIndex();
         beamParamsBuffer_.Update(beamParamsData_, frameIndex);
@@ -142,7 +142,7 @@ void EnemyBeamComponent::UpdateParameters() {
 }
 
 void EnemyBeamComponent::UpdateCharging(float deltaTime) {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
 
     // --- 溜め動作のアニメーション ---
     float t = std::min(stateTimer_ / chargeDuration_, 1.0f);
@@ -236,13 +236,13 @@ void EnemyBeamComponent::UpdateFiring(float deltaTime) {
 }
 
 void EnemyBeamComponent::Update() {
-    UpdateParameters();
-
     if (state_ == State::IDLE) {
         return;
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    UpdateParameters();
+
+    auto engine = GetEngine();
     float deltaTime = engine ? engine->GetGameDeltaTime() : (1.0f / 60.0f);
     if (deltaTime <= 0.0f) {
         deltaTime = 1.0f / 60.0f;
@@ -263,7 +263,7 @@ void EnemyBeamComponent::Update() {
 }
 
 void EnemyBeamComponent::Draw() {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine || !engine->GetDirectXCommon()) {
         return;
     }
