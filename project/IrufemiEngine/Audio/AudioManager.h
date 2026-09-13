@@ -38,6 +38,9 @@ private:
     // ファイナライズ済みフラグ
     bool finalized_{false};
 
+    // マスターボリュームのキャッシュ（不要なSetVolume呼び出し防止用）
+    float cachedMasterVolume_{-1.0f};
+
     /**
      * @brief 管理対象のボイスかどうか判定する
      * @param[in] instance 判定対象のVoiceInstance
