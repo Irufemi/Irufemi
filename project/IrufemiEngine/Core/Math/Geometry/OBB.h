@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Core/Math/Vector3.h"
+#include "Core/Math/Geometry/AABB.h"
+#include <cmath>
 
 namespace Irufemi {
 /**
@@ -17,5 +19,25 @@ struct OBB {
 
     /** @brief 中心から各面までの距離（各軸の長さの半分 / Extents） */
     Vector3 size;
+
+    /**
+     * @brief OBBを包含する最小のAABBを計算する
+     * @return OBBを内包するワールドAABB
+     */
+    AABB ToAABB() const {
+        AABB aabb;
+        Vector3 extents;
+        extents.x = std::abs(orientations[0].x * size.x) + std::abs(orientations[1].x * size.y) +
+                    std::abs(orientations[2].x * size.z);
+        extents.y = std::abs(orientations[0].y * size.x) + std::abs(orientations[1].y * size.y) +
+                    std::abs(orientations[2].y * size.z);
+        extents.z = std::abs(orientations[0].z * size.x) + std::abs(orientations[1].z * size.y) +
+                    std::abs(orientations[2].z * size.z);
+
+        aabb.min = {center.x - extents.x, center.y - extents.y, center.z - extents.z};
+        aabb.max = {center.x + extents.x, center.y + extents.y, center.z + extents.z};
+        return aabb;
+    }
 };
 } // namespace Irufemi
+

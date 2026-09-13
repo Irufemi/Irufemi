@@ -1,6 +1,7 @@
 #include "Framework/Component/Effect/ScreenEffectComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "Core/Utility/Ease.h"
 #include <algorithm>
 
 ScreenEffectComponent::ScreenEffectComponent() {}
@@ -60,16 +61,7 @@ void ScreenEffectComponent::Update() {
         currentWeight_ = 0.0f;
         isPlaying_ = false;
 
-        // パラメータを元の値に戻す
-        if (mode_ == PostProcessMode::Glitch) {
-            engine->GetPostProcessManager()->GetGlitchParams() = baseGlitchParams_;
-        } else if (mode_ == PostProcessMode::Vignette) {
-            engine->GetPostProcessManager()->GetVignetteParams() = baseVignetteParams_;
-        } else if (mode_ == PostProcessMode::ChromaticAberration) {
-            engine->GetPostProcessManager()->GetChromaticAberrationParams() = baseChromaticAberrationParams_;
-        } else if (mode_ == PostProcessMode::RadialBlur) {
-            engine->GetPostProcessManager()->GetRadialBlurParams() = baseRadialBlurParams_;
-        }
+        RestoreBaseParams(engine->GetPostProcessManager());
 
         if (!wasModeActiveBeforePlay_) {
             engine->GetPostProcessManager()->RemoveActiveMode(mode_);
@@ -77,48 +69,81 @@ void ScreenEffectComponent::Update() {
         return;
     }
 
-    // Weightに基づいた補間処理
-    // EaseOut的にしたい場合は、tを変化させる (例: t = t * (2 - t))
-    float t = currentWeight_ * (2.0f - currentWeight_);
+    // Weightに基づいたEaseOut補間処理
+    float t = EaseOutQuad(currentWeight_);
+    ApplyEffectParams(engine->GetPostProcessManager(), t);
+}
 
-    if (mode_ == PostProcessMode::Glitch) {
-        auto& params = engine->GetPostProcessManager()->GetGlitchParams();
-        params.intensity = LerpFloat(baseGlitchParams_.intensity, targetGlitchParams_.intensity, t);
-        params.edgeMaskStrength = targetGlitchParams_.edgeMaskStrength;
-        params.probability = targetGlitchParams_.probability;
-        params.blockSizeX = targetGlitchParams_.blockSizeX;
-        params.blockSizeY = targetGlitchParams_.blockSizeY;
-        params.offsetBase = targetGlitchParams_.offsetBase;
-        params.offsetMax = targetGlitchParams_.offsetMax;
-        params.rgbShiftBase = targetGlitchParams_.rgbShiftBase;
-        params.rgbShiftMax = targetGlitchParams_.rgbShiftMax;
-        params.scanlineFreq = targetGlitchParams_.scanlineFreq;
-        params.scanlineIntensity = targetGlitchParams_.scanlineIntensity;
+void ScreenEffectComponent::ApplyEffectParams(PostProcessManager* ppm, float t) {
+    switch (mode_) {
+    case PostProcessMode::Glitch:
+        UpdateGlitchParams(ppm, t);
+        break;
+    case PostProcessMode::Vignette:
+        UpdateVignetteParams(ppm, t);
+        break;
+    case PostProcessMode::ChromaticAberration:
+        UpdateChromaticAberrationParams(ppm, t);
+        break;
+    case PostProcessMode::RadialBlur:
+        UpdateRadialBlurParams(ppm, t);
+        break;
+    default:
+        break;
+    }
+}
 
-        params.color.x = LerpFloat(baseGlitchParams_.color.x, targetGlitchParams_.color.x, t);
-        params.color.y = LerpFloat(baseGlitchParams_.color.y, targetGlitchParams_.color.y, t);
-        params.color.z = LerpFloat(baseGlitchParams_.color.z, targetGlitchParams_.color.z, t);
-        params.color.w = LerpFloat(baseGlitchParams_.color.w, targetGlitchParams_.color.w, t);
-    } else if (mode_ == PostProcessMode::Vignette) {
-        auto& params = engine->GetPostProcessManager()->GetVignetteParams();
-        params.radius = LerpFloat(baseVignetteParams_.radius, targetVignetteParams_.radius, t);
-        params.softness = LerpFloat(baseVignetteParams_.softness, targetVignetteParams_.softness, t);
+void ScreenEffectComponent::UpdateGlitchParams(PostProcessManager* ppm, float t) {
+    auto& params = ppm->GetGlitchParams();
+    params.intensity = Lerp(baseGlitchParams_.intensity, targetGlitchParams_.intensity, t);
+    params.edgeMaskStrength = targetGlitchParams_.edgeMaskStrength;
+    params.probability = targetGlitchParams_.probability;
+    params.blockSizeX = targetGlitchParams_.blockSizeX;
+    params.blockSizeY = targetGlitchParams_.blockSizeY;
+    params.offsetBase = targetGlitchParams_.offsetBase;
+    params.offsetMax = targetGlitchParams_.offsetMax;
+    params.rgbShiftBase = targetGlitchParams_.rgbShiftBase;
+    params.rgbShiftMax = targetGlitchParams_.rgbShiftMax;
+    params.scanlineFreq = targetGlitchParams_.scanlineFreq;
+    params.scanlineIntensity = targetGlitchParams_.scanlineIntensity;
+    params.color = Lerp(baseGlitchParams_.color, targetGlitchParams_.color, t);
+}
 
-        params.color.x = LerpFloat(baseVignetteParams_.color.x, targetVignetteParams_.color.x, t);
-        params.color.y = LerpFloat(baseVignetteParams_.color.y, targetVignetteParams_.color.y, t);
-        params.color.z = LerpFloat(baseVignetteParams_.color.z, targetVignetteParams_.color.z, t);
-        params.color.w = LerpFloat(baseVignetteParams_.color.w, targetVignetteParams_.color.w, t);
-    } else if (mode_ == PostProcessMode::ChromaticAberration) {
-        auto& params = engine->GetPostProcessManager()->GetChromaticAberrationParams();
-        params.intensity =
-            LerpFloat(baseChromaticAberrationParams_.intensity, targetChromaticAberrationParams_.intensity, t);
-    } else if (mode_ == PostProcessMode::RadialBlur) {
-        auto& params = engine->GetPostProcessManager()->GetRadialBlurParams();
-        params.blurWidth = LerpFloat(baseRadialBlurParams_.blurWidth, targetRadialBlurParams_.blurWidth, t);
-        params.center.x = LerpFloat(baseRadialBlurParams_.center.x, targetRadialBlurParams_.center.x, t);
-        params.center.y = LerpFloat(baseRadialBlurParams_.center.y, targetRadialBlurParams_.center.y, t);
-        // numSamples は整数なのでターゲットの値をそのまま使用するか、フェードアウト中は一定にする。
-        params.numSamples = targetRadialBlurParams_.numSamples;
+void ScreenEffectComponent::UpdateVignetteParams(PostProcessManager* ppm, float t) {
+    auto& params = ppm->GetVignetteParams();
+    params.radius = Lerp(baseVignetteParams_.radius, targetVignetteParams_.radius, t);
+    params.softness = Lerp(baseVignetteParams_.softness, targetVignetteParams_.softness, t);
+    params.color = Lerp(baseVignetteParams_.color, targetVignetteParams_.color, t);
+}
+
+void ScreenEffectComponent::UpdateChromaticAberrationParams(PostProcessManager* ppm, float t) {
+    auto& params = ppm->GetChromaticAberrationParams();
+    params.intensity = Lerp(baseChromaticAberrationParams_.intensity, targetChromaticAberrationParams_.intensity, t);
+}
+
+void ScreenEffectComponent::UpdateRadialBlurParams(PostProcessManager* ppm, float t) {
+    auto& params = ppm->GetRadialBlurParams();
+    params.blurWidth = Lerp(baseRadialBlurParams_.blurWidth, targetRadialBlurParams_.blurWidth, t);
+    params.center = Lerp(baseRadialBlurParams_.center, targetRadialBlurParams_.center, t);
+    params.numSamples = targetRadialBlurParams_.numSamples;
+}
+
+void ScreenEffectComponent::RestoreBaseParams(PostProcessManager* ppm) {
+    switch (mode_) {
+    case PostProcessMode::Glitch:
+        ppm->GetGlitchParams() = baseGlitchParams_;
+        break;
+    case PostProcessMode::Vignette:
+        ppm->GetVignetteParams() = baseVignetteParams_;
+        break;
+    case PostProcessMode::ChromaticAberration:
+        ppm->GetChromaticAberrationParams() = baseChromaticAberrationParams_;
+        break;
+    case PostProcessMode::RadialBlur:
+        ppm->GetRadialBlurParams() = baseRadialBlurParams_;
+        break;
+    default:
+        break;
     }
 }
 
