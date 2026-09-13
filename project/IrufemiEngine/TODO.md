@@ -6,6 +6,30 @@
 ## 🚀 次期アップデート計画 (Ongoing & Future Tasks)
 より「ツール」として使いやすく、商用水準のパフォーマンスを発揮するための拡張機能群です。
 
+### 🏗️ GameObject＆プレハブ・ライフサイクル抜本的改革 (Lifecycle & Prefab Architecture Revamp)
+- [x] **Phase 1: JsonUtility への安全なファイルI/O集約**
+    - [x] `JsonUtility::LoadFromFile` および `SaveToFile`（自動ディレクトリ作成、例外保護、パースエラーログ完備）の実装。
+    - [x] `SceneSerializer` の `Save`, `Load`, `SavePrefab`, `GetPrefabJson` を `JsonUtility` 呼び出しに置き換え、ボイラープレートを排除。
+- [x] **Phase 2: PrefabManager の新設とアセット保持責務の完全分離**
+    - [x] `Framework/Prefab/PrefabManager` を新設し、JSON/テンプレートキャッシュおよびディープコピー生成を一元管理。
+    - [x] `SceneSerializer` から静的キャッシュを撤廃し、純粋なシリアライザへと特化。既存の `LoadPrefab` 呼び出しは `PrefabManager` へ委譲し100%後方互換を維持。
+    - [x] `SceneManager` のシーン遷移（同期・非同期）と連動したプレハブキャッシュの自動解放。
+- [x] **Phase 3: GameObjectLifeState の導入と初期化・破棄の多重実行防止**
+    - [x] `GameObjectLifeState` (`Constructed`, `Awake`, `Spawned`, `Started`, `Destroyed`) の確立。
+    - [x] `Component` 基底クラスに `OnAwake()`, `OnSpawned()`, `OnDestroy()` 仮想メソッドと `isInitialized_` フラグを追加。
+    - [x] `GameObject::Initialize()`, `Start()` に二重実行防止ガードを実装。
+    - [x] `GameObject::Deserialize()` での初期化フェーズ整流化により、シーンロード時のコンポーネント二重初期化バグを根絶。
+    - [x] デストラクタおよび `Destroy()` での `OnDestroy()` 確実呼び出しによるメモリ/マネージャー解放リーク防止。
+- [x] **Phase 4: 遅延スポーンキュー (Deferred Spawn) での OnSpawned() 自動通知**
+    - [x] `BaseScene::Update` 冒頭での `pendingAdds_` フラッシュ時に、シーン・座標確定通知 `NotifySpawned()` を自動発行。
+- [ ] **Phase 5: 各コンポーネントの OnAwake / Start 分離移行（今後のガイドライン）**
+    - **背景**: 現状のコンポーネントは `Initialize()` 内でマネージャー登録等を行っているが、`CollisionManager` や描画パスへの登録は「シーン確定後」に行うのが最も安全。
+    - **移行ルール**:
+        1. **`OnAwake()`**: プロパティの登録、自オブジェクト内の `GetComponent<TransformComponent>()` などの自己完結処理。
+        2. **`OnSpawned()`**: シーン（`GetScene()`）やワールド座標が確定した直後のセットアップ。
+        3. **`Start()`**: `CollisionManager` への登録や、他オブジェクトの検索・バインドなどゲーム世界への参加処理。
+        4. **`OnDestroy()`**: `CollisionManager::UnregisterCollider()` などの登録解除処理。
+
 ### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
 - [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**
     - [x] `AnimationModel` の解体と `AnimatedMeshObject` (描画特化)・`Animator` (ロジック特化) への分離。

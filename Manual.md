@@ -83,17 +83,21 @@ Unityライクな「オブジェクトのテンプレート化」をサポート
 2. **エディタからの配置**:
    - Project Browser に青いキューブのアイコンで表示されます。これを **Scene View** にドラッグ＆ドロップすると、即座にインスタンス化（実体化）して配置されます。
 3. **C++コードからの動的生成 (ランタイム)**:
-   - ゲーム中に「敵」や「弾」をスポーンさせるには、C++コードで以下のように呼び出します。
+   - ゲーム中に「敵」や「弾」を安全にスポーンさせるには、シーンの遅延キューヘルパー `InstantiatePrefab` または `PrefabManager` を使用します。
    ```cpp
-   #include "Framework/SceneSerializer.h"
+   // 推奨: シーンの遅延キューを経由して生成 (座標指定 & 自動Add & イテレータ破壊防止)
+   auto bullet = scene->InstantiatePrefab("resources/prefabs/Bullet.prefab.json", spawnPos);
 
-   // Prefabをロードしてインスタンス化
-   auto bullet = SceneSerializer::LoadPrefab("resources/prefabs/Bullet.prefab.json");
+   // または PrefabManager から直接クローン生成
+   #include "Framework/Prefab/PrefabManager.h"
+   auto bullet = PrefabManager::GetInstance().Instantiate("resources/prefabs/Bullet.prefab.json");
    if (bullet) {
-       bullet->GetComponent<TransformComponent>()->position_ = spawnPos;
-       scene->AddGameObject(bullet);
+       bullet->GetTransform()->SetPosition(spawnPos);
+       scene->AddGameObject(bullet); // 遅延キューに追加され、次フレームUpdate前に安全にStart()が実行される
    }
    ```
+   > [!NOTE]
+   > `SceneSerializer::LoadPrefab` も後方互換としてそのまま動作しますが、内部的には `PrefabManager` へ委譲されています。シーン遷移時にはキャッシュが自動解放されます。
 
 #### 1.2.3 コンソールパネル (Console)
 エンジンからのログ出力（エラー、警告、情報）は、エディタ下部の **Console** パネルに表示されます。

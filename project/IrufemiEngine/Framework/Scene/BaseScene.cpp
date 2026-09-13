@@ -144,6 +144,9 @@ void BaseScene::Update() {
         for (auto& obj : pendingAdds_) {
             gameObjects_.push_back(obj);
             objectRegistry_->Register(obj);
+            if (obj && !obj->IsSpawned()) {
+                obj->NotifySpawned();
+            }
         }
         pendingAdds_.clear();
 
