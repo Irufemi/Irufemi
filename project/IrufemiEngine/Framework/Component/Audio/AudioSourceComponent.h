@@ -43,7 +43,6 @@ private:
     void InitializeAudio();
 
 public:
-
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
