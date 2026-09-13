@@ -5,13 +5,6 @@
 
 AABBColliderComponent::AABBColliderComponent() {}
 
-void AABBColliderComponent::Initialize() {
-    // 初期化時にCollisionManagerに自身を登録する
-    if (collisionManager_) {
-        collisionManager_->RegisterCollider(this);
-    }
-}
-
 void AABBColliderComponent::DrawDebug() {}
 
 void AABBColliderComponent::OnRegisterProperties() {

@@ -467,7 +467,7 @@ void DebrisManagerComponent::UpdatePulledDebris(float deltaTime) {
                 pos.x += diff.x * pullSpeed * deltaTime;
                 pos.y += diff.y * pullSpeed * deltaTime;
                 pos.z += diff.z * pullSpeed * deltaTime;
-                transform->SetPosition(pos);
+                transform->SetWorldPosition(pos);
 
                 float distSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
                 if (distSq < catchDistSq) {
@@ -504,7 +504,7 @@ void DebrisManagerComponent::UpdateOrbitingDebris(float deltaTime) {
                 pos.x = targetTransform->GetWorldPosition().x + offset.x;
                 pos.y = targetTransform->GetWorldPosition().y + offset.y;
                 pos.z = targetTransform->GetWorldPosition().z + offset.z;
-                transform->SetPosition(pos);
+                transform->SetWorldPosition(pos);
             }
         }
     }
@@ -541,7 +541,7 @@ void DebrisManagerComponent::UpdateBossOrbitingDebris(float deltaTime) {
                 pos.x = targetTransform->GetWorldPosition().x + localPos.x;
                 pos.y = targetTransform->GetWorldPosition().y + localPos.y;
                 pos.z = targetTransform->GetWorldPosition().z + localPos.z;
-                transform->SetPosition(pos);
+                transform->SetWorldPosition(pos);
 
                 transform->SetRotation({debris->bossOrbitAngleX_ * 2.0f, debris->bossOrbitAngleY_ * 2.0f,
                                         debris->bossOrbitAngleZ_ * 2.0f});
@@ -588,7 +588,7 @@ void DebrisManagerComponent::UpdateThrownDebris(float deltaTime) {
                             pos.x += diff.x;
                             pos.y += diff.y;
                             pos.z += diff.z;
-                            transform->SetPosition(pos);
+                            transform->SetWorldPosition(pos);
                             continue; // 衝突処理はOnCollisionEnterに任せるためここでは移動のみ
                         } else {
                             debris->throwDirection_ = {diff.x / len, diff.y / len, diff.z / len};
@@ -603,7 +603,7 @@ void DebrisManagerComponent::UpdateThrownDebris(float deltaTime) {
         pos.x += debris->throwDirection_.x * throwSpeed * deltaTime;
         pos.y += debris->throwDirection_.y * throwSpeed * deltaTime;
         pos.z += debris->throwDirection_.z * throwSpeed * deltaTime;
-        transform->SetPosition(pos);
+        transform->SetWorldPosition(pos);
 
         float dx = pos.x - debris->throwOrigin_.x;
         float dy = pos.y - debris->throwOrigin_.y;

@@ -19,6 +19,26 @@ public:
     virtual ~ColliderComponent();
 
     /**
+     * @brief 開始処理 (最初のUpdate直前にCollisionManagerへ登録)
+     */
+    virtual void Start() override;
+
+    /**
+     * @brief 破棄処理 (CollisionManagerから登録解除)
+     */
+    virtual void OnDestroy() override;
+
+    /**
+     * @brief コンポーネント有効化時の通知
+     */
+    virtual void OnEnable() override;
+
+    /**
+     * @brief コンポーネント無効化時の通知
+     */
+    virtual void OnDisable() override;
+
+    /**
      * @brief Initialize を実行する。
      */
     virtual void Initialize() override {}

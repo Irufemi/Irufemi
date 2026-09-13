@@ -22,13 +22,17 @@
     - [x] デストラクタおよび `Destroy()` での `OnDestroy()` 確実呼び出しによるメモリ/マネージャー解放リーク防止。
 - [x] **Phase 4: 遅延スポーンキュー (Deferred Spawn) での OnSpawned() 自動通知**
     - [x] `BaseScene::Update` 冒頭での `pendingAdds_` フラッシュ時に、シーン・座標確定通知 `NotifySpawned()` を自動発行。
-- [ ] **Phase 5: 各コンポーネントの OnAwake / Start 分離移行（今後のガイドライン）**
-    - **背景**: 現状のコンポーネントは `Initialize()` 内でマネージャー登録等を行っているが、`CollisionManager` や描画パスへの登録は「シーン確定後」に行うのが最も安全。
-    - **移行ルール**:
-        1. **`OnAwake()`**: プロパティの登録、自オブジェクト内の `GetComponent<TransformComponent>()` などの自己完結処理。
-        2. **`OnSpawned()`**: シーン（`GetScene()`）やワールド座標が確定した直後のセットアップ。
-        3. **`Start()`**: `CollisionManager` への登録や、他オブジェクトの検索・バインドなどゲーム世界への参加処理。
-        4. **`OnDestroy()`**: `CollisionManager::UnregisterCollider()` などの登録解除処理。
+- [ ] **Phase 5: 各コンポーネントの OnAwake / Start 分離移行**
+    - [x] **コライダー系コンポーネント (`ColliderComponent`, `Sphere`, `AABB`, `OBB`)**:
+        - 派生クラスの重複 `Initialize()` を全廃し、基底 `ColliderComponent` の `Start()` / `OnDestroy()` / `OnEnable()` / `OnDisable()` に登録・解除を一元化。
+        - `CollisionManager::FlushPendingCommands` での追加・削除相殺バグを修正し、オブジェクトプール等での多重有効化/無効化時のコライダー消失を根絶。
+        - `CheckAllCollisions` におけるTriggerコライダーの片方向レイヤーマスク検知のサポート。
+        - `DebrisManagerComponent` でのワールド座標設定の整合性修正。
+    - [ ] **レンダラー系・他コンポーネントの順次移行**:
+        - `OnAwake()`: プロパティの登録、自オブジェクト内の `GetComponent<TransformComponent>()` などの自己完結処理。
+        - `OnSpawned()`: シーン（`GetScene()`）やワールド座標が確定した直後のセットアップ。
+        - `Start()`: 外部マネージャーへの登録や、他オブジェクトの検索・バインドなどゲーム世界への参加処理。
+        - `OnDestroy()`: 各種マネージャーからの登録解除処理。
 
 ### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
 - [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**

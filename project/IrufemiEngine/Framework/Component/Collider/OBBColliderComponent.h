@@ -24,14 +24,8 @@ public:
     ~OBBColliderComponent() override = default;
 
     /**
-     * @brief コンポーネントの初期化
-     * @details アタッチされているGameObjectからTransformComponentを取得しキャッシュします。
-     */
-    void Initialize() override;
-
-    /**
      * @brief デバッグ描画
-     * @details 衝突領域をワイヤーフレームなどで可視化します。
+     * @details 衝突領域をワイヤーフレーム等で可視化します。
      */
     void DrawDebug() override;
 

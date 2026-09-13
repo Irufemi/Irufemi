@@ -15,12 +15,6 @@ void SphereColliderComponent::OnRegisterProperties() {
     // ToDo: Layer や Mask も必要に応じて追加する
 }
 
-void SphereColliderComponent::Initialize() {
-    if (collisionManager_) {
-        collisionManager_->RegisterCollider(this);
-    }
-}
-
 void SphereColliderComponent::DrawDebug() {}
 
 Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {

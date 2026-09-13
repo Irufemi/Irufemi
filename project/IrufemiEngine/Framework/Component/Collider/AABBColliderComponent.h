@@ -16,10 +16,6 @@ public:
     ~AABBColliderComponent() override = default;
 
     /**
-     * @brief Initialize を実行する。
-     */
-    void Initialize() override;
-    /**
      * @brief DrawDebug を実行する。
      */
     void DrawDebug() override;

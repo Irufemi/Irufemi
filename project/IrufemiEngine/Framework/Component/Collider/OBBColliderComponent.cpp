@@ -6,13 +6,6 @@
 
 OBBColliderComponent::OBBColliderComponent() {}
 
-void OBBColliderComponent::Initialize() {
-    // 初期化時にCollisionManagerに自身を登録する
-    if (collisionManager_) {
-        collisionManager_->RegisterCollider(this);
-    }
-}
-
 void OBBColliderComponent::DrawDebug() {}
 
 void OBBColliderComponent::OnRegisterProperties() {

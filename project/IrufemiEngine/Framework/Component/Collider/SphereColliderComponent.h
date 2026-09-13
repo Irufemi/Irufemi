@@ -26,12 +26,6 @@ public:
     void OnRegisterProperties() override;
 
     /**
-     * @brief コンポーネントの初期化
-     * @details アタッチされているGameObjectからTransformComponentを取得しキャッシュします。
-     */
-    void Initialize() override;
-
-    /**
      * @brief デバッグ描画
      * @details 衝突領域をワイヤーフレーム等で可視化します。
      */
