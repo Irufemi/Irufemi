@@ -7,7 +7,7 @@
 AudioSourceComponent::AudioSourceComponent() {}
 
 AudioSourceComponent::~AudioSourceComponent() {
-    Stop();
+    OnDestroy();
 }
 
 void AudioSourceComponent::OnRegisterProperties() {
@@ -19,6 +19,23 @@ void AudioSourceComponent::OnRegisterProperties() {
 }
 
 void AudioSourceComponent::Initialize() {
+    InitializeAudio();
+}
+
+void AudioSourceComponent::Start() {
+    if (!player_) {
+        InitializeAudio();
+    }
+}
+
+void AudioSourceComponent::OnDestroy() {
+    Stop();
+}
+
+void AudioSourceComponent::InitializeAudio() {
+    if (player_) {
+        return;
+    }
     if (!gameObject_) {
         return;
     }

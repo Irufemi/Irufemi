@@ -21,6 +21,10 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
+    /**
+     * @brief 破棄時の処理を行います（CameraManagerからの登録解除）
+     */
+    void OnDestroy() override;
 
     /**
      * @brief ComponentName を取得する。

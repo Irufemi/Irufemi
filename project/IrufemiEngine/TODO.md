@@ -28,7 +28,13 @@
         - `CollisionManager::FlushPendingCommands` での追加・削除相殺バグを修正し、オブジェクトプール等での多重有効化/無効化時のコライダー消失を根絶。
         - `CheckAllCollisions` におけるTriggerコライダーの片方向レイヤーマスク検知のサポート。
         - `DebrisManagerComponent` でのワールド座標設定の整合性修正。
-    - [ ] **レンダラー系・他コンポーネントの順次移行**:
+    - [x] **動的スポーン・親子階層および他コンポーネントのライフサイクル整流化**:
+        - `GameObject::AddChild` / `InsertChild`: 親オブジェクトがすでに `Spawned` / `Started` の場合、後から動的に追加された子階層へ `NotifySpawned()` / `Start()` を自動伝播。
+        - `BaseScene`: `AddGameObject` / `RemoveGameObject` において、`pendingAdds_` や `gameObjects_` への二重登録ガードを実装。
+        - `AudioSourceComponent`: 遅延初期化 (`InitializeAudio`) と `Start()` / `OnDestroy()` を実装し、シーンバインド前に動的生成された場合の不鳴バグと解放漏れを解消。
+        - `CameraComponent`: `OnDestroy()` による `CameraManager` からの登録解除を実装し、動的破棄時のダングリング参照を防止。
+        - `EffectManagerComponent` / `DestructibleEnvironmentComponent`: エフェクト発生・瓦礫スポーン時の座標設定を `SetWorldPosition` に統一し、階層構造下での位置ズレを防止。
+    - [ ] **レンダラー系コンポーネントの順次移行**:
         - `OnAwake()`: プロパティの登録、自オブジェクト内の `GetComponent<TransformComponent>()` などの自己完結処理。
         - `OnSpawned()`: シーン（`GetScene()`）やワールド座標が確定した直後のセットアップ。
         - `Start()`: 外部マネージャーへの登録や、他オブジェクトの検索・バインドなどゲーム世界への参加処理。

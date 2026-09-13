@@ -126,7 +126,7 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
             auto obj = targetPool->Resolve(handle);
             if (obj) {
                 if (auto t = obj->GetComponent<TransformComponent>()) {
-                    t->SetPosition(worldPosition);
+                    t->SetWorldPosition(worldPosition);
                 }
 
                 // アクティブ化して LifetimeComponent のタイマーをリセットする

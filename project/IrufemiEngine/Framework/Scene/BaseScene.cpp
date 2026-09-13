@@ -357,7 +357,10 @@ void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
     if (obj) {
         std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
         obj->SetScene(this);
-        pendingAdds_.push_back(obj);
+        if (std::find(pendingAdds_.begin(), pendingAdds_.end(), obj) == pendingAdds_.end() &&
+            std::find(gameObjects_.begin(), gameObjects_.end(), obj) == gameObjects_.end()) {
+            pendingAdds_.push_back(obj);
+        }
     }
 }
 
@@ -382,7 +385,9 @@ void BaseScene::RemoveGameObject(std::shared_ptr<GameObject> obj) {
         return;
     }
     std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
-    pendingRemoves_.push_back(obj);
+    if (std::find(pendingRemoves_.begin(), pendingRemoves_.end(), obj) == pendingRemoves_.end()) {
+        pendingRemoves_.push_back(obj);
+    }
 }
 
 void BaseScene::ClearGameObjects() {

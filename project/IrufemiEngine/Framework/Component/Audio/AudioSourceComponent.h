@@ -19,9 +19,22 @@ public:
      */
     void Initialize() override;
     /**
+     * @brief ゲーム開始時の処理（シーンバインド後の確実なオーディオ初期化）
+     */
+    void Start() override;
+    /**
+     * @brief コンポーネント破棄時の処理
+     */
+    void OnDestroy() override;
+    /**
      * @brief Update を実行する。
      */
     void Update() override;
+
+private:
+    void InitializeAudio();
+
+public:
 
     /**
      * @brief ComponentName を取得する。

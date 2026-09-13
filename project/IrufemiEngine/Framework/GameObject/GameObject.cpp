@@ -307,6 +307,17 @@ void GameObject::AddChild(std::shared_ptr<GameObject> child) {
     if (auto childTransform = child->GetComponent<TransformComponent>()) {
         childTransform->MarkWorldDirty();
     }
+
+    // 親のライフサイクル状態を子へ伝播
+    if (lifeState_ >= GameObjectLifeState::Started) {
+        if (!child->IsStarted()) {
+            child->Start();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Spawned) {
+        if (!child->IsSpawned()) {
+            child->NotifySpawned();
+        }
+    }
 }
 
 void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
@@ -338,6 +349,17 @@ void GameObject::InsertChild(std::shared_ptr<GameObject> child, size_t index) {
 
     if (auto childTransform = child->GetComponent<TransformComponent>()) {
         childTransform->MarkWorldDirty();
+    }
+
+    // 親のライフサイクル状態を子へ伝播
+    if (lifeState_ >= GameObjectLifeState::Started) {
+        if (!child->IsStarted()) {
+            child->Start();
+        }
+    } else if (lifeState_ >= GameObjectLifeState::Spawned) {
+        if (!child->IsSpawned()) {
+            child->NotifySpawned();
+        }
     }
 }
 

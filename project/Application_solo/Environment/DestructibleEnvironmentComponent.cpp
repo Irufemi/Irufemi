@@ -57,7 +57,7 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
                         Irufemi::Vector3 offset = {Irufemi::Random::GeneratorFloat(-2.0f, 2.0f),
                                                    Irufemi::Random::GeneratorFloat(2.0f, 6.0f),
                                                    Irufemi::Random::GeneratorFloat(-2.0f, 2.0f)};
-                        debrisTransform->SetPosition(pos + offset);
+                        debrisTransform->SetWorldPosition(pos + offset);
                     }
 
                     if (auto comp = debris->GetComponent<DebrisComponent>()) {

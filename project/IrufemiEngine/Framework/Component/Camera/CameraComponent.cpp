@@ -6,7 +6,18 @@
 #include "Renderer/System/Core/BaseModel.h"
 
 CameraComponent::CameraComponent() = default;
-CameraComponent::~CameraComponent() = default;
+CameraComponent::~CameraComponent() {
+    OnDestroy();
+}
+
+void CameraComponent::OnDestroy() {
+    if (gameObject_) {
+        auto* engine = BaseModel::GetIrufemiEngine();
+        if (engine && engine->GetCameraManager()) {
+            engine->GetCameraManager()->RemoveCamera(gameObject_->GetName());
+        }
+    }
+}
 
 void CameraComponent::OnRegisterProperties() {
     RegisterProperty("FOV", &fovAngleY_);
