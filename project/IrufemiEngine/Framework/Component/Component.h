@@ -105,14 +105,33 @@ public:
     virtual ~Component() = default;
 
     /**
-     * @brief コンポーネントの初期化
+     * @brief [Phase 1: Awake] 自己完結の初期化
+     * @details プロパティの初期設定や、同一GameObject内のコンポーネント取得(GetComponent)を行う。
+     *          ※ 他オブジェクトや外部マネージャーへのアクセスは避ける。
+     */
+    virtual void OnAwake() {}
+
+    /**
+     * @brief コンポーネントの初期化 (従来の初期化メソッド、後方互換用)
      */
     virtual void Initialize() {}
+
+    /**
+     * @brief [Phase 2: Spawned] シーン・座標確定時の通知
+     * @details GameObjectがシーンに配置され、Transform(座標・回転)が確定した瞬間に呼ばれる。
+     */
+    virtual void OnSpawned() {}
 
     /**
      * @brief 開始処理 (最初のUpdateの直前に一度だけ呼ばれる)
      */
     virtual void Start() {}
+
+    /**
+     * @brief [Phase 4: Destroy] 離脱・後始末
+     * @details 各種マネージャーからの登録解除や内部リソースの解放を行う。
+     */
+    virtual void OnDestroy() {}
 
     /**
      * @brief コンポーネントが有効化された時に呼ばれる
@@ -524,7 +543,22 @@ public:
      */
     IrufemiEngine* GetEngine() const;
 
+    /**
+     * @brief 初期化済みかどうかを取得する
+     */
+    bool IsInitialized() const {
+        return isInitialized_;
+    }
+
+    /**
+     * @brief 初期化済みフラグを設定する
+     */
+    void SetInitialized(bool initialized) {
+        isInitialized_ = initialized;
+    }
+
 protected:
     GameObject* gameObject_ = nullptr;          ///< 親GameObjectへのポインタ
     std::vector<ComponentProperty> properties_; ///< 自動シリアライズ・UI化用のプロパティリスト
+    bool isInitialized_ = false;                ///< 初期化済みフラグ
 };

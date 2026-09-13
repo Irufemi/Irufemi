@@ -12,6 +12,17 @@
 class BaseScene;
 
 /**
+ * @brief GameObjectのライフサイクル状態
+ */
+enum class GameObjectLifeState : uint8_t {
+    Constructed = 0, ///< インスタンス生成直後（コンストラクタ実行中）
+    Awake,           ///< コンポーネント構築・プロパティ登録完了
+    Spawned,         ///< シーン配置・Transform設定完了
+    Started,         ///< 初回Update直前のStart実行完了
+    Destroyed        ///< 破棄済み
+};
+
+/**
  * @class GameObject
  * @brief コンポーネントをアタッチできるエンティティの基底クラス
  */
@@ -19,7 +30,28 @@ class GameObject : public std::enable_shared_from_this<GameObject> {
 public:
     GameObject();
     GameObject(const std::string& name);
-    ~GameObject() = default;
+    ~GameObject();
+
+    /**
+     * @brief 現在のライフサイクル状態を取得する
+     */
+    GameObjectLifeState GetLifeState() const {
+        return lifeState_;
+    }
+
+    /**
+     * @brief Awake済みかどうかを判定する
+     */
+    bool IsAwake() const {
+        return lifeState_ >= GameObjectLifeState::Awake;
+    }
+
+    /**
+     * @brief Spawned（シーン配置済み）かどうかを判定する
+     */
+    bool IsSpawned() const {
+        return lifeState_ >= GameObjectLifeState::Spawned;
+    }
 
     /**
      * @brief InstanceID を取得する。
@@ -44,9 +76,20 @@ public:
     }
 
     /**
-     * @brief ゲームオブジェクトの初期化処理を行う。アタッチされたコンポーネント群のInitializeも呼び出される。
+     * @brief 自己完結の初期化処理を行う（Phase 1: Awake）。同一GameObject内のコンポーネント取得を行う。
+     */
+    void Awake();
+
+    /**
+     * @brief ゲームオブジェクトの初期化処理を行う。多重呼び出しは自動的にガードされます。
      */
     void Initialize();
+
+    /**
+     * @brief シーン配置およびTransform確定時の通知を行う（Phase 2: Spawned）。
+     */
+    void NotifySpawned();
+
     /**
      * @brief ゲームオブジェクトの開始処理。最初のUpdateが呼ばれる直前に1度だけ実行される。
      */
@@ -137,9 +180,21 @@ public:
         }
 
         component->OnRegisterProperties();
-        component->Initialize();
+        if (lifeState_ >= GameObjectLifeState::Awake) {
+            component->OnAwake();
+        }
+        if (!component->IsInitialized()) {
+            component->Initialize();
+            component->SetInitialized(true);
+        }
+        if (lifeState_ >= GameObjectLifeState::Spawned) {
+            component->OnSpawned();
+        }
         if (isActive_) {
             component->OnEnable();
+        }
+        if (lifeState_ >= GameObjectLifeState::Started) {
+            component->Start();
         }
         return component;
     }
@@ -320,17 +375,15 @@ public:
 
     // --- ライフサイクル ---
     /**
-     * @brief オブジェクトを破棄状態にする（現在のフレームの終わりに削除される）
+     * @brief オブジェクトを破棄状態にする（OnDestroyを呼び出し、現在のフレームの終わりに削除される）
      */
-    void Destroy() {
-        isDestroyed_ = true;
-    }
+    void Destroy();
     /**
      * @brief IsDestroyed かどうかを判定する。
      * @return 判定結果 (true/false)
      */
     bool IsDestroyed() const {
-        return isDestroyed_;
+        return isDestroyed_ || lifeState_ == GameObjectLifeState::Destroyed;
     }
     /**
      * @brief IsStarted かどうかを判定する。
@@ -433,6 +486,7 @@ private:
     bool isActive_ = true;
     bool isStarted_ = false;
     bool isDestroyed_ = false;
+    GameObjectLifeState lifeState_ = GameObjectLifeState::Constructed;
     bool isFolder_ = false;
     bool isLocked_ = false;
     bool isSerializable_ = false; // デフォルトはfalse（動的生成とみなす）

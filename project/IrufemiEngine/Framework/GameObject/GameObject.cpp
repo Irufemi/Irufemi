@@ -27,6 +27,12 @@ GameObject::GameObject(const std::string& name)
     AddComponent<TransformComponent>();
 }
 
+GameObject::~GameObject() {
+    if (lifeState_ != GameObjectLifeState::Destroyed) {
+        Destroy();
+    }
+}
+
 // GetTransform() is now inline in GameObject.h
 
 void GameObject::SetIsActive(bool isActive) {
@@ -46,19 +52,67 @@ void GameObject::SetIsActive(bool isActive) {
     }
 }
 
-void GameObject::Initialize() {
-    for (auto& comp : components_) {
-        comp->Initialize();
+void GameObject::Awake() {
+    if (lifeState_ >= GameObjectLifeState::Awake) {
+        return;
     }
-    for (auto& child : children_) {
-        child->Initialize();
+    lifeState_ = GameObjectLifeState::Awake;
+
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->OnAwake();
+    }
+    for (size_t i = 0; i < children_.size(); ++i) {
+        if (children_[i]) {
+            children_[i]->Awake();
+        }
+    }
+}
+
+void GameObject::Initialize() {
+    if (lifeState_ >= GameObjectLifeState::Awake) {
+        return;
+    }
+    Awake();
+    for (size_t i = 0; i < components_.size(); ++i) {
+        if (!components_[i]->IsInitialized()) {
+            components_[i]->Initialize();
+            components_[i]->SetInitialized(true);
+        }
+    }
+    for (size_t i = 0; i < children_.size(); ++i) {
+        if (children_[i]) {
+            children_[i]->Initialize();
+        }
+    }
+}
+
+void GameObject::NotifySpawned() {
+    if (lifeState_ >= GameObjectLifeState::Spawned) {
+        return;
+    }
+    if (lifeState_ < GameObjectLifeState::Awake) {
+        Initialize();
+    }
+    lifeState_ = GameObjectLifeState::Spawned;
+
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->OnSpawned();
+    }
+    for (size_t i = 0; i < children_.size(); ++i) {
+        if (children_[i]) {
+            children_[i]->NotifySpawned();
+        }
     }
 }
 
 void GameObject::Start() {
-    if (isStarted_) {
+    if (lifeState_ >= GameObjectLifeState::Started) {
         return;
     }
+    if (lifeState_ < GameObjectLifeState::Spawned) {
+        NotifySpawned();
+    }
+    lifeState_ = GameObjectLifeState::Started;
     isStarted_ = true;
 
     // Use index-based loop to allow components to add components/children during Start
@@ -66,7 +120,26 @@ void GameObject::Start() {
         components_[i]->Start();
     }
     for (size_t i = 0; i < children_.size(); ++i) {
-        children_[i]->Start();
+        if (children_[i]) {
+            children_[i]->Start();
+        }
+    }
+}
+
+void GameObject::Destroy() {
+    if (lifeState_ == GameObjectLifeState::Destroyed) {
+        return;
+    }
+    isDestroyed_ = true;
+    lifeState_ = GameObjectLifeState::Destroyed;
+
+    for (size_t i = 0; i < components_.size(); ++i) {
+        components_[i]->OnDestroy();
+    }
+    for (size_t i = 0; i < children_.size(); ++i) {
+        if (children_[i]) {
+            children_[i]->Destroy();
+        }
     }
 }
 
@@ -320,9 +393,21 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     }
 
     component->OnRegisterProperties();
-    component->Initialize();
+    if (lifeState_ >= GameObjectLifeState::Awake) {
+        component->OnAwake();
+    }
+    if (!component->IsInitialized()) {
+        component->Initialize();
+        component->SetInitialized(true);
+    }
+    if (lifeState_ >= GameObjectLifeState::Spawned) {
+        component->OnSpawned();
+    }
     if (isActive_) {
         component->OnEnable();
+    }
+    if (lifeState_ >= GameObjectLifeState::Started) {
+        component->Start();
     }
 }
 
@@ -639,8 +724,13 @@ void GameObject::Deserialize(const nlohmann::json& j) {
 
         // 全てのコンポーネントがリストに登録されてから一斉にInitializeを呼ぶ
         // これにより、Initialize内でGetComponentした際に他のコンポーネントが見つかるようになる
+        lifeState_ = GameObjectLifeState::Awake;
         for (auto& comp : loadedComps) {
-            comp->Initialize();
+            comp->OnAwake();
+            if (!comp->IsInitialized()) {
+                comp->Initialize();
+                comp->SetInitialized(true);
+            }
         }
         if (isActive_) {
             for (auto& comp : loadedComps) {
