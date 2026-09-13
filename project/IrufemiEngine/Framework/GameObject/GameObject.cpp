@@ -54,9 +54,9 @@ void GameObject::SetIsActive(bool isActive) {
         }
     }
 
-    for (size_t i = 0; i < children_.size(); ++i) {
-        if (children_[i]) {
-            children_[i]->SetIsActive(isActive);
+    for (const auto& child : children_) {
+        if (child) {
+            child->SetIsActive(isActive);
         }
     }
 }
@@ -67,16 +67,16 @@ void GameObject::Awake() {
     }
     lifeState_ = GameObjectLifeState::Awake;
 
-    for (size_t i = 0; i < components_.size(); ++i) {
-        components_[i]->OnAwake();
-        if (!components_[i]->IsInitialized()) {
-            components_[i]->Initialize();
-            components_[i]->SetInitialized(true);
+    for (const auto& comp : components_) {
+        comp->OnAwake();
+        if (!comp->IsInitialized()) {
+            comp->Initialize();
+            comp->SetInitialized(true);
         }
     }
-    for (size_t i = 0; i < children_.size(); ++i) {
-        if (children_[i]) {
-            children_[i]->Awake();
+    for (const auto& child : children_) {
+        if (child) {
+            child->Awake();
         }
     }
 }
@@ -86,15 +86,15 @@ void GameObject::Initialize() {
         return;
     }
     Awake();
-    for (size_t i = 0; i < components_.size(); ++i) {
-        if (!components_[i]->IsInitialized()) {
-            components_[i]->Initialize();
-            components_[i]->SetInitialized(true);
+    for (const auto& comp : components_) {
+        if (!comp->IsInitialized()) {
+            comp->Initialize();
+            comp->SetInitialized(true);
         }
     }
-    for (size_t i = 0; i < children_.size(); ++i) {
-        if (children_[i]) {
-            children_[i]->Initialize();
+    for (const auto& child : children_) {
+        if (child) {
+            child->Initialize();
         }
     }
 }
@@ -108,12 +108,12 @@ void GameObject::NotifySpawned() {
     }
     lifeState_ = GameObjectLifeState::Spawned;
 
-    for (size_t i = 0; i < components_.size(); ++i) {
-        components_[i]->OnSpawned();
+    for (const auto& comp : components_) {
+        comp->OnSpawned();
     }
-    for (size_t i = 0; i < children_.size(); ++i) {
-        if (children_[i]) {
-            children_[i]->NotifySpawned();
+    for (const auto& child : children_) {
+        if (child) {
+            child->NotifySpawned();
         }
     }
 }
@@ -144,20 +144,20 @@ void GameObject::Destroy() {
         return;
     }
     if (isActive_) {
-        for (size_t i = 0; i < components_.size(); ++i) {
-            components_[i]->OnDisable();
+        for (const auto& comp : components_) {
+            comp->OnDisable();
         }
         isActive_ = false;
     }
     isDestroyed_ = true;
     lifeState_ = GameObjectLifeState::Destroyed;
 
-    for (size_t i = 0; i < components_.size(); ++i) {
-        components_[i]->OnDestroy();
+    for (const auto& comp : components_) {
+        comp->OnDestroy();
     }
-    for (size_t i = 0; i < children_.size(); ++i) {
-        if (children_[i]) {
-            children_[i]->Destroy();
+    for (const auto& child : children_) {
+        if (child) {
+            child->Destroy();
         }
     }
 }

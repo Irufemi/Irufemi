@@ -39,11 +39,6 @@ public:
      */
     void Update() override;
 
-private:
-    void InitializeAudio();
-
-public:
-
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
@@ -83,6 +78,8 @@ public:
     void SetAudioType(AudioType type);
 
 private:
+    void InitializeAudio();
+
     std::string audioPath_ = "audio/BGM/bgm_default.wav"; // デフォルト
     int audioType_ = static_cast<int>(AudioType::SE);     // シリアライズ用
     bool playOnAwake_ = false;
