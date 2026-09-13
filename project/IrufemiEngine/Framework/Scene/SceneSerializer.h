@@ -59,9 +59,6 @@ public:
     static nlohmann::json GetPrefabJson(const std::string& filepath);
 
 private:
-    static std::unordered_map<std::string, nlohmann::json> prefabCache_;
-    static std::unordered_map<std::string, std::shared_ptr<GameObject>> prefabInstanceCache_;
-
     /**
      * @brief シーン名からファイルパスを生成する(設定されたパス/[Name].json)
      */

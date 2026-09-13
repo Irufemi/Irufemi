@@ -335,6 +335,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Scene\IScene.cpp" />
     <ClCompile Include="Framework\Scene\SceneManager.cpp" />
     <ClCompile Include="Framework\Scene\SceneSerializer.cpp" />
+    <ClCompile Include="Framework\Prefab\PrefabManager.cpp" />
     <ClCompile Include="Framework\Scene\SceneTransition.cpp" />
     <ClCompile Include="Framework\Scene\OptionsScene.cpp" />
     <ClCompile Include="Framework\UI\UIAnimator.cpp" />
@@ -510,6 +511,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Core\System\ILoadingScreen.h" />
     <ClInclude Include="Framework\Scene\SceneManager.h" />
     <ClInclude Include="Framework\Scene\SceneSerializer.h" />
+    <ClInclude Include="Framework\Prefab\PrefabManager.h" />
     <ClInclude Include="Framework\Scene\SceneTransition.h" />
     <ClInclude Include="Framework\Scene\OptionsScene.h" />
     <ClInclude Include="Framework\UI\UIAnimator.h" />
