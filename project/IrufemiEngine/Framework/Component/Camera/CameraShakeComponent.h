@@ -29,6 +29,7 @@ public:
     ~CameraShakeComponent() override;
 
     void Initialize() override;
+    void OnAwake() override;
     void Update() override;
 
     std::string GetComponentName() const override {

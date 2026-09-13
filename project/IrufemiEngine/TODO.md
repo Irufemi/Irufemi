@@ -34,7 +34,7 @@
         - `AudioSourceComponent`: 遅延初期化 (`InitializeAudio`) と `Start()` / `OnDestroy()` を実装し、シーンバインド前に動的生成された場合の不鳴バグと解放漏れを解消。
         - `CameraComponent`: `OnDestroy()` による `CameraManager` からの登録解除を実装し、動的破棄時のダングリング参照を防止。
         - `EffectManagerComponent` / `DestructibleEnvironmentComponent`: エフェクト発生・瓦礫スポーン時の座標設定を `SetWorldPosition` に統一し、階層構造下での位置ズレを防止。
-    - [ ] **レンダラー系コンポーネントの順次移行**:
+    - [x] **主要コンポーネントの順次ライフサイクル移行 (完了)**:
         - [x] `MeshRendererComponent` / `SkinnedMeshRendererComponent`:
             - `OnAwake()`: `StaticModelObject` / `AnimatedMeshObject` の内部生成とモデルロード。
             - `OnSpawned()`: `SyncRenderState()` を呼び出し、スポーン直後の原点チラつきバグを根本防止。
@@ -43,7 +43,11 @@
             - `OnAwake()`: `Sprite` / `Text` / `ParticleObject` の内部生成および初期プロパティ適用。
             - `OnSpawned()`: 初期Transformおよび描画・放出ステートの即時同期（`SyncRenderState()`）。
             - `Initialize()`: 後方互換レイヤーとして `OnAwake()` / `OnSpawned()` を呼ぶよう整流化。
-        - [ ] 他の補助系コンポーネント（`LifetimeComponent`, UIコンポーネント等）の移行。
+        - [x] ロジック・エフェクト・UI系コンポーネント (`VoxelParticleComponent`, `AnimatorComponent`, `LifetimeComponent`, `CameraShakeComponent`, `ButtonComponent`, `SliderComponent`):
+            - `VoxelParticleComponent`: `OnAwake()` でモデル名キャッシュ、`Start()` で `ReservePool` を実行し、動的生成時のメモリ予約漏れを防止。
+            - `AnimatorComponent`: `OnSpawned()` でエンジン取得・初期化、`Start()` でデフォルトアニメーション再生開始に整流化。
+            - `LifetimeComponent`: `OnSpawned()` および `OnEnable()` で寿命タイマーを自動リセットし、オブジェクトプール再利用時の手動初期化を不要化。
+            - `CameraShakeComponent` / `ButtonComponent` / `SliderComponent`: 同一オブジェクト内のコンポーネント参照解決を `OnAwake()` に移譲。
 
 ### 🏃 次世代アニメーション＆モデルアーキテクチャ (Ultimate Animation System)
 - [x] **Phase 1: 二段構えアーキテクチャの構築（低レイヤー＆コンポーネント分離）**

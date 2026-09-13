@@ -12,6 +12,14 @@ void LifetimeComponent::Initialize() {
     currentLifeTime_ = 0.0f;
 }
 
+void LifetimeComponent::OnSpawned() {
+    currentLifeTime_ = 0.0f;
+}
+
+void LifetimeComponent::OnEnable() {
+    currentLifeTime_ = 0.0f;
+}
+
 void LifetimeComponent::Update() {
     float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
     currentLifeTime_ += dt;

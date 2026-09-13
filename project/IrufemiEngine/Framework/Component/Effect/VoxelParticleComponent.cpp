@@ -14,7 +14,18 @@ VoxelParticleComponent::VoxelParticleComponent() {}
 VoxelParticleComponent::~VoxelParticleComponent() {}
 
 void VoxelParticleComponent::Initialize() {
+    OnAwake();
+    Start();
+}
+
+void VoxelParticleComponent::OnAwake() {
     cachedModelName_ = GetTargetModelName();
+}
+
+void VoxelParticleComponent::Start() {
+    if (cachedModelName_.empty()) {
+        cachedModelName_ = GetTargetModelName();
+    }
 
     if (!cachedModelName_.empty()) {
         IrufemiEngine* engine = nullptr;

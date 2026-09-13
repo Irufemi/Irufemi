@@ -12,6 +12,11 @@ AnimatorComponent::AnimatorComponent() {
 AnimatorComponent::~AnimatorComponent() {}
 
 void AnimatorComponent::Initialize() {
+    OnSpawned();
+    Start();
+}
+
+void AnimatorComponent::OnSpawned() {
     if (GetGameObject() && GetGameObject()->GetScene()) {
         animator_->Initialize(GetGameObject()->GetScene()->GetEngine());
     }

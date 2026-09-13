@@ -18,6 +18,7 @@ public:
     ~SliderComponent() override = default;
 
     void Initialize() override;
+    void OnAwake() override;
     void Start() override;
     void Update() override;
 

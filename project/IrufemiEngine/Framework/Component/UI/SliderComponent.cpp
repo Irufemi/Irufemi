@@ -17,6 +17,10 @@ void SliderComponent::OnRegisterProperties() {
 }
 
 void SliderComponent::Initialize() {
+    OnAwake();
+}
+
+void SliderComponent::OnAwake() {
     if (gameObject_) {
         backgroundSprite_ = gameObject_->GetComponent<SpriteRendererComponent>();
     }

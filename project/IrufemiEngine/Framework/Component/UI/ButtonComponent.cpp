@@ -20,6 +20,10 @@ void ButtonComponent::OnRegisterProperties() {
 }
 
 void ButtonComponent::Initialize() {
+    OnAwake();
+}
+
+void ButtonComponent::OnAwake() {
     if (gameObject_) {
         sprite_ = gameObject_->GetComponent<SpriteRendererComponent>();
     }
