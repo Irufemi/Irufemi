@@ -5,11 +5,13 @@
 #include "Core/Utility/PerlinNoise.h"
 #include "Core/Utility/Ease.h"
 #include "Renderer/System/Core/BaseModel.h"
+#include "Core/Math/Random/Random.h"
 #include <algorithm>
-#include <cstdlib>
+#include <climits>
 
 CameraShakeComponent::CameraShakeComponent() {
-    perlinNoise_ = std::make_shared<Irufemi::PerlinNoise>(std::rand());
+    perlinNoise_ = std::make_shared<Irufemi::PerlinNoise>(
+        static_cast<unsigned int>(Irufemi::Random::GeneratorUint64(0, UINT_MAX)));
 }
 
 CameraShakeComponent::~CameraShakeComponent() = default;
@@ -42,7 +44,7 @@ void CameraShakeComponent::PlayShakeSeconds(float intensity, float durationSecon
     ev.frequency = frequency;
     // X, Y, Z の揺れやすさにバラツキを持たせる
     ev.axisIntensity = {1.0f, 1.0f, 0.5f};
-    ev.seed = std::rand();
+    ev.seed = static_cast<unsigned int>(Irufemi::Random::GeneratorUint64(0, UINT_MAX));
 
     activeShakes_.push_back(ev);
 }
