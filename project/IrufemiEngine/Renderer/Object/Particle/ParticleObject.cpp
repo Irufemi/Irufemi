@@ -538,6 +538,66 @@ bool ParticleObject::LoadFromJson(const std::string& filepath) {
     }
 }
 
+void ParticleObject::CopyFrom(const ParticleObject& other) {
+    position_ = other.position_;
+    rotation_ = other.rotation_;
+
+    texturePath_ = other.texturePath_;
+    blendMode_ = other.blendMode_;
+    depthWrite_ = other.depthWrite_;
+    enableLighting_ = other.enableLighting_;
+    isUnscaledTime_ = other.isUnscaledTime_;
+    emitOnAwake_ = other.emitOnAwake_;
+    burstCountOnAwake_ = other.burstCountOnAwake_;
+
+    emitterModelPath_ = other.emitterModelPath_;
+    emitterModelHandle_ = ResourceHandle();
+
+    emitType_ = other.emitType_;
+    emissionRate_ = other.emissionRate_;
+    lifeTimeMin_ = other.lifeTimeMin_;
+    lifeTimeMax_ = other.lifeTimeMax_;
+    velocity_ = other.velocity_;
+    radius_ = other.radius_;
+    spread_ = other.spread_;
+
+    atlasRows_ = other.atlasRows_;
+    atlasCols_ = other.atlasCols_;
+
+    gravity_ = other.gravity_;
+    damping_ = other.damping_;
+    bounce_ = other.bounce_;
+    groundHeight_ = other.groundHeight_;
+    attractorStrength_ = other.attractorStrength_;
+    attractorPos_ = other.attractorPos_;
+    jitter_ = other.jitter_;
+    enableTrail_ = other.enableTrail_;
+    trailFrequency_ = other.trailFrequency_;
+    enableDeathEmit_ = other.enableDeathEmit_;
+    enableRandomRotation_ = other.enableRandomRotation_;
+    showDebugArea_ = other.showDebugArea_;
+
+    billboardMode_ = other.billboardMode_;
+    color_ = other.color_;
+    midColor_ = other.midColor_;
+    startScale_ = other.startScale_;
+    midScale_ = other.midScale_;
+    endScale_ = other.endScale_;
+    midPoint_ = other.midPoint_;
+
+    direction_ = other.direction_;
+    areaSize_ = other.areaSize_;
+
+    if (emitterHandle_.IsValid() && gpuParticleManager_) {
+        gpuParticleManager_->UnregisterEmitter(emitterHandle_);
+        emitterHandle_ = GPUParticleManager::EmitterHandle();
+    }
+
+    isPlaying_ = other.isPlaying_;
+    burstCountPending_ = other.burstCountPending_;
+    isDirty_ = true;
+}
+
 void ParticleObject::RegisterProperties(Component* comp) {
     if (!comp) {
         return;

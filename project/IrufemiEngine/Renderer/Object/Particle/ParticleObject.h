@@ -88,6 +88,12 @@ public:
      */
     bool LoadFromJson(const std::string& filepath);
 
+    /**
+     * @brief 他の ParticleObject から全パラメータを直接ディープコピーする
+     * @param other コピー元オブジェクト
+     */
+    void CopyFrom(const ParticleObject& other);
+
     // --- Getters & Setters ---
 
     /**
