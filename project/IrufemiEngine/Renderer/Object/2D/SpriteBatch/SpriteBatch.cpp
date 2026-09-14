@@ -226,7 +226,7 @@ void SpriteBatch::Draw(bool isTopMost) {
     packet.blendMode = Irufemi::BlendMode::kBlendModeNormal;
     packet.depthWrite = PSOManager::DepthWrite::Off;
     packet.cullMode = PSOManager::CullMode::None;
-    packet.customPSO = customPSO_;
+    packet.customPSO = GetCustomPSO();
     packet.customCBVAddress = customCBVAddress_;
 
     if (isTopMost) {
@@ -234,6 +234,15 @@ void SpriteBatch::Draw(bool isTopMost) {
     } else {
         drawManager_->SubmitSpriteBatch(packet);
     }
+}
+
+ID3D12PipelineState* SpriteBatch::GetCustomPSO() const {
+    if (!customPSOName_.empty() && dx_) {
+        if (auto* pm = dx_->GetPSOManager()) {
+            return pm->GetPSO(customPSOName_, customBlend_, customDepth_, customCull_);
+        }
+    }
+    return customPSO_;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE SpriteBatch::GetInstancingSrvHandleGPU() const {

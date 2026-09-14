@@ -48,6 +48,11 @@ void DirectoryWatcher::WatchLoop() {
             break;
         }
 
+        // --- デバウンス処理 (Debounce) ---
+        // エディタ保存やビルド時に複数のファイル変更通知が連続して飛ぶため、
+        // 変更が落ち着くまで一定時間待機して1回にまとめる
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
         if (isRunning_ && onChangeCallback_) {
             onChangeCallback_();
         }

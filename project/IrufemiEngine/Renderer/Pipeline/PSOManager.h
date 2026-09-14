@@ -153,6 +153,7 @@ private:
     std::unordered_map<std::string, std::vector<Key>>
         cacheKeysByName_; ///< ホットリロードのためのキートラッキング (名前ごとの生成済みキャッシュキー)
     std::unordered_map<std::string, ComPtr> computeCache_; ///< Compute PSO キャッシュ
+    std::vector<ComPtr> retiredPSOs_; ///< ホットリロード時等に一時退避させて安全に寿命を延ばすための遅延解放リスト
 
     /** @name 内部生成ヘルパー */
     ///@{

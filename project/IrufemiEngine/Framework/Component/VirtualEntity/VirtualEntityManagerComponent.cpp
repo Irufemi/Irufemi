@@ -12,10 +12,27 @@ VirtualEntityManagerComponent::VirtualEntityManagerComponent() {
 }
 
 VirtualEntityManagerComponent::~VirtualEntityManagerComponent() {
+    CleanUpPool();
     auto it = std::find(sInstances_.begin(), sInstances_.end(), this);
     if (it != sInstances_.end()) {
         sInstances_.erase(it);
     }
+}
+
+void VirtualEntityManagerComponent::OnDestroy() {
+    CleanUpPool();
+}
+
+void VirtualEntityManagerComponent::CleanUpPool() {
+    if (pool_) {
+        pool_->ForEach([](const std::shared_ptr<GameObject>& obj) {
+            if (obj && !obj->IsDestroyed()) {
+                obj->Destroy();
+            }
+        });
+        pool_.reset();
+    }
+    activeHandles_.clear();
 }
 
 int VirtualEntityManagerComponent::GetTotalActiveVirtualInstances() {

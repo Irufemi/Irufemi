@@ -146,17 +146,44 @@ public:
     }
 
     /**
-     * @brief CustomPSO を設定する。
+     * @brief CustomPSO を設定する（生ポインタ指定・下位互換用）。
      * @param[in] pso 設定する CustomPSO の値
      */
     void SetCustomPSO(ID3D12PipelineState* pso) {
+        customPSOName_.clear();
         customPSO_ = pso;
     }
     /**
-     * @brief CustomPSO を取得する。
+     * @brief CustomPSO を設定する（名前指定・推奨）。
+     * @param[in] psoName 設定する PSO 名
+     */
+    void SetCustomPSO(const std::string& psoName) {
+        customPSOName_ = psoName;
+    }
+    /**
+     * @brief CustomPSO を詳細設定付きで設定する（名前指定・推奨）。
+     * @param[in] psoName 設定する PSO 名
+     * @param[in] blend ブレンドモード
+     * @param[in] depth 深度書き込み設定
+     * @param[in] cull カリングモード
+     */
+    void SetCustomPSO(const std::string& psoName, Irufemi::BlendMode blend, PSOManager::DepthWrite depth,
+                      PSOManager::CullMode cull) {
+        customPSOName_ = psoName;
+        blendMode_ = blend;
+        depthWrite_ = depth;
+        cullMode_ = cull;
+    }
+    /**
+     * @brief CustomPSO を取得する。名前指定がある場合は PSOManager から動的解決する。
      * @return 取得された CustomPSO
      */
     ID3D12PipelineState* GetCustomPSO() const {
+        if (!customPSOName_.empty() && dx_) {
+            if (auto* pm = dx_->GetPSOManager()) {
+                return pm->GetPSO(customPSOName_, blendMode_, depthWrite_, cullMode_);
+            }
+        }
         return customPSO_;
     }
 
@@ -420,5 +447,6 @@ protected:
     PSOManager::CullMode cullMode_ = PSOManager::CullMode::Back;
     bool castShadows_ = true;
     ID3D12PipelineState* customPSO_ = nullptr;
+    std::string customPSOName_ = "";
     D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
 };

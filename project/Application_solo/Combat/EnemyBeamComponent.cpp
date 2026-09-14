@@ -47,9 +47,8 @@ void EnemyBeamComponent::Initialize() {
     // 警戒色と赤黒さを混ぜたベース色（アルファ値は中心コアの透明度として利用）
     chargeSphere_->SetColor(chargeColor_); // プロパティから適用
     chargeSphere_->SetCullingEnabled(false);
-    chargeSphere_->SetCustomPSO(
-        engine->GetPSOManager()->GetPSO("EnergyCore", Irufemi::BlendMode::kBlendModePremultiplied,
-                                        PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back));
+    chargeSphere_->SetCustomPSO("EnergyCore", Irufemi::BlendMode::kBlendModePremultiplied,
+                                PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
     chargeSphere_->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
 
     // --- ビーム本体の初期化 ---
@@ -277,9 +276,8 @@ void EnemyBeamComponent::Draw() {
     } else if (state_ == State::FIRING) {
         // 外側オーラ (LightningCrawl)
         if (attackCylinderOuter_) {
-            attackCylinderOuter_->SetCustomPSO(
-                engine->GetPSOManager()->GetPSO("LightningCrawl", Irufemi::BlendMode::kBlendModeAdd,
-                                                PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinderOuter_->SetCustomPSO("LightningCrawl", Irufemi::BlendMode::kBlendModeAdd,
+                                               PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             attackCylinderOuter_->SetCustomCBVAddress(auraParamsBuffer_.GetGPUVirtualAddress(frameIndex));
 
             attackCylinderOuter_->Draw();
@@ -287,9 +285,8 @@ void EnemyBeamComponent::Draw() {
 
         // 内側コア (EnergyBeam)
         if (attackCylinder_) {
-            attackCylinder_->SetCustomPSO(
-                engine->GetPSOManager()->GetPSO("EnergyBeam", Irufemi::BlendMode::kBlendModeAdd,
-                                                PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinder_->SetCustomPSO("EnergyBeam", Irufemi::BlendMode::kBlendModeAdd,
+                                          PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             attackCylinder_->SetCustomCBVAddress(beamParamsBuffer_.GetGPUVirtualAddress(frameIndex));
 
             attackCylinder_->Draw();

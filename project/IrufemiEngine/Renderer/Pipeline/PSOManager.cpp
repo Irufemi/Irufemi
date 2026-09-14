@@ -305,8 +305,26 @@ ID3D12PipelineState* PSOManager::GetComputePSO(const std::string& name) {
 }
 
 void PSOManager::ClearCache() {
+    // 古いPSOを直ちに破棄せず、退避用リストに移動して安全に寿命を延長する（Deferred Release）
+    // これにより、ホットリロード直後に古いポインタが一時的に参照されても 0xC0000005 クラッシュを起こさない
+    for (auto& [k, pso] : cache_) {
+        if (pso) {
+            retiredPSOs_.push_back(std::move(pso));
+        }
+    }
+    for (auto& [k, pso] : computeCache_) {
+        if (pso) {
+            retiredPSOs_.push_back(std::move(pso));
+        }
+    }
     cache_.clear();
+    cacheKeysByName_.clear();
     computeCache_.clear();
+
+    // 退避リストが肥大化しないよう、前々回以前の古い退避分（上限256件）を適宜間引く
+    if (retiredPSOs_.size() > 256) {
+        retiredPSOs_.erase(retiredPSOs_.begin(), retiredPSOs_.begin() + 64);
+    }
 
     // ホットリロード等で強制クリアされた場合、古いディスクキャッシュも破棄する
     std::filesystem::path cacheDir = kCacheDirectory;
@@ -511,7 +529,13 @@ void PSOManager::ClearCacheByName(const std::string& name) {
     auto it = cacheKeysByName_.find(name);
     if (it != cacheKeysByName_.end()) {
         for (const auto& key : it->second) {
-            cache_.erase(key);
+            auto cit = cache_.find(key);
+            if (cit != cache_.end()) {
+                if (cit->second) {
+                    retiredPSOs_.push_back(std::move(cit->second));
+                }
+                cache_.erase(cit);
+            }
         }
         it->second.clear(); // ベクターをクリア
     }

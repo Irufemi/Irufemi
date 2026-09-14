@@ -25,15 +25,9 @@ void LockonMarkerUIComponent::Initialize() {
     markerBatch_ = std::make_unique<SpriteBatch>();
     markerBatch_->Initialize("resources/reticle.jpg");
 
-    // 2. カスタムシェーダー（輝度アルファ抜き）の登録・取得と適用
-    auto psoManager = engine->GetPSOManager();
-    IRUFEMI_ASSERT(psoManager != nullptr && "PSOManager is null");
-
-    // 2D用のブレンドモード(通常透過: Normal)を指定
-    auto pso = psoManager->GetPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off,
-                                  PSOManager::CullMode::None);
-    IRUFEMI_ASSERT(pso != nullptr && "LuminanceAlpha2D PSO not found!");
-    markerBatch_->SetCustomPSO(pso);
+    // 2. カスタムシェーダー（輝度アルファ抜き）の適用 (名前指定によるホットリロード安全化)
+    markerBatch_->SetCustomPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off,
+                               PSOManager::CullMode::None);
 }
 
 void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets) {

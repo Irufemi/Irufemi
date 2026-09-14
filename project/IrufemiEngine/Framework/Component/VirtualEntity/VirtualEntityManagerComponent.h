@@ -48,6 +48,10 @@ public:
      */
     void Update() override;
     /**
+     * @brief コンポーネント破棄時の処理。プール内の全GameObjectを安全にDestroyする。
+     */
+    void OnDestroy() override;
+    /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */
@@ -128,6 +132,8 @@ private:
     int activeInstanceCount_ = 0;
     int maxVirtualInstances_ = 0;
     int nextId_ = 0; // Backup if freeIds is empty or we don't want strict pre-alloc
+
+    void CleanUpPool();
 
     std::unique_ptr<ObjectPool<GameObject>> pool_;
     int maxPoolSize_ = 0;

@@ -190,12 +190,27 @@ public:
         transform_.isDirty = true;
     }
     /**
-     * @brief CustomPSO を設定する。
+     * @brief CustomPSO を設定する（生ポインタ指定・下位互換用）。
      * @param[in] pso 設定する CustomPSO の値
      */
     void SetCustomPSO(ID3D12PipelineState* pso) {
         if (mesh_.resource) {
             mesh_.resource->SetCustomPSO(pso);
+        }
+    }
+    /**
+     * @brief CustomPSO を設定する（名前指定・推奨）。
+     * @param[in] psoName 設定する PSO 名
+     * @param[in] blend ブレンドモード
+     * @param[in] depth 深度書き込み設定
+     * @param[in] cull カリングモード
+     */
+    void SetCustomPSO(const std::string& psoName,
+                      Irufemi::BlendMode blend = Irufemi::BlendMode::kBlendModeNormal,
+                      PSOManager::DepthWrite depth = PSOManager::DepthWrite::Enable,
+                      PSOManager::CullMode cull = PSOManager::CullMode::Back) {
+        if (mesh_.resource) {
+            mesh_.resource->SetCustomPSO(psoName, blend, depth, cull);
         }
     }
     /**

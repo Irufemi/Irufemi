@@ -102,10 +102,8 @@ void DebrisManagerComponent::Initialize() {
             auraModel->SetShape(Irufemi::PrimitiveType::Sphere);
 
             if (auto primitive = static_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
-                auto pso = BaseModel::GetIrufemiEngine()->GetPSOManager()->GetPSO(
-                    "EnergyCore", Irufemi::BlendMode::kBlendModeAdd, PSOManager::DepthWrite::Disable,
-                    PSOManager::CullMode::Back);
-                primitive->SetCustomPSO(pso);
+                primitive->SetCustomPSO("EnergyCore", Irufemi::BlendMode::kBlendModeAdd,
+                                        PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
                 primitive->SetIsTransparent(true);
                 primitive->SetColor(idleAuraColor_);
             }
