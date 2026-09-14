@@ -1,8 +1,5 @@
 #include "Player/PlayerTargetingComponent.h"
 #include "Player/TargetableComponent.h"
-#include "RailMechanics/RailShooterEnemyComponent.h"
-#include "Combat/Boss/BossComponent.h"
-#include "Environment/DebrisComponent.h"
 #include "UI/LockonMarkerUIComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
@@ -21,23 +18,24 @@
 
 void PlayerTargetingComponent::Initialize() {
     // UIコンポーネントを検索
-    auto scene = gameObject_->GetScene();
-    if (scene) {
-        for (const auto& obj : scene->GetGameObjects()) {
-            if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                lockonMarkerUI_ = ui;
-                break;
+    if (lockonMarkerUI_.expired() && gameObject_) {
+        if (auto scene = gameObject_->GetScene()) {
+            for (const auto& obj : scene->GetGameObjects()) {
+                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
+                    lockonMarkerUI_ = ui->weak_from_this();
+                    break;
+                }
             }
         }
     }
 }
 
 void PlayerTargetingComponent::Start() {
-    if (!lockonMarkerUI_ && gameObject_) {
+    if (lockonMarkerUI_.expired() && gameObject_) {
         if (auto scene = gameObject_->GetScene()) {
             for (const auto& obj : scene->GetGameObjects()) {
                 if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                    lockonMarkerUI_ = ui;
+                    lockonMarkerUI_ = ui->weak_from_this();
                     break;
                 }
             }
@@ -46,55 +44,45 @@ void PlayerTargetingComponent::Start() {
 }
 
 void PlayerTargetingComponent::Update() {
-    // 死んだオブジェクトなどをキューから削除する
+    // 死んだオブジェクトやターゲット不可になったオブジェクトをキューから削除する
     queuedTargets_.erase(std::remove_if(queuedTargets_.begin(), queuedTargets_.end(),
                                         [](const std::shared_ptr<GameObject>& obj) {
-                                            if (!obj || !obj->GetIsActive()) {
+                                            if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
                                                 return true;
                                             }
 
-                                            // 生死判定
-                                            if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
-                                                if (!enemyComp->IsAlive()) {
-                                                    return true;
-                                                }
-                                            } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-                                                if (!bossComp->IsCoreExposed()) {
-                                                    return true;
-                                                }
-                                            } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
-                                                if (debrisComp->GetState() != DebrisState::BossOrbiting) {
-                                                    return true;
-                                                }
+                                            // TargetableComponent による共通ターゲット可否判定
+                                            if (auto targetable = obj->GetComponent<TargetableComponent>()) {
+                                                return !targetable->IsTargetable();
                                             }
 
-                                            return false;
+                                            return true;
                                         }),
                          queuedTargets_.end());
 
     UpdateHoverTarget();
 
-    if (!lockonMarkerUI_) {
-        auto scene = gameObject_->GetScene();
-        if (scene) {
-            for (auto obj : scene->GetGameObjects()) {
+    if (lockonMarkerUI_.expired() && gameObject_) {
+        if (auto scene = gameObject_->GetScene()) {
+            for (const auto& obj : scene->GetGameObjects()) {
                 if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                    lockonMarkerUI_ = ui;
+                    lockonMarkerUI_ = ui->weak_from_this();
                     break;
                 }
             }
         }
     }
 
-    if (lockonMarkerUI_) {
-        lockonMarkerUI_->SetMaxLockonCount(maxLockonCount_);
+    if (auto markerUI = lockonMarkerUI_.lock()) {
+        markerUI->SetMaxLockonCount(maxLockonCount_);
         std::vector<std::shared_ptr<GameObject>> displayTargets = queuedTargets_;
         if (hoverTarget_) {
             displayTargets.push_back(hoverTarget_);
         }
-        lockonMarkerUI_->SyncTargets(displayTargets);
+        markerUI->SyncTargets(displayTargets);
     }
 }
+
 
 void PlayerTargetingComponent::OnRegisterProperties() {}
 
@@ -165,29 +153,18 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 
     // 2. ターゲット候補のスコアリングと評価
     for (auto targetComp : TargetableComponent::GetTargets()) {
-        auto obj = targetComp->GetGameObject();
-        if (!obj || !obj->GetIsActive()) {
+        if (!targetComp || !targetComp->IsTargetable()) {
             continue;
         }
 
-        bool isTargetable = false;
-        if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
-            if (enemyComp->IsAlive()) {
-                isTargetable = true;
-            }
-        } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-            if (bossComp->IsCoreExposed()) {
-                isTargetable = true;
-            }
-        } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
-            if (debrisComp->GetState() == DebrisState::BossOrbiting) {
-                isTargetable = true;
-            }
+        auto obj = targetComp->GetGameObject();
+        if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
+            continue;
         }
 
-        if (isTargetable) {
-            auto transform = obj->GetComponent<TransformComponent>();
-            if (transform) {
+        auto transform = obj->GetComponent<TransformComponent>();
+        if (transform) {
+
                 Irufemi::Vector3 worldPos = transform->GetWorldPosition();
                 Irufemi::Vector3 clipPos = Irufemi::Math::Transform(worldPos, viewProj);
 
@@ -232,10 +209,12 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                 }
             }
         }
-    }
 
     hoverTarget_ = bestTarget;
 }
+
+
+
 
 void PlayerTargetingComponent::MarkTarget(size_t maxLockOn) {
     if (queuedTargets_.size() >= maxLockOn) {

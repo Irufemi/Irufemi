@@ -6,6 +6,7 @@
 #include "Renderer/System/Core/BaseModel.h"
 #include "Combat/IDamageable.h"
 #include "Combat/Boss/BossComponent.h"
+#include "Player/TargetableComponent.h"
 #include "Environment/DebrisManagerComponent.h"
 #include "Effects/EffectManagerComponent.h"
 #include "Core/Math/Random/Random.h"
@@ -86,10 +87,19 @@ void DebrisComponent::OnEnable() {
     targetObject_.reset();
     idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
 
+    if (gameObject_) {
+        if (auto targetable = gameObject_->GetComponent<TargetableComponent>()) {
+            targetable->SetTargetablePredicate([this]() {
+                return state_ == DebrisState::BossOrbiting;
+            });
+        }
+    }
+
     if (auto transform = GetTransform()) {
         baseIdleY_ = transform->GetPosition().y;
     }
 }
+
 
 void DebrisComponent::OnDisable() {
     if (manager_) {

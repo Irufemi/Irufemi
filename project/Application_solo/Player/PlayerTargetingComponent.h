@@ -77,5 +77,6 @@ private:
     float weight2D_ = 1.0f;         ///< 2D距離のスコア重み
     float weight3D_ = 10.0f;        ///< 3D深度のスコア重み
 
-    LockonMarkerUIComponent* lockonMarkerUI_ = nullptr;
+    std::weak_ptr<LockonMarkerUIComponent> lockonMarkerUI_;
 };
+

@@ -56,9 +56,17 @@ void BossComponent::LoadStatusFromJson() {
 BossComponent::BossComponent() {}
 
 void BossComponent::Initialize() {
-    if (!gameObject_->GetComponent<TargetableComponent>()) {
-        gameObject_->AddComponent<TargetableComponent>();
+    auto targetable = gameObject_->GetComponent<TargetableComponent>();
+    if (!targetable) {
+        auto comp = gameObject_->AddComponent<TargetableComponent>();
+        targetable = comp.get();
     }
+    if (targetable) {
+        targetable->SetTargetablePredicate([this]() {
+            return IsCoreExposed();
+        });
+    }
+
 
     LoadStatusFromJson();
     hp_ = maxHp_;

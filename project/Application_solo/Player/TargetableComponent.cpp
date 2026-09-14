@@ -1,4 +1,5 @@
 #include "Player/TargetableComponent.h"
+#include "Framework/GameObject/GameObject.h"
 #include <algorithm>
 
 std::vector<TargetableComponent*> TargetableComponent::s_targets;
@@ -23,3 +24,14 @@ void TargetableComponent::OnDisable() {
         s_targets.erase(it);
     }
 }
+
+bool TargetableComponent::IsTargetable() const {
+    if (!gameObject_ || !gameObject_->GetIsActive() || gameObject_->IsDestroyed()) {
+        return false;
+    }
+    if (predicate_) {
+        return predicate_();
+    }
+    return true;
+}
+

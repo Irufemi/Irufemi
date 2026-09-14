@@ -15,7 +15,11 @@ struct LockonMarkerState {
     float animationT = 0.0f;   // イージング用タイマー (0.0 ～ 1.0)
 };
 
-class LockonMarkerUIComponent : public Component {
+/**
+ * @class LockonMarkerUIComponent
+ * @brief ロックオンマーカーのUI描画およびアニメーションを管理するコンポーネント
+ */
+class LockonMarkerUIComponent : public Component, public std::enable_shared_from_this<LockonMarkerUIComponent> {
 public:
     LockonMarkerUIComponent() = default;
     ~LockonMarkerUIComponent() override = default;
