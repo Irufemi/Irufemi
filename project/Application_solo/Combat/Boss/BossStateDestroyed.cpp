@@ -11,15 +11,15 @@
 void BossStateDestroyed::Enter(BossComponent* boss) {
     Log::OutPutLog(std::cout, "Boss Destroyed!\n");
     hasFinished_ = false;
-    shakeComp_ = nullptr;
+    cameraObj_.reset();
 
     if (boss && boss->gameObject_) {
         // ボス破壊時の特大シェイク
         if (auto scene = boss->gameObject_->GetScene()) {
             if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {
-                shakeComp_ = mainCameraObj->GetComponent<CameraShakeComponent>();
-                if (shakeComp_) {
-                    shakeComp_->PlayShake(2.0f, 60, 10.0f); // Intensity=2.0, 60 Frames, Freq=10 (大きめ、ゆっくり)
+                cameraObj_ = mainCameraObj;
+                if (auto shake = mainCameraObj->GetComponent<CameraShakeComponent>()) {
+                    shake->PlayShake(2.0f, 60, 10.0f); // Intensity=2.0, 60 Frames, Freq=10 (大きめ、ゆっくり)
                 }
             }
         }
@@ -49,17 +49,14 @@ void BossStateDestroyed::Update(BossComponent* boss) {
         return;
     }
 
-    if (shakeComp_) {
-        if (!shakeComp_->IsPlaying()) {
-            hasFinished_ = true;
-            if (boss && boss->gameObject_) {
-                boss->gameObject_->SetIsActive(false);
-            }
-            if (boss && boss->onDeathSequenceFinished) {
-                boss->onDeathSequenceFinished();
-            }
+    bool isShakePlaying = false;
+    if (auto cam = cameraObj_.lock()) {
+        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
+            isShakePlaying = shake->IsPlaying();
         }
-    } else {
+    }
+
+    if (!isShakePlaying) {
         hasFinished_ = true;
         if (boss && boss->gameObject_) {
             boss->gameObject_->SetIsActive(false);
