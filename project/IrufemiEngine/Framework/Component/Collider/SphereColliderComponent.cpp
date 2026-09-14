@@ -19,9 +19,10 @@ void SphereColliderComponent::DrawDebug() {}
 
 Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
     Irufemi::Sphere sphere;
-    if (GetTransform()) {
-        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
-        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
+    auto* transform = GetTransform();
+    if (transform) {
+        Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+        Irufemi::Vector3 worldScale = transform->GetWorldScale();
 
         // スケールの最大成分を半径に掛ける
         float scaleX = std::abs(worldScale.x);
@@ -29,9 +30,9 @@ Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
         float scaleZ = std::abs(worldScale.z);
 
         // オブジェクトの回転とスケールを考慮したワールド空間のローカルオフセット
-        Irufemi::Vector3 worldOffset = GetTransform()->GetWorldRight() * (localOffset_.x * scaleX) +
-                                       GetTransform()->GetWorldUp() * (localOffset_.y * scaleY) +
-                                       GetTransform()->GetWorldForward() * (localOffset_.z * scaleZ);
+        Irufemi::Vector3 worldOffset = transform->GetWorldRight() * (localOffset_.x * scaleX) +
+                                       transform->GetWorldUp() * (localOffset_.y * scaleY) +
+                                       transform->GetWorldForward() * (localOffset_.z * scaleZ);
 
         float maxXY = scaleX > scaleY ? scaleX : scaleY;
         float maxScale = maxXY > scaleZ ? maxXY : scaleZ;

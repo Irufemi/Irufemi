@@ -20,13 +20,14 @@ void OBBColliderComponent::OnRegisterProperties() {
 
 Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
     Irufemi::OBB obb;
-    if (GetTransform()) {
-        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
-        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
+    auto* transform = GetTransform();
+    if (transform) {
+        Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+        Irufemi::Vector3 worldScale = transform->GetWorldScale();
 
-        obb.orientations[0] = GetTransform()->GetWorldRight();
-        obb.orientations[1] = GetTransform()->GetWorldUp();
-        obb.orientations[2] = GetTransform()->GetWorldForward();
+        obb.orientations[0] = transform->GetWorldRight();
+        obb.orientations[1] = transform->GetWorldUp();
+        obb.orientations[2] = transform->GetWorldForward();
 
         // Offsetも回転・スケールを考慮
         obb.center = worldPos + obb.orientations[0] * (localOffset_.x * worldScale.x) +

@@ -66,7 +66,9 @@ public:
      */
     virtual void Deserialize(const nlohmann::json& j) override;
 
-    /// @brief デバッグ用の当たり判定の枠線を描画する
+    /**
+     * @brief デバッグ用の当たり判定枠線（ワイヤーフレーム）を描画する
+     */
     virtual void DrawDebug() = 0;
 
     /**
@@ -81,17 +83,33 @@ protected:
     inline static CollisionManager* collisionManager_ = nullptr;
 
 public:
-    /// @brief 自身の当たり判定の種類を返す
+    /**
+     * @brief 自身の当たり判定の種類（AABB, Sphere, OBB）を取得する
+     * @return コライダー種別 enum
+     */
     virtual ColliderType GetColliderType() const = 0;
 
-    /// @brief BVH等空間分割用の大まかなAABBを返す
+    /**
+     * @brief 空間分割（DynamicBVH）登録用のワールドAABBを取得する
+     * @return ワールド空間のバウンディングボックス AABB
+     */
     virtual Irufemi::AABB GetBoundingBox() const = 0;
 
     // --- コールバック機能 ---
-    // 衝突時に呼ばれる関数を登録できる
-    std::function<void(ColliderComponent*)> onCollisionEnter_; // 衝突した瞬間に呼ばれる
-    std::function<void(ColliderComponent*)> onCollisionStay_;  // 衝突している間呼ばれ続ける
-    std::function<void(ColliderComponent*)> onCollisionExit_;  // 離れた瞬間に呼ばれる
+    /**
+     * @brief 他のコライダーと接触した瞬間に呼ばれるコールバック
+     */
+    std::function<void(ColliderComponent*)> onCollisionEnter_;
+
+    /**
+     * @brief 他のコライダーと接触し続けている間毎フレーム呼ばれるコールバック
+     */
+    std::function<void(ColliderComponent*)> onCollisionStay_;
+
+    /**
+     * @brief 他のコライダーと離れた瞬間に呼ばれるコールバック
+     */
+    std::function<void(ColliderComponent*)> onCollisionExit_;
 
     // --- レイヤー設定 ---
     uint32_t layer_ = 1;         // 1 << 0 (Default)
