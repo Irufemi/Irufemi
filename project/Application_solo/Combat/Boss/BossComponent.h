@@ -86,6 +86,14 @@ public:
         return bossContainer_.lock();
     }
 
+    /**
+     * @brief カメラシェイクを再生する
+     * @param intensity 揺れの強さ
+     * @param frames 継続フレーム数
+     * @param frequency 振動数
+     */
+    void PlayCameraShake(float intensity, int frames, float frequency);
+
 private:
     friend class BossStateIdle;
     friend class BossStateCoreExposed;
@@ -101,6 +109,7 @@ private:
     std::unique_ptr<IBossState> currentState_;
 
     std::weak_ptr<GameObject> bossContainer_;
+    std::weak_ptr<GameObject> mainCameraObj_;
     std::vector<std::shared_ptr<GameObject>> shields_;
 
     DebrisManagerComponent* debrisManager_ = nullptr;

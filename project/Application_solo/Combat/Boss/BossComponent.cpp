@@ -9,6 +9,7 @@
 #include "Combat/EnemyBeamComponent.h"
 #include "Combat/DroneManagerComponent.h"
 #include "Combat/BossBulletManagerComponent.h"
+#include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Player/TargetableComponent.h"
 #include <algorithm>
 #include <iostream>
@@ -93,6 +94,11 @@ void BossComponent::Start() {
     }
     auto scene = gameObject_->GetScene();
     if (scene) {
+        auto camObj = scene->FindGameObject("MainCamera");
+        if (camObj) {
+            mainCameraObj_ = camObj;
+        }
+
         auto container = scene->FindGameObject("BossContainer");
         if (container) {
             bossContainer_ = container;
@@ -190,5 +196,26 @@ void BossComponent::ChangeState(std::unique_ptr<IBossState> newState) {
     currentState_ = std::move(newState);
     if (currentState_) {
         currentState_->Enter(this);
+    }
+}
+
+void BossComponent::PlayCameraShake(float intensity, int frames, float frequency) {
+    if (auto cam = mainCameraObj_.lock()) {
+        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
+            shake->PlayShake(intensity, frames, frequency);
+            return;
+        }
+    }
+
+    // キャッシュ未初期化または破棄時のフォールバック検索
+    if (gameObject_) {
+        if (auto scene = gameObject_->GetScene()) {
+            if (auto cam = scene->FindGameObject("MainCamera")) {
+                mainCameraObj_ = cam;
+                if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
+                    shake->PlayShake(intensity, frames, frequency);
+                }
+            }
+        }
     }
 }

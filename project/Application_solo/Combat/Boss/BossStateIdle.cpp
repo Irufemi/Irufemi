@@ -34,9 +34,7 @@ void BossStateIdle::Update(BossComponent* boss) {
                 if (auto myTrans = boss->GetTransform()) {
                     Irufemi::Vector3 startPos = myTrans->GetWorldPosition();
 
-                    Irufemi::Matrix4x4 worldMat = myTrans->GetWorldMatrix();
-                    Irufemi::Vector3 forward = {-worldMat.m[2][0], -worldMat.m[2][1], -worldMat.m[2][2]};
-                    forward = Irufemi::Math::Normalize(forward);
+                    Irufemi::Vector3 forward = -myTrans->GetWorldForward();
 
                     startPos = Irufemi::Math::Add(startPos, Irufemi::Math::Multiply(boss->beamOffsetZ_, forward));
                     startPos.y += boss->beamOffsetY_;
