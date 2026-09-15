@@ -639,6 +639,7 @@ void BaseScene::Deserialize(const nlohmann::json& j) {
     if (goArray) {
         for (const auto& objJson : *goArray) {
             auto obj = std::make_shared<GameObject>();
+            obj->SetScene(this);
             obj->Deserialize(objJson);
             obj->Initialize();
             AddGameObject(obj);

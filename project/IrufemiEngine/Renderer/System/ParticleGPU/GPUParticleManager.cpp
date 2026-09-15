@@ -10,7 +10,6 @@ void GPUParticleManager::Initialize() {
 
 void GPUParticleManager::Update() {
     for (auto& pair : systems_) {
-        pair.second.system->fieldsData_ = globalFields_; // Push global fields to all systems
         pair.second.system->Update();
     }
 }
@@ -46,6 +45,7 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
         ctx.system->SetUnscaledTime(isUnscaledTime);
         ctx.system->SetEnableLighting(enableLighting);
         ctx.system->SetDepthWrite(depthWrite);
+        ctx.system->SetGlobalFields(&globalFields_);
     }
 
     uint32_t assignedIndex = 0;

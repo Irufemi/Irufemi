@@ -105,7 +105,15 @@ void EnemyBeamComponent::Initialize() {
     state_ = State::IDLE;
 }
 
+void EnemyBeamComponent::EnsureResources() {
+    if (!chargeSphere_ || !attackCylinder_ || !attackCylinderOuter_) {
+        Initialize();
+    }
+}
+
 void EnemyBeamComponent::Fire(const Irufemi::Vector3& startPos, const Irufemi::Vector3& targetPos) {
+    EnsureResources();
+
     state_ = State::CHARGING;
     stateTimer_ = 0.0f;
     startPos_ = startPos;
@@ -262,6 +270,8 @@ void EnemyBeamComponent::Update() {
 }
 
 void EnemyBeamComponent::Draw() {
+    EnsureResources();
+
     auto engine = GetEngine();
     if (!engine || !engine->GetDirectXCommon()) {
         return;

@@ -81,6 +81,11 @@ private:
     LightningParams auraParamsData_{};
 
     /**
+     * @brief 描画リソースが未生成の場合に遅延初期化する
+     */
+    void EnsureResources();
+
+    /**
      * @brief インスペクターやプロパティの変更を定数バッファデータへ同期する
      */
     void UpdateParameters();
