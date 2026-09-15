@@ -1,5 +1,6 @@
 #pragma once
 #include "Framework/Component/Component.h"
+#include "Core/Math/Vector3.h"
 #include <vector>
 #include <memory>
 #include <future>
@@ -57,6 +58,13 @@ public:
     void SetMaxLockonCount(size_t count) {
         maxLockonCount_ = count;
     }
+
+    /**
+     * @brief マウスカーソル位置に基づくワールド空間の照準座標（レイキャスト着地点）を算出する
+     * @param maxDistance レイキャストの最大到達距離
+     * @return 算出したワールド照準座標
+     */
+    Irufemi::Vector3 CalculateAimPoint(float maxDistance = 1000.0f) const;
 
 private:
     size_t maxLockonCount_ = 1;

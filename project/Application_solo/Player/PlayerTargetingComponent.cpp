@@ -238,3 +238,33 @@ std::shared_ptr<GameObject> PlayerTargetingComponent::PopTarget() {
     queuedTargets_.erase(queuedTargets_.begin());
     return target;
 }
+
+Irufemi::Vector3 PlayerTargetingComponent::CalculateAimPoint(float maxDistance) const {
+    auto engine = BaseModel::GetIrufemiEngine();
+    if (!engine) {
+        return {0.0f, 0.0f, 0.0f};
+    }
+
+    auto cameraManager = engine->GetCameraManager();
+    auto inputManager = engine->GetInputManager();
+    if (!cameraManager || !cameraManager->GetActiveCamera() || !inputManager) {
+        return {0.0f, 0.0f, 0.0f};
+    }
+
+    auto camera = cameraManager->GetActiveCamera();
+    float width = camera->GetViewportWidth();
+    float height = camera->GetViewportHeight();
+    Irufemi::Vector2 mousePos = inputManager->GetMousePosition();
+
+    Irufemi::Matrix4x4 viewProjInv = Irufemi::Math::Inverse(camera->GetViewProjectionMatrix3D());
+    Irufemi::Ray ray = Irufemi::Math::ScreenPointToRay(mousePos, width, height, viewProjInv);
+
+    RaycastHit hitInfo;
+    if (auto collisionManager = engine->GetCollisionManager()) {
+        if (collisionManager->Raycast(ray, hitInfo, maxDistance)) {
+            return hitInfo.hitPoint;
+        }
+    }
+
+    return Irufemi::Math::Add(ray.origin, Irufemi::Math::Multiply(maxDistance, ray.diff));
+}

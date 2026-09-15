@@ -92,8 +92,8 @@ private:
     int maxOrbitCount_ = 5;                                   ///< 最大保持数
     float pullRadius_ = 100.0f;                               ///< 引き寄せ検知半径
 
-    PlayerTargetingComponent* targetingComp_ = nullptr;     ///< 敵ターゲティングコンポーネントの参照
-    class DebrisManagerComponent* debrisManager_ = nullptr; ///< ガレキマネージャーコンポーネントの参照
+    PlayerTargetingComponent* targetingComp_ = nullptr; ///< 敵ターゲティングコンポーネントの参照
+    std::weak_ptr<GameObject> debrisManagerObj_;        ///< ガレキマネージャーオブジェクトの弱参照
 
     // Orbit parameters for pulled debris
     float orbitRadiusMin_ = 2.0f;       ///< ガレキ回転半径（最小）

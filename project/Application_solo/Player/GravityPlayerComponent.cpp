@@ -89,10 +89,7 @@ void GravityPlayerComponent::Start() {
 
     auto scene = gameObject_->GetScene();
     if (scene) {
-        auto debrisManagerObj = scene->FindGameObject("DebrisManager");
-        if (debrisManagerObj) {
-            debrisManager_ = debrisManagerObj->GetComponent<DebrisManagerComponent>();
-        }
+        debrisManagerObj_ = scene->FindGameObject("DebrisManager");
     }
 }
 
@@ -211,18 +208,18 @@ void GravityPlayerComponent::HandlePullInput() {
             return; // ボスから奪った場合はフリーガレキは吸わない
         }
 
-        if (!debrisManager_) {
-            return;
-        }
-
-        auto debrisObj = debrisManager_->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_);
-        if (debrisObj) {
-            if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
-                debrisComp->SetState(DebrisState::Pulled);
-                debrisComp->SetTarget(gameObject_->shared_from_this());
-                debrisComp->SetOrbitParams(Irufemi::Random::GeneratorFloat(0.0f, orbitAngleRandomMax_),
-                                           Irufemi::Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
-                orbitingDebris_.push_back(debrisObj);
+        if (auto debrisManagerObj = debrisManagerObj_.lock()) {
+            if (auto debrisManager = debrisManagerObj->GetComponent<DebrisManagerComponent>()) {
+                auto debrisObj = debrisManager->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_);
+                if (debrisObj) {
+                    if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
+                        debrisComp->SetState(DebrisState::Pulled);
+                        debrisComp->SetTarget(gameObject_->shared_from_this());
+                        debrisComp->SetOrbitParams(Irufemi::Random::GeneratorFloat(0.0f, orbitAngleRandomMax_),
+                                                   Irufemi::Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
+                        orbitingDebris_.push_back(debrisObj);
+                    }
+                }
             }
         }
     }
@@ -320,32 +317,13 @@ void GravityPlayerComponent::UpdateThrowing() {
                             Irufemi::Math::Normalize(Irufemi::Math::Subtract(deadPos, debrisPos));
                         comp->SetThrowDirection(throwDir);
                     } else {
-                        // 完全なノーロック時の場合、マウスカーソルの奥へレイキャスト
-                        auto cameraManager = engine->GetCameraManager();
-                        auto inputManager = engine->GetInputManager();
-                        if (cameraManager && cameraManager->GetActiveCamera() && inputManager) {
-                            auto camera = cameraManager->GetActiveCamera();
-                            float width = camera->GetViewportWidth();
-                            float height = camera->GetViewportHeight();
-                            Irufemi::Vector2 mousePos = inputManager->GetMousePosition();
-
-                            Irufemi::Matrix4x4 viewProjInv =
-                                Irufemi::Math::Inverse(camera->GetViewProjectionMatrix3D());
-                            Irufemi::Ray ray = Irufemi::Math::ScreenPointToRay(mousePos, width, height, viewProjInv);
-
-                            RaycastHit hitInfo;
-                            Irufemi::Vector3 targetPoint;
-                            if (engine->GetCollisionManager()->Raycast(ray, hitInfo, noLockThrowDistance_)) {
-                                targetPoint = hitInfo.hitPoint;
-                            } else {
-                                targetPoint = Irufemi::Math::Add(
-                                    ray.origin, Irufemi::Math::Multiply(noLockThrowDistance_, ray.diff));
-                            }
-
-                            Irufemi::Vector3 throwDir =
-                                Irufemi::Math::Normalize(Irufemi::Math::Subtract(targetPoint, debrisPos));
-                            comp->SetThrowDirection(throwDir);
-                        }
+                        // 完全なノーロック時の場合、照準点（マウスカーソル位置へのレイキャスト）へ投擲
+                        Irufemi::Vector3 targetPoint =
+                            targetingComp_ ? targetingComp_->CalculateAimPoint(noLockThrowDistance_)
+                                           : (debrisPos + Irufemi::Vector3{0.0f, 0.0f, noLockThrowDistance_});
+                        Irufemi::Vector3 throwDir =
+                            Irufemi::Math::Normalize(Irufemi::Math::Subtract(targetPoint, debrisPos));
+                        comp->SetThrowDirection(throwDir);
                     }
                 }
             }
