@@ -14,20 +14,24 @@
 #include <iostream>
 
 GameLoopManagerComponent::~GameLoopManagerComponent() {
-    if (playerHealth_) {
-        playerHealth_->onPlayerDied = nullptr;
-        playerHealth_->onDeathSequenceFinished = nullptr;
+    if (auto player = playerObj_.lock()) {
+        if (auto health = player->GetComponent<PlayerHealthComponent>()) {
+            health->onPlayerDied = nullptr;
+            health->onDeathSequenceFinished = nullptr;
+        }
     }
-    if (boss_) {
-        boss_->onBossDied = nullptr;
-        boss_->onDeathSequenceFinished = nullptr;
+    if (auto boss = bossObj_.lock()) {
+        if (auto b = boss->GetComponent<BossComponent>()) {
+            b->onBossDied = nullptr;
+            b->onDeathSequenceFinished = nullptr;
+        }
     }
 }
 
 void GameLoopManagerComponent::Initialize() {
     state_ = State::Playing;
-    playerHealth_ = nullptr;
-    boss_ = nullptr;
+    playerObj_.reset();
+    bossObj_.reset();
 
     // 事前キャッシュ: ResultScene で使用するテキストのSDF生成をバックグラウンドで事前に行う
     if (auto engine = BaseModel::GetIrufemiEngine()) {
@@ -39,6 +43,40 @@ void GameLoopManagerComponent::Initialize() {
     }
 }
 
+void GameLoopManagerComponent::Start() {
+    BindTargets();
+}
+
+bool GameLoopManagerComponent::BindTargets() {
+    if (!gameObject_ || !gameObject_->GetScene()) {
+        return false;
+    }
+
+    auto scene = gameObject_->GetScene();
+
+    if (playerObj_.expired() && !targetPlayerName_.empty()) {
+        if (auto playerObj = scene->FindGameObject(targetPlayerName_)) {
+            if (auto playerHealth = playerObj->GetComponent<PlayerHealthComponent>()) {
+                playerObj_ = playerObj;
+                playerHealth->onPlayerDied = [this]() { OnPlayerDied(); };
+                playerHealth->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
+            }
+        }
+    }
+
+    if (bossObj_.expired() && !targetBossName_.empty()) {
+        if (auto bossObj = scene->FindGameObject(targetBossName_)) {
+            if (auto boss = bossObj->GetComponent<BossComponent>()) {
+                bossObj_ = bossObj;
+                boss->onBossDied = [this]() { OnBossDied(); };
+                boss->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
+            }
+        }
+    }
+
+    return !playerObj_.expired() && !bossObj_.expired();
+}
+
 void GameLoopManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Result Time Scale", &timeScaleAtResult_);
@@ -48,25 +86,8 @@ void GameLoopManagerComponent::OnRegisterProperties() {
 
 void GameLoopManagerComponent::Update() {
     if (state_ == State::Playing) {
-        if (!playerHealth_ && !targetPlayerName_.empty()) {
-            auto playerObj = gameObject_->GetScene()->FindGameObject(targetPlayerName_);
-            if (playerObj) {
-                playerHealth_ = playerObj->GetComponent<PlayerHealthComponent>();
-                if (playerHealth_) {
-                    playerHealth_->onPlayerDied = [this]() { OnPlayerDied(); };
-                    playerHealth_->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
-                }
-            }
-        }
-        if (!boss_ && !targetBossName_.empty()) {
-            auto bossObj = gameObject_->GetScene()->FindGameObject(targetBossName_);
-            if (bossObj) {
-                boss_ = bossObj->GetComponent<BossComponent>();
-                if (boss_) {
-                    boss_->onBossDied = [this]() { OnBossDied(); };
-                    boss_->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
-                }
-            }
+        if (playerObj_.expired() || bossObj_.expired()) {
+            BindTargets();
         }
     }
 }
@@ -77,8 +98,10 @@ void GameLoopManagerComponent::OnBossDied() {
     }
     state_ = State::Finished;
     isClear_ = true;
-    if (playerHealth_) {
-        playerHealth_->SetGodMode(true); // ゲームクリア時に被弾しないようにする
+    if (auto player = playerObj_.lock()) {
+        if (auto health = player->GetComponent<PlayerHealthComponent>()) {
+            health->SetGodMode(true); // ゲームクリア時に被弾しないようにする
+        }
     }
     BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);
 }
