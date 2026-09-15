@@ -15,6 +15,10 @@
 class ColliderComponent;
 class GameObject;
 
+namespace Irufemi::Collision {
+struct CollisionResult;
+}
+
 struct RaycastHit {
     bool isHit = false;
     GameObject* hitObject = nullptr;
@@ -177,4 +181,32 @@ private:
     CollisionPairSet previousCollisions_;
 
     Irufemi::DynamicBVH dynamicBVH_;
+
+    /**
+     * @brief 2つのコライダー間の Narrow Phase（形状別詳細交差判定）を実行する
+     * @param colA コライダーA
+     * @param colB コライダーB
+     * @param outResult 判定結果を出力する構造体
+     */
+    void CheckNarrowPhase(ColliderComponent* colA, ColliderComponent* colB,
+                          Irufemi::Collision::CollisionResult& outResult) const;
+
+    /**
+     * @brief 衝突イベント（Enter / Stay）をコールバックおよびGameObjectへ通知する
+     * @param colA コライダーA
+     * @param colB コライダーB
+     * @param result 衝突結果
+     * @param isNewHit 新規衝突(Enter)か継続衝突(Stay)か
+     */
+    void DispatchCollisionEvents(ColliderComponent* colA, ColliderComponent* colB,
+                                 const Irufemi::Collision::CollisionResult& result, bool isNewHit);
+
+    /**
+     * @brief 非トリガーコライダー同士のキネマティック押し戻し処理を実行する
+     * @param colA コライダーA
+     * @param colB コライダーB
+     * @param result 衝突結果
+     */
+    void ResolveKinematicCollision(ColliderComponent* colA, ColliderComponent* colB,
+                                   const Irufemi::Collision::CollisionResult& result);
 };
