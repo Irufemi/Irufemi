@@ -64,4 +64,11 @@ private:
 
     // モデルごとのバッチレンダラー
     std::unordered_map<std::string, std::unique_ptr<ModelBatchRendererComponent>> batchRenderers_;
+
+    /**
+     * @brief 指定モデルのバッチレンダラーを取得（未生成なら生成して初期化・キャッシュ）
+     * @param modelName 3Dモデル名
+     * @return バッチレンダラーへのポインタ（生成失敗時は nullptr）
+     */
+    ModelBatchRendererComponent* GetOrCreateBatchRenderer(const std::string& modelName);
 };
