@@ -5,9 +5,6 @@
 
 #include "Engine/Irufemi.h"
 #include "Framework/Scene/SceneManager.h"
-
-// memoryでの未定義
-
 #include "Framework/Component/ComponentFactory.h"
 #include "RailMechanics/RailShooterPlayerComponent.h"
 #include "RailMechanics/SplineFollowerComponent.h"
@@ -89,60 +86,35 @@ void RegisterScenes(SceneManager& sm) {
 #endif
     sm.Register("OptionsScene", [] { return std::make_unique<OptionsScene>(); });
 }
-} // namespace
 
-GameApplication::GameApplication() = default;
-GameApplication::~GameApplication() = default;
-
-void GameApplication::Run() {
-    // エンジンのインスタンスを生成
-    auto engine = std::make_unique<IrufemiEngine>();
-
-#ifdef EditorMode
-    // エディタマネージャを拡張として事前登録（Initialize時に初期化される）
-    auto editorManager = std::make_shared<EditorManager>();
-    engine->AddExtension(editorManager);
-#endif
-
-    // エンジンの初期化
-    engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
-
-#ifdef EditorMode
-    // エンジン初期化後にエディタへ登録（OnInitialize内でレジストリが生成されるため）
-    if (auto registry = editorManager->GetComponentEditorRegistry()) {
-        registry->RegisterEditor<WaveManagerComponent, WaveManagerComponentEditor>();
-        registry->RegisterEditor<GravityPlayerComponent, GravityPlayerComponentEditor>();
-        registry->RegisterEditor<BossComponent, BossComponentEditor>();
-    }
-#endif
-
-    // アプリ固有のシェーダー登録
-    {
-        ShaderCompileOptions options;
+// --- シェーダー登録処理 ---
+void RegisterShaders(IrufemiEngine& engine) {
+    ShaderCompileOptions options;
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        options.isDebug = true;
+    options.isDebug = true;
 #endif
-        auto shaderManager = engine->GetDirectXCommon()->GetShaderManager();
-        auto psoManager = engine->GetPSOManager();
+    auto shaderManager = engine.GetDirectXCommon()->GetShaderManager();
+    auto psoManager = engine.GetPSOManager();
 
-        auto vs3d = shaderManager->GetOrCompile(L"Object3d.VS.hlsl", options);
-        auto psEnergyCore = shaderManager->GetOrCompile(L"EnergyCore.PS.hlsl", options);
-        psoManager->RegisterShader("EnergyCore", {{vs3d, psEnergyCore}});
+    auto vs3d = shaderManager->GetOrCompile(L"Object3d.VS.hlsl", options);
+    auto psEnergyCore = shaderManager->GetOrCompile(L"EnergyCore.PS.hlsl", options);
+    psoManager->RegisterShader("EnergyCore", {{vs3d, psEnergyCore}});
 
-        // 追加: EnergyBeam と LightningCrawl の登録
-        auto psEnergyBeam = shaderManager->GetOrCompile(L"EnergyBeam.PS.hlsl", options);
-        psoManager->RegisterShader("EnergyBeam", {{vs3d, psEnergyBeam}});
+    // 追加: EnergyBeam と LightningCrawl の登録
+    auto psEnergyBeam = shaderManager->GetOrCompile(L"EnergyBeam.PS.hlsl", options);
+    psoManager->RegisterShader("EnergyBeam", {{vs3d, psEnergyBeam}});
 
-        auto psLightningCrawl = shaderManager->GetOrCompile(L"LightningCrawl.PS.hlsl", options);
-        psoManager->RegisterShader("LightningCrawl", {{vs3d, psLightningCrawl}});
+    auto psLightningCrawl = shaderManager->GetOrCompile(L"LightningCrawl.PS.hlsl", options);
+    psoManager->RegisterShader("LightningCrawl", {{vs3d, psLightningCrawl}});
 
-        // LockonMarker用シェーダー (SpriteBatch.VS.hlsl を使う)
-        auto vsSpriteBatch = shaderManager->GetOrCompile(L"SpriteBatch.VS.hlsl", options);
-        auto psLuminanceAlpha = shaderManager->GetOrCompile(L"LuminanceAlpha2D.PS.hlsl", options);
-        psoManager->RegisterShader("LuminanceAlpha2D", {{vsSpriteBatch, psLuminanceAlpha}});
-    }
+    // LockonMarker用シェーダー (SpriteBatch.VS.hlsl を使う)
+    auto vsSpriteBatch = shaderManager->GetOrCompile(L"SpriteBatch.VS.hlsl", options);
+    auto psLuminanceAlpha = shaderManager->GetOrCompile(L"LuminanceAlpha2D.PS.hlsl", options);
+    psoManager->RegisterShader("LuminanceAlpha2D", {{vsSpriteBatch, psLuminanceAlpha}});
+}
 
-    // 独自コンポーネントの登録
+// --- コンポーネント登録処理 ---
+void RegisterComponents() {
     ComponentFactory::Register("RailShooterPlayerComponent", "Game",
                                []() { return std::make_shared<RailShooterPlayerComponent>(); });
     ComponentFactory::Register("SplineFollowerComponent", "Game",
@@ -185,6 +157,39 @@ void GameApplication::Run() {
                                []() { return std::make_shared<GameLoopManagerComponent>(); });
     ComponentFactory::Register("ResultManagerComponent", "Game",
                                []() { return std::make_shared<ResultManagerComponent>(); });
+}
+} // namespace
+
+GameApplication::GameApplication() = default;
+GameApplication::~GameApplication() = default;
+
+void GameApplication::Run() {
+    // エンジンのインスタンスを生成
+    auto engine = std::make_unique<IrufemiEngine>();
+
+#ifdef EditorMode
+    // エディタマネージャを拡張として事前登録（Initialize時に初期化される）
+    auto editorManager = std::make_shared<EditorManager>();
+    engine->AddExtension(editorManager);
+#endif
+
+    // エンジンの初期化
+    engine->Initialize(kTitle, kClientWidth, kClientHeight, kClearColor);
+
+#ifdef EditorMode
+    // エンジン初期化後にエディタへ登録（OnInitialize内でレジストリが生成されるため）
+    if (auto registry = editorManager->GetComponentEditorRegistry()) {
+        registry->RegisterEditor<WaveManagerComponent, WaveManagerComponentEditor>();
+        registry->RegisterEditor<GravityPlayerComponent, GravityPlayerComponentEditor>();
+        registry->RegisterEditor<BossComponent, BossComponentEditor>();
+    }
+#endif
+
+    // アプリ固有のシェーダー登録
+    RegisterShaders(*engine);
+
+    // 独自コンポーネントの登録
+    RegisterComponents();
     // UIの登録
     auto loadingScreen = std::make_shared<LoadingScreen>();
     loadingScreen->Initialize(engine.get());
