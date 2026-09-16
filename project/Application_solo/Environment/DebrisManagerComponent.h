@@ -174,4 +174,5 @@ private:
     std::vector<DebrisComponent*> orbitingDebris_;
     std::vector<DebrisComponent*> bossOrbitingDebris_;
     std::vector<DebrisComponent*> thrownDebris_;
+    std::vector<DebrisComponent*> activeIdleDebris_; ///< 実体化されているIdle状態のがれきリスト
 };

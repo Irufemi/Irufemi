@@ -245,8 +245,10 @@ std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
         auto comp = obj->GetComponent<DebrisComponent>();
         if (comp) {
             comp->SetManager(this);
-            comp->SetVirtualId(-1);
+            comp->SetVirtualId(id);
             comp->SetVariationIndex(0);
+            comp->ResetForPool();
+            comp->SetState(DebrisState::Idle, true);
         }
     }
     return obj;
@@ -258,6 +260,8 @@ void DebrisManagerComponent::ReleaseDebris(std::shared_ptr<GameObject> debris) {
     }
     auto comp = debris->GetComponent<DebrisComponent>();
     if (comp) {
+        comp->ResetForPool();
+
         int vid = comp->GetVirtualId();
         int vIndex = comp->GetVariationIndex();
         if (vid >= 0 && vIndex >= 0 && vIndex < variations_.size()) {
@@ -279,56 +283,56 @@ void DebrisManagerComponent::MarkForRelease(std::shared_ptr<GameObject> debris) 
 std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(const Irufemi::Vector3& pos,
                                                                              float radius) {
     float bestDistSq = radius * radius;
+    std::shared_ptr<GameObject> bestObj = nullptr;
+
+    // 1. 実体化されている Idle がれき（環境物破壊等で発生したもの）を最優先で探索
+    for (auto it = activeIdleDebris_.begin(); it != activeIdleDebris_.end();) {
+        DebrisComponent* comp = *it;
+        if (!comp || !comp->GetGameObject() || !comp->GetGameObject()->GetIsActive()) {
+            it = activeIdleDebris_.erase(it);
+            continue;
+        }
+
+        if (comp->GetState() == DebrisState::Idle) {
+            if (auto t = comp->GetGameObject()->GetTransform()) {
+                Irufemi::Vector3 d = t->GetWorldPosition() - pos;
+                float distSq = d.x * d.x + d.y * d.y + d.z * d.z;
+                if (distSq <= bestDistSq) {
+                    bestDistSq = distSq;
+                    bestObj = comp->GetGameObject()->shared_from_this();
+                }
+            }
+        }
+        ++it;
+    }
+
+    if (bestObj) {
+        return bestObj;
+    }
+
+    // 2. 実体が範囲内になければ、未実体化（!isPromoted_）の仮想インスタンスから最も近いものを探索
     int bestId = -1;
     int bestVarIndex = -1;
-    std::shared_ptr<GameObject> bestPromotedObj = nullptr;
 
     for (size_t v = 0; v < variations_.size(); ++v) {
         auto& virtualInstances = variations_[v].virtualManager->GetDenseInstances();
         for (const auto& vi : virtualInstances) {
-            float dx, dy, dz;
-            bool isValid = false;
-
-            if (!vi.isPromoted_) {
-                dx = vi.position_.x - pos.x;
-                dy = vi.position_.y - pos.y;
-                dz = vi.position_.z - pos.z;
-                isValid = true;
-            } else {
-                auto obj = variations_[v].virtualManager->Promote(vi.id_);
-                if (obj && obj->GetIsActive()) {
-                    if (auto comp = obj->GetComponent<DebrisComponent>()) {
-                        if (comp->GetState() == DebrisState::Idle) {
-                            if (auto t = obj->GetTransform()) {
-                                dx = t->GetPosition().x - pos.x;
-                                dy = t->GetPosition().y - pos.y;
-                                dz = t->GetPosition().z - pos.z;
-                                isValid = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (isValid) {
+            if (!vi.isDestroyed_ && !vi.isPromoted_) {
+                float dx = vi.position_.x - pos.x;
+                float dy = vi.position_.y - pos.y;
+                float dz = vi.position_.z - pos.z;
                 float distSq = dx * dx + dy * dy + dz * dz;
                 if (distSq <= bestDistSq) {
                     bestDistSq = distSq;
                     bestId = vi.id_;
                     bestVarIndex = static_cast<int>(v);
-
-                    if (vi.isPromoted_) {
-                        bestPromotedObj = variations_[v].virtualManager->Promote(vi.id_);
-                    } else {
-                        bestPromotedObj = nullptr;
-                    }
                 }
             }
         }
     }
 
     if (bestId >= 0 && bestVarIndex >= 0) {
-        auto obj = bestPromotedObj ? bestPromotedObj : variations_[bestVarIndex].virtualManager->Promote(bestId);
+        auto obj = variations_[bestVarIndex].virtualManager->Promote(bestId);
         if (!obj) {
             if (DemoteFarthestIdleDebris(pos)) {
                 obj = variations_[bestVarIndex].virtualManager->Promote(bestId);
@@ -340,7 +344,8 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
                 comp->SetVirtualId(bestId);
                 comp->SetVariationIndex(bestVarIndex);
                 comp->SetManager(this);
-                comp->SetState(DebrisState::Idle);
+                comp->ResetForPool();
+                comp->SetState(DebrisState::Idle, true);
             }
             return obj;
         }
@@ -356,39 +361,31 @@ void DebrisManagerComponent::NotifyDestroyed(int virtualId, int variationIndex) 
 
 bool DebrisManagerComponent::DemoteFarthestIdleDebris(const Irufemi::Vector3& fromPos) {
     float maxDistSq = -1.0f;
-    int targetVid = -1;
-    int targetVarIndex = -1;
+    DebrisComponent* farthestComp = nullptr;
 
-    for (size_t v = 0; v < variations_.size(); ++v) {
-        auto& virtualInstances = variations_[v].virtualManager->GetDenseInstances();
-        for (const auto& vi : virtualInstances) {
-            if (vi.isPromoted_) {
-                auto obj = variations_[v].virtualManager->Promote(vi.id_);
-                if (obj && obj->GetIsActive()) {
-                    if (auto comp = obj->GetComponent<DebrisComponent>()) {
-                        if (comp->GetState() == DebrisState::Idle) {
-                            if (auto t = obj->GetTransform()) {
-                                Irufemi::Vector3 pos = t->GetWorldPosition();
-                                float dx = pos.x - fromPos.x;
-                                float dy = pos.y - fromPos.y;
-                                float dz = pos.z - fromPos.z;
-                                float distSq = dx * dx + dy * dy + dz * dz;
-                                if (distSq > maxDistSq) {
-                                    maxDistSq = distSq;
-                                    targetVid = vi.id_;
-                                    targetVarIndex = static_cast<int>(v);
-                                }
-                            }
-                        }
-                    }
+    for (auto* comp : activeIdleDebris_) {
+        if (!comp || !comp->GetGameObject() || !comp->GetGameObject()->GetIsActive()) {
+            continue;
+        }
+        if (comp->GetVirtualId() >= 0) {
+            if (auto t = comp->GetGameObject()->GetTransform()) {
+                Irufemi::Vector3 d = t->GetWorldPosition() - fromPos;
+                float distSq = d.x * d.x + d.y * d.y + d.z * d.z;
+                if (distSq > maxDistSq) {
+                    maxDistSq = distSq;
+                    farthestComp = comp;
                 }
             }
         }
     }
 
-    if (targetVid >= 0 && targetVarIndex >= 0) {
-        variations_[targetVarIndex].virtualManager->Demote(targetVid);
-        return true;
+    if (farthestComp) {
+        int vid = farthestComp->GetVirtualId();
+        int vIndex = farthestComp->GetVariationIndex();
+        if (vid >= 0 && vIndex >= 0 && vIndex < variations_.size()) {
+            variations_[vIndex].virtualManager->Demote(vid);
+            return true;
+        }
     }
     return false;
 }
@@ -399,6 +396,9 @@ void DebrisManagerComponent::MarkForDestroy(int virtualId, int variationIndex) {
 
 void DebrisManagerComponent::RegisterDebris(DebrisComponent* debris, DebrisState state) {
     switch (state) {
+    case DebrisState::Idle:
+        activeIdleDebris_.push_back(debris);
+        break;
     case DebrisState::Pulled:
         pulledDebris_.push_back(debris);
         break;
@@ -424,6 +424,9 @@ void DebrisManagerComponent::UnregisterDebris(DebrisComponent* debris, DebrisSta
         }
     };
     switch (state) {
+    case DebrisState::Idle:
+        remove_func(activeIdleDebris_);
+        break;
     case DebrisState::Pulled:
         remove_func(pulledDebris_);
         break;

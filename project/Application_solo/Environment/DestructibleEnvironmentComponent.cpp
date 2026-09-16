@@ -61,7 +61,7 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
                     }
 
                     if (auto comp = debris->GetComponent<DebrisComponent>()) {
-                        comp->SetState(DebrisState::Idle); // TODO: 空中にばらまく物理挙動を入れる場合はここで処理
+                        comp->SetState(DebrisState::Idle, true); // オーラ消灯・状態同期を強制
                         comp->SetTarget(std::weak_ptr<GameObject>());
                     }
                 }

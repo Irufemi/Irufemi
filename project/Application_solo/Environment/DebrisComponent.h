@@ -38,10 +38,20 @@ public:
     std::shared_ptr<Component> Clone() override;
 
     // 状態変更用のインターフェース
-    void SetState(DebrisState newState);
+    void SetState(DebrisState newState, bool forceVisualUpdate = false);
     DebrisState GetState() const {
         return state_;
     }
+
+    /**
+     * @brief プールへの返却時または再利用時に状態・オーラを初期化する
+     */
+    void ResetForPool();
+
+    /**
+     * @brief 現在のステートに基づいてオーラの表示状態および色を更新する
+     */
+    void UpdateAuraVisuals();
 
     void SetTarget(std::weak_ptr<GameObject> target) {
         targetObject_ = target;
