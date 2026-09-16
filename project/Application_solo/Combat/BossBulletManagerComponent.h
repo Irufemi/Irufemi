@@ -7,6 +7,7 @@
 
 class GameObject;
 class VirtualEntityManagerComponent;
+class ColliderComponent;
 
 class BossBulletManagerComponent : public Component {
 public:
@@ -60,4 +61,5 @@ private:
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
     std::vector<BossBulletData> bulletDataList_;
     std::queue<int> activeVirtualIds_;
+    std::vector<ColliderComponent*> prefetchedColliders_;
 };
