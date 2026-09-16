@@ -159,6 +159,9 @@
     <ClCompile Include="Player\PlayerHealthComponent.cpp">
       <Filter>Player</Filter>
     </ClCompile>
+    <ClCompile Include="Player\PlayerDamageVisualizerComponent.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
     <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
@@ -289,6 +292,9 @@
       <Filter>Player</Filter>
     </ClInclude>
     <ClInclude Include="Player\PlayerHealthComponent.h">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Player\PlayerDamageVisualizerComponent.h">
       <Filter>Player</Filter>
     </ClInclude>
     <ClInclude Include="Combat\DebugEnemySpawnerComponent.h">

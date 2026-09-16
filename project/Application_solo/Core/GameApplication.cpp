@@ -16,6 +16,7 @@
 #include "Level/WaveManagerComponent.h"
 #include "Player/GravityPlayerComponent.h"
 #include "Player/PlayerHealthComponent.h"
+#include "Player/PlayerDamageVisualizerComponent.h"
 #include "Player/PlayerTargetingComponent.h"
 #include "Combat/DebugEnemySpawnerComponent.h"
 #include "Combat/Boss/BossComponent.h"
@@ -135,6 +136,8 @@ void RegisterComponents() {
                                []() { return std::make_shared<GravityPlayerComponent>(); });
     ComponentFactory::Register("PlayerHealthComponent", "Game",
                                []() { return std::make_shared<PlayerHealthComponent>(); });
+    ComponentFactory::Register("PlayerDamageVisualizerComponent", "Game",
+                               []() { return std::make_shared<PlayerDamageVisualizerComponent>(); });
     ComponentFactory::Register("PlayerTargetingComponent", "Game",
                                []() { return std::make_shared<PlayerTargetingComponent>(); });
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game",

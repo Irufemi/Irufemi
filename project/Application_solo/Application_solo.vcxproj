@@ -268,6 +268,7 @@ exit 0</Command>
     <ClCompile Include="Environment\DestructibleEnvironmentComponent.cpp" />
     <ClCompile Include="Player\GravityPlayerComponent.cpp" />
     <ClCompile Include="Player\PlayerHealthComponent.cpp" />
+    <ClCompile Include="Player\PlayerDamageVisualizerComponent.cpp" />
     <ClCompile Include="Core\GameLoopManagerComponent.cpp" />
     <ClCompile Include="Core\ResultManagerComponent.cpp" />
     <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp" />
@@ -318,6 +319,7 @@ exit 0</Command>
     <ClInclude Include="Environment\DestructibleEnvironmentComponent.h" />
     <ClInclude Include="Player\GravityPlayerComponent.h" />
     <ClInclude Include="Player\PlayerHealthComponent.h" />
+    <ClInclude Include="Player\PlayerDamageVisualizerComponent.h" />
     <ClInclude Include="Core\GameLoopManagerComponent.h" />
     <ClInclude Include="Core\ResultManagerComponent.h" />
     <ClInclude Include="Combat\DebugEnemySpawnerComponent.h" />

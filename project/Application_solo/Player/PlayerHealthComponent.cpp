@@ -1,10 +1,5 @@
 #include "Player/PlayerHealthComponent.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
-#include "Framework/Component/Effect/ScreenEffectComponent.h"
-#include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Framework/GameObject/GameObject.h"
-#include "Framework/Scene/BaseScene.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -12,7 +7,6 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
-#include <cmath>
 
 void PlayerHealthComponent::LoadStatusFromJson() {
     if (statusDataPath_.empty()) {
@@ -48,9 +42,8 @@ void PlayerHealthComponent::Initialize() {
     LoadStatusFromJson();
 
     invincibilityTimer_ = 0.0f;
-    flashTimer_ = 0.0f;
-    flashInterval_ = 0.1f;
-    colorCached_ = false;
+    onDamageTakenListeners_.clear();
+    onPlayerDiedListeners_.clear();
 }
 
 void PlayerHealthComponent::Start() {}
@@ -81,34 +74,11 @@ void PlayerHealthComponent::Update() {
         return;
     }
 
-    // --- 被弾時の無敵時間と点滅処理 ---
+    // 無敵タイマーの更新
     if (invincibilityTimer_ > 0.0f) {
         invincibilityTimer_ -= dt;
-        flashTimer_ += dt;
-
-        BaseModel* model = nullptr;
-        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
-            model = reinterpret_cast<BaseModel*>(mesh->GetRenderable());
-        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
-            model = reinterpret_cast<BaseModel*>(skinned->GetRenderable());
-        }
-
-        if (model) {
-            if (!colorCached_) {
-                originalBaseColor_ = model->GetColor();
-                colorCached_ = true;
-            }
-            if (fmod(flashTimer_, flashInterval_ * 2.0f) < flashInterval_) {
-                model->SetColor({1.0f, 0.0f, 0.0f, 1.0f}); // 赤色
-            } else {
-                model->SetColor(originalBaseColor_); // 通常色
-            }
-        }
-
-        if (invincibilityTimer_ <= 0.0f) {
-            if (model && colorCached_) {
-                model->SetColor(originalBaseColor_);
-            }
+        if (invincibilityTimer_ < 0.0f) {
+            invincibilityTimer_ = 0.0f;
         }
     }
 }
@@ -134,40 +104,26 @@ void PlayerHealthComponent::TakeDamage(int damage) {
         hp_ = 0;
         isDead_ = true;
         deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
+
         if (onPlayerDied) {
             onPlayerDied();
         }
-        Log::OutPutLog(std::cout, "[PlayerHealth] Player Died!\n");
-
-        // 自機が死んだときに自機のモデルの描画を切る
-        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
-            mesh->SetVisible(false);
-        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
-            skinned->SetVisible(false);
+        for (const auto& listener : onPlayerDiedListeners_) {
+            if (listener) {
+                listener();
+            }
         }
 
+        Log::OutPutLog(std::cout, "[PlayerHealth] Player Died!\n");
         return;
     }
 
-    Log::OutPutLog(std::cout, "[PlayerHealth] Triggering flashing...\n");
     invincibilityTimer_ = maxInvincibilityTime_;
-    isFlashing_ = true;
-    flashTimer_ = 0.0f;
 
-    // カメラシェイク発火 (プレイヤー被弾時なので強め)
-    if (auto scene = gameObject_->GetScene()) {
-        if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {
-            if (auto shakeComp = mainCameraObj->GetComponent<CameraShakeComponent>()) {
-                shakeComp->PlayShake(1.0f, 30, 20.0f); // Intensity=1.0, 30 Frames, Freq=20
-            }
-        }
-    }
-
-    // ポストエフェクト演出の再生
-    auto& comps = gameObject_->GetComponents();
-    for (auto& comp : comps) {
-        if (auto screenEffect = std::dynamic_pointer_cast<ScreenEffectComponent>(comp)) {
-            screenEffect->Play();
+    for (const auto& listener : onDamageTakenListeners_) {
+        if (listener) {
+            listener(damage);
         }
     }
 }
+

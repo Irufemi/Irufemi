@@ -2,7 +2,7 @@
 #include "Framework/Component/Component.h"
 #include <functional>
 #include <string>
-#include "Core/Math/Vector4.h"
+#include <vector>
 
 /**
  * @class PlayerHealthComponent
@@ -24,6 +24,20 @@ public:
     std::function<void()> onPlayerDied;
     std::function<void()> onDeathSequenceFinished;
 
+    /**
+     * @brief 被弾時のイベントリスナーを追加する
+     */
+    void AddOnDamageTakenListener(std::function<void(int damage)> callback) {
+        onDamageTakenListeners_.push_back(std::move(callback));
+    }
+
+    /**
+     * @brief 死亡時のイベントリスナーを追加する
+     */
+    void AddOnPlayerDiedListener(std::function<void()> callback) {
+        onPlayerDiedListeners_.push_back(std::move(callback));
+    }
+
     void LoadStatusFromJson();
 
     std::string GetStatusDataPath() const {
@@ -36,6 +50,12 @@ public:
     void TakeDamage(int damage);
     bool IsInvincible() const {
         return invincibilityTimer_ > 0.0f;
+    }
+    float GetInvincibilityTimer() const {
+        return invincibilityTimer_;
+    }
+    float GetMaxInvincibilityTime() const {
+        return maxInvincibilityTime_;
     }
     void SetGodMode(bool godMode) {
         isGodMode_ = godMode;
@@ -64,12 +84,11 @@ private:
     float deathStartTime_ = 0.0f;
     bool hasTriggeredDeathSequenceFinished_ = false;
 
-    // 被弾処理
+    // 被弾・無敵時間
     float invincibilityTimer_ = 0.0f;
     float maxInvincibilityTime_ = 1.0f;
-    bool isFlashing_ = false;
-    float flashTimer_ = 0.0f;
-    float flashInterval_ = 0.05f;
-    Irufemi::Vector4 originalBaseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    bool colorCached_ = false;
+
+    std::vector<std::function<void(int damage)>> onDamageTakenListeners_;
+    std::vector<std::function<void()>> onPlayerDiedListeners_;
 };
+

@@ -1552,6 +1552,14 @@
             },
             {
               "data": {
+                "Flash Duration": 1.0,
+                "Flash Interval": 0.05000000074505806,
+                "Shake Intensity": 1.0
+              },
+              "type": "PlayerDamageVisualizerComponent"
+            },
+            {
+              "data": {
                 "isStatic": false,
                 "isTrigger": false,
                 "layer": 2,
