@@ -46,14 +46,14 @@ void PlayerTargetingComponent::Start() {
 void PlayerTargetingComponent::Update() {
     // 死んだオブジェクトやターゲット不可になったオブジェクトをキューから削除する
     queuedTargets_.erase(std::remove_if(queuedTargets_.begin(), queuedTargets_.end(),
-                                        [](const std::shared_ptr<GameObject>& obj) {
+                                        [this](const std::shared_ptr<GameObject>& obj) {
                                             if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
                                                 return true;
                                             }
 
                                             // TargetableComponent による共通ターゲット可否判定
                                             if (auto targetable = obj->GetComponent<TargetableComponent>()) {
-                                                return !targetable->IsTargetable();
+                                                return !targetable->IsTargetable() || !IsTargetTypeAllowed(targetable->GetTargetType());
                                             }
 
                                             return true;
@@ -136,6 +136,7 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                     }
                 }
                 cache.canSee = canSee;
+                cache.hasCheckedOnce = true;
                 cache.pendingTask.reset();
             }
         }
@@ -153,7 +154,7 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 
     // 2. ターゲット候補のスコアリングと評価
     for (auto targetComp : TargetableComponent::GetTargets()) {
-        if (!targetComp || !targetComp->IsTargetable()) {
+        if (!targetComp || !targetComp->IsTargetable() || !IsTargetTypeAllowed(targetComp->GetTargetType())) {
             continue;
         }
 
@@ -186,20 +187,41 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                         if (score < bestScore) {
                             auto& cache = visibilityCache_[obj];
 
-                            // 0.1秒以上経過していれば、非同期レイキャストを発行（Amortization）
-                            if (currentTime - cache.lastCheckTime > 0.1f && !cache.pendingTask) {
-                                cache.lastCheckTime = currentTime;
+                            if (!cache.hasCheckedOnce) {
+                                // 初回は同期Raycastで遮蔽を即座に確定し、壁裏敵の一瞬の透過ロックオンを防止
                                 Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
                                 Irufemi::Ray ray;
                                 ray.origin = cameraPos;
                                 ray.diff = dir;
+                                RaycastHit hitInfo{};
+                                bool hit = engine->GetCollisionManager()->Raycast(
+                                    ray, hitInfo, dist3D + 10.0f, 0xFFFFFFFF, playerObj);
 
-                                cache.pendingTask = std::make_shared<std::future<std::pair<bool, RaycastHit>>>(
-                                    engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
-                                                                                dist3D + 10.0f, 0xFFFFFFFF, playerObj));
+                                bool canSee = true;
+                                if (hit && hitInfo.hitObject != nullptr) {
+                                    if (hitInfo.hitObject != obj && hitInfo.distance < dist3D - 1.0f) {
+                                        canSee = false;
+                                    }
+                                }
+                                cache.canSee = canSee;
+                                cache.hasCheckedOnce = true;
+                                cache.lastCheckTime = currentTime;
+                            } else {
+                                // 2回目以降: 0.1秒以上経過していれば、非同期レイキャストを発行（Amortization）
+                                if (currentTime - cache.lastCheckTime > 0.1f && !cache.pendingTask) {
+                                    cache.lastCheckTime = currentTime;
+                                    Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
+                                    Irufemi::Ray ray;
+                                    ray.origin = cameraPos;
+                                    ray.diff = dir;
+
+                                    cache.pendingTask = std::make_shared<std::future<std::pair<bool, RaycastHit>>>(
+                                        engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
+                                                                                    dist3D + 10.0f, 0xFFFFFFFF, playerObj));
+                                }
                             }
 
-                            // 非同期判定中の場合は、過去のキャッシュ(canSee)を利用して即座に評価を続ける
+                            // 視認可能な場合のみベストターゲット候補とする
                             if (cache.canSee) {
                                 bestScore = score;
                                 bestTarget = obj->shared_from_this();

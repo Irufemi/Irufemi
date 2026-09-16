@@ -89,6 +89,7 @@ void DebrisComponent::OnEnable() {
 
     if (gameObject_) {
         if (auto targetable = gameObject_->GetComponent<TargetableComponent>()) {
+            targetable->SetTargetType(TargetType::BossShield);
             targetable->SetTargetablePredicate([this]() {
                 return state_ == DebrisState::BossOrbiting;
             });

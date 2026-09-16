@@ -1,10 +1,12 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include "Core/Math/Vector3.h"
+#include "Player/TargetableComponent.h"
 #include <vector>
 #include <memory>
 #include <future>
 #include <unordered_map>
+#include <cstdint>
 
 class GameObject;
 class LockonMarkerUIComponent;
@@ -66,14 +68,54 @@ public:
      */
     Irufemi::Vector3 CalculateAimPoint(float maxDistance = 1000.0f) const;
 
+    // --- ターゲット種別の能動的フィルタリングAPI ---
+    /**
+     * @brief ロックオン対象とするターゲット種別マスクを一括設定する
+     */
+    void SetTargetTypeMask(uint32_t mask) {
+        targetTypeMask_ = mask;
+    }
+
+    /**
+     * @brief 指定したターゲット種別をロックオン対象に追加する
+     */
+    void EnableTargetType(TargetType type) {
+        targetTypeMask_ |= static_cast<uint32_t>(type);
+    }
+
+    /**
+     * @brief 指定したターゲット種別をロックオン対象から除外する
+     */
+    void DisableTargetType(TargetType type) {
+        targetTypeMask_ &= ~static_cast<uint32_t>(type);
+    }
+
+    /**
+     * @brief 現在のターゲット種別マスクを取得する
+     */
+    uint32_t GetTargetTypeMask() const {
+        return targetTypeMask_;
+    }
+
+    /**
+     * @brief 指定したターゲット種別が現在ロックオン許可されているか判定する
+     */
+    bool IsTargetTypeAllowed(TargetType type) const {
+        return (targetTypeMask_ & static_cast<uint32_t>(type)) != 0;
+    }
+
 private:
     size_t maxLockonCount_ = 1;
     std::vector<std::shared_ptr<GameObject>> queuedTargets_;
     std::shared_ptr<GameObject> hoverTarget_ = nullptr;
 
+    // ロックオン許可マスク（デフォルトは敵とボスのシールドのみ許可、環境物は除外）
+    uint32_t targetTypeMask_ = static_cast<uint32_t>(TargetType::Enemy) | static_cast<uint32_t>(TargetType::BossShield);
+
     /** @brief 非同期レイキャストの結果待機用と時間間引き(Amortization)用キャッシュ構造体 */
     struct TargetVisibilityCache {
-        bool canSee = true;
+        bool canSee = false;         ///< 壁裏チェック完了前はfalse（透過防止）
+        bool hasCheckedOnce = false; ///< 初回判定が実行されたかどうか
         float lastCheckTime = -1.0f;
         std::shared_ptr<std::future<std::pair<bool, RaycastHit>>> pendingTask;
     };

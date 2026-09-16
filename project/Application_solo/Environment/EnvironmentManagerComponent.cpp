@@ -106,6 +106,10 @@ void EnvironmentManagerComponent::Start() {
                     if (!child->GetComponent<TargetableComponent>()) {
                         child->AddComponent<TargetableComponent>();
                     }
+                    if (auto targetable = child->GetComponent<TargetableComponent>()) {
+                        targetable->SetTargetType(TargetType::Environment);
+                    }
+
                     if (!child->GetComponent<DestructibleEnvironmentComponent>()) {
                         auto destructible = child->AddComponent<DestructibleEnvironmentComponent>();
                         destructible->SetDebrisSpawnCount(setting.debrisSpawnCount);
