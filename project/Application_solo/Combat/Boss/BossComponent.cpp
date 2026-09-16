@@ -100,6 +100,12 @@ void BossComponent::Start() {
     if (!gameObject_) {
         return;
     }
+
+    if (auto col = gameObject_->GetComponent<SphereColliderComponent>()) {
+        col->SetDebugCategory(DebugCategory::Combat);
+        col->SetDebugCustomColor(Irufemi::Vector4{1.0f, 0.0f, 1.0f, 1.0f});
+    }
+
     auto scene = gameObject_->GetScene();
     if (scene) {
         auto camObj = scene->FindGameObject("MainCamera");

@@ -1,5 +1,6 @@
 #include "Player/PlayerHealthComponent.h"
 #include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -46,7 +47,15 @@ void PlayerHealthComponent::Initialize() {
     onPlayerDiedListeners_.clear();
 }
 
-void PlayerHealthComponent::Start() {}
+void PlayerHealthComponent::Start() {
+    if (gameObject_) {
+        collider_ = gameObject_->GetComponentByInterface<ColliderComponent>();
+        if (collider_) {
+            collider_->SetDebugCategory(DebugCategory::Combat);
+            collider_->SetDebugCustomColor(Irufemi::Vector4{0.0f, 1.0f, 1.0f, 1.0f});
+        }
+    }
+}
 
 void PlayerHealthComponent::Update() {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
@@ -55,6 +64,14 @@ void PlayerHealthComponent::Update() {
         Log::OutPutLog(std::cout, std::string("[PlayerHealth] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
     }
 #endif
+
+    if (collider_) {
+        if (IsInvincible()) {
+            collider_->SetDebugCustomColor(Irufemi::Vector4{1.0f, 1.0f, 1.0f, 1.0f});
+        } else {
+            collider_->SetDebugCustomColor(Irufemi::Vector4{0.0f, 1.0f, 1.0f, 1.0f});
+        }
+    }
 
     if (isDead_) {
         if (!hasTriggeredDeathSequenceFinished_) {

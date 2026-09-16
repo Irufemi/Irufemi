@@ -16,6 +16,27 @@ class DirectXCommon;
 class DrawManager;
 class DescriptorPool;
 
+enum class DebugCategory : uint32_t {
+    None        = 0,
+    Collision   = 1 << 0, ///< 物理コライダー（OBB, Sphere, AABB）
+    Combat      = 1 << 1, ///< 弾幕、攻撃判定、ヒットボックス
+    Particle    = 1 << 2, ///< パーティクル・エミッター領域
+    Level       = 1 << 3, ///< スポーン範囲、トリガー領域
+    Path        = 1 << 4, ///< スプラインレール、移動ノード
+    General     = 1 << 5, ///< その他汎用
+    All         = 0xFFFFFFFF
+};
+
+inline constexpr DebugCategory operator|(DebugCategory a, DebugCategory b) {
+    return static_cast<DebugCategory>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+inline constexpr DebugCategory operator&(DebugCategory a, DebugCategory b) {
+    return static_cast<DebugCategory>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+inline constexpr DebugCategory operator~(DebugCategory a) {
+    return static_cast<DebugCategory>(~static_cast<uint32_t>(a));
+}
+
 /**
  * @class DebugPrimitiveRenderer
  * @brief GPUインスタンシングを用いた高速なデバッグ用プリミティブ描画クラス
@@ -41,18 +62,80 @@ public:
     void Update();
 
     /**
+     * @brief 全デバッグプリミティブ描画の一括有効/無効を設定する
+     */
+    void SetEnabled(bool enabled) { isEnabled_ = enabled; }
+
+    /**
+     * @brief 全デバッグプリミティブ描画の一括有効状態を取得する
+     */
+    bool IsEnabled() const { return isEnabled_; }
+
+    /**
+     * @brief 表示対象カテゴリのビットマスクを設定する
+     */
+    void SetCategoryMask(uint32_t mask) { categoryMask_ = mask; }
+
+    /**
+     * @brief 表示対象カテゴリのビットマスクを取得する
+     */
+    uint32_t GetCategoryMask() const { return categoryMask_; }
+
+    /**
+     * @brief 指定したカテゴリの表示/非表示を設定する
+     */
+    void SetCategoryEnabled(DebugCategory category, bool enabled) {
+        if (enabled) {
+            categoryMask_ |= static_cast<uint32_t>(category);
+        } else {
+            categoryMask_ &= ~static_cast<uint32_t>(category);
+        }
+    }
+
+    /**
+     * @brief 指定したカテゴリが表示対象かどうかを取得する
+     */
+    bool IsCategoryEnabled(DebugCategory category) const {
+        return (categoryMask_ & static_cast<uint32_t>(category)) != 0;
+    }
+
+    /**
      * @brief AddSphere を実行する。
      */
-    void AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color);
+    void AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color,
+                   DebugCategory category = DebugCategory::General);
     /**
      * @brief AddCube を実行する。
      */
-    void AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color);
+    void AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color,
+                 DebugCategory category = DebugCategory::General);
 
     /**
-     * @brief ClearInstances を実行する。
+     * @brief ClearInstances を実行する。（シミュレーション用・描画用双方をクリア）
      */
     void ClearInstances();
+
+    /**
+     * @brief 毎フレーム末尾に描画フェーズ用のプリミティブのみをクリアする
+     */
+    void ClearDrawInstances();
+
+    /**
+     * @brief シミュレーション（Update）用のプリミティブのみをクリアする
+     */
+    void ClearSimulationInstances();
+
+    /**
+     * @brief シミュレーション（Update）フェーズを開始する
+     * @details Updateフェーズ中に呼ばれたAddSphere/AddCubeはシミュレーションバッファに格納され、ポーズ中もクリアされずにフリーズ保持されます。
+     */
+    void BeginSimulationFrame();
+
+    /**
+     * @brief シミュレーション（Update）フェーズを終了する
+     */
+    void EndSimulationFrame();
+
     /**
      * @brief BuildInstanceBuffer を実行する。
      */
@@ -63,9 +146,15 @@ public:
     void Draw();
 
 private:
-    struct InstanceData {
+    struct GPUInstanceData {
         Irufemi::Matrix4x4 world;
         Irufemi::Vector4 color;
+    };
+
+    struct CPUInstanceData {
+        Irufemi::Matrix4x4 world;
+        Irufemi::Vector4 color;
+        DebugCategory category = DebugCategory::General;
     };
 
     /**
@@ -92,15 +181,22 @@ private:
     D3D12_INDEX_BUFFER_VIEW sphereIBV_{};
     uint32_t sphereIndexCount_ = 0;
 
-    std::vector<InstanceData> sphereInstances_;
-    size_t activeSphereCount_ = 0;
+    // 描画フェーズ用（毎フレームクリア）
+    std::vector<CPUInstanceData> drawSphereInstances_;
+    size_t activeDrawSphereCount_ = 0;
+
+    // シミュレーションフェーズ用（Update単位でクリア、ポーズ中は保持）
+    std::vector<CPUInstanceData> simSphereInstances_;
+    size_t activeSimSphereCount_ = 0;
+
     size_t maxSphereInstances_ = 65535;
 
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> sphereInstanceBuffer_;
-    std::array<InstanceData*, kMaxFramesInFlight> sphereInstanceDataMap_{};
+    std::array<GPUInstanceData*, kMaxFramesInFlight> sphereInstanceDataMap_{};
     std::array<uint32_t, kMaxFramesInFlight> sphereInstanceCapacity_{};
     std::array<uint32_t, kMaxFramesInFlight> sphereSrvIndex_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> sphereSrvGPU_{};
+    std::array<size_t, kMaxFramesInFlight> visibleSphereCount_{};
 
     // --- Cube Data ---
     Microsoft::WRL::ComPtr<ID3D12Resource> cubeVertexResource_;
@@ -109,17 +205,28 @@ private:
     D3D12_INDEX_BUFFER_VIEW cubeIBV_{};
     uint32_t cubeIndexCount_ = 0;
 
-    std::vector<InstanceData> cubeInstances_;
-    size_t activeCubeCount_ = 0;
+    // 描画フェーズ用（毎フレームクリア）
+    std::vector<CPUInstanceData> drawCubeInstances_;
+    size_t activeDrawCubeCount_ = 0;
+
+    // シミュレーションフェーズ用（Update単位でクリア、ポーズ中は保持）
+    std::vector<CPUInstanceData> simCubeInstances_;
+    size_t activeSimCubeCount_ = 0;
+
     size_t maxCubeInstances_ = 65535;
 
     std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kMaxFramesInFlight> cubeInstanceBuffer_;
-    std::array<InstanceData*, kMaxFramesInFlight> cubeInstanceDataMap_{};
+    std::array<GPUInstanceData*, kMaxFramesInFlight> cubeInstanceDataMap_{};
     std::array<uint32_t, kMaxFramesInFlight> cubeInstanceCapacity_{};
     std::array<uint32_t, kMaxFramesInFlight> cubeSrvIndex_{};
     std::array<D3D12_GPU_DESCRIPTOR_HANDLE, kMaxFramesInFlight> cubeSrvGPU_{};
+    std::array<size_t, kMaxFramesInFlight> visibleCubeCount_{};
 
     uint32_t lastUpdateFrameIndex_ = 0;
+
+    bool isEnabled_ = true;
+    uint32_t categoryMask_ = static_cast<uint32_t>(DebugCategory::All);
+    bool isSimulating_ = false;
 
     std::mutex mutex_;
 };

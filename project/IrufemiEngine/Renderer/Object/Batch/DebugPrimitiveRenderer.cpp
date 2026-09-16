@@ -32,8 +32,10 @@ void DebugPrimitiveRenderer::Initialize(DirectXCommon* dx, DrawManager* drawM, D
     sphereSrvIndex_.fill(UINT32_MAX);
     cubeSrvIndex_.fill(UINT32_MAX);
 
-    sphereInstances_.resize(maxSphereInstances_);
-    cubeInstances_.resize(maxCubeInstances_);
+    drawSphereInstances_.resize(maxSphereInstances_);
+    simSphereInstances_.resize(maxSphereInstances_);
+    drawCubeInstances_.resize(maxCubeInstances_);
+    simCubeInstances_.resize(maxCubeInstances_);
 
     CreateSphereResource();
     CreateCubeResource();
@@ -146,28 +148,80 @@ void DebugPrimitiveRenderer::CreateCubeResource() {
 
 void DebugPrimitiveRenderer::ClearInstances() {
     std::lock_guard<std::mutex> lock(mutex_);
-    activeSphereCount_ = 0;
-    activeCubeCount_ = 0;
+    activeDrawSphereCount_ = 0;
+    activeSimSphereCount_ = 0;
+    activeDrawCubeCount_ = 0;
+    activeSimCubeCount_ = 0;
 }
 
-void DebugPrimitiveRenderer::AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color) {
+void DebugPrimitiveRenderer::ClearDrawInstances() {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (activeSphereCount_ < maxSphereInstances_) {
-        auto& instance = sphereInstances_[activeSphereCount_];
-        instance.world =
-            Irufemi::Math::MakeScaleMatrix({radius, radius, radius}) * Irufemi::Math::MakeTranslateMatrix(center);
-        instance.color = color;
-        activeSphereCount_++;
+    activeDrawSphereCount_ = 0;
+    activeDrawCubeCount_ = 0;
+}
+
+void DebugPrimitiveRenderer::ClearSimulationInstances() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    activeSimSphereCount_ = 0;
+    activeSimCubeCount_ = 0;
+}
+
+void DebugPrimitiveRenderer::BeginSimulationFrame() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    activeSimSphereCount_ = 0;
+    activeSimCubeCount_ = 0;
+    isSimulating_ = true;
+}
+
+void DebugPrimitiveRenderer::EndSimulationFrame() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    isSimulating_ = false;
+}
+
+void DebugPrimitiveRenderer::AddSphere(const Irufemi::Vector3& center, float radius, const Irufemi::Vector4& color,
+                                       DebugCategory category) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    Irufemi::Matrix4x4 world =
+        Irufemi::Math::MakeScaleMatrix({radius, radius, radius}) * Irufemi::Math::MakeTranslateMatrix(center);
+
+    if (isSimulating_) {
+        if (activeSimSphereCount_ < maxSphereInstances_) {
+            auto& instance = simSphereInstances_[activeSimSphereCount_];
+            instance.world = world;
+            instance.color = color;
+            instance.category = category;
+            activeSimSphereCount_++;
+        }
+    } else {
+        if (activeDrawSphereCount_ < maxSphereInstances_) {
+            auto& instance = drawSphereInstances_[activeDrawSphereCount_];
+            instance.world = world;
+            instance.color = color;
+            instance.category = category;
+            activeDrawSphereCount_++;
+        }
     }
 }
 
-void DebugPrimitiveRenderer::AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color) {
+void DebugPrimitiveRenderer::AddCube(const Irufemi::Matrix4x4& transform, const Irufemi::Vector4& color,
+                                     DebugCategory category) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (activeCubeCount_ < maxCubeInstances_) {
-        auto& instance = cubeInstances_[activeCubeCount_];
-        instance.world = transform;
-        instance.color = color;
-        activeCubeCount_++;
+    if (isSimulating_) {
+        if (activeSimCubeCount_ < maxCubeInstances_) {
+            auto& instance = simCubeInstances_[activeSimCubeCount_];
+            instance.world = transform;
+            instance.color = color;
+            instance.category = category;
+            activeSimCubeCount_++;
+        }
+    } else {
+        if (activeDrawCubeCount_ < maxCubeInstances_) {
+            auto& instance = drawCubeInstances_[activeDrawCubeCount_];
+            instance.world = transform;
+            instance.color = color;
+            instance.category = category;
+            activeDrawCubeCount_++;
+        }
     }
 }
 
@@ -192,11 +246,26 @@ void DebugPrimitiveRenderer::EnsureInstancingSRVs() {
 }
 
 void DebugPrimitiveRenderer::BuildInstanceBuffer() {
-    if (activeSphereCount_ == 0 && activeCubeCount_ == 0) {
+    uint32_t frameIndex = dx_->GetFrameIndex();
+    visibleSphereCount_[frameIndex] = 0;
+    visibleCubeCount_[frameIndex] = 0;
+
+    if (!isEnabled_) {
         return;
     }
 
-    uint32_t frameIndex = dx_->GetFrameIndex();
+    size_t totalSpheres = 0;
+    size_t totalCubes = 0;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        totalSpheres = activeSimSphereCount_ + activeDrawSphereCount_;
+        totalCubes = activeSimCubeCount_ + activeDrawCubeCount_;
+    }
+
+    if (totalSpheres == 0 && totalCubes == 0) {
+        return;
+    }
+
     lastUpdateFrameIndex_ = frameIndex;
 
     Camera* activeCam = dx_->GetEngine()->GetCameraManager()->GetActiveCamera();
@@ -204,14 +273,16 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
         return;
     }
 
+    std::lock_guard<std::mutex> lock(mutex_);
+
     // Irufemi::Sphere Buffer
-    if (activeSphereCount_ > 0) {
-        if (activeSphereCount_ > sphereInstanceCapacity_[frameIndex]) {
+    if (totalSpheres > 0) {
+        if (totalSpheres > sphereInstanceCapacity_[frameIndex]) {
             if (sphereInstanceBuffer_[frameIndex]) {
                 sphereInstanceBuffer_[frameIndex]->Unmap(0, nullptr);
             }
-            sphereInstanceCapacity_[frameIndex] = static_cast<uint32_t>(activeSphereCount_);
-            size_t size = sizeof(InstanceData) * sphereInstanceCapacity_[frameIndex];
+            sphereInstanceCapacity_[frameIndex] = static_cast<uint32_t>(totalSpheres);
+            size_t size = sizeof(GPUInstanceData) * sphereInstanceCapacity_[frameIndex];
             sphereInstanceBuffer_[frameIndex] = dx_->CreateBufferResource(size);
             sphereInstanceBuffer_[frameIndex]->Map(0, nullptr,
                                                    reinterpret_cast<void**>(&sphereInstanceDataMap_[frameIndex]));
@@ -222,26 +293,38 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
             srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             srvDesc.Buffer.NumElements = sphereInstanceCapacity_[frameIndex];
-            srvDesc.Buffer.StructureByteStride = sizeof(InstanceData);
+            srvDesc.Buffer.StructureByteStride = sizeof(GPUInstanceData);
 
             dx_->GetDevice()->CreateShaderResourceView(sphereInstanceBuffer_[frameIndex].Get(), &srvDesc,
                                                        srvAllocator_->GetCPUHandle(sphereSrvIndex_[frameIndex]));
         }
 
-        for (size_t i = 0; i < activeSphereCount_; ++i) {
-            sphereInstanceDataMap_[frameIndex][i].world = sphereInstances_[i].world;
-            sphereInstanceDataMap_[frameIndex][i].color = sphereInstances_[i].color;
+        size_t count = 0;
+        for (size_t i = 0; i < activeSimSphereCount_; ++i) {
+            if (categoryMask_ & static_cast<uint32_t>(simSphereInstances_[i].category)) {
+                sphereInstanceDataMap_[frameIndex][count].world = simSphereInstances_[i].world;
+                sphereInstanceDataMap_[frameIndex][count].color = simSphereInstances_[i].color;
+                count++;
+            }
         }
+        for (size_t i = 0; i < activeDrawSphereCount_; ++i) {
+            if (categoryMask_ & static_cast<uint32_t>(drawSphereInstances_[i].category)) {
+                sphereInstanceDataMap_[frameIndex][count].world = drawSphereInstances_[i].world;
+                sphereInstanceDataMap_[frameIndex][count].color = drawSphereInstances_[i].color;
+                count++;
+            }
+        }
+        visibleSphereCount_[frameIndex] = count;
     }
 
     // Cube Buffer
-    if (activeCubeCount_ > 0) {
-        if (activeCubeCount_ > cubeInstanceCapacity_[frameIndex]) {
+    if (totalCubes > 0) {
+        if (totalCubes > cubeInstanceCapacity_[frameIndex]) {
             if (cubeInstanceBuffer_[frameIndex]) {
                 cubeInstanceBuffer_[frameIndex]->Unmap(0, nullptr);
             }
-            cubeInstanceCapacity_[frameIndex] = static_cast<uint32_t>(activeCubeCount_);
-            size_t size = sizeof(InstanceData) * cubeInstanceCapacity_[frameIndex];
+            cubeInstanceCapacity_[frameIndex] = static_cast<uint32_t>(totalCubes);
+            size_t size = sizeof(GPUInstanceData) * cubeInstanceCapacity_[frameIndex];
             cubeInstanceBuffer_[frameIndex] = dx_->CreateBufferResource(size);
             cubeInstanceBuffer_[frameIndex]->Map(0, nullptr,
                                                  reinterpret_cast<void**>(&cubeInstanceDataMap_[frameIndex]));
@@ -252,38 +335,54 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
             srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
             srvDesc.Buffer.NumElements = cubeInstanceCapacity_[frameIndex];
-            srvDesc.Buffer.StructureByteStride = sizeof(InstanceData);
+            srvDesc.Buffer.StructureByteStride = sizeof(GPUInstanceData);
 
             dx_->GetDevice()->CreateShaderResourceView(cubeInstanceBuffer_[frameIndex].Get(), &srvDesc,
                                                        srvAllocator_->GetCPUHandle(cubeSrvIndex_[frameIndex]));
         }
 
-        for (size_t i = 0; i < activeCubeCount_; ++i) {
-            cubeInstanceDataMap_[frameIndex][i].world = cubeInstances_[i].world;
-            cubeInstanceDataMap_[frameIndex][i].color = cubeInstances_[i].color;
+        size_t count = 0;
+        for (size_t i = 0; i < activeSimCubeCount_; ++i) {
+            if (categoryMask_ & static_cast<uint32_t>(simCubeInstances_[i].category)) {
+                cubeInstanceDataMap_[frameIndex][count].world = simCubeInstances_[i].world;
+                cubeInstanceDataMap_[frameIndex][count].color = simCubeInstances_[i].color;
+                count++;
+            }
         }
+        for (size_t i = 0; i < activeDrawCubeCount_; ++i) {
+            if (categoryMask_ & static_cast<uint32_t>(drawCubeInstances_[i].category)) {
+                cubeInstanceDataMap_[frameIndex][count].world = drawCubeInstances_[i].world;
+                cubeInstanceDataMap_[frameIndex][count].color = drawCubeInstances_[i].color;
+                count++;
+            }
+        }
+        visibleCubeCount_[frameIndex] = count;
     }
 }
 
 void DebugPrimitiveRenderer::Draw() {
+    if (!isEnabled_) {
+        return;
+    }
+
     uint32_t frameIndex = dx_->GetFrameIndex();
 
-    if (activeSphereCount_ > 0) {
+    if (visibleSphereCount_[frameIndex] > 0) {
         RenderPackets::DebugPrimitivePacket packet{};
         packet.vertexBufferView = sphereVBV_;
         packet.indexBufferView = sphereIBV_;
         packet.indexCount = sphereIndexCount_;
-        packet.instanceCount = static_cast<UINT>(activeSphereCount_);
+        packet.instanceCount = static_cast<UINT>(visibleSphereCount_[frameIndex]);
         packet.instancingSrvHandleGPU = sphereSrvGPU_[frameIndex];
         drawManager_->SubmitDebugPrimitive(packet);
     }
 
-    if (activeCubeCount_ > 0) {
+    if (visibleCubeCount_[frameIndex] > 0) {
         RenderPackets::DebugPrimitivePacket packet{};
         packet.vertexBufferView = cubeVBV_;
         packet.indexBufferView = cubeIBV_;
         packet.indexCount = cubeIndexCount_;
-        packet.instanceCount = static_cast<UINT>(activeCubeCount_);
+        packet.instanceCount = static_cast<UINT>(visibleCubeCount_[frameIndex]);
         packet.instancingSrvHandleGPU = cubeSrvGPU_[frameIndex];
         drawManager_->SubmitDebugPrimitive(packet);
     }

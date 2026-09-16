@@ -20,6 +20,7 @@
 #include "Renderer/DrawManager.h"
 #include "Renderer/Object/PrimitiveManager.h"
 #include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "Resource/Texture/TextureManager.h"
 #include <algorithm>
 #include <cassert>
@@ -479,6 +480,13 @@ void GPUParticleSystem::UpdateDebugLines() {
 #if defined(USE_IMGUI)
     if (debugLineRegion_) {
         debugLineRegion_->ClearInstances();
+    }
+
+    if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+        auto* debugRenderer = engine_->GetDebugPrimitiveRenderer();
+        if (!debugRenderer->IsEnabled() || !debugRenderer->IsCategoryEnabled(DebugCategory::Particle)) {
+            return;
+        }
     }
 
     if (showEmitterArea_) {

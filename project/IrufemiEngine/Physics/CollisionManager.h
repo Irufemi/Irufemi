@@ -11,6 +11,7 @@
 #include "Core/Math/Vector3.h"
 #include "Core/Shape/LinePrimitive.h"
 #include "Physics/Collision/DynamicBVH.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 
 class ColliderComponent;
 class GameObject;
@@ -126,7 +127,8 @@ public:
     void DrawDebugRay(const Irufemi::Ray& ray, float distance, const Irufemi::Vector4& color = {1, 0, 0, 1});
 
     /// @brief デバッグ用のAABBを描画キューに追加する
-    void DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color = {1, 0, 0, 1});
+    void DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color = {1, 0, 0, 1},
+                       DebugCategory category = DebugCategory::Collision);
 
 private:
     CollisionManager(const CollisionManager&) = delete;

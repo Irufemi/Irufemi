@@ -1594,7 +1594,7 @@ void DrawManager::ExecuteRenderQueues(IrufemiEngine* engine) {
     }
 
     if (engine->GetDebugPrimitiveRenderer()) {
-        engine->GetDebugPrimitiveRenderer()->ClearInstances();
+        engine->GetDebugPrimitiveRenderer()->ClearDrawInstances();
     }
     // TODO: engine->GetCollisionManager()->ClearDebugLines()
     // 等、他のグローバルデバッグバッチもここでクリアするアーキテクチャに統一できる

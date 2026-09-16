@@ -12,6 +12,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "Core/Math/MathFunction.h"
 #include <iostream>
 
@@ -139,7 +140,7 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
             // モデルが背景に溶け込んで見えにくいため、同時に赤いワイヤー（キューブ）も描画して視認性を上げる
             if (engine->GetDebugPrimitiveRenderer()) {
                 Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
-                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
+                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
             }
         }
     } else if (engine->GetDebugPrimitiveRenderer()) {
@@ -148,7 +149,7 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
             Irufemi::Vector3 scale = {2.0f, 2.0f, 2.0f};
             Irufemi::Matrix4x4 transform =
                 Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, pos);
-            engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
+            engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
         }
     }
 }

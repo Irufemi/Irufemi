@@ -1,6 +1,9 @@
 #pragma once
 #include "Framework/Component/Component.h"
+#include "Core/Math/Vector4.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include <functional>
+#include <optional>
 
 class CollisionManager;
 
@@ -124,4 +127,37 @@ public:
 
     // --- BVH (空間分割) 連携 ---
     int32_t bvhNodeId_ = -1; //!< 自身が登録されている Irufemi::DynamicBVH 内のノードインデックス
+
+    // --- デバッグ描画設定 ---
+    /**
+     * @brief デバッグプリミティブ描画時のカテゴリを取得する
+     */
+    DebugCategory GetDebugCategory() const {
+        return debugCategory_;
+    }
+
+    /**
+     * @brief デバッグプリミティブ描画時のカテゴリを設定する
+     */
+    void SetDebugCategory(DebugCategory category) {
+        debugCategory_ = category;
+    }
+
+    /**
+     * @brief デバッグ描画時のカスタムカラーを取得する (設定されていない場合は std::nullopt)
+     */
+    const std::optional<Irufemi::Vector4>& GetDebugCustomColor() const {
+        return debugCustomColor_;
+    }
+
+    /**
+     * @brief デバッグ描画時のカスタムカラーを設定する
+     */
+    void SetDebugCustomColor(const std::optional<Irufemi::Vector4>& color) {
+        debugCustomColor_ = color;
+    }
+
+protected:
+    DebugCategory debugCategory_ = DebugCategory::Collision; //!< デバッグ描画カテゴリ (デフォルト: Collision)
+    std::optional<Irufemi::Vector4> debugCustomColor_ = std::nullopt; //!< デバッグ描画カスタムカラー
 };

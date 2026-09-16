@@ -33,7 +33,7 @@ void SplineNodeComponent::Draw() {
     }
     auto debugRenderer = engine->GetDebugPrimitiveRenderer();
     if (debugRenderer) {
-        debugRenderer->AddSphere(transform->GetWorldPosition(), radius_, color_);
+        debugRenderer->AddSphere(transform->GetWorldPosition(), radius_, color_, DebugCategory::Path);
     }
 #endif
 }

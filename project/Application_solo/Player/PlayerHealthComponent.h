@@ -90,5 +90,7 @@ private:
 
     std::vector<std::function<void(int damage)>> onDamageTakenListeners_;
     std::vector<std::function<void()>> onPlayerDiedListeners_;
+
+    class ColliderComponent* collider_ = nullptr;
 };
 

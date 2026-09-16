@@ -138,6 +138,16 @@ void BaseScene::Update() {
     }
 #endif
 
+    bool isPaused = false;
+    if (engine_) {
+        isPaused = (engine_->GetTimeScale() == 0.0f);
+    }
+
+    auto debugRenderer = engine_ ? engine_->GetDebugPrimitiveRenderer() : nullptr;
+    if (debugRenderer && isPlayMode && !isPaused) {
+        debugRenderer->BeginSimulationFrame();
+    }
+
     // --- 遅延キューの処理 ---
     {
         std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
@@ -237,6 +247,10 @@ void BaseScene::Update() {
         std::remove_if(gameObjects_.begin(), gameObjects_.end(),
                        [](const std::shared_ptr<GameObject>& obj) { return !obj || obj->IsDestroyed(); }),
         gameObjects_.end());
+
+    if (debugRenderer && isPlayMode && !isPaused) {
+        debugRenderer->EndSimulationFrame();
+    }
 
     SubmitFrameData();
 }

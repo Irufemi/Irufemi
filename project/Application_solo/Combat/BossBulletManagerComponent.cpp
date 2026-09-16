@@ -215,7 +215,7 @@ void BossBulletManagerComponent::Update() {
         if (cm && cm->GetIsDrawDebugLinePtr() && *cm->GetIsDrawDebugLinePtr()) {
             Irufemi::Vector3 minPos = {p.x - hitRadius_, p.y - hitRadius_, p.z - hitRadius_};
             Irufemi::Vector3 maxPos = {p.x + hitRadius_, p.y + hitRadius_, p.z + hitRadius_};
-            cm->DrawDebugAABB(Irufemi::AABB{minPos, maxPos}, {1.0f, 0.0f, 0.0f, 1.0f});
+            cm->DrawDebugAABB(Irufemi::AABB{minPos, maxPos}, {1.0f, 0.0f, 0.0f, 1.0f}, DebugCategory::Combat);
         }
 #endif
 

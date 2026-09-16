@@ -13,6 +13,7 @@
 #include "Framework/Scene/SceneManager.h"
 #include "Framework/Scene/SceneSerializer.h"
 #include "Physics/CollisionManager.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "RHI/DirectX12/RenderTexture.h"
 #include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
@@ -131,6 +132,9 @@ void EditorManager::EnterPlayMode() {
     if (auto cm = engine_->GetCollisionManager()) {
         cm->Clear();
     }
+    if (auto debugRenderer = engine_->GetDebugPrimitiveRenderer()) {
+        debugRenderer->ClearInstances();
+    }
 
     // 保存したばかりのバックアップから復元して、完全に初期化し直す
     SceneSerializer::Load(scene, "temp/.temp_playmode");
@@ -176,6 +180,9 @@ void EditorManager::ExitPlayMode() {
     }
     if (auto cm = engine_->GetCollisionManager()) {
         cm->Clear();
+    }
+    if (auto debugRenderer = engine_->GetDebugPrimitiveRenderer()) {
+        debugRenderer->ClearInstances();
     }
 
     // バックアップから復元
@@ -489,6 +496,46 @@ void EditorManager::OnDrawUI() {
             ImGui::EndMenu();
         }
 
+        if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+            auto debugRenderer = engine_->GetDebugPrimitiveRenderer();
+            if (ImGui::BeginMenu("Gizmos")) {
+                bool isAllEnabled = debugRenderer->IsEnabled();
+                if (ImGui::Checkbox("Show All Gizmos", &isAllEnabled)) {
+                    debugRenderer->SetEnabled(isAllEnabled);
+                }
+                ImGui::SameLine();
+                ImGui::TextDisabled("(G)");
+
+                ImGui::Separator();
+
+                if (ImGui::Button("Select All", ImVec2(90, 0))) {
+                    debugRenderer->SetCategoryMask(static_cast<uint32_t>(DebugCategory::All));
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Deselect All", ImVec2(90, 0))) {
+                    debugRenderer->SetCategoryMask(0);
+                }
+
+                ImGui::Separator();
+
+                auto drawCategoryItem = [&](const char* label, DebugCategory cat) {
+                    bool enabled = debugRenderer->IsCategoryEnabled(cat);
+                    if (ImGui::Checkbox(label, &enabled)) {
+                        debugRenderer->SetCategoryEnabled(cat, enabled);
+                    }
+                };
+
+                drawCategoryItem("Collision (Colliders)", DebugCategory::Collision);
+                drawCategoryItem("Combat (Bullets/Hitboxes)", DebugCategory::Combat);
+                drawCategoryItem("Particle (Emitters)", DebugCategory::Particle);
+                drawCategoryItem("Level (Spawners/Triggers)", DebugCategory::Level);
+                drawCategoryItem("Path (Spline Rails)", DebugCategory::Path);
+                drawCategoryItem("General (Other)", DebugCategory::General);
+
+                ImGui::EndMenu();
+            }
+        }
+
         // --- 中央への Play / Pause / Step / Stop コントロール配置 ---
         float playButtonWidth = 45.0f;
         float playButtonHeight = 20.0f;
@@ -582,6 +629,14 @@ void EditorManager::OnDrawUI() {
 #ifdef USE_IMGUI
     // 描画呼び出しをDebugUI.cppに移動しました
 #endif // USE_IMGUI
+
+    // ショートカットキー 'G' で全デバッグ描画のトグル（テキスト入力中は無視）
+    if (engine_ && engine_->GetDebugPrimitiveRenderer() && !ImGui::GetIO().WantTextInput) {
+        if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
+            auto debugRenderer = engine_->GetDebugPrimitiveRenderer();
+            debugRenderer->SetEnabled(!debugRenderer->IsEnabled());
+        }
+    }
 
     ImGui::End(); // Editor DockSpace
 }

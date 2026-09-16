@@ -87,7 +87,7 @@ void WaveManagerComponent::Draw() {
                 Irufemi::Matrix4x4 transform =
                     Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, phPos);
                 Irufemi::Vector4 color = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow for Playhead
-                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
+                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
             }
         }
 

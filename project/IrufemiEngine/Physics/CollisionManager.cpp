@@ -441,8 +441,10 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             continue;
         }
 
+        DebugCategory category = collider->GetDebugCategory();
         Irufemi::Vector4 color =
-            isSelected ? Irufemi::Vector4{1.0f, 0.5f, 0.0f, 1.0f} : Irufemi::Vector4{0.0f, 1.0f, 0.0f, 1.0f};
+            isSelected ? Irufemi::Vector4{1.0f, 0.5f, 0.0f, 1.0f}
+                       : collider->GetDebugCustomColor().value_or(Irufemi::Vector4{0.0f, 1.0f, 0.0f, 1.0f});
 
         if (collider->GetColliderType() == ColliderComponent::ColliderType::AABB) {
             AABBColliderComponent* aabbCol = static_cast<AABBColliderComponent*>(collider);
@@ -454,14 +456,14 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(size, Irufemi::Vector3{0, 0, 0}, center);
 
             if (debugPrimitiveRenderer_) {
-                debugPrimitiveRenderer_->AddCube(transform, color);
+                debugPrimitiveRenderer_->AddCube(transform, color, category);
             }
         } else if (collider->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
             SphereColliderComponent* sphereCol = static_cast<SphereColliderComponent*>(collider);
             Irufemi::Sphere sphere = sphereCol->GetWorldSphere();
 
             if (debugPrimitiveRenderer_) {
-                debugPrimitiveRenderer_->AddSphere(sphere.center, sphere.radius, color);
+                debugPrimitiveRenderer_->AddSphere(sphere.center, sphere.radius, color, category);
             }
         } else if (collider->GetColliderType() == ColliderComponent::ColliderType::OBB) {
             OBBColliderComponent* obbCol = static_cast<OBBColliderComponent*>(collider);
@@ -486,7 +488,7 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             transform.m[3][3] = 1.0f;
 
             if (debugPrimitiveRenderer_) {
-                debugPrimitiveRenderer_->AddCube(transform, color);
+                debugPrimitiveRenderer_->AddCube(transform, color, category);
             }
         }
     } // end for colliders_
@@ -645,12 +647,13 @@ void CollisionManager::DrawDebugRay(const Irufemi::Ray& ray, float distance, con
     debugRays_.push_back({ray, distance, color});
 }
 
-void CollisionManager::DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color) {
+void CollisionManager::DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color,
+                                     DebugCategory category) {
     if (debugPrimitiveRenderer_) {
         Irufemi::Vector3 center = (aabb.min + aabb.max) * 0.5f;
         Irufemi::Vector3 size = aabb.max - aabb.min;
         Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(size, Irufemi::Vector3::zero, center);
-        debugPrimitiveRenderer_->AddCube(transform, color);
+        debugPrimitiveRenderer_->AddCube(transform, color, category);
     }
 }
 
