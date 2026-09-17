@@ -120,7 +120,12 @@ void EnemyBeamComponent::Fire(const Irufemi::Vector3& startPos, const Irufemi::V
 
     // 発射方向の計算 (演算子オーバーロードによる近代化)
     Irufemi::Vector3 diff = targetPos - startPos_;
-    direction_ = Irufemi::Math::Normalize(diff);
+    float diffDistSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+    if (diffDistSq > 1e-6f) {
+        direction_ = Irufemi::Math::Normalize(diff);
+    } else {
+        direction_ = {0.0f, 0.0f, 1.0f}; // ゼロ距離の場合はデフォルトのZ前方を設定
+    }
 }
 
 void EnemyBeamComponent::UpdateParameters() {
@@ -173,16 +178,23 @@ void EnemyBeamComponent::UpdateCharging(float deltaTime) {
 
         // ベクトル演算子を用いた直感的な計算
         Irufemi::Vector3 toCamera = cameraPos - startPos_;
-        Irufemi::Vector3 toCameraDir = Irufemi::Math::Normalize(toCamera);
+        float distSq = toCamera.x * toCamera.x + toCamera.y * toCamera.y + toCamera.z * toCamera.z;
+        if (distSq > 1e-4f) {
+            Irufemi::Vector3 toCameraDir = Irufemi::Math::Normalize(toCamera);
 
-        // 少しカメラ側に引き寄せてモデルに埋まらないようにする
-        tForm.translate = startPos_ + toCameraDir * (currentScale * 0.5f);
+            // 少しカメラ側に引き寄せてモデルに埋まらないようにする
+            tForm.translate = startPos_ + toCameraDir * (currentScale * 0.5f);
 
-        toCamera = cameraPos - tForm.translate;
-        float distXZ = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
-        tForm.rotate.y = std::atan2(-toCamera.x, -toCamera.z);
-        tForm.rotate.x = std::atan2(toCamera.y, distXZ);
-        tForm.rotate.z = 0.0f;
+            toCamera = cameraPos - tForm.translate;
+            float distXZ = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
+            tForm.rotate.y = std::atan2(-toCamera.x, -toCamera.z);
+            tForm.rotate.x = std::atan2(toCamera.y, distXZ);
+            tForm.rotate.z = 0.0f;
+        } else {
+            // カメラと極端に近い/一致する場合はオフセットと回転計算をスキップ
+            tForm.translate = startPos_;
+            tForm.rotate = {0.0f, 0.0f, 0.0f};
+        }
 
         chargeSphere_->GetTransform().transform = tForm;
         chargeSphere_->GetTransform().isDirty = true;
