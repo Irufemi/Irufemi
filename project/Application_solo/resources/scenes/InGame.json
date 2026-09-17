@@ -3587,6 +3587,17 @@
             "Fire Duration": 0.800000011920929
           },
           "type": "EnemyBeamComponent"
+        },
+        {
+          "data": {
+            "Damage Shake Frames": 10,
+            "Damage Shake Frequency": 15.0,
+            "Damage Shake Intensity": 0.4000000059604645,
+            "Death Shake Frames": 60,
+            "Death Shake Frequency": 10.0,
+            "Death Shake Intensity": 2.0
+          },
+          "type": "BossDamageVisualizerComponent"
         }
       ],
       "instanceId": 12219067998687025011,

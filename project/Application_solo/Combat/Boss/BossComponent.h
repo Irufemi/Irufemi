@@ -27,6 +27,30 @@ public:
     std::function<void()> onBossDied;
     std::function<void()> onDeathSequenceFinished;
 
+    /**
+     * @brief 被弾時のイベントリスナーを追加する
+     */
+    void AddOnDamageTakenListener(std::function<void(float damage)> callback) {
+        onDamageTakenListeners_.push_back(std::move(callback));
+    }
+
+    /**
+     * @brief 撃破時のイベントリスナーを追加する
+     */
+    void AddOnBossDiedListener(std::function<void()> callback) {
+        onBossDiedListeners_.push_back(std::move(callback));
+    }
+
+    /**
+     * @brief 被弾を通知する
+     */
+    void NotifyDamageTaken(float damage);
+
+    /**
+     * @brief 撃破を通知する
+     */
+    void NotifyBossDied();
+
     void OnRegisterProperties() override;
     std::string GetComponentName() const override {
         return "BossComponent";
@@ -86,13 +110,7 @@ public:
         return bossContainer_.lock();
     }
 
-    /**
-     * @brief カメラシェイクを再生する
-     * @param intensity 揺れの強さ
-     * @param frames 継続フレーム数
-     * @param frequency 振動数
-     */
-    void PlayCameraShake(float intensity, int frames, float frequency);
+
 
 private:
     friend class BossStateIdle;
@@ -109,8 +127,9 @@ private:
     std::unique_ptr<IBossState> currentState_;
 
     std::weak_ptr<GameObject> bossContainer_;
-    std::weak_ptr<GameObject> mainCameraObj_;
     std::vector<std::shared_ptr<GameObject>> shields_;
+    std::vector<std::function<void(float damage)>> onDamageTakenListeners_;
+    std::vector<std::function<void()>> onBossDiedListeners_;
 
     DebrisManagerComponent* debrisManager_ = nullptr;
     DroneManagerComponent* droneManager_ = nullptr;

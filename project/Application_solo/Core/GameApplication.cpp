@@ -20,6 +20,7 @@
 #include "Player/PlayerTargetingComponent.h"
 #include "Combat/DebugEnemySpawnerComponent.h"
 #include "Combat/Boss/BossComponent.h"
+#include "Combat/Boss/BossDamageVisualizerComponent.h"
 #include "Core/SceneTransitionButtonComponent.h"
 #include "Effects/EffectManagerComponent.h"
 #include "Environment/EnvironmentManagerComponent.h"
@@ -143,6 +144,8 @@ void RegisterComponents() {
     ComponentFactory::Register("DebugEnemySpawnerComponent", "Game",
                                []() { return std::make_shared<DebugEnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
+    ComponentFactory::Register("BossDamageVisualizerComponent", "Game",
+                               []() { return std::make_shared<BossDamageVisualizerComponent>(); });
     ComponentFactory::Register("SceneTransitionButtonComponent", "Game",
                                []() { return std::make_shared<SceneTransitionButtonComponent>(); });
     ComponentFactory::Register("EffectManagerComponent", "Game",

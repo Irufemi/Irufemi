@@ -1,9 +1,8 @@
 #include "Combat/Boss/BossStateDestroyed.h"
 #include "Combat/Boss/BossComponent.h"
+#include "Combat/Boss/BossDamageVisualizerComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Core/Utility/Log.h"
-#include "Framework/Scene/BaseScene.h"
-#include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 #include <iostream>
@@ -11,22 +10,13 @@
 void BossStateDestroyed::Enter(BossComponent* boss) {
     Log::OutPutLog(std::cout, "Boss Destroyed!\n");
     hasFinished_ = false;
-    cameraObj_.reset();
+    visualizer_ = nullptr;
 
     if (boss && boss->gameObject_) {
-        // ボス破壊時の特大シェイク
-        if (auto scene = boss->gameObject_->GetScene()) {
-            if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {
-                cameraObj_ = mainCameraObj;
-                if (auto shake = mainCameraObj->GetComponent<CameraShakeComponent>()) {
-                    shake->PlayShake(2.0f, 60, 10.0f); // Intensity=2.0, 60 Frames, Freq=10 (大きめ、ゆっくり)
-                }
-            }
-        }
+        visualizer_ = boss->gameObject_->GetComponent<BossDamageVisualizerComponent>();
 
-        if (boss->onBossDied) {
-            boss->onBossDied();
-        }
+        // 撃破イベントの通知（BossDamageVisualizerComponent が特大カメラシェイクを発火）
+        boss->NotifyBossDied();
 
         // 演出エフェクトが始まったタイミングでボスのモデル描画をすべて切る
         auto renderers = boss->gameObject_->GetComponentsInChildren<MeshRendererComponent>();
@@ -49,12 +39,7 @@ void BossStateDestroyed::Update(BossComponent* boss) {
         return;
     }
 
-    bool isShakePlaying = false;
-    if (auto cam = cameraObj_.lock()) {
-        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
-            isShakePlaying = shake->IsPlaying();
-        }
-    }
+    bool isShakePlaying = visualizer_ ? visualizer_->IsDeathShakePlaying() : false;
 
     if (!isShakePlaying) {
         hasFinished_ = true;

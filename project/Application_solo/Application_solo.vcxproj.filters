@@ -114,6 +114,9 @@
     <ClCompile Include="Combat\Boss\BossComponent.cpp">
       <Filter>Combat\Boss</Filter>
     </ClCompile>
+    <ClCompile Include="Combat\Boss\BossDamageVisualizerComponent.cpp">
+      <Filter>Combat\Boss</Filter>
+    </ClCompile>
     <ClCompile Include="Combat\Boss\BossStateIdle.cpp">
       <Filter>Combat\Boss</Filter>
     </ClCompile>
@@ -247,6 +250,9 @@
       <Filter>RailMechanics</Filter>
     </ClInclude>
     <ClInclude Include="Combat\Boss\BossComponent.h">
+      <Filter>Combat\Boss</Filter>
+    </ClInclude>
+    <ClInclude Include="Combat\Boss\BossDamageVisualizerComponent.h">
       <Filter>Combat\Boss</Filter>
     </ClInclude>
     <ClInclude Include="Combat\Boss\IBossState.h">

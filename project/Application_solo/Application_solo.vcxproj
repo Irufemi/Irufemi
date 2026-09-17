@@ -257,6 +257,7 @@ exit 0</Command>
     <ClCompile Include="Environment\DebrisComponent.cpp" />
     <ClCompile Include="Player\TargetableComponent.cpp" />
     <ClCompile Include="Combat\Boss\BossComponent.cpp" />
+    <ClCompile Include="Combat\Boss\BossDamageVisualizerComponent.cpp" />
     <ClCompile Include="Combat\Boss\BossStateIdle.cpp" />
     <ClCompile Include="Combat\Boss\BossStateCoreExposed.cpp" />
     <ClCompile Include="Combat\Boss\BossStateDestroyed.cpp" />
@@ -307,6 +308,7 @@ exit 0</Command>
     <ClInclude Include="Environment\DebrisComponent.h" />
     <ClInclude Include="Player\TargetableComponent.h" />
     <ClInclude Include="Combat\Boss\BossComponent.h" />
+    <ClInclude Include="Combat\Boss\BossDamageVisualizerComponent.h" />
     <ClInclude Include="Combat\Boss\IBossState.h" />
     <ClInclude Include="Combat\Boss\BossStateIdle.h" />
     <ClInclude Include="Combat\Boss\BossStateCoreExposed.h" />

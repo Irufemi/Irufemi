@@ -2,12 +2,12 @@
 #include "Combat/Boss/IBossState.h"
 #include <memory>
 
-class CameraShakeComponent;
+class BossDamageVisualizerComponent;
 
 /**
  * @class BossStateDestroyed
  * @brief ボス撃破時の演出ステート
- * @details 画面全体の特大シェイクとモデル非表示、および死亡完了通知を制御します。
+ * @details 撃破イベント発行とモデル非表示、および死亡完了通知を制御します。
  */
 class BossStateDestroyed : public IBossState {
 public:
@@ -18,7 +18,7 @@ public:
     void Enter(BossComponent* boss) override;
 
     /**
-     * @brief 毎フレーム更新処理。カメラシェイクの終了を監視し、死亡シーケンス完了を通知します。
+     * @brief 毎フレーム更新処理。演出終了を監視し、死亡シーケンス完了を通知します。
      * @param boss 対象のボスコンポーネント
      */
     void Update(BossComponent* boss) override;
@@ -37,6 +37,6 @@ public:
     void OnTakeDamage(BossComponent* boss, float damage) override;
 
 private:
-    std::weak_ptr<class GameObject> cameraObj_; ///< カメラオブジェクトへの安全な弱参照
-    bool hasFinished_ = false;                  ///< 撃破演出終了フラグ
+    BossDamageVisualizerComponent* visualizer_ = nullptr; ///< 演出コンポーネントの参照
+    bool hasFinished_ = false;                             ///< 撃破演出終了フラグ
 };
