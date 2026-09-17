@@ -12,7 +12,7 @@ class BossBulletManagerComponent;
 class DroneManagerComponent : public Component {
 public:
     DroneManagerComponent();
-    ~DroneManagerComponent() override = default;
+    ~DroneManagerComponent() override;
 
     void Initialize() override;
     void Start() override;
@@ -42,7 +42,12 @@ private:
         float fireTimer = 0.0f;
     };
 
-    std::vector<std::shared_ptr<GameObject>> activeDrones_;
+    struct ActiveDrone {
+        ObjectPool<GameObject>::Handle handle;
+        std::shared_ptr<GameObject> gameObject;
+    };
+
+    std::vector<ActiveDrone> activeDrones_;
     std::vector<DroneAnimData> animDataList_;
 
     class ModelBatchRendererComponent* batchRenderer_ = nullptr;

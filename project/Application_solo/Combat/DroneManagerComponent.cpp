@@ -14,6 +14,10 @@
 
 DroneManagerComponent::DroneManagerComponent() {}
 
+DroneManagerComponent::~DroneManagerComponent() {
+    RecallAllDrones();
+}
+
 void DroneManagerComponent::Initialize() {
     batchRenderer_ = gameObject_->GetComponent<ModelBatchRendererComponent>();
 }
@@ -65,7 +69,7 @@ void DroneManagerComponent::Update() {
 
     // Data-Oriented Update Loop (CPUキャッシュ効率化)
     for (size_t i = 0; i < activeDrones_.size(); ++i) {
-        auto& droneObj = activeDrones_[i];
+        auto& droneObj = activeDrones_[i].gameObject;
         auto& anim = animDataList_[i];
 
         if (!droneObj || !droneObj->GetIsActive()) {
@@ -80,14 +84,18 @@ void DroneManagerComponent::Update() {
         float y = std::sin(anim.orbitAngle) * orbitRadius_;
         Irufemi::Vector3 targetPos = bossPos + Irufemi::Vector3{x, y, 0.0f};
 
-        // 3. 向きの計算
+        // 3. 向きの計算 (ゼロベクトル・ゼロ除算ガード)
         Irufemi::Vector3 rot = {0.0f, 0.0f, 0.0f};
         if (hasPlayer) {
-            Irufemi::Vector3 dirToPlayer = Irufemi::Math::Subtract(playerPos, targetPos).GetNormalized();
-            rot = Irufemi::Math::LookRotation(dirToPlayer);
+            Irufemi::Vector3 diff = playerPos - targetPos;
+            if (diff.LengthSquared() > 1e-4f) {
+                rot = Irufemi::Math::LookRotation(Irufemi::Math::Normalize(diff));
+            }
         } else {
-            Irufemi::Vector3 dirToBoss = Irufemi::Math::Subtract(bossPos, targetPos).GetNormalized();
-            rot = Irufemi::Math::LookRotation(dirToBoss);
+            Irufemi::Vector3 diff = bossPos - targetPos;
+            if (diff.LengthSquared() > 1e-4f) {
+                rot = Irufemi::Math::LookRotation(Irufemi::Math::Normalize(diff));
+            }
         }
 
         // 4. 当たり判定（GameObject）のTransform更新
@@ -97,13 +105,16 @@ void DroneManagerComponent::Update() {
             t->SetRotation(rot);
         }
 
-        // 5. 弾幕の発射処理
+        // 5. 弾幕の発射処理 (ゼロベクトル・ゼロ除算ガード)
         anim.fireTimer += deltaTime;
         if (anim.fireTimer >= fireInterval_) {
             anim.fireTimer = 0.0f;
             if (bulletManager_ && hasPlayer) {
-                Irufemi::Vector3 dirToPlayer = Irufemi::Math::Subtract(playerPos, targetPos).GetNormalized();
-                bulletManager_->SpawnBullet(targetPos, Irufemi::Math::Multiply(30.0f, dirToPlayer));
+                Irufemi::Vector3 diff = playerPos - targetPos;
+                if (diff.LengthSquared() > 1e-4f) {
+                    Irufemi::Vector3 dirToPlayer = Irufemi::Math::Normalize(diff);
+                    bulletManager_->SpawnBullet(targetPos, dirToPlayer * 30.0f);
+                }
             }
         }
 
@@ -166,12 +177,14 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
             std::shared_ptr<GameObject> droneObj = dronePool_->Resolve(handle);
             if (droneObj) {
                 droneObj->SetIsActive(true);
-                activeDrones_.push_back(droneObj);
+                activeDrones_.push_back({handle, droneObj});
 
                 DroneAnimData anim;
                 anim.orbitAngle = angleStep * i;
                 anim.fireTimer = Irufemi::Random::GeneratorFloat(0.0f, fireInterval_);
                 animDataList_.push_back(anim);
+            } else {
+                dronePool_->Release(handle);
             }
         }
     }
@@ -181,10 +194,11 @@ void DroneManagerComponent::RecallAllDrones() {
     if (!dronePool_) {
         return;
     }
-    for (auto& droneObj : activeDrones_) {
-        if (droneObj) {
-            droneObj->SetIsActive(false);
+    for (auto& drone : activeDrones_) {
+        if (drone.gameObject) {
+            drone.gameObject->SetIsActive(false);
         }
+        dronePool_->Release(drone.handle);
     }
     activeDrones_.clear();
     animDataList_.clear();
