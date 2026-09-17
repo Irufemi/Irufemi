@@ -93,10 +93,8 @@ void CameraShakeComponent::Update() {
         totalOffset.z += nz * currentIntensity * ev.axisIntensity.z;
     }
 
-    // 終了したイベントを削除
-    activeShakes_.erase(std::remove_if(activeShakes_.begin(), activeShakes_.end(),
-                                       [](const ShakeEvent& e) { return e.currentTime >= e.duration; }),
-                        activeShakes_.end());
+    // 終了したイベントを削除 (C++20 std::erase_if)
+    std::erase_if(activeShakes_, [](const ShakeEvent& e) { return e.currentTime >= e.duration; });
 
     cameraComp_->SetPositionOffset(totalOffset);
 }

@@ -44,6 +44,24 @@ IrufemiEngineのコアやコンポーネントを拡張する際、パフォー�
      Irufemi::Container::EraseSwap(activeObjects_, targetObj);
      ```
 
+5. **コンテナ操作ユーティリティ (`Irufemi::Container`) の活用**
+   - **ヘッダー**: `#include "Core/Utility/ContainerUtility.h"`
+   - **`PushBackUnique(vec, value)`**: 重複を避けて末尾に追加（AddUnique）。既に存在すれば `false` を返し二重登録を防ぎます。
+   - **`Contains(vec, value)` / `ContainsIf(vec, pred)`**: `std::find(begin, end, val) != end` の冗長な記述を直感的な真偽値判定に置き換えます。
+   - **`IndexOf(vec, value)`**: 配列内における要素のインデックス（未検出時は `-1`）を取得します。
+   - **例**:
+     ```cpp
+     #include "Core/Utility/ContainerUtility.h"
+
+     // 重複なしで安全に追加
+     Irufemi::Container::PushBackUnique(listeners_, this);
+
+     // 含まれているかを簡潔に判定
+     if (Irufemi::Container::Contains(activeColliders_, collider)) {
+         // ...
+     }
+     ```
+
 ---
 
 ### 1.1.1 外部ライブラリの手動セットアップ（クローン直後の手順）

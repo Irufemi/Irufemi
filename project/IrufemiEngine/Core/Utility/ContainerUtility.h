@@ -78,4 +78,62 @@ bool EraseSwapIf(std::vector<T>& vec, Predicate pred) {
     return false;
 }
 
+/**
+ * @brief 重複を避けて要素を末尾に追加 (AddUnique)
+ * @details 配列内にまだ同一の要素が存在しない場合のみ追加します。
+ * @tparam T 要素型
+ * @tparam U 比較・追加する要素の型
+ * @param vec 対象の std::vector
+ * @param value 追加したい値
+ * @return 新規に追加された場合は true、既に存在していた場合は false
+ */
+template <typename T, typename U>
+bool PushBackUnique(std::vector<T>& vec, U&& value) {
+    if (std::find(vec.begin(), vec.end(), value) == vec.end()) {
+        vec.push_back(std::forward<U>(value));
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief 配列に特定の値が含まれているか判定 (Contains)
+ * @tparam T 要素型
+ * @tparam U 検索する値の型
+ * @param vec 対象の std::vector
+ * @param value 検索したい値
+ * @return 含まれている場合は true
+ */
+template <typename T, typename U>
+bool Contains(const std::vector<T>& vec, const U& value) {
+    return std::find(vec.begin(), vec.end(), value) != vec.end();
+}
+
+/**
+ * @brief 条件に一致する要素が配列に含まれているか判定 (ContainsIf)
+ * @tparam T 要素型
+ * @tparam Predicate 条件述語の型
+ * @param vec 対象の std::vector
+ * @param pred 判定関数またはラムダ式
+ * @return 条件に一致する要素が存在する場合は true
+ */
+template <typename T, typename Predicate>
+bool ContainsIf(const std::vector<T>& vec, Predicate pred) {
+    return std::find_if(vec.begin(), vec.end(), pred) != vec.end();
+}
+
+/**
+ * @brief 配列内における特定の値のインデックスを取得 (IndexOf)
+ * @tparam T 要素型
+ * @tparam U 検索する値の型
+ * @param vec 対象の std::vector
+ * @param value 検索したい値
+ * @return 見つかった場合は 0 以上のインデックス、見つからなかった場合は -1
+ */
+template <typename T, typename U>
+int IndexOf(const std::vector<T>& vec, const U& value) {
+    auto it = std::find(vec.begin(), vec.end(), value);
+    return (it != vec.end()) ? static_cast<int>(std::distance(vec.begin(), it)) : -1;
+}
+
 } // namespace Irufemi::Container

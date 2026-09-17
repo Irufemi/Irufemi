@@ -1,5 +1,6 @@
 #include "Physics/CollisionManager.h"
 #include "Core/Utility/Log.h"
+#include "Core/Utility/ContainerUtility.h"
 #include <iostream>
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Framework/Component/Collider/AABBColliderComponent.h"
@@ -48,10 +49,8 @@ void CollisionManager::RegisterCollider(ColliderComponent* collider) {
         return;
     }
     std::lock_guard<std::mutex> lock(pendingMutex_);
-    // 重複を避ける
-    if (std::find(pendingAdds_.begin(), pendingAdds_.end(), collider) == pendingAdds_.end()) {
-        pendingAdds_.push_back(collider);
-    }
+    // 重複を避けて末尾に追加
+    Irufemi::Container::PushBackUnique(pendingAdds_, collider);
 }
 
 void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
@@ -85,9 +84,7 @@ void CollisionManager::FlushPendingCommands() {
     // 削除の適用
     for (const PendingRemove& removeInfo : removes) {
         ColliderComponent* collider = removeInfo.collider;
-        auto it = std::find(colliders_.begin(), colliders_.end(), collider);
-        if (it != colliders_.end()) {
-            colliders_.erase(it);
+        if (Irufemi::Container::EraseSwap(colliders_, collider)) {
             if (removeInfo.bvhNodeId != -1) {
                 dynamicBVH_.Remove(removeInfo.bvhNodeId);
                 // Note: We cannot set collider->bvhNodeId_ = -1 here because collider might be destroyed
