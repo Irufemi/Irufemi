@@ -45,7 +45,10 @@ template <typename T> void EraseSwap(std::vector<T>& vec, typename std::vector<T
     if (it == vec.end()) {
         return;
     }
-    *it = std::move(vec.back());
+    auto lastIt = std::prev(vec.end());
+    if (it != lastIt) {
+        *it = std::move(*lastIt);
+    }
     vec.pop_back();
 }
 
