@@ -94,6 +94,7 @@ DirectXGame/imgui.ini
 # Ignore runtime task states, sessions, logs, and caches
 .agents/*
 !.agents/skills/
+!.agents/workflows/
 .agents/skills/**/temp_*
 .agents/skills/**/reports/
 .agents/skills/**/*.log
