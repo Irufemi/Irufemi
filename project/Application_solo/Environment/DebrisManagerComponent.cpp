@@ -22,6 +22,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "Core/Utility/Log.h"
+#include "Core/Utility/ContainerUtility.h"
 #include <iostream>
 #include <algorithm>
 #include "Effects/EffectManagerComponent.h"
@@ -415,22 +416,8 @@ void DebrisManagerComponent::RegisterDebris(DebrisComponent* debris, DebrisState
 }
 
 void DebrisManagerComponent::UnregisterDebris(DebrisComponent* debris, DebrisState state) {
-    // 順序非依存のため Swap & Pop による O(1) 削除
     auto remove_func = [debris](std::vector<DebrisComponent*>& vec) {
-        if (vec.empty()) {
-            return;
-        }
-        // 逆順ループ走査中の末尾要素なら探索不要で即時 pop (完全な O(1))
-        if (vec.back() == debris) {
-            vec.pop_back();
-            return;
-        }
-        // 末尾以外の場合は末尾要素で上書きして pop_back (シフトなしの O(1))
-        auto it = std::find(vec.begin(), vec.end(), debris);
-        if (it != vec.end()) {
-            *it = vec.back();
-            vec.pop_back();
-        }
+        Irufemi::Container::EraseSwap(vec, debris);
     };
     switch (state) {
     case DebrisState::Idle:

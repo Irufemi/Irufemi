@@ -32,6 +32,18 @@ IrufemiEngineのコアやコンポーネントを拡張する際、パフォー�
    - **メンバ変数に保存 (Sinkパターン) の場合**: 「値渡し ＋ `std::move`」に統一する。
    - 例: `void SetName(std::string name) { name_ = std::move(name); }`
 
+4. **配列 (`std::vector`) からの順序非依存削除は `Irufemi::Container::EraseSwap`**
+   - **対象**: オブジェクトリスト、弾薬、シールド、マネージャー内の管理配列など
+   - **理由**: `std::vector::erase` は後続要素のメモリシフトが発生するため $O(N)$ のコストがかかります。順序の維持が不要なコレクションでは、末尾と入れ替えて pop する `EraseSwap` を使用することで $O(1)$（定数時間）で高速削除でき、大量オブジェクト破棄時のラグスパイクを防止できます。
+   - **ヘッダー**: `#include "Core/Utility/ContainerUtility.h"`
+   - **例**:
+     ```cpp
+     #include "Core/Utility/ContainerUtility.h"
+
+     // 特定のオブジェクトを O(1) で削除（順序は保持されません）
+     Irufemi::Container::EraseSwap(activeObjects_, targetObj);
+     ```
+
 ---
 
 ### 1.1.1 外部ライブラリの手動セットアップ（クローン直後の手順）

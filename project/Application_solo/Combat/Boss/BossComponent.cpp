@@ -16,6 +16,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include "Core/Utility/Log.h"
+#include "Core/Utility/ContainerUtility.h"
 
 void BossComponent::LoadStatusFromJson() {
     if (statusDataPath_.empty()) {
@@ -188,10 +189,7 @@ std::shared_ptr<GameObject> BossComponent::ExtractDebris() {
 }
 
 void BossComponent::RemoveShield(std::shared_ptr<GameObject> shield) {
-    auto it = std::find(shields_.begin(), shields_.end(), shield);
-    if (it != shields_.end()) {
-        shields_.erase(it);
-    }
+    Irufemi::Container::EraseSwap(shields_, shield);
 }
 
 void BossComponent::TakeDamage(float damage) {

@@ -103,17 +103,14 @@ void GravityPlayerComponent::Update() {
         return;
     }
 
-    // 無効になったガレキを除外
-    orbitingDebris_.erase(std::remove_if(orbitingDebris_.begin(), orbitingDebris_.end(),
-                                         [](const std::shared_ptr<GameObject>& obj) {
-                                             if (!obj || !obj->GetIsActive()) {
-                                                 return true;
-                                             }
-                                             auto comp = obj->GetComponent<DebrisComponent>();
-                                             return !comp || (comp->GetState() != DebrisState::Orbiting &&
-                                                              comp->GetState() != DebrisState::Pulled);
-                                         }),
-                          orbitingDebris_.end());
+    // 無効になったガレキを除外 (C++20 std::erase_if による一括クリーンアップ)
+    std::erase_if(orbitingDebris_, [](const std::shared_ptr<GameObject>& obj) {
+        if (!obj || !obj->GetIsActive()) {
+            return true;
+        }
+        auto comp = obj->GetComponent<DebrisComponent>();
+        return !comp || (comp->GetState() != DebrisState::Orbiting && comp->GetState() != DebrisState::Pulled);
+    });
 
     if (isThrowing_) {
         UpdateThrowing();

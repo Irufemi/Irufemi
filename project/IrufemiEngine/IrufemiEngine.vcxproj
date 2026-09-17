@@ -435,6 +435,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Core\Utility\Log.h" />
     <ClInclude Include="Core\Utility\FileSystem.h" />
     <ClInclude Include="Core\Utility\ErrorUtility.h" />
+    <ClInclude Include="Core\Utility\ContainerUtility.h" />
     <ClInclude Include="Core\Utility\ObjectPool.h" />
     <ClInclude Include="Core\Utility\StringUtility.h" />
     <ClInclude Include="Renderer\Camera\Camera.h" />
