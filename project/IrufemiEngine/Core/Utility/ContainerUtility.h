@@ -15,8 +15,7 @@ namespace Irufemi::Container {
  * @param value 削除したい値
  * @return 削除された場合は true、見つからなかった場合は false
  */
-template <typename T, typename U>
-bool EraseSwap(std::vector<T>& vec, const U& value) {
+template <typename T, typename U> bool EraseSwap(std::vector<T>& vec, const U& value) {
     if (vec.empty()) {
         return false;
     }
@@ -42,8 +41,7 @@ bool EraseSwap(std::vector<T>& vec, const U& value) {
  * @param vec 対象の std::vector
  * @param it 削除したいイテレータ
  */
-template <typename T>
-void EraseSwap(std::vector<T>& vec, typename std::vector<T>::iterator it) {
+template <typename T> void EraseSwap(std::vector<T>& vec, typename std::vector<T>::iterator it) {
     if (it == vec.end()) {
         return;
     }
@@ -60,8 +58,7 @@ void EraseSwap(std::vector<T>& vec, typename std::vector<T>::iterator it) {
  * @param pred 判定関数またはラムダ式
  * @return 削除された場合は true、見つからなかった場合は false
  */
-template <typename T, typename Predicate>
-bool EraseSwapIf(std::vector<T>& vec, Predicate pred) {
+template <typename T, typename Predicate> bool EraseSwapIf(std::vector<T>& vec, Predicate pred) {
     if (vec.empty()) {
         return false;
     }
@@ -87,8 +84,7 @@ bool EraseSwapIf(std::vector<T>& vec, Predicate pred) {
  * @param value 追加したい値
  * @return 新規に追加された場合は true、既に存在していた場合は false
  */
-template <typename T, typename U>
-bool PushBackUnique(std::vector<T>& vec, U&& value) {
+template <typename T, typename U> bool PushBackUnique(std::vector<T>& vec, U&& value) {
     if (std::find(vec.begin(), vec.end(), value) == vec.end()) {
         vec.push_back(std::forward<U>(value));
         return true;
@@ -104,8 +100,7 @@ bool PushBackUnique(std::vector<T>& vec, U&& value) {
  * @param value 検索したい値
  * @return 含まれている場合は true
  */
-template <typename T, typename U>
-bool Contains(const std::vector<T>& vec, const U& value) {
+template <typename T, typename U> bool Contains(const std::vector<T>& vec, const U& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
@@ -117,8 +112,7 @@ bool Contains(const std::vector<T>& vec, const U& value) {
  * @param pred 判定関数またはラムダ式
  * @return 条件に一致する要素が存在する場合は true
  */
-template <typename T, typename Predicate>
-bool ContainsIf(const std::vector<T>& vec, Predicate pred) {
+template <typename T, typename Predicate> bool ContainsIf(const std::vector<T>& vec, Predicate pred) {
     return std::find_if(vec.begin(), vec.end(), pred) != vec.end();
 }
 
@@ -130,8 +124,7 @@ bool ContainsIf(const std::vector<T>& vec, Predicate pred) {
  * @param value 検索したい値
  * @return 見つかった場合は 0 以上のインデックス、見つからなかった場合は -1
  */
-template <typename T, typename U>
-int IndexOf(const std::vector<T>& vec, const U& value) {
+template <typename T, typename U> int IndexOf(const std::vector<T>& vec, const U& value) {
     auto it = std::find(vec.begin(), vec.end(), value);
     return (it != vec.end()) ? static_cast<int>(std::distance(vec.begin(), it)) : -1;
 }

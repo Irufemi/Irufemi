@@ -110,8 +110,6 @@ public:
         return bossContainer_.lock();
     }
 
-
-
 private:
     friend class BossStateIdle;
     friend class BossStateCoreExposed;
