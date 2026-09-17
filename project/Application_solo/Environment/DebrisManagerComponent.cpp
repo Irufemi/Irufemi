@@ -416,9 +416,7 @@ void DebrisManagerComponent::RegisterDebris(DebrisComponent* debris, DebrisState
 }
 
 void DebrisManagerComponent::UnregisterDebris(DebrisComponent* debris, DebrisState state) {
-    auto remove_func = [debris](std::vector<DebrisComponent*>& vec) {
-        Irufemi::Container::EraseSwap(vec, debris);
-    };
+    auto remove_func = [debris](std::vector<DebrisComponent*>& vec) { Irufemi::Container::EraseSwap(vec, debris); };
     switch (state) {
     case DebrisState::Idle:
         remove_func(activeIdleDebris_);

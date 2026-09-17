@@ -38,5 +38,5 @@ public:
 
 private:
     BossDamageVisualizerComponent* visualizer_ = nullptr; ///< 演出コンポーネントの参照
-    bool hasFinished_ = false;                             ///< 撃破演出終了フラグ
+    bool hasFinished_ = false;                            ///< 撃破演出終了フラグ
 };

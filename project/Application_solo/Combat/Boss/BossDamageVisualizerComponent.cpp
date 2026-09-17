@@ -26,14 +26,10 @@ void BossDamageVisualizerComponent::Start() {
     bossComp_ = gameObject_->GetComponent<BossComponent>();
     if (bossComp_) {
         // 被弾イベントリスナーを登録
-        bossComp_->AddOnDamageTakenListener([this](float damage) {
-            TriggerDamageShake(damage);
-        });
+        bossComp_->AddOnDamageTakenListener([this](float damage) { TriggerDamageShake(damage); });
 
         // 撃破イベントリスナーを登録
-        bossComp_->AddOnBossDiedListener([this]() {
-            TriggerDeathShake();
-        });
+        bossComp_->AddOnBossDiedListener([this]() { TriggerDeathShake(); });
     }
 }
 
