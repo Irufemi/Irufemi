@@ -43,21 +43,33 @@ void DebugEnemySpawnerComponent::Start() {
         return;
     }
 
-    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
+    auto weakObj = gameObject_->weak_from_this();
+
+    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [weakObj]() {
         auto enemy = std::make_shared<GameObject>("DebugEnemy");
-        scene->AddGameObject(enemy);
+        enemy->SetIsSerializable(false); // セーブデータ（JSON）への混入を防止
+
+        // スポナーの子オブジェクトとして登録しライフサイクルを同期
+        if (auto spawnerObj = weakObj.lock()) {
+            spawnerObj->AddChild(enemy);
+        }
 
         auto transform = enemy->GetTransform();
         transform->SetScale({1.2f, 1.2f, 1.2f});
 
         auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-        enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
+        enemyComp->SetOnDeathCallback([weakObj](GameObject* deadObj) {
             deadObj->SetIsActive(false);
-            if (enemyPool_) {
-                auto it = activeEnemyHandles_.find(deadObj);
-                if (it != activeEnemyHandles_.end()) {
-                    enemyPool_->Release(it->second);
-                    activeEnemyHandles_.erase(it);
+            // スポナーの生存確認（ダングリングポインタによるクラッシュを防止）
+            if (auto spawnerObj = weakObj.lock()) {
+                if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
+                    if (spawner->enemyPool_) {
+                        auto it = spawner->activeEnemyHandles_.find(deadObj);
+                        if (it != spawner->activeEnemyHandles_.end()) {
+                            spawner->enemyPool_->Release(it->second);
+                            spawner->activeEnemyHandles_.erase(it);
+                        }
+                    }
                 }
             }
         });
