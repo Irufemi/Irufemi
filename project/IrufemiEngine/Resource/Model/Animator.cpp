@@ -73,7 +73,7 @@ void Animator::Update(SkeletonPose& targetPose) {
 
     if (isBlending_ && previousAnimation_) {
         fadeTimer_ += engine_->GetGameDeltaTime(); // フェードは等速(playbackSpeedに依存しない)
-        float prevDeltaTime = engine_->GetGameDeltaTime() * playbackSpeed_; // previousAnimの速度は一旦同じにする
+        float prevDeltaTime = engine_->GetGameDeltaTime() * playbackSpeed_; // ブレンド元の旧アニメーションも同一の再生速度で進行
         previousAnimationTime_ += prevDeltaTime;
         if (previousAnimation_->duration > 0.0f && isLooping_) {
             previousAnimationTime_ = std::fmod(previousAnimationTime_, previousAnimation_->duration);

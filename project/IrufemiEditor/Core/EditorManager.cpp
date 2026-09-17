@@ -119,7 +119,7 @@ void EditorManager::EnterPlayMode() {
     SceneSerializer::Save(scene, "temp/.temp_playmode");
     playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
 
-    // === ここから追加: Play開始時にシーンをクリーンな状態にリロードする ===
+    // Play開始時にシーンをクリーンな状態にリロードする
     ClearSelectedObject(); // 選択状態をクリア
 
     // GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄
@@ -138,7 +138,6 @@ void EditorManager::EnterPlayMode() {
 
     // 保存したばかりのバックアップから復元して、完全に初期化し直す
     SceneSerializer::Load(scene, "temp/.temp_playmode");
-    // === ここまで追加 ===
 
     currentMode_ = EditorModeState::Playing;
     engine_->SetPlayMode(true);
@@ -169,7 +168,7 @@ void EditorManager::ExitPlayMode() {
     // プレイモード中の選択状態をクリア
     ClearSelectedObject();
 
-    // === 追加: GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄する ===
+    // GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄する
     // （実行中のフレームで使われているリソースが削除されることによるクラッシュを防ぐため）
     if (auto dxCommon = engine_->GetDirectXCommon()) {
         dxCommon->WaitForGPU();

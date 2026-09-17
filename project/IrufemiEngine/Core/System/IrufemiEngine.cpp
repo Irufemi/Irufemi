@@ -480,7 +480,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Initialize(title, clientWidth, clientHeight);
 }
 
-// 追加: Irufemi::Vector4 版 Initialize
+// Irufemi::Vector4 版 Initialize
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                                const Irufemi::Vector4& clearColor) {
     clearColor_ = {clearColor.x, clearColor.y, clearColor.z, clearColor.w};
@@ -938,7 +938,7 @@ void IrufemiEngine::EndFrame() {
         srvPool->GarbageCollect(completed);
     }
 
-    // --- 追加: 中間リソースの遅延解放を実行 ---
+    // --- 中間リソースの遅延解放を実行 ---
     dxCommon_->ClearPendingResources();
 
     // 指数移動平均(EMA)を用いてFPSの変動を平滑化
@@ -988,9 +988,7 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
         // EditorMode時は描画先が1280x720固定のため、ウィンドウサイズに関わらずゲーム解像度をアスペクト比計算に使用する
         cameraManager_->OnResize(gameResWidth_, gameResHeight_);
 #else
-        // Standaloneでもレターボックスが有効ならゲーム解像度を維持すべきだが、
-        // 万が一の仕様変更に備え一旦従来通りとするか、もしくは常に固定するか。
-        // 現状はPostProcessでレターボックス処理をしているのでゲーム解像度を使用するのが正しい。
+        // Standalone環境でもPostProcess側でレターボックス処理を行うため、ゲーム解像度基準でアスペクト比を維持する
         cameraManager_->OnResize(gameResWidth_, gameResHeight_);
 #endif
     }

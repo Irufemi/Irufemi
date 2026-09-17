@@ -155,7 +155,7 @@ void UISelectionGroup::Draw() {
     for (auto& item : items_) {
         if (std::holds_alternative<Sprite*>(item)) {
             if (auto* sprite = std::get<Sprite*>(item)) {
-                // 透明な場合は描画をスキップするなどの最適化も可能だが一旦そのまま呼ぶ
+                // アルファ値が0より大きい可視要素のみ描画
                 if (sprite->GetColor().w > 0.0f) {
                     sprite->Draw();
                 }

@@ -12,14 +12,14 @@ DescriptorPool* Texture::s_srvPool_ = nullptr;
 ID3D12Resource* Texture::s_whiteResource_ = nullptr;
 
 Texture::Texture() {
-    // コンストラクタでSRV枠を先に確保して、暫定的に白テクスチャを割り当てておく
+    // コンストラクタでSRV枠を確保し、初期状態として白テクスチャを割り当てておく
     if (s_srvPool_) {
         srvIndex_ = s_srvPool_->Allocate();
         if (srvIndex_ != DescriptorPool::kInvalid) {
             textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(srvIndex_);
             textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(srvIndex_);
 
-            // とりあえず白テクスチャでSRVを作っておく(セーフティ)
+            // 未ロード時のアクセス違反を防ぐため白テクスチャSRVで初期化（フォールバック）
             if (s_whiteResource_ && dxCommon_) {
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
                 srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;

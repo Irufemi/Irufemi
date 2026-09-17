@@ -133,7 +133,7 @@ private:
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE};
 
     std::unordered_map<std::string, PipelineStateDesc> shaderRegistry_;
-    ShaderSet copyImageShaders_{}; // GetCopyImage用は内部処理として一旦残す
+    ShaderSet copyImageShaders_{}; //!< GetCopyImage内部処理用シェーダーセット
 
     /** @brief キャッシュキー構造体 */
     struct Key {

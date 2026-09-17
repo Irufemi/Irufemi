@@ -232,7 +232,7 @@ std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
         return nullptr;
     }
 
-    // Boss用などは一旦0番（Archwayや固定のもの）を渡しておく
+    // TODO: Boss戦等の動的取得用途において、専用PrefabIndexの指定に対応する（現在は0番の固定Prefabを使用）
     auto& var = variations_[0];
     int id = var.virtualManager->AddVirtualInstance({0, 0, 0}, {0, 0, 0}, {0.5f, 0.5f, 0.5f});
     auto obj = var.virtualManager->Promote(id);

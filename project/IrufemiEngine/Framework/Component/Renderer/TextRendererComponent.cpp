@@ -101,7 +101,7 @@ bool TextRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance)
     Irufemi::Sphere sphere;
     sphere.center = transform->GetWorldPosition();
     float maxScale = (std::max)({transform->GetWorldScale().x, transform->GetWorldScale().y});
-    // Textの横幅は文字数によるため、少し大きめの半径を確保（暫定）
+    // 文字列の長さに応じたバウンディングスフィア半径を概算
     sphere.radius = maxScale * baseScale_ * (text_.length() * 0.5f);
 
     return Irufemi::Collision::IsCollision(ray, sphere, outDistance);

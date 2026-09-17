@@ -198,8 +198,7 @@ PixelShaderOutput main(VertexShaderOutput input)
     output.mask.a = 1.0f;
 
     // 法線と深度の出力 (法線は -1.0～1.0 のままで出力)
-    output.normal = float4(normalize(input.normal), 1.0f); // W成分等に何か入れる場合は適宜変更 (とりあえず1.0)
-    output.normal.w = 1.0f; 
+    output.normal = float4(normalize(input.normal), 1.0f);
 
     // マテリアル情報の出力
     output.material = float4(gMaterial.metallic, gMaterial.roughness, 0.0f, 1.0f);

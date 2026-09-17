@@ -826,7 +826,7 @@ private:
     float trailFrequency_ = 0.05f;
     bool enableDeathEmit_ = false;
     bool enableRandomRotation_ = false;
-    bool showDebugArea_ = true; // 追加：デバッグエリア表示フラグ
+    bool showDebugArea_ = true; //!< デバッグエリア表示フラグ
 
     // ビジュアル・ライフタイム
     int billboardMode_ = 1; // 0: None, 1: Billboard, 2: Y-Axis

@@ -29,7 +29,7 @@ void BossBulletManagerComponent::Initialize() {
     // バッチレンダラに球モデルを設定
     if (auto batchRenderer = gameObject_->GetComponent<ModelBatchRendererComponent>()) {
         batchRenderer->LoadModel("resources/model/BossBulletSphere.obj");
-        // 紫色などはマテリアル側で設定する必要がありますが、ここでは一旦モデルを描画します
+        // TODO: マテリアル側での弾色設定（紫色等）に対応後、マテリアルパラメータを反映する
     }
 
     auto factory = []() -> std::shared_ptr<GameObject> { return nullptr; };

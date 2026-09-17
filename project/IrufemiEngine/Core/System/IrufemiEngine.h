@@ -591,7 +591,7 @@ public: // ゲッター
         return totalTime_;
     }
 
-    // 追加: ポーズ対応のゲーム内時間関連
+    // ポーズ対応のゲーム内時間制御
     /**
      * @brief GameTime を取得する。
      * @return 取得された GameTime
@@ -677,7 +677,6 @@ public: // ゲッター
         sceneDirectory_ = dir;
     }
 
-    // 追加: アセットがロード中かどうかを判定する
     /**
      * @brief IsAssetLoading かどうかを判定する。
      * @return 判定結果 (true/false)
@@ -736,7 +735,6 @@ public: // セッター
     void SetDepthWrite(PSOManager::DepthWrite w) {
         currentDepth_ = w;
     }
-    // 追加: Cull の切替
     /**
      * @brief Cull を設定する。
      * @param[in] c 設定する Cull の値
@@ -745,7 +743,6 @@ public: // セッター
         currentCull_ = c;
     }
 
-    // 追加: クリアカラーのセッター(いつでも変更可能)
     /**
      * @brief 画面のクリアカラー（背景色）を設定する。
      * @param[in] color クリアカラー(RGBA)
@@ -760,7 +757,6 @@ public: // セッター
     void SetClearColor(const std::array<float, 4>& c) {
         clearColor_ = c;
     }
-    // 追加: Irufemi::Vector4 版
     /**
      * @brief 画面のクリアカラー（背景色）を設定する。
      * @param[in] color クリアカラー(RGBA)
@@ -860,7 +856,7 @@ public:
     // 状態(現在のブレンドと深度書き込み)
     Irufemi::BlendMode currentBlend_ = Irufemi::BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable;
-    PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; // 追加: デフォルトは Back
+    PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; //!< 現在のカリングモード（デフォルトは背面）
 
 private: // メンバ変数
     // --- Debug & Logging ---

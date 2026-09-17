@@ -1438,7 +1438,7 @@ void DrawManager::DrawRenderTexture(RenderTexture* renderTexture, ID3D12Pipeline
     if (depthSrvHandle.ptr != 0) {
     }
 
-    // 追加: ConstantBuffer の設定 (引数があれば RootParameter[(UINT)RootSlot::Material] にセット)
+    // ConstantBuffer の設定 (RootParameter[(UINT)RootSlot::Material])
     if (cbvAddress != 0) {
         commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, cbvAddress);
     }

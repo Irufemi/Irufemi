@@ -102,7 +102,7 @@ void RegisterShaders(IrufemiEngine& engine) {
     auto psEnergyCore = shaderManager->GetOrCompile(L"EnergyCore.PS.hlsl", options);
     psoManager->RegisterShader("EnergyCore", {{vs3d, psEnergyCore}});
 
-    // 追加: EnergyBeam と LightningCrawl の登録
+    // EnergyBeam と LightningCrawl シェーダーの登録
     auto psEnergyBeam = shaderManager->GetOrCompile(L"EnergyBeam.PS.hlsl", options);
     psoManager->RegisterShader("EnergyBeam", {{vs3d, psEnergyBeam}});
 

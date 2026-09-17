@@ -1002,7 +1002,7 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
 
     // DXSwapChainManager 側でバッファ再構築
     swapChainManager_->ResizeSwapChain(device_.Get(), width, height);
-    CreateDepthSRV(); // 追加: リサイズ後にSRVを作り直す
+    CreateDepthSRV(); // ウィンドウリサイズに伴う深度SRVの再生成
 
     // ビューポートとシザーレクトの更新
     viewport_.Width = static_cast<float>(width);
