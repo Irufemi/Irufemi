@@ -53,7 +53,8 @@ void PlayerTargetingComponent::Update() {
 
                                             // TargetableComponent による共通ターゲット可否判定
                                             if (auto targetable = obj->GetComponent<TargetableComponent>()) {
-                                                return !targetable->IsTargetable() || !IsTargetTypeAllowed(targetable->GetTargetType());
+                                                return !targetable->IsTargetable() ||
+                                                       !IsTargetTypeAllowed(targetable->GetTargetType());
                                             }
 
                                             return true;
@@ -82,7 +83,6 @@ void PlayerTargetingComponent::Update() {
         markerUI->SyncTargets(displayTargets);
     }
 }
-
 
 void PlayerTargetingComponent::OnRegisterProperties() {}
 
@@ -166,77 +166,74 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
         auto transform = obj->GetComponent<TransformComponent>();
         if (transform) {
 
-                Irufemi::Vector3 worldPos = transform->GetWorldPosition();
-                Irufemi::Vector3 clipPos = Irufemi::Math::Transform(worldPos, viewProj);
+            Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+            Irufemi::Vector3 clipPos = Irufemi::Math::Transform(worldPos, viewProj);
 
-                if (clipPos.z >= 0.0f && clipPos.z <= 1.0f) {
-                    float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
-                    float screenY = (1.0f - clipPos.y) * 0.5f * viewHeight;
+            if (clipPos.z >= 0.0f && clipPos.z <= 1.0f) {
+                float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
+                float screenY = (1.0f - clipPos.y) * 0.5f * viewHeight;
 
-                    float dx = screenX - screenCenter.x;
-                    float dy = screenY - screenCenter.y;
-                    float dist2DSq = dx * dx + dy * dy;
+                float dx = screenX - screenCenter.x;
+                float dy = screenY - screenCenter.y;
+                float dist2DSq = dx * dx + dy * dy;
 
-                    if (dist2DSq <= lockonRadius2D_ * lockonRadius2D_) {
-                        Irufemi::Vector3 cameraPos = camera->GetTranslate();
-                        Irufemi::Vector3 toTarget = Irufemi::Math::Subtract(worldPos, cameraPos);
-                        float dist3D = Irufemi::Math::Length(toTarget);
+                if (dist2DSq <= lockonRadius2D_ * lockonRadius2D_) {
+                    Irufemi::Vector3 cameraPos = camera->GetTranslate();
+                    Irufemi::Vector3 toTarget = Irufemi::Math::Subtract(worldPos, cameraPos);
+                    float dist3D = Irufemi::Math::Length(toTarget);
 
-                        float score = std::sqrt(dist2DSq) * weight2D_ + dist3D * weight3D_;
+                    float score = std::sqrt(dist2DSq) * weight2D_ + dist3D * weight3D_;
 
-                        if (score < bestScore) {
-                            auto& cache = visibilityCache_[obj];
+                    if (score < bestScore) {
+                        auto& cache = visibilityCache_[obj];
 
-                            if (!cache.hasCheckedOnce) {
-                                // 初回は同期Raycastで遮蔽を即座に確定し、壁裏敵の一瞬の透過ロックオンを防止
+                        if (!cache.hasCheckedOnce) {
+                            // 初回は同期Raycastで遮蔽を即座に確定し、壁裏敵の一瞬の透過ロックオンを防止
+                            Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
+                            Irufemi::Ray ray;
+                            ray.origin = cameraPos;
+                            ray.diff = dir;
+                            RaycastHit hitInfo{};
+                            bool hit = engine->GetCollisionManager()->Raycast(ray, hitInfo, dist3D + 10.0f, 0xFFFFFFFF,
+                                                                              playerObj);
+
+                            bool canSee = true;
+                            if (hit && hitInfo.hitObject != nullptr) {
+                                if (hitInfo.hitObject != obj && hitInfo.distance < dist3D - 1.0f) {
+                                    canSee = false;
+                                }
+                            }
+                            cache.canSee = canSee;
+                            cache.hasCheckedOnce = true;
+                            cache.lastCheckTime = currentTime;
+                        } else {
+                            // 2回目以降: 0.1秒以上経過していれば、非同期レイキャストを発行（Amortization）
+                            if (currentTime - cache.lastCheckTime > 0.1f && !cache.pendingTask) {
+                                cache.lastCheckTime = currentTime;
                                 Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
                                 Irufemi::Ray ray;
                                 ray.origin = cameraPos;
                                 ray.diff = dir;
-                                RaycastHit hitInfo{};
-                                bool hit = engine->GetCollisionManager()->Raycast(
-                                    ray, hitInfo, dist3D + 10.0f, 0xFFFFFFFF, playerObj);
 
-                                bool canSee = true;
-                                if (hit && hitInfo.hitObject != nullptr) {
-                                    if (hitInfo.hitObject != obj && hitInfo.distance < dist3D - 1.0f) {
-                                        canSee = false;
-                                    }
-                                }
-                                cache.canSee = canSee;
-                                cache.hasCheckedOnce = true;
-                                cache.lastCheckTime = currentTime;
-                            } else {
-                                // 2回目以降: 0.1秒以上経過していれば、非同期レイキャストを発行（Amortization）
-                                if (currentTime - cache.lastCheckTime > 0.1f && !cache.pendingTask) {
-                                    cache.lastCheckTime = currentTime;
-                                    Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
-                                    Irufemi::Ray ray;
-                                    ray.origin = cameraPos;
-                                    ray.diff = dir;
-
-                                    cache.pendingTask = std::make_shared<std::future<std::pair<bool, RaycastHit>>>(
-                                        engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
-                                                                                    dist3D + 10.0f, 0xFFFFFFFF, playerObj));
-                                }
+                                cache.pendingTask = std::make_shared<std::future<std::pair<bool, RaycastHit>>>(
+                                    engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
+                                                                                dist3D + 10.0f, 0xFFFFFFFF, playerObj));
                             }
+                        }
 
-                            // 視認可能な場合のみベストターゲット候補とする
-                            if (cache.canSee) {
-                                bestScore = score;
-                                bestTarget = obj->shared_from_this();
-                            }
+                        // 視認可能な場合のみベストターゲット候補とする
+                        if (cache.canSee) {
+                            bestScore = score;
+                            bestTarget = obj->shared_from_this();
                         }
                     }
                 }
             }
         }
+    }
 
     hoverTarget_ = bestTarget;
 }
-
-
-
 
 void PlayerTargetingComponent::MarkTarget(size_t maxLockOn) {
     if (queuedTargets_.size() >= maxLockOn) {

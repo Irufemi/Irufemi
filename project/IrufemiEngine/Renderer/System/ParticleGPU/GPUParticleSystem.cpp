@@ -234,26 +234,30 @@ void GPUParticleSystem::Update() {
             // 基本形状の半径/半対角長
             float baseRadius = em.radius;
             if (em.type == 4) { // Box
-                baseRadius = std::sqrt(em.areaSizeX * em.areaSizeX + em.areaSizeY * em.areaSizeY + em.areaSizeZ * em.areaSizeZ) * 0.5f;
+                baseRadius =
+                    std::sqrt(em.areaSizeX * em.areaSizeX + em.areaSizeY * em.areaSizeY + em.areaSizeZ * em.areaSizeZ) *
+                    0.5f;
             }
 
             // 粒子の最大到達距離 (初速 + 拡散度) * 寿命
             float maxSpeed = em.velocity * (1.0f + (std::max)(0.0f, em.spread));
             float maxTravelDistance = maxSpeed * em.maxLife;
             float maxGravityDrop = 0.5f * std::abs(em.gravity) * em.maxLife * em.maxLife;
-            float maxScale = (std::max)({em.startScaleMaxX, em.startScaleMaxY, em.startScaleMaxZ,
-                                         em.endScaleMaxX, em.endScaleMaxY, em.endScaleMaxZ,
-                                         em.midScaleMaxX, em.midScaleMaxY, em.midScaleMaxZ});
+            float maxScale =
+                (std::max)({em.startScaleMaxX, em.startScaleMaxY, em.startScaleMaxZ, em.endScaleMaxX, em.endScaleMaxY,
+                            em.endScaleMaxZ, em.midScaleMaxX, em.midScaleMaxY, em.midScaleMaxZ});
 
             Irufemi::Sphere boundingSphere;
             if (em.type == 1) { // Beam: 進行方向に中心をオフセットして無駄な肥大化を防ぐ
                 Irufemi::Vector3 rawDir = {em.directionX, em.directionY, em.directionZ};
                 float lenSq = rawDir.x * rawDir.x + rawDir.y * rawDir.y + rawDir.z * rawDir.z;
-                Irufemi::Vector3 dir = (lenSq > 0.0001f) ? Irufemi::Math::Normalize(rawDir) : Irufemi::Vector3{0.0f, 0.0f, 1.0f};
+                Irufemi::Vector3 dir =
+                    (lenSq > 0.0001f) ? Irufemi::Math::Normalize(rawDir) : Irufemi::Vector3{0.0f, 0.0f, 1.0f};
                 boundingSphere.center = {em.translateX + dir.x * (maxTravelDistance * 0.5f),
                                          em.translateY + dir.y * (maxTravelDistance * 0.5f),
                                          em.translateZ + dir.z * (maxTravelDistance * 0.5f)};
-                boundingSphere.radius = (baseRadius + (maxTravelDistance * 0.5f) + maxGravityDrop + maxScale + em.jitter) * 1.1f;
+                boundingSphere.radius =
+                    (baseRadius + (maxTravelDistance * 0.5f) + maxGravityDrop + maxScale + em.jitter) * 1.1f;
             } else {
                 boundingSphere.center = {em.translateX, em.translateY, em.translateZ};
                 boundingSphere.radius = (baseRadius + maxTravelDistance + maxGravityDrop + maxScale + em.jitter) * 1.1f;

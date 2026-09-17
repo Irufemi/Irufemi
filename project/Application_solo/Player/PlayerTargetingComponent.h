@@ -129,4 +129,3 @@ private:
 
     std::weak_ptr<LockonMarkerUIComponent> lockonMarkerUI_;
 };
-

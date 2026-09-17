@@ -26,11 +26,8 @@ void RailShooterEnemyComponent::Initialize() {
         targetable->Initialize();
     }
     if (targetable) {
-        targetable->SetTargetablePredicate([this]() {
-            return IsAlive();
-        });
+        targetable->SetTargetablePredicate([this]() { return IsAlive(); });
     }
-
 
     // 初期状態では非表示にしておく
     if (gameObject_) {

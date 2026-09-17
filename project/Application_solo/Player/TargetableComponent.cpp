@@ -34,4 +34,3 @@ bool TargetableComponent::IsTargetable() const {
     }
     return true;
 }
-

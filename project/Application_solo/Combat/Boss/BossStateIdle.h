@@ -4,7 +4,8 @@
 /**
  * @class BossStateIdle
  * @brief ボスの通常待機（シールド展開中・定期ビーム攻撃）ステート
- * @details シールドによるダメージ無効化と、定期的なビーム攻撃の発射、全シールド破壊時の露出ステートへの遷移を制御します。
+ * @details
+ * シールドによるダメージ無効化と、定期的なビーム攻撃の発射、全シールド破壊時の露出ステートへの遷移を制御します。
  */
 class BossStateIdle : public IBossState {
 public:

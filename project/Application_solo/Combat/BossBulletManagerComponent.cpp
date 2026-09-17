@@ -80,13 +80,12 @@ void BossBulletManagerComponent::Update() {
 
             Irufemi::Vector4 aura = {0.8f, 0.0f, 0.6f, 0.4f}; // Boss Aura
             Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
-            p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f,
-                            rockColor.z + aura.z * 2.0f, 1.0f};
+            p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f, rockColor.z + aura.z * 2.0f,
+                            1.0f};
             p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
             p.dissolveEdgeColor = aura;
 
-            voxelManager->PlayExplosion(explosionModelPath_, pos, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, p,
-                                        {2, 2, 2});
+            voxelManager->PlayExplosion(explosionModelPath_, pos, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, p, {2, 2, 2});
         }
     };
 
@@ -189,8 +188,10 @@ void BossBulletManagerComponent::Update() {
                 proxy.isSphere = true;
                 proxy.sphere = sphereCol->GetWorldSphere();
                 float totalR = proxy.sphere.radius + hitRadius_;
-                proxy.broadAABB.min = {proxy.sphere.center.x - totalR, proxy.sphere.center.y - totalR, proxy.sphere.center.z - totalR};
-                proxy.broadAABB.max = {proxy.sphere.center.x + totalR, proxy.sphere.center.y + totalR, proxy.sphere.center.z + totalR};
+                proxy.broadAABB.min = {proxy.sphere.center.x - totalR, proxy.sphere.center.y - totalR,
+                                       proxy.sphere.center.z - totalR};
+                proxy.broadAABB.max = {proxy.sphere.center.x + totalR, proxy.sphere.center.y + totalR,
+                                       proxy.sphere.center.z + totalR};
             } else {
                 proxy.isSphere = false;
                 Irufemi::AABB bbox = col->GetBoundingBox();
@@ -223,9 +224,8 @@ void BossBulletManagerComponent::Update() {
         if (!targetProxies.empty()) {
             for (const auto& proxy : targetProxies) {
                 // 1. Broadphase: ターゲットの拡張AABB内かチェック
-                if (p.x < proxy.broadAABB.min.x || p.x > proxy.broadAABB.max.x ||
-                    p.y < proxy.broadAABB.min.y || p.y > proxy.broadAABB.max.y ||
-                    p.z < proxy.broadAABB.min.z || p.z > proxy.broadAABB.max.z) {
+                if (p.x < proxy.broadAABB.min.x || p.x > proxy.broadAABB.max.x || p.y < proxy.broadAABB.min.y ||
+                    p.y > proxy.broadAABB.max.y || p.z < proxy.broadAABB.min.z || p.z > proxy.broadAABB.max.z) {
                     continue;
                 }
 
@@ -242,7 +242,8 @@ void BossBulletManagerComponent::Update() {
 
                 // 命中確定！
                 if (proxy.playerHealth) {
-                    const bool isTarget = (targetPlayerID_ == 0 || proxy.gameObject->GetInstanceID() == targetPlayerID_);
+                    const bool isTarget =
+                        (targetPlayerID_ == 0 || proxy.gameObject->GetInstanceID() == targetPlayerID_);
                     if (isTarget && !proxy.playerHealth->IsInvincible()) {
                         proxy.playerHealth->TakeDamage(1);
                         isHit = true;

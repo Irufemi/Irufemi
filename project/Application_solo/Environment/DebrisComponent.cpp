@@ -90,9 +90,7 @@ void DebrisComponent::OnEnable() {
     if (gameObject_) {
         if (auto targetable = gameObject_->GetComponent<TargetableComponent>()) {
             targetable->SetTargetType(TargetType::BossShield);
-            targetable->SetTargetablePredicate([this]() {
-                return state_ == DebrisState::BossOrbiting;
-            });
+            targetable->SetTargetablePredicate([this]() { return state_ == DebrisState::BossOrbiting; });
         }
     }
 
@@ -100,7 +98,6 @@ void DebrisComponent::OnEnable() {
         baseIdleY_ = transform->GetPosition().y;
     }
 }
-
 
 void DebrisComponent::OnDisable() {
     if (manager_) {
@@ -223,7 +220,8 @@ void DebrisComponent::UpdateAuraVisuals() {
     for (auto& child : gameObject_->GetChildren()) {
         if (child && child->GetName() == "DebrisAura") {
             bool isActive = false;
-            Irufemi::Vector4 auraColor = manager_ ? manager_->GetIdleAuraColor() : Irufemi::Vector4{0.6f, 0.2f, 1.0f, 0.4f};
+            Irufemi::Vector4 auraColor =
+                manager_ ? manager_->GetIdleAuraColor() : Irufemi::Vector4{0.6f, 0.2f, 1.0f, 0.4f};
 
             switch (state_) {
             case DebrisState::Pulled:

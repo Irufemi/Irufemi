@@ -42,9 +42,7 @@ void PlayerDamageVisualizerComponent::Start() {
         });
 
         // 死亡イベントリスナーを登録
-        healthComp_->AddOnPlayerDiedListener([this]() {
-            TriggerDeathVisuals();
-        });
+        healthComp_->AddOnPlayerDiedListener([this]() { TriggerDeathVisuals(); });
     }
 }
 

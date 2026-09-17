@@ -17,14 +17,14 @@ class DrawManager;
 class DescriptorPool;
 
 enum class DebugCategory : uint32_t {
-    None        = 0,
-    Collision   = 1 << 0, ///< 物理コライダー（OBB, Sphere, AABB）
-    Combat      = 1 << 1, ///< 弾幕、攻撃判定、ヒットボックス
-    Particle    = 1 << 2, ///< パーティクル・エミッター領域
-    Level       = 1 << 3, ///< スポーン範囲、トリガー領域
-    Path        = 1 << 4, ///< スプラインレール、移動ノード
-    General     = 1 << 5, ///< その他汎用
-    All         = 0xFFFFFFFF
+    None = 0,
+    Collision = 1 << 0, ///< 物理コライダー（OBB, Sphere, AABB）
+    Combat = 1 << 1,    ///< 弾幕、攻撃判定、ヒットボックス
+    Particle = 1 << 2,  ///< パーティクル・エミッター領域
+    Level = 1 << 3,     ///< スポーン範囲、トリガー領域
+    Path = 1 << 4,      ///< スプラインレール、移動ノード
+    General = 1 << 5,   ///< その他汎用
+    All = 0xFFFFFFFF
 };
 
 inline constexpr DebugCategory operator|(DebugCategory a, DebugCategory b) {
@@ -64,22 +64,30 @@ public:
     /**
      * @brief 全デバッグプリミティブ描画の一括有効/無効を設定する
      */
-    void SetEnabled(bool enabled) { isEnabled_ = enabled; }
+    void SetEnabled(bool enabled) {
+        isEnabled_ = enabled;
+    }
 
     /**
      * @brief 全デバッグプリミティブ描画の一括有効状態を取得する
      */
-    bool IsEnabled() const { return isEnabled_; }
+    bool IsEnabled() const {
+        return isEnabled_;
+    }
 
     /**
      * @brief 表示対象カテゴリのビットマスクを設定する
      */
-    void SetCategoryMask(uint32_t mask) { categoryMask_ = mask; }
+    void SetCategoryMask(uint32_t mask) {
+        categoryMask_ = mask;
+    }
 
     /**
      * @brief 表示対象カテゴリのビットマスクを取得する
      */
-    uint32_t GetCategoryMask() const { return categoryMask_; }
+    uint32_t GetCategoryMask() const {
+        return categoryMask_;
+    }
 
     /**
      * @brief 指定したカテゴリの表示/非表示を設定する
@@ -127,7 +135,8 @@ public:
 
     /**
      * @brief シミュレーション（Update）フェーズを開始する
-     * @details Updateフェーズ中に呼ばれたAddSphere/AddCubeはシミュレーションバッファに格納され、ポーズ中もクリアされずにフリーズ保持されます。
+     * @details
+     * Updateフェーズ中に呼ばれたAddSphere/AddCubeはシミュレーションバッファに格納され、ポーズ中もクリアされずにフリーズ保持されます。
      */
     void BeginSimulationFrame();
 

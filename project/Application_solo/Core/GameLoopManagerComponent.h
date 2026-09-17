@@ -10,7 +10,8 @@ class BossComponent;
 /**
  * @class GameLoopManagerComponent
  * @brief ゲームの進行状態（ゲームオーバー・ステージクリア・リザルト遷移）を一元管理するコンポーネント
- * @details プレイヤーおよびボスの死亡イベントを購読し、演出用のタイムスケール変更およびリザルトシーンの呼び出しを制御する。
+ * @details
+ * プレイヤーおよびボスの死亡イベントを購読し、演出用のタイムスケール変更およびリザルトシーンの呼び出しを制御する。
  */
 class GameLoopManagerComponent : public Component {
 public:
@@ -19,8 +20,8 @@ public:
      * @brief ゲームループの進行状態
      */
     enum class State {
-        Playing,  ///< 通常プレイ中
-        Finished  ///< クリアまたはゲームオーバー演出終了後
+        Playing, ///< 通常プレイ中
+        Finished ///< クリアまたはゲームオーバー演出終了後
     };
 
     GameLoopManagerComponent() = default;

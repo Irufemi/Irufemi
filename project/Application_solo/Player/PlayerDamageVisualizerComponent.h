@@ -82,7 +82,7 @@ private:
     float flashInterval_ = 0.05f;
     bool isFlashing_ = false;
 
-    Irufemi::Vector4 flashColor_ = {1.0f, 0.0f, 0.0f, 1.0f};       ///< 点滅カラー
+    Irufemi::Vector4 flashColor_ = {1.0f, 0.0f, 0.0f, 1.0f};        ///< 点滅カラー
     Irufemi::Vector4 originalBaseColor_ = {1.0f, 1.0f, 1.0f, 1.0f}; ///< 元のモデルカラー
     bool colorCached_ = false;
 

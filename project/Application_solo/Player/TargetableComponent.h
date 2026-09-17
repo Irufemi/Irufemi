@@ -9,11 +9,11 @@
  * @brief ターゲット対象のカテゴリ種別フラグ
  */
 enum class TargetType : uint32_t {
-    None        = 0,
-    Enemy       = 1 << 0, ///< 敵（雑魚敵、ボス本体）
-    BossShield  = 1 << 1, ///< ボスのシールド（がれき）
+    None = 0,
+    Enemy = 1 << 0,       ///< 敵（雑魚敵、ボス本体）
+    BossShield = 1 << 1,  ///< ボスのシールド（がれき）
     Environment = 1 << 2, ///< 破壊可能な環境物
-    All         = 0xFFFFFFFF
+    All = 0xFFFFFFFF
 };
 
 /**
@@ -78,5 +78,3 @@ private:
     TargetablePredicate predicate_ = nullptr;
     TargetType targetType_ = TargetType::Enemy; ///< デフォルトは敵
 };
-
-

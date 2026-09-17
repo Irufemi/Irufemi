@@ -146,7 +146,7 @@ void CollisionManager::CheckNarrowPhase(ColliderComponent* colA, ColliderCompone
             outResult = Irufemi::Collision::GetCollisionResult(boxA, sphereB);
         } else if (typeB == ColliderComponent::ColliderType::OBB) {
             Irufemi::OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
-            outResult = Irufemi::Collision::GetCollisionResult(obbB, boxA); // OBB vs AABB
+            outResult = Irufemi::Collision::GetCollisionResult(obbB, boxA);      // OBB vs AABB
             outResult.normal = Irufemi::Math::Multiply(-1.0f, outResult.normal); // OBBを押し出す方向の逆にする
         }
     } else if (typeA == ColliderComponent::ColliderType::Sphere) {
@@ -181,7 +181,7 @@ void CollisionManager::CheckNarrowPhase(ColliderComponent* colA, ColliderCompone
 }
 
 void CollisionManager::DispatchCollisionEvents(ColliderComponent* colA, ColliderComponent* colB,
-                                              const Irufemi::Collision::CollisionResult& result, bool isNewHit) {
+                                               const Irufemi::Collision::CollisionResult& result, bool isNewHit) {
     if (!colA || !colB || !result.isHit) {
         return;
     }
@@ -647,8 +647,7 @@ void CollisionManager::DrawDebugRay(const Irufemi::Ray& ray, float distance, con
     debugRays_.push_back({ray, distance, color});
 }
 
-void CollisionManager::DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color,
-                                     DebugCategory category) {
+void CollisionManager::DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color, DebugCategory category) {
     if (debugPrimitiveRenderer_) {
         Irufemi::Vector3 center = (aabb.min + aabb.max) * 0.5f;
         Irufemi::Vector3 size = aabb.max - aabb.min;

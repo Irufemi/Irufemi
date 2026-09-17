@@ -62,11 +62,8 @@ void BossComponent::Initialize() {
         targetable = comp.get();
     }
     if (targetable) {
-        targetable->SetTargetablePredicate([this]() {
-            return IsCoreExposed();
-        });
+        targetable->SetTargetablePredicate([this]() { return IsCoreExposed(); });
     }
-
 
     LoadStatusFromJson();
     hp_ = maxHp_;

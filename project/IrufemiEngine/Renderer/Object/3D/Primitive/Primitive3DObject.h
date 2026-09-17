@@ -205,8 +205,7 @@ public:
      * @param[in] depth 深度書き込み設定
      * @param[in] cull カリングモード
      */
-    void SetCustomPSO(const std::string& psoName,
-                      Irufemi::BlendMode blend = Irufemi::BlendMode::kBlendModeNormal,
+    void SetCustomPSO(const std::string& psoName, Irufemi::BlendMode blend = Irufemi::BlendMode::kBlendModeNormal,
                       PSOManager::DepthWrite depth = PSOManager::DepthWrite::Enable,
                       PSOManager::CullMode cull = PSOManager::CullMode::Back) {
         if (mesh_.resource) {

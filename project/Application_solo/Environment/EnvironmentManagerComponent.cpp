@@ -221,8 +221,7 @@ void EnvironmentManagerComponent::Draw() {
 
                 // ワールド行列を取得してバッチにインスタンスを追加
                 if (auto transform = obj->GetComponent<TransformComponent>()) {
-                    batchRenderer->AddInstanceWorld(transform->GetWorldMatrix(), effectType, effectParam,
-                                                   enableMask);
+                    batchRenderer->AddInstanceWorld(transform->GetWorldMatrix(), effectType, effectParam, enableMask);
                 }
             }
         }

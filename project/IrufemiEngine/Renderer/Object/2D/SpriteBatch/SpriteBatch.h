@@ -114,8 +114,7 @@ public:
      * @param[in] depth 深度設定
      * @param[in] cull カリングモード
      */
-    void SetCustomPSO(const std::string& psoName,
-                      Irufemi::BlendMode blend = Irufemi::BlendMode::kBlendModeNormal,
+    void SetCustomPSO(const std::string& psoName, Irufemi::BlendMode blend = Irufemi::BlendMode::kBlendModeNormal,
                       PSOManager::DepthWrite depth = PSOManager::DepthWrite::Off,
                       PSOManager::CullMode cull = PSOManager::CullMode::None) {
         customPSOName_ = psoName;
