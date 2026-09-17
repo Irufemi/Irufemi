@@ -286,13 +286,12 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
     std::shared_ptr<GameObject> bestObj = nullptr;
 
     // 1. 実体化されている Idle がれき（環境物破壊等で発生したもの）を最優先で探索
-    for (auto it = activeIdleDebris_.begin(); it != activeIdleDebris_.end();) {
-        DebrisComponent* comp = *it;
-        if (!comp || !comp->GetGameObject() || !comp->GetGameObject()->GetIsActive()) {
-            it = activeIdleDebris_.erase(it);
-            continue;
-        }
+    // 無効になった要素を std::erase_if で一括クリーンアップ (O(N))
+    std::erase_if(activeIdleDebris_, [](DebrisComponent* comp) {
+        return !comp || !comp->GetGameObject() || !comp->GetGameObject()->GetIsActive();
+    });
 
+    for (auto* comp : activeIdleDebris_) {
         if (comp->GetState() == DebrisState::Idle) {
             if (auto t = comp->GetGameObject()->GetTransform()) {
                 Irufemi::Vector3 d = t->GetWorldPosition() - pos;
@@ -303,7 +302,6 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
                 }
             }
         }
-        ++it;
     }
 
     if (bestObj) {
@@ -417,10 +415,21 @@ void DebrisManagerComponent::RegisterDebris(DebrisComponent* debris, DebrisState
 }
 
 void DebrisManagerComponent::UnregisterDebris(DebrisComponent* debris, DebrisState state) {
+    // 順序非依存のため Swap & Pop による O(1) 削除
     auto remove_func = [debris](std::vector<DebrisComponent*>& vec) {
+        if (vec.empty()) {
+            return;
+        }
+        // 逆順ループ走査中の末尾要素なら探索不要で即時 pop (完全な O(1))
+        if (vec.back() == debris) {
+            vec.pop_back();
+            return;
+        }
+        // 末尾以外の場合は末尾要素で上書きして pop_back (シフトなしの O(1))
         auto it = std::find(vec.begin(), vec.end(), debris);
         if (it != vec.end()) {
-            vec.erase(it);
+            *it = vec.back();
+            vec.pop_back();
         }
     };
     switch (state) {
