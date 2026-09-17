@@ -14,7 +14,6 @@
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Core/Utility/Log.h"
-#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Effects/EffectManagerComponent.h"
 #include <iostream>
 #include <algorithm>
@@ -42,7 +41,14 @@ void BossBulletManagerComponent::Initialize() {
     }
 }
 
-void BossBulletManagerComponent::Start() {}
+void BossBulletManagerComponent::Start() {
+    // シーン開始時に依存マネージャーを事前解決（Updateループでの検索負荷を完全排除）
+    if (auto scene = gameObject_->GetScene()) {
+        if (auto go = scene->FindGameObject("EffectManager")) {
+            effectManager_ = go->GetComponent<EffectManagerComponent>();
+        }
+    }
+}
 
 void BossBulletManagerComponent::Update() {
     if (!virtualManager_) {
@@ -60,32 +66,10 @@ void BossBulletManagerComponent::Update() {
         return;
     }
 
-    // 共通の爆発エフェクト処理ラムダ
+    // 共通の爆発エフェクト処理ラムダ（プレハブデータから自動再生）
     auto playExplosion = [&](const Irufemi::Vector3& pos) {
-        EffectManagerComponent* effectManager = nullptr;
-        if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
-            effectManager = go->GetComponent<EffectManagerComponent>();
-        }
-        if (effectManager) {
-            effectManager->PlayEffect(hitEffectKey_, pos);
-        }
-
-        if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {
-            VoxelEmitter p{};
-            p.particleType = 5; // DebrisExplosive
-            p.lifeTime = 1.0f;
-            p.gravity = 5.0f;
-            p.dispersion = 12.0f;
-            p.scale = {0.5f, 0.5f, 0.5f};
-
-            Irufemi::Vector4 aura = {0.8f, 0.0f, 0.6f, 0.4f}; // Boss Aura
-            Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
-            p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f, rockColor.z + aura.z * 2.0f,
-                            1.0f};
-            p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
-            p.dissolveEdgeColor = aura;
-
-            voxelManager->PlayExplosion(explosionModelPath_, pos, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, p, {2, 2, 2});
+        if (effectManager_) {
+            effectManager_->PlayEffect(hitEffectKey_, pos);
         }
     };
 
@@ -272,7 +256,6 @@ void BossBulletManagerComponent::OnRegisterProperties() {
     RegisterProperty("Default Life Time", &defaultLifeTime_);
     RegisterPropertyRange("Hit Radius", &hitRadius_, 0.1f, 10.0f);
     RegisterProperty("Hit Effect Key", &hitEffectKey_);
-    RegisterProperty("Explosion Model Path", &explosionModelPath_);
     RegisterGameObjectRef("Target Player", &targetPlayerID_);
 }
 

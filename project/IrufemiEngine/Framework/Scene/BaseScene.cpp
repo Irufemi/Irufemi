@@ -363,6 +363,16 @@ void BaseScene::WarmUpRenderState() {
 
     // 5. 初回フレームデータ（カメラ行列、ライト、フォグ等）をレンダラーへ提出
     SubmitFrameData();
+
+    // 6. 演出サブシステム（Voxel / GPU Particle）のシーン開始前ウォームアップ
+    if (engine_) {
+        if (auto vpm = engine_->GetVoxelParticleManager()) {
+            vpm->WarmUp();
+        }
+        if (auto gpm = engine_->GetGPUParticleManager()) {
+            gpm->WarmUp();
+        }
+    }
 }
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {

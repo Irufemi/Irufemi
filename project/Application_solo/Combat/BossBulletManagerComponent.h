@@ -54,7 +54,6 @@ private:
     Irufemi::Vector3 bulletScale_ = {0.5f, 0.5f, 0.5f};
     float hitRadius_ = 2.0f;
     std::string hitEffectKey_ = "Dust";
-    std::string explosionModelPath_ = "resources/model/BossBulletSphere.obj";
     /// @brief 攻撃対象となるプレイヤーのGameObject ID
     uint64_t targetPlayerID_ = 0;
 
@@ -62,4 +61,5 @@ private:
     std::vector<BossBulletData> bulletDataList_;
     std::queue<int> activeVirtualIds_;
     std::vector<ColliderComponent*> prefetchedColliders_;
+    class EffectManagerComponent* effectManager_ = nullptr;
 };

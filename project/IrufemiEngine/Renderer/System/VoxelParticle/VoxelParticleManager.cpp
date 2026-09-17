@@ -139,6 +139,16 @@ void VoxelParticleManager::ReservePool(const std::string& modelName, const Irufe
     UnregisterEmitter(handle);
 }
 
+void VoxelParticleManager::WarmUp() {
+    // 登録済みの全システムの状態をリセット・同期（モデル読み込みは各コンポーネント・プレハブのStart()に委任）
+    for (auto& pair : systems_) {
+        if (pair.second.system) {
+            pair.second.freeIndices.clear();
+            pair.second.nextIndex = 0;
+        }
+    }
+}
+
 void VoxelParticleManager::PlayExplosion(const std::string& modelName, const Irufemi::Vector3& worldPos,
                                          const Irufemi::Vector3& velocity, const Irufemi::Vector3& rotate,
                                          const Irufemi::Vector3& scale, const VoxelEmitter& params,

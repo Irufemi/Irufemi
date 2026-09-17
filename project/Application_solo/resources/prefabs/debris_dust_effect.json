@@ -143,6 +143,30 @@
           }
         }
       ]
+    },
+    {
+      "name": "VoxelExplosion",
+      "components": [
+        {
+          "type": "TransformComponent"
+        },
+        {
+          "type": "VoxelParticleComponent",
+          "data": {
+            "overrideModelName": "resources/model/BossBulletSphere.obj",
+            "resolution": [2, 2, 2],
+            "preAllocateCount": 10,
+            "particleType": 5,
+            "lifeTime": 1.0,
+            "gravity": 5.0,
+            "dispersion": 12.0,
+            "scale": [0.5, 0.5, 0.5],
+            "startColor": [3.1, 1.2, 2.2, 1.0],
+            "endColor": [0.2, 0.2, 0.2, 1.0],
+            "dissolveEdgeColor": [0.8, 0.0, 0.6, 0.4]
+          }
+        }
+      ]
     }
   ]
 }

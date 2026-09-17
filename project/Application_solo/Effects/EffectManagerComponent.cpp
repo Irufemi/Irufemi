@@ -5,6 +5,7 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Effect/ParticleEmitterComponent.h"
+#include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Framework/Component/Utility/LifetimeComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -144,6 +145,12 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
 
                 for (auto pe : emitters) {
                     pe->Restart(false);
+                }
+
+                // ツリー全体からすべての VoxelParticleComponent を取得して爆発させる
+                auto voxelEmitters = obj->GetComponentsInChildren<VoxelParticleComponent>();
+                for (auto ve : voxelEmitters) {
+                    ve->Explode();
                 }
 
                 activeEffects_.push_back({handle, 0.0f, effectKey}); // timerはもう使わないが構造体互換のため0をセット

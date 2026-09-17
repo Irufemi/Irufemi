@@ -108,6 +108,13 @@ nlohmann::json VoxelParticleComponent::Serialize() {
     j["gravity"] = emitterParams_.gravity;
     j["dispersion"] = emitterParams_.dispersion;
     j["convergence"] = emitterParams_.convergence;
+    j["scale"] = {emitterParams_.scale.x, emitterParams_.scale.y, emitterParams_.scale.z};
+    j["startColor"] = {emitterParams_.startColor.x, emitterParams_.startColor.y, emitterParams_.startColor.z,
+                       emitterParams_.startColor.w};
+    j["endColor"] = {emitterParams_.endColor.x, emitterParams_.endColor.y, emitterParams_.endColor.z,
+                     emitterParams_.endColor.w};
+    j["dissolveEdgeColor"] = {emitterParams_.dissolveEdgeColor.x, emitterParams_.dissolveEdgeColor.y,
+                              emitterParams_.dissolveEdgeColor.z, emitterParams_.dissolveEdgeColor.w};
 
     return j;
 }
@@ -139,5 +146,28 @@ void VoxelParticleComponent::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("convergence")) {
         emitterParams_.convergence = j["convergence"];
+    }
+    if (j.contains("scale") && j["scale"].is_array() && j["scale"].size() >= 3) {
+        emitterParams_.scale.x = j["scale"][0];
+        emitterParams_.scale.y = j["scale"][1];
+        emitterParams_.scale.z = j["scale"][2];
+    }
+    if (j.contains("startColor") && j["startColor"].is_array() && j["startColor"].size() >= 4) {
+        emitterParams_.startColor.x = j["startColor"][0];
+        emitterParams_.startColor.y = j["startColor"][1];
+        emitterParams_.startColor.z = j["startColor"][2];
+        emitterParams_.startColor.w = j["startColor"][3];
+    }
+    if (j.contains("endColor") && j["endColor"].is_array() && j["endColor"].size() >= 4) {
+        emitterParams_.endColor.x = j["endColor"][0];
+        emitterParams_.endColor.y = j["endColor"][1];
+        emitterParams_.endColor.z = j["endColor"][2];
+        emitterParams_.endColor.w = j["endColor"][3];
+    }
+    if (j.contains("dissolveEdgeColor") && j["dissolveEdgeColor"].is_array() && j["dissolveEdgeColor"].size() >= 4) {
+        emitterParams_.dissolveEdgeColor.x = j["dissolveEdgeColor"][0];
+        emitterParams_.dissolveEdgeColor.y = j["dissolveEdgeColor"][1];
+        emitterParams_.dissolveEdgeColor.z = j["dissolveEdgeColor"][2];
+        emitterParams_.dissolveEdgeColor.w = j["dissolveEdgeColor"][3];
     }
 }

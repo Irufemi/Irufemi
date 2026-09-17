@@ -34,6 +34,11 @@ public:
      */
     void Clear();
 
+    /**
+     * @brief シーン開始前に基本モデルやComputeパイプラインを事前ウォームアップする
+     */
+    void WarmUp();
+
     struct EmitterHandle {
         VoxelParticleSystem* system = nullptr;
         uint32_t emitterIndex = 0xFFFFFFFF;

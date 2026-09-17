@@ -37,6 +37,11 @@ public:
      */
     void ClearAllParticles();
 
+    /**
+     * @brief シーン開始前にパーティクル基盤のウォームアップを行う
+     */
+    void WarmUp();
+
     struct EmitterHandle {
         GPUParticleSystem* system = nullptr;
         uint32_t emitterIndex = 0xFFFFFFFF;

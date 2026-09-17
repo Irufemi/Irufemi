@@ -30,6 +30,14 @@ void GPUParticleManager::ClearAllParticles() {
     }
 }
 
+void GPUParticleManager::WarmUp() {
+    for (auto& pair : systems_) {
+        if (pair.second.system) {
+            pair.second.system->Clear();
+        }
+    }
+}
+
 GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std::string& texturePath,
                                                                       Irufemi::BlendMode blendMode, bool isUnscaledTime,
                                                                       bool enableLighting,
