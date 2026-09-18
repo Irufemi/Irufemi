@@ -50,7 +50,7 @@ public:
 
 private:
     PrefabManager() = default;
-    ~PrefabManager() = default;
+    ~PrefabManager();
     PrefabManager(const PrefabManager&) = delete;
     PrefabManager& operator=(const PrefabManager&) = delete;
 

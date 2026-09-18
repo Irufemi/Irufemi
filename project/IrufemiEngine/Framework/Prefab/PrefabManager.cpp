@@ -57,8 +57,17 @@ std::shared_ptr<GameObject> PrefabManager::Instantiate(const std::string& filepa
     return obj;
 }
 
+PrefabManager::~PrefabManager() {
+    ClearCache();
+}
+
 void PrefabManager::ClearCache() {
     std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& [path, templateObj] : templateCache_) {
+        if (templateObj && !templateObj->IsDestroyed()) {
+            templateObj->Destroy();
+        }
+    }
     jsonCache_.clear();
     templateCache_.clear();
 }
