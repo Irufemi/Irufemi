@@ -1,0 +1,53 @@
+{
+  "name": "Enemy_GravityGolem",
+  "isFolder": false,
+  "isActive": true,
+  "components": [
+    {
+      "type": "TransformComponent",
+      "data": {
+        "scale": [
+          1.2,
+          1.2,
+          1.2
+        ]
+      }
+    },
+    {
+      "type": "MeshRendererComponent",
+      "data": {
+        "modelName": "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj"
+      }
+    },
+    {
+      "type": "SphereColliderComponent",
+      "data": {
+        "isTrigger": true,
+        "radius": 2.0,
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "type": "TargetableComponent",
+      "data": {}
+    },
+    {
+      "type": "RailShooterEnemyComponent",
+      "data": {
+        "BodyDamage": 20,
+        "BulletScale": 0.3,
+        "BulletSpeed": 32.0,
+        "CombatDuration": 7.5,
+        "HP": 100,
+        "ShootInterval": 1.8,
+        "SpawnProgress": 0.5,
+        "Speed": 15.0,
+        "TargetDistance": 65.0
+      }
+    }
+  ]
+}

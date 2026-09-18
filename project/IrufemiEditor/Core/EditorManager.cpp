@@ -40,8 +40,21 @@
 // FontAwesome 用のヘッダーを含める
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 
-EditorManager::EditorManager() = default;
-EditorManager::~EditorManager() = default;
+static EditorManager* sInstance = nullptr;
+
+EditorManager::EditorManager() {
+    sInstance = this;
+}
+
+EditorManager::~EditorManager() {
+    if (sInstance == this) {
+        sInstance = nullptr;
+    }
+}
+
+EditorManager* EditorManager::GetInstance() {
+    return sInstance;
+}
 
 void EditorManager::OnInitialize(IrufemiEngine* engine) {
     engine_ = engine;

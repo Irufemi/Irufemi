@@ -27,6 +27,8 @@ public:
     EditorManager();
     ~EditorManager() override;
 
+    static EditorManager* GetInstance();
+
     void OnInitialize(IrufemiEngine* engine) override;
     void OnUpdate(float deltaTime) override;
     void OnDrawUI() override;

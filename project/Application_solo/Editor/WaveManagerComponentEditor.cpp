@@ -61,7 +61,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
 
     ImGui::Separator();
 
-    static int selectedEventIndex = -1;
+    int selectedEventIndex = waveManager->GetSelectedEventIndex();
     static int draggingNodeIndex = -1;
 
     // Timeline drawing
@@ -116,10 +116,12 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         if (hitIndex != -1) {
             selectedEventIndex = hitIndex;
             draggingNodeIndex = hitIndex;
+            waveManager->SetSelectedEventIndex(hitIndex);
         } else {
             float newDist = (mousePos.x - p.x) / scale;
             waveManager->SetEditorPreviewDistance((std::max)(0.0f, newDist));
             selectedEventIndex = -1;
+            waveManager->SetSelectedEventIndex(-1);
         }
     }
 
@@ -185,6 +187,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         newEvent.eventType = "SpawnEnemy";
         events.push_back(newEvent);
         selectedEventIndex = (int)events.size() - 1;
+        waveManager->SetSelectedEventIndex(selectedEventIndex);
         pushUndo(preEdit);
     }
     ImGui::SameLine();
@@ -192,6 +195,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         auto preEdit = events;
         events.erase(events.begin() + selectedEventIndex);
         selectedEventIndex = -1;
+        waveManager->SetSelectedEventIndex(-1);
         pushUndo(preEdit);
     }
     ImGui::SameLine();
@@ -270,10 +274,36 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
             }
         };
 
+        auto editFloatParam = [&](const char* key, float defaultVal, float speed, float minVal, float maxVal) {
+            bool hasKey = ev.parameters.contains(key);
+            float val = hasKey ? ev.parameters[key].get<float>() : defaultVal;
+            if (ImGui::DragFloat(key, &val, speed, minVal, maxVal, "%.2f")) {
+                ev.parameters[key] = val;
+            }
+            handleItemUndo();
+            ImGui::SameLine();
+            if (hasKey) {
+                if (ImGui::Button((std::string("Remove##") + key).c_str())) {
+                    auto preEdit = events;
+                    ev.parameters.erase(key);
+                    pushUndo(preEdit);
+                }
+            } else {
+                if (ImGui::Button((std::string("Add##") + key).c_str())) {
+                    auto preEdit = events;
+                    ev.parameters[key] = defaultVal;
+                    pushUndo(preEdit);
+                }
+            }
+        };
+
         editStringParam("WaveId");
         editStringParam("BossID");
         editStringParam("Formation");
         editIntParam("Count");
+        editFloatParam("Scale", 1.0f, 0.05f, 0.2f, 5.0f);
+        editFloatParam("CombatDuration", 7.5f, 0.5f, 1.0f, 60.0f);
+        editFloatParam("TargetDistance", 65.0f, 1.0f, 10.0f, 200.0f);
 
         bool hasOffset = ev.parameters.contains("OffsetFromRail");
         if (hasOffset) {

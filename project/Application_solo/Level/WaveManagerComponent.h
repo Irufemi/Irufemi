@@ -85,10 +85,18 @@ public:
         editorPreviewDistance_ = dist;
     }
 
+    int GetSelectedEventIndex() const {
+        return selectedEventIndex_;
+    }
+    void SetSelectedEventIndex(int index) {
+        selectedEventIndex_ = index;
+    }
+
     void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
 private:
     float editorPreviewDistance_ = 0.0f;
+    int selectedEventIndex_ = -1;
     std::string currentPreviewModelPath_ = "";
     std::shared_ptr<ModelBatchRendererComponent> previewBatch_;
     uint64_t targetSplineID_ = 0;

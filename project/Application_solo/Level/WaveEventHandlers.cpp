@@ -14,6 +14,7 @@
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "RailMechanics/RailShooterEnemyComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Core/Math/MathFunction.h"
 #include <iostream>
 
@@ -102,6 +103,7 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
 
     float combatDuration = data.parameters.value("CombatDuration", 7.5f);
     float targetDistance = data.parameters.value("TargetDistance", 65.0f);
+    float scaleMultiplier = data.parameters.value("Scale", 1.0f);
 
     auto engine = BaseModel::GetIrufemiEngine();
     auto scene = engine ? engine->GetSceneManager()->GetCurrentScene() : nullptr;
@@ -110,7 +112,7 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
         if (spawnerObj) {
             if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
                 for (const auto& pos : positions) {
-                    if (auto enemyObj = spawner->SpawnEnemy(pos, spawnRot)) {
+                    if (auto enemyObj = spawner->SpawnEnemy(pos, spawnRot, scaleMultiplier)) {
                         if (auto enemyComp = enemyObj->GetComponent<RailShooterEnemyComponent>()) {
                             enemyComp->SetCombatDuration(combatDuration);
                             enemyComp->SetTargetDistance(targetDistance);
@@ -129,6 +131,7 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
 
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include "Framework/Prefab/PrefabUtility.h"
 
 void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const WaveEventData& data,
                                           const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward,
@@ -141,37 +144,48 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
     }
 
     std::string modelPath = "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj";
+    Irufemi::Vector3 baseScale = {1.2f, 1.2f, 1.2f};
+    float baseRadius = 2.0f;
+
     auto scene = manager->GetGameObject()->GetScene();
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
         if (spawnerObj) {
             if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
                 modelPath = spawner->enemyModelPath_;
+                baseScale = spawner->baseEnemyScale_;
+                baseRadius = spawner->baseColliderRadius_;
             }
+        } else {
+            // スポナーが見つからない場合もプレハブから自動解決
+            auto metrics = PrefabUtility::ExtractMetrics("resources/prefabs/Enemy_GravityGolem.json");
+            if (!metrics.modelPath.empty()) modelPath = metrics.modelPath;
+            baseScale = metrics.baseScale;
+            if (metrics.hasSphereCollider) baseRadius = metrics.colliderRadius;
         }
     }
+
+    float scaleMultiplier = data.parameters.value("Scale", 1.0f);
+    Irufemi::Vector3 finalScale = baseScale * scaleMultiplier;
+    float finalRadius = baseRadius * scaleMultiplier;
 
     auto previewBatch = manager->GetPreviewBatchRenderer(modelPath);
     if (previewBatch) {
         for (size_t i = 0; i < positions.size(); ++i) {
-            Irufemi::Vector3 scale = {1.2f, 1.2f, 1.2f};
             Irufemi::Vector3 rot = {0.0f, std::atan2(-railForward.x, -railForward.z), 0.0f};
-            Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(scale, rot, positions[i]);
+            Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(finalScale, rot, positions[i]);
             previewBatch->AddInstanceWorld(transform);
 
-            // モデルが背景に溶け込んで見えにくいため、同時に赤いワイヤー（キューブ）も描画して視認性を上げる
-            if (engine->GetDebugPrimitiveRenderer()) {
-                Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
-                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
+            // 当たり判定の球体（ワイヤー球: エメラルドグリーン）をリアルタイム描画
+            if (auto debugRenderer = engine->GetDebugPrimitiveRenderer()) {
+                Irufemi::Vector4 sphereColor = {0.0f, 1.0f, 0.5f, 0.85f}; // 見やすい緑色のワイヤー球
+                debugRenderer->AddSphere(positions[i], finalRadius, sphereColor, DebugCategory::Level);
             }
         }
-    } else if (engine->GetDebugPrimitiveRenderer()) {
-        Irufemi::Vector4 color = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤色のキューブ
+    } else if (auto debugRenderer = engine->GetDebugPrimitiveRenderer()) {
+        Irufemi::Vector4 sphereColor = {0.0f, 1.0f, 0.5f, 0.85f};
         for (const auto& pos : positions) {
-            Irufemi::Vector3 scale = {2.0f, 2.0f, 2.0f};
-            Irufemi::Matrix4x4 transform =
-                Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, pos);
-            engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
+            debugRenderer->AddSphere(pos, finalRadius, sphereColor, DebugCategory::Level);
         }
     }
 }

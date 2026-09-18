@@ -16,7 +16,11 @@
 #include "Framework/Component/Logic/SpawnPointComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 
-WaveManagerComponent::WaveManagerComponent() {}
+WaveManagerComponent::WaveManagerComponent() {
+    // デフォルトハンドラの登録（コンポーネント自身のストラテジーとして自己完結カプセル化）
+    RegisterHandler("SpawnEnemy", std::make_shared<SpawnEnemyHandler>());
+    RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
+}
 
 void WaveManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
@@ -31,9 +35,11 @@ void WaveManagerComponent::Deserialize(const nlohmann::json& j) {
 }
 
 void WaveManagerComponent::Initialize() {
-    // デフォルトハンドラの登録
-    RegisterHandler("SpawnEnemy", std::make_shared<SpawnEnemyHandler>());
-    RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
+    // ハンドラがクリアされている等の場合のみフォールバック登録
+    if (handlers_.empty()) {
+        RegisterHandler("SpawnEnemy", std::make_shared<SpawnEnemyHandler>());
+        RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
+    }
 
     ReloadLevelData();
 }
@@ -72,6 +78,7 @@ void WaveManagerComponent::Draw() {
             previewBatch_->ClearInstances();
         }
 
+        // 1. レールスプラインの取得: インスペクターで設定された Target Spline を唯一の真実（Single Source of Truth）として使用
         SplineComponent* spline = nullptr;
         if (targetSplineID_ != 0) {
             auto splineObj = scene->FindGameObjectByID(targetSplineID_);
@@ -80,40 +87,23 @@ void WaveManagerComponent::Draw() {
             }
         }
 
+        // 2. プレイヘッドのギズモ描画
+        if (spline && engine->GetDebugPrimitiveRenderer()) {
+            Irufemi::Vector3 phPos = spline->GetPointAtDistance(editorPreviewDistance_);
+            Irufemi::Vector3 scale = {3.0f, 3.0f, 3.0f};
+            Irufemi::Matrix4x4 transform =
+                Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, phPos);
+            Irufemi::Vector4 color = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow for Playhead
+            engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
+        }
+
+        // 3. イベントのプレビュー描画（Target Spline を基準レールとして使用）
         if (spline) {
-            if (engine->GetDebugPrimitiveRenderer()) {
-                Irufemi::Vector3 phPos = spline->GetPointAtDistance(editorPreviewDistance_);
-                Irufemi::Vector3 scale = {3.0f, 3.0f, 3.0f};
-                Irufemi::Matrix4x4 transform =
-                    Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, phPos);
-                Irufemi::Vector4 color = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow for Playhead
-                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
-            }
-        }
-
-        auto cartObj = scene->FindGameObject("PlayerCart");
-        if (!cartObj) {
-            cartObj = scene->FindGameObject("Player");
-        }
-        auto follower = cartObj ? cartObj->GetComponent<SplineFollowerComponent>() : nullptr;
-        SplineComponent* railSpline = nullptr;
-        if (follower) {
-            if (auto pathObj = scene->FindGameObjectByID(follower->GetTargetPathID())) {
-                railSpline = pathObj->GetComponent<SplineComponent>();
-            }
-        }
-
-        if (railSpline) {
-            for (const auto& ev : allEvents_) {
-                // GPU負荷軽減のため、現在のプレイヘッド距離から遠すぎるイベントはプレビュー描画をスキップする
-                if (std::abs(ev.triggerDistance - editorPreviewDistance_) > 300.0f) {
-                    continue;
-                }
-
+            auto drawEvent = [this, spline](const WaveEventData& ev) {
                 auto it = handlers_.find(ev.eventType);
                 if (it != handlers_.end() && it->second) {
-                    Irufemi::Vector3 pos = railSpline->GetPointAtDistance(ev.triggerDistance);
-                    Irufemi::Vector3 fwd = railSpline->GetTangentAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 pos = spline->GetPointAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 fwd = spline->GetTangentAtDistance(ev.triggerDistance);
                     Irufemi::Vector3 up = {0.0f, 1.0f, 0.0f};
                     Irufemi::Vector3 right = {up.y * fwd.z - up.z * fwd.y, up.z * fwd.x - up.x * fwd.z,
                                               up.x * fwd.y - up.y * fwd.x};
@@ -125,6 +115,25 @@ void WaveManagerComponent::Draw() {
                     }
 
                     it->second->DrawEditorPreview(this, ev, pos, fwd, right);
+                }
+            };
+
+            if (selectedEventIndex_ >= 0 && selectedEventIndex_ < (int)allEvents_.size()) {
+                // タイムラインで選択中のイベントのみを単独プレビュー！
+                drawEvent(allEvents_[selectedEventIndex_]);
+            } else {
+                // 未選択時は、プレイヘッド距離に最も近い直近の1イベントのみプレビュー
+                const WaveEventData* nearestEv = nullptr;
+                float minDiff = 150.0f;
+                for (const auto& ev : allEvents_) {
+                    float diff = std::abs(ev.triggerDistance - editorPreviewDistance_);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        nearestEv = &ev;
+                    }
+                }
+                if (nearestEv) {
+                    drawEvent(*nearestEv);
                 }
             }
         }

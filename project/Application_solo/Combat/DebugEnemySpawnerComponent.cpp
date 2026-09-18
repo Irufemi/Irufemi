@@ -10,6 +10,7 @@
 #include "Core/Math/Random/Random.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Player/TargetableComponent.h"
+#include "Framework/Prefab/PrefabUtility.h"
 
 // AAAタイトルのアプローチ (Data-Oriented Design & Instancing)
 // 個々の敵オブジェクトにMeshRendererを持たせるのではなく、Spawnerが一括でModelBatchRendererComponentを管理します。
@@ -32,9 +33,22 @@ void DebugEnemySpawnerComponent::Initialize() {}
 
 void DebugEnemySpawnerComponent::OnRegisterProperties() {
     RegisterProperty("Enemy Model Path", &enemyModelPath_);
+    RegisterProperty("Enemy Prefab Path", &enemyPrefabPath_);
+    RegisterProperty("Base Enemy Scale", &baseEnemyScale_);
+    RegisterProperty("Base Collider Radius", &baseColliderRadius_);
 }
 
 void DebugEnemySpawnerComponent::Start() {
+    // プレハブ（Archetype）からモデル・基本スケール・当たり判定半径を自動解決
+    auto metrics = PrefabUtility::ExtractMetrics(enemyPrefabPath_);
+    if (!metrics.modelPath.empty()) {
+        enemyModelPath_ = metrics.modelPath;
+    }
+    baseEnemyScale_ = metrics.baseScale;
+    if (metrics.hasSphereCollider) {
+        baseColliderRadius_ = metrics.colliderRadius;
+    }
+
     batchRenderer_ = gameObject_->AddComponent<ModelBatchRendererComponent>();
     batchRenderer_->LoadModel(enemyModelPath_);
 
@@ -45,8 +59,16 @@ void DebugEnemySpawnerComponent::Start() {
 
     auto weakObj = gameObject_->weak_from_this();
 
-    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [weakObj]() {
-        auto enemy = std::make_shared<GameObject>("DebugEnemy");
+    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, weakObj]() {
+        std::shared_ptr<GameObject> enemy = nullptr;
+        if (auto spawnerObj = weakObj.lock()) {
+            enemy = spawnerObj->Instantiate(enemyPrefabPath_);
+        }
+        if (!enemy) {
+            enemy = std::make_shared<GameObject>("DebugEnemy");
+            enemy->AddComponent<RailShooterEnemyComponent>();
+        }
+
         enemy->SetIsSerializable(false); // セーブデータ（JSON）への混入を防止
 
         // スポナーの子オブジェクトとして登録しライフサイクルを同期
@@ -54,25 +76,37 @@ void DebugEnemySpawnerComponent::Start() {
             spawnerObj->AddChild(enemy);
         }
 
-        auto transform = enemy->GetTransform();
-        transform->SetScale({1.2f, 1.2f, 1.2f});
+        // プレハブ単体プレビュー用レンダラーがあれば削除し、SpawnerのBatchRenderer（Instancing）で一括描画
+        if (auto meshRenderer = enemy->GetComponent<MeshRendererComponent>()) {
+            enemy->RemoveComponent(meshRenderer);
+        }
 
-        auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-        enemyComp->SetOnDeathCallback([weakObj](GameObject* deadObj) {
-            deadObj->SetIsActive(false);
-            // スポナーの生存確認（ダングリングポインタによるクラッシュを防止）
-            if (auto spawnerObj = weakObj.lock()) {
-                if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
-                    if (spawner->enemyPool_) {
-                        auto it = spawner->activeEnemyHandles_.find(deadObj);
-                        if (it != spawner->activeEnemyHandles_.end()) {
-                            spawner->enemyPool_->Release(it->second);
-                            spawner->activeEnemyHandles_.erase(it);
+        auto transform = enemy->GetTransform();
+        if (transform) {
+            transform->SetScale(baseEnemyScale_);
+        }
+
+        if (auto collider = enemy->GetComponent<SphereColliderComponent>()) {
+            collider->SetLocalRadius(baseColliderRadius_);
+        }
+
+        if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
+            enemyComp->SetOnDeathCallback([weakObj](GameObject* deadObj) {
+                deadObj->SetIsActive(false);
+                // スポナーの生存確認（ダングリングポインタによるクラッシュを防止）
+                if (auto spawnerObj = weakObj.lock()) {
+                    if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
+                        if (spawner->enemyPool_) {
+                            auto it = spawner->activeEnemyHandles_.find(deadObj);
+                            if (it != spawner->activeEnemyHandles_.end()) {
+                                spawner->enemyPool_->Release(it->second);
+                                spawner->activeEnemyHandles_.erase(it);
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
 
         enemy->SetIsActive(false);
         return enemy;
@@ -137,7 +171,7 @@ void DebugEnemySpawnerComponent::Update() {
     }
 }
 
-GameObject* DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
+GameObject* DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation, float scaleMultiplier) {
     if (!enemyPool_) {
         return nullptr;
     }
@@ -154,10 +188,15 @@ GameObject* DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& posit
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
             transform->SetWorldPosition(position);
             transform->SetWorldRotation(rotation);
+            transform->SetScale(baseEnemyScale_ * scaleMultiplier);
+        }
+
+        if (auto collider = enemy->GetComponent<SphereColliderComponent>()) {
+            collider->SetLocalRadius(baseColliderRadius_ * scaleMultiplier);
         }
 
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
-            // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ想定
+            // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ
             enemyComp->Initialize();
         }
 

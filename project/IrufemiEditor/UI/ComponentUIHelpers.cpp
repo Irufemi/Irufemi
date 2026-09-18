@@ -12,6 +12,7 @@
 #include "Framework/Component/Utility/SplineNodeComponent.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Core/EditorManager.h"
 #include <algorithm>
 #include <functional>
 
@@ -527,6 +528,11 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             char buffer[256];
                             strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
 
+                            bool isPrefabProp = (lowerName.find("prefab") != std::string::npos);
+                            if (isPrefabProp) {
+                                ImGui::SetNextItemWidth((std::max)(50.0f, ImGui::GetContentRegionAvail().x - 70.0f));
+                            }
+
                             static std::string startStr;
                             if (ImGui::InputText(hiddenName.c_str(), buffer, sizeof(buffer))) {
                                 *str = buffer;
@@ -538,6 +544,18 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                 std::string endStr = *str;
                                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
                                     startStr, endStr, [str](const std::string& v) { *str = v; }));
+                            }
+
+                            if (isPrefabProp && !str->empty()) {
+                                ImGui::SameLine();
+                                if (ImGui::Button((std::string(ICON_FA_WRENCH " Open##") + prop.name).c_str(), ImVec2(65.0f, 0))) {
+                                    if (auto em = EditorManager::GetInstance()) {
+                                        em->EnterPrefabMode(*str);
+                                    }
+                                }
+                                if (ImGui::IsItemHovered()) {
+                                    ImGui::SetTooltip("Open in Prefab Edit Mode");
+                                }
                             }
                         }
 

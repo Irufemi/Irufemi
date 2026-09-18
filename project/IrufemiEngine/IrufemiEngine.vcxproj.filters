@@ -624,6 +624,9 @@
     <ClCompile Include="Framework\Prefab\PrefabManager.cpp">
       <Filter>Framework\Prefab</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Prefab\PrefabUtility.cpp">
+      <Filter>Framework\Prefab</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Scene\OptionsScene.cpp">
       <Filter>Framework\Scene</Filter>
     </ClCompile>
@@ -1152,6 +1155,9 @@
       <Filter>Framework\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Prefab\PrefabManager.h">
+      <Filter>Framework\Prefab</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Prefab\PrefabUtility.h">
       <Filter>Framework\Prefab</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Scene\OptionsScene.h">
