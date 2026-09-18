@@ -129,6 +129,9 @@
     <ClCompile Include="Combat\BossBulletManagerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
+    <ClCompile Include="Combat\EnemyBulletComponent.cpp">
+      <Filter>Combat</Filter>
+    </ClCompile>
     <ClCompile Include="Combat\DroneManagerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
@@ -268,6 +271,9 @@
       <Filter>Combat\Boss</Filter>
     </ClInclude>
     <ClInclude Include="Combat\BossBulletManagerComponent.h">
+      <Filter>Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Combat\EnemyBulletComponent.h">
       <Filter>Combat</Filter>
     </ClInclude>
     <ClInclude Include="Combat\DroneManagerComponent.h">

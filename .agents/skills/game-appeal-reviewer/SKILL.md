@@ -1,91 +1,115 @@
 ---
 name: game-appeal-reviewer
-description: "Evaluates the overall appeal, core hook, pacing, and technical showcase of the game (Gravity Shooter) from the perspective of players, contest judges, and game industry recruiters."
+description: "Evaluates the overall appeal, core hook, pacing, and technical showcase of the game (Gravity Shooter) from the perspective of players, contest judges, and game industry recruiters, enforcing strict reality checks on actual C++ logic and colliders."
 ---
 
 # Game Appeal Reviewer Skill
 
-このスキルは、プロのゲームディレクター、コンテスト審査員、およびゲーム会社の採用担当者（テクニカルディレクター・リードエンジニア）の視点に立ち、**「このゲームの魅力・独自性は何か」「開始30秒でプレイヤーを惹きつけられるか」「自作エンジンの技術的強みが画面に結実しているか」** を客観的かつ厳格に審査・レポートするためのスキルです。
+このスキルは、プロのゲームディレクター、コンテスト審査員、およびゲーム会社の採用担当者（テクニカルディレクター・リードエンジニア）の視点に立ち、**「このゲームの魅力・独自性は何か」「開始30秒でプレイヤーを惹きつけられるか」「技術的強みがゲームプレイとして本当に動いているか」** を客観的かつ厳格に審査・レポートするためのスキルです。
 
 ---
 
-## 1. スコープと参照ファイル
+## 1. 【絶対厳守】実装リアリティ・チェック (Reality Check) の原則
+
+**仕様書（GDD）に書かれている構想や、クラス名・変数名が存在することをもって「実装されている」と判断することは絶対に厳禁です。**
+必ず実際の `.cpp` ファイルの処理内容（`Update()`、`OnCollisionEnter()`、コールバック等）およびシーンデータ（`InGame.json`）を直接読み込み、**「本当にゲームとして動作しているか」「空っぽのダミーやスタブ（仮実装）で止まっていないか」** を容赦なく暴き出して評価してください。
+
+### 必須のチェック項目
+1. **敵AIの実態監査**:
+   - `RailShooterEnemyComponent` や `BossComponent` の `Update()` 内で、弾の発射、自機のターゲティング、攻撃パターン、回避行動が**実際にコードとして書かれているか？**
+   - 「単に前進しているだけ」「`// (仮)` で放置されている」「攻撃処理が存在しない」場合は、**「敵AI未実装（単なる動く的）」** として厳しく減点・指摘すること。
+2. **当たり判定（コリジョン）の実態監査**:
+   - コライダーがついているだけでなく、相互の衝突コールバック（`OnCollisionEnter`）が実装されているか？
+   - プレイヤー機体、敵、ガレキ、建造物（Environment）、地面の間に、**「すり抜け」「一方通行の判定」「リアクション抜け」** がないか？
+3. **ゲームループ・進行の実態監査**:
+   - シーン上のスポナーやウェーブ管理が実際に動いているか？（`DebugEnemySpawnerComponent` による単発デバッグ出現で止まっていないか？）
+   - クリア判定、被弾によるゲームオーバー判定、リザルト画面への遷移がステージ進行と連動しているか？
+
+---
+
+## 2. スコープと参照ファイル
 
 デフォルトの対象は **`project/Application_solo`** です。
-（ユーザーから「チーム制作用で実行して」などの明示的な指定があった場合のみ `project/Application_team` を対象とします。チーム制作側のファイルを誤って参照・変更しないよう厳格にスコープを分離してください。）
+（明示的な指定があった場合のみ `project/Application_team` を対象とします。）
 
-### 主要参照ドキュメント & データ
+### 主要参照ドキュメント & コード
 1. **ゲーム仕様書**:
-   - `project/Application_solo/GameDesignDocument.md`（世界観、コアメカニクス、操作感、ボス戦構想）
-2. **進捗・タスク管理**:
-   - `project/Application_solo/LE3B_15_スエヒロ_コウイチ_タスクリスト.md`
-   - `project/Application_solo/LE3B_15_スエヒロ_コウイチ_ロードマップ.md`
-3. **シーン・プレハブ構成**:
-   - `project/Application_solo/resources/scenes/InGame.json`
-   - `project/Application_solo/resources/prefabs/` 配下の各種プレハブ（ガレキ、エフェクト、弾幕）
-4. **戦闘・演出・プレイヤー実装**:
-   - `project/Application_solo/Combat/`（`PlayerBulletManagerComponent`, `BossComponent`, `BossBulletManagerComponent`, `EnemyComponent` 等）
-   - `project/Application_solo/Effects/`（`EffectManagerComponent`, `BossDamageVisualizerComponent` 等）
-   - `project/Application_solo/Environment/`（`DebrisManagerComponent` 等）
+   - `project/Application_solo/GameDesignDocument.md`（企画意図の把握用）
+2. **シーンデータ**:
+   - `project/Application_solo/resources/scenes/InGame.json`（実際の配置・コライダー・スポナー設定）
+3. **戦闘・敵制御コード（実態精査対象）**:
+   - `project/Application_solo/RailMechanics/RailShooterEnemyComponent.cpp`
+   - `project/Application_solo/Combat/Boss/BossComponent.cpp`
+   - `project/Application_solo/Combat/DebugEnemySpawnerComponent.cpp`
+   - `project/Application_solo/Combat/EnemyBeamComponent.cpp`
+4. **プレイヤー・ガレキ・当たり判定コード（実態精査対象）**:
+   - `project/Application_solo/Player/GravityPlayerComponent.cpp`
+   - `project/Application_solo/Player/PlayerHealthComponent.cpp`
+   - `project/Application_solo/Environment/DebrisComponent.cpp`
+   - `project/Application_solo/Environment/DebrisManagerComponent.cpp`
+5. **演出・エンジン基盤**:
+   - `project/Application_solo/Effects/EffectManagerComponent.cpp`
+   - `project/IrufemiEngine/Renderer/System/VoxelParticle/VoxelParticleManager.cpp`
+   - `project/IrufemiEngine/Renderer/System/ParticleGPU/GPUParticleManager.cpp`
 
 ---
 
-## 2. 審査の4大評価軸
-
-以下の4つの視点からプロジェクトを多角的に分析し、評価を行ってください。
+## 3. 審査の4大評価軸
 
 ### 軸1: コアフックと独自性（Core Hook & Novelty）
-- **開始30秒の体験**: プレイヤーが操作を開始して最初の敵と遭遇するまでの間に、「このゲームならではの強み（『グラビティデイズ』風のガレキ引き寄せ・一斉掃射）」を直感的に味わえる構成になっているか？
-- **差別化**: 単に弾を撃ち合う「普通の3Dレールシューティング」に陥っていないか？ 重力アクションとしての必然性と爽快感があるか？
+- **操作の手触りと実装の真実**: ガレキの引き寄せ・投擲が気持ちよく動いているか？ 敵や障害物にぶつけたときの判定とリアクションが成立しているか？
+- **ゲームサイクルの成立度**: 「ガレキを引き寄せる ➔ 狙う ➔ ぶつけて倒す ➔ 新たな敵が現れる」という最小ゲームループが実際に遊べる状態になっているか？
 
-### 軸2: 技術アピールの視覚的結実（Tech-to-Visual Showcase）★就活・ポートフォリオで最重要
+### 軸2: 敵AI・レベルデザインの実装度（AI & Level Reality）★重要
+- **敵の脅威度と駆け引き**: 敵がただの置物や直進する的になっていないか？ プレイヤーを脅かす弾幕、突撃、レーザーなどの行動ルーチンが本当に稼働しているか？
+- **当たり判定の完全性**: 衝突判定が片道通行になっていないか？ 被弾時のダメージやノックバック、破壊処理が双方向で正しく結線されているか？
+
+### 軸3: 自作エンジン技術の視覚的結実（Tech-to-Visual Showcase）
 - **エンジンの強みが画面に出ているか**:
-  - Compute ShaderによるGPUパーティクル
-  - 破砕演出（`VoxelParticleManager` / `VoxelParticleComponent`）
-  - 高速当たり判定・空間分割（BVH）やオブジェクトプール
-  - Prefab Linking による完全データ駆動化
-- **説得力**: 技術的な苦労（DirectX12、メモリ管理、ゼロアロケーション）が、ただの自己満足ではなく「大量のガレキが舞い散る派手さ」「60fps/120fpsの滑らかさ」「リッチなエフェクト」という目に見えるゲーム体験として結実しているか？
+  - Compute Shader による GPU パーティクル
+  - `VoxelParticle` によるメッシュ粉砕演出
+  - 空間分割（BVH）やオブジェクトプールによる 60fps 安定化
+- **演出の説得力**: 技術的な苦労が、ただの自己満足ではなく「大量のガレキが舞い散る派手さ」「リッチなエフェクト」という目に見える体験になっているか？
 
-### 軸3: テンポとドラマチックな起伏（Pacing & Tension Curve）
-- **レール進行の緩急**:
-  - 移動中に何も起きない「虚無の時間」がないか？
-  - 敵の出現パターン（ウェーブ）に緊張と緩和があるか？
-- **ボス戦のドラマ性**:
-  - チェイスバトル（時間・距離制限内に削り切る焦燥感）から、将来構想であるアリーナ決戦への移行など、クライマックスに向けた盛り上がりが設計されているか？
-
-### 軸4: ビジュアル・世界観の一貫性（Tone & Juice）
-- **トーン＆マナー**: 『DEATH STRANDING』風の退廃的な空気感やサイバーパンクの世界観と、エフェクトの色調（シアン、ネオンパープル、オレンジ等）、UI、サウンド構想が一致しているか？
-- **ゲームの手応え（Game Juice）**: 攻撃が当たった瞬間のヒット感、爆発の重厚感、敵撃破時の達成感が十分に伝わる設計になっているか？
+### 軸4: ゲームテンポと演出の手応え（Pacing & Game Juice）
+- **進行の起伏**: レール移動中のウェーブ構成に緩急があるか？（デバッグ配置のまま放置されていないか？）
+- **ヒット感・フィードバック**: ヒットストップ、カメラシェイク、被弾フラッシュなど、商用クオリティとして不可欠な演出が組み込まれているか？
 
 ---
 
-## 3. レポートの出力フォーマット
+## 4. レポートの出力フォーマット
 
-審査結果は必ず **日本語** で、以下の構成で出力してください。
+審査結果は必ず **日本語** で、お世辞や忖度のない率直かつ具体的な内容で出力してください。
 
 ```markdown
-# 🎮 ゲーム魅力・ポートフォリオ総合審査レポート
+# 🎮 ゲーム魅力・実装実態（Reality Check）総合審査レポート
 
 ## ■ 総合評価
-- **総合ランク**: 【 S / A / B / C 】
-- **一言要約**: （例: 「自作エンジンのボクセル技術と重力アクションが美しく融合。あとは敵ウェーブの緩急が揃えば即座にコンテスト上位を狙える作品」）
+- **総合ランク**: 【 S / A / B / C / D 】
+- **一言要約**: （現状の実態を端的に突いた総括）
+
+## ■ 実装リアリティ・チェック結果（動いているもの vs ダミー・未実装）
+| 要素 | 状態 | コード実態の診断結果 |
+| :--- | :---: | :--- |
+| **プレイヤー（重力アクション）** | ⭕ 実装済 | 引き寄せ、オービット、手動ロックオン、時間差投擲が動作 |
+| **敵AI（行動・攻撃）** | ❌ 未実装 | 直進のみで攻撃ルーチン・弾発射処理が完全欠落（ただの的） |
+| **当たり判定（コリジョン）** | ⚠️ 片道/不完全 | ガレキ➔敵は判定あるが、敵の衝突コールバックや地形判定が未実装 |
+| **敵ウェーブ・進行** | ❌ 未実装 | DebugEnemySpawner の単発出現のみでウェーブ未稼働 |
+| **自作エンジン演出（GPU/Voxel）** | ⭕ 実装済 | ComputeパーティクルとVoxel破砕がデータ駆動で正常稼働 |
 
 ## ■ 4大評価軸の詳細採点
-| 評価軸 | ランク | 評価コメント |
+| 評価軸 | ランク | 厳密な評価コメント |
 | :--- | :---: | :--- |
-| **1. コアフック・独自性** | A | ... |
-| **2. 技術アピール度** | S | ... |
-| **3. テンポ・起伏** | B | ... |
-| **4. 世界観・演出の一致** | A | ... |
+| **1. コアフック・独自性** | ... | ... |
+| **2. 敵AI・コリジョン実装度** | ... | ... |
+| **3. 技術アピール度** | ... | ... |
+| **4. テンポ・手応え（Juice）** | ... | ... |
 
-## ■ 審査員・採用担当者目線での「キラーポイント（絶賛点）」
-- （ポートフォリオや面接で最も刺さる強みを箇条書きで具体的に記載）
+## ■ 審査員・採用担当者が見たときの「致命的な見抜かれポイント」
+- （面接官や審査員が触った瞬間に「あ、これ中身まだできてないな」とバレる箇所）
 
-## ■ 伸びしろ・惜しいポイント（改善の余地）
-- （何が欠けていて、どうすればさらに魅力が跳ね上がるかを指摘）
-
-## ■ 今すぐできる魅力爆上げアクション TOP 3
-1. 【高優先度】...
-2. 【中優先度】...
-3. 【低優先度】...
+## ■ ポートフォリオとして完成させるための必須実装ロードマップ TOP 3
+1. 【最優先】...
+2. 【高優先】...
+3. 【中優先】...
 ```

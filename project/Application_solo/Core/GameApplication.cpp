@@ -31,6 +31,7 @@
 #include "Core/GameLoopManagerComponent.h"
 #include "Core/ResultManagerComponent.h"
 #include "Combat/EnemyBeamComponent.h"
+#include "Combat/EnemyBulletComponent.h"
 
 // エンジン機能
 #include "RHI/DirectX12/ShaderManager.h"
@@ -158,6 +159,7 @@ void RegisterComponents() {
     ComponentFactory::Register("BossBulletManagerComponent", "Game",
                                []() { return std::make_shared<BossBulletManagerComponent>(); });
     ComponentFactory::Register("EnemyBeamComponent", "Game", []() { return std::make_shared<EnemyBeamComponent>(); });
+    ComponentFactory::Register("EnemyBulletComponent", "Game", []() { return std::make_shared<EnemyBulletComponent>(); });
 
     ComponentFactory::Register("GameLoopManagerComponent", "Game",
                                []() { return std::make_shared<GameLoopManagerComponent>(); });
