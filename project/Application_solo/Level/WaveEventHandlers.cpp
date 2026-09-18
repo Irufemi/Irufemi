@@ -13,6 +13,7 @@
 #include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include "RailMechanics/RailShooterEnemyComponent.h"
 #include "Core/Math/MathFunction.h"
 #include <iostream>
 
@@ -44,6 +45,19 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
             Log::OutPutLog(std::cout, "[WaveManager] Warning: SpawnPoint with WaveId '" + waveId +
                                           "' not found in preview/execute.\n");
         }
+    }
+
+    // 2. OffsetFromRail の加算 (レール基準座標系: X = railRight, Y = 上方向(0,1,0), Z = railForward)
+    if (data.parameters.contains("OffsetFromRail")) {
+        const auto& offsetJson = data.parameters["OffsetFromRail"];
+        float ox = offsetJson.value("x", 0.0f);
+        float oy = offsetJson.value("y", 0.0f);
+        float oz = offsetJson.value("z", 0.0f);
+
+        Irufemi::Vector3 railUp = {0.0f, 1.0f, 0.0f};
+        spawnPos.x += railRight.x * ox + railUp.x * oy + railForward.x * oz;
+        spawnPos.y += railRight.y * ox + railUp.y * oy + railForward.y * oz;
+        spawnPos.z += railRight.z * ox + railUp.z * oy + railForward.z * oz;
     }
 
     int count = 1;
@@ -86,6 +100,9 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
     auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
     Irufemi::Vector3 spawnRot = {0.0f, std::atan2(-railForward.x, -railForward.z), 0.0f};
 
+    float combatDuration = data.parameters.value("CombatDuration", 7.5f);
+    float targetDistance = data.parameters.value("TargetDistance", 65.0f);
+
     auto engine = BaseModel::GetIrufemiEngine();
     auto scene = engine ? engine->GetSceneManager()->GetCurrentScene() : nullptr;
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
@@ -93,7 +110,12 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
         if (spawnerObj) {
             if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
                 for (const auto& pos : positions) {
-                    spawner->SpawnEnemy(pos, spawnRot);
+                    if (auto enemyObj = spawner->SpawnEnemy(pos, spawnRot)) {
+                        if (auto enemyComp = enemyObj->GetComponent<RailShooterEnemyComponent>()) {
+                            enemyComp->SetCombatDuration(combatDuration);
+                            enemyComp->SetTargetDistance(targetDistance);
+                        }
+                    }
                 }
                 Log::OutPutLog(std::cout, "[WaveManager] Spawned " + std::to_string(positions.size()) +
                                               " enemies at distance: " + std::to_string(data.triggerDistance) + "\n");

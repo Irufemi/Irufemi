@@ -156,8 +156,8 @@ void RailShooterEnemyComponent::Update() {
         // 相対同期を解除し、自機の脇をすり抜けて後方へ急加速
         myPos.z -= speed_ * 2.5f * dt;
 
-        // 自機後方に完全に抜けたら消滅
-        if (myPos.z < playerPos.z - 20.0f) {
+        // 自機後方に完全に抜けたら消滅（画面外へ抜けるまで安全に生存）
+        if (myPos.z < playerPos.z - 30.0f) {
             if (onDeathCallback_) {
                 onDeathCallback_(gameObject_);
             } else {

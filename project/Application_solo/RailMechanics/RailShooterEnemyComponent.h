@@ -43,6 +43,16 @@ public:
         onDeathCallback_ = std::move(callback);
     }
 
+    void SetCombatDuration(float duration) {
+        combatDuration_ = duration;
+    }
+    void SetTargetDistance(float distance) {
+        targetDistance_ = distance;
+    }
+    void SetShootInterval(float interval) {
+        shootInterval_ = interval;
+    }
+
 private:
     void ShootAtPlayer(const Irufemi::Vector3& playerPos);
     GameObject* GetPlayerObject();
@@ -50,7 +60,7 @@ private:
 private:
     EnemyAIState state_ = EnemyAIState::Approach; //!< 現在のAIステート
     float stateTimer_ = 0.0f;                     //!< ステート内タイマー
-    float combatDuration_ = 3.5f;                 //!< 滞空交戦の制限時間（秒）
+    float combatDuration_ = 7.5f;                 //!< 滞空交戦の制限時間（秒）
     float shootInterval_ = 1.8f;                  //!< 射撃インターバル（秒）
     float shootTimer_ = 0.6f;                     //!< 射撃タイマー
     float targetDistance_ = 65.0f;                //!< 自機前方との維持距離

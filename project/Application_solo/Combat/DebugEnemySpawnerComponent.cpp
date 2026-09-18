@@ -137,14 +137,14 @@ void DebugEnemySpawnerComponent::Update() {
     }
 }
 
-void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
+GameObject* DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
     if (!enemyPool_) {
-        return;
+        return nullptr;
     }
 
     auto handle = enemyPool_->Acquire();
     if (!handle.IsValid()) {
-        return;
+        return nullptr;
     }
 
     auto enemy = enemyPool_->Resolve(handle);
@@ -162,5 +162,8 @@ void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, co
         }
 
         enemy->SetIsActive(true);
+        return enemy.get();
     }
+
+    return nullptr;
 }
