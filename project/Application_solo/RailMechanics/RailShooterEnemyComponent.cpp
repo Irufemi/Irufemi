@@ -21,6 +21,8 @@ void RailShooterEnemyComponent::OnRegisterProperties() {
     RegisterProperty("ShootInterval", &shootInterval_);
     RegisterProperty("TargetDistance", &targetDistance_);
     RegisterProperty("BodyDamage", &bodyDamage_);
+    RegisterProperty("BulletScale", &bulletScale_);
+    RegisterProperty("BulletSpeed", &bulletSpeed_);
 }
 
 void RailShooterEnemyComponent::Initialize() {
@@ -206,16 +208,16 @@ void RailShooterEnemyComponent::ShootAtPlayer(const Irufemi::Vector3& playerPos)
 
     auto bulletTrans = bulletObj->GetTransform();
     bulletTrans->SetWorldPosition(myPos);
-    bulletTrans->SetScale({0.8f, 0.8f, 0.8f});
+    bulletTrans->SetScale({bulletScale_, bulletScale_, bulletScale_});
 
     auto meshRenderer = bulletObj->AddComponent<MeshRendererComponent>();
-    meshRenderer->LoadModel("resources/model/BossBulletSphere.obj");
+    meshRenderer->LoadModel("resources/model/EnemyBullet/EnemyBullet.obj");
     meshRenderer->Initialize();
 
     auto collider = bulletObj->AddComponent<SphereColliderComponent>();
     collider->Initialize();
     collider->isTrigger_ = true;
-    collider->SetLocalRadius(0.8f);
+    collider->SetLocalRadius(bulletScale_);
 
     auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
     if (cm) {
@@ -225,7 +227,7 @@ void RailShooterEnemyComponent::ShootAtPlayer(const Irufemi::Vector3& playerPos)
 
     auto bulletComp = bulletObj->AddComponent<EnemyBulletComponent>();
     bulletComp->Initialize();
-    bulletComp->Launch(dir, 32.0f, 10);
+    bulletComp->Launch(dir, bulletSpeed_, 10);
 
     scene->AddGameObject(bulletObj);
 }

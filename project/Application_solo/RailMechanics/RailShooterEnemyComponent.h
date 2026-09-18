@@ -52,6 +52,12 @@ public:
     void SetShootInterval(float interval) {
         shootInterval_ = interval;
     }
+    void SetBulletScale(float scale) {
+        bulletScale_ = scale;
+    }
+    void SetBulletSpeed(float speed) {
+        bulletSpeed_ = speed;
+    }
 
 private:
     void ShootAtPlayer(const Irufemi::Vector3& playerPos);
@@ -66,6 +72,8 @@ private:
     float targetDistance_ = 65.0f;                //!< 自機前方との維持距離
     float hoverTimer_ = 0.0f;                     //!< 浮遊サイン波タイマー
     int bodyDamage_ = 20;                         //!< 体当たり衝突ダメージ
+    float bulletScale_ = 0.3f;                    //!< 敵弾のスケール・コライダー半径
+    float bulletSpeed_ = 32.0f;                   //!< 敵弾の飛翔速度
 
     float spawnProgress_ = 0.5f; ///< プレイヤーがどの進行度に達したらアクティブになるか (0.0 ~ 1.0)
     bool isActive_ = false;      ///< 現在活動中かどうか

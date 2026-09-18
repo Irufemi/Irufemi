@@ -153,7 +153,7 @@
         {
           "type": "VoxelParticleComponent",
           "data": {
-            "overrideModelName": "resources/model/BossBulletSphere.obj",
+            "overrideModelName": "resources/model/BossDroneBullet/BossDroneBullet.obj",
             "resolution": [2, 2, 2],
             "preAllocateCount": 10,
             "particleType": 5,

@@ -3881,7 +3881,7 @@
             },
             {
               "data": {
-                "modelName": "resources/model/BossBulletSphere.obj"
+                "modelName": "resources/model/BossDroneBullet/BossDroneBullet.obj"
               },
               "type": "ModelBatchRendererComponent"
             },

@@ -28,7 +28,7 @@ void BossBulletManagerComponent::Initialize() {
 
     // バッチレンダラに球モデルを設定
     if (auto batchRenderer = gameObject_->GetComponent<ModelBatchRendererComponent>()) {
-        batchRenderer->LoadModel("resources/model/BossBulletSphere.obj");
+        batchRenderer->LoadModel("resources/model/BossDroneBullet/BossDroneBullet.obj");
         // TODO: マテリアル側での弾色設定（紫色等）に対応後、マテリアルパラメータを反映する
     }
 
