@@ -144,6 +144,12 @@ public:
     virtual void OnDisable() {}
 
     /**
+     * @brief 所属するシーンが設定・変更された時に呼ばれる
+     * @param scene 設定されたシーンのポインタ（破棄・シーン離脱時はnullptr）
+     */
+    virtual void OnSetScene(class BaseScene* scene) {}
+
+    /**
      * @brief 毎フレームの更新処理
      */
     virtual void Update() {}

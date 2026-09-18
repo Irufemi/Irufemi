@@ -233,6 +233,9 @@ void BaseScene::Update() {
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
     if (isPlayMode && engine_) {
         engine_->GetCollisionManager()->CheckAllCollisions();
+    } else if (engine_) {
+        // 非プレイモード（エディタ・プレハブ編集モード）時もコライダーの登録・削除キューを同期
+        engine_->GetCollisionManager()->FlushPendingCommands();
     }
 
     // 破棄フラグが立った子オブジェクトを一括削除 (GC)

@@ -29,7 +29,9 @@ PrefabMetrics PrefabUtility::ExtractMetrics(const std::string& prefabPath) {
             }
         } else if (type == "SphereColliderComponent") {
             metrics.hasSphereCollider = true;
-            if (data.contains("radius")) {
+            if (data.contains("localRadius")) {
+                metrics.colliderRadius = data["localRadius"].get<float>();
+            } else if (data.contains("radius")) {
                 metrics.colliderRadius = data["radius"].get<float>();
             } else if (data.contains("Local Radius")) {
                 metrics.colliderRadius = data["Local Radius"].get<float>();

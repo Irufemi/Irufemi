@@ -42,6 +42,11 @@ public:
     virtual void OnDisable() override;
 
     /**
+     * @brief 所属するシーンが設定・変更された時の通知（シーン所属実体のみ物理登録）
+     */
+    virtual void OnSetScene(BaseScene* scene) override;
+
+    /**
      * @brief Initialize を実行する。
      */
     virtual void Initialize() override {}

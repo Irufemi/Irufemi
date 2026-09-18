@@ -43,15 +43,8 @@ void RailShooterEnemyComponent::Initialize() {
     }
 
     if (gameObject_) {
-        auto collider = gameObject_->GetComponent<SphereColliderComponent>();
-        if (!collider) {
-            collider = gameObject_->AddComponent<SphereColliderComponent>().get();
-            collider->Initialize();
-        }
-        if (collider) {
-            collider->isTrigger_ = true;
-            collider->SetLocalRadius(2.0f);
-
+        // コライダーのサイズ・形状はプレハブ（アセット）側を100%尊重し、コードによる勝手な追加・上書きを行わない
+        if (auto collider = gameObject_->GetComponent<SphereColliderComponent>()) {
             auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
             if (cm) {
                 collider->layer_ = cm->GetLayerMask("Enemy");

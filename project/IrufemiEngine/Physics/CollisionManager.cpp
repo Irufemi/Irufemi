@@ -371,6 +371,9 @@ void CollisionManager::CheckAllCollisions() {
     previousCollisions_ = std::move(currentCollisions);
 }
 void CollisionManager::DrawDebug(GameObject* selectedObject) {
+    // 保留中のコライダー追加・削除コマンドを確定してデバッグ描画に即時反映
+    FlushPendingCommands();
+
     if (!debugLine_) {
         return;
     }

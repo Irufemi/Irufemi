@@ -178,6 +178,11 @@ void GameObject::SetScene(BaseScene* scene) {
     if (scene_ && !name_.empty()) {
         scene_->OnGameObjectNameChanged(shared_from_this(), "", name_);
     }
+    for (auto& comp : components_) {
+        if (comp) {
+            comp->OnSetScene(scene);
+        }
+    }
     for (auto& child : children_) {
         if (child) {
             child->SetScene(scene);
@@ -443,6 +448,14 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
         return;
     }
     std::lock_guard<std::recursive_mutex> lock(structureMutex_);
+
+    // TransformComponent の重複追加を防止（1オブジェクトにつき常に1つのみ）
+    if (dynamic_cast<TransformComponent*>(component.get())) {
+        if (GetComponent<TransformComponent>()) {
+            Log::OutPutLog(std::cerr, "[GameObject] Warning: TransformComponent already exists on '" + name_ + "'. Skipping duplicate addition.\n");
+            return;
+        }
+    }
     component->SetGameObject(this);
     components_.push_back(component);
     componentMap_[typeid(*component)].push_back(component.get());
@@ -846,6 +859,14 @@ std::shared_ptr<GameObject> GameObject::CloneInternal(std::unordered_map<uint64_
 
     // Deep copy components
     for (const auto& comp : components_) {
+        // TransformComponentはコンストラクタで既に1つ存在するため、新規追加せず値をコピーして再利用
+        if (auto trans = dynamic_cast<TransformComponent*>(comp.get())) {
+            if (auto cloneTrans = clone->GetComponent<TransformComponent>()) {
+                cloneTrans->Deserialize(trans->Serialize());
+                continue;
+            }
+        }
+
         auto clonedComp = comp->Clone();
         if (clonedComp) {
             clone->AddComponent(clonedComp);

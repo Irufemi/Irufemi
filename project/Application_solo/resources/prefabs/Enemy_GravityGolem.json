@@ -1,53 +1,71 @@
 {
-  "name": "Enemy_GravityGolem",
-  "isFolder": false,
-  "isActive": true,
   "components": [
     {
-      "type": "TransformComponent",
       "data": {
-        "scale": [
-          1.2,
-          1.2,
-          1.2
-        ]
-      }
-    },
-    {
-      "type": "MeshRendererComponent",
-      "data": {
-        "modelName": "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj"
-      }
-    },
-    {
-      "type": "SphereColliderComponent",
-      "data": {
-        "isTrigger": true,
-        "radius": 2.0,
-        "center": [
+        "inheritScale": true,
+        "position": [
           0.0,
           0.0,
           0.0
+        ],
+        "rotation": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "scale": [
+          2.0,
+          2.0,
+          2.0
         ]
-      }
+      },
+      "type": "TransformComponent"
     },
     {
-      "type": "TargetableComponent",
-      "data": {}
+      "data": {
+        "modelName": "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj"
+      },
+      "type": "MeshRendererComponent"
     },
     {
-      "type": "RailShooterEnemyComponent",
+      "data": {
+        "isStatic": false,
+        "isTrigger": false,
+        "layer": 4,
+        "localOffset": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "localRadius": 0.5,
+        "mask": 18,
+        "pushbackMask": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "type": "SphereColliderComponent"
+    },
+    {
+      "type": "TargetableComponent"
+    },
+    {
       "data": {
         "BodyDamage": 20,
-        "BulletScale": 0.3,
+        "BulletScale": 0.30000001192092896,
         "BulletSpeed": 32.0,
         "CombatDuration": 7.5,
         "HP": 100,
-        "ShootInterval": 1.8,
+        "ShootInterval": 1.7999999523162842,
         "SpawnProgress": 0.5,
         "Speed": 15.0,
         "TargetDistance": 65.0
-      }
+      },
+      "type": "RailShooterEnemyComponent"
     }
-  ]
+  ],
+  "instanceId": 7391454204695923275,
+  "name": "Enemy_GravityGolem",
+  "tag": "Untagged"
 }

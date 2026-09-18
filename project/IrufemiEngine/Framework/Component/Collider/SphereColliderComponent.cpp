@@ -67,9 +67,15 @@ void SphereColliderComponent::Deserialize(const nlohmann::json& j) {
         localOffset_.x = j["localOffset"][0];
         localOffset_.y = j["localOffset"][1];
         localOffset_.z = j["localOffset"][2];
+    } else if (j.contains("center")) {
+        localOffset_.x = j["center"][0];
+        localOffset_.y = j["center"][1];
+        localOffset_.z = j["center"][2];
     }
     if (j.contains("localRadius")) {
         localRadius_ = j["localRadius"];
+    } else if (j.contains("radius")) {
+        localRadius_ = j["radius"];
     }
 }
 

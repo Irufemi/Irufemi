@@ -247,6 +247,10 @@ void EditorManager::EnterPrefabMode(const std::string& prefabPath) {
     // Prefabの読み込み
     auto prefabObj = SceneSerializer::LoadPrefab(prefabPath);
     if (prefabObj) {
+        // プレハブ編集モードでの表示名はファイル名（拡張子なし）に統一し、(Clone)が付かないようにする
+        std::string prefabName = std::filesystem::path(prefabPath).stem().string();
+        prefabObj->SetName(prefabName);
+
         if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
             baseScene->AddGameObject(prefabObj);
             SetSelectedObject(prefabObj);
@@ -272,8 +276,15 @@ void EditorManager::ExitPrefabMode(bool saveChanges) {
         if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
             auto gameObjects = baseScene->GetGameObjects();
             if (!gameObjects.empty()) {
+                auto rootObj = gameObjects.front();
+                // 保存時もプレハブ名に正規化
+                std::string prefabName = std::filesystem::path(editingPrefabPath_).stem().string();
+                rootObj->SetName(prefabName);
+
                 // シーン内の最初のルートオブジェクトをPrefabとして上書き保存
-                SceneSerializer::SavePrefab(gameObjects.front(), editingPrefabPath_);
+                SceneSerializer::SavePrefab(rootObj, editingPrefabPath_);
+                // 保存したプレハブのメモリキャッシュをクリアして次回生成時に最新データをロード
+                SceneSerializer::ClearCache();
                 Log::OutPutLog(std::cout, "Prefab saved successfully: " + editingPrefabPath_);
             }
         }

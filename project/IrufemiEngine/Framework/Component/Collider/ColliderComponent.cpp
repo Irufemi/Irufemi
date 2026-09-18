@@ -7,7 +7,8 @@ ColliderComponent::~ColliderComponent() {
 }
 
 void ColliderComponent::Start() {
-    if (collisionManager_ && gameObject_ && gameObject_->GetIsActive()) {
+    // 有効なシーンに所属している実体のみ登録
+    if (collisionManager_ && gameObject_ && gameObject_->GetScene() && gameObject_->GetIsActive()) {
         collisionManager_->RegisterCollider(this);
     }
 }
@@ -19,7 +20,8 @@ void ColliderComponent::OnDestroy() {
 }
 
 void ColliderComponent::OnEnable() {
-    if (collisionManager_) {
+    // シーンに正式に追加されている実体のみ物理マネージャに登録（テンプレート等の誤登録を防止）
+    if (collisionManager_ && gameObject_ && gameObject_->GetScene()) {
         collisionManager_->RegisterCollider(this);
     }
 }
@@ -27,6 +29,16 @@ void ColliderComponent::OnEnable() {
 void ColliderComponent::OnDisable() {
     if (collisionManager_) {
         collisionManager_->UnregisterCollider(this);
+    }
+}
+
+void ColliderComponent::OnSetScene(BaseScene* scene) {
+    if (collisionManager_ && gameObject_) {
+        if (scene && gameObject_->GetIsActive()) {
+            collisionManager_->RegisterCollider(this);
+        } else if (!scene) {
+            collisionManager_->UnregisterCollider(this);
+        }
     }
 }
 
