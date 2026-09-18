@@ -452,7 +452,8 @@ void GameObject::AddComponent(std::shared_ptr<Component> component) {
     // TransformComponent の重複追加を防止（1オブジェクトにつき常に1つのみ）
     if (dynamic_cast<TransformComponent*>(component.get())) {
         if (GetComponent<TransformComponent>()) {
-            Log::OutPutLog(std::cerr, "[GameObject] Warning: TransformComponent already exists on '" + name_ + "'. Skipping duplicate addition.\n");
+            Log::OutPutLog(std::cerr, "[GameObject] Warning: TransformComponent already exists on '" + name_ +
+                                          "'. Skipping duplicate addition.\n");
             return;
         }
     }

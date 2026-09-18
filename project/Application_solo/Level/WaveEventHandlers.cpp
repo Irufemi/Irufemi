@@ -159,9 +159,13 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
         } else {
             // スポナーが見つからない場合もプレハブから自動解決
             auto metrics = PrefabUtility::ExtractMetrics("resources/prefabs/Enemy_GravityGolem.json");
-            if (!metrics.modelPath.empty()) modelPath = metrics.modelPath;
+            if (!metrics.modelPath.empty()) {
+                modelPath = metrics.modelPath;
+            }
             baseScale = metrics.baseScale;
-            if (metrics.hasSphereCollider) baseRadius = metrics.colliderRadius;
+            if (metrics.hasSphereCollider) {
+                baseRadius = metrics.colliderRadius;
+            }
         }
     }
 

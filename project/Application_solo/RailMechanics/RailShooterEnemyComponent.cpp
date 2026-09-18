@@ -182,18 +182,14 @@ void RailShooterEnemyComponent::ShootAtPlayer(const Irufemi::Vector3& playerPos)
     }
 
     Irufemi::Vector3 myPos = transform->GetWorldPosition();
-    Irufemi::Vector3 dir = {
-        playerPos.x - myPos.x,
-        playerPos.y - myPos.y,
-        playerPos.z - myPos.z
-    };
+    Irufemi::Vector3 dir = {playerPos.x - myPos.x, playerPos.y - myPos.y, playerPos.z - myPos.z};
     float len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
     if (len > 0.0001f) {
         dir.x /= len;
         dir.y /= len;
         dir.z /= len;
     } else {
-        dir = { 0.0f, 0.0f, -1.0f };
+        dir = {0.0f, 0.0f, -1.0f};
     }
 
     auto bulletObj = std::make_shared<GameObject>("EnemyBullet");
