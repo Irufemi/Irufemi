@@ -42,7 +42,8 @@ public:
      * @param scale 弾のスケール・コライダー半径
      * @return 射出された弾の GameObject ポインタ（プール枯渇時は nullptr）
      */
-    GameObject* FireBullet(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction, float speed = 30.0f, int damage = 10, float scale = 0.4f);
+    GameObject* FireBullet(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction, float speed = 30.0f,
+                           int damage = 10, float scale = 0.4f);
 
     /**
      * @brief 寿命終了または衝突した弾を非アクティブ化し、プールに返却する
@@ -57,5 +58,5 @@ private:
     std::string bulletModelPath_ = "resources/model/EnemyBullet/EnemyBullet.obj"; ///< 弾の3Dモデルパス
     std::unique_ptr<ObjectPool<GameObject>> bulletPool_;                          ///< 弾のオブジェクトプール
     std::unordered_map<GameObject*, ObjectPool<GameObject>::Handle> activeBulletHandles_; ///< 飛翔中弾のハンドルマップ
-    bool isWarmedUp_ = false;                                                     ///< 事前ウォームアップ完了フラグ
+    bool isWarmedUp_ = false; ///< 事前ウォームアップ完了フラグ
 };
