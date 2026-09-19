@@ -97,7 +97,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     dxCommon_ = dxCommon;
 
     /*開発UIを出そう*/
-    // ImGuiの初期化。詳細はさして重要ではないので開設は省略する。
+    // ImGuiの初期化。詳細はさして重要ではないので解説は省略する。
     // こういうもんである
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

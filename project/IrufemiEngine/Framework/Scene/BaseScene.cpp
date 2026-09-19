@@ -245,8 +245,16 @@ void BaseScene::Update() {
         }
     }
 
-    // 破棄フラグが立ったオブジェクトを一括削除 (GC - C++20 std::erase_if)
-    std::erase_if(gameObjects_, [](const std::shared_ptr<GameObject>& obj) { return !obj || obj->IsDestroyed(); });
+    // 破棄フラグが立ったオブジェクトを一括削除 (GC - C++20 std::erase_if) と同時にレジストリからも解除
+    std::erase_if(gameObjects_, [this](const std::shared_ptr<GameObject>& obj) {
+        if (!obj || obj->IsDestroyed()) {
+            if (obj && objectRegistry_) {
+                objectRegistry_->Unregister(obj);
+            }
+            return true;
+        }
+        return false;
+    });
 
     if (debugRenderer && isPlayMode && !isPaused) {
         debugRenderer->EndSimulationFrame();

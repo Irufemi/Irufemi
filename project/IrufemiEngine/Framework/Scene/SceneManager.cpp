@@ -12,6 +12,8 @@
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Physics/CollisionManager.h"
 #include "Renderer/Camera/CameraManager.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 
 namespace {
 /**
@@ -269,22 +271,29 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
         }
     } else if (transitionPhase_ == TransitionPhase::Initializing) {
         // バックグラウンドでのシーン破棄・初期化完了待ち
-        if (!isAsyncInitializing_.load()) {
-            if (initFuture_.valid()) {
-                initFuture_.get(); // 例外があればキャッチ
+        if (initFuture_.valid() && initFuture_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            try {
+                initFuture_.get(); // ワーカースレッドの完了待機および例外の再スロー
+            } catch (const std::exception& e) {
+                Log::OutPutLog(std::cerr, std::string("[SceneManager] Scene async initialization failed: ") + e.what() + "\n");
+            } catch (...) {
+                Log::OutPutLog(std::cerr, "[SceneManager] Scene async initialization failed with unknown exception\n");
             }
 
             {
                 std::lock_guard<std::mutex> lock(nextSceneMutex_);
-                SceneStackItem item;
-                item.name = pendingTransition_;
-                item.scene = std::move(nextScene_);
-                // ここではまだ呼ばない（ロード完了後に呼ぶ）
-                sceneStack_.push_back(std::move(item));
+                if (nextScene_) {
+                    SceneStackItem item;
+                    item.name = pendingTransition_;
+                    item.scene = std::move(nextScene_);
+                    // ここではまだ呼ばない（ロード完了後に呼ぶ）
+                    sceneStack_.push_back(std::move(item));
+                }
             }
 
             pendingTransition_.clear(); // ロード完了後にクリアする
             isInitializing_ = false;
+            isAsyncInitializing_.store(false);
 
             // ポーズ可能なシーンかどうかに応じてマウスをロック
             if (!sceneStack_.empty()) {
