@@ -4,6 +4,7 @@
 #include <string>
 
 class DebrisManagerComponent;
+class EffectManagerComponent;
 
 /**
  * @class DestructibleEnvironmentComponent
@@ -45,4 +46,5 @@ private:
     int debrisSpawnCount_ = 3;
 
     DebrisManagerComponent* debrisManager_ = nullptr;
+    EffectManagerComponent* effectManager_ = nullptr;
 };

@@ -150,14 +150,10 @@ public:
     static void RemapJSONInstanceIDs(nlohmann::json& j, std::unordered_map<uint64_t, uint64_t>& outIdMap);
 
     /**
-     * @brief 新しいコンポーネントを追加する
-     * @return 追加されたコンポーネントの共有ポインタ
+     * @brief 指定した型の新しいコンポーネントをアタッチして返す
+     * @return アタッチされたコンポーネントの共有ポインタ
      */
     template <typename T, typename... Args>
-    /**
-     * @brief 指定した型の新しいコンポーネントをアタッチして返す。
-     * @return アタッチされたコンポーネントのポインタ
-     */
     std::shared_ptr<T> AddComponent(Args&&... args) {
         std::shared_ptr<T> component;
         if constexpr (IsPooledComponent<T>::value) {
@@ -178,12 +174,9 @@ public:
 
     /**
      * @brief 指定した型のコンポーネントを取得する
-     */
-    template <typename T>
-    /**
-     * @brief 指定した型のコンポーネントを取得する。
      * @return 見つかった場合はそのポインタ、無ければnullptr
      */
+    template <typename T>
     T* GetComponent() const {
         std::lock_guard<std::recursive_mutex> lock(structureMutex_);
         auto it = componentMap_.find(typeid(T));
@@ -217,12 +210,9 @@ public:
 
     /**
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントを1つ探して取得する
+     * @return 見つかった場合はそのポインタ、無ければnullptr
      */
     template <typename T>
-    /**
-     * @brief ComponentInChildren を取得する。
-     * @return 取得された ComponentInChildren
-     */
     T* GetComponentInChildren() {
         if (T* comp = GetComponent<T>()) {
             return comp;
@@ -237,12 +227,9 @@ public:
 
     /**
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントをすべて取得する
+     * @return 見つかったコンポーネントポインタのリスト
      */
     template <typename T>
-    /**
-     * @brief ComponentsInChildren を取得する。
-     * @return 取得された ComponentsInChildren
-     */
     std::vector<T*> GetComponentsInChildren() {
         std::vector<T*> results;
         GetComponentsInChildrenRecursive<T>(results);

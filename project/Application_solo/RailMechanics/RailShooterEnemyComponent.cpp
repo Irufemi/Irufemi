@@ -26,6 +26,9 @@ void RailShooterEnemyComponent::OnRegisterProperties() {
 }
 
 void RailShooterEnemyComponent::Initialize() {
+    if (!gameObject_) {
+        return;
+    }
     hp_ = 100;
     isActive_ = true;
     state_ = EnemyAIState::Approach;
@@ -42,11 +45,10 @@ void RailShooterEnemyComponent::Initialize() {
         targetable->SetTargetablePredicate([this]() { return IsAlive(); });
     }
 
-    if (gameObject_) {
-        // コライダーのサイズ・形状はプレハブ（アセット）側を100%尊重し、コードによる勝手な追加・上書きを行わない
-        if (auto collider = gameObject_->GetComponent<SphereColliderComponent>()) {
-            auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
-            if (cm) {
+    // コライダーのサイズ・形状はプレハブ（アセット）側を100%尊重し、コードによる勝手な追加・上書きを行わない
+    if (auto collider = gameObject_->GetComponent<SphereColliderComponent>()) {
+        if (auto engine = GetEngine()) {
+            if (auto cm = engine->GetCollisionManager()) {
                 collider->layer_ = cm->GetLayerMask("Enemy");
                 collider->mask_ = cm->GetLayerMask("Player") | cm->GetLayerMask("Debris_Player");
             }
@@ -74,7 +76,7 @@ void RailShooterEnemyComponent::Update() {
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float dt = GetEngine() ? GetEngine()->GetGameDeltaTime() : 0.0f;
     if (dt <= 0.0f) {
         return;
     }
@@ -208,7 +210,8 @@ void RailShooterEnemyComponent::ShootAtPlayer(const Irufemi::Vector3& playerPos)
     collider->isTrigger_ = true;
     collider->SetLocalRadius(bulletScale_);
 
-    auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+    auto engine = GetEngine();
+    auto cm = engine ? engine->GetCollisionManager() : nullptr;
     if (cm) {
         collider->layer_ = cm->GetLayerMask("Enemy");
         collider->mask_ = cm->GetLayerMask("Player");

@@ -31,6 +31,7 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
+    void OnRegisterProperties() override;
 
     /**
      * @brief CanUpdateInEditMode かどうかを判定する。

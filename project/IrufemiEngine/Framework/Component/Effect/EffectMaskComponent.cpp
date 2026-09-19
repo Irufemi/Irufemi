@@ -52,6 +52,17 @@ void EffectMaskComponent::Update() {
     }
 }
 
+void EffectMaskComponent::OnRegisterProperties() {
+    RegisterProperty("Enable Effect Mask", &enableEffectMask_);
+    RegisterProperty("Custom Effect Type", &customEffectType_);
+    RegisterProperty("Color 1", &customParams_.color1);
+    RegisterProperty("Color 2", &customParams_.color2);
+    RegisterProperty("Param 1", &customParams_.param1);
+    RegisterProperty("Param 2", &customParams_.param2);
+    RegisterProperty("Param 3", &customParams_.param3);
+    RegisterProperty("Param 4", &customParams_.param4);
+}
+
 nlohmann::json EffectMaskComponent::Serialize() {
     nlohmann::json j;
     j["enableEffectMask"] = enableEffectMask_;

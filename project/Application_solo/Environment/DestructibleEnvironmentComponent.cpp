@@ -21,6 +21,10 @@ void DestructibleEnvironmentComponent::Start() {
         if (managerObj) {
             debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
         }
+        auto effectObj = scene->FindGameObject("EffectManager");
+        if (effectObj) {
+            effectManager_ = effectObj->GetComponent<EffectManagerComponent>();
+        }
     }
 }
 
@@ -40,12 +44,13 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
             Irufemi::Vector3 pos = transform->GetWorldPosition();
 
             // 破壊エフェクト（ヒットエフェクト流用）
-            EffectManagerComponent* effectManager = nullptr;
-            if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
-                effectManager = go->GetComponent<EffectManagerComponent>();
+            if (!effectManager_ && gameObject_->GetScene()) {
+                if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                    effectManager_ = go->GetComponent<EffectManagerComponent>();
+                }
             }
-            if (effectManager) {
-                effectManager->PlayEffect("Dust", pos);
+            if (effectManager_) {
+                effectManager_->PlayEffect("Dust", pos);
             }
 
             // 瓦礫のスポーン（散らばるように）
