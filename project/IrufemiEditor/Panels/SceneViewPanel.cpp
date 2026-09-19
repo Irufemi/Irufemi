@@ -77,7 +77,7 @@ void SceneViewPanel::Draw() {
             ImGui::GetWindowDrawList()->PushClipRect(minPos, maxPos, true);
 
             if (auto spriteComp = selectedObj->GetComponent<SpriteRendererComponent>()) {
-                if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                if (auto transform = selectedObj->GetTransform()) {
                     auto sprite = spriteComp->GetSprite();
                     if (sprite) {
                         Irufemi::Vector2 sizeScaled = sprite->GetSize();
@@ -99,7 +99,7 @@ void SceneViewPanel::Draw() {
                     }
                 }
             } else if (auto textComp = selectedObj->GetComponent<TextRendererComponent>()) {
-                if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                if (auto transform = selectedObj->GetTransform()) {
                     Irufemi::Vector3 pos = transform->GetWorldPosition();
                     Irufemi::Vector2 minBounds = textComp->GetLocalBoundsMin();
                     Irufemi::Vector2 maxBounds = textComp->GetLocalBoundsMax();
@@ -147,7 +147,7 @@ void SceneViewPanel::Draw() {
                 // Fキーによるフォーカス機能
                 if (ImGui::IsKeyPressed(ImGuiKey_F)) {
                     if (auto selectedObj = editorManager_->GetSelectedObject()) {
-                        if (auto transform = selectedObj->GetComponent<TransformComponent>()) {
+                        if (auto transform = selectedObj->GetTransform()) {
                             if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
                                 cameraController_.Focus(camera, transform->GetWorldPosition());
                             }

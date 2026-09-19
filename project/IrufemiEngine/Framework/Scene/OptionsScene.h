@@ -71,6 +71,4 @@ private:
 
     // UIの初期化が完了したか
     bool uiBound_ = false;
-    class ButtonComponent* closeBtn_ = nullptr;
-    class ButtonComponent* applyBtn_ = nullptr;
 };

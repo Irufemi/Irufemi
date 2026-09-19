@@ -1,6 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include <string>
+#include <functional>
 #include "Core/Math/Vector4.h"
 #include "Framework/UI/UIAnimator.h"
 
@@ -53,6 +54,14 @@ public:
         return isClicked_;
     }
 
+    /**
+     * @brief クリック完了時に呼び出されるコールバック関数を設定する
+     * @param[in] callback 実行するコールバック関数
+     */
+    void SetOnClickCallback(std::function<void()> callback) {
+        onClickCallback_ = std::move(callback);
+    }
+
 private:
     /**
      * @brief CheckBounds を実行する。
@@ -76,4 +85,5 @@ private:
     bool isClicked_ = false;         // クリックされた瞬間
     bool isPressedOnButton_ = false; // ボタン上で押下中かどうか
     SpriteRendererComponent* sprite_ = nullptr;
+    std::function<void()> onClickCallback_;
 };

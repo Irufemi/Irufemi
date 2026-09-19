@@ -1,94 +1,96 @@
-#include "Core/Utility/ErrorUtility.h"
 #include "Core/System/IrufemiEngine.h"
-#ifdef USE_IMGUI
-#include <imgui.h>
-#endif
-
-#include "Platform/Input/InputManager.h"
-
-#include "Platform/WindowsAPI/WinApp.h"
-#include "Renderer/DrawManager.h"
-#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
-#include "Core/System/IEngineExtension.h"
-#include "Resource/Texture/TextureManager.h"
-#include "Audio/AudioManager.h"
-#include "Resource/Model/ModelManager.h"
-#include "Resource/Model/AnimationManager.h"
-#include "Physics/CollisionManager.h"
-#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
-#include "Framework/Component/Collider/ColliderComponent.h"
-#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Core/Utility/ErrorUtility.h"
 #include "Core/Utility/Log.h"
 #include "Core/Utility/FileSystem.h"
-#include "Framework/Scene/SceneManager.h"
-#include "Framework/Scene/SceneTransition.h"
-#include "Framework/Scene/SceneSerializer.h"
+#include "Core/System/IEngineExtension.h"
 #include "Core/System/DirectoryWatcher.h"
-#include "Renderer/Font/FontManager.h"
+#include "Core/Math/Math.h"
+#include "Core/Math/Random/Random.h"
 #include "Core/Profiler/TelemetrySender.h"
 #include "Core/Profiler/GpuProfiler.h"
 #include "Framework/Utility/CVar.h"
 
-namespace Irufemi {
-extern void ReferenceEngineCVars();
-}
-
-IrufemiEngine::IrufemiEngine() = default;
-
-#include "Core/Math/Math.h"
-#include "Core/Math/Random/Random.h"
-
-#include <DbgHelp.h>
+// 標準 / OS ライブラリ
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <format>
-#include "Audio/AudioManager.h"
-#include "Audio/AudioPlayer.h"
-#include "Framework/Component/Audio/AudioSourceComponent.h"
-#include "Renderer/Camera/CameraManager.h"
-#include "RHI/DirectX12/DirectXUtils.h"
-#include "Framework/UI/DebugUI.h"
-#include "Renderer/Object/PrimitiveManager.h"
-#include "Renderer/System/Core/BaseResource.h"
-#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
-#include "Renderer/Object/Effect/Effect.h"
-#include "Renderer/Object/Line/LineClass.h"
-#include "Renderer/System/Core/LineResource.h"
-#include "Renderer/System/Core/Object2DResource.h"
-#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
-#include "Renderer/Object/2D/Sprite/Sprite.h"
-#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
-#include "Renderer/Object/2D/Text/Text.h"
-
-#include "Renderer/System/Core/BaseModel.h"
-#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/System/Core/Object3DResource.h"
-#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
-
-#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
-#include "Renderer/Object/Particle/ParticleObject.h"
-#include "Renderer/Object/Batch/ModelBatch.h"
-
-namespace {
-static float s_gpuWaitTimeMs = 0.0f;
-}
-#include "Renderer/Object/Batch/PrimitiveBatch.h"
-#include "Renderer/System/Data/RenderData.h"
-#include "Renderer/Object/Skybox/Skybox.h"
-#include "Renderer/Data/VertexData.h"
-#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
-#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
-#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
-#include "Framework/Scene/IScene.h"
-#include "Framework/Component/ComponentFactory.h"
+#include <DbgHelp.h>
+#include <mmsystem.h>
+#ifdef USE_IMGUI
+#include <imgui.h>
+#endif
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxcompiler.lib")
 #pragma comment(lib, "winmm.lib")
-#include <mmsystem.h>
+
+// プラットフォーム & RHI
+#include "Platform/Input/InputManager.h"
+#include "Platform/WindowsAPI/WinApp.h"
+#include "RHI/DirectX12/DirectXUtils.h"
+
+// サブシステムマネージャー
+#include "Renderer/DrawManager.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Renderer/Font/FontManager.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Resource/Model/ModelManager.h"
+#include "Resource/Model/AnimationManager.h"
+#include "Audio/AudioManager.h"
+#include "Audio/AudioPlayer.h"
+#include "Physics/CollisionManager.h"
+
+// レンダリングリソース & オブジェクト
+#include "Renderer/Data/VertexData.h"
+#include "Renderer/System/Data/RenderData.h"
+#include "Renderer/System/Core/BaseResource.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include "Renderer/System/Core/LineResource.h"
+#include "Renderer/System/Core/Object2DResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Renderer/Object/PrimitiveManager.h"
+#include "Renderer/Object/Effect/Effect.h"
+#include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Skybox/Skybox.h"
+#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
+#include "Renderer/Object/2D/Text/Text.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
+
+// パーティクルシステム
+#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
+
+// フレームワーク & シーン
+#include "Framework/UI/DebugUI.h"
+#include "Framework/Scene/IScene.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Framework/Scene/SceneTransition.h"
+#include "Framework/Scene/SceneSerializer.h"
+#include "Framework/Component/ComponentFactory.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
+#include "Framework/Component/Audio/AudioSourceComponent.h"
+
+namespace Irufemi {
+extern void ReferenceEngineCVars();
+}
+
+namespace {
+static float s_gpuWaitTimeMs = 0.0f;
+}
+
+IrufemiEngine::IrufemiEngine() = default;
 
 // デストラクタ
 IrufemiEngine::~IrufemiEngine() {

@@ -116,6 +116,9 @@ void ButtonComponent::Update() {
             // 離された瞬間（クリック完了）
             if (input->IsMouseButtonReleased(Mouse::Button::Left) && isPressedOnButton_) {
                 isClicked_ = true;
+                if (onClickCallback_) {
+                    onClickCallback_();
+                }
             }
         }
     } else {
