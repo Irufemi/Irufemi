@@ -159,7 +159,8 @@ void RegisterComponents() {
     ComponentFactory::Register("BossBulletManagerComponent", "Game",
                                []() { return std::make_shared<BossBulletManagerComponent>(); });
     ComponentFactory::Register("EnemyBeamComponent", "Game", []() { return std::make_shared<EnemyBeamComponent>(); });
-    ComponentFactory::Register("EnemyBulletComponent", "Game", []() { return std::make_shared<EnemyBulletComponent>(); });
+    ComponentFactory::Register("EnemyBulletComponent", "Game",
+                               []() { return std::make_shared<EnemyBulletComponent>(); });
 
     ComponentFactory::Register("GameLoopManagerComponent", "Game",
                                []() { return std::make_shared<GameLoopManagerComponent>(); });

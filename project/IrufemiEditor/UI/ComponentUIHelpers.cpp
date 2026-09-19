@@ -548,7 +548,8 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
 
                             if (isPrefabProp && !str->empty()) {
                                 ImGui::SameLine();
-                                if (ImGui::Button((std::string(ICON_FA_WRENCH " Open##") + prop.name).c_str(), ImVec2(65.0f, 0))) {
+                                if (ImGui::Button((std::string(ICON_FA_WRENCH " Open##") + prop.name).c_str(),
+                                                  ImVec2(65.0f, 0))) {
                                     if (auto em = EditorManager::GetInstance()) {
                                         em->EnterPrefabMode(*str);
                                     }

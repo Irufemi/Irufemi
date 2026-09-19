@@ -78,7 +78,8 @@ void WaveManagerComponent::Draw() {
             previewBatch_->ClearInstances();
         }
 
-        // 1. レールスプラインの取得: インスペクターで設定された Target Spline を唯一の真実（Single Source of Truth）として使用
+        // 1. レールスプラインの取得: インスペクターで設定された Target Spline を唯一の真実（Single Source of
+        // Truth）として使用
         SplineComponent* spline = nullptr;
         if (targetSplineID_ != 0) {
             auto splineObj = scene->FindGameObjectByID(targetSplineID_);

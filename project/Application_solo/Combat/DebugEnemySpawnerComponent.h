@@ -19,7 +19,8 @@ public:
         return "DebugEnemySpawnerComponent";
     }
 
-    GameObject* SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation, float scaleMultiplier = 1.0f);
+    GameObject* SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
+                           float scaleMultiplier = 1.0f);
 
     int maxEnemies_ = 50;
     std::string enemyModelPath_ = "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj";

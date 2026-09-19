@@ -171,7 +171,8 @@ void DebugEnemySpawnerComponent::Update() {
     }
 }
 
-GameObject* DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation, float scaleMultiplier) {
+GameObject* DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
+                                                   float scaleMultiplier) {
     if (!enemyPool_) {
         return nullptr;
     }

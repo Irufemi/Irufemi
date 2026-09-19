@@ -7,9 +7,9 @@
  * @brief 敵キャラクターのAI行動状態
  */
 enum class EnemyAIState {
-    Approach,  //!< 前方定位置への進入
-    Combat,    //!< 自機と一定距離を保って滞空・射撃
-    Disengage  //!< 制限時間終了によるすれ違い離脱
+    Approach, //!< 前方定位置への進入
+    Combat,   //!< 自機と一定距離を保って滞空・射撃
+    Disengage //!< 制限時間終了によるすれ違い離脱
 };
 
 /**
