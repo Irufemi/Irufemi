@@ -35,11 +35,8 @@ Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
                      obb.orientations[1] * (localOffset_.y * worldScale.y) +
                      obb.orientations[2] * (localOffset_.z * worldScale.z);
 
-        obb.size = {
-            std::abs(localSize_.x * worldScale.x),
-            std::abs(localSize_.y * worldScale.y),
-            std::abs(localSize_.z * worldScale.z)
-        };
+        obb.size = {std::abs(localSize_.x * worldScale.x), std::abs(localSize_.y * worldScale.y),
+                    std::abs(localSize_.z * worldScale.z)};
     } else {
         obb.center = localOffset_;
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};
