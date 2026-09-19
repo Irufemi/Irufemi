@@ -5,6 +5,7 @@
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Quaternion.h"
+#include <algorithm>
 
 namespace Irufemi {
 // 前方宣言
@@ -451,13 +452,14 @@ Vector3 Perpendicular(Vector3 vector);
 
 /**
  * @brief 値を最小値と最大値の間にクランプする
+ * @param v 対象の値
+ * @param lo 最小値
+ * @param hi 最大値
+ * @return クランプされた値
  */
 template <typename T>
-/**
- * @brief Clamp を実行する。
- */
 constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
-    return (v < lo) ? lo : (hi < v) ? hi : v;
+    return (std::clamp)(v, lo, hi);
 }
 
 /**

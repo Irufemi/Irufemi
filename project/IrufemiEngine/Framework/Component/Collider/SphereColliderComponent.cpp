@@ -34,8 +34,7 @@ Irufemi::Sphere SphereColliderComponent::GetWorldSphere() const {
                                        transform->GetWorldUp() * (localOffset_.y * scaleY) +
                                        transform->GetWorldForward() * (localOffset_.z * scaleZ);
 
-        float maxXY = scaleX > scaleY ? scaleX : scaleY;
-        float maxScale = maxXY > scaleZ ? maxXY : scaleZ;
+        float maxScale = (std::max)({scaleX, scaleY, scaleZ});
 
         sphere.center = worldPos + worldOffset;
         sphere.radius = localRadius_ * maxScale;
