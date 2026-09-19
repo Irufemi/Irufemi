@@ -207,47 +207,63 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     if (!prop.defaultValue.is_null()) {
                         bool isModified = false;
                         switch (prop.type) {
-                        case ComponentPropertyType::Float:
-                            isModified = (*static_cast<float*>(prop.GetRawData()) != prop.defaultValue.get<float>());
+                        case ComponentPropertyType::Float: {
+                            if (auto* v = prop.GetData<float>()) {
+                                isModified = (*v != prop.defaultValue.get<float>());
+                            }
                             break;
+                        }
                         case ComponentPropertyType::Enum:
-                        case ComponentPropertyType::Int:
-                            isModified = (*static_cast<int*>(prop.GetRawData()) != prop.defaultValue.get<int>());
+                        case ComponentPropertyType::Int: {
+                            if (auto* v = prop.GetData<int>()) {
+                                isModified = (*v != prop.defaultValue.get<int>());
+                            }
                             break;
-                        case ComponentPropertyType::Bool:
-                            isModified = (*static_cast<bool*>(prop.GetRawData()) != prop.defaultValue.get<bool>());
+                        }
+                        case ComponentPropertyType::Bool: {
+                            if (auto* v = prop.GetData<bool>()) {
+                                isModified = (*v != prop.defaultValue.get<bool>());
+                            }
                             break;
-                        case ComponentPropertyType::String:
-                            isModified =
-                                (*static_cast<std::string*>(prop.GetRawData()) != prop.defaultValue.get<std::string>());
+                        }
+                        case ComponentPropertyType::String: {
+                            if (auto* v = prop.GetData<std::string>()) {
+                                isModified = (*v != prop.defaultValue.get<std::string>());
+                            }
                             break;
-                        case ComponentPropertyType::GameObjectRef:
-                            isModified =
-                                (*static_cast<uint64_t*>(prop.GetRawData()) != prop.defaultValue.get<uint64_t>());
+                        }
+                        case ComponentPropertyType::GameObjectRef: {
+                            if (auto* v = prop.GetData<uint64_t>()) {
+                                isModified = (*v != prop.defaultValue.get<uint64_t>());
+                            }
                             break;
+                        }
                         case ComponentPropertyType::Float2: {
-                            auto* v = static_cast<Irufemi::Vector2*>(prop.GetRawData());
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 2) {
-                                isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
+                            if (auto* v = prop.GetData<Irufemi::Vector2>()) {
+                                auto arr = prop.defaultValue;
+                                if (arr.is_array() && arr.size() >= 2) {
+                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
+                                }
                             }
                             break;
                         }
                         case ComponentPropertyType::Float3: {
-                            auto* v = static_cast<Irufemi::Vector3*>(prop.GetRawData());
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 3) {
-                                isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
-                                              v->z != arr[2].get<float>());
+                            if (auto* v = prop.GetData<Irufemi::Vector3>()) {
+                                auto arr = prop.defaultValue;
+                                if (arr.is_array() && arr.size() >= 3) {
+                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
+                                                  v->z != arr[2].get<float>());
+                                }
                             }
                             break;
                         }
                         case ComponentPropertyType::Float4: {
-                            auto* v = static_cast<Irufemi::Vector4*>(prop.GetRawData());
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 4) {
-                                isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
-                                              v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
+                            if (auto* v = prop.GetData<Irufemi::Vector4>()) {
+                                auto arr = prop.defaultValue;
+                                if (arr.is_array() && arr.size() >= 4) {
+                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
+                                                  v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
+                                }
                             }
                             break;
                         }
@@ -260,45 +276,67 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             if (ImGui::Button((std::string(ICON_FA_ARROW_ROTATE_LEFT) + "##" + prop.name).c_str(),
                                               ImVec2(20, 0))) {
                                 switch (prop.type) {
-                                case ComponentPropertyType::Float:
-                                    *static_cast<float*>(prop.GetRawData()) = prop.defaultValue.get<float>();
+                                case ComponentPropertyType::Float: {
+                                    if (auto* ptr = prop.GetData<float>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<float>(), ptr);
+                                    }
                                     break;
+                                }
                                 case ComponentPropertyType::Enum:
-                                case ComponentPropertyType::Int:
-                                    *static_cast<int*>(prop.GetRawData()) = prop.defaultValue.get<int>();
+                                case ComponentPropertyType::Int: {
+                                    if (auto* ptr = prop.GetData<int>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<int>(), ptr);
+                                    }
                                     break;
-                                case ComponentPropertyType::Bool:
-                                    *static_cast<bool*>(prop.GetRawData()) = prop.defaultValue.get<bool>();
+                                }
+                                case ComponentPropertyType::Bool: {
+                                    if (auto* ptr = prop.GetData<bool>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<bool>(), ptr);
+                                    }
                                     break;
-                                case ComponentPropertyType::String:
-                                    *static_cast<std::string*>(prop.GetRawData()) =
-                                        prop.defaultValue.get<std::string>();
+                                }
+                                case ComponentPropertyType::String: {
+                                    if (auto* ptr = prop.GetData<std::string>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<std::string>(), ptr);
+                                    }
                                     break;
-                                case ComponentPropertyType::GameObjectRef:
-                                    *static_cast<uint64_t*>(prop.GetRawData()) = prop.defaultValue.get<uint64_t>();
+                                }
+                                case ComponentPropertyType::GameObjectRef: {
+                                    if (auto* ptr = prop.GetData<uint64_t>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<uint64_t>(), ptr);
+                                    }
                                     break;
+                                }
                                 case ComponentPropertyType::Float2: {
-                                    auto* v = static_cast<Irufemi::Vector2*>(prop.GetRawData());
-                                    auto arr = prop.defaultValue;
-                                    v->x = arr[0].get<float>();
-                                    v->y = arr[1].get<float>();
+                                    if (auto* ptr = prop.GetData<Irufemi::Vector2>()) {
+                                        auto arr = prop.defaultValue;
+                                        if (arr.is_array() && arr.size() >= 2) {
+                                            Irufemi::Vector2 defaultVal{arr[0].get<float>(), arr[1].get<float>()};
+                                            PushInstantUndo(actionManager, *ptr, defaultVal, ptr);
+                                        }
+                                    }
                                     break;
                                 }
                                 case ComponentPropertyType::Float3: {
-                                    auto* v = static_cast<Irufemi::Vector3*>(prop.GetRawData());
-                                    auto arr = prop.defaultValue;
-                                    v->x = arr[0].get<float>();
-                                    v->y = arr[1].get<float>();
-                                    v->z = arr[2].get<float>();
+                                    if (auto* ptr = prop.GetData<Irufemi::Vector3>()) {
+                                        auto arr = prop.defaultValue;
+                                        if (arr.is_array() && arr.size() >= 3) {
+                                            Irufemi::Vector3 defaultVal{arr[0].get<float>(), arr[1].get<float>(),
+                                                                        arr[2].get<float>()};
+                                            PushInstantUndo(actionManager, *ptr, defaultVal, ptr);
+                                        }
+                                    }
                                     break;
                                 }
                                 case ComponentPropertyType::Float4: {
-                                    auto* v = static_cast<Irufemi::Vector4*>(prop.GetRawData());
-                                    auto arr = prop.defaultValue;
-                                    v->x = arr[0].get<float>();
-                                    v->y = arr[1].get<float>();
-                                    v->z = arr[2].get<float>();
-                                    v->w = arr[3].get<float>();
+                                    if (auto* ptr = prop.GetData<Irufemi::Vector4>()) {
+                                        auto arr = prop.defaultValue;
+                                        if (arr.is_array() && arr.size() >= 4) {
+                                            Irufemi::Vector4 defaultVal{arr[0].get<float>(), arr[1].get<float>(),
+                                                                        arr[2].get<float>(), arr[3].get<float>()};
+                                            PushInstantUndo(actionManager, *ptr, defaultVal, ptr);
+                                        }
+                                    }
                                     break;
                                 }
                                 default:

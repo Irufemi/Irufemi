@@ -6,10 +6,10 @@
 class MainTransparentPass : public IRenderPass {
 public:
     /**
-     * @brief up を設定する。
-     * @param[in] builder 設定する up の値
-     * @param[in] drawManager 設定する up の値
-     * @param[in] engine 設定する up の値
+     * @brief 半透明描画パスで必要なリソース状態やバリアをレンダーグラフに登録する
+     * @param[in,out] builder レンダーグラフビルダー
+     * @param[in] drawManager 描画マネージャ
+     * @param[in] engine エンジンコア
      */
     void Setup(RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) override;
     /**

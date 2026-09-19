@@ -82,7 +82,8 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
         first = true;
     };
 
-    auto ApplyAndDrawPacket = [&](const auto& p, auto drawFunc, bool isParticle, bool isLine, bool isDebugPrimitive) {
+    auto ApplyAndDrawPacket = [&](const auto& p, auto drawFunc, bool isParticle, bool isLine, bool isDebugPrimitive,
+                                  bool isGPUParticle = false) {
         bool stateChanged =
             first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
         bool psoChanged = (p.customPSO != currentCustomPSO);
@@ -101,6 +102,8 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
                     engine->ApplyPSO("LineBatch");
                 } else if (isDebugPrimitive) {
                     engine->ApplyPSO("DebugPrimitive");
+                } else if (isGPUParticle) {
+                    engine->ApplyPSO("GpuParticle");
                 }
             }
 
@@ -122,13 +125,13 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     };
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false,
-                           bool isDebugPrimitive = false) {
+                           bool isDebugPrimitive = false, bool isGPUParticle = false) {
         if (queue.empty()) {
             return;
         }
         ResetPSOState();
         for (const auto& p : queue) {
-            ApplyAndDrawPacket(p, drawFunc, isParticle, isLine, isDebugPrimitive);
+            ApplyAndDrawPacket(p, drawFunc, isParticle, isLine, isDebugPrimitive, isGPUParticle);
         }
     };
 
@@ -171,40 +174,9 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
         true);
 
     // 6. GPU Particles
-    const auto& gpuParticleQueue = drawManager->GetGPUParticleQueue();
-    if (!gpuParticleQueue.empty()) {
-        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
-        PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
-        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
-        ID3D12PipelineState* currentCustomPSO = nullptr;
-        bool psoApplied = false;
-        bool first = true;
-        for (const auto& p : gpuParticleQueue) {
-            bool stateChanged =
-                first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
-            bool psoChanged = (p.customPSO != currentCustomPSO);
-
-            if (stateChanged || psoChanged || !psoApplied) {
-                engine->SetBlend(p.blendMode);
-                engine->SetDepthWrite(p.depthWrite);
-                engine->SetCull(p.cullMode);
-
-                if (p.customPSO) {
-                    drawManager->BindPSO(p.customPSO);
-                } else {
-                    engine->ApplyPSO("GpuParticle");
-                }
-
-                currentBlend = p.blendMode;
-                currentDepth = p.depthWrite;
-                currentCull = p.cullMode;
-                currentCustomPSO = p.customPSO;
-                psoApplied = true;
-                first = false;
-            }
-            drawManager->DrawGPUParticle(p);
-        }
-    }
+    DrawWithPSO(
+        drawManager->GetGPUParticleQueue(), [&](const auto& p) { drawManager->DrawGPUParticle(p); }, false, false,
+        false, true);
     // 7. Irufemi::Voxel Particles
     const auto& voxelParticleQueue = drawManager->GetVoxelParticleQueue();
     if (!voxelParticleQueue.empty()) {

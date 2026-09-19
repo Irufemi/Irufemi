@@ -153,6 +153,7 @@ private:
     };
 
     std::unordered_map<SystemKey, SystemContext, SystemKeyHasher> systems_;
+    std::unordered_map<GPUParticleSystem*, SystemContext*> systemLookup_;
 
     // グローバルなField管理
     std::vector<ParticleField> globalFields_;

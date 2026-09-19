@@ -6,6 +6,7 @@
 
 void GPUParticleManager::Initialize() {
     systems_.clear();
+    systemLookup_.clear();
 }
 
 void GPUParticleManager::Update() {
@@ -22,6 +23,7 @@ void GPUParticleManager::Draw() {
 
 void GPUParticleManager::Finalize() {
     systems_.clear();
+    systemLookup_.clear();
 }
 
 void GPUParticleManager::ClearAllParticles() {
@@ -54,6 +56,7 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
         ctx.system->SetEnableLighting(enableLighting);
         ctx.system->SetDepthWrite(depthWrite);
         ctx.system->SetGlobalFields(&globalFields_);
+        systemLookup_[ctx.system.get()] = &ctx;
     }
 
     uint32_t assignedIndex = 0;
@@ -82,16 +85,13 @@ void GPUParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
         return;
     }
 
-    // Find the context to add free index
-    for (auto& pair : systems_) {
-        if (pair.second.system.get() == handle.system) {
-            // Disable emission
-            if (handle.emitterIndex < pair.second.system->emittersData_.size()) {
-                pair.second.system->emittersData_[handle.emitterIndex].emit = 0;
-            }
-            pair.second.freeIndices.push_back(handle.emitterIndex);
-            break;
+    auto it = systemLookup_.find(handle.system);
+    if (it != systemLookup_.end()) {
+        auto* ctx = it->second;
+        if (handle.emitterIndex < ctx->system->emittersData_.size()) {
+            ctx->system->emittersData_[handle.emitterIndex].emit = 0;
         }
+        ctx->freeIndices.push_back(handle.emitterIndex);
     }
 }
 
