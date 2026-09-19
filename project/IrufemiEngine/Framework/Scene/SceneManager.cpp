@@ -275,7 +275,8 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
             try {
                 initFuture_.get(); // ワーカースレッドの完了待機および例外の再スロー
             } catch (const std::exception& e) {
-                Log::OutPutLog(std::cerr, std::string("[SceneManager] Scene async initialization failed: ") + e.what() + "\n");
+                Log::OutPutLog(std::cerr,
+                               std::string("[SceneManager] Scene async initialization failed: ") + e.what() + "\n");
             } catch (...) {
                 Log::OutPutLog(std::cerr, "[SceneManager] Scene async initialization failed with unknown exception\n");
             }

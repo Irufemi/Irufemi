@@ -153,8 +153,7 @@ public:
      * @brief 指定した型の新しいコンポーネントをアタッチして返す
      * @return アタッチされたコンポーネントの共有ポインタ
      */
-    template <typename T, typename... Args>
-    std::shared_ptr<T> AddComponent(Args&&... args) {
+    template <typename T, typename... Args> std::shared_ptr<T> AddComponent(Args&&... args) {
         std::shared_ptr<T> component;
         if constexpr (IsPooledComponent<T>::value) {
             component = ComponentPool<T>::GetInstance().Create(std::forward<Args>(args)...);
@@ -176,8 +175,7 @@ public:
      * @brief 指定した型のコンポーネントを取得する
      * @return 見つかった場合はそのポインタ、無ければnullptr
      */
-    template <typename T>
-    T* GetComponent() const {
+    template <typename T> T* GetComponent() const {
         std::lock_guard<std::recursive_mutex> lock(structureMutex_);
         auto it = componentMap_.find(typeid(T));
         if (it != componentMap_.end() && !it->second.empty()) {
@@ -212,8 +210,7 @@ public:
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントを1つ探して取得する
      * @return 見つかった場合はそのポインタ、無ければnullptr
      */
-    template <typename T>
-    T* GetComponentInChildren() {
+    template <typename T> T* GetComponentInChildren() {
         if (T* comp = GetComponent<T>()) {
             return comp;
         }
@@ -229,8 +226,7 @@ public:
      * @brief 自身およびすべての子孫から、指定した型のコンポーネントをすべて取得する
      * @return 見つかったコンポーネントポインタのリスト
      */
-    template <typename T>
-    std::vector<T*> GetComponentsInChildren() {
+    template <typename T> std::vector<T*> GetComponentsInChildren() {
         std::vector<T*> results;
         GetComponentsInChildrenRecursive<T>(results);
         return results;
