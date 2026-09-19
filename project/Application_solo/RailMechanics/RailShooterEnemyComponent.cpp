@@ -6,6 +6,7 @@
 #include "Player/TargetableComponent.h"
 #include "Player/PlayerHealthComponent.h"
 #include "Combat/EnemyBulletComponent.h"
+#include "Combat/EnemyBulletManagerComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Scene/BaseScene.h"
@@ -194,34 +195,9 @@ void RailShooterEnemyComponent::ShootAtPlayer(const Irufemi::Vector3& playerPos)
         dir = {0.0f, 0.0f, -1.0f};
     }
 
-    auto bulletObj = std::make_shared<GameObject>("EnemyBullet");
-    bulletObj->SetIsSerializable(false);
-
-    auto bulletTrans = bulletObj->GetTransform();
-    bulletTrans->SetWorldPosition(myPos);
-    bulletTrans->SetScale({bulletScale_, bulletScale_, bulletScale_});
-
-    auto meshRenderer = bulletObj->AddComponent<MeshRendererComponent>();
-    meshRenderer->LoadModel("resources/model/EnemyBullet/EnemyBullet.obj");
-    meshRenderer->Initialize();
-
-    auto collider = bulletObj->AddComponent<SphereColliderComponent>();
-    collider->Initialize();
-    collider->isTrigger_ = true;
-    collider->SetLocalRadius(bulletScale_);
-
-    auto engine = GetEngine();
-    auto cm = engine ? engine->GetCollisionManager() : nullptr;
-    if (cm) {
-        collider->layer_ = cm->GetLayerMask("Enemy");
-        collider->mask_ = cm->GetLayerMask("Player");
+    if (auto bulletMgr = EnemyBulletManagerComponent::GetOrCreate(scene)) {
+        bulletMgr->FireBullet(myPos, dir, bulletSpeed_, 10, bulletScale_);
     }
-
-    auto bulletComp = bulletObj->AddComponent<EnemyBulletComponent>();
-    bulletComp->Initialize();
-    bulletComp->Launch(dir, bulletSpeed_, 10);
-
-    scene->AddGameObject(bulletObj);
 }
 
 void RailShooterEnemyComponent::OnCollisionEnter(GameObject* other) {

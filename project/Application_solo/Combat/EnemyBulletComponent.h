@@ -3,6 +3,7 @@
 #include "Core/Math/Vector3.h"
 
 class GameObject;
+class EnemyBulletManagerComponent;
 
 /**
  * @class EnemyBulletComponent
@@ -29,9 +30,23 @@ public:
      */
     void Launch(const Irufemi::Vector3& direction, float speed = 30.0f, int damage = 10);
 
+    /**
+     * @brief 管理元マネージャーを設定する
+     * @param manager 所属する EnemyBulletManagerComponent のポインタ
+     */
+    void SetManager(EnemyBulletManagerComponent* manager) {
+        manager_ = manager;
+    }
+
+    /**
+     * @brief 弾を非アクティブ化し、マネージャーへ返却（または破棄）する
+     */
+    void Deactivate();
+
 private:
-    Irufemi::Vector3 velocity_{0.0f, 0.0f, 0.0f}; //!< 移動速度ベクトル
-    int damage_ = 10;                             //!< 命中時のダメージ量
-    float lifeTimer_ = 0.0f;                      //!< 生存タイマー
-    float maxLifeTime_ = 5.0f;                    //!< 最大寿命（秒）
+    EnemyBulletManagerComponent* manager_ = nullptr; //!< 管理元マネージャー
+    Irufemi::Vector3 velocity_{0.0f, 0.0f, 0.0f};     //!< 移動速度ベクトル
+    int damage_ = 10;                                 //!< 命中時のダメージ量
+    float lifeTimer_ = 0.0f;                          //!< 生存タイマー
+    float maxLifeTime_ = 5.0f;                        //!< 最大寿命（秒）
 };

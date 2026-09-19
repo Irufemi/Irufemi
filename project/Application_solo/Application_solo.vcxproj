@@ -263,6 +263,7 @@ exit 0</Command>
     <ClCompile Include="Combat\Boss\BossStateDestroyed.cpp" />
     <ClCompile Include="Combat\BossBulletManagerComponent.cpp" />
     <ClCompile Include="Combat\EnemyBulletComponent.cpp" />
+    <ClCompile Include="Combat\EnemyBulletManagerComponent.cpp" />
 
     <ClCompile Include="Combat\DroneManagerComponent.cpp" />
     <ClCompile Include="Environment\DebrisManagerComponent.cpp" />
@@ -316,6 +317,7 @@ exit 0</Command>
     <ClInclude Include="Combat\Boss\BossStateDestroyed.h" />
     <ClInclude Include="Combat\BossBulletManagerComponent.h" />
     <ClInclude Include="Combat\EnemyBulletComponent.h" />
+    <ClInclude Include="Combat\EnemyBulletManagerComponent.h" />
 
     <ClInclude Include="Combat\DroneManagerComponent.h" />
     <ClInclude Include="Environment\DebrisManagerComponent.h" />

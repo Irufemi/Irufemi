@@ -1,4 +1,5 @@
 #include "Combat/EnemyBulletComponent.h"
+#include "Combat/EnemyBulletManagerComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Player/PlayerHealthComponent.h"
@@ -17,19 +18,32 @@ void EnemyBulletComponent::Launch(const Irufemi::Vector3& direction, float speed
     lifeTimer_ = 0.0f;
 }
 
+void EnemyBulletComponent::Deactivate() {
+    if (manager_) {
+        manager_->ReturnBullet(gameObject_);
+    } else if (gameObject_) {
+        gameObject_->Destroy();
+    }
+}
+
 void EnemyBulletComponent::Update() {
     if (!gameObject_) {
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
+    float dt = engine->GetGameDeltaTime();
     if (dt <= 0.0f) {
         return;
     }
 
     lifeTimer_ += dt;
     if (lifeTimer_ >= maxLifeTime_) {
-        gameObject_->Destroy();
+        Deactivate();
         return;
     }
 
@@ -63,8 +77,8 @@ void EnemyBulletComponent::OnCollisionEnter(GameObject* other) {
                 }
             }
 
-            // 弾自身を破棄
-            gameObject_->Destroy();
+            // 弾自身を返却（または破棄）
+            Deactivate();
         }
     }
 }
