@@ -40,8 +40,7 @@ float EvaluateEase(EaseType type, float t);
  * @param t 進行度 (0.0f ~ 1.0f)
  * @return 補間された値
  */
-template <typename T>
-[[nodiscard]] constexpr inline T Lerp(const T& a, const T& b, float t) noexcept {
+template <typename T> [[nodiscard]] constexpr inline T Lerp(const T& a, const T& b, float t) noexcept {
     return a + (b - a) * t;
 }
 
@@ -53,8 +52,7 @@ template <typename T>
  * @param t 進行度
  * @return クランプ補間された値
  */
-template <typename T>
-[[nodiscard]] constexpr inline T LerpClamped(const T& a, const T& b, float t) noexcept {
+template <typename T> [[nodiscard]] constexpr inline T LerpClamped(const T& a, const T& b, float t) noexcept {
     return Lerp(a, b, (std::clamp)(t, 0.0f, 1.0f));
 }
 

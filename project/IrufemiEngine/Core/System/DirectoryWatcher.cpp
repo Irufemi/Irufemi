@@ -61,13 +61,12 @@ void DirectoryWatcher::WatchLoop() {
 
     while (isRunning_) {
         ResetEvent(overlapped.hEvent);
-        BOOL success = ReadDirectoryChangesW(
-            directoryHandle_, buffer, sizeof(buffer),
-            TRUE, // サブディレクトリも監視
-            FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
-                FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
-                FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_CREATION,
-            &bytesReturned, &overlapped, NULL);
+        BOOL success = ReadDirectoryChangesW(directoryHandle_, buffer, sizeof(buffer),
+                                             TRUE, // サブディレクトリも監視
+                                             FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
+                                                 FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
+                                                 FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_CREATION,
+                                             &bytesReturned, &overlapped, NULL);
 
         if (!success && GetLastError() != ERROR_IO_PENDING) {
             break;
