@@ -3,11 +3,11 @@
 #include "Core/Utility/ObjectPool.h"
 #include "Core/Math/Vector3.h"
 #include <memory>
-#include <unordered_map>
 #include <string>
 
 class GameObject;
 class BaseScene;
+class EnemyBulletComponent;
 
 /**
  * @class EnemyBulletManagerComponent
@@ -45,7 +45,13 @@ public:
     GameObject* FireBullet(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction, float speed = 30.0f, int damage = 10, float scale = 0.4f);
 
     /**
-     * @brief 寿命終了または衝突した弾を非アクティブ化し、プールに返却する
+     * @brief 寿命終了または衝突した弾コンポーネントを受け取り、O(1) でプールへ返却する
+     * @param bulletComp 返却する弾の EnemyBulletComponent
+     */
+    void ReturnBullet(EnemyBulletComponent* bulletComp);
+
+    /**
+     * @brief 寿命終了または衝突した弾オブジェクトを受け取り、プールへ返却する（互換用）
      * @param bullet 返却する弾の GameObject
      */
     void ReturnBullet(GameObject* bullet);
@@ -53,9 +59,8 @@ public:
 private:
     void WarmupPool();
 
-    int maxBullets_ = 40;                                                         ///< プール最大容量
-    std::string bulletModelPath_ = "resources/model/EnemyBullet/EnemyBullet.obj"; ///< 弾の3Dモデルパス
-    std::unique_ptr<ObjectPool<GameObject>> bulletPool_;                          ///< 弾のオブジェクトプール
-    std::unordered_map<GameObject*, ObjectPool<GameObject>::Handle> activeBulletHandles_; ///< 飛翔中弾のハンドルマップ
-    bool isWarmedUp_ = false;                                                     ///< 事前ウォームアップ完了フラグ
+    int maxBullets_ = 40;                                                         //!< プール最大容量
+    std::string bulletModelPath_ = "resources/model/EnemyBullet/EnemyBullet.obj"; //!< 弾の3Dモデルパス
+    std::unique_ptr<ObjectPool<GameObject>> bulletPool_;                          //!< 弾のオブジェクトプール
+    bool isWarmedUp_ = false;                                                     //!< 事前ウォームアップ完了フラグ
 };

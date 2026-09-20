@@ -57,6 +57,12 @@ void RailShooterEnemyComponent::Initialize() {
     }
 }
 
+void RailShooterEnemyComponent::Start() {
+    if (auto scene = gameObject_ ? gameObject_->GetScene() : nullptr) {
+        bulletManager_ = EnemyBulletManagerComponent::GetOrCreate(scene);
+    }
+}
+
 GameObject* RailShooterEnemyComponent::GetPlayerObject() {
     if (!gameObject_) {
         return nullptr;
@@ -195,8 +201,11 @@ void RailShooterEnemyComponent::ShootAtPlayer(const Irufemi::Vector3& playerPos)
         dir = {0.0f, 0.0f, -1.0f};
     }
 
-    if (auto bulletMgr = EnemyBulletManagerComponent::GetOrCreate(scene)) {
-        bulletMgr->FireBullet(myPos, dir, bulletSpeed_, 10, bulletScale_);
+    if (!bulletManager_) {
+        bulletManager_ = EnemyBulletManagerComponent::GetOrCreate(scene);
+    }
+    if (bulletManager_) {
+        bulletManager_->FireBullet(myPos, dir, bulletSpeed_, 10, bulletScale_);
     }
 }
 

@@ -8,10 +8,10 @@
  * @brief プレハブアセットから抽出された基準寸法・当たり判定・モデル情報
  */
 struct PrefabMetrics {
-    Irufemi::Vector3 baseScale = {1.0f, 1.0f, 1.0f}; ///< 基準スケール
-    float colliderRadius = 1.0f;                     ///< スフィアコライダーの半径
-    bool hasSphereCollider = false;                  ///< スフィアコライダーが存在するか
-    std::string modelPath = "";                      ///< 参照モデルのファイルパス
+    Irufemi::Vector3 baseScale = {1.0f, 1.0f, 1.0f}; //!< 基準スケール
+    float colliderRadius = 1.0f;                     //!< スフィアコライダーの半径
+    bool hasSphereCollider = false;                  //!< スフィアコライダーが存在するか
+    std::string modelPath = "";                      //!< 参照モデルのファイルパス
 };
 
 /**

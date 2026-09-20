@@ -1,6 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include "Core/Math/Vector3.h"
+#include "Core/Utility/ObjectPool.h"
 
 class GameObject;
 class EnemyBulletManagerComponent;
@@ -39,12 +40,29 @@ public:
     }
 
     /**
+     * @brief プール管理用のハンドルを設定する
+     * @param handle オブジェクトプールのハンドル
+     */
+    void SetPoolHandle(ObjectPool<GameObject>::Handle handle) {
+        poolHandle_ = handle;
+    }
+
+    /**
+     * @brief プール管理用のハンドルを取得する
+     * @return 保持しているオブジェクトプールハンドル
+     */
+    ObjectPool<GameObject>::Handle GetPoolHandle() const {
+        return poolHandle_;
+    }
+
+    /**
      * @brief 弾を非アクティブ化し、マネージャーへ返却（または破棄）する
      */
     void Deactivate();
 
 private:
     EnemyBulletManagerComponent* manager_ = nullptr; //!< 管理元マネージャー
+    ObjectPool<GameObject>::Handle poolHandle_;       //!< プール管理用ハンドル
     Irufemi::Vector3 velocity_{0.0f, 0.0f, 0.0f};     //!< 移動速度ベクトル
     int damage_ = 10;                                 //!< 命中時のダメージ量
     float lifeTimer_ = 0.0f;                          //!< 生存タイマー

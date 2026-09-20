@@ -19,7 +19,6 @@ void EnemyBulletManagerComponent::Start() {
 }
 
 void EnemyBulletManagerComponent::OnDestroy() {
-    activeBulletHandles_.clear();
     bulletPool_.reset();
 }
 
@@ -48,12 +47,18 @@ void EnemyBulletManagerComponent::WarmupPool() {
         return;
     }
 
-    auto scene = gameObject_->GetScene();
-    if (!scene) {
+    auto initialScene = gameObject_->GetScene();
+    if (!initialScene) {
         return;
     }
 
-    bulletPool_ = std::make_unique<ObjectPool<GameObject>>(maxBullets_, [this, scene]() {
+    // ラムダ式内では scene ポインタをキャプチャせず、gameObject_ から最新の有効なシーンを取得する（ダングリング防止）
+    bulletPool_ = std::make_unique<ObjectPool<GameObject>>(maxBullets_, [this]() {
+        auto scene = gameObject_ ? gameObject_->GetScene() : nullptr;
+        if (!scene) {
+            return std::make_shared<GameObject>("EnemyBullet");
+        }
+
         auto bullet = std::make_shared<GameObject>("EnemyBullet");
         bullet->SetIsSerializable(false);
 
@@ -120,25 +125,30 @@ GameObject* EnemyBulletManagerComponent::FireBullet(const Irufemi::Vector3& orig
 
     if (auto bulletComp = bullet->GetComponent<EnemyBulletComponent>()) {
         bulletComp->SetManager(this);
+        bulletComp->SetPoolHandle(handle); // O(1) 返却用ハンドルを弾自身に保持
         bulletComp->Launch(direction, speed, damage);
     }
 
     bullet->SetIsActive(true);
-    activeBulletHandles_[bullet.get()] = handle;
-
     return bullet.get();
 }
 
-void EnemyBulletManagerComponent::ReturnBullet(GameObject* bullet) {
-    if (!bullet || !bulletPool_) {
+void EnemyBulletManagerComponent::ReturnBullet(EnemyBulletComponent* bulletComp) {
+    if (!bulletComp || !bulletPool_) {
         return;
     }
 
-    bullet->SetIsActive(false);
-
-    auto it = activeBulletHandles_.find(bullet);
-    if (it != activeBulletHandles_.end()) {
-        bulletPool_->Release(it->second);
-        activeBulletHandles_.erase(it);
+    if (auto bulletGo = bulletComp->GetGameObject()) {
+        bulletGo->SetIsActive(false);
     }
+
+    // ハッシュマップ検索なしで O(1) 即時返却
+    bulletPool_->Release(bulletComp->GetPoolHandle());
+}
+
+void EnemyBulletManagerComponent::ReturnBullet(GameObject* bullet) {
+    if (!bullet) {
+        return;
+    }
+    ReturnBullet(bullet->GetComponent<EnemyBulletComponent>());
 }

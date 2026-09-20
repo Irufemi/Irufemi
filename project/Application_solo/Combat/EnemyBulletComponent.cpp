@@ -20,7 +20,7 @@ void EnemyBulletComponent::Launch(const Irufemi::Vector3& direction, float speed
 
 void EnemyBulletComponent::Deactivate() {
     if (manager_) {
-        manager_->ReturnBullet(gameObject_);
+        manager_->ReturnBullet(this);
     } else if (gameObject_) {
         gameObject_->Destroy();
     }
