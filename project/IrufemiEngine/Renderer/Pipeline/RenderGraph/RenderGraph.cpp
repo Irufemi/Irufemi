@@ -1,6 +1,8 @@
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
 #include "Renderer/DrawManager.h"
 #include "RHI/DirectX12/DirectXCommon.h"
+#include "Core/System/IrufemiEngine.h"
+#include "Renderer/Data/RenderContext.h"
 #include <algorithm>
 #include <string>
 
@@ -16,18 +18,29 @@ void RenderGraph::InitializeTransientResourceManager(DirectXCommon* dxCommon) {
 }
 
 void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
-    auto* cmdList = drawManager->GetDxCommon()->GetCommandList();
-    auto* device = drawManager->GetDxCommon()->GetDevice();
+    auto* dxCommon = drawManager ? drawManager->GetDxCommon() : nullptr;
+    auto* cmdList = dxCommon ? dxCommon->GetCommandList() : nullptr;
+    auto* device = dxCommon ? dxCommon->GetDevice() : nullptr;
 
     if (transientResourceManager_) {
         transientResourceManager_->ResetForFrame();
     }
 
+    // RenderContext の構築
+    Irufemi::RenderContext rc{};
+    rc.engine = engine;
+    rc.drawManager = drawManager;
+    rc.dxCommon = dxCommon;
+    rc.textureManager = engine ? engine->GetTextureManager() : nullptr;
+    rc.fontManager = engine ? engine->GetFontManager() : nullptr;
+    rc.psoManager = engine ? engine->GetPSOManager() : nullptr;
+    rc.commandList = cmdList;
+
     // 1. Compile Phase (全パスの Setup を実行し、リソース要求を収集)
     RenderGraphBuilder builder;
     for (size_t i = 0; i < passes_.size(); ++i) {
         builder.SetCurrentPassIndex(i);
-        passes_[i]->Setup(builder, drawManager, engine);
+        passes_[i]->Setup(builder, rc);
     }
 
     // 2. Resource Allocation Phase (Transient Resource の寿命計算とエイリアシング)
@@ -217,7 +230,7 @@ void RenderGraph::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
         }
 
         // パスの実行
-        pass->Execute(drawManager, engine);
+        pass->Execute(rc);
     }
 
     // 全パス実行後、要求された最終ステートへの TransitionBarrier を発行

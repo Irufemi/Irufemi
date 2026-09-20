@@ -3,14 +3,22 @@
 #include "Core/System/IrufemiEngine.h"
 #include "RHI/DirectX12/ShadowMap.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
+#include "Renderer/Data/RenderContext.h"
 
-void ShadowPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    if (auto shadowMap = drawManager->GetShadowMap()) {
-        builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+void ShadowPass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
+    if (rc.drawManager) {
+        if (auto shadowMap = rc.drawManager->GetShadowMap()) {
+            builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        }
     }
 }
 
-void ShadowPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+void ShadowPass::Execute(const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
     drawManager->BeginShadowPass();
 
     auto DrawShadowsWithPSO = [&](const auto& queue, const std::string& psoName, auto drawFunc) {

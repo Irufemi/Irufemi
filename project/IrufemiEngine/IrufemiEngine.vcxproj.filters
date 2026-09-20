@@ -950,6 +950,9 @@
     <ClInclude Include="Renderer\Data\PointLight.h">
       <Filter>Renderer\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Data\RenderContext.h">
+      <Filter>Renderer\Data</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\Data\RenderPackets.h">
       <Filter>Renderer\Data</Filter>
     </ClInclude>

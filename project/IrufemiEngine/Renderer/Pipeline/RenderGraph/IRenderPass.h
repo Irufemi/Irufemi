@@ -1,10 +1,11 @@
 #pragma once
 
 // 前方宣言
-class DrawManager;
-class IrufemiEngine;
-
 class RenderGraphBuilder;
+
+namespace Irufemi {
+struct RenderContext;
+}
 
 /**
  * @class IRenderPass
@@ -19,14 +20,14 @@ public:
      * @brief パスのセットアップ処理
      * @details リソースバリアの自動解決のため、入力・出力リソースの要求ステートを登録します。
      * @param[in,out] builder リソースの使用状態を記録するビルダー
+     * @param[in] rc 描画コンテキスト
      */
-    virtual void Setup(RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) {}
+    virtual void Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {}
 
     /**
      * @brief パスの実行処理
-     * @param[in] drawManager 描画コマンドを発行するための DrawManager
-     * @param[in] engine エンジン本体（各種マネージャーへのアクセス用）
+     * @param[in] rc 描画コンテキスト
      * @details 実際の DrawCall（描画コマンドの積み込み）をこの中で行います。
      */
-    virtual void Execute(class DrawManager* drawManager, class IrufemiEngine* engine) = 0;
+    virtual void Execute(const Irufemi::RenderContext& rc) = 0;
 };

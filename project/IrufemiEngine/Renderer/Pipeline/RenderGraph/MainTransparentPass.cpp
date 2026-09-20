@@ -2,48 +2,59 @@
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "RHI/DirectX12/ShadowMap.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 #include "RHI/DirectX12/RootSignatureConfig.h"
 #include "RHI/DirectX12/DirectXUtils.h"
+#include "Renderer/Data/RenderContext.h"
 #include <algorithm>
 
-void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    if (auto shadowMap = drawManager->GetShadowMap()) {
-        builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+void MainTransparentPass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+
+    if (drawManager) {
+        if (auto shadowMap = drawManager->GetShadowMap()) {
+            builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (auto dx = drawManager->GetDxCommon()) {
+            builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        }
+        // GPUParticleのリソースを読み取り専用として要求
+        for (const auto& p : drawManager->GetGPUParticleQueue()) {
+            if (p.particleResource) {
+                builder.RequireState(p.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+                                                             D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            }
+        }
     }
 
-    // G-Bufferをレンダーターゲットとして要求
-    if (auto tex = engine->GetMainRenderTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetEffectMaskTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetNormalTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetMaterialTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetVelocityTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-
-    // 深度バッファを書き込み可能として要求
-    if (auto dx = drawManager->GetDxCommon()) {
-        builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    }
-
-    // GPUParticleのリソースを読み取り専用として要求
-    for (const auto& p : drawManager->GetGPUParticleQueue()) {
-        if (p.particleResource) {
-            builder.RequireState(p.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
-                                                         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    if (engine) {
+        // G-Bufferをレンダーターゲットとして要求
+        if (auto tex = engine->GetMainRenderTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetEffectMaskTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetNormalTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetMaterialTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetVelocityTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
     }
 }
 
-void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+void MainTransparentPass::Execute(const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
     auto cmdList = engine->GetCommandList();
     auto dxCommon = engine->GetDirectXCommon();
     auto depthResource = dxCommon->GetDepthStencilResource();

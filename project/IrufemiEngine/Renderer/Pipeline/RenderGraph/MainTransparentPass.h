@@ -11,11 +11,8 @@ public:
      * @param[in] drawManager 描画マネージャ
      * @param[in] engine エンジンコア
      */
-    void Setup(RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) override;
-    /**
-     * @brief Execute を実行する。
-     */
-    void Execute(class DrawManager* drawManager, class IrufemiEngine* engine) override;
+    void Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) override;
+    void Execute(const Irufemi::RenderContext& rc) override;
 
 private:
     /// @brief 半透明描画のインデックスソート用軽量キー (8 bytes)

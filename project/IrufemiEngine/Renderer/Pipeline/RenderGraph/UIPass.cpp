@@ -1,13 +1,22 @@
 #include "Renderer/Pipeline/RenderGraph/UIPass.h"
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
+#include "Renderer/Data/RenderContext.h"
 
-void UIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    builder.RequireState(engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+void UIPass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
+    if (rc.engine && rc.engine->GetMainRenderTexture()) {
+        builder.RequireState(rc.engine->GetMainRenderTexture()->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
 }
 
-void UIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+void UIPass::Execute(const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
     if (auto scm = engine->GetScreenCaptureManager()) {
         scm->OnPreUIDraw(engine->GetCommandList(), engine->GetMainRenderTexture());
     }
