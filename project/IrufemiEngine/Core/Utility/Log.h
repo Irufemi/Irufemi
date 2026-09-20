@@ -42,6 +42,17 @@ public: // メンバ関数
     static void OutPutLog(std::ostream& os, const std::string& message);
 
     /**
+     * @brief ログ履歴を排他ロック下でゼロコピー走査・処理します（エディタコンソール等での高速描画用）
+     * @tparam Func 呼び出し可能オブジェクト型 (void(const std::vector<LogEntry>&))
+     * @param[in] func ログ履歴を受け取る関数またはラムダ式
+     */
+    template <typename Func>
+    static void WithLogHistory(Func&& func) {
+        std::lock_guard<std::mutex> lock(logMutex_);
+        func(logHistory_);
+    }
+
+    /**
      * @brief 現在のログ履歴を取得します（エディタのコンソールパネル用）
      */
     static std::vector<LogEntry> GetLogHistory() {

@@ -25,24 +25,30 @@ void ConsolePanel::Draw() {
 
     ImGui::BeginChild("LogRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-    auto logHistory = Log::GetLogHistory();
-    for (const auto& logEntry : logHistory) {
-        if (logEntry.isError) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+    Log::WithLogHistory([this](const std::vector<Log::LogEntry>& logHistory) {
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(logHistory.size()));
+        while (clipper.Step()) {
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+                const auto& logEntry = logHistory[i];
+                if (logEntry.isError) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+                }
+                ImGui::TextUnformatted(logEntry.message.c_str());
+                if (logEntry.isError) {
+                    ImGui::PopStyleColor();
+                }
+            }
         }
-        ImGui::TextUnformatted(logEntry.message.c_str());
-        if (logEntry.isError) {
-            ImGui::PopStyleColor();
+
+        // 自動スクロールロジック:
+        // Auto-scroll が有効で、かつログの件数が増えた場合、または既に一番下にいる場合に一番下を維持する
+        if (autoScroll_ && (logHistory.size() > previousLogSize_ || ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
+            ImGui::SetScrollHereY(1.0f);
         }
-    }
 
-    // 自動スクロールロジック:
-    // Auto-scroll が有効で、かつログの件数が増えた場合、または既に一番下にいる場合に一番下を維持する
-    if (autoScroll_ && (logHistory.size() > previousLogSize_ || ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) {
-        ImGui::SetScrollHereY(1.0f);
-    }
-
-    previousLogSize_ = logHistory.size();
+        previousLogSize_ = logHistory.size();
+    });
 
     ImGui::EndChild();
 

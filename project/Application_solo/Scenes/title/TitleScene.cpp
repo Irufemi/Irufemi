@@ -4,6 +4,8 @@
 #include "Framework/Scene/SceneSerializer.h"
 #include "Irufemi.h"
 
+#include "Platform/Input/InputManager.h"
+
 // デストラクタ
 TitleScene::~TitleScene() {}
 
@@ -18,13 +20,16 @@ void TitleScene::Initialize(IrufemiEngine* engine) {
 void TitleScene::Update() {
     BaseScene::Update();
 
-    if (IsKeyPressed(VK_SPACE) || IsButtonPressed(XINPUT_GAMEPAD_A)) {
-        engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Fade, 1.0f);
-    }
+    auto inputManager = engine_ ? engine_->GetInputManager() : nullptr;
+    if (inputManager) {
+        if (inputManager->IsKeyPressed(VK_SPACE) || inputManager->IsButtonPressed(XINPUT_GAMEPAD_A)) {
+            engine_->GetSceneManager()->TransitionTo("InGame", SceneTransition::Type::Fade, 1.0f);
+        }
 
-    // オプション画面のテスト用呼び出し
-    if (IsKeyPressed('O') || IsButtonPressed(XINPUT_GAMEPAD_START)) {
-        engine_->GetSceneManager()->PushScene("OptionsScene");
+        // オプション画面のテスト用呼び出し
+        if (inputManager->IsKeyPressed('O') || inputManager->IsButtonPressed(XINPUT_GAMEPAD_START)) {
+            engine_->GetSceneManager()->PushScene("OptionsScene");
+        }
     }
 }
 

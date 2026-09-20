@@ -54,13 +54,13 @@ void ProjectBrowserPanel::BuildDirectoryTree(DirectoryNode* node) {
             if (entry.is_directory()) {
                 auto childNode = std::make_unique<DirectoryNode>();
                 childNode->path = entry.path();
-                childNode->folderName = reinterpret_cast<const char*>(entry.path().filename().u8string().c_str());
+                childNode->folderName = entry.path().filename().string();
                 BuildDirectoryTree(childNode.get());
                 node->subDirectories.push_back(std::move(childNode));
             } else if (entry.is_regular_file()) {
                 FileEntry fileEntry;
                 fileEntry.path = entry.path();
-                fileEntry.filenameString = reinterpret_cast<const char*>(entry.path().filename().u8string().c_str());
+                fileEntry.filenameString = entry.path().filename().string();
                 fileEntry.ext = entry.path().extension().string();
                 std::transform(fileEntry.ext.begin(), fileEntry.ext.end(), fileEntry.ext.begin(), ::tolower);
                 fileEntry.isDirectory = false;
@@ -74,7 +74,7 @@ void ProjectBrowserPanel::BuildDirectoryTree(DirectoryNode* node) {
 void ProjectBrowserPanel::RefreshCache() {
     auto newRoot = std::make_unique<DirectoryNode>();
     newRoot->path = projectRootPath_;
-    std::string folderName = reinterpret_cast<const char*>(projectRootPath_.filename().u8string().c_str());
+    std::string folderName = projectRootPath_.filename().string();
     if (folderName.empty()) {
         folderName = "Root";
     }
