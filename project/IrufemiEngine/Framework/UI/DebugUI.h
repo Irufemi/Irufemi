@@ -56,11 +56,6 @@ private: // メンバ変数
 
     TextureManager* textureManager_ = nullptr;
 
-    // --- ImGui用ライト編集テンプレート ---
-    static std::unique_ptr<PointLight> templatePointLight_;
-    static std::unique_ptr<SpotLight> templateSpotLight_;
-    static std::unique_ptr<AreaLight> templateAreaLight_;
-
     uint32_t srvIndex_ = 0xFFFFFFFF;
 
 public: // メンバ関数

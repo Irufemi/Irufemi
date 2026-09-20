@@ -70,4 +70,5 @@ public:
 private:
     std::unordered_map<std::string, std::shared_ptr<Camera>> cameras_;
     std::string activeCameraName_;
+    Camera* activeCameraCache_ = nullptr; ///< 現在アクティブなカメラへのキャッシュ（ホットパス最適化）
 };

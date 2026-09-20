@@ -84,9 +84,12 @@ public:
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(obj_.get());
-    }
+    IRenderable* GetRenderable() override;
+
+    /**
+     * @brief プロパティ登録
+     */
+    void OnRegisterProperties() override;
 
     // エディタのRaycast用
     /**
@@ -135,6 +138,7 @@ public:
 private:
     std::unique_ptr<StaticModelObject> obj_; ///< 実際の描画を担う既存クラス
     std::string modelName_ = "";             ///< 読み込むモデル名
+    std::string currentLoadedFilename_ = "";  ///< 現在ロードされているモデル名（動的変更検知用）
     bool castShadows_ = true;
     bool isVisible_ = true;
 };
