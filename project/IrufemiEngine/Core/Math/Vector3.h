@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <cassert>
 
 namespace Irufemi {
 /**
@@ -24,23 +25,62 @@ struct Vector3 final {
      * @param index 成分のインデックス (0:x, 1:y, 2:z)
      * @return 成分への参照
      */
-    float& operator[](int index);
+    float& operator[](int index) noexcept {
+        assert(index >= 0 && index < 3);
+        return (&x)[index];
+    }
 
     /**
      * @brief 添え字演算子 (const)
      * @param index 成分のインデックス (0:x, 1:y, 2:z)
      * @return 成分の値
      */
-    float operator[](int index) const;
+    float operator[](int index) const noexcept {
+        assert(index >= 0 && index < 3);
+        return (&x)[index];
+    }
 
     /** @name 複合代入演算子 */
     /** @{ */
-    Vector3& operator+=(const Vector3& rhs);
-    Vector3& operator-=(const Vector3& rhs);
-    Vector3& operator*=(float s);
-    Vector3& operator/=(float s);
-    Vector3& operator*=(const Vector3& rhs);
-    Vector3& operator/=(const Vector3& rhs);
+    constexpr Vector3& operator+=(const Vector3& rhs) noexcept {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+        return *this;
+    }
+    constexpr Vector3& operator-=(const Vector3& rhs) noexcept {
+        x -= rhs.x;
+        y -= rhs.y;
+        z -= rhs.z;
+        return *this;
+    }
+    constexpr Vector3& operator*=(float s) noexcept {
+        x *= s;
+        y *= s;
+        z *= s;
+        return *this;
+    }
+    Vector3& operator/=(float s) noexcept {
+        assert(s != 0.0f);
+        const float inv = 1.0f / s;
+        x *= inv;
+        y *= inv;
+        z *= inv;
+        return *this;
+    }
+    constexpr Vector3& operator*=(const Vector3& rhs) noexcept {
+        x *= rhs.x;
+        y *= rhs.y;
+        z *= rhs.z;
+        return *this;
+    }
+    Vector3& operator/=(const Vector3& rhs) noexcept {
+        assert(rhs.x != 0.0f && rhs.y != 0.0f && rhs.z != 0.0f);
+        x /= rhs.x;
+        y /= rhs.y;
+        z /= rhs.z;
+        return *this;
+    }
     /** @} */
 
     /** @name 比較演算子 */
@@ -125,20 +165,48 @@ struct Vector3 final {
     /** @} */
 };
 
+// 定数定義 (C++17 インライン変数)
+inline constexpr Vector3 Vector3::zero{0.0f, 0.0f, 0.0f};
+inline constexpr Vector3 Vector3::one{1.0f, 1.0f, 1.0f};
+inline constexpr Vector3 Vector3::right{1.0f, 0.0f, 0.0f};
+inline constexpr Vector3 Vector3::up{0.0f, 1.0f, 0.0f};
+inline constexpr Vector3 Vector3::forward{0.0f, 0.0f, 1.0f};
+
 /** @name 非メンバ演算子 */
 /** @{ */
 
-Vector3 operator+(const Vector3& lhs, const Vector3& rhs);
-Vector3 operator-(const Vector3& lhs, const Vector3& rhs);
-Vector3 operator+(const Vector3& v);
-Vector3 operator-(const Vector3& v);
-Vector3 operator*(const Vector3& v, float s);
-Vector3 operator*(float s, const Vector3& v);
-Vector3 operator/(const Vector3& v, float s);
+[[nodiscard]] constexpr inline Vector3 operator+(const Vector3& lhs, const Vector3& rhs) noexcept {
+    return {lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
+}
+[[nodiscard]] constexpr inline Vector3 operator-(const Vector3& lhs, const Vector3& rhs) noexcept {
+    return {lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z};
+}
+[[nodiscard]] constexpr inline Vector3 operator+(const Vector3& v) noexcept {
+    return v;
+}
+[[nodiscard]] constexpr inline Vector3 operator-(const Vector3& v) noexcept {
+    return {-v.x, -v.y, -v.z};
+}
+[[nodiscard]] constexpr inline Vector3 operator*(const Vector3& v, float s) noexcept {
+    return {v.x * s, v.y * s, v.z * s};
+}
+[[nodiscard]] constexpr inline Vector3 operator*(float s, const Vector3& v) noexcept {
+    return {v.x * s, v.y * s, v.z * s};
+}
+[[nodiscard]] inline Vector3 operator/(const Vector3& v, float s) noexcept {
+    assert(s != 0.0f);
+    const float inv = 1.0f / s;
+    return {v.x * inv, v.y * inv, v.z * inv};
+}
 
 // 要素ごとの乗除算
-Vector3 operator*(const Vector3& lhs, const Vector3& rhs);
-Vector3 operator/(const Vector3& lhs, const Vector3& rhs);
+[[nodiscard]] constexpr inline Vector3 operator*(const Vector3& lhs, const Vector3& rhs) noexcept {
+    return {lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z};
+}
+[[nodiscard]] inline Vector3 operator/(const Vector3& lhs, const Vector3& rhs) noexcept {
+    assert(rhs.x != 0.0f && rhs.y != 0.0f && rhs.z != 0.0f);
+    return {lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z};
+}
 
 /** @} */
 

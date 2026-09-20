@@ -336,22 +336,13 @@
     <ClCompile Include="Core\Math\MathFunction.cpp">
       <Filter>Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Math\Matrix4x4.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Math\NumericalSequence.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Quaternion.cpp">
       <Filter>Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Core\Math\Random\Random.cpp">
       <Filter>Core\Math\Random</Filter>
     </ClCompile>
     <ClCompile Include="Core\Math\Vector2.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Vector3.cpp">
       <Filter>Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Core\Math\Vector4.cpp">
