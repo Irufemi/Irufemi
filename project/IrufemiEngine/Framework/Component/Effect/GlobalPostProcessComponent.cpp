@@ -3,7 +3,6 @@
 #include "Renderer/PostProcess/PostProcessManager.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
-#include "Renderer/System/Core/BaseModel.h"
 
 void GlobalPostProcessComponent::OnRegisterProperties() {
     // GUIはGlobalPostProcessComponentEditorによって描画されるため、
@@ -11,7 +10,7 @@ void GlobalPostProcessComponent::OnRegisterProperties() {
 }
 
 void GlobalPostProcessComponent::Start() {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (engine) {
         if (auto pp = engine->GetPostProcessManager()) {
             pp->Reset(); // 以前のプレイセッションやエディタ状態で残っているエフェクトスタックを完全にクリア
@@ -21,7 +20,7 @@ void GlobalPostProcessComponent::Start() {
 }
 
 void GlobalPostProcessComponent::Update() {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return;
     }
@@ -36,7 +35,7 @@ void GlobalPostProcessComponent::Update() {
 }
 
 void GlobalPostProcessComponent::OnDisable() {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (engine) {
         if (auto pp = engine->GetPostProcessManager()) {
             pp->Reset();

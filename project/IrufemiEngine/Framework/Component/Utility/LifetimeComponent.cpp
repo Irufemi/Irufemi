@@ -1,7 +1,6 @@
 #include "Framework/Component/Utility/LifetimeComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 
 void LifetimeComponent::OnRegisterProperties() {
     RegisterProperty("Life Time", &lifeTime_);
@@ -21,7 +20,8 @@ void LifetimeComponent::OnEnable() {
 }
 
 void LifetimeComponent::Update() {
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    float dt = engine ? engine->GetGameDeltaTime() : 0.0f;
     currentLifeTime_ += dt;
     if (currentLifeTime_ >= lifeTime_) {
         if (timeoutAction_ == TimeoutAction::Destroy) {

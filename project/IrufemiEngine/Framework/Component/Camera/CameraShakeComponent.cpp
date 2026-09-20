@@ -4,7 +4,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Utility/PerlinNoise.h"
 #include "Core/Utility/Ease.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Math/Random/Random.h"
 #include <algorithm>
 #include <climits>
@@ -59,7 +58,7 @@ void CameraShakeComponent::Update() {
         }
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return;
     }

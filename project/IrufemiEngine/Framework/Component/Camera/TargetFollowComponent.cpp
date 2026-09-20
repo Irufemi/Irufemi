@@ -4,7 +4,6 @@
 #include "Framework/Scene/BaseScene.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Math/MathFunction.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include <cmath>
 
 void TargetFollowComponent::OnRegisterProperties() {
@@ -43,7 +42,8 @@ void TargetFollowComponent::Update() {
     }
 
     // 正確なデルタタイムの取得
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    float deltaTime = engine ? engine->GetGameDeltaTime() : (1.0f / 60.0f);
     if (deltaTime <= 0.0f) {
         deltaTime = 1.0f / 60.0f;
     }

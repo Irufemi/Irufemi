@@ -90,12 +90,14 @@ void AudioManager::Finalize() {
 }
 
 bool AudioManager::IsManagedVoice(std::shared_ptr<VoiceInstance> instance) const {
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     return std::find(activeVoices_.begin(), activeVoices_.end(), instance) != activeVoices_.end();
 }
 
 void AudioManager::Update() {
     // 終了したボイスをリストから削除
     // 削除されると shared_ptr の参照が外れ、VoiceInstance のデストラクタで DestroyVoice される
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     activeVoices_.erase(std::remove_if(activeVoices_.begin(), activeVoices_.end(),
                                        [](const std::shared_ptr<VoiceInstance>& instance) {
                                            return instance->GetCallback()->IsFinished();
@@ -226,7 +228,10 @@ std::weak_ptr<VoiceInstance> AudioManager::Play(std::shared_ptr<Sound> soundData
 
     // 管理インスタンスを生成してリストに追加
     auto instance = std::make_shared<VoiceInstance>(pSourceVoice, std::move(callback), category);
-    activeVoices_.push_back(instance);
+    {
+        std::lock_guard<std::mutex> lock(voiceMutex_);
+        activeVoices_.push_back(instance);
+    }
     return instance;
 }
 
@@ -236,11 +241,12 @@ void AudioManager::Stop(std::weak_ptr<VoiceInstance>& instance) {
         return;
     }
 
-    if (finalized_ || !IsManagedVoice(locked)) {
+    if (finalized_) {
         return;
     }
 
     // 管理リストから除去 (shared_ptr が外れて VoiceInstance のデストラクタで破棄される)
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     auto it = std::remove(activeVoices_.begin(), activeVoices_.end(), locked);
     if (it != activeVoices_.end()) {
         activeVoices_.erase(it, activeVoices_.end());
@@ -248,6 +254,7 @@ void AudioManager::Stop(std::weak_ptr<VoiceInstance>& instance) {
 }
 
 void AudioManager::StopAll() {
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     for (auto& voice : activeVoices_) {
         if (voice) {
             voice->Stop();
@@ -256,6 +263,7 @@ void AudioManager::StopAll() {
 }
 
 void AudioManager::PauseAll() {
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     for (auto& voice : activeVoices_) {
         if (voice) {
             voice->Pause();
@@ -264,6 +272,7 @@ void AudioManager::PauseAll() {
 }
 
 void AudioManager::ResumeAll() {
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     for (auto& voice : activeVoices_) {
         if (voice) {
             voice->Resume();
@@ -272,6 +281,7 @@ void AudioManager::ResumeAll() {
 }
 
 void AudioManager::PauseCategory(AudioCategory category) {
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     for (auto& voice : activeVoices_) {
         if (voice && voice->GetCategory() == category) {
             voice->Pause();
@@ -280,6 +290,7 @@ void AudioManager::PauseCategory(AudioCategory category) {
 }
 
 void AudioManager::ResumeCategory(AudioCategory category) {
+    std::lock_guard<std::mutex> lock(voiceMutex_);
     for (auto& voice : activeVoices_) {
         if (voice && voice->GetCategory() == category) {
             voice->Resume();
