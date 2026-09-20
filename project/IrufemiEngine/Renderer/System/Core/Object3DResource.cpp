@@ -5,8 +5,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 
-TextureManager* Object3DResource::sTextureManager = nullptr;
-
 Object3DResource::~Object3DResource() {
     Unmap();
 
@@ -27,8 +25,16 @@ Object3DResource::~Object3DResource() {
             }
         }
     }
-    if (sTextureManager && textureHandle_.IsValid()) {
-        sTextureManager->ReleaseTexture(textureHandle_);
+    auto* tm = textureManager_;
+    if (!tm) {
+        if (auto dxCommon = BaseResource::GetDirectXCommon()) {
+            if (auto engine = dxCommon->GetEngine()) {
+                tm = engine->GetTextureManager();
+            }
+        }
+    }
+    if (tm && textureHandle_.IsValid()) {
+        tm->ReleaseTexture(textureHandle_);
     }
 }
 
@@ -150,10 +156,14 @@ void Object3DResource::SyncBeforeDraw() {
             }
 
             // テクスチャのインデックスを解決して反映
-            if (sTextureManager) {
-                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+            auto* tm = textureManager_;
+            if (!tm) {
+                tm = engine->GetTextureManager();
+            }
+            if (tm) {
+                cpuMaterialData_.textureIndex = tm->GetSrvIndex(textureHandle_);
                 cpuMaterialData_.envMapIndex =
-                    sTextureManager->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
+                    tm->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
             } else {
                 cpuMaterialData_.textureIndex = 0;
                 cpuMaterialData_.envMapIndex = 0;

@@ -275,9 +275,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ui_ = std::make_unique<DebugUI>();
     ui_->Initialize(dxCommon_->GetHwnd(), dxCommon_.get());
 
-    Object2DResource::sTextureManager = textureManager_.get();
-    Object3DResource::sTextureManager = textureManager_.get();
-
     for (auto& ext : extensions_) {
         ext->OnInitialize(this);
     }

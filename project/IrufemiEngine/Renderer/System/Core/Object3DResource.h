@@ -157,7 +157,17 @@ public:
     // --- テクスチャ ---
     ResourceHandle textureHandle_;
 
-    static class TextureManager* sTextureManager;
+    void SetTextureManager(class TextureManager* tm) {
+        textureManager_ = tm;
+    }
+    class TextureManager* GetTextureManager() const {
+        return textureManager_;
+    }
+
+protected:
+    class TextureManager* textureManager_ = nullptr;
+
+public:
 
     ID3D12PipelineState* customPSO_ = nullptr;
     std::string customPSOName_ = "";

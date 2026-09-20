@@ -71,7 +71,17 @@ public:
 
     ResourceHandle textureHandle_;
 
-    static class TextureManager* sTextureManager;
+    void SetTextureManager(class TextureManager* tm) {
+        textureManager_ = tm;
+    }
+    class TextureManager* GetTextureManager() const {
+        return textureManager_;
+    }
+
+protected:
+    class TextureManager* textureManager_ = nullptr;
+
+public:
 
     /**
      * @brief TransformVAddress を取得する。

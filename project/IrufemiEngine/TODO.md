@@ -468,8 +468,8 @@ private:
 - `ParticleObject::s_textureManager_` / `ParticleObject::GetTextureManager()`
 - `BaseModel::s_engine_` / `BaseModel::GetIrufemiEngine()`
 - `GPUParticleSystem::s_engine_`, `s_textureManager_`
-- `Texture::s_descriptorPool_` / `Texture::GetDescriptorPool()`
-- `Object2DResource::sTextureManager`, `Object3DResource::sTextureManager`, `GpuMaterial::sTextureManager`
+- [x] ~~`Object2DResource::sTextureManager`, `Object3DResource::sTextureManager`, `GpuMaterial::sTextureManager`~~ (Phase 2完了: インスタンス所有へ移行)
+- [x] ~~`RenderContext` 基盤新設と全レンダーパス移行~~ (Phase 1完了: IRenderPass / RenderGraph 統合)
 
 これらは `IrufemiEngine::Initialize()` 時に一括注入されエンジン破棄時に解放されるため現状クラッシュのリスクはないが、**「将来のマルチスレッド描画（並列コマンドリスト構築）」「複数ワールド・エディタ同時実行（PIE）」** を導入する際にグローバル衝突の原因となる。
 

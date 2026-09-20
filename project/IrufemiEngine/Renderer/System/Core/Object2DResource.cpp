@@ -5,8 +5,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 
-TextureManager* Object2DResource::sTextureManager = nullptr;
-
 Object2DResource::~Object2DResource() {
     Unmap();
     if (auto dxCommon = BaseResource::GetDirectXCommon()) {
@@ -26,8 +24,16 @@ Object2DResource::~Object2DResource() {
             }
         }
     }
-    if (sTextureManager && textureHandle_.IsValid()) {
-        sTextureManager->ReleaseTexture(textureHandle_);
+    auto* tm = textureManager_;
+    if (!tm) {
+        if (auto dxCommon = BaseResource::GetDirectXCommon()) {
+            if (auto engine = dxCommon->GetEngine()) {
+                tm = engine->GetTextureManager();
+            }
+        }
+    }
+    if (tm && textureHandle_.IsValid()) {
+        tm->ReleaseTexture(textureHandle_);
     }
 }
 
@@ -139,8 +145,12 @@ void Object2DResource::SyncBeforeDraw() {
             }
 
             // テクスチャのインデックスを解決して反映
-            if (sTextureManager) {
-                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+            auto* tm = textureManager_;
+            if (!tm) {
+                tm = engine->GetTextureManager();
+            }
+            if (tm) {
+                cpuMaterialData_.textureIndex = tm->GetSrvIndex(textureHandle_);
             } else {
                 cpuMaterialData_.textureIndex = 0;
             }

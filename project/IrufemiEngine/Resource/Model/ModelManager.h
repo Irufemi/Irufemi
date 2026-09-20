@@ -57,11 +57,11 @@ struct GpuMesh {
  */
 struct GpuMaterial {
     GpuMaterial() = default;
+    explicit GpuMaterial(TextureManager* tm) : textureManager_(tm) {}
     ~GpuMaterial();
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
     ResourceHandle textureHandle;
-
-    static TextureManager* sTextureManager;
+    TextureManager* textureManager_ = nullptr;
 };
 
 /**
