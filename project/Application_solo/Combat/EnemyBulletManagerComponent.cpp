@@ -95,7 +95,8 @@ void EnemyBulletManagerComponent::WarmupPool() {
     isWarmedUp_ = true;
 }
 
-GameObject* EnemyBulletManagerComponent::FireBullet(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction, float speed, int damage, float scale) {
+GameObject* EnemyBulletManagerComponent::FireBullet(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction,
+                                                    float speed, int damage, float scale) {
     if (!isWarmedUp_) {
         WarmupPool();
     }

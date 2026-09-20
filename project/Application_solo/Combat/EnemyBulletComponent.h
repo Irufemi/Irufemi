@@ -62,9 +62,9 @@ public:
 
 private:
     EnemyBulletManagerComponent* manager_ = nullptr; //!< 管理元マネージャー
-    ObjectPool<GameObject>::Handle poolHandle_;       //!< プール管理用ハンドル
-    Irufemi::Vector3 velocity_{0.0f, 0.0f, 0.0f};     //!< 移動速度ベクトル
-    int damage_ = 10;                                 //!< 命中時のダメージ量
-    float lifeTimer_ = 0.0f;                          //!< 生存タイマー
-    float maxLifeTime_ = 5.0f;                        //!< 最大寿命（秒）
+    ObjectPool<GameObject>::Handle poolHandle_;      //!< プール管理用ハンドル
+    Irufemi::Vector3 velocity_{0.0f, 0.0f, 0.0f};    //!< 移動速度ベクトル
+    int damage_ = 10;                                //!< 命中時のダメージ量
+    float lifeTimer_ = 0.0f;                         //!< 生存タイマー
+    float maxLifeTime_ = 5.0f;                       //!< 最大寿命（秒）
 };

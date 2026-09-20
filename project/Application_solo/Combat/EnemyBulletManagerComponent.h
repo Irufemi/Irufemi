@@ -42,7 +42,8 @@ public:
      * @param scale 弾のスケール・コライダー半径
      * @return 射出された弾の GameObject ポインタ（プール枯渇時は nullptr）
      */
-    GameObject* FireBullet(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction, float speed = 30.0f, int damage = 10, float scale = 0.4f);
+    GameObject* FireBullet(const Irufemi::Vector3& origin, const Irufemi::Vector3& direction, float speed = 30.0f,
+                           int damage = 10, float scale = 0.4f);
 
     /**
      * @brief 寿命終了または衝突した弾コンポーネントを受け取り、O(1) でプールへ返却する
