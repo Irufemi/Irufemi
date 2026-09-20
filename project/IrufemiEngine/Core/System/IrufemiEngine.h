@@ -51,6 +51,7 @@ class CameraManager;
 class CollisionManager;
 class GPUParticleManager;
 class PrimitiveManager;
+class TelemetrySender;
 #include "Core/System/ThreadPool.h"
 #include "Renderer/ScreenCaptureManager.h"
 
@@ -462,6 +463,13 @@ public: // ゲッター
      */
     VoxelParticleManager* GetVoxelParticleManager() const {
         return voxelParticleManager_.get();
+    }
+    /**
+     * @brief TelemetrySender を取得する。
+     * @return 取得された TelemetrySender
+     */
+    TelemetrySender* GetTelemetrySender() const {
+        return telemetrySender_.get();
     }
     /**
      * @brief ThreadPool を取得する。
@@ -967,7 +975,8 @@ private: // メンバ変数
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
 
-    // Telemetry Gatherer
+    // Telemetry
+    std::unique_ptr<TelemetrySender> telemetrySender_ = nullptr;
     std::unique_ptr<TelemetryGatherer> telemetryGatherer_ = nullptr;
 
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持

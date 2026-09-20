@@ -459,7 +459,8 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         this->SetVSync(vsync);
     });
     // -------------------------------------------------------------
-    TelemetrySender::GetInstance().Initialize();
+    telemetrySender_ = std::make_unique<TelemetrySender>();
+    telemetrySender_->Initialize();
 
     // TelemetryGatherer の初期化 (ここでプロファイル項目をバインド)
     telemetryGatherer_ = std::make_unique<TelemetryGatherer>();
@@ -706,7 +707,9 @@ void IrufemiEngine::Finalize() {
 
     Irufemi::CVarSystem::Save("resources/settings_local.json");
 
-    TelemetrySender::GetInstance().Finalize();
+    if (telemetrySender_) {
+        telemetrySender_->Finalize();
+    }
 
     // OSタイマー精度の引き上げを解除
     timeEndPeriod(1);

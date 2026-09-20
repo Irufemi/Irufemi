@@ -12,10 +12,12 @@ class DirectXCommon;
  */
 class GpuProfiler {
 public:
-    static GpuProfiler& GetInstance() {
-        static GpuProfiler instance;
-        return instance;
-    }
+    GpuProfiler() = default;
+    ~GpuProfiler();
+
+    // コピー禁止
+    GpuProfiler(const GpuProfiler&) = delete;
+    GpuProfiler& operator=(const GpuProfiler&) = delete;
 
     /**
      * @brief 初期化処理。クエリヒープと結果格納用バッファを作成する
@@ -42,12 +44,6 @@ public:
     }
 
 private:
-    GpuProfiler() = default;
-    ~GpuProfiler();
-
-    // コピー禁止
-    GpuProfiler(const GpuProfiler&) = delete;
-    GpuProfiler& operator=(const GpuProfiler&) = delete;
 
 private:
     Microsoft::WRL::ComPtr<ID3D12QueryHeap> queryHeap_;

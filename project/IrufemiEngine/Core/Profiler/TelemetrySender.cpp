@@ -13,11 +13,6 @@ struct TelemetrySender::NetworkData {
     sockaddr_in targetAddr_{};
 };
 
-TelemetrySender& TelemetrySender::GetInstance() {
-    static TelemetrySender instance;
-    return instance;
-}
-
 TelemetrySender::TelemetrySender() : networkData_(std::make_unique<NetworkData>()) {}
 
 TelemetrySender::~TelemetrySender() {

@@ -165,7 +165,8 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     CreateDepthSRV();
 
     // GpuProfilerの初期化
-    GpuProfiler::GetInstance().Initialize(this);
+    gpuProfiler_ = std::make_unique<GpuProfiler>();
+    gpuProfiler_->Initialize(this);
 }
 
 void DirectXCommon::CreateDepthSRV() {

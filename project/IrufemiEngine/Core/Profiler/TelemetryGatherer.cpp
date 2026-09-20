@@ -5,6 +5,7 @@
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Core/Profiler/GpuProfiler.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 
 void TelemetryGatherer::RegisterMetric(const std::string& name, std::function<float()> fetcher) {
@@ -15,6 +16,7 @@ void TelemetryGatherer::Initialize(IrufemiEngine* engine) {
     if (!engine) {
         return;
     }
+    sender_ = engine->GetTelemetrySender();
 
     // ==========================================
     // System Metrics
@@ -25,9 +27,13 @@ void TelemetryGatherer::Initialize(IrufemiEngine* engine) {
 
     RegisterMetric("System/CPU_Time_ms", [engine]() { return engine->GetPureCpuTimeMs(); });
 
-    RegisterMetric("System/GPU_Time_ms", []() {
-        // GpuProfiler is a singleton, so we can fetch it directly
-        return GpuProfiler::GetInstance().GetLastFrameGpuTimeMs();
+    RegisterMetric("System/GPU_Time_ms", [engine]() {
+        if (auto* dx = engine->GetDirectXCommon()) {
+            if (auto* profiler = dx->GetGpuProfiler()) {
+                return profiler->GetLastFrameGpuTimeMs();
+            }
+        }
+        return 0.0f;
     });
 
     // ==========================================
@@ -87,10 +93,14 @@ void TelemetryGatherer::Initialize(IrufemiEngine* engine) {
 }
 
 void TelemetryGatherer::DispatchAll() {
+    if (!sender_) {
+        return;
+    }
+
     for (const auto& metric : metrics_) {
-        TelemetrySender::GetInstance().SetMetric(metric.name, metric.fetcher());
+        sender_->SetMetric(metric.name, metric.fetcher());
     }
 
     // 最後にフレームの終了を通知
-    TelemetrySender::GetInstance().OnFrameEnd();
+    sender_->OnFrameEnd();
 }

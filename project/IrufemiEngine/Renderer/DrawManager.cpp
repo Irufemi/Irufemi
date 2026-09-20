@@ -380,7 +380,9 @@ void DrawManager::PreDraw(std::array<float, 4> clearColor, float clearDepth, uin
     SyncCachedFrameData();
 
     // GPU計測開始
-    GpuProfiler::GetInstance().StartFrame(commandList_);
+    if (auto* profiler = dxCommon_->GetGpuProfiler()) {
+        profiler->StartFrame(commandList_);
+    }
 
     // バックバッファとRTV/DSVの取得 (これはスワップチェーン依存なのでそのままでよい)
 
@@ -466,7 +468,9 @@ void DrawManager::PostDraw() {
     /// コマンドを積み込んで確定させる
 
     // GPU計測終了
-    GpuProfiler::GetInstance().EndFrame(commandList_);
+    if (auto* profiler = dxCommon_->GetGpuProfiler()) {
+        profiler->EndFrame(commandList_);
+    }
 
     // コマンドリストの内容を確定させる。すべてのコマンドを積んでからCloseすること
     HRESULT hr = commandList_->Close();

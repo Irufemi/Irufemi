@@ -17,7 +17,12 @@
  */
 class TelemetrySender {
 public:
-    static TelemetrySender& GetInstance();
+    TelemetrySender();
+    ~TelemetrySender();
+
+    // コピー禁止
+    TelemetrySender(const TelemetrySender&) = delete;
+    TelemetrySender& operator=(const TelemetrySender&) = delete;
 
     /**
      * @brief システムを初期化し、裏スレッドを起動します。
@@ -50,13 +55,6 @@ public:
     void OnFrameEnd();
 
 private:
-    TelemetrySender();
-    ~TelemetrySender();
-
-    // コピー禁止
-    TelemetrySender(const TelemetrySender&) = delete;
-    TelemetrySender& operator=(const TelemetrySender&) = delete;
-
     void ThreadLoop();
 
 private:
