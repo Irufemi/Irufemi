@@ -78,6 +78,7 @@
 #include "Framework/Scene/SceneManager.h"
 #include "Framework/Scene/SceneTransition.h"
 #include "Framework/Scene/SceneSerializer.h"
+#include "Framework/Prefab/PrefabManager.h"
 #include "Framework/Component/ComponentFactory.h"
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Framework/Component/Audio/AudioSourceComponent.h"
@@ -465,6 +466,10 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     // TelemetryGatherer の初期化 (ここでプロファイル項目をバインド)
     telemetryGatherer_ = std::make_unique<TelemetryGatherer>();
     telemetryGatherer_->Initialize(this);
+
+    // PrefabManager の初期化と SceneSerializer へのバインド
+    prefabManager_ = std::make_unique<PrefabManager>();
+    SceneSerializer::SetPrefabManager(prefabManager_.get());
 }
 
 // クリアカラーをfloat配列で持つ初期化
@@ -706,6 +711,12 @@ void IrufemiEngine::Finalize() {
     }
 
     Irufemi::CVarSystem::Save("resources/settings_local.json");
+
+    SceneSerializer::SetPrefabManager(nullptr);
+    if (prefabManager_) {
+        prefabManager_->ClearCache();
+        prefabManager_.reset();
+    }
 
     if (telemetrySender_) {
         telemetrySender_->Finalize();

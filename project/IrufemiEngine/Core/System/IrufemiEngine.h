@@ -52,6 +52,7 @@ class CollisionManager;
 class GPUParticleManager;
 class PrimitiveManager;
 class TelemetrySender;
+class PrefabManager;
 #include "Core/System/ThreadPool.h"
 #include "Renderer/ScreenCaptureManager.h"
 
@@ -470,6 +471,13 @@ public: // ゲッター
      */
     TelemetrySender* GetTelemetrySender() const {
         return telemetrySender_.get();
+    }
+    /**
+     * @brief PrefabManager を取得する。
+     * @return 取得された PrefabManager
+     */
+    PrefabManager* GetPrefabManager() const {
+        return prefabManager_.get();
     }
     /**
      * @brief ThreadPool を取得する。
@@ -978,6 +986,9 @@ private: // メンバ変数
     // Telemetry
     std::unique_ptr<TelemetrySender> telemetrySender_ = nullptr;
     std::unique_ptr<TelemetryGatherer> telemetryGatherer_ = nullptr;
+
+    // Prefab Manager
+    std::unique_ptr<PrefabManager> prefabManager_ = nullptr;
 
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false;            // 終了処理済みフラグ

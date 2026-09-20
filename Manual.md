@@ -118,9 +118,8 @@ Unityライクな「オブジェクトのテンプレート化」をサポート
    // 推奨: シーンの遅延キューを経由して生成 (座標指定 & 自動Add & イテレータ破壊防止)
    auto bullet = scene->InstantiatePrefab("resources/prefabs/Bullet.prefab.json", spawnPos);
 
-   // または PrefabManager から直接クローン生成
-   #include "Framework/Prefab/PrefabManager.h"
-   auto bullet = PrefabManager::GetInstance().Instantiate("resources/prefabs/Bullet.prefab.json");
+   // または エンジンから PrefabManager を取得してクローン生成
+   auto bullet = scene->GetEngine()->GetPrefabManager()->Instantiate("resources/prefabs/Bullet.prefab.json");
    if (bullet) {
        bullet->GetTransform()->SetPosition(spawnPos);
        scene->AddGameObject(bullet); // 遅延キューに追加され、次フレームUpdate前に安全にStart()が実行される
@@ -2236,10 +2235,10 @@ dotnet publish TelemetryMonitor.csproj -c Release -r win-x64 --self-contained fa
 **【カスタムデータの送り方】**
 ゲーム固有の変数（例：プレイヤーのHPやボスのフェーズ）を監視したい場合は、エンジン内の任意の場所から以下の1行を呼ぶだけで、ツール側に新しい折れ線グラフが追加されます。
 ```cpp
-#include "Profiler/TelemetrySender.h"
-
-// 毎フレームのUpdate内などで呼ぶ
-TelemetrySender::GetInstance().SetMetric("Game/PlayerHP", player->GetHP());
+// 毎フレームのUpdate内などで呼ぶ (engineポインタ経由)
+if (auto* sender = engine->GetTelemetrySender()) {
+    sender->SetMetric("Game/PlayerHP", player->GetHP());
+}
 ```
 
 ### 8.2 フレームレート制御とタイマー精度 (AAA Frame Pacing)

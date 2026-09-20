@@ -56,15 +56,17 @@ bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::str
 }
 
 nlohmann::json SceneSerializer::GetPrefabJson(const std::string& filepath) {
-    return PrefabManager::GetInstance().GetPrefabJson(filepath);
+    return s_prefabManager_ ? s_prefabManager_->GetPrefabJson(filepath) : nlohmann::json::object();
 }
 
 std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
-    return PrefabManager::GetInstance().Instantiate(filepath);
+    return s_prefabManager_ ? s_prefabManager_->Instantiate(filepath) : nullptr;
 }
 
 void SceneSerializer::ClearCache() {
-    PrefabManager::GetInstance().ClearCache();
+    if (s_prefabManager_) {
+        s_prefabManager_->ClearCache();
+    }
 }
 
 std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& sceneName) {

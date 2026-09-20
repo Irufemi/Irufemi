@@ -16,11 +16,11 @@ class GameObject;
  */
 class PrefabManager {
 public:
-    /**
-     * @brief シングルトンインスタンスを取得する
-     * @return PrefabManagerの参照
-     */
-    static PrefabManager& GetInstance();
+    PrefabManager() = default;
+    ~PrefabManager();
+
+    PrefabManager(const PrefabManager&) = delete;
+    PrefabManager& operator=(const PrefabManager&) = delete;
 
     /**
      * @brief プレハブのJSONデータを取得する（キャッシュ対応）
@@ -49,10 +49,6 @@ public:
     void ClearCache();
 
 private:
-    PrefabManager() = default;
-    ~PrefabManager();
-    PrefabManager(const PrefabManager&) = delete;
-    PrefabManager& operator=(const PrefabManager&) = delete;
 
 private:
     std::mutex mutex_;

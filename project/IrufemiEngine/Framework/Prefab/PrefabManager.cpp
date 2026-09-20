@@ -2,11 +2,6 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Core/Utility/JsonUtility.h"
 
-PrefabManager& PrefabManager::GetInstance() {
-    static PrefabManager instance;
-    return instance;
-}
-
 nlohmann::json PrefabManager::GetPrefabJson(const std::string& filepath) {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = jsonCache_.find(filepath);

@@ -1,5 +1,5 @@
 #include "Framework/Prefab/PrefabUtility.h"
-#include "Framework/Prefab/PrefabManager.h"
+#include "Core/Utility/JsonUtility.h"
 #include <nlohmann/json.hpp>
 
 PrefabMetrics PrefabUtility::ExtractMetrics(const std::string& prefabPath) {
@@ -8,8 +8,8 @@ PrefabMetrics PrefabUtility::ExtractMetrics(const std::string& prefabPath) {
         return metrics;
     }
 
-    nlohmann::json j = PrefabManager::GetInstance().GetPrefabJson(prefabPath);
-    if (j.is_null() || !j.contains("components") || !j["components"].is_array()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(prefabPath, j)) {
         return metrics;
     }
 
