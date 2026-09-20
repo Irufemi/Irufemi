@@ -315,7 +315,8 @@ void DebugUI::DebugLights([[maybe_unused]] DirectionalLight* directionalLight,
                 ImGui::DragFloat3("SL Position", &s_lightEditorContext.spotLight.position.x, 0.01f);
                 ImGui::DragFloat("SL Intensity", &s_lightEditorContext.spotLight.intensity, 0.01f, 0.0f);
                 ImGui::DragFloat3("SL Direction", &s_lightEditorContext.spotLight.direction.x, 0.01f);
-                s_lightEditorContext.spotLight.direction = Irufemi::Math::Normalize(s_lightEditorContext.spotLight.direction);
+                s_lightEditorContext.spotLight.direction =
+                    Irufemi::Math::Normalize(s_lightEditorContext.spotLight.direction);
                 ImGui::DragFloat("SL Distance", &s_lightEditorContext.spotLight.distance, 0.01f, 0.0f);
                 ImGui::DragFloat("SL Decay", &s_lightEditorContext.spotLight.decay, 0.01f, 0.0f);
                 ImGui::DragFloat("SL CosAngle", &s_lightEditorContext.spotLight.cosAngle, 0.01f, 0.0f, 1.0f);
@@ -331,7 +332,8 @@ void DebugUI::DebugLights([[maybe_unused]] DirectionalLight* directionalLight,
                 ImGui::DragFloat3("AL Position", &s_lightEditorContext.areaLight.position.x, 0.01f);
                 ImGui::DragFloat("AL Intensity", &s_lightEditorContext.areaLight.intensity, 0.01f, 0.0f);
                 ImGui::DragFloat3("AL Direction", &s_lightEditorContext.areaLight.direction.x, 0.01f);
-                s_lightEditorContext.areaLight.direction = Irufemi::Math::Normalize(s_lightEditorContext.areaLight.direction);
+                s_lightEditorContext.areaLight.direction =
+                    Irufemi::Math::Normalize(s_lightEditorContext.areaLight.direction);
                 ImGui::DragFloat("AL Range", &s_lightEditorContext.areaLight.range, 0.01f, 0.0f);
                 ImGui::DragFloat2("AL Size", &s_lightEditorContext.areaLight.size.x, 0.01f, 0.0f);
                 if (ImGui::Button("Add AreaLight to Scene")) {

@@ -63,5 +63,5 @@ private:
     int maxBullets_ = 40;                                                         //!< プール最大容量
     std::string bulletModelPath_ = "resources/model/EnemyBullet/EnemyBullet.obj"; //!< 弾の3Dモデルパス
     std::unique_ptr<ObjectPool<GameObject>> bulletPool_;                          //!< 弾のオブジェクトプール
-    bool isWarmedUp_ = false;                                                     //!< 事前ウォームアップ完了フラグ
+    bool isWarmedUp_ = false; //!< 事前ウォームアップ完了フラグ
 };
