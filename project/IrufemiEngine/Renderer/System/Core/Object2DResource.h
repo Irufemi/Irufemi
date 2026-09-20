@@ -82,7 +82,6 @@ protected:
     class TextureManager* textureManager_ = nullptr;
 
 public:
-
     /**
      * @brief TransformVAddress を取得する。
      * @return 取得された TransformVAddress

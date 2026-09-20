@@ -168,7 +168,6 @@ protected:
     class TextureManager* textureManager_ = nullptr;
 
 public:
-
     ID3D12PipelineState* customPSO_ = nullptr;
     std::string customPSOName_ = "";
     Irufemi::BlendMode customBlend_ = Irufemi::BlendMode::kBlendModeNormal;
