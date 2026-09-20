@@ -36,82 +36,85 @@ public: // メンバ関数
     ~Skybox();
     // 初期化
     /**
-     * @brief Initialize を実行する。
+     * @brief スカイボックスの初期化（キューブメッシュ生成およびテクスチャ読み込み）
+     * @param[in] textureName キューブマップテクスチャのパス（デフォルトは Rostock Laage Airport）
      */
     void Initialize(const std::string& textureName = "resources/rostock_laage_airport_4k.dds");
-    // 更新
+
     /**
-     * @brief Update を実行する。
+     * @brief スカイボックスの更新処理（アクティブカメラ追従および行列計算）
      */
     void Update();
+
     /**
-     * @brief SyncBeforeDraw を実行する。
+     * @brief 描画前フレーム同期（定数バッファへのデータ転送およびDrawManagerへのパケット登録）
      */
     void SyncBeforeDraw() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief スカイボックスの直接描画処理
      */
     void Draw() override;
-    // デバッグ
+
     /**
-     * @brief Debug を実行する。
+     * @brief デバッグ用 ImGui ウィンドウを描画する
      */
     void Debug();
 
 public: // メンバ関数(セッター/ゲッター)
-    // engineセッター
     /**
-     * @brief Engine を設定する。
-     * @param[in] engine 設定する Engine の値
+     * @brief 静的エンジン参照を設定する
+     * @param[in] engine エンジンのポインタ
      */
     static void SetEngine(IrufemiEngine* engine) {
         engine_ = engine;
     }
-    // ID3D12Resource関連ゲッター
+
     /**
-     * @brief VertexBufferView を取得する。
-     * @return 取得された VertexBufferView
+     * @brief 頂点バッファビューを取得する
+     * @return 頂点バッファビューの参照
      */
     const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const {
         return vertexBufferView_;
     }
+
     /**
-     * @brief IndexBufferView を取得する。
-     * @return 取得された IndexBufferView
+     * @brief インデックスバッファビューを取得する
+     * @return インデックスバッファビューの参照
      */
     const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const {
         return indexBufferView_;
     }
+
     /**
-     * @brief TextureHandle を取得する。
-     * @return 取得された TextureHandle
+     * @brief キューブマップテクスチャのハンドルを取得する
+     * @return テクスチャリソースハンドル
      */
     ResourceHandle GetTextureHandle() const {
         return textureHandle_;
     }
-    // indexのサイズ取得
+
     /**
-     * @brief IndexSize を取得する。
-     * @return 取得された IndexSize
+     * @brief インデックス数を取得する
+     * @return インデックスデータの総要素数
      */
     UINT GetIndexSize() const {
         return static_cast<UINT>(indexDataList_.size());
     }
 
 private: // メンバ関数(内部ヘルパ)
-    // ID3D12Resourceの生成
     /**
-     * @brief CreateResource を実行する。
+     * @brief 頂点バッファおよびインデックスバッファのリソースを生成する
      */
     void CreateResource();
-    // ID3D12ResourceのMap
+
     /**
-     * @brief MapResource を実行する。
+     * @brief リソースのメモリマップを行い、CPU側ポインタを取得する
      */
     void MapResource();
-    // Id3D12ResourceのUnMap
+
     /**
-     * @brief UnMapResource を実行する。
+     * @brief リソースのメモリマップを解除する
      */
     void UnMapResource();
 

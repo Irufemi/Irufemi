@@ -83,11 +83,12 @@ public: // メンバ関数
     void Update();
 
     /**
-     * @brief 描画コマンドの積み込み
+     * @brief 描画前フレーム同期（DrawManagerへの描画パケット登録）
      */
     void SyncBeforeDraw() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief スプライトの直接描画処理
      */
     void Draw() override;
 
@@ -99,59 +100,71 @@ public: // メンバ関数
 
     /** @name ゲッター */
     ///@{
+    /**
+     * @brief 2D描画用リソースを取得する
+     * @return Object2DResource ポインタ
+     */
     Object2DResource* GetD3D12Resource() {
         return this->resource_.get();
     }
+
     /**
-     * @brief Size を取得する。
-     * @return 取得された Size
+     * @brief スプライトの表示サイズを取得する
+     * @return 幅と高さ（ピクセル単位）
      */
     const Irufemi::Vector2& GetSize() const {
         return size_;
     }
+
     /**
-     * @brief Anchor を取得する。
-     * @return 取得された Anchor
+     * @brief アンカーポイント（原点位置比率）を取得する
+     * @return アンカー座標 (0.0 ~ 1.0)
      */
     const Irufemi::Vector2& GetAnchor() const {
         return anchor_;
     }
+
     /**
-     * @brief Position2D を取得する。
-     * @return 取得された Position2D
+     * @brief 2Dスクリーン座標位置を取得する
+     * @return XY座標
      */
     const Irufemi::Vector2 GetPosition2D() const;
+
     /**
-     * @brief Rotation を取得する。
-     * @return 取得された Rotation
+     * @brief 回転角を取得する
+     * @return オイラー回転角ベクトル
      */
     const Irufemi::Vector3& GetRotation() const {
         return resource_ ? resource_->transform_.rotate : Irufemi::Vector3{};
     }
+
     /**
-     * @brief Color を取得する。
-     * @return 取得された Color
+     * @brief スプライトのカラー値を取得する
+     * @return RGBA カラー
      */
     const Irufemi::Vector4& GetColor() const {
         return resource_->GetMaterialData()->color;
     }
+
     /**
-     * @brief IsFlipX かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief 水平方向（X軸）の反転フラグを取得する
+     * @return 反転している場合 true
      */
     bool IsFlipX() const {
         return isFlipX_;
     }
+
     /**
-     * @brief IsFlipY かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief 垂直方向（Y軸）の反転フラグを取得する
+     * @return 反転している場合 true
      */
     bool IsFlipY() const {
         return isFlipY_;
     }
+
     /**
-     * @brief TextureName を取得する。
-     * @return 取得された TextureName
+     * @brief 適用されているテクスチャのファイル名を取得する
+     * @return テクスチャパス/名前
      */
     std::string GetTextureName() const;
     ///@}

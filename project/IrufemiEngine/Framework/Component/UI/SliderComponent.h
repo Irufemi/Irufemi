@@ -49,7 +49,7 @@ public:
     /**
      * @brief ハンドル（ツマミ）となるGameObjectのIDを設定
      */
-    void SetHandleObjectID(int id);
+    void SetHandleObjectID(uint64_t id);
 
 private:
     bool CheckBounds(const Irufemi::Vector2& mousePos);
@@ -59,7 +59,7 @@ private:
     SpriteRendererComponent* backgroundSprite_ = nullptr;
     GameObject* handleObject_ = nullptr;
 
-    int handleObjectID_ = 0;                   // Prefabからの復元用
+    uint64_t handleObjectID_ = 0;              // Prefabからの復元用
     float value_ = 1.0f;                       // 0.0 ~ 1.0 の割合
     bool isDragging_ = false;                  // ドラッグ中か
     Irufemi::Vector2 hitboxScale_{1.0f, 1.0f}; // 当たり判定のスケール

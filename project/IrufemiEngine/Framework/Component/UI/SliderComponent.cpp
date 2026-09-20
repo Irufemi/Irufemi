@@ -13,7 +13,7 @@
 void SliderComponent::OnRegisterProperties() {
     RegisterProperty("Hitbox Scale", &hitboxScale_);
     RegisterProperty("Value", &value_);
-    RegisterProperty("Handle Object ID", &handleObjectID_);
+    RegisterGameObjectRef("Handle Object ID", &handleObjectID_);
 }
 
 void SliderComponent::Initialize() {
@@ -30,7 +30,7 @@ void SliderComponent::Start() {
     ResolveHandleObject();
 }
 
-void SliderComponent::SetHandleObjectID(int id) {
+void SliderComponent::SetHandleObjectID(uint64_t id) {
     handleObjectID_ = id;
     ResolveHandleObject();
 }
@@ -43,7 +43,7 @@ void SliderComponent::ResolveHandleObject() {
 
     // シーンの高速ハッシュ検索を試みる
     if (auto scene = gameObject_->GetScene()) {
-        if (auto obj = scene->FindGameObjectByID(static_cast<uint64_t>(handleObjectID_))) {
+        if (auto obj = scene->FindGameObjectByID(handleObjectID_)) {
             handleObject_ = obj.get();
             return;
         }
@@ -51,7 +51,7 @@ void SliderComponent::ResolveHandleObject() {
 
     // フォールバックとして子オブジェクトから検索
     for (auto& child : gameObject_->GetChildren()) {
-        if (child && child->GetInstanceID() == static_cast<uint64_t>(handleObjectID_)) {
+        if (child && child->GetInstanceID() == handleObjectID_) {
             handleObject_ = child.get();
             return;
         }
@@ -89,11 +89,7 @@ void SliderComponent::Update() {
         return;
     }
 
-    auto scene = gameObject_->GetScene();
-    if (!scene) {
-        return;
-    }
-    auto engine = scene->GetEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return;
     }
