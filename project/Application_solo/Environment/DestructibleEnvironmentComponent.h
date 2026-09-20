@@ -45,6 +45,9 @@ private:
     int hp_ = 1;
     int debrisSpawnCount_ = 3;
 
-    DebrisManagerComponent* debrisManager_ = nullptr;
+    DebrisManagerComponent* debrisManager_ = nullptr; ///< 破片生成マネージャーへの参照
+    /**
+     * @brief 破壊エフェクトを再生するためのエフェクトマネージャーへの参照
+     */
     EffectManagerComponent* effectManager_ = nullptr;
 };

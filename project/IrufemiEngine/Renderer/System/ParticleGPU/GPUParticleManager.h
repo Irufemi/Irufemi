@@ -153,6 +153,9 @@ private:
     };
 
     std::unordered_map<SystemKey, SystemContext, SystemKeyHasher> systems_;
+    /**
+     * @brief システムポインタからシステムコンテキストへの高速逆引きマップ (O(1) 解除用)
+     */
     std::unordered_map<GPUParticleSystem*, SystemContext*> systemLookup_;
 
     // グローバルなField管理

@@ -31,6 +31,10 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
+
+    /**
+     * @brief インスペクターおよびシリアライズ用のプロパティ登録を行う
+     */
     void OnRegisterProperties() override;
 
     /**
