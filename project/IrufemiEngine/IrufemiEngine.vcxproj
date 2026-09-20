@@ -406,7 +406,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Core\Math\Geometry\Frustum.h" />
     <ClInclude Include="Core\Math\Geometry\OBB.h" />
     <ClInclude Include="Core\Math\Random\Random.h" />
-    <ClInclude Include="Core\Pattern\Singleton.h" />
     <ClInclude Include="Core\Shape\Ball.h" />
     <ClInclude Include="Core\Shape\LinePrimitive.h" />
     <ClInclude Include="Core\Shape\Plane.h" />

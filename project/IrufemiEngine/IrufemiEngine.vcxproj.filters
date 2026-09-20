@@ -833,9 +833,6 @@
     <ClInclude Include="Core\Math\Random\Random.h">
       <Filter>Core\Math\Random</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Pattern\Singleton.h">
-      <Filter>Core\Pattern</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Shape\Ball.h">
       <Filter>Core\Shape</Filter>
     </ClInclude>

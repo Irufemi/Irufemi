@@ -457,3 +457,40 @@ private:
 - **Phase 3 (IrufemiEngine のファサード化)**:
   - `IrufemiEngine.cpp` のコード量を 100〜200行程度にスリム化し、単なるブートストラップ（起動エントリーポイント）とサブシステムへのアクセス窓口（Facade パターン）へ純化する。
 
+### 📦 静的ポインタキャッシュ群のコンテキスト集約（Context Struct / Dependency Injection 改革）
+
+#### 1. 現状の課題とアーキテクチャ背景
+現在、描画・リソースオブジェクトの基底クラス群において、コンストラクタ引数の過剰なバケツリレーを避けるための利便性パターンとして以下の静的ポインタキャッシュ（準シングルトン）が運用されている：
+- `BaseResource::s_dxCommon_` / `BaseResource::GetDirectXCommon()`
+- `Sprite::s_textureManager_` / `Sprite::GetTextureManager()`
+- `Text::s_fontManager_` / `Text::GetFontManager()`
+- `Primitive3DObject::s_textureManager_` / `Primitive3DObject::GetTextureManager()`
+- `ParticleObject::s_textureManager_` / `ParticleObject::GetTextureManager()`
+- `BaseModel::s_engine_` / `BaseModel::GetIrufemiEngine()`
+- `GPUParticleSystem::s_engine_`, `s_textureManager_`
+- `Texture::s_descriptorPool_` / `Texture::GetDescriptorPool()`
+- `Object2DResource::sTextureManager`, `Object3DResource::sTextureManager`, `GpuMaterial::sTextureManager`
+
+これらは `IrufemiEngine::Initialize()` 時に一括注入されエンジン破棄時に解放されるため現状クラッシュのリスクはないが、**「将来のマルチスレッド描画（並列コマンドリスト構築）」「複数ワールド・エディタ同時実行（PIE）」** を導入する際にグローバル衝突の原因となる。
+
+#### 2. 一線級エンジン（UE / Frostbite）準拠の解決策：`RenderContext`
+個別の静的ポインタを排除し、描画パスやリソース操作時に軽量なコンテキスト構造体を参照渡しする設計へ移行する。
+
+```cpp
+struct RenderContext {
+    DirectXCommon* dxCommon = nullptr;
+    TextureManager* textureManager = nullptr;
+    FontManager* fontManager = nullptr;
+    PSOManager* psoManager = nullptr;
+    ID3D12GraphicsCommandList* commandList = nullptr;
+};
+```
+
+#### 3. 段階的移行フェーズ (Phased Roadmap)
+- **Phase 1: 描画パイプライン（`DrawManager` / `RenderGraph`）のコンテキスト化**:
+  - `RenderPass::Execute` や `BaseBatch::Draw` に `const RenderContext&` を渡すフローを確立。
+- **Phase 2: リソース層（`Object2DResource` / `Object3DResource`）の静的ポインタ撤廃**:
+  - `ReleaseTexture` などのリソース破棄責務を `TextureManager` / `ResourceManager` の一元管理へ移譲し、静的ポインタを排除。
+- **Phase 3: オブジェクト層（`Sprite` / `Text` / `Primitive3DObject`）の純化**:
+  - 基底クラスの静的ポインタを全廃し、生成時または描画時にコンテキストを受け取るクリーンな設計へ統一。
+
