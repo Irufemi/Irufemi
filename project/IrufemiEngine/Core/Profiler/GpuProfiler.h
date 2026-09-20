@@ -44,7 +44,6 @@ public:
     }
 
 private:
-
 private:
     Microsoft::WRL::ComPtr<ID3D12QueryHeap> queryHeap_;
     Microsoft::WRL::ComPtr<ID3D12Resource> queryResultBuffer_;

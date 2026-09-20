@@ -381,7 +381,8 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Ve
     return MakeScaleMatrix(scale) * MakeRotateXYZMatrix(rotate) * Math::MakeTranslateMatrix(translate);
 }
 
-Matrix4x4 MakeAffineMatrix(const Vector3& scale, float rotateX, float rotateY, float rotateZ, const Vector3& translate) {
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, float rotateX, float rotateY, float rotateZ,
+                           const Vector3& translate) {
     return MakeAffineMatrix(scale, Vector3{rotateX, rotateY, rotateZ}, translate);
 }
 

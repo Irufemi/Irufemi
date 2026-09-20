@@ -68,8 +68,7 @@ public:
 // ---------------------------------------------------------
 // 高速キャッシュアクセサ (O(1) Direct Access)
 // ---------------------------------------------------------
-template <typename T>
-class AutoCVarRef {
+template <typename T> class AutoCVarRef {
 public:
     explicit AutoCVarRef(const std::string& name) : name_(name) {}
 
