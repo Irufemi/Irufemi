@@ -172,27 +172,37 @@ bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance)
 
 nlohmann::json MeshRendererComponent::Serialize() {
     nlohmann::json j;
-    j["Model File"] = modelName_;
-    j["modelName"] = modelName_; // 後方互換性維持
-    j["isVisible"] = isVisible_;
-    j["castShadows"] = castShadows_;
+    j["modelName"] = modelName_; // 正規キーに統一
+
+    // デフォルト値(true)と異なる場合のみ出力（プレハブオーバーライド最小化・疎シリアライズ）
+    if (!isVisible_) {
+        j["isVisible"] = false;
+    }
+    if (!castShadows_) {
+        j["castShadows"] = false;
+    }
     return j;
 }
 
 void MeshRendererComponent::Deserialize(const nlohmann::json& j) {
-    if (j.contains("Model File")) {
-        modelName_ = j["Model File"].get<std::string>();
-        LoadModel(modelName_);
-    } else if (j.contains("modelName")) {
+    // modelName または Model File の両対応（後方互換性維持）
+    if (j.contains("modelName")) {
         modelName_ = j["modelName"].get<std::string>();
+        LoadModel(modelName_);
+    } else if (j.contains("Model File")) {
+        modelName_ = j["Model File"].get<std::string>();
         LoadModel(modelName_);
     }
 
     if (j.contains("isVisible")) {
         isVisible_ = j["isVisible"].get<bool>();
+    } else {
+        isVisible_ = true;
     }
     if (j.contains("castShadows")) {
         castShadows_ = j["castShadows"].get<bool>();
+    } else {
+        castShadows_ = true;
     }
 }
 
