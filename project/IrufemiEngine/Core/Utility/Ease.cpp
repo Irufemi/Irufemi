@@ -7,27 +7,6 @@
 
 using namespace Irufemi::Math;
 
-float Lerp(float pos1, float pos2, float t) {
-    float result;
-    result = (1.0f - t) * pos1 + t * pos2;
-    return result;
-}
-
-// 線形補間
-Irufemi::Vector2 Lerp(const Irufemi::Vector2& v1, const Irufemi::Vector2& v2, float t) {
-    return Add(Multiply(1.0f - t, v1), Multiply(t, v2));
-}
-
-// 線形補間
-Irufemi::Vector3 Lerp(const Irufemi::Vector3& v1, const Irufemi::Vector3& v2, float t) {
-    return Add(Multiply(1.0f - t, v1), Multiply(t, v2));
-}
-
-// 線形補間
-Irufemi::Vector4 Lerp(const Irufemi::Vector4& v1, const Irufemi::Vector4& v2, float t) {
-    return Multiply(1.0f - t, v1) + Multiply(t, v2);
-}
-
 // Irufemi::Quaternion 線形補間(最短経路を選び正規化して返す)
 Irufemi::Quaternion Lerp(const Irufemi::Quaternion& q0, const Irufemi::Quaternion& q1, float t) {
     // 最短経路のため内積を計算し、負なら q1 を反転
@@ -48,24 +27,6 @@ Irufemi::Quaternion Lerp(const Irufemi::Quaternion& q0, const Irufemi::Quaternio
 
     // 正規化して返す(NLERP)
     return Normalize(res);
-}
-
-// 線形補間(0~1制限あり)
-float LerpClamped(float a, float b, float t) {
-    t = std::clamp(t, 0.0f, 1.0f);
-    return Lerp(a, b, t);
-}
-
-// 線形補間(0~1制限あり)
-Irufemi::Vector2 LerpClamped(const Irufemi::Vector2& v1, const Irufemi::Vector2& v2, float t) {
-    t = std::clamp(t, 0.0f, 1.0f);
-    return Lerp(v1, v2, t);
-}
-
-// 線形補間(0~1制限あり)
-Irufemi::Vector3 LerpClamped(const Irufemi::Vector3& v1, const Irufemi::Vector3& v2, float t) {
-    t = std::clamp(t, 0.0f, 1.0f);
-    return Lerp(v1, v2, t);
 }
 
 // 球面線形補間

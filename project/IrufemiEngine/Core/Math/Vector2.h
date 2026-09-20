@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <cassert>
 
 namespace Irufemi {
 /**
@@ -22,23 +23,56 @@ struct Vector2 final {
      * @param index 成分のインデックス (0:x, 1:y)
      * @return 成分への参照
      */
-    float& operator[](int index);
+    float& operator[](int index) noexcept {
+        assert(index >= 0 && index < 2);
+        return (&x)[index];
+    }
 
     /**
      * @brief 添え字演算子 (const)
      * @param index 成分のインデックス (0:x, 1:y)
      * @return 成分の値
      */
-    float operator[](int index) const;
+    float operator[](int index) const noexcept {
+        assert(index >= 0 && index < 2);
+        return (&x)[index];
+    }
 
     /** @name 複合代入演算子 */
     /** @{ */
-    Vector2& operator+=(const Vector2& rhs);
-    Vector2& operator-=(const Vector2& rhs);
-    Vector2& operator*=(float s);
-    Vector2& operator/=(float s);
-    Vector2& operator*=(const Vector2& rhs);
-    Vector2& operator/=(const Vector2& rhs);
+    constexpr Vector2& operator+=(const Vector2& rhs) noexcept {
+        x += rhs.x;
+        y += rhs.y;
+        return *this;
+    }
+    constexpr Vector2& operator-=(const Vector2& rhs) noexcept {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+    constexpr Vector2& operator*=(float s) noexcept {
+        x *= s;
+        y *= s;
+        return *this;
+    }
+    Vector2& operator/=(float s) noexcept {
+        assert(s != 0.0f);
+        const float inv = 1.0f / s;
+        x *= inv;
+        y *= inv;
+        return *this;
+    }
+    constexpr Vector2& operator*=(const Vector2& rhs) noexcept {
+        x *= rhs.x;
+        y *= rhs.y;
+        return *this;
+    }
+    Vector2& operator/=(const Vector2& rhs) noexcept {
+        assert(rhs.x != 0.0f && rhs.y != 0.0f);
+        x /= rhs.x;
+        y /= rhs.y;
+        return *this;
+    }
     /** @} */
 
     /** @name 比較演算子 */
@@ -110,20 +144,47 @@ struct Vector2 final {
     /** @} */
 };
 
+// 定数定義 (C++17 インライン変数)
+inline constexpr Vector2 Vector2::zero{0.0f, 0.0f};
+inline constexpr Vector2 Vector2::one{1.0f, 1.0f};
+inline constexpr Vector2 Vector2::right{1.0f, 0.0f};
+inline constexpr Vector2 Vector2::up{0.0f, 1.0f};
+
 /** @name 非メンバ演算子 */
 /** @{ */
 
-Vector2 operator+(const Vector2& lhs, const Vector2& rhs);
-Vector2 operator-(const Vector2& lhs, const Vector2& rhs);
-Vector2 operator+(const Vector2& v);
-Vector2 operator-(const Vector2& v);
-Vector2 operator*(const Vector2& v, float s);
-Vector2 operator*(float s, const Vector2& v);
-Vector2 operator/(const Vector2& v, float s);
+[[nodiscard]] constexpr inline Vector2 operator+(const Vector2& lhs, const Vector2& rhs) noexcept {
+    return {lhs.x + rhs.x, lhs.y + rhs.y};
+}
+[[nodiscard]] constexpr inline Vector2 operator-(const Vector2& lhs, const Vector2& rhs) noexcept {
+    return {lhs.x - rhs.x, lhs.y - rhs.y};
+}
+[[nodiscard]] constexpr inline Vector2 operator+(const Vector2& v) noexcept {
+    return v;
+}
+[[nodiscard]] constexpr inline Vector2 operator-(const Vector2& v) noexcept {
+    return {-v.x, -v.y};
+}
+[[nodiscard]] constexpr inline Vector2 operator*(const Vector2& v, float s) noexcept {
+    return {v.x * s, v.y * s};
+}
+[[nodiscard]] constexpr inline Vector2 operator*(float s, const Vector2& v) noexcept {
+    return {v.x * s, v.y * s};
+}
+[[nodiscard]] inline Vector2 operator/(const Vector2& v, float s) noexcept {
+    assert(s != 0.0f);
+    const float inv = 1.0f / s;
+    return {v.x * inv, v.y * inv};
+}
 
 // 要素ごとの乗除算
-Vector2 operator*(const Vector2& lhs, const Vector2& rhs);
-Vector2 operator/(const Vector2& lhs, const Vector2& rhs);
+[[nodiscard]] constexpr inline Vector2 operator*(const Vector2& lhs, const Vector2& rhs) noexcept {
+    return {lhs.x * rhs.x, lhs.y * rhs.y};
+}
+[[nodiscard]] inline Vector2 operator/(const Vector2& lhs, const Vector2& rhs) noexcept {
+    assert(rhs.x != 0.0f && rhs.y != 0.0f);
+    return {lhs.x / rhs.x, lhs.y / rhs.y};
+}
 
 /** @} */
 

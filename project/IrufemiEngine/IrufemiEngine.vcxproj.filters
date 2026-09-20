@@ -336,17 +336,8 @@
     <ClCompile Include="Core\Math\MathFunction.cpp">
       <Filter>Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Math\NumericalSequence.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Math\Random\Random.cpp">
       <Filter>Core\Math\Random</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Vector2.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Vector4.cpp">
-      <Filter>Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Core\System\DirectoryWatcher.cpp">
       <Filter>Core\System</Filter>

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include <cmath>
 
 namespace Irufemi {
 /**
@@ -17,7 +18,9 @@ namespace Math::Sequence {
  * @param index 項の番号 (0から始まる)
  * @return 第index項の値
  */
-float CalculateArithmetic(float firstTerm, float difference, uint32_t index);
+[[nodiscard]] constexpr inline float CalculateArithmetic(float firstTerm, float difference, uint32_t index) noexcept {
+    return firstTerm + (static_cast<float>(index) * difference);
+}
 
 /**
  * @brief 等比数列の第n項（0-indexed）を計算する
@@ -27,7 +30,9 @@ float CalculateArithmetic(float firstTerm, float difference, uint32_t index);
  * @param index 項の番号 (0から始まる)
  * @return 第index項の値
  */
-float CalculateGeometric(float firstTerm, float ratio, uint32_t index);
+[[nodiscard]] inline float CalculateGeometric(float firstTerm, float ratio, uint32_t index) noexcept {
+    return firstTerm * std::pow(ratio, static_cast<float>(index));
+}
 
 /**
  * @brief 等差数列を指定した個数生成する
@@ -36,7 +41,14 @@ float CalculateGeometric(float firstTerm, float ratio, uint32_t index);
  * @param count 生成する項の数
  * @return 生成された数列のvector
  */
-std::vector<float> GenerateArithmetic(float firstTerm, float difference, uint32_t count);
+[[nodiscard]] inline std::vector<float> GenerateArithmetic(float firstTerm, float difference, uint32_t count) {
+    std::vector<float> sequence;
+    sequence.reserve(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        sequence.push_back(CalculateArithmetic(firstTerm, difference, i));
+    }
+    return sequence;
+}
 
 /**
  * @brief 等比数列を指定した個数生成する
@@ -45,7 +57,14 @@ std::vector<float> GenerateArithmetic(float firstTerm, float difference, uint32_
  * @param count 生成する項の数
  * @return 生成された数列のvector
  */
-std::vector<float> GenerateGeometric(float firstTerm, float ratio, uint32_t count);
+[[nodiscard]] inline std::vector<float> GenerateGeometric(float firstTerm, float ratio, uint32_t count) {
+    std::vector<float> sequence;
+    sequence.reserve(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        sequence.push_back(CalculateGeometric(firstTerm, ratio, i));
+    }
+    return sequence;
+}
 } // namespace Math::Sequence
 
 } // namespace Irufemi

@@ -240,10 +240,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Physics\Collision\Collision.cpp" />
     <ClCompile Include="Physics\Collision\DynamicBVH.cpp" />
     <ClCompile Include="Core\Math\MathFunction.cpp" />
-    <ClCompile Include="Core\Math\NumericalSequence.cpp" />
     <ClCompile Include="Core\Math\Random\Random.cpp" />
-    <ClCompile Include="Core\Math\Vector2.cpp" />
-    <ClCompile Include="Core\Math\Vector4.cpp" />
     <ClCompile Include="Core\System\DirectoryWatcher.cpp" />
     <ClCompile Include="Core\System\ResourceCachePool.cpp" />
     <ClCompile Include="Core\Utility\Ease.cpp" />

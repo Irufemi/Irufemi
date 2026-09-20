@@ -4,6 +4,7 @@
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Quaternion.h"
+#include <algorithm>
 
 // イージングの種類
 enum class EaseType {
@@ -31,53 +32,37 @@ enum class EaseType {
  */
 float EvaluateEase(EaseType type, float t);
 
-// 線形補間
+// 線形補間 (ジェネリックテンプレート: float, Vector2, Vector3, Vector4 等に対応)
 /**
- * @brief Lerp を実行する。
+ * @brief 2つの値またはベクトル間を線形補間する
+ * @param a 開始値
+ * @param b 終了値
+ * @param t 進行度 (0.0f ~ 1.0f)
+ * @return 補間された値
  */
-float Lerp(float pos1, float pos2, float t);
+template <typename T>
+[[nodiscard]] constexpr inline T Lerp(const T& a, const T& b, float t) noexcept {
+    return a + (b - a) * t;
+}
 
-// 線形補間
+// 線形補間(0~1制限あり)
 /**
- * @brief Lerp を実行する。
+ * @brief 2つの値またはベクトル間を進行度0~1にクランプして線形補間する
+ * @param a 開始値
+ * @param b 終了値
+ * @param t 進行度
+ * @return クランプ補間された値
  */
-Irufemi::Vector2 Lerp(const Irufemi::Vector2& v1, const Irufemi::Vector2& v2, float t);
-
-// 線形補間
-/**
- * @brief Lerp を実行する。
- */
-Irufemi::Vector3 Lerp(const Irufemi::Vector3& v1, const Irufemi::Vector3& v2, float t);
-
-// 線形補間
-/**
- * @brief Lerp を実行する。
- */
-Irufemi::Vector4 Lerp(const Irufemi::Vector4& v1, const Irufemi::Vector4& v2, float t);
+template <typename T>
+[[nodiscard]] constexpr inline T LerpClamped(const T& a, const T& b, float t) noexcept {
+    return Lerp(a, b, (std::clamp)(t, 0.0f, 1.0f));
+}
 
 // Irufemi::Quaternion 線形補間(最短経路・正規化)
 /**
- * @brief Lerp を実行する。
+ * @brief クォータニオンの線形補間 (最短経路・正規化)
  */
-Irufemi::Quaternion Lerp(const Irufemi::Quaternion& q1, const Irufemi::Quaternion& q2, float t); // 追加
-
-// 線形補間(0~1制限あり)
-/**
- * @brief LerpClamped を実行する。
- */
-float LerpClamped(float a, float b, float t);
-
-// 線形補間(0~1制限あり)
-/**
- * @brief LerpClamped を実行する。
- */
-Irufemi::Vector2 LerpClamped(const Irufemi::Vector2& v1, const Irufemi::Vector2& v2, float t);
-
-// 線形補間(0~1制限あり)
-/**
- * @brief LerpClamped を実行する。
- */
-Irufemi::Vector3 LerpClamped(const Irufemi::Vector3& v1, const Irufemi::Vector3& v2, float t);
+Irufemi::Quaternion Lerp(const Irufemi::Quaternion& q1, const Irufemi::Quaternion& q2, float t);
 
 // 球面線形補間
 /**
