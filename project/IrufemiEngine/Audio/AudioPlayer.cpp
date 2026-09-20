@@ -38,8 +38,9 @@ void AudioPlayer::Play(std::optional<bool> loop) {
 
     // ループ指定がなければAudioTypeから判断
     bool shouldLoop = loop.has_value() ? loop.value() : (type_ == AudioType::BGM);
+    AudioCategory category = (type_ == AudioType::BGM) ? AudioCategory::BGM : AudioCategory::SE;
 
-    voice_ = audioManager_->Play(sound_, shouldLoop, volume_);
+    voice_ = audioManager_->Play(sound_, shouldLoop, volume_, category);
 }
 
 void AudioPlayer::Stop() {

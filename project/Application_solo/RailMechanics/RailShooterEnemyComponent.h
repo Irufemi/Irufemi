@@ -35,9 +35,7 @@ public:
         return "RailShooterEnemyComponent";
     }
 
-    void TakeDamage(float damage) override {
-        TakeDamage(static_cast<int>(damage));
-    }
+    void TakeDamage(float damage) override;
     void TakeDamage(int damage);
 
     DamageableType GetDamageableType() const override {

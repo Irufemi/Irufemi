@@ -15,7 +15,7 @@ public:
     ~AudioSourceComponent() override;
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 初期化処理
      */
     void Initialize() override;
     /**
@@ -35,19 +35,19 @@ public:
      */
     void OnDestroy() override;
     /**
-     * @brief Update を実行する。
+     * @brief 毎フレーム更新処理
      */
     void Update() override;
 
     /**
-     * @brief ComponentName を取得する。
-     * @return 取得された ComponentName
+     * @brief コンポーネント名を取得する
+     * @return コンポーネント名文字列
      */
     std::string GetComponentName() const override {
         return "AudioSourceComponent";
     }
     /**
-     * @brief OnRegisterProperties を実行する。
+     * @brief インスペクター編集用プロパティの登録
      */
     void OnRegisterProperties() override;
 
@@ -57,23 +57,23 @@ public:
     void Stop();
 
     /**
-     * @brief AudioPath を設定する。
-     * @param[in] path 設定する AudioPath の値
+     * @brief 再生するオーディオのファイルパスを設定する
+     * @param[in] path 音声ファイルの相対パス
      */
     void SetAudioPath(const std::string& path);
     /**
-     * @brief Volume を設定する。
-     * @param[in] volume 設定する Volume の値
+     * @brief 再生音量を設定する
+     * @param[in] volume 音量 (0.0f ~ 1.0f)
      */
     void SetVolume(float volume);
     /**
-     * @brief Loop を設定する。
-     * @param[in] loop 設定する Loop の値
+     * @brief ループ再生の有効/無効を設定する
+     * @param[in] loop ループ再生するかどうか
      */
     void SetLoop(bool loop);
     /**
-     * @brief AudioType を設定する。
-     * @param[in] type 設定する AudioType の値
+     * @brief オーディオカテゴリ種別を設定する
+     * @param[in] type オーディオ種別 (BGM or SE)
      */
     void SetAudioType(AudioType type);
 
@@ -85,6 +85,7 @@ private:
     bool playOnAwake_ = false;
     bool loop_ = false;
     float volume_ = 1.0f;
+    float lastVolume_ = -1.0f; ///< 不要な音量再設定を抑止するためのキャッシュ値
 
     std::unique_ptr<AudioPlayer> player_; ///< 実際の再生を担うObject層のインスタンス
 };
