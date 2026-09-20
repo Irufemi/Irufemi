@@ -60,7 +60,60 @@ public:
 
     // 内部辞書の取得 (DebugUI用など)
     static std::unordered_map<std::string, std::unique_ptr<CVar>>& GetRegistry();
+
+    // CVarポインタの直接取得 (nullptr if not found)
+    static CVar* GetCVar(const std::string& name);
 };
+
+// ---------------------------------------------------------
+// 高速キャッシュアクセサ (O(1) Direct Access)
+// ---------------------------------------------------------
+template <typename T>
+class AutoCVarRef {
+public:
+    explicit AutoCVarRef(const std::string& name) : name_(name) {}
+
+    T Get() {
+        if (!cachedCVar_) {
+            cachedCVar_ = CVarSystem::GetCVar(name_);
+        }
+        if (cachedCVar_ && std::holds_alternative<T>(cachedCVar_->value)) {
+            return std::get<T>(cachedCVar_->value);
+        }
+        return T{};
+    }
+
+    T Get(T fallback) {
+        if (!cachedCVar_) {
+            cachedCVar_ = CVarSystem::GetCVar(name_);
+        }
+        if (cachedCVar_ && std::holds_alternative<T>(cachedCVar_->value)) {
+            return std::get<T>(cachedCVar_->value);
+        }
+        return fallback;
+    }
+
+    void Set(const T& value) {
+        if (!cachedCVar_) {
+            cachedCVar_ = CVarSystem::GetCVar(name_);
+        }
+        if (cachedCVar_ && std::holds_alternative<T>(cachedCVar_->value)) {
+            cachedCVar_->value = value;
+            if (cachedCVar_->onChangeCallback) {
+                cachedCVar_->onChangeCallback();
+            }
+        }
+    }
+
+private:
+    std::string name_;
+    CVar* cachedCVar_ = nullptr;
+};
+
+using AutoCVarInt = AutoCVarRef<int>;
+using AutoCVarFloat = AutoCVarRef<float>;
+using AutoCVarBool = AutoCVarRef<bool>;
+using AutoCVarString = AutoCVarRef<std::string>;
 
 } // namespace Irufemi
 

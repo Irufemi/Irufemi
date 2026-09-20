@@ -43,7 +43,7 @@ public:
 
 private:
     GpuProfiler() = default;
-    ~GpuProfiler() = default;
+    ~GpuProfiler();
 
     // コピー禁止
     GpuProfiler(const GpuProfiler&) = delete;
@@ -52,6 +52,7 @@ private:
 private:
     Microsoft::WRL::ComPtr<ID3D12QueryHeap> queryHeap_;
     Microsoft::WRL::ComPtr<ID3D12Resource> queryResultBuffer_;
+    uint64_t* mappedData_ = nullptr; ///< 永続マップ (Persistent Mapping) されたCPUポインタ
 
     DirectXCommon* dxCommon_ = nullptr;
 

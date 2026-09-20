@@ -4,12 +4,21 @@
 DirectoryWatcher::DirectoryWatcher(const std::filesystem::path& targetDirectory, std::function<void()> onChangeCallback)
     : targetDirectory_(targetDirectory), onChangeCallback_(onChangeCallback), isRunning_(true) {
 
-    // ディレクトリハンドルの取得
+    // ディレクトリハンドルの取得 (FILE_FLAG_OVERLAPPED を指定して非同期待機可能にする)
     directoryHandle_ = CreateFileW(targetDirectory_.c_str(), FILE_LIST_DIRECTORY,
                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
-                                   FILE_FLAG_BACKUP_SEMANTICS, NULL);
+                                   FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
     if (directoryHandle_ == INVALID_HANDLE_VALUE) {
+        directoryHandle_ = nullptr;
+        isRunning_ = false;
+        return;
+    }
+
+    // 終了通知用イベントの作成
+    stopEvent_ = CreateEventW(NULL, TRUE, FALSE, NULL);
+    if (!stopEvent_) {
+        CloseHandle(directoryHandle_);
         directoryHandle_ = nullptr;
         isRunning_ = false;
         return;
@@ -20,41 +29,71 @@ DirectoryWatcher::DirectoryWatcher(const std::filesystem::path& targetDirectory,
 
 DirectoryWatcher::~DirectoryWatcher() {
     isRunning_ = false;
+    if (stopEvent_) {
+        SetEvent(stopEvent_);
+    }
     if (directoryHandle_) {
-        // CancelIoEx を用いて非同期の待機を強制キャンセルする（Windows Vista以降）
         CancelIoEx(directoryHandle_, NULL);
-        CloseHandle(directoryHandle_);
-        directoryHandle_ = nullptr;
     }
     if (workerThread_.joinable()) {
         workerThread_.join();
+    }
+    if (stopEvent_) {
+        CloseHandle(stopEvent_);
+        stopEvent_ = nullptr;
+    }
+    if (directoryHandle_) {
+        CloseHandle(directoryHandle_);
+        directoryHandle_ = nullptr;
     }
 }
 
 void DirectoryWatcher::WatchLoop() {
     alignas(DWORD) char buffer[4096];
     DWORD bytesReturned = 0;
+    OVERLAPPED overlapped = {};
+    overlapped.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+    if (!overlapped.hEvent) {
+        return;
+    }
+
+    HANDLE handles[2] = {stopEvent_, overlapped.hEvent};
 
     while (isRunning_) {
-        BOOL result = ReadDirectoryChangesW(directoryHandle_, buffer, sizeof(buffer),
-                                            TRUE, // サブディレクトリも監視
-                                            FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
-                                                FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
-                                                FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_CREATION,
-                                            &bytesReturned, NULL, NULL);
+        ResetEvent(overlapped.hEvent);
+        BOOL success = ReadDirectoryChangesW(
+            directoryHandle_, buffer, sizeof(buffer),
+            TRUE, // サブディレクトリも監視
+            FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
+                FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
+                FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_CREATION,
+            &bytesReturned, &overlapped, NULL);
 
-        if (!result || bytesReturned == 0) {
-            // ハンドルが閉じられたかエラーが発生した場合はループを抜ける
+        if (!success && GetLastError() != ERROR_IO_PENDING) {
             break;
         }
 
-        // --- デバウンス処理 (Debounce) ---
-        // エディタ保存やビルド時に複数のファイル変更通知が連続して飛ぶため、
-        // 変更が落ち着くまで一定時間待機して1回にまとめる
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        // 終了イベントまたはI/O完了イベントのいずれかを待機
+        DWORD waitResult = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
+        if (waitResult == WAIT_OBJECT_0) {
+            // stopEvent_ がシグナル化されたため待機をキャンセルして即座に終了
+            CancelIoEx(directoryHandle_, &overlapped);
+            break;
+        } else if (waitResult == WAIT_OBJECT_0 + 1) {
+            // ファイル変更完了
+            DWORD transferred = 0;
+            if (GetOverlappedResult(directoryHandle_, &overlapped, &transferred, FALSE)) {
+                // --- デバウンス処理 (Debounce) ---
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-        if (isRunning_ && onChangeCallback_) {
-            onChangeCallback_();
+                if (isRunning_ && onChangeCallback_) {
+                    onChangeCallback_();
+                }
+            }
+        } else {
+            break;
         }
     }
+
+    CloseHandle(overlapped.hEvent);
 }

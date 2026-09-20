@@ -220,4 +220,16 @@ void CVarSystem::Save(const std::string& filepath) {
     }
 }
 
+// ---------------------------------------------------------
+// Direct Access
+// ---------------------------------------------------------
+CVar* CVarSystem::GetCVar(const std::string& name) {
+    auto& reg = GetRegistry();
+    auto it = reg.find(name);
+    if (it != reg.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
 } // namespace Irufemi

@@ -37,4 +37,5 @@ private:
     std::atomic<bool> isRunning_;
     std::thread workerThread_;
     void* directoryHandle_ = nullptr; // HANDLE (windows.hのインクルード漏れを防ぐためvoid*で保持)
+    void* stopEvent_ = nullptr;       // 終了通知用イベントハンドル (HANDLE)
 };

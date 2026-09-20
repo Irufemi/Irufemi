@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Utility/ErrorUtility.h"
 
+#include <memory>
 #include <cassert>
 
 /**
@@ -13,7 +14,7 @@
 template <typename T> class Singleton {
 protected:
     Singleton() = default;
-    virtual ~Singleton() = default;
+    ~Singleton() = default;
 
 public:
     // コピーとムーブを禁止
@@ -28,7 +29,7 @@ public:
      */
     static void Initialize() {
         IRUFEMI_ASSERT(!instance_ && "Singleton is already initialized.");
-        instance_ = new T();
+        instance_ = std::unique_ptr<T>(new T());
     }
 
     /**
@@ -36,10 +37,7 @@ public:
      * @details メインループ終了後（DirectX破棄前など）に手動で呼び出し、確実にリソースを解放します。
      */
     static void Finalize() {
-        if (instance_) {
-            delete instance_;
-            instance_ = nullptr;
-        }
+        instance_.reset();
     }
 
     /**
@@ -48,11 +46,16 @@ public:
      */
     static T* GetInstance() {
         IRUFEMI_ASSERT(instance_ && "Singleton is not initialized. Call Initialize() first.");
-        return instance_;
+        return instance_.get();
+    }
+
+    /**
+     * @brief インスタンスが初期化されているか判定する
+     */
+    static bool IsInitialized() {
+        return instance_ != nullptr;
     }
 
 private:
-    static T* instance_;
+    static inline std::unique_ptr<T> instance_{nullptr};
 };
-
-template <typename T> T* Singleton<T>::instance_ = nullptr;
