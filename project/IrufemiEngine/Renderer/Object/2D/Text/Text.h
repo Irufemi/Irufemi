@@ -197,6 +197,26 @@ public:
      * @brief FontManager を設定する。
      * @param[in] fm 設定する FontManager の値
      */
+    void SetFontManagerInstance(FontManager* fm) {
+        instFontManager_ = fm;
+    }
+    void SetDrawManagerInstance(DrawManager* dm) {
+        instDrawManager_ = dm;
+    }
+    void SetCameraManagerInstance(CameraManager* cm) {
+        instCameraManager_ = cm;
+    }
+
+    FontManager* GetFontManagerInstance() const {
+        return instFontManager_ ? instFontManager_ : fontManager_;
+    }
+    DrawManager* GetDrawManagerInstance() const {
+        return instDrawManager_ ? instDrawManager_ : drawManager_;
+    }
+    CameraManager* GetCameraManagerInstance() const {
+        return instCameraManager_ ? instCameraManager_ : cameraManager_;
+    }
+
     static void SetFontManager(FontManager* fm) {
         fontManager_ = fm;
     }
@@ -230,6 +250,9 @@ public:
     }
 
 private:
+    FontManager* instFontManager_ = nullptr;
+    DrawManager* instDrawManager_ = nullptr;
+    CameraManager* instCameraManager_ = nullptr;
     /**
      * @brief GenerateVertices を実行する。
      */

@@ -23,6 +23,31 @@ class CameraManager;
  * テクスチャの表示、座標変換（位置・回転・拡縮）、アンカーポイントの設定、トリミング（Rect指定）などを行います。
  */
 class Sprite : public IRenderable {
+public:
+    Sprite() = default;
+    explicit Sprite(TextureManager* tm, DrawManager* dm = nullptr, CameraManager* cm = nullptr)
+        : instTextureManager_(tm), instDrawManager_(dm), instCameraManager_(cm) {}
+
+    void SetTextureManagerInstance(TextureManager* tm) {
+        instTextureManager_ = tm;
+    }
+    void SetDrawManagerInstance(DrawManager* dm) {
+        instDrawManager_ = dm;
+    }
+    void SetCameraManagerInstance(CameraManager* cm) {
+        instCameraManager_ = cm;
+    }
+
+    TextureManager* GetTextureManagerInstance() const {
+        return instTextureManager_ ? instTextureManager_ : textureManager_;
+    }
+    DrawManager* GetDrawManagerInstance() const {
+        return instDrawManager_ ? instDrawManager_ : drawManager_;
+    }
+    CameraManager* GetCameraManagerInstance() const {
+        return instCameraManager_ ? instCameraManager_ : cameraManager_;
+    }
+
 private:
     std::unique_ptr<Object2DResource> resource_ = nullptr;
 
@@ -30,12 +55,15 @@ private:
 
     int selectedTextureIndex_ = 0;
 
+    // インスタンス依存ポインタ（優先）
+    TextureManager* instTextureManager_ = nullptr;
+    DrawManager* instDrawManager_ = nullptr;
+    CameraManager* instCameraManager_ = nullptr;
+
+    // 静的フォールバックポインタ
     static CameraManager* cameraManager_;
-
     static TextureManager* textureManager_;
-
     static DrawManager* drawManager_;
-
     static DebugUI* ui_;
 
     // サイズとアンカー

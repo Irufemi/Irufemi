@@ -7,6 +7,7 @@
 #include "Core/Type/PrimitiveType.h"
 #include "Physics/Collision/Collision.h"
 #include "Core/Math/Geometry/OBB.h"
+#include "Core/System/IrufemiEngine.h"
 #include <cmath>
 
 PrimitiveRendererComponent::PrimitiveRendererComponent() {}
@@ -20,6 +21,11 @@ void PrimitiveRendererComponent::Initialize() {
 void PrimitiveRendererComponent::OnAwake() {
     if (!primitive_) {
         primitive_ = std::make_unique<Primitive3DObject>();
+        if (auto engine = GetEngine()) {
+            primitive_->SetTextureManagerInstance(engine->GetTextureManager());
+            primitive_->SetDrawManagerInstance(engine->GetDrawManager());
+            primitive_->SetEngineInstance(engine);
+        }
         // 設定された形状（デフォルトはCube）で初期化
         primitive_->Initialize(static_cast<Irufemi::PrimitiveType>(currentTypeIndex_));
     }

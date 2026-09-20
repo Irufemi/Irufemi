@@ -46,12 +46,13 @@ void Text::SetFontId(const std::string& fontId) {
 }
 
 void Text::GenerateVertices() {
-    if (!fontManager_) {
+    auto* fm = GetFontManagerInstance();
+    if (!fm) {
         return;
     }
 
     // 文字が存在しない可能性があるため、まずは非同期生成要求をかける
-    fontManager_->PrecacheText(fontId_, text_);
+    fm->PrecacheText(fontId_, text_);
 
     resource_->vertexDataList_.clear();
     resource_->indexDataList_.clear();
@@ -184,7 +185,9 @@ void Text::GenerateVertices() {
     }
 
     // SRVを設定
-    resource_->textureHandle_ = fontManager_->GetAtlasHandle();
+    if (fm) {
+        resource_->textureHandle_ = fm->GetAtlasHandle();
+    }
 
     // 頂点がなければ終了
     if (resource_->vertexDataList_.empty()) {
@@ -203,12 +206,14 @@ void Text::GenerateVertices() {
 }
 
 void Text::Update() {
-    if (!resource_ || !cameraManager_ || !fontManager_) {
+    auto* fm = GetFontManagerInstance();
+    auto* camMgr = GetCameraManagerInstance();
+    if (!resource_ || !camMgr || !fm) {
         return;
     }
 
     // AtlasのSRVが変わったか(リビルドされた等)、テキストに変更があった場合は再生成
-    ResourceHandle currentAtlas = fontManager_->GetAtlasHandle();
+    ResourceHandle currentAtlas = fm->GetAtlasHandle();
     if (lastAtlasHandle_ != currentAtlas) {
         isTextDirty_ = true;
         lastAtlasHandle_ = currentAtlas;
@@ -220,7 +225,7 @@ void Text::Update() {
         isDirty_ = true;
     }
 
-    Camera* activeCam = cameraManager_->GetActiveCamera();
+    Camera* activeCam = camMgr->GetActiveCamera();
     if (!activeCam) {
         return;
     }
@@ -241,10 +246,12 @@ void Text::SyncBeforeDraw() {
 }
 
 void Text::Draw() {
-    if (!resource_ || !drawManager_ || !cameraManager_) {
+    auto* drawMgr = GetDrawManagerInstance();
+    auto* camMgr = GetCameraManagerInstance();
+    if (!resource_ || !drawMgr || !camMgr) {
         return;
     }
-    Camera* activeCam = cameraManager_->GetActiveCamera();
+    Camera* activeCam = camMgr->GetActiveCamera();
     if (!activeCam) {
         return;
     }
@@ -265,17 +272,19 @@ void Text::Draw() {
 
     // TextRenderer用の描画キューに送信
     if (isTopMost_) {
-        drawManager_->SubmitTopMostText(resource_.get());
+        drawMgr->SubmitTopMostText(resource_.get());
     } else {
-        drawManager_->SubmitText(resource_.get());
+        drawMgr->SubmitText(resource_.get());
     }
 }
 
 void Text::DrawOutlineMask() {
-    if (!resource_ || !drawManager_ || !cameraManager_) {
+    auto* drawMgr = GetDrawManagerInstance();
+    auto* camMgr = GetCameraManagerInstance();
+    if (!resource_ || !drawMgr || !camMgr) {
         return;
     }
-    Camera* activeCam = cameraManager_->GetActiveCamera();
+    Camera* activeCam = camMgr->GetActiveCamera();
     if (!activeCam) {
         return;
     }
@@ -289,5 +298,5 @@ void Text::DrawOutlineMask() {
         return;
     }
 
-    drawManager_->SubmitTextOutlineMask(resource_.get());
+    drawMgr->SubmitTextOutlineMask(resource_.get());
 }

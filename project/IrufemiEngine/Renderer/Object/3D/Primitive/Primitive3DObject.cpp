@@ -28,22 +28,23 @@ IrufemiEngine* Primitive3DObject::engine_ = nullptr;
 // --- Primitive3DObject ---
 
 void Primitive3DObject::Initialize(Irufemi::PrimitiveType type, const std::string& texturePath) {
+    auto* texM = GetTextureManagerInstance();
 
     // 形状の初期化
     mesh_.ChangeMesh(type);
 
     // マテリアルの初期化
     material_.texturePath = texturePath;
-    if (textureManager_) {
+    if (texM) {
         // 現在のテクスチャ名からインデックスを復元（Debug UI用）
-        auto textureNames = textureManager_->GetTextureNamesForDebug();
+        auto textureNames = texM->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), texturePath);
         material_.selectedTextureIndex =
             (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
     }
 
     // デフォルトのマテリアル設定反映
-    material_.UpdateMaterial(mesh_.resource.get(), textureManager_);
+    material_.UpdateMaterial(mesh_.resource.get(), texM);
 
     // 初回のトランスフォーム更新
     transform_.isDirty = true;
@@ -56,15 +57,17 @@ void Primitive3DObject::ReinitializeMesh(const PrimitiveData& data) {
 }
 
 void Primitive3DObject::Update() {
-    if (!mesh_.resource || !engine_) {
+    auto* engine = GetEngineInstance();
+    auto* texM = GetTextureManagerInstance();
+    if (!mesh_.resource || !engine) {
         return;
     }
-    Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
+    Camera* activeCam = engine->GetCameraManager()->GetActiveCamera();
     if (!activeCam) {
         return;
     }
 
-    // 必要に応じてトランスフォーム更新
+    // トランスフォームの同期
     if (transform_.isDirty) {
         transform_.UpdateTransform(mesh_.resource.get(), *activeCam);
     } else {
@@ -73,23 +76,25 @@ void Primitive3DObject::Update() {
     }
 
     // マテリアル情報の最新化
-    material_.UpdateMaterial(mesh_.resource.get(), textureManager_);
+    material_.UpdateMaterial(mesh_.resource.get(), texM);
 }
 
 void Primitive3DObject::Draw() {
-    if (!engine_) {
+    auto* engine = GetEngineInstance();
+    if (!engine) {
         return;
     }
-    if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+    if (Camera* activeCam = engine->GetCameraManager()->GetActiveCamera()) {
         Draw(*activeCam, false);
     }
 }
 
 void Primitive3DObject::Draw(bool isUI) {
-    if (!engine_) {
+    auto* engine = GetEngineInstance();
+    if (!engine) {
         return;
     }
-    if (Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera()) {
+    if (Camera* activeCam = engine->GetCameraManager()->GetActiveCamera()) {
         Draw(*activeCam, isUI);
     }
 }
@@ -99,7 +104,8 @@ void Primitive3DObject::Draw(const Camera& camera) {
 }
 
 void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
-    if (!mesh_.resource || !drawManager_) {
+    auto* drawM = GetDrawManagerInstance();
+    if (!mesh_.resource || !drawM) {
         return;
     }
 
@@ -142,19 +148,20 @@ void Primitive3DObject::Draw(const Camera& camera, bool isUI) {
 
     // 描画実行
     if (isUI) {
-        drawManager_->SubmitUI3D(mesh_.resource.get(), nullptr);
+        drawM->SubmitUI3D(mesh_.resource.get(), nullptr);
     } else if (isTransparent_) {
-        drawManager_->SubmitTransparent3D(mesh_.resource.get(), nullptr, castShadows_);
+        drawM->SubmitTransparent3D(mesh_.resource.get(), nullptr, castShadows_);
     } else {
-        drawManager_->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
+        drawM->SubmitStandard3D(mesh_.resource.get(), nullptr, castShadows_);
     }
 }
 
 void Primitive3DObject::DrawOutlineMask() {
-    if (!mesh_.resource || !drawManager_) {
+    auto* drawM = GetDrawManagerInstance();
+    if (!mesh_.resource || !drawM) {
         return;
     }
-    drawManager_->SubmitOutlineMask(mesh_.resource.get(), nullptr);
+    drawM->SubmitOutlineMask(mesh_.resource.get(), nullptr);
 }
 
 void Primitive3DObject::Debug(const char* label) {
@@ -220,8 +227,9 @@ void Primitive3DObject::Debug(const char* label) {
 }
 
 void Primitive3DObject::SyncBeforeDraw() {
-    if (customSyncCallback_ && engine_) {
-        uint32_t frameIndex = engine_->GetDirectXCommon()->GetFrameIndex();
+    auto* engine = GetEngineInstance();
+    if (customSyncCallback_ && engine) {
+        uint32_t frameIndex = engine->GetDirectXCommon()->GetFrameIndex();
         customSyncCallback_(frameIndex);
     }
     if (mesh_.resource) {

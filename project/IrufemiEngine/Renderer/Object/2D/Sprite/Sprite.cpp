@@ -16,7 +16,13 @@ DebugUI* Sprite::ui_ = nullptr;
 CameraManager* Sprite::cameraManager_ = nullptr;
 
 void Sprite::Initialize(const std::string& textureName) {
+    auto* texMgr = GetTextureManagerInstance();
+    auto* camMgr = GetCameraManagerInstance();
+
     resource_ = std::make_unique<Object2DResource>();
+    if (texMgr) {
+        resource_->SetTextureManager(texMgr);
+    }
 
     // 頂点はユニットクワッド(0..1)に統一(サイズはscaleで与える)
     // 左下
@@ -56,8 +62,8 @@ void Sprite::Initialize(const std::string& textureName) {
     SetSize(size_.x, size_.y);
 
     // 初回の行列計算
-    if (cameraManager_) {
-        if (Camera* activeCam = cameraManager_->GetActiveCamera()) {
+    if (camMgr) {
+        if (Camera* activeCam = camMgr->GetActiveCamera()) {
             resource_->UpdateTransform(*activeCam);
         }
     }
@@ -72,26 +78,26 @@ void Sprite::Initialize(const std::string& textureName) {
     }
 
     // テクスチャ設定
-    if (textureManager_) {
+    if (texMgr) {
         if (resource_->textureHandle_.IsValid()) {
-            textureManager_->ReleaseTexture(resource_->textureHandle_);
+            texMgr->ReleaseTexture(resource_->textureHandle_);
         }
-        resource_->textureHandle_ = textureManager_->LoadTexture(textureName);
+        resource_->textureHandle_ = texMgr->LoadTexture(textureName);
 
         // テクスチャサイズを直接取得して描画サイズに反映
         uint32_t tw = 0, th = 0;
-        if (textureManager_->GetTextureSize(textureName, tw, th) && tw > 0 && th > 0) {
+        if (texMgr->GetTextureSize(textureName, tw, th) && tw > 0 && th > 0) {
             textureSize_ = {static_cast<float>(tw), static_cast<float>(th)};
             SetSize(textureSize_.x, textureSize_.y);
-            if (cameraManager_) {
-                if (Camera* activeCam = cameraManager_->GetActiveCamera()) {
+            if (camMgr) {
+                if (Camera* activeCam = camMgr->GetActiveCamera()) {
                     resource_->UpdateTransform(*activeCam);
                 }
             }
         }
 
         // デバッグUI(コンボ)の初期インデックス決定
-        auto textureNames = textureManager_->GetTextureNamesForDebug();
+        auto textureNames = texMgr->GetTextureNamesForDebug();
         auto it = std::find(textureNames.begin(), textureNames.end(), textureName);
         selectedTextureIndex_ =
             (it != textureNames.end()) ? static_cast<int>(std::distance(textureNames.begin(), it)) : 0;
@@ -99,10 +105,11 @@ void Sprite::Initialize(const std::string& textureName) {
 }
 
 void Sprite::Update() {
-    if (!resource_ || !cameraManager_) {
+    auto* camMgr = GetCameraManagerInstance();
+    if (!resource_ || !camMgr) {
         return;
     }
-    Camera* activeCam = cameraManager_->GetActiveCamera();
+    Camera* activeCam = camMgr->GetActiveCamera();
     if (!activeCam) {
         return;
     }
@@ -152,10 +159,12 @@ void Sprite::SyncBeforeDraw() {
 }
 
 void Sprite::Draw() {
-    if (!resource_ || !drawManager_ || !cameraManager_) {
+    auto* drawMgr = GetDrawManagerInstance();
+    auto* camMgr = GetCameraManagerInstance();
+    if (!resource_ || !drawMgr || !camMgr) {
         return;
     }
-    Camera* activeCam = cameraManager_->GetActiveCamera();
+    Camera* activeCam = camMgr->GetActiveCamera();
     if (!activeCam) {
         return;
     }
@@ -173,9 +182,9 @@ void Sprite::Draw() {
     SyncBeforeDraw();
 
     if (isTopMost_) {
-        drawManager_->SubmitTopMostSprite(resource_.get());
+        drawMgr->SubmitTopMostSprite(resource_.get());
     } else {
-        drawManager_->SubmitSprite(resource_.get());
+        drawMgr->SubmitSprite(resource_.get());
     }
 }
 

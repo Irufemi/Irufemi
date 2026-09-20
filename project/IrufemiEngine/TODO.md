@@ -460,11 +460,10 @@ private:
 ### 📦 静的ポインタキャッシュ群のコンテキスト集約（Context Struct / Dependency Injection 改革）
 
 #### 1. 現状の課題とアーキテクチャ背景
-現在、描画・リソースオブジェクトの基底クラス群において、コンストラクタ引数の過剰なバケツリレーを避けるための利便性パターンとして以下の静的ポインタキャッシュ（準シングルトン）が運用されている：
-- `BaseResource::s_dxCommon_` / `BaseResource::GetDirectXCommon()`
-- `Sprite::s_textureManager_` / `Sprite::GetTextureManager()`
-- `Text::s_fontManager_` / `Text::GetFontManager()`
-- `Primitive3DObject::s_textureManager_` / `Primitive3DObject::GetTextureManager()`
+- [x] ~~`BaseResource::s_dxCommon_` / `BaseResource::GetDirectXCommon()`~~ (Phase 3完了: インスタンス優先メンバ移行)
+- [x] ~~`Sprite::s_textureManager_` / `Sprite::GetTextureManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
+- [x] ~~`Text::s_fontManager_` / `Text::GetFontManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
+- [x] ~~`Primitive3DObject::s_textureManager_` / `Primitive3DObject::GetTextureManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
 - `ParticleObject::s_textureManager_` / `ParticleObject::GetTextureManager()`
 - `BaseModel::s_engine_` / `BaseModel::GetIrufemiEngine()`
 - `GPUParticleSystem::s_engine_`, `s_textureManager_`
@@ -487,10 +486,7 @@ struct RenderContext {
 ```
 
 #### 3. 段階的移行フェーズ (Phased Roadmap)
-- **Phase 1: 描画パイプライン（`DrawManager` / `RenderGraph`）のコンテキスト化**:
-  - `RenderPass::Execute` や `BaseBatch::Draw` に `const RenderContext&` を渡すフローを確立。
-- **Phase 2: リソース層（`Object2DResource` / `Object3DResource`）の静的ポインタ撤廃**:
-  - `ReleaseTexture` などのリソース破棄責務を `TextureManager` / `ResourceManager` の一元管理へ移譲し、静的ポインタを排除。
-- **Phase 3: オブジェクト層（`Sprite` / `Text` / `Primitive3DObject`）の純化**:
-  - 基底クラスの静的ポインタを全廃し、生成時または描画時にコンテキストを受け取るクリーンな設計へ統一。
+- [x] ~~**Phase 1: 描画パイプライン（`DrawManager` / `RenderGraph`）のコンテキスト化**~~ (完了)
+- [x] ~~**Phase 2: リソース層（`Object2DResource` / `Object3DResource` / `GpuMaterial`）の静的ポインタ撤廃**~~ (完了)
+- [x] ~~**Phase 3: オブジェクト層（`Sprite` / `Text` / `Primitive3DObject` / `BaseResource`）の純化**~~ (完了: コンポーネント自動DIによる後方互換100%維持)
 

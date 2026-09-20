@@ -2,6 +2,7 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Resource/Texture/TextureManager.h"
+#include "Core/System/IrufemiEngine.h"
 
 SpriteRendererComponent::SpriteRendererComponent() {}
 SpriteRendererComponent::~SpriteRendererComponent() {}
@@ -14,6 +15,11 @@ void SpriteRendererComponent::Initialize() {
 void SpriteRendererComponent::OnAwake() {
     if (!sprite_) {
         sprite_ = std::make_unique<Sprite>();
+        if (auto engine = GetEngine()) {
+            sprite_->SetTextureManagerInstance(engine->GetTextureManager());
+            sprite_->SetDrawManagerInstance(engine->GetDrawManager());
+            sprite_->SetCameraManagerInstance(engine->GetCameraManager());
+        }
         sprite_->Initialize(texturePath_);
 
         // 初期設定

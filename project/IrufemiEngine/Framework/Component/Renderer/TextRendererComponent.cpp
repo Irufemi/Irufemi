@@ -5,6 +5,7 @@
 #include "Physics/Collision/Collision.h"
 #include "Core/Shape/Sphere.h"
 #include "Core/Utility/Log.h"
+#include "Core/System/IrufemiEngine.h"
 #include <algorithm>
 #include <iostream>
 
@@ -20,6 +21,11 @@ void TextRendererComponent::Initialize() {
 void TextRendererComponent::OnAwake() {
     if (!textObj_) {
         textObj_ = std::make_unique<Text>();
+        if (auto engine = GetEngine()) {
+            textObj_->SetFontManagerInstance(engine->GetFontManager());
+            textObj_->SetDrawManagerInstance(engine->GetDrawManager());
+            textObj_->SetCameraManagerInstance(engine->GetCameraManager());
+        }
     }
     textObj_->Initialize(fontId_);
     textObj_->SetText(text_);

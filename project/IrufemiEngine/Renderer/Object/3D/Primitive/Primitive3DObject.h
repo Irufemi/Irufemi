@@ -266,6 +266,26 @@ public:
         isTransparent_ = isTransparent;
     }
 
+    void SetTextureManagerInstance(TextureManager* tm) {
+        instTextureManager_ = tm;
+    }
+    void SetDrawManagerInstance(DrawManager* dm) {
+        instDrawManager_ = dm;
+    }
+    void SetEngineInstance(class IrufemiEngine* engine) {
+        instEngine_ = engine;
+    }
+
+    TextureManager* GetTextureManagerInstance() const {
+        return instTextureManager_ ? instTextureManager_ : textureManager_;
+    }
+    DrawManager* GetDrawManagerInstance() const {
+        return instDrawManager_ ? instDrawManager_ : drawManager_;
+    }
+    class IrufemiEngine* GetEngineInstance() const {
+        return instEngine_ ? instEngine_ : engine_;
+    }
+
     // --- 静的各種マネージャの設定 ---
     /**
      * @brief TextureManager を設定する。
@@ -311,6 +331,11 @@ private:
     bool castShadows_ = true;               //!< 影を落とすフラグ
     bool isTransparent_ = false;            //!< 半透明・エフェクト（遅延・Zソート描画）フラグ
     CustomSyncCallback customSyncCallback_; //!< カスタムの同期処理用コールバック
+
+    // インスタンスポインタ（優先）
+    TextureManager* instTextureManager_ = nullptr;
+    DrawManager* instDrawManager_ = nullptr;
+    class IrufemiEngine* instEngine_ = nullptr;
 
     // 静的ポインタ（既存の設計パターンを継承）
     static TextureManager* textureManager_;

@@ -9,7 +9,24 @@ class DirectXCommon;
 
 class BaseResource : public MultiBufferSyncState {
 public:
-    virtual ~BaseResource() = default;
+    BaseResource() = default;
+    explicit BaseResource(DirectXCommon* dxCommon) : dxCommon_(dxCommon) {}
+
+    /**
+     * @brief DirectXCommon インスタンスを設定する。
+     * @param[in] dxCommon 設定する DirectXCommon の値
+     */
+    void SetDirectXCommonInstance(DirectXCommon* dxCommon) {
+        dxCommon_ = dxCommon;
+    }
+
+    /**
+     * @brief DirectXCommon を取得する（インスタンスメンバ優先、未設定時は静的フォールバック）。
+     * @return 取得された DirectXCommon
+     */
+    DirectXCommon* GetDxCommon() const {
+        return dxCommon_ ? dxCommon_ : s_dxCommon_;
+    }
 
     /**
      * @brief DirectXCommon を設定する。
@@ -40,5 +57,6 @@ public:
     virtual void Unmap() = 0;
 
 protected:
+    DirectXCommon* dxCommon_ = nullptr;
     static DirectXCommon* s_dxCommon_;
 };
