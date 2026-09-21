@@ -17,6 +17,7 @@ public:
     DestructibleEnvironmentComponent() = default;
     ~DestructibleEnvironmentComponent() override = default;
 
+    void Initialize() override;
     void Start() override;
 
     std::string GetComponentName() const override {
@@ -42,6 +43,9 @@ public:
     }
 
 private:
+    DebrisManagerComponent* GetDebrisManager();
+    EffectManagerComponent* GetEffectManager();
+
     int hp_ = 1;
     int debrisSpawnCount_ = 3;
 
