@@ -145,9 +145,6 @@ void RegisterComponents() {
                                []() { return std::make_shared<PlayerTargetingComponent>(); });
     ComponentFactory::Register("EnemySpawnerComponent", "Game",
                                []() { return std::make_shared<EnemySpawnerComponent>(); });
-    // 後方互換エイリアス（旧シーン・旧プレハブ用）
-    ComponentFactory::Register("DebugEnemySpawnerComponent", "Game",
-                               []() { return std::make_shared<EnemySpawnerComponent>(); });
     ComponentFactory::Register("BossComponent", "Game", []() { return std::make_shared<BossComponent>(); });
     ComponentFactory::Register("BossDamageVisualizerComponent", "Game",
                                []() { return std::make_shared<BossDamageVisualizerComponent>(); });
