@@ -39,11 +39,41 @@ public:
     static void Warning(bool condition, const std::string& msg, const char* file, int line);
 };
 
-// HRESULTエラーハンドリング
-#define ASSERT_IF_FAILED(hr) ErrorUtility::ThrowIfFailed(hr, "", __FILE__, __LINE__)
-#define ASSERT_IF_FAILED_MSG(hr, msg) ErrorUtility::ThrowIfFailed(hr, msg, __FILE__, __LINE__)
+// HRESULTエラーハンドリング (正常時は0オーバーヘッド)
+#define ASSERT_IF_FAILED(hr) \
+    do { \
+        HRESULT hr_ = (hr); \
+        if (FAILED(hr_)) { \
+            ErrorUtility::ThrowIfFailed(hr_, "", __FILE__, __LINE__); \
+        } \
+    } while (0)
 
-// エンジン独自の標準アサーション
-#define IRUFEMI_ASSERT(condition) ErrorUtility::Assert(!!(condition), #condition, __FILE__, __LINE__)
-#define IRUFEMI_ASSERT_MSG(condition, msg) ErrorUtility::Assert(!!(condition), msg, __FILE__, __LINE__)
-#define IRUFEMI_WARNING(condition, msg) ErrorUtility::Warning(!!(condition), msg, __FILE__, __LINE__)
+#define ASSERT_IF_FAILED_MSG(hr, msg) \
+    do { \
+        HRESULT hr_ = (hr); \
+        if (FAILED(hr_)) { \
+            ErrorUtility::ThrowIfFailed(hr_, (msg), __FILE__, __LINE__); \
+        } \
+    } while (0)
+
+// エンジン独自の標準アサーション (正常時は0オーバーヘッド)
+#define IRUFEMI_ASSERT(condition) \
+    do { \
+        if (!(condition)) { \
+            ErrorUtility::Assert(false, #condition, __FILE__, __LINE__); \
+        } \
+    } while (0)
+
+#define IRUFEMI_ASSERT_MSG(condition, msg) \
+    do { \
+        if (!(condition)) { \
+            ErrorUtility::Assert(false, (msg), __FILE__, __LINE__); \
+        } \
+    } while (0)
+
+#define IRUFEMI_WARNING(condition, msg) \
+    do { \
+        if (!(condition)) { \
+            ErrorUtility::Warning(false, (msg), __FILE__, __LINE__); \
+        } \
+    } while (0)
