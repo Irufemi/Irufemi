@@ -283,7 +283,7 @@ void GravityPlayerComponent::UpdateThrowing() {
     }
 
     auto engine = BaseModel::GetIrufemiEngine();
-    throwTimer_ += engine->GetDeltaTime();
+    throwTimer_ += engine->GetGameDeltaTime();
 
     if (throwTimer_ >= throwInterval_) {
         throwTimer_ = 0.0f;

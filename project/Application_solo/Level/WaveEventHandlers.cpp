@@ -152,9 +152,9 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
         auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
         if (spawnerObj) {
             if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
-                modelPath = spawner->enemyModelPath_;
-                baseScale = spawner->baseEnemyScale_;
-                baseRadius = spawner->baseColliderRadius_;
+                modelPath = spawner->GetEnemyModelPath();
+                baseScale = spawner->GetBaseEnemyScale();
+                baseRadius = spawner->GetBaseColliderRadius();
             }
         } else {
             // スポナーが見つからない場合もプレハブから自動解決

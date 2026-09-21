@@ -3,6 +3,7 @@
 #include "Core/Math/Vector3.h"
 #include "Player/TargetableComponent.h"
 #include <vector>
+#include <deque>
 #include <memory>
 #include <future>
 #include <unordered_map>
@@ -41,7 +42,7 @@ public:
      */
     void ClearTargets();
 
-    const std::vector<std::shared_ptr<GameObject>>& GetQueuedTargets() const {
+    const std::deque<std::shared_ptr<GameObject>>& GetQueuedTargets() const {
         return queuedTargets_;
     }
 
@@ -106,7 +107,7 @@ public:
 
 private:
     size_t maxLockonCount_ = 1;
-    std::vector<std::shared_ptr<GameObject>> queuedTargets_;
+    std::deque<std::shared_ptr<GameObject>> queuedTargets_;
     std::shared_ptr<GameObject> hoverTarget_ = nullptr;
 
     // ロックオン許可マスク（デフォルトは敵とボスのシールドのみ許可、環境物は除外）

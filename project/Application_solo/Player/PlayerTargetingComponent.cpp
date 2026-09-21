@@ -44,22 +44,19 @@ void PlayerTargetingComponent::Start() {
 }
 
 void PlayerTargetingComponent::Update() {
-    // 死んだオブジェクトやターゲット不可になったオブジェクトをキューから削除する
-    queuedTargets_.erase(std::remove_if(queuedTargets_.begin(), queuedTargets_.end(),
-                                        [this](const std::shared_ptr<GameObject>& obj) {
-                                            if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
-                                                return true;
-                                            }
+    // 死んだオブジェクトやターゲット不可になったオブジェクトをキューから削除する (C++20 std::erase_if)
+    std::erase_if(queuedTargets_, [this](const std::shared_ptr<GameObject>& obj) {
+        if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
+            return true;
+        }
 
-                                            // TargetableComponent による共通ターゲット可否判定
-                                            if (auto targetable = obj->GetComponent<TargetableComponent>()) {
-                                                return !targetable->IsTargetable() ||
-                                                       !IsTargetTypeAllowed(targetable->GetTargetType());
-                                            }
+        // TargetableComponent による共通ターゲット可否判定
+        if (auto targetable = obj->GetComponent<TargetableComponent>()) {
+            return !targetable->IsTargetable() || !IsTargetTypeAllowed(targetable->GetTargetType());
+        }
 
-                                            return true;
-                                        }),
-                         queuedTargets_.end());
+        return true;
+    });
 
     UpdateHoverTarget();
 
@@ -76,7 +73,7 @@ void PlayerTargetingComponent::Update() {
 
     if (auto markerUI = lockonMarkerUI_.lock()) {
         markerUI->SetMaxLockonCount(maxLockonCount_);
-        std::vector<std::shared_ptr<GameObject>> displayTargets = queuedTargets_;
+        std::vector<std::shared_ptr<GameObject>> displayTargets(queuedTargets_.begin(), queuedTargets_.end());
         if (hoverTarget_) {
             displayTargets.push_back(hoverTarget_);
         }
@@ -253,8 +250,8 @@ std::shared_ptr<GameObject> PlayerTargetingComponent::PopTarget() {
     if (queuedTargets_.empty()) {
         return nullptr;
     }
-    auto target = queuedTargets_.front();
-    queuedTargets_.erase(queuedTargets_.begin());
+    auto target = std::move(queuedTargets_.front());
+    queuedTargets_.pop_front();
     return target;
 }
 
