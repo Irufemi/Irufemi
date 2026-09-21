@@ -112,6 +112,7 @@ public:
     IrufemiEngine* engine_ = nullptr;
 
     static constexpr int32_t kMaxKawaseIterations = 8; // 最大ダウンサンプル回数
+    static constexpr uint32_t kMaxPostProcessBufferEntries = 256; ///< 動的定数バッファの最大リング要素数
 
     struct PostProcessWorkspace {
         class RenderTexture* workTextures[2] = {nullptr, nullptr};
@@ -1105,21 +1106,32 @@ public:
 
 private:
     /**
-     * @brief CreatePSOs を実行する。
+     * @brief 各ポストプロセスエフェクト用パイプラインステート（PSO）を生成する
      */
     void CreatePSOs();
+
     /**
-     * @brief CreateConstantBuffers を実行する。
+     * @brief 各ポストプロセスエフェクト用定数バッファ（CBV）を生成する
      */
     void CreateConstantBuffers();
+
     /**
-     * @brief DrawSinglePass を実行する。
+     * @brief 単一のポストプロセスマルチパス描画を実行する
+     * @param commandList コマンドリスト
+     * @param mode ポストプロセスモード
+     * @param srcTexture 入力元テクスチャ
+     * @param rtvHandle 出力先レンダーターゲットハンドル
+     * @param isFinalPass 最終出力パスかどうか
+     * @param psoOverride オーバーライド用PSO（省略時は通常PSO）
      */
     void DrawSinglePass(ID3D12GraphicsCommandList* commandList, Mode mode, RenderTexture* srcTexture,
                         D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, bool isFinalPass = false,
                         ID3D12PipelineState* psoOverride = nullptr);
+
     /**
-     * @brief CreateBuffer を実行する。
+     * @brief アップロードヒープ上に定数バッファ用リソースを作成する
+     * @param size バッファサイズ（バイト）
+     * @return 作成された D3D12 リソース
      */
     Microsoft::WRL::ComPtr<ID3D12Resource> CreateBuffer(size_t size);
 

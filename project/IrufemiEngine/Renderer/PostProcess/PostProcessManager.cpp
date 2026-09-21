@@ -269,7 +269,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList* commandList, 
     commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
                                                    bindlessCB_->GetGPUVirtualAddress() +
                                                        bindlessBufferOffset_ * sizeof(BindlessParams));
-    bindlessBufferOffset_++;
+    if (bindlessBufferOffset_ + 1 < kMaxPostProcessBufferEntries) {
+        bindlessBufferOffset_++;
+    }
     // -------------------------------------------------------------
 
     // 定数バッファのバインド (Root0 -> b0)
@@ -560,8 +562,8 @@ void PostProcessManager::CreatePSOs() {
 }
 
 void PostProcessManager::CreateConstantBuffers() {
-    combinedCB_ = CreateBuffer(sizeof(CombinedParams) * 256);
-    bindlessCB_ = CreateBuffer(sizeof(BindlessParams) * 256);
+    combinedCB_ = CreateBuffer(sizeof(CombinedParams) * kMaxPostProcessBufferEntries);
+    bindlessCB_ = CreateBuffer(sizeof(BindlessParams) * kMaxPostProcessBufferEntries);
     customEffectParamsCB_ = CreateBuffer(sizeof(CustomEffectParams) * kMaxCustomEffectParams);
 
     bindlessCB_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBindless_));
