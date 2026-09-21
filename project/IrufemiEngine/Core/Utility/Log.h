@@ -4,7 +4,7 @@
 #include <ostream>
 #include <string>
 
-#include <vector>
+#include <deque>
 #include <mutex>
 
 class Log {
@@ -14,9 +14,11 @@ public:
         bool isError;
     };
 
+    using LogContainer = std::deque<LogEntry>;
+
 private: // メンバ変数
     std::ofstream logStream;
-    inline static std::vector<LogEntry> logHistory_; // ログの履歴バッファ
+    inline static LogContainer logHistory_;          // ログの履歴バッファ (O(1) pop_front)
     inline static std::mutex logMutex_;              // ログ履歴保護用ミューテックス
     static const size_t MAX_LOG_LINES = 1000;        // メモリ保護のための最大行数
 
@@ -54,7 +56,7 @@ public: // メンバ関数
     /**
      * @brief 現在のログ履歴を取得します（エディタのコンソールパネル用）
      */
-    static std::vector<LogEntry> GetLogHistory() {
+    static LogContainer GetLogHistory() {
         std::lock_guard<std::mutex> lock(logMutex_);
         return logHistory_;
     }

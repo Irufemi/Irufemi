@@ -25,7 +25,7 @@ void ConsolePanel::Draw() {
 
     ImGui::BeginChild("LogRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-    Log::WithLogHistory([this](const std::vector<Log::LogEntry>& logHistory) {
+    Log::WithLogHistory([this](const Log::LogContainer& logHistory) {
         ImGuiListClipper clipper;
         clipper.Begin(static_cast<int>(logHistory.size()));
         while (clipper.Step()) {
