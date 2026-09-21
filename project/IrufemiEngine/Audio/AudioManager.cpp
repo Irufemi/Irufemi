@@ -3,6 +3,7 @@
 #include <cassert>
 #include <filesystem> // フォルダ内のファイルを探索するために使用
 #include <algorithm>  // 文字列を小文字に変換するために使用
+#include <vector>
 #include <Windows.h>
 #include <iostream>
 #include "Framework/Utility/CVar.h"
@@ -98,11 +99,9 @@ void AudioManager::Update() {
     // 終了したボイスをリストから削除
     // 削除されると shared_ptr の参照が外れ、VoiceInstance のデストラクタで DestroyVoice される
     std::lock_guard<std::mutex> lock(voiceMutex_);
-    activeVoices_.erase(std::remove_if(activeVoices_.begin(), activeVoices_.end(),
-                                       [](const std::shared_ptr<VoiceInstance>& instance) {
-                                           return instance->GetCallback()->IsFinished();
-                                       }),
-                        activeVoices_.end());
+    std::erase_if(activeVoices_, [](const std::shared_ptr<VoiceInstance>& instance) {
+        return instance->GetCallback()->IsFinished();
+    });
 }
 
 void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {
