@@ -99,9 +99,8 @@ void AudioManager::Update() {
     // 終了したボイスをリストから削除
     // 削除されると shared_ptr の参照が外れ、VoiceInstance のデストラクタで DestroyVoice される
     std::lock_guard<std::mutex> lock(voiceMutex_);
-    std::erase_if(activeVoices_, [](const std::shared_ptr<VoiceInstance>& instance) {
-        return instance->GetCallback()->IsFinished();
-    });
+    std::erase_if(activeVoices_,
+                  [](const std::shared_ptr<VoiceInstance>& instance) { return instance->GetCallback()->IsFinished(); });
 }
 
 void AudioManager::LoadAllSoundsFromFolder(const std::string& folderPath) {

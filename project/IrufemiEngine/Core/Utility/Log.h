@@ -18,9 +18,9 @@ public:
 
 private: // メンバ変数
     std::ofstream logStream;
-    inline static LogContainer logHistory_;          // ログの履歴バッファ (O(1) pop_front)
-    inline static std::mutex logMutex_;              // ログ履歴保護用ミューテックス
-    static const size_t MAX_LOG_LINES = 1000;        // メモリ保護のための最大行数
+    inline static LogContainer logHistory_;   // ログの履歴バッファ (O(1) pop_front)
+    inline static std::mutex logMutex_;       // ログ履歴保護用ミューテックス
+    static const size_t MAX_LOG_LINES = 1000; // メモリ保護のための最大行数
 
 public: // メンバ関数
     /// <summary>

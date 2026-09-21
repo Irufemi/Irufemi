@@ -172,7 +172,7 @@ void EnemySpawnerComponent::Update() {
 }
 
 GameObject* EnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
-                                                   float scaleMultiplier) {
+                                              float scaleMultiplier) {
     if (!enemyPool_) {
         return nullptr;
     }

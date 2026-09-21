@@ -50,8 +50,8 @@ void EffectMaskComponent::Update() {
         cachedEffectParam_ = 0.0f;
     }
 
-    const bool isDirty = (lastEnable_ != enableEffectMask_ || lastType_ != customEffectType_ ||
-                          lastParam_ != cachedEffectParam_);
+    const bool isDirty =
+        (lastEnable_ != enableEffectMask_ || lastType_ != customEffectType_ || lastParam_ != cachedEffectParam_);
     if (isDirty) {
         if (cachedRenderer_) {
             cachedRenderer_->SetEnableEffectMask(enableEffectMask_);

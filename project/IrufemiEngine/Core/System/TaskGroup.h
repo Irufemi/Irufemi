@@ -23,10 +23,8 @@ public:
      */
     void NotifyTaskFinished() {
         uint32_t current = pendingCount_.load(std::memory_order_relaxed);
-        while (current > 0 && !pendingCount_.compare_exchange_weak(
-                                  current, current - 1,
-                                  std::memory_order_release,
-                                  std::memory_order_relaxed)) {
+        while (current > 0 && !pendingCount_.compare_exchange_weak(current, current - 1, std::memory_order_release,
+                                                                   std::memory_order_relaxed)) {
             // CASループにより、0未満へのアンダーフロー（UINT32_MAX化）を防止
         }
     }
