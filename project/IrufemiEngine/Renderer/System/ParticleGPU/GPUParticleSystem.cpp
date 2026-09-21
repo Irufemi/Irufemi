@@ -43,6 +43,7 @@ GPUParticleSystem::~GPUParticleSystem() {
         if (auto* srvPool = dxCommon_->GetSrvPool()) {
             for (int i = 0; i < 3; ++i) {
                 srvPool->FreeAfterFence(emittersSrvIndex_[i], fv);
+                srvPool->FreeAfterFence(fieldsSrvIndex_[i], fv);
             }
             srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
             srvPool->FreeAfterFence(particleUavIndex_, fv);
@@ -51,6 +52,10 @@ GPUParticleSystem::~GPUParticleSystem() {
             srvPool->FreeAfterFence(freeListUavIndex_, fv);
             srvPool->FreeAfterFence(sortIndex_, fv);
             srvPool->FreeAfterFence(sortSrvIndex_, fv);
+        }
+        for (int i = 0; i < 3; ++i) {
+            dxCommon_->ReleaseAfterFence(emittersResource_[i]);
+            dxCommon_->ReleaseAfterFence(fieldsResource_[i]);
         }
         dxCommon_->ReleaseAfterFence(particleResource_);
         dxCommon_->ReleaseAfterFence(freeListIndexResource_);
@@ -1159,8 +1164,6 @@ void GPUParticleSystem::CreateBuffersAndViews() {
     sortIndex_ = srvPool->Allocate();
     sortUavHandleCPU_ = srvPool->GetCPUHandle(sortIndex_);
     sortUavHandleGPU_ = srvPool->GetGPUHandle(sortIndex_);
-    sortSrvHandleCPU_ = sortUavHandleCPU_; // 同じディスクリプタヒープ領域を使用
-    sortSrvHandleGPU_ = sortUavHandleGPU_;
     // UAV
     D3D12_UNORDERED_ACCESS_VIEW_DESC sortUavDesc{};
     sortUavDesc.Format = DXGI_FORMAT_UNKNOWN;

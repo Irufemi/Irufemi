@@ -19,6 +19,14 @@ public:
     ParticleObject();
     ~ParticleObject();
 
+    // コピー禁止 (GPUエミッターハンドルの二重解放防止。パラメータ複製は CopyFrom を使用すること)
+    ParticleObject(const ParticleObject&) = delete;
+    ParticleObject& operator=(const ParticleObject&) = delete;
+
+    // ムーブ操作の明示的許可
+    ParticleObject(ParticleObject&&) noexcept = default;
+    ParticleObject& operator=(ParticleObject&&) noexcept = default;
+
     /**
      * @brief Initialize を実行する。
      */
