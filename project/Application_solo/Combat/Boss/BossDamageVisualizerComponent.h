@@ -4,6 +4,7 @@
 
 class BossComponent;
 class GameObject;
+class CameraShakeComponent;
 
 /**
  * @class BossDamageVisualizerComponent
@@ -37,7 +38,7 @@ public:
      * @brief 撃破シェイクが現在再生中かどうかを取得する
      * @return 再生中の場合は true
      */
-    bool IsDeathShakePlaying() const;
+    bool IsDeathShakePlaying();
 
     float GetDamageShakeIntensity() const {
         return damageShakeIntensity_;
@@ -87,9 +88,15 @@ private:
      */
     std::shared_ptr<GameObject> GetMainCamera();
 
+    /**
+     * @brief メインカメラの CameraShakeComponent を取得する（弱参照キャッシュ付き）
+     */
+    CameraShakeComponent* GetCameraShake();
+
 private:
     BossComponent* bossComp_ = nullptr;
     std::weak_ptr<GameObject> mainCameraObj_;
+    CameraShakeComponent* mainCameraShakeComp_ = nullptr;
 
     // 被弾シェイク
     float damageShakeIntensity_ = 0.4f;

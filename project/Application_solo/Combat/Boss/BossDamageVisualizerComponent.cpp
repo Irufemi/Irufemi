@@ -16,6 +16,7 @@ void BossDamageVisualizerComponent::OnRegisterProperties() {
 
 void BossDamageVisualizerComponent::Initialize() {
     mainCameraObj_.reset();
+    mainCameraShakeComp_ = nullptr;
 }
 
 void BossDamageVisualizerComponent::Start() {
@@ -48,28 +49,37 @@ std::shared_ptr<GameObject> BossDamageVisualizerComponent::GetMainCamera() {
     return nullptr;
 }
 
+CameraShakeComponent* BossDamageVisualizerComponent::GetCameraShake() {
+    auto cam = mainCameraObj_.lock();
+    if (!cam) {
+        mainCameraShakeComp_ = nullptr;
+        cam = GetMainCamera();
+    }
+    if (cam) {
+        if (!mainCameraShakeComp_) {
+            mainCameraShakeComp_ = cam->GetComponent<CameraShakeComponent>();
+        }
+        return mainCameraShakeComp_;
+    }
+    return nullptr;
+}
+
 void BossDamageVisualizerComponent::TriggerDamageShake(float damage) {
     (void)damage;
-    if (auto cam = GetMainCamera()) {
-        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
-            shake->PlayShake(damageShakeIntensity_, damageShakeFrames_, damageShakeFrequency_);
-        }
+    if (auto shake = GetCameraShake()) {
+        shake->PlayShake(damageShakeIntensity_, damageShakeFrames_, damageShakeFrequency_);
     }
 }
 
 void BossDamageVisualizerComponent::TriggerDeathShake() {
-    if (auto cam = GetMainCamera()) {
-        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
-            shake->PlayShake(deathShakeIntensity_, deathShakeFrames_, deathShakeFrequency_);
-        }
+    if (auto shake = GetCameraShake()) {
+        shake->PlayShake(deathShakeIntensity_, deathShakeFrames_, deathShakeFrequency_);
     }
 }
 
-bool BossDamageVisualizerComponent::IsDeathShakePlaying() const {
-    if (auto cam = mainCameraObj_.lock()) {
-        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
-            return shake->IsPlaying();
-        }
+bool BossDamageVisualizerComponent::IsDeathShakePlaying() {
+    if (auto shake = GetCameraShake()) {
+        return shake->IsPlaying();
     }
     return false;
 }
