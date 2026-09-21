@@ -1518,6 +1518,12 @@
             },
             {
               "data": {
+                "Acceleration": 150.0,
+                "Friction": 10.0,
+                "HoverAmplitude": 0.5,
+                "HoverFrequency": 2.0,
+                "MaxRollAngle": 1.0,
+                "MaxSpeed": 15.0,
                 "MoveLimitMax": [
                   8.0,
                   6.0,

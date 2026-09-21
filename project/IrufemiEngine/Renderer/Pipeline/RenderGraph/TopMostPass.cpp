@@ -3,11 +3,22 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Math/MathFunction.h"
 #include "RHI/DirectX12/DirectXCommon.h"
+#include "RHI/DirectX12/RenderTexture.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 #include "Renderer/Data/RenderContext.h"
 
 void TopMostPass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
-    // 最終画面（バックバッファ）に描画するため、RenderGraph管理外のリソースに直接書き込む想定
+#ifdef EditorMode
+    if (rc.engine) {
+        if (auto* tex = rc.engine->GetMainRenderTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+    }
+#else
+    // 実行時はバックバッファ（スワップチェーン）に直接書き込む
+    (void)builder;
+    (void)rc;
+#endif
 }
 
 void TopMostPass::Execute(const Irufemi::RenderContext& rc) {
