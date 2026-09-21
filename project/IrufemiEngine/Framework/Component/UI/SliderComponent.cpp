@@ -37,14 +37,14 @@ void SliderComponent::SetHandleObjectID(uint64_t id) {
 
 void SliderComponent::ResolveHandleObject() {
     if (handleObjectID_ == 0 || !gameObject_) {
-        handleObject_ = nullptr;
+        handleObject_.reset();
         return;
     }
 
     // シーンの高速ハッシュ検索を試みる
     if (auto scene = gameObject_->GetScene()) {
         if (auto obj = scene->FindGameObjectByID(handleObjectID_)) {
-            handleObject_ = obj.get();
+            handleObject_ = obj;
             return;
         }
     }
@@ -52,7 +52,7 @@ void SliderComponent::ResolveHandleObject() {
     // フォールバックとして子オブジェクトから検索
     for (auto& child : gameObject_->GetChildren()) {
         if (child && child->GetInstanceID() == handleObjectID_) {
-            handleObject_ = child.get();
+            handleObject_ = child;
             return;
         }
     }
@@ -152,11 +152,12 @@ void SliderComponent::SetValue(float value) {
 }
 
 void SliderComponent::UpdateHandlePosition() {
-    if (!handleObject_ || !backgroundSprite_ || !GetTransform()) {
+    auto handle = handleObject_.lock();
+    if (!handle || !backgroundSprite_ || !GetTransform()) {
         return;
     }
 
-    auto handleTransform = handleObject_->GetTransform();
+    auto handleTransform = handle->GetTransform();
     if (!handleTransform) {
         return;
     }
