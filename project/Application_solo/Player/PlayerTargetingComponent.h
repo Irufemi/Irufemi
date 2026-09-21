@@ -115,18 +115,22 @@ private:
 
     /** @brief 非同期レイキャストの結果待機用と時間間引き(Amortization)用キャッシュ構造体 */
     struct TargetVisibilityCache {
-        bool canSee = false;         ///< 壁裏チェック完了前はfalse（透過防止）
-        bool hasCheckedOnce = false; ///< 初回判定が実行されたかどうか
+        std::weak_ptr<GameObject> targetObject; ///< 生存確認用ポインタ（UAF防止）
+        bool canSee = false;                    ///< 壁裏チェック完了前はfalse（透過防止）
+        bool hasCheckedOnce = false;            ///< 初回判定が実行されたかどうか
         float lastCheckTime = -1.0f;
         std::shared_ptr<std::future<std::pair<bool, RaycastHit>>> pendingTask;
     };
-    std::unordered_map<GameObject*, TargetVisibilityCache> visibilityCache_;
+    std::unordered_map<uint64_t, TargetVisibilityCache> visibilityCache_;
 
     void UpdateHoverTarget();
+    void TryFindLockonMarkerUI();
 
     float lockonRadius2D_ = 200.0f; ///< スクリーン上の許容半径（ピクセル）
     float weight2D_ = 1.0f;         ///< 2D距離のスコア重み
     float weight3D_ = 10.0f;        ///< 3D深度のスコア重み
 
     std::weak_ptr<LockonMarkerUIComponent> lockonMarkerUI_;
+    float uiSearchTimer_ = 0.0f;                     ///< UI未検出時の再試行タイマー
+    static constexpr float kUISearchInterval = 0.5f; ///< UI再検索の実行間隔（秒）
 };

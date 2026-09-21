@@ -42,7 +42,7 @@ public:
      * @return ターゲット候補コンポーネントのリスト
      */
     static const std::vector<TargetableComponent*>& GetTargets() {
-        return s_targets;
+        return targets_;
     }
 
     /**
@@ -74,7 +74,7 @@ public:
     }
 
 private:
-    static std::vector<TargetableComponent*> s_targets;
+    static std::vector<TargetableComponent*> targets_;
     TargetablePredicate predicate_ = nullptr;
     TargetType targetType_ = TargetType::Enemy; ///< デフォルトは敵
 };

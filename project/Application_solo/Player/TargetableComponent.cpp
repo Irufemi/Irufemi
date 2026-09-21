@@ -3,18 +3,18 @@
 #include "Core/Utility/ContainerUtility.h"
 #include <algorithm>
 
-std::vector<TargetableComponent*> TargetableComponent::s_targets;
+std::vector<TargetableComponent*> TargetableComponent::targets_;
 
 TargetableComponent::~TargetableComponent() {
-    Irufemi::Container::EraseSwap(s_targets, this);
+    Irufemi::Container::EraseSwap(targets_, this);
 }
 
 void TargetableComponent::OnEnable() {
-    Irufemi::Container::PushBackUnique(s_targets, this);
+    Irufemi::Container::PushBackUnique(targets_, this);
 }
 
 void TargetableComponent::OnDisable() {
-    Irufemi::Container::EraseSwap(s_targets, this);
+    Irufemi::Container::EraseSwap(targets_, this);
 }
 
 bool TargetableComponent::IsTargetable() const {

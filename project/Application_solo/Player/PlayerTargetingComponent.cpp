@@ -17,27 +17,22 @@
 #include <cmath>
 
 void PlayerTargetingComponent::Initialize() {
-    // UIコンポーネントを検索
-    if (lockonMarkerUI_.expired() && gameObject_) {
-        if (auto scene = gameObject_->GetScene()) {
-            for (const auto& obj : scene->GetGameObjects()) {
-                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                    lockonMarkerUI_ = ui->weak_from_this();
-                    break;
-                }
-            }
-        }
-    }
+    TryFindLockonMarkerUI();
 }
 
 void PlayerTargetingComponent::Start() {
-    if (lockonMarkerUI_.expired() && gameObject_) {
-        if (auto scene = gameObject_->GetScene()) {
-            for (const auto& obj : scene->GetGameObjects()) {
-                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                    lockonMarkerUI_ = ui->weak_from_this();
-                    break;
-                }
+    TryFindLockonMarkerUI();
+}
+
+void PlayerTargetingComponent::TryFindLockonMarkerUI() {
+    if (!lockonMarkerUI_.expired() || !gameObject_) {
+        return;
+    }
+    if (auto scene = gameObject_->GetScene()) {
+        for (const auto& obj : scene->GetGameObjects()) {
+            if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
+                lockonMarkerUI_ = ui->weak_from_this();
+                break;
             }
         }
     }
@@ -60,15 +55,15 @@ void PlayerTargetingComponent::Update() {
 
     UpdateHoverTarget();
 
-    if (lockonMarkerUI_.expired() && gameObject_) {
-        if (auto scene = gameObject_->GetScene()) {
-            for (const auto& obj : scene->GetGameObjects()) {
-                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                    lockonMarkerUI_ = ui->weak_from_this();
-                    break;
-                }
-            }
+    if (lockonMarkerUI_.expired()) {
+        float dt = BaseModel::GetIrufemiEngine() ? BaseModel::GetIrufemiEngine()->GetGameDeltaTime() : (1.0f / 60.0f);
+        uiSearchTimer_ += dt;
+        if (uiSearchTimer_ >= kUISearchInterval) {
+            uiSearchTimer_ = 0.0f;
+            TryFindLockonMarkerUI();
         }
+    } else {
+        uiSearchTimer_ = 0.0f;
     }
 
     if (auto markerUI = lockonMarkerUI_.lock()) {
@@ -104,11 +99,11 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 
     // 1. 保留中の非同期レイキャストをポーリングして視線キャッシュを更新
     for (auto it = visibilityCache_.begin(); it != visibilityCache_.end();) {
-        GameObject* objPtr = it->first;
+        auto targetObj = it->second.targetObject.lock();
         TargetVisibilityCache& cache = it->second;
 
-        // オブジェクトが破棄されていたらキャッシュから削除
-        if (!objPtr || !objPtr->GetIsActive()) {
+        // オブジェクトが破棄されていたらキャッシュから安全に削除 (UAF防止)
+        if (!targetObj || !targetObj->GetIsActive() || targetObj->IsDestroyed()) {
             it = visibilityCache_.erase(it);
             continue;
         }
@@ -120,14 +115,14 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                 RaycastHit hitInfo = result.second;
 
                 bool canSee = true;
-                auto transform = objPtr->GetComponent<TransformComponent>();
+                auto transform = targetObj->GetComponent<TransformComponent>();
                 if (transform) {
                     Irufemi::Vector3 targetPos = transform->GetWorldPosition();
                     Irufemi::Vector3 cameraPos = camera->GetTranslate();
                     float dist3D = Irufemi::Math::Length(Irufemi::Math::Subtract(targetPos, cameraPos));
 
                     if (hit && hitInfo.hitObject != nullptr) {
-                        if (hitInfo.hitObject != objPtr && hitInfo.distance < dist3D - 1.0f) {
+                        if (hitInfo.hitObject != targetObj.get() && hitInfo.distance < dist3D - 1.0f) {
                             canSee = false; // 障害物に遮蔽されている
                         }
                     }
@@ -182,7 +177,8 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                     float score = std::sqrt(dist2DSq) * weight2D_ + dist3D * weight3D_;
 
                     if (score < bestScore) {
-                        auto& cache = visibilityCache_[obj];
+                        auto& cache = visibilityCache_[obj->GetInstanceID()];
+                        cache.targetObject = obj->shared_from_this();
 
                         if (!cache.hasCheckedOnce) {
                             // 初回は同期Raycastで遮蔽を即座に確定し、壁裏敵の一瞬の透過ロックオンを防止
