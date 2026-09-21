@@ -1,4 +1,4 @@
-#include "Combat/DebugEnemySpawnerComponent.h"
+#include "Combat/EnemySpawnerComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
@@ -17,7 +17,7 @@
 // これにより、数千体の敵を描画する際でもドローコールが1回（Instancing）に削減され、
 // CPUとGPUのオーバーヘッドが劇的に改善されます（Unreal EngineのHISMやUnityのDOTSに近いアーキテクチャ）。
 
-DebugEnemySpawnerComponent::~DebugEnemySpawnerComponent() {
+EnemySpawnerComponent::~EnemySpawnerComponent() {
     if (enemyPool_) {
         enemyPool_->ForEach([](const std::shared_ptr<GameObject>& enemy) {
             if (enemy) {
@@ -29,16 +29,16 @@ DebugEnemySpawnerComponent::~DebugEnemySpawnerComponent() {
     }
 }
 
-void DebugEnemySpawnerComponent::Initialize() {}
+void EnemySpawnerComponent::Initialize() {}
 
-void DebugEnemySpawnerComponent::OnRegisterProperties() {
+void EnemySpawnerComponent::OnRegisterProperties() {
     RegisterProperty("Enemy Model Path", &enemyModelPath_);
     RegisterProperty("Enemy Prefab Path", &enemyPrefabPath_);
     RegisterProperty("Base Enemy Scale", &baseEnemyScale_);
     RegisterProperty("Base Collider Radius", &baseColliderRadius_);
 }
 
-void DebugEnemySpawnerComponent::Start() {
+void EnemySpawnerComponent::Start() {
     // プレハブ（Archetype）からモデル・基本スケール・当たり判定半径を自動解決
     auto metrics = PrefabUtility::ExtractMetrics(enemyPrefabPath_);
     if (!metrics.modelPath.empty()) {
@@ -95,7 +95,7 @@ void DebugEnemySpawnerComponent::Start() {
                 deadObj->SetIsActive(false);
                 // スポナーの生存確認（ダングリングポインタによるクラッシュを防止）
                 if (auto spawnerObj = weakObj.lock()) {
-                    if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
+                    if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
                         if (spawner->enemyPool_) {
                             auto it = spawner->activeEnemyHandles_.find(deadObj);
                             if (it != spawner->activeEnemyHandles_.end()) {
@@ -113,7 +113,7 @@ void DebugEnemySpawnerComponent::Start() {
     });
 }
 
-void DebugEnemySpawnerComponent::Update() {
+void EnemySpawnerComponent::Update() {
     if (batchRenderer_) {
         // 毎フレーム、バッチレンダラーのインスタンス（描画キュー）をクリアします。
         batchRenderer_->ClearInstances();
@@ -171,7 +171,7 @@ void DebugEnemySpawnerComponent::Update() {
     }
 }
 
-GameObject* DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
+GameObject* EnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
                                                    float scaleMultiplier) {
     if (!enemyPool_) {
         return nullptr;

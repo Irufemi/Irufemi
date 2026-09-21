@@ -171,7 +171,7 @@
     <ClCompile Include="Player\PlayerDamageVisualizerComponent.cpp">
       <Filter>Player</Filter>
     </ClCompile>
-    <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp">
+    <ClCompile Include="Combat\EnemySpawnerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
     <ClCompile Include="Core\SceneTransitionButtonComponent.cpp">
@@ -315,7 +315,7 @@
     <ClInclude Include="Player\PlayerDamageVisualizerComponent.h">
       <Filter>Player</Filter>
     </ClInclude>
-    <ClInclude Include="Combat\DebugEnemySpawnerComponent.h">
+    <ClInclude Include="Combat\EnemySpawnerComponent.h">
       <Filter>Combat</Filter>
     </ClInclude>
     <ClInclude Include="Core\SceneTransitionButtonComponent.h">

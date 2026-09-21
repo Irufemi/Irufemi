@@ -1,5 +1,5 @@
 #include "Level/WaveEventHandlers.h"
-#include "Combat/DebugEnemySpawnerComponent.h"
+#include "Combat/EnemySpawnerComponent.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Renderer/System/Core/BaseModel.h"
@@ -110,7 +110,7 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
         if (spawnerObj) {
-            if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
+            if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
                 for (const auto& pos : positions) {
                     if (auto enemyObj = spawner->SpawnEnemy(pos, spawnRot, scaleMultiplier)) {
                         if (auto enemyComp = enemyObj->GetComponent<RailShooterEnemyComponent>()) {
@@ -126,7 +126,7 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
         }
     }
 
-    Log::OutPutLog(std::cout, "[WaveManager] Warning: DebugEnemySpawner not found.\n");
+    Log::OutPutLog(std::cout, "[WaveManager] Warning: EnemySpawner not found.\n");
 }
 
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
@@ -151,7 +151,7 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
     if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
         auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
         if (spawnerObj) {
-            if (auto spawner = spawnerObj->GetComponent<DebugEnemySpawnerComponent>()) {
+            if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
                 modelPath = spawner->GetEnemyModelPath();
                 baseScale = spawner->GetBaseEnemyScale();
                 baseRadius = spawner->GetBaseColliderRadius();

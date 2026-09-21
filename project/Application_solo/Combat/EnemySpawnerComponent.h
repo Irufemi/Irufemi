@@ -6,17 +6,17 @@
 #include <memory>
 #include <unordered_map>
 
-class DebugEnemySpawnerComponent : public Component {
+class EnemySpawnerComponent : public Component {
 public:
-    DebugEnemySpawnerComponent() = default;
-    ~DebugEnemySpawnerComponent() override;
+    EnemySpawnerComponent() = default;
+    ~EnemySpawnerComponent() override;
 
     void Initialize() override;
     void Start() override;
     void Update() override;
     void OnRegisterProperties() override;
     std::string GetComponentName() const override {
-        return "DebugEnemySpawnerComponent";
+        return "EnemySpawnerComponent";
     }
 
     GameObject* SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
