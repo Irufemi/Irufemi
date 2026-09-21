@@ -156,3 +156,21 @@ void SkinnedMeshRendererComponent::Deserialize(const nlohmann::json& j) {
         modelFilename_ = j["Model File"].get<std::string>();
     }
 }
+
+void SkinnedMeshRendererComponent::SetEnableEffectMask(bool enable) {
+    if (animatedMesh_) {
+        animatedMesh_->SetEnableEffectMask(enable);
+    }
+}
+
+void SkinnedMeshRendererComponent::SetCustomEffectType(int32_t type) {
+    if (animatedMesh_) {
+        animatedMesh_->SetCustomEffectType(type);
+    }
+}
+
+void SkinnedMeshRendererComponent::SetCustomEffectParam(float param) {
+    if (animatedMesh_) {
+        animatedMesh_->SetCustomEffectParam(param);
+    }
+}

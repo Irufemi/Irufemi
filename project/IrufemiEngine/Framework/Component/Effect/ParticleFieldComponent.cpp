@@ -5,6 +5,7 @@
 #include "Core/System/IrufemiEngine.h"
 ParticleFieldComponent::ParticleFieldComponent() {
     fieldData_.type = 1; // Default to Point Attractor
+    fieldType_ = static_cast<int>(fieldData_.type);
     fieldData_.strength = 10.0f;
     fieldData_.range = 50.0f;
     fieldData_.falloff = 1.0f;
@@ -49,6 +50,7 @@ void ParticleFieldComponent::Update() {
         }
     }
 
+    fieldData_.type = static_cast<uint32_t>(fieldType_);
     if (fieldHandle_.IsValid() && gpuParticleManager_) {
         gpuParticleManager_->UpdateFieldData(fieldHandle_, fieldData_);
     }
@@ -56,7 +58,7 @@ void ParticleFieldComponent::Update() {
 
 void ParticleFieldComponent::OnRegisterProperties() {
     static const std::vector<std::string> fieldTypeNames = {"Directional", "Point Attractor", "Vortex"};
-    RegisterEnum("Field Type", reinterpret_cast<int*>(&fieldData_.type), fieldTypeNames);
+    RegisterEnum("Field Type", &fieldType_, fieldTypeNames);
     RegisterProperty("Strength", &fieldData_.strength).SetMinMax(-1000.0f, 1000.0f);
     RegisterProperty("Effect Range", &fieldData_.range).SetMinMax(0.0f, 10000.0f);
     RegisterProperty("Falloff", &fieldData_.falloff).SetMinMax(0.0f, 10.0f);
@@ -78,6 +80,7 @@ nlohmann::json ParticleFieldComponent::Serialize() {
 void ParticleFieldComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("type")) {
         fieldData_.type = j["type"];
+        fieldType_ = static_cast<int>(fieldData_.type);
     }
     if (j.contains("strength")) {
         fieldData_.strength = j["strength"];

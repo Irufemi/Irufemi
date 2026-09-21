@@ -28,7 +28,7 @@ struct OBB {
      * @brief OBBを包含する最小のAABBを計算する
      * @return OBBを内包するワールドAABB
      */
-    AABB ToAABB() const {
+    [[nodiscard]] AABB ToAABB() const {
         AABB aabb;
         Vector3 extents;
         extents.x = std::abs(orientations[0].x * size.x) + std::abs(orientations[1].x * size.y) +

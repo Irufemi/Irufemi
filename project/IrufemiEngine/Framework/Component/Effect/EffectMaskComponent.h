@@ -4,6 +4,7 @@
 #include "Renderer/PostProcess/PostProcessManager.h"
 
 class MeshRendererComponent;
+class SkinnedMeshRendererComponent;
 
 /**
  * @class EffectMaskComponent
@@ -126,5 +127,10 @@ private:
     PostProcessManager::CustomEffectParams customParams_;
 
     MeshRendererComponent* cachedRenderer_ = nullptr;
+    SkinnedMeshRendererComponent* cachedSkinnedRenderer_ = nullptr;
+    bool hasCheckedRenderer_ = false;
+    bool lastEnable_ = false;
+    int32_t lastType_ = -1;
+    float lastParam_ = -1.0f;
     PostProcessManager* cachedPostProcessManager_ = nullptr;
 };

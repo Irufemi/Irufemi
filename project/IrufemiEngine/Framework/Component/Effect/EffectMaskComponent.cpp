@@ -2,6 +2,7 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
+#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
 #include "Core/System/IrufemiEngine.h"
 
 EffectMaskComponent::EffectMaskComponent() {}
@@ -16,6 +17,8 @@ void EffectMaskComponent::Initialize() {
 void EffectMaskComponent::OnAwake() {
     if (gameObject_) {
         cachedRenderer_ = gameObject_->GetComponent<MeshRendererComponent>();
+        cachedSkinnedRenderer_ = gameObject_->GetComponent<SkinnedMeshRendererComponent>();
+        hasCheckedRenderer_ = true;
     }
 }
 
@@ -26,8 +29,10 @@ void EffectMaskComponent::OnSpawned() {
 }
 
 void EffectMaskComponent::Update() {
-    if (!cachedRenderer_ && gameObject_) {
+    if (!hasCheckedRenderer_ && gameObject_) {
         cachedRenderer_ = gameObject_->GetComponent<MeshRendererComponent>();
+        cachedSkinnedRenderer_ = gameObject_->GetComponent<SkinnedMeshRendererComponent>();
+        hasCheckedRenderer_ = true;
     }
 
     if (enableEffectMask_ && customEffectType_ > 0) {
@@ -45,10 +50,22 @@ void EffectMaskComponent::Update() {
         cachedEffectParam_ = 0.0f;
     }
 
-    if (cachedRenderer_) {
-        cachedRenderer_->SetEnableEffectMask(enableEffectMask_);
-        cachedRenderer_->SetCustomEffectType(customEffectType_);
-        cachedRenderer_->SetCustomEffectParam(cachedEffectParam_);
+    const bool isDirty = (lastEnable_ != enableEffectMask_ || lastType_ != customEffectType_ ||
+                          lastParam_ != cachedEffectParam_);
+    if (isDirty) {
+        if (cachedRenderer_) {
+            cachedRenderer_->SetEnableEffectMask(enableEffectMask_);
+            cachedRenderer_->SetCustomEffectType(customEffectType_);
+            cachedRenderer_->SetCustomEffectParam(cachedEffectParam_);
+        }
+        if (cachedSkinnedRenderer_) {
+            cachedSkinnedRenderer_->SetEnableEffectMask(enableEffectMask_);
+            cachedSkinnedRenderer_->SetCustomEffectType(customEffectType_);
+            cachedSkinnedRenderer_->SetCustomEffectParam(cachedEffectParam_);
+        }
+        lastEnable_ = enableEffectMask_;
+        lastType_ = customEffectType_;
+        lastParam_ = cachedEffectParam_;
     }
 }
 

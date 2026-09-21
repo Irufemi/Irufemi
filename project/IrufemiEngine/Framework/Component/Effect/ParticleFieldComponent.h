@@ -108,4 +108,5 @@ private:
     GPUParticleManager* gpuParticleManager_ = nullptr;
 
     ParticleField fieldData_;
+    int fieldType_ = 0;
 };
