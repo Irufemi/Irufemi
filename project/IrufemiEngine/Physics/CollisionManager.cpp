@@ -12,11 +12,7 @@
 #include "Renderer/Object/Line/LineClass.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <nlohmann/json.hpp>
-#include <iostream>
-#include <nlohmann/json.hpp>
+#include "Core/Utility/JsonUtility.h"
 #include "Core/Math/MathFunction.h"
 #include "Core/System/ThreadPool.h"
 
@@ -507,22 +503,13 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
 }
 
 void CollisionManager::LoadLayers(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (file.is_open()) {
-        try {
-            nlohmann::json j;
-            file >> j;
-            if (j.contains("layers") && j["layers"].is_array()) {
-                layerNames_.clear();
-                for (const auto& name : j["layers"]) {
-                    layerNames_.push_back(name);
-                }
+    nlohmann::json j;
+    if (Irufemi::JsonUtility::LoadFromFile(filepath, j)) {
+        if (j.contains("layers") && j["layers"].is_array()) {
+            layerNames_.clear();
+            for (const auto& name : j["layers"]) {
+                layerNames_.push_back(name);
             }
-        } catch (const std::exception& e) {
-            /**
-             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
-             */
-            Log::OutPutLog(std::cerr, "Failed to load layers config: " + std::string(e.what()));
         }
     }
 }
@@ -530,11 +517,7 @@ void CollisionManager::LoadLayers(const std::string& filepath) {
 void CollisionManager::SaveLayers(const std::string& filepath) {
     nlohmann::json j;
     j["layers"] = layerNames_;
-
-    std::ofstream file(filepath);
-    if (file.is_open()) {
-        file << j.dump(4);
-    }
+    Irufemi::JsonUtility::SaveToFile(filepath, j, 4);
 }
 
 void CollisionManager::AddLayer(const std::string& name) {

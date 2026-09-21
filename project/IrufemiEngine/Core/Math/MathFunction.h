@@ -457,7 +457,7 @@ Vector3 Perpendicular(const Vector3& vector);
  * @param hi 最大値
  * @return クランプされた値
  */
-template <typename T> constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
+template <typename T> [[nodiscard]] constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
     return (std::clamp)(v, lo, hi);
 }
 

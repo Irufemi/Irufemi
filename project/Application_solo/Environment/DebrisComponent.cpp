@@ -85,7 +85,7 @@ void DebrisComponent::Initialize() {
 void DebrisComponent::OnEnable() {
     state_ = DebrisState::Idle;
     targetObject_.reset();
-    idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
+    idleTimeY_ = Irufemi::Random::GeneratorFloat(0.0f, 100.0f); // ランダムな位相で開始
 
     if (gameObject_) {
         if (auto targetable = gameObject_->GetComponent<TargetableComponent>()) {

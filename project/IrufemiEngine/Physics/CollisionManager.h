@@ -3,7 +3,6 @@
 #include <unordered_set>
 #include <memory>
 #include <string>
-#include <nlohmann/json.hpp>
 #include <shared_mutex>
 #include <future>
 #include <utility>
