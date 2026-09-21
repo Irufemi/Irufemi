@@ -75,8 +75,5 @@ std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& 
         dir = scene->GetEngine()->GetSceneDirectory();
     }
     fs::path filePath = dir / (sceneName + ".json");
-    // Windows環境でもスラッシュ区切りにするための工夫（必要に応じて）
-    std::string pathStr = filePath.string();
-    std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-    return pathStr;
+    return filePath.generic_string();
 }

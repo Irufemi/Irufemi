@@ -48,9 +48,7 @@ public:
      * @brief Renderable を取得する。
      * @return 取得された Renderable
      */
-    IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(primitive_.get());
-    }
+    IRenderable* GetRenderable() override;
 
     // エディタのRaycast用
     /**

@@ -48,7 +48,7 @@ void ModelBatchRendererComponent::Draw() {
 }
 
 IRenderable* ModelBatchRendererComponent::GetRenderable() {
-    return reinterpret_cast<IRenderable*>(batch_.get());
+    return batch_.get();
 }
 
 Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {

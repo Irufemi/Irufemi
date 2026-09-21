@@ -43,13 +43,12 @@ bool ReadString(std::ifstream& ifs, std::string& str, uint64_t fileSize) {
         return false;
     }
 
-    std::vector<char> buffer(size);
-    ifs.read(buffer.data(), size);
+    str.resize(size);
+    ifs.read(str.data(), size);
     if (ifs.fail()) {
         str.clear();
         return false;
     }
-    str.assign(buffer.data(), size);
     return true;
 }
 

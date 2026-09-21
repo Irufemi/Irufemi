@@ -57,6 +57,10 @@ void PrimitiveRendererComponent::Draw() {
     }
 }
 
+IRenderable* PrimitiveRendererComponent::GetRenderable() {
+    return primitive_.get();
+}
+
 void PrimitiveRendererComponent::SetShape(Irufemi::PrimitiveType type) {
     currentTypeIndex_ = static_cast<int>(type);
     if (primitive_) {

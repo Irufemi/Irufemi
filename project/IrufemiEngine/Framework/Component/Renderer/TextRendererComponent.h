@@ -57,7 +57,7 @@ public:
      * @return 取得された Renderable
      */
     IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(textObj_.get());
+        return textObj_.get();
     }
     /**
      * @brief DrawOutlineMask を実行する。

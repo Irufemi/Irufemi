@@ -54,7 +54,7 @@ public:
      * @return 取得された Renderable
      */
     IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(primitive_.get());
+        return primitive_.get();
     }
 
 #ifdef EditorMode

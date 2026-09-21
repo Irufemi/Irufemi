@@ -52,7 +52,7 @@ public:
      * @return 取得された Renderable
      */
     IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(sprite_.get());
+        return sprite_.get();
     }
 #ifdef EditorMode
     friend class SpriteRendererComponentEditor;
