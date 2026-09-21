@@ -5,6 +5,7 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Core/Math/MathFunction.h"
+#include <algorithm>
 #include <cmath>
 
 void RailRelativeFollowerComponent::OnRegisterProperties() {
@@ -16,7 +17,9 @@ void RailRelativeFollowerComponent::OnRegisterProperties() {
     RegisterProperty("Local Offset Z", &localOffset_.z);
 }
 
-void RailRelativeFollowerComponent::Initialize() {}
+void RailRelativeFollowerComponent::Initialize() {
+    retryCounter_ = 0;
+}
 
 void RailRelativeFollowerComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
     if (targetObjectID_ != 0) {
@@ -67,11 +70,10 @@ void RailRelativeFollowerComponent::Update() {
             // FindGameObject はシーンのミューテックスをロックするため、
             // 毎フレーム複数スレッドから呼ばれると深刻なスレッド競合（ガタつき）の原因になる。
             // そのためリトライ頻度を落とす。
-            static thread_local int s_retryCounter = 0;
-            if (++s_retryCounter < 30) {
+            if (++retryCounter_ < 30) {
                 return;
             }
-            s_retryCounter = 0;
+            retryCounter_ = 0;
 
             Start();
             if (!targetFollower_ || !cachedPath_) {
@@ -101,7 +103,7 @@ void RailRelativeFollowerComponent::Update() {
 
     // 基本となる回転（Z前方）を計算
     float yaw = std::atan2(tangent.x, tangent.z);
-    float pitch = std::asin(-tangent.y);
+    float pitch = std::asin(std::clamp(-tangent.y, -1.0f, 1.0f));
     Irufemi::Vector3 rotation = {pitch, yaw, 0.0f};
 
     // XYローカルオフセットの適用（レール中心から上下左右へのズレ）

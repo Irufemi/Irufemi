@@ -36,4 +36,5 @@ private:
     std::weak_ptr<GameObject> targetObject_;
     SplineFollowerComponent* targetFollower_ = nullptr;
     SplineComponent* cachedPath_ = nullptr; ///< ターゲットが乗っているレール（スプライン）
+    int retryCounter_ = 0;                  ///< シーン検索リトライ用カウンター
 };

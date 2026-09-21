@@ -13,6 +13,12 @@ void RailShooterPlayerComponent::OnRegisterProperties() {
     RegisterProperty("XYSpeed", &xySpeed_);
     RegisterProperty("MoveLimitMin", &moveLimitMin_);
     RegisterProperty("MoveLimitMax", &moveLimitMax_);
+    RegisterProperty("Acceleration", &acceleration_);
+    RegisterProperty("Friction", &friction_);
+    RegisterProperty("MaxSpeed", &maxSpeed_);
+    RegisterProperty("MaxRollAngle", &maxRollAngle_);
+    RegisterProperty("HoverAmplitude", &hoverAmplitude_);
+    RegisterProperty("HoverFrequency", &hoverFrequency_);
 }
 
 void RailShooterPlayerComponent::Update() {

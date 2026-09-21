@@ -68,7 +68,7 @@ void SplineFollowerComponent::Update() {
 
             // 進行方向に向くように回転を設定 (Z前方)
             float yaw = std::atan2(tangent.x, tangent.z);
-            float pitch = std::asin(-tangent.y);
+            float pitch = std::asin(std::clamp(-tangent.y, -1.0f, 1.0f));
             transform->SetWorldRotation({pitch, yaw, 0.0f});
         }
     }
