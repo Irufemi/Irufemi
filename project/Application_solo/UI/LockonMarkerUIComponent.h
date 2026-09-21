@@ -5,14 +5,16 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <unordered_map>
+#include <cstdint>
 
 class GameObject;
 
 struct LockonMarkerState {
-    std::weak_ptr<GameObject> target;
-    float currentScale = 2.0f; // 初期は大きく（シュッと縮小させるため）
-    float targetScale = 1.0f;  // 最終的なスケール（距離に依存）
-    float animationT = 0.0f;   // イージング用タイマー (0.0 ～ 1.0)
+    std::weak_ptr<GameObject> target_;
+    float currentScale_ = 2.0f; ///< 初期は大きく（シュッと縮小させるため）
+    float targetScale_ = 1.0f;  ///< 最終的なスケール（距離に依存）
+    float animationT_ = 0.0f;   ///< イージング用タイマー (0.0 ～ 1.0)
 };
 
 /**
@@ -44,6 +46,6 @@ private:
 
     // ゼロアロケーション用のキャッシュコンテナ
     std::vector<LockonMarkerState> nextMarkersCache_;
-    std::unordered_map<GameObject*, int> targetCountsCache_;
-    std::unordered_map<GameObject*, int> drawCountsCache_;
+    std::unordered_map<uint64_t, int> targetCountsCache_;
+    std::unordered_map<uint64_t, int> drawCountsCache_;
 };

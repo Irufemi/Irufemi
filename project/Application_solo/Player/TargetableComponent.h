@@ -46,6 +46,13 @@ public:
     }
 
     /**
+     * @brief シーンアンロード時などに登録されているすべてのターゲットを一括クリアする
+     */
+    static void ClearAllTargets() {
+        targets_.clear();
+    }
+
+    /**
      * @brief ターゲット可能かどうかを判定する外部述語関数を設定する
      * @param predicate ターゲット可能ならtrueを返す述語関数
      */
