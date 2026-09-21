@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 #include "Core/Utility/Log.h"
 #include "Core/Utility/ContainerUtility.h"
+#include "Core/Utility/JsonUtility.h"
 #include <iostream>
 #include <algorithm>
 #include "Effects/EffectManagerComponent.h"
@@ -53,14 +54,11 @@ void DebrisManagerComponent::OnRegisterProperties() {
 
 void DebrisManagerComponent::Initialize() {
     std::string configPath = "resources/GameData/DebrisPalette.json";
-    std::ifstream file(configPath);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(configPath, j)) {
         Log::OutPutLog(std::cout, "Failed to load DebrisPalette.json\n");
         return;
     }
-
-    nlohmann::json j;
-    file >> j;
 
     const auto& variationsJson = j["variations"];
     int varIndex = 0;
