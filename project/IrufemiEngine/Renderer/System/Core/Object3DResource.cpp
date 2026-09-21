@@ -162,8 +162,7 @@ void Object3DResource::SyncBeforeDraw() {
             }
             if (tm) {
                 cpuMaterialData_.textureIndex = tm->GetSrvIndex(textureHandle_);
-                cpuMaterialData_.envMapIndex =
-                    tm->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
+                cpuMaterialData_.envMapIndex = tm->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
             } else {
                 cpuMaterialData_.textureIndex = 0;
                 cpuMaterialData_.envMapIndex = 0;
