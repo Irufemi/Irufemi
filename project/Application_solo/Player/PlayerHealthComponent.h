@@ -21,8 +21,12 @@ public:
         return "PlayerHealthComponent";
     }
 
-    void SetOnPlayerDied(std::function<void()> callback) { onPlayerDied_ = std::move(callback); }
-    void SetOnDeathSequenceFinished(std::function<void()> callback) { onDeathSequenceFinished_ = std::move(callback); }
+    void SetOnPlayerDied(std::function<void()> callback) {
+        onPlayerDied_ = std::move(callback);
+    }
+    void SetOnDeathSequenceFinished(std::function<void()> callback) {
+        onDeathSequenceFinished_ = std::move(callback);
+    }
 
     /**
      * @brief プレイヤー死亡を通知する

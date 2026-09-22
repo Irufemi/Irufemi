@@ -231,4 +231,3 @@ void BossComponent::NotifyDeathSequenceFinished() {
         onDeathSequenceFinished_();
     }
 }
-

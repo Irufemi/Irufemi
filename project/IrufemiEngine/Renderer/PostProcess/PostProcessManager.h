@@ -111,7 +111,7 @@ public:
 
     IrufemiEngine* engine_ = nullptr;
 
-    static constexpr int32_t kMaxKawaseIterations = 8; // 最大ダウンサンプル回数
+    static constexpr int32_t kMaxKawaseIterations = 8;            // 最大ダウンサンプル回数
     static constexpr uint32_t kMaxPostProcessBufferEntries = 256; ///< 動的定数バッファの最大リング要素数
 
     struct PostProcessWorkspace {

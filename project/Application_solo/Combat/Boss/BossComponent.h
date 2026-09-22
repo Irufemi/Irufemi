@@ -24,8 +24,12 @@ public:
     void Start() override;
     void Update() override;
 
-    void SetOnBossDied(std::function<void()> callback) { onBossDied_ = std::move(callback); }
-    void SetOnDeathSequenceFinished(std::function<void()> callback) { onDeathSequenceFinished_ = std::move(callback); }
+    void SetOnBossDied(std::function<void()> callback) {
+        onBossDied_ = std::move(callback);
+    }
+    void SetOnDeathSequenceFinished(std::function<void()> callback) {
+        onDeathSequenceFinished_ = std::move(callback);
+    }
 
     /**
      * @brief 被弾時のイベントリスナーを追加する
