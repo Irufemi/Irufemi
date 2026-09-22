@@ -74,18 +74,10 @@ void TargetFollowComponent::Update() {
         return;
     }
 
-    // プレイヤーの向き（回転角度）から進行方向をベースとしたローカル座標系を作成
-    float yaw = targetTransform->GetWorldRotation().y;
-    float pitch = targetTransform->GetWorldRotation().x;
-
-    // プレイヤーを基準とした回転行列の方向成分を計算し正規化
-    Irufemi::Vector3 forward = {std::sin(yaw) * std::cos(pitch), std::sin(-pitch), std::cos(yaw) * std::cos(pitch)};
-    forward = Irufemi::Math::Normalize(forward);
-
-    // 右ベクトルと上ベクトルの算出 (外積・正規化)
-    Irufemi::Vector3 upVec = {0.0f, 1.0f, 0.0f};
-    Irufemi::Vector3 right = Irufemi::Math::Normalize(Irufemi::Math::Cross(upVec, forward));
-    Irufemi::Vector3 up = Irufemi::Math::Cross(forward, right);
+    // プレイヤーの向き（ワールド姿勢行列）から基底ベクトルを取得
+    Irufemi::Vector3 forward = targetTransform->GetWorldForward();
+    Irufemi::Vector3 right = targetTransform->GetWorldRight();
+    Irufemi::Vector3 up = targetTransform->GetWorldUp();
 
     // プレイヤー位置に、プレイヤーの向きに基づいたローカルオフセットを足す
     Irufemi::Vector3 targetCamPos = {

@@ -27,7 +27,6 @@ void CameraComponent::OnRegisterProperties() {
 
 void CameraComponent::Initialize() {
     OnAwake();
-    Start();
 }
 
 void CameraComponent::OnAwake() {

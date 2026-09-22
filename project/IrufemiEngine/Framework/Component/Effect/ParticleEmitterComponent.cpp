@@ -38,14 +38,6 @@ void ParticleEmitterComponent::Update() {
         particleObj_->SetPosition(GetTransform()->GetWorldPosition());
     }
 
-    static int frameCounter = 0;
-    if (frameCounter++ % 60 == 0) {
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        Log::OutPutLog(std::cout, "[ParticleEmitterComponent] Update called. Pos: " +
-                                      std::to_string(GetTransform()->GetWorldPosition().x) + "\n");
-#endif
-    }
-
     particleObj_->Update();
 }
 
