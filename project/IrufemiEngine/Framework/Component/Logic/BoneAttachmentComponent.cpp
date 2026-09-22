@@ -27,41 +27,52 @@ void BoneAttachmentComponent::Update() {
         return;
     }
 
-    auto scene = gameObject->GetScene();
-    if (!scene) {
-        return;
-    }
+    // キャッシュの検証と再構築
+    auto targetObj = cachedTargetObj_.lock();
+    if (!targetObj || cachedBoneIndex_ < 0 || !cachedRenderer_ || !cachedTargetTransform_) {
+        auto scene = gameObject->GetScene();
+        if (!scene) {
+            return;
+        }
 
-    // ターゲットとなるGameObjectを探す
-    auto targetObj = scene->FindGameObject(targetName_);
-    if (!targetObj) {
-        return;
-    }
+        targetObj = scene->FindGameObject(targetName_);
+        if (!targetObj) {
+            return;
+        }
 
-    // ターゲットのSkinnedMeshRendererComponentを探す
-    auto renderer = targetObj->GetComponent<SkinnedMeshRendererComponent>();
-    if (renderer && renderer->GetRawObject()) {
-        const SkeletonPose* pose = renderer->GetRawObject()->GetInternalSkeletonPose();
-        if (pose && pose->data) {
-            auto it = pose->data->jointMap.find(targetBoneName_);
-            if (it != pose->data->jointMap.end()) {
-                int index = it->second;
-                // ローカルのボーン行列を取得
-                Irufemi::Matrix4x4 localMat = pose->jointPoses[index].skeletonSpaceMatrix;
+        cachedTargetObj_ = targetObj;
+        cachedTargetTransform_ = targetObj->GetComponent<TransformComponent>();
+        cachedRenderer_ = targetObj->GetComponent<SkinnedMeshRendererComponent>();
 
-                // 親のワールド行列と掛けてボーンの最終ワールド行列を算出
-                auto targetTransform = targetObj->GetComponent<TransformComponent>();
-                Irufemi::Matrix4x4 boneWorldMat = localMat;
-                if (targetTransform) {
-                    boneWorldMat = localMat * targetTransform->GetWorldMatrix();
+        if (cachedRenderer_ && cachedRenderer_->GetRawObject()) {
+            const SkeletonPose* pose = cachedRenderer_->GetRawObject()->GetInternalSkeletonPose();
+            if (pose && pose->data) {
+                auto it = pose->data->jointMap.find(targetBoneName_);
+                if (it != pose->data->jointMap.end()) {
+                    cachedBoneIndex_ = it->second;
                 }
-
-                // 自身のTransformComponentに適用するため、ワールド行列をそのまま渡す
-                transform->SetWorldMatrix(boneWorldMat);
-
-                // 更新を即座に反映させる（次のコンポーネントが描画などに使うため）
-                transform->UpdateMatrixImmediate();
             }
+        }
+    }
+
+    // O(1) で即座にボーン姿勢を取得して同期
+    if (cachedRenderer_ && cachedRenderer_->GetRawObject() && cachedBoneIndex_ >= 0) {
+        const SkeletonPose* pose = cachedRenderer_->GetRawObject()->GetInternalSkeletonPose();
+        if (pose && cachedBoneIndex_ < static_cast<int>(pose->jointPoses.size())) {
+            // ローカルのボーン行列を取得
+            Irufemi::Matrix4x4 localMat = pose->jointPoses[cachedBoneIndex_].skeletonSpaceMatrix;
+
+            // 親のワールド行列と掛けてボーンの最終ワールド行列を算出
+            Irufemi::Matrix4x4 boneWorldMat = localMat;
+            if (cachedTargetTransform_) {
+                boneWorldMat = localMat * cachedTargetTransform_->GetWorldMatrix();
+            }
+
+            // 自身のTransformComponentに適用するため、ワールド行列をそのまま渡す
+            transform->SetWorldMatrix(boneWorldMat);
+
+            // 更新を即座に反映させる（次のコンポーネントが描画などに使うため）
+            transform->UpdateMatrixImmediate();
         }
     }
 }
@@ -85,4 +96,5 @@ void BoneAttachmentComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("Target Bone Name")) {
         targetBoneName_ = j["Target Bone Name"];
     }
+    InvalidateCache();
 }

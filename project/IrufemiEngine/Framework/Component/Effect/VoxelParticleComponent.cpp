@@ -15,7 +15,6 @@ VoxelParticleComponent::~VoxelParticleComponent() {}
 
 void VoxelParticleComponent::Initialize() {
     OnAwake();
-    Start();
 }
 
 void VoxelParticleComponent::OnAwake() {

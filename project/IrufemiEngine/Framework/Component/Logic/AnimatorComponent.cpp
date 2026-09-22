@@ -13,7 +13,6 @@ AnimatorComponent::~AnimatorComponent() {}
 
 void AnimatorComponent::Initialize() {
     OnSpawned();
-    Start();
 }
 
 void AnimatorComponent::OnSpawned() {
@@ -46,10 +45,13 @@ void AnimatorComponent::Update() {
 
     animator_->SetPlaybackSpeed(playbackSpeed_);
 
-    // 同じGameObjectについている SkinnedMeshRenderer を探す
-    auto renderer = GetGameObject()->GetComponent<SkinnedMeshRendererComponent>();
-    if (renderer && renderer->GetRawObject()) {
-        SkeletonPose* pose = renderer->GetRawObject()->GetInternalSkeletonPose();
+    // 同じGameObjectについている SkinnedMeshRenderer を探す（キャッシュ化）
+    if (!cachedRenderer_ && GetGameObject()) {
+        cachedRenderer_ = GetGameObject()->GetComponent<SkinnedMeshRendererComponent>();
+    }
+
+    if (cachedRenderer_ && cachedRenderer_->GetRawObject()) {
+        SkeletonPose* pose = cachedRenderer_->GetRawObject()->GetInternalSkeletonPose();
         if (pose && pose->data) {
             animator_->Update(*pose);
 
@@ -71,7 +73,7 @@ void AnimatorComponent::Update() {
             }
 
             // SkinnedMeshRenderer に対して計算済みのポーズを描画に使うよう指示
-            renderer->SetPoseOverride(pose);
+            cachedRenderer_->SetPoseOverride(pose);
         }
     }
 }
