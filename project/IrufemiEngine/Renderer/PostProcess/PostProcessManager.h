@@ -600,6 +600,18 @@ public:
               bool isBackBufferTarget = false);
 
     /**
+     * @brief Bindless 定数バッファのリングオフセットを安全にインクリメントする
+     * @return 上限に達しておらず安全に進められた場合は true、上限超過時は false（警告ログ出力・クランプ）
+     */
+    bool TryIncrementBindlessOffset();
+
+    /**
+     * @brief Combined 定数バッファのリングオフセットを安全にインクリメントする
+     * @return 上限に達しておらず安全に進められた場合は true、上限超過時は false（警告ログ出力・クランプ）
+     */
+    bool TryIncrementCombinedOffset();
+
+    /**
      * @brief 個別エフェクトの詳細パラメータを登録し、インスタンスID（1〜255）を発行する
      * @param params 個別エフェクトのパラメータ
      * @return インスタンスID (0はデフォルト/未登録)

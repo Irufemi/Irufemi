@@ -3,6 +3,7 @@
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DirectXUtils.h"
 #include "Core/System/IrufemiEngine.h"
+#include "Core/Utility/ErrorUtility.h"
 #include <algorithm>
 #include <cassert>
 #include <d3d12.h>
@@ -269,12 +270,7 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList* commandList, 
     commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::LightCommon,
                                                    bindlessCB_->GetGPUVirtualAddress() +
                                                        bindlessBufferOffset_ * sizeof(BindlessParams));
-    if (bindlessBufferOffset_ + 1 < kMaxPostProcessBufferEntries) {
-        bindlessBufferOffset_++;
-    } else {
-        assert(false &&
-               "PostProcess bindless constant buffer overflow! Consider increasing kMaxPostProcessBufferEntries.");
-    }
+    TryIncrementBindlessOffset();
     // -------------------------------------------------------------
 
     // 定数バッファのバインド (Root0 -> b0)
@@ -636,4 +632,24 @@ Microsoft::WRL::ComPtr<ID3D12Resource> PostProcessManager::CreateBuffer(size_t s
     device_->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
                                      nullptr, IID_PPV_ARGS(&resource));
     return resource;
+}
+
+bool PostProcessManager::TryIncrementBindlessOffset() {
+    if (bindlessBufferOffset_ + 1 < kMaxPostProcessBufferEntries) {
+        bindlessBufferOffset_++;
+        return true;
+    }
+    IRUFEMI_WARNING(false,
+                    "PostProcess bindless constant buffer overflow! Consider increasing kMaxPostProcessBufferEntries.");
+    return false;
+}
+
+bool PostProcessManager::TryIncrementCombinedOffset() {
+    if (combinedBufferOffset_ + 1 < kMaxPostProcessBufferEntries) {
+        combinedBufferOffset_++;
+        return true;
+    }
+    IRUFEMI_WARNING(false,
+                    "PostProcess combined constant buffer overflow! Consider increasing kMaxPostProcessBufferEntries.");
+    return false;
 }
