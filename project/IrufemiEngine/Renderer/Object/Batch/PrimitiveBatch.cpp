@@ -1,6 +1,7 @@
 #include "Core/Utility/ErrorUtility.h"
 #include "Renderer/Object/Batch/PrimitiveBatch.h"
 #include <cassert>
+#include <cmath>
 #include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 #include "Renderer/DrawManager.h"
@@ -8,6 +9,7 @@
 void PrimitiveBatch::Initialize(Irufemi::PrimitiveType type, const std::string& textureName) {
     type_ = type;
     isCustomPrimitive_ = false;
+    boundingSphereRadius_ = 1.0f; // 基本形状の半径
 
     EnsureMaterialResources();
     EnsureSharedTexture(textureName);
@@ -19,6 +21,16 @@ void PrimitiveBatch::InitializeRing(const RingParams& params, const std::string&
 
     PrimitiveData ringData = PrimitiveManager::CreateRing(params);
     primitiveManager_->CreateGPUResource(ringData, customPrimitiveResource_);
+
+    // リング頂点群から外接球半径を算出
+    float maxDistSq = 0.0f;
+    for (const auto& v : ringData.vertices) {
+        float distSq = v.position.x * v.position.x + v.position.y * v.position.y + v.position.z * v.position.z;
+        if (distSq > maxDistSq) {
+            maxDistSq = distSq;
+        }
+    }
+    boundingSphereRadius_ = (maxDistSq > 0.0f) ? std::sqrt(maxDistSq) : 1.0f;
 
     EnsureMaterialResources();
     EnsureSharedTexture(textureName);
@@ -58,9 +70,7 @@ void PrimitiveBatch::EnsureSharedTexture(const std::string& textureName) {
 }
 
 float PrimitiveBatch::GetBoundingSphereRadius() const {
-    // プリミティブマネージャが生成する基本形状のサイズは基本的に半径/サイズ1.0近辺なので1.0fを返す。
-    // 必要なら PrimitiveManager からバウンディングスフィア情報を取得できるようにする
-    return 1.0f;
+    return boundingSphereRadius_;
 }
 
 void PrimitiveBatch::Draw() {

@@ -14,6 +14,7 @@ namespace TextureUtility {
 enum class TextureFileType {
     DDS, ///< DirectDraw Surface
     WIC, ///< Windows Imaging Component (PNG, JPG, etc.)
+    TGA, ///< Targa Image
     Unknown
 };
 

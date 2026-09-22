@@ -8,34 +8,34 @@
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
 uint32_t Texture::index_ = 0;
-DescriptorPool* Texture::s_srvPool_ = nullptr;
-ID3D12Resource* Texture::s_whiteResource_ = nullptr;
+DescriptorPool* Texture::srvPool_ = nullptr;
+ID3D12Resource* Texture::whiteResource_ = nullptr;
 
 Texture::Texture() {
     // コンストラクタでSRV枠を確保し、初期状態として白テクスチャを割り当てておく
-    if (s_srvPool_) {
-        srvIndex_ = s_srvPool_->Allocate();
+    if (srvPool_) {
+        srvIndex_ = srvPool_->Allocate();
         if (srvIndex_ != DescriptorPool::kInvalid) {
-            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(srvIndex_);
-            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(srvIndex_);
+            textureSrvHandleCPU_ = srvPool_->GetCPUHandle(srvIndex_);
+            textureSrvHandleGPU_ = srvPool_->GetGPUHandle(srvIndex_);
 
             // 未ロード時のアクセス違反を防ぐため白テクスチャSRVで初期化（フォールバック）
-            if (s_whiteResource_ && dxCommon_) {
+            if (whiteResource_ && dxCommon_) {
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
                 srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
                 srvDesc.Texture2D.MipLevels = 1;
-                dxCommon_->GetDevice()->CreateShaderResourceView(s_whiteResource_, &srvDesc, textureSrvHandleCPU_);
+                dxCommon_->GetDevice()->CreateShaderResourceView(whiteResource_, &srvDesc, textureSrvHandleCPU_);
             }
         }
     }
 }
 
 Texture::~Texture() {
-    if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
+    if (srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
         // GPU が参照し終わるまで遅延解放
-        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+        srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = UINT32_MAX;
     }
 }
@@ -173,8 +173,8 @@ void Texture::InitializeFromExternalResource(const std::string& name, Microsoft:
     this->textureResource_ = resource;
 
     // Textureコンストラクタで確保済みの古いsrvIndexを解放する
-    if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
-        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+    if (srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
+        srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
     }
 
     // 新しいインデックスとハンドルを保持

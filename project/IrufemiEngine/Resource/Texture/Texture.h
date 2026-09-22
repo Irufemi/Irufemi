@@ -25,25 +25,25 @@ public:
         dxCommon_ = dxCommon;
     }
     /**
-     * @brief DescriptorPool を設定する。
-     * @param[in] pool 設定する DescriptorPool の値
+     * @brief SRV用ディスクリプタプールを設定する
+     * @param[in] pool 設定する DescriptorPool のポインタ
      */
     static void SetDescriptorPool(DescriptorPool* pool) {
-        s_srvPool_ = pool;
+        srvPool_ = pool;
     }
     /**
-     * @brief DescriptorPool を取得する。
-     * @return 取得された DescriptorPool
+     * @brief SRV用ディスクリプタプールを取得する
+     * @return 取得された DescriptorPool ポインタ
      */
     static DescriptorPool* GetDescriptorPool() {
-        return s_srvPool_;
+        return srvPool_;
     }
     /**
-     * @brief WhiteTextureResource を設定する。
-     * @param[in] resource 設定する WhiteTextureResource の値
+     * @brief デフォルト白テクスチャリソースを設定する
+     * @param[in] resource 設定する ID3D12Resource ポインタ
      */
     static void SetWhiteTextureResource(ID3D12Resource* resource) {
-        s_whiteResource_ = resource;
+        whiteResource_ = resource;
     }
     ///@}
 
@@ -178,8 +178,8 @@ protected:
     bool isCubemap_ = false;
 
     static DirectXCommon* dxCommon_;
-    static DescriptorPool* s_srvPool_;
-    static ID3D12Resource* s_whiteResource_;
+    static DescriptorPool* srvPool_;
+    static ID3D12Resource* whiteResource_;
 
     uint32_t width_ = 0;
     uint32_t height_ = 0;

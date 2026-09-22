@@ -771,6 +771,15 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
                 image.OverrideFormat(DirectX::MakeSRGB(metadata.format));
             }
         }
+    } else if (fileType == TextureUtility::TextureFileType::TGA) {
+        hr = LoadFromTGAFile(filePathW.c_str(), TGA_FLAGS_NONE, nullptr, image);
+
+        if (SUCCEEDED(hr) && isSRGB) {
+            const auto& metadata = image.GetMetadata();
+            if (DirectX::FormatDataType(metadata.format) != DirectX::FORMAT_TYPE_FLOAT) {
+                image.OverrideFormat(DirectX::MakeSRGB(metadata.format));
+            }
+        }
     } else {
         WIC_FLAGS wicFlags = isSRGB ? WIC_FLAGS_FORCE_SRGB : WIC_FLAGS_NONE;
         hr = LoadFromWICFile(filePathW.c_str(), wicFlags, nullptr, image);
@@ -828,8 +837,11 @@ DirectX::TexMetadata DirectXCommon::GetTextureMetadata(const std::string& filePa
     using namespace DirectX;
     std::wstring filePathW = ConvertString(filePath);
     TexMetadata metadata{};
-    if (StringUtility::EndsWith(filePathW, L".dds")) {
+    TextureUtility::TextureFileType fileType = TextureUtility::GetTextureFileType(filePathW);
+    if (fileType == TextureUtility::TextureFileType::DDS) {
         GetMetadataFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, metadata);
+    } else if (fileType == TextureUtility::TextureFileType::TGA) {
+        GetMetadataFromTGAFile(filePathW.c_str(), TGA_FLAGS_NONE, metadata);
     } else {
         GetMetadataFromWICFile(filePathW.c_str(), WIC_FLAGS_NONE, metadata);
     }
