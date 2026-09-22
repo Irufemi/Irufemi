@@ -6,7 +6,8 @@
 
 void GPUParticleManager::Initialize() {
     systems_.clear();
-    systemLookup_.clear();
+    idLookup_.clear();
+    nextSystemId_ = 1;
 }
 
 void GPUParticleManager::Update() {
@@ -23,7 +24,8 @@ void GPUParticleManager::Draw() {
 
 void GPUParticleManager::Finalize() {
     systems_.clear();
-    systemLookup_.clear();
+    idLookup_.clear();
+    nextSystemId_ = 1;
 }
 
 void GPUParticleManager::ClearAllParticles() {
@@ -49,6 +51,7 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
 
     if (!ctx.system) {
         // Create new system
+        ctx.systemId = nextSystemId_++;
         ctx.system = std::make_unique<GPUParticleSystem>();
         ctx.system->Initialize(texturePath);
         ctx.system->SetBlendMode(blendMode);
@@ -56,7 +59,7 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
         ctx.system->SetEnableLighting(enableLighting);
         ctx.system->SetDepthWrite(depthWrite);
         ctx.system->SetGlobalFields(&globalFields_);
-        systemLookup_[ctx.system.get()] = &ctx;
+        idLookup_[ctx.systemId] = &ctx;
     }
 
     uint32_t assignedIndex = 0;
@@ -71,12 +74,17 @@ GPUParticleManager::EmitterHandle GPUParticleManager::RegisterEmitter(const std:
         }
     }
 
+    if (assignedIndex >= ctx.slotGenerations.size()) {
+        ctx.slotGenerations.resize(assignedIndex + 1, 1);
+    }
+
     // Initialize the slot
     ctx.system->emittersData_[assignedIndex] = GPUParticleEmitter();
 
     EmitterHandle handle;
-    handle.system = ctx.system.get();
-    handle.emitterIndex = assignedIndex;
+    handle.systemId = ctx.systemId;
+    handle.emitterIndex = static_cast<uint16_t>(assignedIndex);
+    handle.generation = ctx.slotGenerations[assignedIndex];
     return handle;
 }
 
@@ -85,32 +93,57 @@ void GPUParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
         return;
     }
 
-    auto it = systemLookup_.find(handle.system);
-    if (it != systemLookup_.end()) {
+    auto it = idLookup_.find(handle.systemId);
+    if (it != idLookup_.end()) {
         auto* ctx = it->second;
-        if (handle.emitterIndex < ctx->system->emittersData_.size()) {
-            ctx->system->emittersData_[handle.emitterIndex].emit = 0;
+        if (handle.emitterIndex < ctx->slotGenerations.size() &&
+            ctx->slotGenerations[handle.emitterIndex] == handle.generation) {
+            if (handle.emitterIndex < ctx->system->emittersData_.size()) {
+                ctx->system->emittersData_[handle.emitterIndex].emit = 0;
+            }
+            // 世代番号をインクリメントして古いハンドルを無効化
+            ctx->slotGenerations[handle.emitterIndex]++;
+            ctx->freeIndices.push_back(handle.emitterIndex);
         }
-        ctx->freeIndices.push_back(handle.emitterIndex);
     }
 }
 
 void GPUParticleManager::UpdateEmitterData(const EmitterHandle& handle, const GPUParticleEmitter& data) {
-    if (handle.IsValid() && handle.emitterIndex < handle.system->emittersData_.size()) {
-        uint32_t burst = handle.system->emittersData_[handle.emitterIndex].burstCount + data.burstCount;
-        float residue = handle.system->emittersData_[handle.emitterIndex].emissionResidue;
-        handle.system->emittersData_[handle.emitterIndex] = data;
-        handle.system->emittersData_[handle.emitterIndex].burstCount = burst;
-        handle.system->emittersData_[handle.emitterIndex].emissionResidue = residue;
+    if (!handle.IsValid()) {
+        return;
+    }
+
+    auto it = idLookup_.find(handle.systemId);
+    if (it != idLookup_.end()) {
+        auto* ctx = it->second;
+        if (handle.emitterIndex < ctx->slotGenerations.size() &&
+            ctx->slotGenerations[handle.emitterIndex] == handle.generation &&
+            handle.emitterIndex < ctx->system->emittersData_.size()) {
+            uint32_t burst = ctx->system->emittersData_[handle.emitterIndex].burstCount + data.burstCount;
+            float residue = ctx->system->emittersData_[handle.emitterIndex].emissionResidue;
+            ctx->system->emittersData_[handle.emitterIndex] = data;
+            ctx->system->emittersData_[handle.emitterIndex].burstCount = burst;
+            ctx->system->emittersData_[handle.emitterIndex].emissionResidue = residue;
+        }
     }
 }
 
 void GPUParticleManager::SetMeshEmitterBuffer(EmitterHandle handle, D3D12_GPU_VIRTUAL_ADDRESS vbAddress) {
-    if (handle.IsValid() && handle.emitterIndex < handle.system->emittersData_.size()) {
-        if (handle.system->meshVertexBuffers_.size() <= handle.emitterIndex) {
-            handle.system->meshVertexBuffers_.resize(handle.emitterIndex + 1, 0);
+    if (!handle.IsValid()) {
+        return;
+    }
+
+    auto it = idLookup_.find(handle.systemId);
+    if (it != idLookup_.end()) {
+        auto* ctx = it->second;
+        if (handle.emitterIndex < ctx->slotGenerations.size() &&
+            ctx->slotGenerations[handle.emitterIndex] == handle.generation &&
+            handle.emitterIndex < ctx->system->emittersData_.size()) {
+            if (ctx->system->meshVertexBuffers_.size() <= handle.emitterIndex) {
+                ctx->system->meshVertexBuffers_.resize(handle.emitterIndex + 1, 0);
+            }
+            ctx->system->meshVertexBuffers_[handle.emitterIndex] = vbAddress;
         }
-        handle.system->meshVertexBuffers_[handle.emitterIndex] = vbAddress;
     }
 }
 

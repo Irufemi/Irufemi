@@ -512,9 +512,10 @@ struct RenderContext {
 - マネージャー側でシステムが再生成・解放された際に、ダングリングポインタが発生するリスクを排除するため、AAA水準の世代番号付き不透明ハンドル（Opaque Handle: SystemId + Generation + EmitterIndex）への刷新を検討する。
 
 #### 2. 段階的実装計画
-- [ ] **Step 1: Opaque Handle 型の設計と世代カウンタの実装**（`uint32_t systemId`, `uint16_t generation`, `uint16_t emitterIndex`）
-- [ ] **Step 2: GPUParticleManager / VoxelParticleManager でのハンドル解決・検証 API の整備**
-- [ ] **Step 3: 呼び出し元（`ParticleObject`, `DebugScene` 等）の移行と生ポインタ完全撤廃**
+- [x] ~~**Step 1: Opaque Handle 型の設計と世代カウンタの実装**~~ (完了: `uint32_t systemId`, `uint16_t emitterIndex`, `uint16_t generation` を 64bit 値型として定義)
+- [x] ~~**Step 2: GPUParticleManager / VoxelParticleManager でのハンドル解決・検証 API の整備**~~ (完了: `idLookup_` による O(1) 解決、世代番号インクリメントによる Use-After-Free/二重解放防止、VoxelParticleManagerの線形探索撤廃)
+- [x] ~~**Step 3: 呼び出し元（`ParticleObject`, `DebugScene` 等）の移行と生ポインタ完全撤廃**~~ (完了: 100% 後方互換 API により呼び出し元無変更で生ポインタを完全排除)
+
 
 
 

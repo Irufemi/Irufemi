@@ -12,10 +12,12 @@ VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const 
     auto& context = systems_[key];
 
     if (!context.system) {
+        context.systemId = nextSystemId_++;
         context.system = std::make_unique<VoxelParticleSystem>();
         VoxelParticleSystem::SetEngine(engine_);
         context.system->Initialize(modelName, resolution);
         context.nextIndex = 0;
+        idLookup_[context.systemId] = &context;
     }
 
     uint32_t index = 0;
@@ -29,9 +31,14 @@ VoxelParticleManager::EmitterHandle VoxelParticleManager::RegisterEmitter(const 
         index = context.nextIndex++;
     }
 
+    if (index >= context.slotGenerations.size()) {
+        context.slotGenerations.resize(index + 1, 1);
+    }
+
     EmitterHandle handle;
-    handle.system = context.system.get();
-    handle.emitterIndex = index;
+    handle.systemId = context.systemId;
+    handle.emitterIndex = static_cast<uint16_t>(index);
+    handle.generation = context.slotGenerations[index];
     return handle;
 }
 
@@ -40,17 +47,20 @@ void VoxelParticleManager::UnregisterEmitter(const EmitterHandle& handle) {
         return;
     }
 
-    // システムを検索してfreeIndicesに戻す
-    for (auto& pair : systems_) {
-        if (pair.second.system.get() == handle.system) {
-            pair.second.freeIndices.push_back(handle.emitterIndex);
-
-            // 無効化用のダミーデータを送る
-            VoxelEmitter emptyData;
-            emptyData.emit = 0;
-            emptyData.lifeTime = 0.0f; // 即座に非表示判定にする
-            handle.system->UpdateEmitterData(handle.emitterIndex, emptyData);
-            break;
+    auto it = idLookup_.find(handle.systemId);
+    if (it != idLookup_.end()) {
+        auto* context = it->second;
+        if (handle.emitterIndex < context->slotGenerations.size() &&
+            context->slotGenerations[handle.emitterIndex] == handle.generation) {
+            if (context->system && handle.emitterIndex < context->system->GetMaxInstances()) {
+                VoxelEmitter emptyData;
+                emptyData.emit = 0;
+                emptyData.lifeTime = 0.0f;
+                context->system->UpdateEmitterData(handle.emitterIndex, emptyData);
+            }
+            // 世代番号をインクリメントして古いハンドルを無効化
+            context->slotGenerations[handle.emitterIndex]++;
+            context->freeIndices.push_back(handle.emitterIndex);
         }
     }
 }
@@ -73,7 +83,10 @@ void VoxelParticleManager::Clear() {
                 pair.second.system->UpdateEmitterData(i, emptyData);
             }
 
-            // インデックスの割り当て状態を完全に初期化する
+            // インデックスおよび世代を更新して既存ハンドルをすべて無効化
+            for (auto& gen : pair.second.slotGenerations) {
+                gen++;
+            }
             pair.second.freeIndices.clear();
             pair.second.nextIndex = 0;
         }
@@ -84,15 +97,34 @@ void VoxelParticleManager::UpdateEmitterData(const EmitterHandle& handle, const 
     if (!handle.IsValid()) {
         return;
     }
-    handle.system->UpdateEmitterData(handle.emitterIndex, data);
+
+    auto it = idLookup_.find(handle.systemId);
+    if (it != idLookup_.end()) {
+        auto* context = it->second;
+        if (handle.emitterIndex < context->slotGenerations.size() &&
+            context->slotGenerations[handle.emitterIndex] == handle.generation &&
+            context->system) {
+            context->system->UpdateEmitterData(handle.emitterIndex, data);
+        }
+    }
 }
 
 const VoxelEmitter& VoxelParticleManager::GetEmitterData(const EmitterHandle& handle) const {
+    static const VoxelEmitter dummy{};
     if (!handle.IsValid()) {
-        static VoxelEmitter dummy;
         return dummy;
     }
-    return handle.system->GetEmitterData(handle.emitterIndex);
+
+    auto it = idLookup_.find(handle.systemId);
+    if (it != idLookup_.end()) {
+        const auto* context = it->second;
+        if (handle.emitterIndex < context->slotGenerations.size() &&
+            context->slotGenerations[handle.emitterIndex] == handle.generation &&
+            context->system) {
+            return context->system->GetEmitterData(handle.emitterIndex);
+        }
+    }
+    return dummy;
 }
 
 void VoxelParticleManager::Update(float deltaTime) {
@@ -143,6 +175,9 @@ void VoxelParticleManager::WarmUp() {
     // 登録済みの全システムの状態をリセット・同期（モデル読み込みは各コンポーネント・プレハブのStart()に委任）
     for (auto& pair : systems_) {
         if (pair.second.system) {
+            for (auto& gen : pair.second.slotGenerations) {
+                gen++;
+            }
             pair.second.freeIndices.clear();
             pair.second.nextIndex = 0;
         }

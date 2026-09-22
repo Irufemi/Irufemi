@@ -39,15 +39,28 @@ public:
      */
     void WarmUp();
 
+    /**
+     * @struct EmitterHandle
+     * @brief ボクセルパーティクルエミッターを一意に識別・操作するための不透明ハンドル (Opaque Handle)
+     */
     struct EmitterHandle {
-        VoxelParticleSystem* system = nullptr;
-        uint32_t emitterIndex = 0xFFFFFFFF;
+        uint32_t systemId = 0;          ///< システム一意ID（0は無効値）
+        uint16_t emitterIndex = 0xFFFF; ///< スロット番号
+        uint16_t generation = 0;        ///< スロット世代番号（解放・再利用の検知用）
+
         /**
-         * @brief IsValid かどうかを判定する。
+         * @brief 有効なハンドルかどうかを判定する。
          * @return 判定結果 (true/false)
          */
         bool IsValid() const {
-            return system != nullptr && emitterIndex != 0xFFFFFFFF;
+            return systemId != 0 && emitterIndex != 0xFFFF;
+        }
+
+        bool operator==(const EmitterHandle& other) const {
+            return systemId == other.systemId && emitterIndex == other.emitterIndex && generation == other.generation;
+        }
+        bool operator!=(const EmitterHandle& other) const {
+            return !(*this == other);
         }
     };
 
@@ -125,12 +138,19 @@ private:
     };
 
     struct SystemContext {
+        uint32_t systemId = 0;
         std::unique_ptr<VoxelParticleSystem> system;
         std::vector<uint32_t> freeIndices;
+        std::vector<uint16_t> slotGenerations;
         uint32_t nextIndex = 0;
     };
 
     std::unordered_map<SystemKey, SystemContext, SystemKeyHasher> systems_;
+    /**
+     * @brief システムIDからシステムコンテキストへの高速逆引きマップ (O(1) 解除・更新用)
+     */
+    std::unordered_map<uint32_t, SystemContext*> idLookup_;
+    uint32_t nextSystemId_ = 1;
     std::vector<OneShotEmitter> oneShots_;
     IrufemiEngine* engine_ = nullptr;
 };
