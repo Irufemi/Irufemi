@@ -16,6 +16,12 @@ void InputManager::Update() {
         keyboard_->Clear();
         gamepad_->Clear();
         mouse_->Clear();
+        for (auto& pair : currentActionValues_) {
+            pair.second = InputActionValue{};
+        }
+        for (auto& pair : previousActionValues_) {
+            pair.second = InputActionValue{};
+        }
         return;
     }
 
@@ -31,9 +37,8 @@ void InputManager::Update() {
         pair.second = InputActionValue{};
     }
 
-    // 全てのバインディングを評価
-    for (const auto& actionName : mappingContext_.GetAllActionNames()) {
-        const auto& bindings = mappingContext_.GetBindings(actionName);
+    // 全てのバインディングを評価（直接参照でゼロアロケーション走査）
+    for (const auto& [actionName, bindings] : mappingContext_.GetMappings()) {
         InputActionValue totalValue;
 
         for (const auto& binding : bindings) {

@@ -64,13 +64,13 @@ public:
      */
     float GetRightStickY() const;
     /**
-     * @brief LeftTrigger を取得する。
-     * @return 取得された LeftTrigger
+     * @brief 左トリガー（LT）のアナログ押し込み量を取得する
+     * @return 押し込み量 (0.0f 〜 1.0f)
      */
     float GetLeftTrigger() const;
     /**
-     * @brief RightTrigger を取得する。
-     * @return 取得された RightTrigger
+     * @brief 右トリガー（RT）のアナログ押し込み量を取得する
+     * @return 押し込み量 (0.0f 〜 1.0f)
      */
     float GetRightTrigger() const;
 
@@ -163,15 +163,18 @@ public:
     ///@{
     Stick8 DPad8Now() const;
     /**
-     * @brief DPad8Is を実行する。
+     * @brief D-Pad が指定した8方向に押されているか判定
+     * @param[in] dir 判定対象の8方向
      */
     bool DPad8Is(Stick8 dir) const;
     /**
-     * @brief DPad8Pressed を実行する。
+     * @brief D-Pad が指定した8方向に押された瞬間か判定（立ち上がり検出）
+     * @param[in] dir 判定対象の8方向
      */
     bool DPad8Pressed(Stick8 dir) const;
     /**
-     * @brief DPad8Released を実行する。
+     * @brief D-Pad が指定した8方向から離された瞬間か判定（立ち下がり検出）
+     * @param[in] dir 判定対象の8方向
      */
     bool DPad8Released(Stick8 dir) const;
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <array>
 #include "Core/Math/Vector2.h"
 
 /**
@@ -33,11 +34,11 @@ public:
         gameResHeight_ = height;
     }
     /**
-     * @brief Update を実行する。
+     * @brief マウス入力状態を毎フレーム更新する
      */
     void Update();
     /**
-     * @brief Clear を実行する。
+     * @brief マウス入力状態（ボタン状態、移動量、ホイール量）をクリアする
      */
     void Clear();
     ///@}
@@ -103,8 +104,8 @@ public:
 
 private:
     HWND hwnd_ = nullptr;
-    BYTE currentButtons_[3]{};
-    BYTE prevButtons_[3]{};
+    std::array<BYTE, 3> currentButtons_{};
+    std::array<BYTE, 3> prevButtons_{};
     Irufemi::Vector2 position_{};
     Irufemi::Vector2 prevPosition_{};
     Irufemi::Vector2 delta_{};
