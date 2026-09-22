@@ -32,10 +32,11 @@ private:
      */
     void WatchLoop();
 
-    std::filesystem::path targetDirectory_;   ///< 監視対象ディレクトリパス
-    std::function<void()> onChangeCallback_;  ///< 変更検知コールバック
-    std::atomic<bool> isRunning_{false};      ///< 監視ループ実行中フラグ
-    std::thread workerThread_;                ///< バックグラウンドワーカースレッド
-    void* directoryHandle_ = nullptr;         ///< ディレクトリハンドル (HANDLE, windows.hのインクルード漏れを防ぐためvoid*で保持)
-    void* stopEvent_ = nullptr;               ///< 終了通知用イベントハンドル (HANDLE)
+    std::filesystem::path targetDirectory_;  ///< 監視対象ディレクトリパス
+    std::function<void()> onChangeCallback_; ///< 変更検知コールバック
+    std::atomic<bool> isRunning_{false};     ///< 監視ループ実行中フラグ
+    std::thread workerThread_;               ///< バックグラウンドワーカースレッド
+    void* directoryHandle_ =
+        nullptr; ///< ディレクトリハンドル (HANDLE, windows.hのインクルード漏れを防ぐためvoid*で保持)
+    void* stopEvent_ = nullptr; ///< 終了通知用イベントハンドル (HANDLE)
 };

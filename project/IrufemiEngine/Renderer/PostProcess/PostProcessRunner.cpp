@@ -147,9 +147,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             if (manager->bindlessBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
                 manager->bindlessBufferOffset_++;
             } else {
-                assert(false &&
-                       "PostProcess bindless constant buffer overflow! Consider increasing "
-                       "kMaxPostProcessBufferEntries.");
+                assert(false && "PostProcess bindless constant buffer overflow! Consider increasing "
+                                "kMaxPostProcessBufferEntries.");
             }
 
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
@@ -202,9 +201,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             if (manager->bindlessBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
                 manager->bindlessBufferOffset_++;
             } else {
-                assert(false &&
-                       "PostProcess bindless constant buffer overflow! Consider increasing "
-                       "kMaxPostProcessBufferEntries.");
+                assert(false && "PostProcess bindless constant buffer overflow! Consider increasing "
+                                "kMaxPostProcessBufferEntries.");
             }
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
                                                            manager->lightShaftsCB_->GetGPUVirtualAddress());
@@ -228,9 +226,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             if (manager->bindlessBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
                 manager->bindlessBufferOffset_++;
             } else {
-                assert(false &&
-                       "PostProcess bindless constant buffer overflow! Consider increasing "
-                       "kMaxPostProcessBufferEntries.");
+                assert(false && "PostProcess bindless constant buffer overflow! Consider increasing "
+                                "kMaxPostProcessBufferEntries.");
             }
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
                                                            manager->lightShaftsCB_->GetGPUVirtualAddress());
@@ -252,9 +249,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             if (manager->bindlessBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
                 manager->bindlessBufferOffset_++;
             } else {
-                assert(false &&
-                       "PostProcess bindless constant buffer overflow! Consider increasing "
-                       "kMaxPostProcessBufferEntries.");
+                assert(false && "PostProcess bindless constant buffer overflow! Consider increasing "
+                                "kMaxPostProcessBufferEntries.");
             }
             commandList->DrawInstanced(3, 1, 0, 0);
 
@@ -540,9 +536,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             if (manager->bindlessBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
                 manager->bindlessBufferOffset_++;
             } else {
-                assert(false &&
-                       "PostProcess bindless constant buffer overflow! Consider increasing "
-                       "kMaxPostProcessBufferEntries.");
+                assert(false && "PostProcess bindless constant buffer overflow! Consider increasing "
+                                "kMaxPostProcessBufferEntries.");
             }
 
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
@@ -552,9 +547,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             if (manager->combinedBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
                 manager->combinedBufferOffset_++;
             } else {
-                assert(false &&
-                       "PostProcess combined constant buffer overflow! Consider increasing "
-                       "kMaxPostProcessBufferEntries.");
+                assert(false && "PostProcess combined constant buffer overflow! Consider increasing "
+                                "kMaxPostProcessBufferEntries.");
             }
 
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams,
@@ -609,9 +603,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         if (manager->bindlessBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
             manager->bindlessBufferOffset_++;
         } else {
-            assert(false &&
-                   "PostProcess bindless constant buffer overflow! Consider increasing "
-                   "kMaxPostProcessBufferEntries.");
+            assert(false && "PostProcess bindless constant buffer overflow! Consider increasing "
+                            "kMaxPostProcessBufferEntries.");
         }
 
         commandList->SetGraphicsRootConstantBufferView(
@@ -620,9 +613,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         if (manager->combinedBufferOffset_ + 1 < PostProcessManager::kMaxPostProcessBufferEntries) {
             manager->combinedBufferOffset_++;
         } else {
-            assert(false &&
-                   "PostProcess combined constant buffer overflow! Consider increasing "
-                   "kMaxPostProcessBufferEntries.");
+            assert(false && "PostProcess combined constant buffer overflow! Consider increasing "
+                            "kMaxPostProcessBufferEntries.");
         }
 
         commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams,
