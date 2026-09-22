@@ -15,11 +15,7 @@ struct OBB {
     Vector3 center{0.0f, 0.0f, 0.0f};
 
     /** @brief ローカルの各軸方向を表す正規化された3つの基底ベクトル（直交必須） */
-    Vector3 orientations[3]{
-        Vector3{1.0f, 0.0f, 0.0f},
-        Vector3{0.0f, 1.0f, 0.0f},
-        Vector3{0.0f, 0.0f, 1.0f}
-    };
+    Vector3 orientations[3]{Vector3{1.0f, 0.0f, 0.0f}, Vector3{0.0f, 1.0f, 0.0f}, Vector3{0.0f, 0.0f, 1.0f}};
 
     /** @brief 中心から各面までの距離（各軸の長さの半分 / Extents） */
     Vector3 size{1.0f, 1.0f, 1.0f};

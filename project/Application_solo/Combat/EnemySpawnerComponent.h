@@ -22,14 +22,26 @@ public:
     GameObject* SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
                            float scaleMultiplier = 1.0f);
 
-    const std::string& GetEnemyModelPath() const { return enemyModelPath_; }
-    void SetEnemyModelPath(const std::string& path) { enemyModelPath_ = path; }
+    const std::string& GetEnemyModelPath() const {
+        return enemyModelPath_;
+    }
+    void SetEnemyModelPath(const std::string& path) {
+        enemyModelPath_ = path;
+    }
 
-    const Irufemi::Vector3& GetBaseEnemyScale() const { return baseEnemyScale_; }
-    void SetBaseEnemyScale(const Irufemi::Vector3& scale) { baseEnemyScale_ = scale; }
+    const Irufemi::Vector3& GetBaseEnemyScale() const {
+        return baseEnemyScale_;
+    }
+    void SetBaseEnemyScale(const Irufemi::Vector3& scale) {
+        baseEnemyScale_ = scale;
+    }
 
-    float GetBaseColliderRadius() const { return baseColliderRadius_; }
-    void SetBaseColliderRadius(float radius) { baseColliderRadius_ = radius; }
+    float GetBaseColliderRadius() const {
+        return baseColliderRadius_;
+    }
+    void SetBaseColliderRadius(float radius) {
+        baseColliderRadius_ = radius;
+    }
 
 private:
     int maxEnemies_ = 50;
