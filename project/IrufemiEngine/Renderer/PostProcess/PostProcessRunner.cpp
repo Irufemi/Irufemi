@@ -447,7 +447,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             D3D12_VIEWPORT fullViewport{};
             D3D12_RECT fullScissorRect{};
 
-            SetupOutputViewport(manager->engine_, manager->dxCommon_, writeToScreen && isBackBufferTarget, fullViewport, fullScissorRect);
+            SetupOutputViewport(manager->engine_, manager->dxCommon_, writeToScreen && isBackBufferTarget, fullViewport,
+                                fullScissorRect);
             commandList->RSSetViewports(1, &fullViewport);
             commandList->RSSetScissorRects(1, &fullScissorRect);
 
@@ -511,7 +512,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             // Viewport と Scissor の設定
             D3D12_VIEWPORT fullViewport{};
             D3D12_RECT fullScissorRect{};
-            SetupOutputViewport(manager->engine_, manager->dxCommon_, writeToScreen && isBackBufferTarget, fullViewport, fullScissorRect);
+            SetupOutputViewport(manager->engine_, manager->dxCommon_, writeToScreen && isBackBufferTarget, fullViewport,
+                                fullScissorRect);
             commandList->RSSetViewports(1, &fullViewport);
             commandList->RSSetScissorRects(1, &fullScissorRect);
 

@@ -25,13 +25,17 @@ public:
      * @brief プレイヤー死亡時のコールバックを設定する
      * @param[in] callback 呼び出される関数オブジェクト
      */
-    void SetOnPlayerDied(std::function<void()> callback) { onPlayerDied_ = std::move(callback); }
+    void SetOnPlayerDied(std::function<void()> callback) {
+        onPlayerDied_ = std::move(callback);
+    }
 
     /**
      * @brief 死亡演出シーケンス完了時のコールバックを設定する
      * @param[in] callback 呼び出される関数オブジェクト
      */
-    void SetOnDeathSequenceFinished(std::function<void()> callback) { onDeathSequenceFinished_ = std::move(callback); }
+    void SetOnDeathSequenceFinished(std::function<void()> callback) {
+        onDeathSequenceFinished_ = std::move(callback);
+    }
 
     /**
      * @brief プレイヤー死亡を通知する

@@ -99,7 +99,7 @@ private:
     EditorModeState currentMode_ = EditorModeState::Edit;
     std::string playModeStartSceneName_ = "";
     std::string editingPrefabPath_ = "";
-    bool isStepRequested_ = false; // コマ送りの予約フラグ
+    bool isStepRequested_ = false;            // コマ送りの予約フラグ
     bool isPickingAllowedInPlayMode_ = false; // プレイ中のオブジェクト選択（ピッキング）許可フラグ
 
     // レイアウトのリセット用フラグ

@@ -151,4 +151,3 @@ void PlayerHealthComponent::NotifyDeathSequenceFinished() {
         onDeathSequenceFinished_();
     }
 }
-

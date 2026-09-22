@@ -24,7 +24,6 @@
 #include "Core/Utility/Log.h"
 #include "Physics/CollisionManager.h"
 
-
 float DebrisComponent::GetPullSpeed() const {
     return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f;
 }
