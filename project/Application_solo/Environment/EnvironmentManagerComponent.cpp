@@ -38,7 +38,7 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
     for (const auto& name : names) {
         bool found = false;
         for (const auto& setting : batchCollisionSettings_) {
-            if (setting.prefabPath == name) {
+            if (setting.prefabPath_ == name) {
                 newSettings.push_back(setting);
                 found = true;
                 break;
@@ -54,18 +54,18 @@ void EnvironmentManagerComponent::OnRegisterProperties() {
 
     RegisterHeader("Batch Collisions");
     for (auto& setting : batchCollisionSettings_) {
-        std::string name = setting.prefabPath;
-        RegisterProperty("ColSize_" + name, &setting.collisionSize);
-        RegisterProperty("ColOffset_" + name, &setting.collisionOffset);
+        std::string name = setting.prefabPath_;
+        RegisterProperty("ColSize_" + name, &setting.collisionSize_);
+        RegisterProperty("ColOffset_" + name, &setting.collisionOffset_);
         // Type_ is kept for serialization compatibility, but no longer modifies Y position.
-        RegisterEnum("Type_" + name, &setting.placementType, {"Building", "Floating"});
+        RegisterEnum("Type_" + name, &setting.placementType_, {"Building", "Floating"});
 
-        RegisterProperty("IsDestructible_" + name, &setting.isDestructible);
-        RegisterProperty("SpawnCount_" + name, &setting.debrisSpawnCount);
+        RegisterProperty("IsDestructible_" + name, &setting.isDestructible_);
+        RegisterProperty("SpawnCount_" + name, &setting.debrisSpawnCount_);
 
-        RegisterProperty("PushbackMaskX_" + name, &setting.pushbackMask.x);
-        RegisterProperty("PushbackMaskY_" + name, &setting.pushbackMask.y);
-        RegisterProperty("PushbackMaskZ_" + name, &setting.pushbackMask.z);
+        RegisterProperty("PushbackMaskX_" + name, &setting.pushbackMask_.x);
+        RegisterProperty("PushbackMaskY_" + name, &setting.pushbackMask_.y);
+        RegisterProperty("PushbackMaskZ_" + name, &setting.pushbackMask_.z);
     }
 }
 
@@ -84,14 +84,14 @@ void EnvironmentManagerComponent::Start() {
         }
 
         for (auto& setting : batchCollisionSettings_) {
-            if (child->GetName().find(setting.prefabPath) != std::string::npos) {
+            if (child->GetName().find(setting.prefabPath_) != std::string::npos) {
                 // 初回のみプレハブからデフォルトのサイズを取得する
-                if (setting.collisionSize.x < 0.0f) {
+                if (setting.collisionSize_.x < 0.0f) {
                     if (auto obb = child->GetComponent<OBBColliderComponent>()) {
-                        setting.collisionSize = obb->GetLocalSize();
-                        setting.previousSize = setting.collisionSize;
-                        setting.collisionOffset = obb->GetLocalOffset();
-                        setting.previousOffset = setting.collisionOffset;
+                        setting.collisionSize_ = obb->GetLocalSize();
+                        setting.previousSize_ = setting.collisionSize_;
+                        setting.collisionOffset_ = obb->GetLocalOffset();
+                        setting.previousOffset_ = setting.collisionOffset_;
                     }
                 }
 
@@ -102,7 +102,7 @@ void EnvironmentManagerComponent::Start() {
                     origScale = transform->GetScale();
                 }
 
-                if (setting.isDestructible) {
+                if (setting.isDestructible_) {
                     if (!child->GetComponent<TargetableComponent>()) {
                         child->AddComponent<TargetableComponent>();
                     }
@@ -112,11 +112,11 @@ void EnvironmentManagerComponent::Start() {
 
                     if (!child->GetComponent<DestructibleEnvironmentComponent>()) {
                         auto destructible = child->AddComponent<DestructibleEnvironmentComponent>();
-                        destructible->SetDebrisSpawnCount(setting.debrisSpawnCount);
+                        destructible->SetDebrisSpawnCount(setting.debrisSpawnCount_);
                     }
                 }
 
-                spawnedObjects_.push_back({child, setting.prefabPath, origPos, origRot, origScale});
+                spawnedObjects_.push_back({child, setting.prefabPath_, origPos, origRot, origScale});
                 break;
             }
         }
@@ -124,13 +124,13 @@ void EnvironmentManagerComponent::Start() {
 
     // 最初のバッチ設定を適用
     for (const auto& info : spawnedObjects_) {
-        if (auto obj = info.obj.lock()) {
+        if (auto obj = info.obj_.lock()) {
             if (auto obb = obj->GetComponent<OBBColliderComponent>()) {
                 for (const auto& setting : batchCollisionSettings_) {
-                    if (setting.prefabPath == info.prefabPath) {
-                        obb->SetLocalSize(setting.collisionSize);
-                        obb->SetLocalOffset(setting.collisionOffset);
-                        obb->pushbackMask_ = setting.pushbackMask;
+                    if (setting.prefabPath_ == info.prefabPath_) {
+                        obb->SetLocalSize(setting.collisionSize_);
+                        obb->SetLocalOffset(setting.collisionOffset_);
+                        obb->pushbackMask_ = setting.pushbackMask_;
                         break;
                     }
                 }
@@ -140,7 +140,7 @@ void EnvironmentManagerComponent::Start() {
 
     // 環境オブジェクトのモデルバッチレンダラーを事前ロード・初期化
     for (const auto& info : spawnedObjects_) {
-        if (auto obj = info.obj.lock()) {
+        if (auto obj = info.obj_.lock()) {
             if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
                 meshRenderer->SetVisible(false); // 個別の描画を停止
                 std::string modelName = meshRenderer->GetModelName();
@@ -155,28 +155,28 @@ void EnvironmentManagerComponent::Start() {
 void EnvironmentManagerComponent::Update() {
     bool anyChanged = false;
     for (auto& setting : batchCollisionSettings_) {
-        if (setting.collisionSize != setting.previousSize || setting.collisionOffset != setting.previousOffset ||
-            setting.pushbackMask != setting.previousPushbackMask) {
-            setting.previousSize = setting.collisionSize;
-            setting.previousOffset = setting.collisionOffset;
-            setting.previousPushbackMask = setting.pushbackMask;
+        if (setting.collisionSize_ != setting.previousSize_ || setting.collisionOffset_ != setting.previousOffset_ ||
+            setting.pushbackMask_ != setting.previousPushbackMask_) {
+            setting.previousSize_ = setting.collisionSize_;
+            setting.previousOffset_ = setting.collisionOffset_;
+            setting.previousPushbackMask_ = setting.pushbackMask_;
             anyChanged = true;
         }
         // placementType is tracked but unused since manual placement defines Irufemi::Transform
-        if (setting.placementType != setting.previousPlacementType) {
-            setting.previousPlacementType = setting.placementType;
+        if (setting.placementType_ != setting.previousPlacementType_) {
+            setting.previousPlacementType_ = setting.placementType_;
         }
     }
 
     if (anyChanged) {
         for (const auto& info : spawnedObjects_) {
-            if (auto obj = info.obj.lock()) {
+            if (auto obj = info.obj_.lock()) {
                 if (auto obb = obj->GetComponent<OBBColliderComponent>()) {
                     for (const auto& setting : batchCollisionSettings_) {
-                        if (setting.prefabPath == info.prefabPath) {
-                            obb->SetLocalSize(setting.collisionSize);
-                            obb->SetLocalOffset(setting.collisionOffset);
-                            obb->pushbackMask_ = setting.pushbackMask;
+                        if (setting.prefabPath_ == info.prefabPath_) {
+                            obb->SetLocalSize(setting.collisionSize_);
+                            obb->SetLocalOffset(setting.collisionOffset_);
+                            obb->pushbackMask_ = setting.pushbackMask_;
                             break;
                         }
                     }
@@ -196,7 +196,7 @@ void EnvironmentManagerComponent::Draw() {
 
     // 2. 管理下のオブジェクトから Irufemi::Transform を取得し、バッチに登録
     for (const auto& info : spawnedObjects_) {
-        if (auto obj = info.obj.lock()) {
+        if (auto obj = info.obj_.lock()) {
             if (!obj->GetIsActive()) {
                 continue; // 破壊された環境物は描画しない
             }

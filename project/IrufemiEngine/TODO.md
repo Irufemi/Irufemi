@@ -503,5 +503,19 @@ struct RenderContext {
 - [x] ~~**Step 2: 呼び出し側（`DrawManager`, 各 Model/Object クラス, 2D オブジェクト群, UI）の移行**~~ (完了: 全直接アクセスをアクセサ経由へ安全移行)
 - [x] ~~**Step 3: メンバ変数の `protected` 化**~~ (完了: Object3DResource / Object2DResource / LineResource の低レベルリソースを完全カプセル化)
 
+---
+
+### 🛡️ パーティクルエミッターハンドルの安全化（Opaque Handle パターン刷新）
+
+#### 1. 課題と背景
+- `GPUParticleManager::EmitterHandle` および `VoxelParticleManager::EmitterHandle` において、内部システムへの生ポインタ（`GPUParticleSystem*`）を保持して外部（`ParticleObject`, 各シーン等）へ返却している。
+- マネージャー側でシステムが再生成・解放された際に、ダングリングポインタが発生するリスクを排除するため、AAA水準の世代番号付き不透明ハンドル（Opaque Handle: SystemId + Generation + EmitterIndex）への刷新を検討する。
+
+#### 2. 段階的実装計画
+- [ ] **Step 1: Opaque Handle 型の設計と世代カウンタの実装**（`uint32_t systemId`, `uint16_t generation`, `uint16_t emitterIndex`）
+- [ ] **Step 2: GPUParticleManager / VoxelParticleManager でのハンドル解決・検証 API の整備**
+- [ ] **Step 3: 呼び出し元（`ParticleObject`, `DebugScene` 等）の移行と生ポインタ完全撤廃**
+
+
 
 

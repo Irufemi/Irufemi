@@ -1,5 +1,5 @@
-#include "Renderer/System/Core/IRenderable.h"
 #pragma once
+#include "Renderer/System/Core/IRenderable.h"
 
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Vector4.h"

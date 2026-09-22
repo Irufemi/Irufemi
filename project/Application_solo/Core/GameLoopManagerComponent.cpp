@@ -34,7 +34,7 @@ void GameLoopManagerComponent::Initialize() {
     bossObj_.reset();
 
     // 事前キャッシュ: ResultScene で使用するテキストのSDF生成をバックグラウンドで事前に行う
-    if (auto engine = BaseModel::GetIrufemiEngine()) {
+    if (auto engine = GetEngine()) {
         if (auto fm = engine->GetFontManager()) {
             fm->PrecacheText("toro_glitch", L"STAGE CLEAR");
             fm->PrecacheText("toro_glitch", L"GAME OVER");
