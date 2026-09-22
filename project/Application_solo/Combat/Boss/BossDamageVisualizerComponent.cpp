@@ -16,7 +16,6 @@ void BossDamageVisualizerComponent::OnRegisterProperties() {
 
 void BossDamageVisualizerComponent::Initialize() {
     mainCameraObj_.reset();
-    mainCameraShakeComp_ = nullptr;
 }
 
 void BossDamageVisualizerComponent::Start() {
@@ -50,16 +49,8 @@ std::shared_ptr<GameObject> BossDamageVisualizerComponent::GetMainCamera() {
 }
 
 CameraShakeComponent* BossDamageVisualizerComponent::GetCameraShake() {
-    auto cam = mainCameraObj_.lock();
-    if (!cam) {
-        mainCameraShakeComp_ = nullptr;
-        cam = GetMainCamera();
-    }
-    if (cam) {
-        if (!mainCameraShakeComp_) {
-            mainCameraShakeComp_ = cam->GetComponent<CameraShakeComponent>();
-        }
-        return mainCameraShakeComp_;
+    if (auto cam = GetMainCamera()) {
+        return cam->GetComponent<CameraShakeComponent>();
     }
     return nullptr;
 }
@@ -77,9 +68,11 @@ void BossDamageVisualizerComponent::TriggerDeathShake() {
     }
 }
 
-bool BossDamageVisualizerComponent::IsDeathShakePlaying() {
-    if (auto shake = GetCameraShake()) {
-        return shake->IsPlaying();
+bool BossDamageVisualizerComponent::IsDeathShakePlaying() const {
+    if (auto cam = mainCameraObj_.lock()) {
+        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
+            return shake->IsPlaying();
+        }
     }
     return false;
 }

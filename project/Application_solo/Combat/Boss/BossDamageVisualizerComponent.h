@@ -38,46 +38,82 @@ public:
      * @brief 撃破シェイクが現在再生中かどうかを取得する
      * @return 再生中の場合は true
      */
-    bool IsDeathShakePlaying();
+    bool IsDeathShakePlaying() const;
 
+    /**
+     * @brief 被弾シェイクの強度を取得する
+     */
     float GetDamageShakeIntensity() const {
         return damageShakeIntensity_;
     }
+    /**
+     * @brief 被弾シェイクの強度を設定する
+     */
     void SetDamageShakeIntensity(float val) {
         damageShakeIntensity_ = val;
     }
 
+    /**
+     * @brief 被弾シェイクのフレーム数を取得する
+     */
     int GetDamageShakeFrames() const {
         return damageShakeFrames_;
     }
+    /**
+     * @brief 被弾シェイクのフレーム数を設定する
+     */
     void SetDamageShakeFrames(int val) {
         damageShakeFrames_ = val;
     }
 
+    /**
+     * @brief 被弾シェイクの周波数を取得する
+     */
     float GetDamageShakeFrequency() const {
         return damageShakeFrequency_;
     }
+    /**
+     * @brief 被弾シェイクの周波数を設定する
+     */
     void SetDamageShakeFrequency(float val) {
         damageShakeFrequency_ = val;
     }
 
+    /**
+     * @brief 撃破シェイクの強度を取得する
+     */
     float GetDeathShakeIntensity() const {
         return deathShakeIntensity_;
     }
+    /**
+     * @brief 撃破シェイクの強度を設定する
+     */
     void SetDeathShakeIntensity(float val) {
         deathShakeIntensity_ = val;
     }
 
+    /**
+     * @brief 撃破シェイクのフレーム数を取得する
+     */
     int GetDeathShakeFrames() const {
         return deathShakeFrames_;
     }
+    /**
+     * @brief 撃破シェイクのフレーム数を設定する
+     */
     void SetDeathShakeFrames(int val) {
         deathShakeFrames_ = val;
     }
 
+    /**
+     * @brief 撃破シェイクの周波数を取得する
+     */
     float GetDeathShakeFrequency() const {
         return deathShakeFrequency_;
     }
+    /**
+     * @brief 撃破シェイクの周波数を設定する
+     */
     void SetDeathShakeFrequency(float val) {
         deathShakeFrequency_ = val;
     }
@@ -89,14 +125,13 @@ private:
     std::shared_ptr<GameObject> GetMainCamera();
 
     /**
-     * @brief メインカメラの CameraShakeComponent を取得する（弱参照キャッシュ付き）
+     * @brief メインカメラの CameraShakeComponent を取得する
      */
     CameraShakeComponent* GetCameraShake();
 
 private:
     BossComponent* bossComp_ = nullptr;
     std::weak_ptr<GameObject> mainCameraObj_;
-    CameraShakeComponent* mainCameraShakeComp_ = nullptr;
 
     // 被弾シェイク
     float damageShakeIntensity_ = 0.4f;
