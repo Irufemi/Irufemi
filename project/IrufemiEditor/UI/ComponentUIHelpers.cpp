@@ -455,11 +455,15 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         float* ptr = static_cast<float*>(prop.GetRawData());
                         if (prop.minVal != prop.maxVal) {
                             if (ImGui::SliderFloat(hiddenName.c_str(), ptr, prop.minVal, prop.maxVal)) {
-                                if (prop.onChanged) prop.onChanged();
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                             }
                         } else {
                             if (ImGui::DragFloat(hiddenName.c_str(), ptr, 0.1f)) {
-                                if (prop.onChanged) prop.onChanged();
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                             }
                         }
                         CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
@@ -474,7 +478,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             }
                             int oldVal = *ptr;
                             if (ImGui::Combo(hiddenName.c_str(), ptr, cStrs.data(), static_cast<int>(cStrs.size()))) {
-                                if (prop.onChanged) prop.onChanged();
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                                 PushInstantUndo(actionManager, oldVal, *ptr, ptr, prop.onChanged);
                             }
                         }
@@ -485,11 +491,15 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         if (prop.minVal != prop.maxVal) {
                             if (ImGui::SliderInt(hiddenName.c_str(), ptr, static_cast<int>(prop.minVal),
                                                  static_cast<int>(prop.maxVal))) {
-                                if (prop.onChanged) prop.onChanged();
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                             }
                         } else {
                             if (ImGui::DragInt(hiddenName.c_str(), ptr, 1)) {
-                                if (prop.onChanged) prop.onChanged();
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                             }
                         }
                         CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
@@ -499,7 +509,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         bool* ptr = static_cast<bool*>(prop.GetRawData());
                         bool oldVal = *ptr;
                         if (ImGui::Checkbox(hiddenName.c_str(), ptr)) {
-                            if (prop.onChanged) prop.onChanged();
+                            if (prop.onChanged) {
+                                prop.onChanged();
+                            }
                             PushInstantUndo(actionManager, oldVal, *ptr, ptr, prop.onChanged);
                         }
                         break;
@@ -507,7 +519,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     case ComponentPropertyType::Float2: {
                         Irufemi::Vector2* ptr = reinterpret_cast<Irufemi::Vector2*>(prop.GetRawData());
                         if (ImGui::DragFloat2(hiddenName.c_str(), &ptr->x, 0.1f)) {
-                            if (prop.onChanged) prop.onChanged();
+                            if (prop.onChanged) {
+                                prop.onChanged();
+                            }
                         }
                         CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
                         break;
@@ -515,7 +529,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     case ComponentPropertyType::Float3: {
                         Irufemi::Vector3* ptr = reinterpret_cast<Irufemi::Vector3*>(prop.GetRawData());
                         if (ImGui::DragFloat3(hiddenName.c_str(), &ptr->x, 0.1f)) {
-                            if (prop.onChanged) prop.onChanged();
+                            if (prop.onChanged) {
+                                prop.onChanged();
+                            }
                         }
                         CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
                         break;
@@ -525,11 +541,15 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                         if (prop.name.find("Color") != std::string::npos ||
                             prop.name.find("color") != std::string::npos) {
                             if (ImGui::ColorEdit4(hiddenName.c_str(), &ptr->x)) {
-                                if (prop.onChanged) prop.onChanged();
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                             }
                         } else {
                             if (ImGui::DragFloat4(hiddenName.c_str(), &ptr->x, 0.1f)) {
-                                if (prop.onChanged) prop.onChanged();
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                             }
                         }
                         CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);

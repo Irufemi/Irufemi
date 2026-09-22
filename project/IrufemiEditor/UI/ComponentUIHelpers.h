@@ -42,16 +42,15 @@ public:
     }
 
     template <typename T>
-    static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr,
-                                  std::function<void()> onChanged) {
+    static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr, std::function<void()> onChanged) {
         static T startValue;
         if (ImGui::IsItemActivated()) {
             startValue = *valuePtr;
         }
         if (ImGui::IsItemDeactivatedAfterEdit()) {
             T endValue = *valuePtr;
-            actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
-                startValue, endValue, [valuePtr, onChanged](const T& v) {
+            actionManager->PushAndExecute(
+                std::make_unique<ChangeValueCommand<T>>(startValue, endValue, [valuePtr, onChanged](const T& v) {
                     *valuePtr = v;
                     if (onChanged) {
                         onChanged();
@@ -63,8 +62,8 @@ public:
     template <typename T>
     static void PushInstantUndo(EditorActionManager* actionManager, const T& oldVal, const T& newVal, T* valuePtr,
                                 std::function<void()> onChanged = nullptr) {
-        actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
-            oldVal, newVal, [valuePtr, onChanged](const T& v) {
+        actionManager->PushAndExecute(
+            std::make_unique<ChangeValueCommand<T>>(oldVal, newVal, [valuePtr, onChanged](const T& v) {
                 *valuePtr = v;
                 if (onChanged) {
                     onChanged();
