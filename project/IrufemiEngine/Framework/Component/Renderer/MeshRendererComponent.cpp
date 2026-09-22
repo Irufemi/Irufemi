@@ -24,7 +24,13 @@ IRenderable* MeshRendererComponent::GetRenderable() {
 }
 
 void MeshRendererComponent::OnRegisterProperties() {
-    RegisterProperty("Model File", &modelName_).SetTooltip("The path to the GLTF or OBJ file to load");
+    RegisterProperty("Model File", &modelName_)
+        .SetTooltip("The path to the GLTF or OBJ file to load")
+        .OnChanged([this]() {
+            if (modelName_ != currentLoadedFilename_) {
+                LoadModel(modelName_);
+            }
+        });
     RegisterProperty("Visible", &isVisible_);
     RegisterProperty("Cast Shadows", &castShadows_);
 }
@@ -66,11 +72,6 @@ void MeshRendererComponent::SetCustomEffectParam(float param) {
 }
 
 void MeshRendererComponent::Update() {
-    // エディタ等で文字列が変更された場合の動的ロード検知
-    if (modelName_ != currentLoadedFilename_) {
-        LoadModel(modelName_);
-    }
-
     // TransformComponent があれば、その座標を StaticModelObject に渡す（同期）
     if (GetTransform() && obj_) {
         obj_->SetTranslate(GetTransform()->GetWorldPosition());

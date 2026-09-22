@@ -38,11 +38,6 @@ void SkinnedMeshRendererComponent::LoadModel(const std::string& filename) {
 }
 
 void SkinnedMeshRendererComponent::Update() {
-    // エディタ等で文字列が変更された場合の動的ロード検知
-    if (modelFilename_ != currentLoadedFilename_) {
-        LoadModel(modelFilename_);
-    }
-
     if (auto transform = GetTransform()) {
         animatedMesh_->SetTranslate(transform->GetWorldPosition());
         animatedMesh_->SetRotate(transform->GetWorldRotation());
@@ -148,7 +143,13 @@ nlohmann::json SkinnedMeshRendererComponent::Serialize() {
 }
 
 void SkinnedMeshRendererComponent::OnRegisterProperties() {
-    RegisterProperty("Model File", &modelFilename_).SetTooltip("The path to the GLTF or OBJ file to load");
+    RegisterProperty("Model File", &modelFilename_)
+        .SetTooltip("The path to the GLTF or OBJ file to load")
+        .OnChanged([this]() {
+            if (modelFilename_ != currentLoadedFilename_) {
+                LoadModel(modelFilename_);
+            }
+        });
 }
 
 void SkinnedMeshRendererComponent::Deserialize(const nlohmann::json& j) {

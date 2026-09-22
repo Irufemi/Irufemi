@@ -47,7 +47,7 @@ public:
     }
 
     void SetOnDeathCallback(std::function<void(GameObject*)> callback) {
-        onDeathCallback_ = callback;
+        onDeathCallback_ = std::move(callback);
     }
 
     // パラメータ設定

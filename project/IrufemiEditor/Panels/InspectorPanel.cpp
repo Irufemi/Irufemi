@@ -99,17 +99,22 @@ void InspectorPanel::Draw() {
                     }
                 }
 
-                // カテゴリ分類（実行時コンポーネント定義は静的なため初回のみ構築・キャッシュ）
-                static const auto categories = []() {
-                    std::map<std::string, std::vector<std::string>> cat;
-                    for (const auto& [name, reg] : ComponentFactory::GetFactoryMap()) {
+                // カテゴリ分類（コンポーネント登録数の変化を検知してキャッシュ再構築）
+                static std::map<std::string, std::vector<std::string>> s_categoriesCache;
+                static size_t s_lastFactoryMapSize = 0;
+
+                const auto& factoryMap = ComponentFactory::GetFactoryMap();
+                if (s_lastFactoryMapSize != factoryMap.size()) {
+                    s_categoriesCache.clear();
+                    for (const auto& [name, reg] : factoryMap) {
                         if (name == "TransformComponent") {
                             continue; // 個別処理
                         }
-                        cat[reg.category].push_back(name);
+                        s_categoriesCache[reg.category].push_back(name);
                     }
-                    return cat;
-                }();
+                    s_lastFactoryMapSize = factoryMap.size();
+                }
+                const auto& categories = s_categoriesCache;
 
                 if (!hasTransform) {
                     if (ImGui::Selectable("TransformComponent")) {
