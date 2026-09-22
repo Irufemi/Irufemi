@@ -45,8 +45,8 @@ public:
 
 private:
     struct BossBulletData {
-        Irufemi::Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
-        float lifeTimer_ = 0.0f;
+        Irufemi::Vector3 velocity = {0.0f, 0.0f, 0.0f};
+        float lifeTimer = 0.0f;
     };
 
     int maxBullets_ = 2000;

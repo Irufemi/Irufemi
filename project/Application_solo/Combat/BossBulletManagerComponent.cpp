@@ -87,29 +87,29 @@ void BossBulletManagerComponent::Update() {
         activeVirtualIds_.pop();
 
         auto& data = bulletDataList_[vid];
-        data.lifeTimer_ -= dt;
+        data.lifeTimer -= dt;
 
         int denseIndex = virtualManager_->GetSparseIndex(vid);
         if (denseIndex >= 0) {
             auto& vi = virtualInstances[denseIndex];
 
-            if (data.lifeTimer_ <= 0.0f) {
-                playExplosion(vi.position_);
+            if (data.lifeTimer <= 0.0f) {
+                playExplosion(vi.position);
                 ReleaseBullet(vid);
                 continue;
             }
 
-            vi.position_ += data.velocity_ * dt;
+            vi.position += data.velocity * dt;
             survivedBulletVids.push_back(vid);
 
             // クラスタAABBの拡張（hitRadius_分も含める）
-            clusterMin.x = (std::min)(clusterMin.x, vi.position_.x - hitRadius_);
-            clusterMin.y = (std::min)(clusterMin.y, vi.position_.y - hitRadius_);
-            clusterMin.z = (std::min)(clusterMin.z, vi.position_.z - hitRadius_);
+            clusterMin.x = (std::min)(clusterMin.x, vi.position.x - hitRadius_);
+            clusterMin.y = (std::min)(clusterMin.y, vi.position.y - hitRadius_);
+            clusterMin.z = (std::min)(clusterMin.z, vi.position.z - hitRadius_);
 
-            clusterMax.x = (std::max)(clusterMax.x, vi.position_.x + hitRadius_);
-            clusterMax.y = (std::max)(clusterMax.y, vi.position_.y + hitRadius_);
-            clusterMax.z = (std::max)(clusterMax.z, vi.position_.z + hitRadius_);
+            clusterMax.x = (std::max)(clusterMax.x, vi.position.x + hitRadius_);
+            clusterMax.y = (std::max)(clusterMax.y, vi.position.y + hitRadius_);
+            clusterMax.z = (std::max)(clusterMax.z, vi.position.z + hitRadius_);
         }
     }
 
@@ -194,7 +194,7 @@ void BossBulletManagerComponent::Update() {
             continue;
         }
         auto& vi = virtualInstances[denseIndex];
-        const auto& p = vi.position_;
+        const auto& p = vi.position;
 
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
         if (cm && cm->GetIsDrawDebugLinePtr() && *cm->GetIsDrawDebugLinePtr()) {
@@ -243,7 +243,7 @@ void BossBulletManagerComponent::Update() {
         }
 
         if (isHit) {
-            playExplosion(vi.position_);
+            playExplosion(vi.position);
             ReleaseBullet(vid);
         } else {
             activeVirtualIds_.push(vid); // 生存弾をキューに維持
@@ -276,8 +276,8 @@ void BossBulletManagerComponent::SpawnBullet(const Irufemi::Vector3& position, c
     int vid = virtualManager_->AddVirtualInstance(position, {0, 0, 0}, bulletScale_);
     if (vid >= 0 && vid < maxBullets_) {
         BossBulletData data;
-        data.velocity_ = velocity;
-        data.lifeTimer_ = defaultLifeTime_;
+        data.velocity = velocity;
+        data.lifeTimer = defaultLifeTime_;
         bulletDataList_[vid] = data;
         activeVirtualIds_.push(vid);
     }

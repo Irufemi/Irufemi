@@ -44,7 +44,7 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
         bool found = false;
         int activeOccurrence = 0;
         for (const auto& active : activeMarkers_) {
-            if (active.target_.lock() == target) {
+            if (active.target.lock() == target) {
                 if (activeOccurrence == occurrenceIndex) {
                     nextMarkersCache_.push_back(active);
                     found = true;
@@ -57,9 +57,9 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
         if (!found) {
             // 新規ロックオン対象
             LockonMarkerState newState;
-            newState.target_ = target;
-            newState.currentScale_ = 3.0f; // 初期スケール（大きめに出現）
-            newState.animationT_ = 0.0f;
+            newState.target = target;
+            newState.currentScale = 3.0f; // 初期スケール（大きめに出現）
+            newState.animationT = 0.0f;
             nextMarkersCache_.push_back(newState);
         }
     }
@@ -86,7 +86,7 @@ void LockonMarkerUIComponent::Update() {
     drawCountsCache_.clear();
 
     for (auto& marker : activeMarkers_) {
-        auto target = marker.target_.lock();
+        auto target = marker.target.lock();
         if (!target) {
             continue;
         }
@@ -120,22 +120,22 @@ void LockonMarkerUIComponent::Update() {
         Irufemi::Vector3 cameraPos = camera->GetTranslate();
         float dist3D = Irufemi::Math::Length(Irufemi::Math::Subtract(worldPos, cameraPos));
         float distanceScale = std::clamp(50.0f / (std::max)(dist3D, 1.0f), 0.3f, 1.2f);
-        marker.targetScale_ = distanceScale;
+        marker.targetScale = distanceScale;
 
         // アニメーション（イージング）の進行
-        if (marker.animationT_ < 1.0f) {
-            marker.animationT_ += deltaTime * 5.0f; // アニメーション速度 (約0.2秒で完了)
-            if (marker.animationT_ > 1.0f) {
-                marker.animationT_ = 1.0f;
+        if (marker.animationT < 1.0f) {
+            marker.animationT += deltaTime * 5.0f; // アニメーション速度 (約0.2秒で完了)
+            if (marker.animationT > 1.0f) {
+                marker.animationT = 1.0f;
             }
         }
 
         // EaseOutCubic を使ってシュッと縮小するアニメーション
-        float easedT = EaseOutCubic(marker.animationT_);
-        marker.currentScale_ = std::lerp(3.0f, marker.targetScale_, easedT);
+        float easedT = EaseOutCubic(marker.animationT);
+        marker.currentScale = std::lerp(3.0f, marker.targetScale, easedT);
 
         int idx = drawCountsCache_[target->GetInstanceID()]++;
-        float finalScale = marker.currentScale_;
+        float finalScale = marker.currentScale;
         Irufemi::Vector2 finalPos = {screenPos.x, screenPos.y};
 
         // 回転と色の設定

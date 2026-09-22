@@ -38,13 +38,13 @@ private:
     std::unique_ptr<ObjectPool<GameObject>> dronePool_;
 
     struct DroneAnimData {
-        float orbitAngle_ = 0.0f;
-        float fireTimer_ = 0.0f;
+        float orbitAngle = 0.0f;
+        float fireTimer = 0.0f;
     };
 
     struct ActiveDrone {
-        ObjectPool<GameObject>::Handle handle_;
-        std::shared_ptr<GameObject> gameObject_;
+        ObjectPool<GameObject>::Handle handle;
+        std::shared_ptr<GameObject> gameObject;
     };
 
     std::vector<ActiveDrone> activeDrones_;

@@ -17,13 +17,13 @@ class ModelBatchRendererComponent;
  * @brief 仮想オブジェクトのデータ
  */
 struct VirtualInstance {
-    int id_;
-    Irufemi::Vector3 position_ = {0.0f, 0.0f, 0.0f};
-    Irufemi::Vector3 rotation_ = {0.0f, 0.0f, 0.0f};
-    Irufemi::Vector3 scale_ = {1.0f, 1.0f, 1.0f};
-    bool isPromoted_ = false;
-    bool isDestroyed_;
-    ObjectPool<GameObject>::Handle promotedHandle_;
+    int id;
+    Irufemi::Vector3 position = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 rotation = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 scale = {1.0f, 1.0f, 1.0f};
+    bool isPromoted = false;
+    bool isDestroyed;
+    ObjectPool<GameObject>::Handle promotedHandle;
 };
 
 /**

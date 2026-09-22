@@ -37,25 +37,25 @@ public:
 
 private:
     struct SpawnedEnvInfo {
-        std::weak_ptr<GameObject> obj_;
-        std::string prefabPath_;
-        Irufemi::Vector3 originalPos_;
-        Irufemi::Vector3 originalRot_;
-        Irufemi::Vector3 originalScale_;
+        std::weak_ptr<GameObject> obj;
+        std::string prefabPath;
+        Irufemi::Vector3 originalPos;
+        Irufemi::Vector3 originalRot;
+        Irufemi::Vector3 originalScale;
     };
 
     struct BatchCollisionSetting {
-        std::string prefabPath_; // Now effectively 'prefabName' (e.g. Env_Pillar)
-        Irufemi::Vector3 collisionSize_;
-        Irufemi::Vector3 previousSize_;
-        Irufemi::Vector3 collisionOffset_;
-        Irufemi::Vector3 previousOffset_;
-        int placementType_ = 0; // 0: Building (スナップ), 1: Floating (そのまま)
-        int previousPlacementType_ = 0;
-        bool isDestructible_ = false;
-        int debrisSpawnCount_ = 3;
-        Irufemi::Vector3 pushbackMask_ = {1.0f, 1.0f, 1.0f};
-        Irufemi::Vector3 previousPushbackMask_ = {1.0f, 1.0f, 1.0f};
+        std::string prefabPath; // Now effectively 'prefabName' (e.g. Env_Pillar)
+        Irufemi::Vector3 collisionSize;
+        Irufemi::Vector3 previousSize;
+        Irufemi::Vector3 collisionOffset;
+        Irufemi::Vector3 previousOffset;
+        int placementType = 0; // 0: Building (スナップ), 1: Floating (そのまま)
+        int previousPlacementType = 0;
+        bool isDestructible = false;
+        int debrisSpawnCount = 3;
+        Irufemi::Vector3 pushbackMask = {1.0f, 1.0f, 1.0f};
+        Irufemi::Vector3 previousPushbackMask = {1.0f, 1.0f, 1.0f};
     };
 
     std::string targetPrefabNames_ = "Env_Pillar,Env_Arch,Env_Wall";
