@@ -1,4 +1,5 @@
 #include "Core/System/DirectoryWatcher.h"
+#include "Core/Utility/ErrorUtility.h"
 #include <windows.h>
 
 DirectoryWatcher::DirectoryWatcher(const std::filesystem::path& targetDirectory, std::function<void()> onChangeCallback)
@@ -10,6 +11,7 @@ DirectoryWatcher::DirectoryWatcher(const std::filesystem::path& targetDirectory,
                                    FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
     if (directoryHandle_ == INVALID_HANDLE_VALUE) {
+        IRUFEMI_WARNING(false, "DirectoryWatcher: Failed to open directory handle.");
         directoryHandle_ = nullptr;
         isRunning_ = false;
         return;
@@ -18,6 +20,7 @@ DirectoryWatcher::DirectoryWatcher(const std::filesystem::path& targetDirectory,
     // 終了通知用イベントの作成
     stopEvent_ = CreateEventW(NULL, TRUE, FALSE, NULL);
     if (!stopEvent_) {
+        IRUFEMI_WARNING(false, "DirectoryWatcher: Failed to create stop event.");
         CloseHandle(directoryHandle_);
         directoryHandle_ = nullptr;
         isRunning_ = false;
@@ -54,6 +57,8 @@ void DirectoryWatcher::WatchLoop() {
     OVERLAPPED overlapped = {};
     overlapped.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
     if (!overlapped.hEvent) {
+        IRUFEMI_WARNING(false, "DirectoryWatcher: Failed to create overlapped event.");
+        isRunning_ = false;
         return;
     }
 

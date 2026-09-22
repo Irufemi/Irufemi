@@ -18,7 +18,7 @@ public:
      * @brief PrefabManager を設定する（エンジン初期化時にバインド）
      */
     static void SetPrefabManager(PrefabManager* prefabManager) {
-        s_prefabManager_ = prefabManager;
+        prefabManager_ = prefabManager;
     }
 
     /**
@@ -72,5 +72,5 @@ private:
      */
     static std::string GetSceneFilePath(IScene* scene, const std::string& sceneName);
 
-    static inline PrefabManager* s_prefabManager_ = nullptr;
+    static inline PrefabManager* prefabManager_ = nullptr;
 };
