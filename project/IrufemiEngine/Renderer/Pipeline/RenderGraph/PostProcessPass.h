@@ -10,12 +10,16 @@ public:
     ~PostProcessPass() override = default;
 
     /**
-     * @brief up を設定する。
-     * @param[in] builder 設定する up の値
-     * @param[in] drawManager 設定する up の値
-     * @param[in] engine 設定する up の値
+     * @brief パスのセットアップ処理（ブルームやブラー等の一時レンダーターゲット確保とバリア設定）
+     * @param[in,out] builder リソース使用状態を記録するビルダー
+     * @param[in] rc 描画コンテキスト
      */
     void Setup(class RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) override;
+
+    /**
+     * @brief パスの実行処理（各種ポストエフェクトの描画・合成）
+     * @param[in] rc 描画コンテキスト
+     */
     void Execute(const Irufemi::RenderContext& rc) override;
 
 private:

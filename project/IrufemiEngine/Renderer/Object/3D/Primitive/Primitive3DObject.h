@@ -266,22 +266,50 @@ public:
         isTransparent_ = isTransparent;
     }
 
+    /**
+     * @brief インスタンス固有の TextureManager を設定する。
+     * @param[in] tm 設定する TextureManager のポインタ
+     */
     void SetTextureManagerInstance(TextureManager* tm) {
         instTextureManager_ = tm;
     }
+
+    /**
+     * @brief インスタンス固有の DrawManager を設定する。
+     * @param[in] dm 設定する DrawManager のポインタ
+     */
     void SetDrawManagerInstance(DrawManager* dm) {
         instDrawManager_ = dm;
     }
+
+    /**
+     * @brief インスタンス固有の IrufemiEngine を設定する。
+     * @param[in] engine 設定する IrufemiEngine のポインタ
+     */
     void SetEngineInstance(class IrufemiEngine* engine) {
         instEngine_ = engine;
     }
 
+    /**
+     * @brief 使用する TextureManager を取得する（インスタンスメンバ優先）。
+     * @return TextureManager のポインタ
+     */
     TextureManager* GetTextureManagerInstance() const {
         return instTextureManager_ ? instTextureManager_ : textureManager_;
     }
+
+    /**
+     * @brief 使用する DrawManager を取得する（インスタンスメンバ優先）。
+     * @return DrawManager のポインタ
+     */
     DrawManager* GetDrawManagerInstance() const {
         return instDrawManager_ ? instDrawManager_ : drawManager_;
     }
+
+    /**
+     * @brief 使用する IrufemiEngine を取得する（インスタンスメンバ優先）。
+     * @return IrufemiEngine のポインタ
+     */
     class IrufemiEngine* GetEngineInstance() const {
         return instEngine_ ? instEngine_ : engine_;
     }

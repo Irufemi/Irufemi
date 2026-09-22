@@ -194,25 +194,49 @@ public:
 
     // Engine dependencies
     /**
-     * @brief FontManager を設定する。
-     * @param[in] fm 設定する FontManager の値
+     * @brief インスタンス固有の FontManager を設定する。
+     * @param[in] fm 設定する FontManager のポインタ
      */
     void SetFontManagerInstance(FontManager* fm) {
         instFontManager_ = fm;
     }
+
+    /**
+     * @brief インスタンス固有の DrawManager を設定する。
+     * @param[in] dm 設定する DrawManager のポインタ
+     */
     void SetDrawManagerInstance(DrawManager* dm) {
         instDrawManager_ = dm;
     }
+
+    /**
+     * @brief インスタンス固有の CameraManager を設定する。
+     * @param[in] cm 設定する CameraManager のポインタ
+     */
     void SetCameraManagerInstance(CameraManager* cm) {
         instCameraManager_ = cm;
     }
 
+    /**
+     * @brief 使用する FontManager を取得する（インスタンスメンバ優先）。
+     * @return FontManager のポインタ
+     */
     FontManager* GetFontManagerInstance() const {
         return instFontManager_ ? instFontManager_ : fontManager_;
     }
+
+    /**
+     * @brief 使用する DrawManager を取得する（インスタンスメンバ優先）。
+     * @return DrawManager のポインタ
+     */
     DrawManager* GetDrawManagerInstance() const {
         return instDrawManager_ ? instDrawManager_ : drawManager_;
     }
+
+    /**
+     * @brief 使用する CameraManager を取得する（インスタンスメンバ優先）。
+     * @return CameraManager のポインタ
+     */
     CameraManager* GetCameraManagerInstance() const {
         return instCameraManager_ ? instCameraManager_ : cameraManager_;
     }

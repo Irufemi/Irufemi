@@ -6,12 +6,16 @@
 class MainTransparentPass : public IRenderPass {
 public:
     /**
-     * @brief 半透明描画パスで必要なリソース状態やバリアをレンダーグラフに登録する
-     * @param[in,out] builder レンダーグラフビルダー
-     * @param[in] drawManager 描画マネージャ
-     * @param[in] engine エンジンコア
+     * @brief パスのセットアップ処理（半透明描画パスで必要なリソース状態やバリアをレンダーグラフに登録する）
+     * @param[in,out] builder リソース使用状態を記録するビルダー
+     * @param[in] rc 描画コンテキスト
      */
     void Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) override;
+
+    /**
+     * @brief パスの実行処理（カメラ距離による奥から手前のソートおよび半透明描画）
+     * @param[in] rc 描画コンテキスト
+     */
     void Execute(const Irufemi::RenderContext& rc) override;
 
 private:
