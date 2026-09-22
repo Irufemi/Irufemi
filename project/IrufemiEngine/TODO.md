@@ -490,3 +490,20 @@ struct RenderContext {
 - [x] ~~**Phase 2: リソース層（`Object2DResource` / `Object3DResource` / `GpuMaterial`）の静的ポインタ撤廃**~~ (完了)
 - [x] ~~**Phase 3: オブジェクト層（`Sprite` / `Text` / `Primitive3DObject` / `BaseResource`）の純化**~~ (完了: コンポーネント自動DIによる後方互換100%維持)
 
+---
+
+### 🛡️ レンダリングリソースのカプセル化刷新（Low-Level Resource Encapsulation）
+
+#### 1. 課題と背景
+- `Object3DResource`, `Object2DResource`, `LineResource` において、頂点バッファポインタ（`vertexData_`）、ビュー（`vertexBufferView_`）、インデックスバッファ（`indexBufferView_`）、トランスフォーム（`transform_`）などの低レベルメンバが `public` で公開されている。
+- `DrawManager.cpp` や `StaticModelObject.cpp`, `AnimatedMeshObject.cpp`, `Effect.cpp`, `RenderData.cpp` などエンジン各所で直接生メンバがアクセスされているため、安全なカプセル化と一貫したアクセサ経由へのリファクタリングを段階的に実施する。
+
+#### 2. 段階的実装計画
+- [ ] **Step 1: アクセサ API（Getter / Read-Only View）の整備**
+  - `const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const`, `const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const` などの読み取り専用アクセサを各 Resource クラスに追加。
+- [ ] **Step 2: 呼び出し側（`DrawManager`, 各 Model/Object クラス）の移行**
+  - 生メンバ直接アクセス（`resource->vertexBufferView_`）をアクセサメソッド経由へ置換。
+- [ ] **Step 3: メンバ変数の `protected` / `private` 化**
+  - 外部アクセスを完全に遮断し、カプセル化を完了させる。
+
+

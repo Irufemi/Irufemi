@@ -79,9 +79,6 @@ void LineResource::UpdateTransform(const Camera& camera) {
     transformationMatrix_.WVP = Irufemi::Math::Multiply(
         transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
 
-    transformationMatrix_.WVP = Irufemi::Math::Multiply(
-        transformationMatrix_.world, Irufemi::Math::Multiply(camera.GetViewMatrix(), camera.GetPerspectiveFovMatrix()));
-
     MarkAsDirty();
 }
 
@@ -89,22 +86,34 @@ D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetMaterialVAddress() const {
     if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
     }
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
-        materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetMaterialBufferManager()) {
+        return 0;
+    }
+    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
+        materialCbIndex_, dxCommon->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetTransformVAddress() const {
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
     }
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetTransformBufferManager()) {
+        return 0;
+    }
+    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
+        transformCbIndex_, dxCommon->GetFrameIndex());
 }
 
 void LineResource::SyncBeforeDraw() {
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon) {
+        return;
+    }
+    uint32_t frameIndex = dxCommon->GetFrameIndex();
     if (CheckAndClearDirty(frameIndex)) {
-        if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        if (auto engine = dxCommon->GetEngine()) {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
