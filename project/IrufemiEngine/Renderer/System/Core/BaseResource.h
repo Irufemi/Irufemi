@@ -13,50 +13,53 @@ public:
     explicit BaseResource(DirectXCommon* dxCommon) : dxCommon_(dxCommon) {}
 
     /**
-     * @brief DirectXCommon インスタンスを設定する。
-     * @param[in] dxCommon 設定する DirectXCommon の値
+     * @brief 個別インスタンス用の DirectXCommon を設定する
+     * @param[in] dxCommon 設定する DirectXCommon インスタンスのポインタ
      */
     void SetDirectXCommonInstance(DirectXCommon* dxCommon) {
         dxCommon_ = dxCommon;
     }
 
     /**
-     * @brief DirectXCommon を取得する（インスタンスメンバ優先、未設定時は静的フォールバック）。
-     * @return 取得された DirectXCommon
+     * @brief DirectXCommon を取得する（個別インスタンス優先、未設定時はデフォルトの静的インスタンスへフォールバック）
+     * @return 利用可能な DirectXCommon のポインタ
      */
     DirectXCommon* GetDxCommon() const {
-        return dxCommon_ ? dxCommon_ : s_dxCommon_;
+        return dxCommon_ ? dxCommon_ : defaultDxCommon_;
     }
 
     /**
-     * @brief DirectXCommon を設定する。
-     * @param[in] dxCommon 設定する DirectXCommon の値
+     * @brief 全リソース共通のデフォルト DirectXCommon を設定する
+     * @param[in] dxCommon 設定する DirectXCommon インスタンスのポインタ
      */
     static void SetDirectXCommon(DirectXCommon* dxCommon) {
-        s_dxCommon_ = dxCommon;
-    }
-    /**
-     * @brief DirectXCommon を取得する。
-     * @return 取得された DirectXCommon
-     */
-    static DirectXCommon* GetDirectXCommon() {
-        return s_dxCommon_;
+        defaultDxCommon_ = dxCommon;
     }
 
     /**
-     * @brief CreateResource を実行する。
+     * @brief 全リソース共通のデフォルト DirectXCommon を取得する
+     * @return デフォルトの DirectXCommon ポインタ
+     */
+    static DirectXCommon* GetDirectXCommon() {
+        return defaultDxCommon_;
+    }
+
+    /**
+     * @brief GPU リソース（頂点・インデックス・定数バッファ等）を生成・初期化する純粋仮想関数
      */
     virtual void CreateResource() = 0;
+
     /**
-     * @brief Map を実行する。
+     * @brief GPU リソースを CPU メモリアドレス空間にマップする純粋仮想関数
      */
     virtual void Map() = 0;
+
     /**
-     * @brief Unmap を実行する。
+     * @brief GPU リソースの CPU マッピングを解除する純粋仮想関数
      */
     virtual void Unmap() = 0;
 
 protected:
     DirectXCommon* dxCommon_ = nullptr;
-    static DirectXCommon* s_dxCommon_;
+    static DirectXCommon* defaultDxCommon_;
 };

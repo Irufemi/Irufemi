@@ -19,27 +19,28 @@ LineResource::~LineResource() {
 }
 
 void LineResource::CreateResource() {
-    if (!s_dxCommon_) {
+    auto* dxCommon = GetDxCommon();
+    if (!dxCommon) {
         return;
     }
 
     // Irufemi::Line は基本 2 頂点
     if (!vertexResource_) {
-        vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * 2);
+        vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * 2);
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
         vertexBufferView_.SizeInBytes = sizeof(VertexData) * 2;
         vertexBufferView_.StrideInBytes = sizeof(VertexData);
     }
 
     if (!indexResource_) {
-        indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * 2);
+        indexResource_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * 2);
         indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
         indexBufferView_.SizeInBytes = sizeof(uint32_t) * 2;
         indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
         indexCount_ = 2;
     }
 
-    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+    if (auto engine = dxCommon->GetEngine()) {
         materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
 
         cpuMaterialData_.color = {1, 1, 1, 1};

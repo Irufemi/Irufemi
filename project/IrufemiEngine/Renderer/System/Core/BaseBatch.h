@@ -27,37 +27,40 @@ public:
     virtual ~BaseBatch();
 
     /**
-     * @brief DirectXCommon を設定する。
-     * @param[in] dx 設定する DirectXCommon の値
+     * @brief バッチ描画システム全体で共有する DirectXCommon インスタンスを設定する
+     * @param[in] dx 設定する DirectXCommon のポインタ
      */
     static void SetDirectXCommon(DirectXCommon* dx) {
         dx_ = dx;
     }
+
     /**
-     * @brief TextureManager を設定する。
-     * @param[in] tm 設定する TextureManager の値
+     * @brief バッチ描画で使用するテクスチャマネージャーを設定する
+     * @param[in] tm 設定する TextureManager のポインタ
      */
     static void SetTextureManager(TextureManager* tm) {
         textureManager_ = tm;
     }
+
     /**
-     * @brief DrawManager を設定する。
-     * @param[in] dm 設定する DrawManager の値
+     * @brief バッチ描画の描画マネージャーを設定する
+     * @param[in] dm 設定する DrawManager のポインタ
      */
     static void SetDrawManager(DrawManager* dm) {
         drawManager_ = dm;
     }
+
     /**
-     * @brief SrvAllocator を設定する。
-     * @param[in] alloc 設定する SrvAllocator の値
+     * @brief バッチ描画用の SRV ディスクリプタプールを設定する
+     * @param[in] alloc 設定する DescriptorPool のポインタ
      */
     static void SetSrvAllocator(DescriptorPool* alloc) {
         srvPool_ = alloc;
     }
 
     /**
-     * @brief CullingEnabled を設定する。
-     * @param[in] enabled 設定する CullingEnabled の値
+     * @brief オブジェクトカリングの有効/無効を設定する
+     * @param[in] enabled カリングを有効にする場合は true
      */
     void SetCullingEnabled(bool enabled) {
         isCullingEnabled_ = enabled;

@@ -496,7 +496,12 @@ std::vector<uint8_t> PSOManager::LoadCachedBlob(const std::string& cacheFileName
         return {};
     }
 
-    size_t size = file.tellg();
+    std::streampos pos = file.tellg();
+    if (pos <= 0) {
+        return {};
+    }
+
+    size_t size = static_cast<size_t>(pos);
     file.seekg(0, std::ios::beg);
     std::vector<uint8_t> buffer(size);
     if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {

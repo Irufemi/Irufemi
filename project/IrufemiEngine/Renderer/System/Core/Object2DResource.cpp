@@ -38,7 +38,8 @@ Object2DResource::~Object2DResource() {
 }
 
 void Object2DResource::CreateResource() {
-    if (!s_dxCommon_) {
+    auto* dxCommon = GetDxCommon();
+    if (!dxCommon) {
         return;
     }
 
@@ -46,10 +47,10 @@ void Object2DResource::CreateResource() {
         if (vertexCapacity_ < vertexDataList_.size()) {
             if (vertexResource_) {
                 Unmap();
-                s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+                dxCommon->ReleaseAfterFence(std::move(vertexResource_));
             }
             vertexCapacity_ = static_cast<uint32_t>(vertexDataList_.size() + 32);
-            vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexCapacity_);
+            vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * vertexCapacity_);
             vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
             vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexCapacity_);
             vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -60,10 +61,10 @@ void Object2DResource::CreateResource() {
         if (indexCapacity_ < indexDataList_.size()) {
             if (indexResource_) {
                 Unmap();
-                s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+                dxCommon->ReleaseAfterFence(std::move(indexResource_));
             }
             indexCapacity_ = static_cast<uint32_t>(indexDataList_.size() + 64);
-            indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexCapacity_);
+            indexResource_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * indexCapacity_);
             indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
             indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexCapacity_);
             indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
@@ -71,7 +72,7 @@ void Object2DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+    if (auto engine = dxCommon->GetEngine()) {
         if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
             materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
 

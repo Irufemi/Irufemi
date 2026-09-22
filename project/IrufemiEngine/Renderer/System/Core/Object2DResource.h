@@ -126,9 +126,11 @@ public:
      * @return 取得された CustomPSO
      */
     ID3D12PipelineState* GetCustomPSO() const {
-        if (!customPSOName_.empty() && s_dxCommon_) {
-            if (auto* pm = s_dxCommon_->GetPSOManager()) {
-                return pm->GetPSO(customPSOName_, customBlend_, customDepth_, customCull_);
+        if (!customPSOName_.empty()) {
+            if (auto* dxCommon = GetDxCommon()) {
+                if (auto* pm = dxCommon->GetPSOManager()) {
+                    return pm->GetPSO(customPSOName_, customBlend_, customDepth_, customCull_);
+                }
             }
         }
         return customPSO_;

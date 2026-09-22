@@ -157,18 +157,6 @@ private:
 
     /** @name 内部生成ヘルパー */
     ///@{
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSO(const ShaderSet& shaders, const D3D12_BLEND_DESC& blendDesc,
-                                                          const D3D12_DEPTH_STENCIL_DESC& depthDesc, CullMode cull,
-                                                          bool useNullInputLayout = false) const;
-
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(const ShaderSet& shaders,
-                                                                      const D3D12_BLEND_DESC& blendDesc,
-                                                                      const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-                                                                      D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
-                                                                      CullMode cull) const;
-
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreateShadowPSO(const ShaderSet& shaders, CullMode cull) const;
-
     /** @brief Irufemi::BlendMode から D3D12_BLEND_DESC を作成 */
     static D3D12_BLEND_DESC MakeBlend(Irufemi::BlendMode m);
     /** @brief DepthWrite から D3D12_DEPTH_STENCIL_DESC を作成 */

@@ -39,15 +39,16 @@ Object3DResource::~Object3DResource() {
 }
 
 void Object3DResource::CreateResource() {
-    if (!s_dxCommon_) {
+    auto* dxCommon = GetDxCommon();
+    if (!dxCommon) {
         return;
     }
 
     if (!vertexDataList_.empty()) {
         if (vertexResource_) {
-            s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+            dxCommon->ReleaseAfterFence(std::move(vertexResource_));
         }
-        vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
+        vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
         vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexDataList_.size());
         vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -55,16 +56,16 @@ void Object3DResource::CreateResource() {
 
     if (!indexDataList_.empty()) {
         if (indexResource_) {
-            s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+            dxCommon->ReleaseAfterFence(std::move(indexResource_));
         }
-        indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexDataList_.size());
+        indexResource_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * indexDataList_.size());
         indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
         indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexDataList_.size());
         indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+    if (auto engine = dxCommon->GetEngine()) {
         materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
 
         cpuMaterialData_.color = {1, 1, 1, 1};
