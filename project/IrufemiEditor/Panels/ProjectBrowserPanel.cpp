@@ -29,18 +29,6 @@ void ProjectBrowserPanel::Initialize(EditorManager* editorManager) {
     // バックグラウンドでの自動監視を開始
     directoryWatcher_ = std::make_unique<DirectoryWatcher>(projectRootPath_, [this]() {
         isCacheDirty_ = true;
-
-        // エンジンの各マネージャにも再スキャンを通知
-        if (editorManager_) {
-            if (auto* engine = editorManager_->GetEngine()) {
-                if (auto* mm = engine->GetObjModelManager()) {
-                    mm->RefreshAvailableModels();
-                }
-                if (auto* tm = engine->GetTextureManager()) {
-                    tm->LoadAllFromFolder("resources/");
-                }
-            }
-        }
     });
 }
 
@@ -152,6 +140,16 @@ void ProjectBrowserPanel::Draw() {
     // 監視スレッドからの通知があれば自動リフレッシュ
     if (isCacheDirty_.exchange(false)) {
         RefreshCache();
+
+        // エンジンの各マネージャへの再スキャン通知をメインスレッド上で安全に実行
+        if (auto* engine = editorManager_->GetEngine()) {
+            if (auto* mm = engine->GetObjModelManager()) {
+                mm->RefreshAvailableModels();
+            }
+            if (auto* tm = engine->GetTextureManager()) {
+                tm->LoadAllFromFolder("resources/");
+            }
+        }
     }
 
     ImGui::Begin(GetName(), &isOpen_);

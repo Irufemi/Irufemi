@@ -82,19 +82,26 @@ void DirectoryWatcher::WatchLoop() {
         if (waitResult == WAIT_OBJECT_0) {
             // stopEvent_ がシグナル化されたため待機をキャンセルして即座に終了
             CancelIoEx(directoryHandle_, &overlapped);
+            DWORD transferred = 0;
+            GetOverlappedResult(directoryHandle_, &overlapped, &transferred, TRUE);
             break;
         } else if (waitResult == WAIT_OBJECT_0 + 1) {
             // ファイル変更完了
             DWORD transferred = 0;
             if (GetOverlappedResult(directoryHandle_, &overlapped, &transferred, FALSE)) {
-                // --- デバウンス処理 (Debounce) ---
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                // --- デバウンス処理 (Debounce): 終了シグナルで即時中断可能な待機 ---
+                if (WaitForSingleObject(stopEvent_, 200) == WAIT_OBJECT_0) {
+                    break;
+                }
 
                 if (isRunning_ && onChangeCallback_) {
                     onChangeCallback_();
                 }
             }
         } else {
+            CancelIoEx(directoryHandle_, &overlapped);
+            DWORD transferred = 0;
+            GetOverlappedResult(directoryHandle_, &overlapped, &transferred, TRUE);
             break;
         }
     }
