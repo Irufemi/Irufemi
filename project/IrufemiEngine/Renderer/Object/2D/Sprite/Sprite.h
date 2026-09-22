@@ -191,7 +191,7 @@ public: // メンバ関数
      * @return オイラー回転角ベクトル
      */
     const Irufemi::Vector3& GetRotation() const {
-        return resource_ ? resource_->transform_.rotate : Irufemi::Vector3{};
+        return resource_ ? resource_->GetTransform().rotate : Irufemi::Vector3{};
     }
 
     /**
@@ -255,7 +255,7 @@ public: // メンバ関数
      */
     void SetPosition(const float& x, const float& y, const float& z = 0.0f) {
         if (resource_) {
-            resource_->transform_.translate = {x, y, z};
+            resource_->GetTransform().translate = {x, y, z};
         }
         isDirty_ = true;
     }
@@ -265,7 +265,7 @@ public: // メンバ関数
      */
     void SetRotation(const float& rotate) {
         if (resource_) {
-            resource_->transform_.rotate = Irufemi::Vector3{0.0f, 0.0f, rotate};
+            resource_->GetTransform().rotate = Irufemi::Vector3{0.0f, 0.0f, rotate};
         }
         isDirty_ = true;
     }

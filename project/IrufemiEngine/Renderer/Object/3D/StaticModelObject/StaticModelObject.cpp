@@ -60,9 +60,9 @@ void StaticModelObject::InitializeResources() {
 
         // メッシュ固有の View を設定
         const auto& gpuMesh = m->gpuMeshes[i];
-        res->vertexBufferView_ = gpuMesh->vertexBufferView;
-        res->indexBufferView_ = gpuMesh->indexBufferView;
-        res->indexCount_ = gpuMesh->indexCount;
+        res->SetVertexBufferView(gpuMesh->vertexBufferView);
+        res->SetIndexBufferView(gpuMesh->indexBufferView);
+        res->SetIndexCount(gpuMesh->indexCount);
 
         // マテリアルリソース等の生成
         res->CreateResource();
@@ -70,7 +70,7 @@ void StaticModelObject::InitializeResources() {
         // 初期テクスチャハンドルを共有データからコピー
         const auto& gpuMaterial = (i < m->gpuMaterials.size()) ? m->gpuMaterials[i] : nullptr;
         if (gpuMaterial) {
-            res->textureHandle_ = gpuMaterial->textureHandle;
+            res->SetTextureHandle(gpuMaterial->textureHandle);
         }
 
         meshResources_.push_back(std::move(res));
@@ -167,14 +167,14 @@ void StaticModelObject::Update() {
             meshWorld = transformationMatrix_.world; // スキニング時は fallback
         }
 
-        res->transformationMatrix_.world = meshWorld;
+        res->GetTransformationMatrix().world = meshWorld;
 
         Irufemi::Matrix4x4 worldForNormal = meshWorld;
         worldForNormal.m[3][0] = 0.0f;
         worldForNormal.m[3][1] = 0.0f;
         worldForNormal.m[3][2] = 0.0f;
         worldForNormal.m[3][3] = 1.0f;
-        res->transformationMatrix_.WorldInverseTranspose =
+        res->GetTransformationMatrix().WorldInverseTranspose =
             Irufemi::Math::Transpose(Irufemi::Math::Inverse(worldForNormal));
 
         res->MarkAsDirty();

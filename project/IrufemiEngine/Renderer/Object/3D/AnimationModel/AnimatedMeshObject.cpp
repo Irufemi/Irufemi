@@ -52,15 +52,15 @@ void AnimatedMeshObject::InitializeResources() {
         res->SetExternalTransformCbIndex(&transformCbIndex_);
 
         const auto& gpuMesh = m->gpuMeshes[i];
-        res->vertexBufferView_ = gpuMesh->vertexBufferView;
-        res->indexBufferView_ = gpuMesh->indexBufferView;
-        res->indexCount_ = gpuMesh->indexCount;
+        res->SetVertexBufferView(gpuMesh->vertexBufferView);
+        res->SetIndexBufferView(gpuMesh->indexBufferView);
+        res->SetIndexCount(gpuMesh->indexCount);
 
         res->CreateResource();
 
         const auto& gpuMaterial = (i < m->gpuMaterials.size()) ? m->gpuMaterials[i] : nullptr;
         if (gpuMaterial) {
-            res->textureHandle_ = gpuMaterial->textureHandle;
+            res->SetTextureHandle(gpuMaterial->textureHandle);
         }
         meshResources_.push_back(std::move(res));
     }

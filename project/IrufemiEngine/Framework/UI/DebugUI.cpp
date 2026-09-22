@@ -685,10 +685,10 @@ void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_
                     bool isSelected = (i == selectedTextureIndex);
                     if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
                         selectedTextureIndex = i;
-                        if (resource->textureHandle_.IsValid()) {
-                            textureManager_->ReleaseTexture(resource->textureHandle_);
+                        if (resource->GetTextureHandle().IsValid()) {
+                            textureManager_->ReleaseTexture(resource->GetTextureHandle());
                         }
-                        resource->textureHandle_ = textureManager_->LoadTexture(textureNames[i]);
+                        resource->SetTextureHandle(textureManager_->LoadTexture(textureNames[i]));
                     }
                 }
                 ImGui::EndCombo();
@@ -710,10 +710,10 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
                     bool isSelected = (i == selectedTextureIndex);
                     if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
                         selectedTextureIndex = i;
-                        if (resource->textureHandle_.IsValid()) {
-                            textureManager_->ReleaseTexture(resource->textureHandle_);
+                        if (resource->GetTextureHandle().IsValid()) {
+                            textureManager_->ReleaseTexture(resource->GetTextureHandle());
                         }
-                        resource->textureHandle_ = textureManager_->LoadTexture(textureNames[i]);
+                        resource->SetTextureHandle(textureManager_->LoadTexture(textureNames[i]));
                     }
                 }
                 ImGui::EndCombo();

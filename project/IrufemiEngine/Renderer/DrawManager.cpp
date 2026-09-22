@@ -637,16 +637,16 @@ void DrawManager::DrawSprite(const RenderPackets::SpritePacket& packet) {
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 頂点バッファとインデックスバッファの設定
-    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
+    commandList_->IASetVertexBuffers(0, 1, &resource->GetVertexBufferView());
+    commandList_->IASetIndexBuffer(&resource->GetIndexBufferView());
 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
 
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->textureHandle_);
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->GetTextureHandle());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LegacyPSTexture, gpuHandle);
 
-    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(resource->GetIndexCount(), 1, 0, 0, 0);
 }
 
 void DrawManager::SubmitSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
@@ -659,13 +659,13 @@ void DrawManager::DrawSpriteBatch(const RenderPackets::SpriteBatchPacket& packet
     }
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList_->IASetVertexBuffers(0, 1, &packet.resource->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&packet.resource->indexBufferView_);
+    commandList_->IASetVertexBuffers(0, 1, &packet.resource->GetVertexBufferView());
+    commandList_->IASetIndexBuffer(&packet.resource->GetIndexBufferView());
 
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, packet.resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::Instancing, packet.instancingSrvHandleGPU); // VS t0
 
-    commandList_->DrawIndexedInstanced(packet.resource->indexCount_, packet.instanceCount, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(packet.resource->GetIndexCount(), packet.instanceCount, 0, 0, 0);
 }
 
 void DrawManager::SubmitTopMostSpriteBatch(const RenderPackets::SpriteBatchPacket& packet) {
@@ -711,15 +711,15 @@ void DrawManager::DrawText(const RenderPackets::SpritePacket& packet) {
     }
 
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
+    commandList_->IASetVertexBuffers(0, 1, &resource->GetVertexBufferView());
+    commandList_->IASetIndexBuffer(&resource->GetIndexBufferView());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material, resource->GetMaterialVAddress());
     commandList_->SetGraphicsRootConstantBufferView((UINT)RootSlot::Transform, resource->GetTransformVAddress());
 
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->textureHandle_);
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = textureManager_->Resolve(resource->GetTextureHandle());
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LegacyPSTexture, gpuHandle);
 
-    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(resource->GetIndexCount(), 1, 0, 0, 0);
 }
 
 void DrawManager::SubmitModelBatch(const ModelBatchPacket& packet) {
@@ -887,8 +887,8 @@ void DrawManager::DrawLineInstanced(const RenderPackets::LinePacket& packet) {
 
     // IA
     commandList_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
-    commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
-    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
+    commandList_->IASetVertexBuffers(0, 1, &resource->GetVertexBufferView());
+    commandList_->IASetIndexBuffer(&resource->GetIndexBufferView());
 
     // SRV (VS t1)
     commandList_->SetGraphicsRootDescriptorTable((UINT)RootSlot::LineInstancing, packet.instancingSrvHandleGPU);
@@ -1036,7 +1036,7 @@ void DrawManager::SubmitTransparent3D(const Object3DResource* resource,
     if (auto engine = dxCommon_->GetEngine()) {
         if (auto camera = engine->GetCameraManager()->GetActiveCamera()) {
             Irufemi::Vector3 camPos = camera->GetTranslate();
-            Irufemi::Vector3 objPos = resource->transform_.translate;
+            Irufemi::Vector3 objPos = resource->GetTransform().translate;
             float dx = camPos.x - objPos.x;
             float dy = camPos.y - objPos.y;
             float dz = camPos.z - objPos.z;
@@ -1114,9 +1114,9 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     if (packet.vertexBufferViewOverride) {
         commandList_->IASetVertexBuffers(0, 1, packet.vertexBufferViewOverride);
     } else {
-        commandList_->IASetVertexBuffers(0, 1, &resource->vertexBufferView_);
+        commandList_->IASetVertexBuffers(0, 1, &resource->GetVertexBufferView());
     }
-    commandList_->IASetIndexBuffer(&resource->indexBufferView_);
+    commandList_->IASetIndexBuffer(&resource->GetIndexBufferView());
 
     // 各種リソースのバインド
     if (packet.overrideMaterialCBV != 0) {
@@ -1132,7 +1132,7 @@ void DrawManager::DrawStandard3D(const RenderPackets::Standard3DPacket& packet) 
     }
 
     // 描画
-    commandList_->DrawIndexedInstanced(resource->indexCount_, 1, 0, 0, 0);
+    commandList_->DrawIndexedInstanced(resource->GetIndexCount(), 1, 0, 0, 0);
 
     // --- 描画後: VBV -> UAV に戻す (次フレームのCompute用) ---
     if (packet.vertexBufferResourceOverride) {

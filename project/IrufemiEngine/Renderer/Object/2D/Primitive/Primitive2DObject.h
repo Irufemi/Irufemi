@@ -89,21 +89,21 @@ public:
      * @return 取得された Position
      */
     const Irufemi::Vector3& GetPosition() const {
-        return resource_->transform_.translate;
+        return resource_->GetTransform().translate;
     }
     /**
      * @brief Rotation を取得する。
      * @return 取得された Rotation
      */
     const Irufemi::Vector3& GetRotation() const {
-        return resource_->transform_.rotate;
+        return resource_->GetTransform().rotate;
     }
     /**
      * @brief Scale を取得する。
      * @return 取得された Scale
      */
     const Irufemi::Vector3& GetScale() const {
-        return resource_->transform_.scale;
+        return resource_->GetTransform().scale;
     }
     /**
      * @brief Color を取得する。
@@ -138,7 +138,7 @@ public:
      * @return 取得された TextureHandle
      */
     ResourceHandle GetTextureHandle() const {
-        return resource_ ? resource_->textureHandle_ : ResourceHandle();
+        return resource_ ? resource_->GetTextureHandle() : ResourceHandle();
     }
 
     // --- プロパティのセッター ---

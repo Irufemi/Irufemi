@@ -73,9 +73,9 @@ void Effect::Initialize(EffectType type) {
         engine_->GetPrimitiveManager()->CreateGPUResource(customAuraData, customAuraResource_);
 
         if (auraObject_->GetMesh().resource) {
-            auraObject_->GetMesh().resource->vertexBufferView_ = customAuraResource_.vertexBufferView;
-            auraObject_->GetMesh().resource->indexBufferView_ = customAuraResource_.indexBufferView;
-            auraObject_->GetMesh().resource->indexCount_ = customAuraResource_.indexCount;
+            auraObject_->GetMesh().resource->SetVertexBufferView(customAuraResource_.vertexBufferView);
+            auraObject_->GetMesh().resource->SetIndexBufferView(customAuraResource_.indexBufferView);
+            auraObject_->GetMesh().resource->SetIndexCount(customAuraResource_.indexCount);
         }
 
         auraObject_->SetCastShadows(false);                // エフェクトなので影は不要

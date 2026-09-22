@@ -67,7 +67,7 @@ public:
      */
     void SetPosition(const float& x, const float& y, const float& z = 0.0f) {
         if (resource_) {
-            resource_->transform_.translate = {x, y, z};
+            resource_->GetTransform().translate = {x, y, z};
         }
         isDirty_ = true;
     }
@@ -77,7 +77,7 @@ public:
      */
     void SetRotation(const float& rotate) {
         if (resource_) {
-            resource_->transform_.rotate = {0.0f, 0.0f, rotate};
+            resource_->GetTransform().rotate = {0.0f, 0.0f, rotate};
         }
         isDirty_ = true;
     }
@@ -88,7 +88,7 @@ public:
      */
     void SetScale(const float& scaleX, const float& scaleY) {
         if (resource_) {
-            resource_->transform_.scale = {scaleX, scaleY, 1.0f};
+            resource_->GetTransform().scale = {scaleX, scaleY, 1.0f};
         }
         isDirty_ = true;
     }

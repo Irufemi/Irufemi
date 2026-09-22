@@ -26,20 +26,20 @@ void Sprite::Initialize(const std::string& textureName) {
 
     // 頂点はユニットクワッド(0..1)に統一(サイズはscaleで与える)
     // 左下
-    resource_->vertexDataList_.push_back({{0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    resource_->GetVertexDataList().push_back({{0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
     // 左上
-    resource_->vertexDataList_.push_back({{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.00}, {0.0f, 0.0f, -1.0f}});
+    resource_->GetVertexDataList().push_back({{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.00}, {0.0f, 0.0f, -1.0f}});
     // 右下
-    resource_->vertexDataList_.push_back({{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    resource_->GetVertexDataList().push_back({{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
     // 右上
-    resource_->vertexDataList_.push_back({{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}});
+    resource_->GetVertexDataList().push_back({{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}});
 
-    resource_->indexDataList_.push_back(0);
-    resource_->indexDataList_.push_back(1);
-    resource_->indexDataList_.push_back(2);
-    resource_->indexDataList_.push_back(1);
-    resource_->indexDataList_.push_back(3);
-    resource_->indexDataList_.push_back(2);
+    resource_->GetIndexDataList().push_back(0);
+    resource_->GetIndexDataList().push_back(1);
+    resource_->GetIndexDataList().push_back(2);
+    resource_->GetIndexDataList().push_back(1);
+    resource_->GetIndexDataList().push_back(3);
+    resource_->GetIndexDataList().push_back(2);
 
     // リソースのメモリを確保
     resource_->CreateResource();
@@ -48,11 +48,11 @@ void Sprite::Initialize(const std::string& textureName) {
     resource_->Map();
 
     // データのコピー
-    if (resource_->vertexData_) {
-        std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
+    if (resource_->GetVertexData()) {
+        std::copy(resource_->GetVertexDataList().begin(), resource_->GetVertexDataList().end(), resource_->GetVertexData());
     }
-    if (resource_->indexData_) {
-        std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+    if (resource_->GetIndexData()) {
+        std::copy(resource_->GetIndexDataList().begin(), resource_->GetIndexDataList().end(), resource_->GetIndexData());
     }
 
     // VB/IB作成とMapが済んだ後に一度アンカーを頂点に反映しておく
@@ -79,10 +79,10 @@ void Sprite::Initialize(const std::string& textureName) {
 
     // テクスチャ設定
     if (texMgr) {
-        if (resource_->textureHandle_.IsValid()) {
-            texMgr->ReleaseTexture(resource_->textureHandle_);
+        if (resource_->GetTextureHandle().IsValid()) {
+            texMgr->ReleaseTexture(resource_->GetTextureHandle());
         }
-        resource_->textureHandle_ = texMgr->LoadTexture(textureName);
+        resource_->SetTextureHandle(texMgr->LoadTexture(textureName));
 
         // テクスチャサイズを直接取得して描画サイズに反映
         uint32_t tw = 0, th = 0;
@@ -118,14 +118,14 @@ void Sprite::Update() {
     ApplyAnchorToVertices();
 
     // 基本的な行列更新の前にスケールを適用
-    resource_->transform_.scale = {size_.x * uiScale_, size_.y * uiScale_, 1.0f};
+    resource_->GetTransform().scale = {size_.x * uiScale_, size_.y * uiScale_, 1.0f};
     resource_->UpdateTransform(*activeCam);
 
     // UV 変換(flip → crop → userUV)
     if (resource_->GetMaterialData()) {
         // userUV: 既存の uvTransform(回転/スクロール)
         Irufemi::Matrix4x4 userUV = Irufemi::Math::MakeAffineMatrix(
-            resource_->uvTransform_.scale, resource_->uvTransform_.rotate, resource_->uvTransform_.translate);
+            resource_->GetUVTransform().scale, resource_->GetUVTransform().rotate, resource_->GetUVTransform().translate);
 
         // crop: px指定 → 正規化UVに変換
         Irufemi::Matrix4x4 cropUV = Irufemi::Math::MakeIdentity4x4();
@@ -193,7 +193,7 @@ void Sprite::SetSize(const float& width, const float& height) {
     size_.y = height;
     // 実サイズはscaleとuiScale_で表現
     if (resource_) {
-        resource_->transform_.scale = {size_.x * uiScale_, size_.y * uiScale_, 1.0f};
+        resource_->GetTransform().scale = {size_.x * uiScale_, size_.y * uiScale_, 1.0f};
     }
     isDirty_ = true;
 }
@@ -202,11 +202,11 @@ const Irufemi::Vector2 Sprite::GetPosition2D() const {
     if (!resource_) {
         return {0.0f, 0.0f};
     }
-    return {resource_->transform_.translate.x, resource_->transform_.translate.y};
+    return {resource_->GetTransform().translate.x, resource_->GetTransform().translate.y};
 }
 
 void Sprite::ApplyAnchorToVertices() {
-    if (!resource_ || resource_->vertexDataList_.size() < 4) {
+    if (!resource_ || resource_->GetVertexDataList().size() < 4) {
         return;
     }
 
@@ -218,10 +218,10 @@ void Sprite::ApplyAnchorToVertices() {
 
     // 頂点の並び
     // 0: 左下, 1: 左上, 2: 右下, 3: 右上
-    resource_->vertexDataList_[0].position = {left, bottom, 0.0f, 1.0f};
-    resource_->vertexDataList_[1].position = {left, top, 0.0f, 1.0f};
-    resource_->vertexDataList_[2].position = {right, bottom, 0.0f, 1.0f};
-    resource_->vertexDataList_[3].position = {right, top, 0.0f, 1.0f};
+    resource_->GetVertexDataList()[0].position = {left, bottom, 0.0f, 1.0f};
+    resource_->GetVertexDataList()[1].position = {left, top, 0.0f, 1.0f};
+    resource_->GetVertexDataList()[2].position = {right, bottom, 0.0f, 1.0f};
+    resource_->GetVertexDataList()[3].position = {right, top, 0.0f, 1.0f};
 }
 
 bool Sprite::SetTextureRectPixels(int x, int y, int w, int h, bool autoResize) {
@@ -263,10 +263,10 @@ void Sprite::SetTexture(const std::string& textureName) {
         return;
     }
 
-    if (resource_->textureHandle_.IsValid()) {
-        textureManager_->ReleaseTexture(resource_->textureHandle_);
+    if (resource_->GetTextureHandle().IsValid()) {
+        textureManager_->ReleaseTexture(resource_->GetTextureHandle());
     }
-    resource_->textureHandle_ = textureManager_->LoadTexture(textureName);
+    resource_->SetTextureHandle(textureManager_->LoadTexture(textureName));
 
     // テクスチャサイズを直接取得して描画サイズに反映
     uint32_t tw = 0, th = 0;
@@ -319,10 +319,10 @@ void Sprite::Debug([[maybe_unused]] const char* spriteName) {
     ImGui::Begin(name.c_str());
 
     if (ui_ && resource_) {
-        ui_->DebugTransform2D(resource_->transform_);
+        ui_->DebugTransform2D(resource_->GetTransform());
         ui_->DebugMaterialBy2D(resource_->GetMaterialData());
         ui_->DebugTexture(resource_.get(), selectedTextureIndex_);
-        ui_->DebugUvTransform(resource_->uvTransform_);
+        ui_->DebugUvTransform(resource_->GetUVTransform());
 
         ImGui::Checkbox("Flip X", &isFlipX_);
         ImGui::Checkbox("Flip Y", &isFlipY_);
@@ -349,8 +349,8 @@ void Sprite::Debug([[maybe_unused]] const char* spriteName) {
             SetSize(sz[0], sz[1]);
         }
 
-        const float left = resource_->transform_.translate.x - anchor_.x * size_.x;
-        const float top = resource_->transform_.translate.y - anchor_.y * size_.y;
+        const float left = resource_->GetTransform().translate.x - anchor_.x * size_.x;
+        const float top = resource_->GetTransform().translate.y - anchor_.y * size_.y;
         const float right = left + size_.x;
         const float bottom = top + size_.y;
         ImGui::Text("Rect L=%.1f T=%.1f R=%.1f B=%.1f", left, top, right, bottom);

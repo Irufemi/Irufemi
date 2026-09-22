@@ -39,49 +39,54 @@ public:
     void UpdateTransform(const Camera& camera);
 
 public:
-    // --- 頂点バッファ ---
-    std::vector<VertexData> vertexDataList_{};
-    VertexData* vertexData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
-    D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+    // --- バッファビュー & 描画情報アクセサ ---
+    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
+    void SetVertexBufferView(const D3D12_VERTEX_BUFFER_VIEW& vbv) { vertexBufferView_ = vbv; }
 
-    // --- インデックスバッファ ---
-    std::vector<uint32_t> indexDataList_{};
-    uint32_t* indexData_ = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_ = nullptr;
-    D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
-    uint32_t indexCount_ = 0;
+    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
+    void SetIndexBufferView(const D3D12_INDEX_BUFFER_VIEW& ibv) { indexBufferView_ = ibv; }
 
-    // --- マテリアル ---
-    Irufemi::Transform uvTransform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
-    Material cpuMaterialData_{};
-    /**
-     * @brief MaterialData を取得する。
-     * @return 取得された MaterialData
-     */
-    Material* GetMaterialData() {
-        return &cpuMaterialData_;
-    }
-    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+    uint32_t GetIndexCount() const { return indexCount_; }
+    void SetIndexCount(uint32_t count) { indexCount_ = count; }
 
-    // --- トランスフォーム ---
-    Irufemi::Transform transform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
-    TransformationMatrix transformationMatrix_{};
-    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
+    Microsoft::WRL::ComPtr<ID3D12Resource> GetVertexResource() const { return vertexResource_; }
+    void SetVertexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) { vertexResource_ = res; }
 
-    ResourceHandle textureHandle_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> GetIndexResource() const { return indexResource_; }
+    void SetIndexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) { indexResource_ = res; }
 
-    void SetTextureManager(class TextureManager* tm) {
-        textureManager_ = tm;
-    }
-    class TextureManager* GetTextureManager() const {
-        return textureManager_;
-    }
+    // --- トランスフォームアクセサ ---
+    const Irufemi::Transform& GetTransform() const { return transform_; }
+    Irufemi::Transform& GetTransform() { return transform_; }
+    void SetTransform(const Irufemi::Transform& transform) { transform_ = transform; }
 
-protected:
-    class TextureManager* textureManager_ = nullptr;
+    const Irufemi::Transform& GetUVTransform() const { return uvTransform_; }
+    Irufemi::Transform& GetUVTransform() { return uvTransform_; }
+    void SetUVTransform(const Irufemi::Transform& uvTransform) { uvTransform_ = uvTransform; }
 
-public:
+    const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
+    TransformationMatrix& GetTransformationMatrix() { return transformationMatrix_; }
+
+    // --- マテリアルアクセサ ---
+    Material* GetMaterialData() { return &cpuMaterialData_; }
+    const Material* GetMaterialData() const { return &cpuMaterialData_; }
+
+    // --- テクスチャアクセサ ---
+    ResourceHandle GetTextureHandle() const { return textureHandle_; }
+    void SetTextureHandle(ResourceHandle handle) { textureHandle_ = handle; }
+
+    void SetTextureManager(class TextureManager* tm) { textureManager_ = tm; }
+    class TextureManager* GetTextureManager() const { return textureManager_; }
+
+    // --- 頂点・インデックス配列アクセサ ---
+    std::vector<VertexData>& GetVertexDataList() { return vertexDataList_; }
+    const std::vector<VertexData>& GetVertexDataList() const { return vertexDataList_; }
+    VertexData* GetVertexData() { return vertexData_; }
+
+    std::vector<uint32_t>& GetIndexDataList() { return indexDataList_; }
+    const std::vector<uint32_t>& GetIndexDataList() const { return indexDataList_; }
+    uint32_t* GetIndexData() { return indexData_; }
+
     /**
      * @brief TransformVAddress を取得する。
      * @return 取得された TransformVAddress
@@ -92,14 +97,6 @@ public:
      * @return 取得された MaterialVAddress
      */
     D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
-
-    // --- カスタム描画設定 ---
-    ID3D12PipelineState* customPSO_ = nullptr;
-    std::string customPSOName_ = "";
-    Irufemi::BlendMode customBlend_ = Irufemi::BlendMode::kBlendModeNormal;
-    PSOManager::DepthWrite customDepth_ = PSOManager::DepthWrite::Off;
-    PSOManager::CullMode customCull_ = PSOManager::CullMode::None;
-    D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
 
     /**
      * @brief CustomPSO を設定する（生ポインタ指定・下位互換用）。
@@ -155,6 +152,42 @@ public:
      * @brief SyncBeforeDraw を実行する。
      */
     void SyncBeforeDraw();
+
+protected:
+    // --- 頂点バッファ ---
+    std::vector<VertexData> vertexDataList_{};
+    VertexData* vertexData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
+    D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+
+    // --- インデックスバッファ ---
+    std::vector<uint32_t> indexDataList_{};
+    uint32_t* indexData_ = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> indexResource_ = nullptr;
+    D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
+    uint32_t indexCount_ = 0;
+
+    // --- マテリアル ---
+    Irufemi::Transform uvTransform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+    Material cpuMaterialData_{};
+    uint32_t materialCbIndex_ = static_cast<uint32_t>(-1);
+
+    // --- トランスフォーム ---
+    Irufemi::Transform transform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+    TransformationMatrix transformationMatrix_{};
+    uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
+
+    // --- テクスチャ ---
+    ResourceHandle textureHandle_;
+    class TextureManager* textureManager_ = nullptr;
+
+    // --- カスタム描画設定 ---
+    ID3D12PipelineState* customPSO_ = nullptr;
+    std::string customPSOName_ = "";
+    Irufemi::BlendMode customBlend_ = Irufemi::BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite customDepth_ = PSOManager::DepthWrite::Off;
+    PSOManager::CullMode customCull_ = PSOManager::CullMode::None;
+    D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
 
 private:
     uint32_t vertexCapacity_ = 0; //!< 現在確保されている頂点バッファの最大要素数

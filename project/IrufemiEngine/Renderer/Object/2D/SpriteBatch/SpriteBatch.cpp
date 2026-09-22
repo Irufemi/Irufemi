@@ -32,28 +32,28 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     baseResource_ = std::make_unique<Object2DResource>();
 
     // 頂点データはSpriteと同じ単位矩形
-    baseResource_->vertexDataList_.push_back({{0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
-    baseResource_->vertexDataList_.push_back({{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.00}, {0.0f, 0.0f, -1.0f}});
-    baseResource_->vertexDataList_.push_back({{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
-    baseResource_->vertexDataList_.push_back({{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.00}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}});
 
-    baseResource_->indexDataList_.push_back(0);
-    baseResource_->indexDataList_.push_back(1);
-    baseResource_->indexDataList_.push_back(2);
-    baseResource_->indexDataList_.push_back(1);
-    baseResource_->indexDataList_.push_back(3);
-    baseResource_->indexDataList_.push_back(2);
+    baseResource_->GetIndexDataList().push_back(0);
+    baseResource_->GetIndexDataList().push_back(1);
+    baseResource_->GetIndexDataList().push_back(2);
+    baseResource_->GetIndexDataList().push_back(1);
+    baseResource_->GetIndexDataList().push_back(3);
+    baseResource_->GetIndexDataList().push_back(2);
 
     baseResource_->CreateResource();
     baseResource_->Map();
 
-    if (baseResource_->vertexData_) {
-        std::copy(baseResource_->vertexDataList_.begin(), baseResource_->vertexDataList_.end(),
-                  baseResource_->vertexData_);
+    if (baseResource_->GetVertexData()) {
+        std::copy(baseResource_->GetVertexDataList().begin(), baseResource_->GetVertexDataList().end(),
+                  baseResource_->GetVertexData());
     }
-    if (baseResource_->indexData_) {
-        std::copy(baseResource_->indexDataList_.begin(), baseResource_->indexDataList_.end(),
-                  baseResource_->indexData_);
+    if (baseResource_->GetIndexData()) {
+        std::copy(baseResource_->GetIndexDataList().begin(), baseResource_->GetIndexDataList().end(),
+                  baseResource_->GetIndexData());
     }
 
     if (baseResource_->GetMaterialData()) {
@@ -65,10 +65,10 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     }
 
     if (textureManager_) {
-        if (baseResource_->textureHandle_.IsValid()) {
-            textureManager_->ReleaseTexture(baseResource_->textureHandle_);
+        if (baseResource_->GetTextureHandle().IsValid()) {
+            textureManager_->ReleaseTexture(baseResource_->GetTextureHandle());
         }
-        baseResource_->textureHandle_ = textureManager_->LoadTexture(textureName);
+        baseResource_->SetTextureHandle(textureManager_->LoadTexture(textureName));
         uint32_t tw = 0, th = 0;
         if (textureManager_->GetTextureSize(textureName, tw, th)) {
             textureSize_ = {static_cast<float>(tw), static_cast<float>(th)};
@@ -77,7 +77,7 @@ void SpriteBatch::Initialize(const std::string& textureName) {
         // Bindless用にtextureIndexをマテリアルに設定
         if (baseResource_->GetMaterialData()) {
             baseResource_->GetMaterialData()->textureIndex =
-                textureManager_->GetSrvIndex(baseResource_->textureHandle_);
+                textureManager_->GetSrvIndex(baseResource_->GetTextureHandle());
         }
     }
 
@@ -203,7 +203,7 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
 
 void SpriteBatch::SyncBeforeDraw() {
     if (textureManager_ && baseResource_->GetMaterialData()) {
-        baseResource_->GetMaterialData()->textureIndex = textureManager_->GetSrvIndex(baseResource_->textureHandle_);
+        baseResource_->GetMaterialData()->textureIndex = textureManager_->GetSrvIndex(baseResource_->GetTextureHandle());
     }
     baseResource_->SyncBeforeDraw();
 }

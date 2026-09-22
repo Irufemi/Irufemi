@@ -54,8 +54,8 @@ void Text::GenerateVertices() {
     // 文字が存在しない可能性があるため、まずは非同期生成要求をかける
     fm->PrecacheText(fontId_, text_);
 
-    resource_->vertexDataList_.clear();
-    resource_->indexDataList_.clear();
+    resource_->GetVertexDataList().clear();
+    resource_->GetIndexDataList().clear();
 
     if (text_.empty()) {
         localBoundsMin_ = {0.0f, 0.0f};
@@ -140,33 +140,33 @@ void Text::GenerateVertices() {
         minY = (std::min)(minY, top);
         maxY = (std::max)(maxY, bottom);
 
-        uint32_t startIndex = static_cast<uint32_t>(resource_->vertexDataList_.size());
+        uint32_t startIndex = static_cast<uint32_t>(resource_->GetVertexDataList().size());
 
         // 頂点の並び: 左下(0), 左上(1), 右下(2), 右上(3)
         // Spriteコンポーネントに合わせて法線は Z=-1
-        resource_->vertexDataList_.push_back({{left, bottom, 0.0f, 1.0f},
+        resource_->GetVertexDataList().push_back({{left, bottom, 0.0f, 1.0f},
                                               {glyph->uvTopLeft.x, glyph->uvBottomRight.y},
                                               {0.0f, 0.0f, -1.0f},
                                               {1.0f, 1.0f, 1.0f, 1.0f}});
-        resource_->vertexDataList_.push_back({{left, top, 0.0f, 1.0f},
+        resource_->GetVertexDataList().push_back({{left, top, 0.0f, 1.0f},
                                               {glyph->uvTopLeft.x, glyph->uvTopLeft.y},
                                               {0.0f, 0.0f, -1.0f},
                                               {1.0f, 1.0f, 1.0f, 1.0f}});
-        resource_->vertexDataList_.push_back({{right, bottom, 0.0f, 1.0f},
+        resource_->GetVertexDataList().push_back({{right, bottom, 0.0f, 1.0f},
                                               {glyph->uvBottomRight.x, glyph->uvBottomRight.y},
                                               {0.0f, 0.0f, -1.0f},
                                               {1.0f, 1.0f, 1.0f, 1.0f}});
-        resource_->vertexDataList_.push_back({{right, top, 0.0f, 1.0f},
+        resource_->GetVertexDataList().push_back({{right, top, 0.0f, 1.0f},
                                               {glyph->uvBottomRight.x, glyph->uvTopLeft.y},
                                               {0.0f, 0.0f, -1.0f},
                                               {1.0f, 1.0f, 1.0f, 1.0f}});
 
-        resource_->indexDataList_.push_back(startIndex + 0);
-        resource_->indexDataList_.push_back(startIndex + 1);
-        resource_->indexDataList_.push_back(startIndex + 2);
-        resource_->indexDataList_.push_back(startIndex + 1);
-        resource_->indexDataList_.push_back(startIndex + 3);
-        resource_->indexDataList_.push_back(startIndex + 2);
+        resource_->GetIndexDataList().push_back(startIndex + 0);
+        resource_->GetIndexDataList().push_back(startIndex + 1);
+        resource_->GetIndexDataList().push_back(startIndex + 2);
+        resource_->GetIndexDataList().push_back(startIndex + 1);
+        resource_->GetIndexDataList().push_back(startIndex + 3);
+        resource_->GetIndexDataList().push_back(startIndex + 2);
 
         currentX += glyph->advanceX * scaleFactor;
     }
@@ -186,22 +186,22 @@ void Text::GenerateVertices() {
 
     // SRVを設定
     if (fm) {
-        resource_->textureHandle_ = fm->GetAtlasHandle();
+        resource_->SetTextureHandle(fm->GetAtlasHandle());
     }
 
     // 頂点がなければ終了
-    if (resource_->vertexDataList_.empty()) {
+    if (resource_->GetVertexDataList().empty()) {
         return;
     }
 
     // GPUリソースの再生成(文字数によって頂点数が可変なため、毎回バッファを作り直すか拡張する)
     resource_->CreateResource();
     resource_->Map();
-    if (resource_->vertexData_) {
-        std::copy(resource_->vertexDataList_.begin(), resource_->vertexDataList_.end(), resource_->vertexData_);
+    if (resource_->GetVertexData()) {
+        std::copy(resource_->GetVertexDataList().begin(), resource_->GetVertexDataList().end(), resource_->GetVertexData());
     }
-    if (resource_->indexData_) {
-        std::copy(resource_->indexDataList_.begin(), resource_->indexDataList_.end(), resource_->indexData_);
+    if (resource_->GetIndexData()) {
+        std::copy(resource_->GetIndexDataList().begin(), resource_->GetIndexDataList().end(), resource_->GetIndexData());
     }
 }
 
@@ -266,7 +266,7 @@ void Text::Draw() {
 
     SyncBeforeDraw();
 
-    if (resource_->vertexDataList_.empty()) {
+    if (resource_->GetVertexDataList().empty()) {
         return; // 描画するものがなければスキップ
     }
 
@@ -294,7 +294,7 @@ void Text::DrawOutlineMask() {
     }
     SyncBeforeDraw();
 
-    if (resource_->vertexDataList_.empty()) {
+    if (resource_->GetVertexDataList().empty()) {
         return;
     }
 
