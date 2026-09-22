@@ -78,9 +78,7 @@ void PlayerHealthComponent::Update() {
             float currentTime = BaseModel::GetIrufemiEngine()->GetGameTime();
             if (currentTime >= deathStartTime_ + 3.0f) {
                 hasTriggeredDeathSequenceFinished_ = true;
-                if (onDeathSequenceFinished) {
-                    onDeathSequenceFinished();
-                }
+                NotifyDeathSequenceFinished();
             }
         }
         return;
@@ -122,14 +120,7 @@ void PlayerHealthComponent::TakeDamage(int damage) {
         isDead_ = true;
         deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
 
-        if (onPlayerDied) {
-            onPlayerDied();
-        }
-        for (const auto& listener : onPlayerDiedListeners_) {
-            if (listener) {
-                listener();
-            }
-        }
+        NotifyPlayerDied();
 
         Log::OutPutLog(std::cout, "[PlayerHealth] Player Died!\n");
         return;
@@ -143,3 +134,21 @@ void PlayerHealthComponent::TakeDamage(int damage) {
         }
     }
 }
+
+void PlayerHealthComponent::NotifyPlayerDied() {
+    if (onPlayerDied_) {
+        onPlayerDied_();
+    }
+    for (const auto& listener : onPlayerDiedListeners_) {
+        if (listener) {
+            listener();
+        }
+    }
+}
+
+void PlayerHealthComponent::NotifyDeathSequenceFinished() {
+    if (onDeathSequenceFinished_) {
+        onDeathSequenceFinished_();
+    }
+}
+

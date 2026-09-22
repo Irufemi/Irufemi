@@ -59,6 +59,12 @@ public:
     bool IsPlayMode() const {
         return currentMode_ != EditorModeState::Edit;
     }
+    bool IsPickingAllowedInPlayMode() const {
+        return isPickingAllowedInPlayMode_;
+    }
+    void SetPickingAllowedInPlayMode(bool allow) {
+        isPickingAllowedInPlayMode_ = allow;
+    }
     ///@}
 
     /**
@@ -94,6 +100,7 @@ private:
     std::string playModeStartSceneName_ = "";
     std::string editingPrefabPath_ = "";
     bool isStepRequested_ = false; // コマ送りの予約フラグ
+    bool isPickingAllowedInPlayMode_ = false; // プレイ中のオブジェクト選択（ピッキング）許可フラグ
 
     // レイアウトのリセット用フラグ
     bool resetLayout_ = false;

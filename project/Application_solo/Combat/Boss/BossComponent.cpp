@@ -216,8 +216,8 @@ void BossComponent::NotifyDamageTaken(float damage) {
 }
 
 void BossComponent::NotifyBossDied() {
-    if (onBossDied) {
-        onBossDied();
+    if (onBossDied_) {
+        onBossDied_();
     }
     for (auto& listener : onBossDiedListeners_) {
         if (listener) {
@@ -225,3 +225,10 @@ void BossComponent::NotifyBossDied() {
         }
     }
 }
+
+void BossComponent::NotifyDeathSequenceFinished() {
+    if (onDeathSequenceFinished_) {
+        onDeathSequenceFinished_();
+    }
+}
+

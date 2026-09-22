@@ -129,15 +129,15 @@ public:
 private:
     // --- Data-Driven Variations ---
     struct DebrisVariation {
-        std::string id;
-        std::string modelPath;
-        int maxVirtualCount;
-        int maxPoolSize;
-        int spawnWeight;
-        VirtualEntityManagerComponent* virtualManager = nullptr;
-        std::vector<DebrisAnimData> animDataList;
-        std::queue<int> activeIds;
-        std::shared_ptr<GameObject> poolObject;
+        std::string id_;
+        std::string modelPath_;
+        int maxVirtualCount_ = 0;
+        int maxPoolSize_ = 0;
+        int spawnWeight_ = 1;
+        VirtualEntityManagerComponent* virtualManager_ = nullptr;
+        std::vector<DebrisAnimData> animDataList_;
+        std::queue<int> activeIds_;
+        std::shared_ptr<GameObject> poolObject_;
     };
     std::vector<DebrisVariation> variations_;
 

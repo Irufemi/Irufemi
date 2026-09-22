@@ -21,8 +21,18 @@ public:
         return "PlayerHealthComponent";
     }
 
-    std::function<void()> onPlayerDied;
-    std::function<void()> onDeathSequenceFinished;
+    void SetOnPlayerDied(std::function<void()> callback) { onPlayerDied_ = std::move(callback); }
+    void SetOnDeathSequenceFinished(std::function<void()> callback) { onDeathSequenceFinished_ = std::move(callback); }
+
+    /**
+     * @brief プレイヤー死亡を通知する
+     */
+    void NotifyPlayerDied();
+
+    /**
+     * @brief 死亡シーケンス完了を通知する
+     */
+    void NotifyDeathSequenceFinished();
 
     /**
      * @brief 被弾時のイベントリスナーを追加する
@@ -90,6 +100,8 @@ private:
 
     std::vector<std::function<void(int damage)>> onDamageTakenListeners_;
     std::vector<std::function<void()>> onPlayerDiedListeners_;
+    std::function<void()> onPlayerDied_;
+    std::function<void()> onDeathSequenceFinished_;
 
     class ColliderComponent* collider_ = nullptr;
 };

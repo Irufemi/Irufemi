@@ -135,4 +135,5 @@ private:
 
     std::string hitEffectKey_ = "Dust";
     std::string explosionModelPath_ = "resources/model/Debris/Generic/Debris_Generic.obj";
+    std::weak_ptr<GameObject> effectManagerObj_;
 };

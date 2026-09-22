@@ -4,6 +4,8 @@
 #include "Renderer/Object/Batch/ModelBatch.h"
 #include "Physics/Collision/Collision.h"
 #include "Core/Math/Geometry/OBB.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include "Core/System/IrufemiEngine.h"
 #include <cmath>
 
 ModelBatchRendererComponent::ModelBatchRendererComponent() {}
@@ -65,6 +67,13 @@ Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {
 bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
     if (!batch_ || !GetTransform()) {
         return false;
+    }
+
+    // プレイモード中は、バッチ親オブジェクトのダミー当たり判定による誤選択を防止する
+    if (auto engine = BaseModel::GetIrufemiEngine()) {
+        if (engine->IsPlayMode()) {
+            return false;
+        }
     }
 
     // バッチ全体のAABBや個々のインスタンスとのRaycastは重いため、

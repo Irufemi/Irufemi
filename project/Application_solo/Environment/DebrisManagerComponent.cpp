@@ -64,18 +64,18 @@ void DebrisManagerComponent::Initialize() {
     int varIndex = 0;
     for (const auto& v : variationsJson) {
         DebrisVariation var;
-        var.id = v["id"].get<std::string>();
-        var.modelPath = v["modelPath"].get<std::string>();
-        var.maxVirtualCount = v["maxVirtualCount"].get<int>();
-        var.maxPoolSize = v["maxPoolSize"].get<int>();
-        var.spawnWeight = v["spawnWeight"].get<int>();
+        var.id_ = v["id"].get<std::string>();
+        var.modelPath_ = v["modelPath"].get<std::string>();
+        var.maxVirtualCount_ = v["maxVirtualCount"].get<int>();
+        var.maxPoolSize_ = v["maxPoolSize"].get<int>();
+        var.spawnWeight_ = v["spawnWeight"].get<int>();
 
-        var.poolObject = std::make_shared<GameObject>("DebrisPool_" + var.id);
+        var.poolObject_ = std::make_shared<GameObject>("DebrisPool_" + var.id_);
 
-        auto batchRenderer = var.poolObject->AddComponent<ModelBatchRendererComponent>();
-        batchRenderer->LoadModel(var.modelPath);
+        auto batchRenderer = var.poolObject_->AddComponent<ModelBatchRendererComponent>();
+        batchRenderer->LoadModel(var.modelPath_);
 
-        var.virtualManager = var.poolObject->AddComponent<VirtualEntityManagerComponent>().get();
+        var.virtualManager_ = var.poolObject_->AddComponent<VirtualEntityManagerComponent>().get();
 
         auto debrisFactory = [this, varIndex]() -> std::shared_ptr<GameObject> {
             auto obj = std::make_shared<GameObject>("Debris");
@@ -115,11 +115,11 @@ void DebrisManagerComponent::Initialize() {
             return obj;
         };
 
-        var.virtualManager->Setup(var.maxPoolSize, var.maxVirtualCount + 500, debrisFactory);
-        var.animDataList.resize(var.maxVirtualCount + 500);
+        var.virtualManager_->Setup(var.maxPoolSize_, var.maxVirtualCount_ + 500, debrisFactory);
+        var.animDataList_.resize(var.maxVirtualCount_ + 500);
 
         if (gameObject_) {
-            gameObject_->AddChild(var.poolObject);
+            gameObject_->AddChild(var.poolObject_);
         }
 
         variations_.push_back(var);
@@ -150,7 +150,7 @@ void DebrisManagerComponent::Update() {
 
         int totalWeight = 0;
         for (const auto& var : variations_) {
-            totalWeight += var.spawnWeight;
+            totalWeight += var.spawnWeight_;
         }
 
         if (totalWeight <= 0) {
@@ -172,29 +172,29 @@ void DebrisManagerComponent::Update() {
             int selectedIndex = 0;
             int currentW = 0;
             for (size_t v = 0; v < variations_.size(); ++v) {
-                currentW += variations_[v].spawnWeight;
-                if (randW < currentW) {
+                currentW += variations_[v].spawnWeight_;
+                if (randW <= currentW) {
                     selectedIndex = static_cast<int>(v);
                     break;
                 }
             }
 
             auto& var = variations_[selectedIndex];
-            int vid = var.virtualManager->AddVirtualInstance(pos, {0, 0, 0}, {0.5f, 0.5f, 0.5f});
+            int vid = var.virtualManager_->AddVirtualInstance(pos, {0, 0, 0}, {0.5f, 0.5f, 0.5f});
             if (vid >= 0) {
                 DebrisAnimData anim;
                 anim.baseIdleY_ = pos.y;
                 anim.idleTimeY_ = Irufemi::Random::GeneratorFloat(0.0f, 100.0f);
-                var.animDataList[vid] = anim;
-                var.activeIds.push(vid);
+                var.animDataList_[vid] = anim;
+                var.activeIds_.push(vid);
             }
         }
 
         for (auto& var : variations_) {
-            while (var.activeIds.size() > static_cast<size_t>(var.maxVirtualCount)) {
-                int oldestId = var.activeIds.front();
-                var.activeIds.pop();
-                var.virtualManager->RemoveVirtualInstance(oldestId);
+            while (var.activeIds_.size() > static_cast<size_t>(var.maxVirtualCount_)) {
+                int oldestId = var.activeIds_.front();
+                var.activeIds_.pop();
+                var.virtualManager_->RemoveVirtualInstance(oldestId);
             }
         }
     };
@@ -232,11 +232,11 @@ std::shared_ptr<GameObject> DebrisManagerComponent::GetDebris() {
 
     // TODO: Boss戦等の動的取得用途において、専用PrefabIndexの指定に対応する（現在は0番の固定Prefabを使用）
     auto& var = variations_[0];
-    int id = var.virtualManager->AddVirtualInstance({0, 0, 0}, {0, 0, 0}, {0.5f, 0.5f, 0.5f});
-    auto obj = var.virtualManager->Promote(id);
+    int id = var.virtualManager_->AddVirtualInstance({0, 0, 0}, {0, 0, 0}, {0.5f, 0.5f, 0.5f});
+    auto obj = var.virtualManager_->Promote(id);
     if (!obj) {
         if (DemoteFarthestIdleDebris({0.0f, 0.0f, 0.0f})) {
-            obj = var.virtualManager->Promote(id);
+            obj = var.virtualManager_->Promote(id);
         }
     }
 
@@ -264,9 +264,9 @@ void DebrisManagerComponent::ReleaseDebris(std::shared_ptr<GameObject> debris) {
         int vid = comp->GetVirtualId();
         int vIndex = comp->GetVariationIndex();
         if (vid >= 0 && vIndex >= 0 && vIndex < variations_.size()) {
-            variations_[vIndex].virtualManager->Demote(vid);
+            variations_[vIndex].virtualManager_->Demote(vid);
         } else if (vIndex >= 0 && vIndex < variations_.size()) {
-            variations_[vIndex].virtualManager->ReleaseGameObject(debris);
+            variations_[vIndex].virtualManager_->ReleaseGameObject(debris);
         } else {
             debris->SetIsActive(false);
         }
@@ -312,7 +312,7 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
     int bestVarIndex = -1;
 
     for (size_t v = 0; v < variations_.size(); ++v) {
-        auto& virtualInstances = variations_[v].virtualManager->GetDenseInstances();
+        auto& virtualInstances = variations_[v].virtualManager_->GetDenseInstances();
         for (const auto& vi : virtualInstances) {
             if (!vi.isDestroyed_ && !vi.isPromoted_) {
                 float dx = vi.position_.x - pos.x;
@@ -329,10 +329,10 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
     }
 
     if (bestId >= 0 && bestVarIndex >= 0) {
-        auto obj = variations_[bestVarIndex].virtualManager->Promote(bestId);
+        auto obj = variations_[bestVarIndex].virtualManager_->Promote(bestId);
         if (!obj) {
             if (DemoteFarthestIdleDebris(pos)) {
-                obj = variations_[bestVarIndex].virtualManager->Promote(bestId);
+                obj = variations_[bestVarIndex].virtualManager_->Promote(bestId);
             }
         }
         if (obj) {
@@ -352,7 +352,7 @@ std::shared_ptr<GameObject> DebrisManagerComponent::ExtractNearestIdleDebris(con
 
 void DebrisManagerComponent::NotifyDestroyed(int virtualId, int variationIndex) {
     if (variationIndex >= 0 && variationIndex < variations_.size()) {
-        variations_[variationIndex].virtualManager->RemoveVirtualInstance(virtualId);
+        variations_[variationIndex].virtualManager_->RemoveVirtualInstance(virtualId);
     }
 }
 
@@ -380,7 +380,7 @@ bool DebrisManagerComponent::DemoteFarthestIdleDebris(const Irufemi::Vector3& fr
         int vid = farthestComp->GetVirtualId();
         int vIndex = farthestComp->GetVariationIndex();
         if (vid >= 0 && vIndex >= 0 && vIndex < variations_.size()) {
-            variations_[vIndex].virtualManager->Demote(vid);
+            variations_[vIndex].virtualManager_->Demote(vid);
             return true;
         }
     }

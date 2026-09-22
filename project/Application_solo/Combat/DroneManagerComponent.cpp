@@ -65,11 +65,11 @@ void DroneManagerComponent::Update() {
         }
     }
 
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float deltaTime = GetEngine() ? GetEngine()->GetGameDeltaTime() : (1.0f / 60.0f);
 
     // Data-Oriented Update Loop (CPUキャッシュ効率化)
     for (size_t i = 0; i < activeDrones_.size(); ++i) {
-        auto& droneObj = activeDrones_[i].gameObject;
+        auto& droneObj = activeDrones_[i].gameObject_;
         auto& anim = animDataList_[i];
 
         if (!droneObj || !droneObj->GetIsActive()) {
@@ -77,11 +77,11 @@ void DroneManagerComponent::Update() {
         }
 
         // 1. 旋回角度の更新
-        anim.orbitAngle += orbitSpeed_ * deltaTime;
+        anim.orbitAngle_ += orbitSpeed_ * deltaTime;
 
         // 2. 座標の計算
-        float x = std::cos(anim.orbitAngle) * orbitRadius_;
-        float y = std::sin(anim.orbitAngle) * orbitRadius_;
+        float x = std::cos(anim.orbitAngle_) * orbitRadius_;
+        float y = std::sin(anim.orbitAngle_) * orbitRadius_;
         Irufemi::Vector3 targetPos = bossPos + Irufemi::Vector3{x, y, 0.0f};
 
         // 3. 向きの計算 (ゼロベクトル・ゼロ除算ガード)
@@ -106,9 +106,9 @@ void DroneManagerComponent::Update() {
         }
 
         // 5. 弾幕の発射処理 (ゼロベクトル・ゼロ除算ガード)
-        anim.fireTimer += deltaTime;
-        if (anim.fireTimer >= fireInterval_) {
-            anim.fireTimer = 0.0f;
+        anim.fireTimer_ += deltaTime;
+        if (anim.fireTimer_ >= fireInterval_) {
+            anim.fireTimer_ = 0.0f;
             if (bulletManager_ && hasPlayer) {
                 Irufemi::Vector3 diff = playerPos - targetPos;
                 if (diff.LengthSquared() > 1e-4f) {
@@ -180,8 +180,8 @@ void DroneManagerComponent::DeployDrones(std::weak_ptr<GameObject> boss, int cou
                 activeDrones_.push_back({handle, droneObj});
 
                 DroneAnimData anim;
-                anim.orbitAngle = angleStep * i;
-                anim.fireTimer = Irufemi::Random::GeneratorFloat(0.0f, fireInterval_);
+                anim.orbitAngle_ = angleStep * i;
+                anim.fireTimer_ = Irufemi::Random::GeneratorFloat(0.0f, fireInterval_);
                 animDataList_.push_back(anim);
             } else {
                 dronePool_->Release(handle);
@@ -195,10 +195,10 @@ void DroneManagerComponent::RecallAllDrones() {
         return;
     }
     for (auto& drone : activeDrones_) {
-        if (drone.gameObject) {
-            drone.gameObject->SetIsActive(false);
+        if (drone.gameObject_) {
+            drone.gameObject_->SetIsActive(false);
         }
-        dronePool_->Release(drone.handle);
+        dronePool_->Release(drone.handle_);
     }
     activeDrones_.clear();
     animDataList_.clear();

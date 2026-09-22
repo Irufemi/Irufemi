@@ -463,8 +463,9 @@ void SceneViewPanel::HandleDragAndDrop(ImVec2 minPos, ImVec2 size) {
 }
 
 void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos, ImVec2 size) {
-    // プレイモード中（ゲーム進行中）のインゲームのクリック操作（射撃など）と競合するためピッキングを無効にする
-    if (editorManager_->IsPlayMode()) {
+    // プレイモード中（ゲーム進行中）のインゲームのクリック操作（射撃など）と競合するため、
+    // 明示的に許可されていない場合はピッキングを無効にする
+    if (editorManager_->IsPlayMode() && !editorManager_->IsPickingAllowedInPlayMode()) {
         return;
     }
 
@@ -575,7 +576,7 @@ void SceneViewPanel::HandlePicking(ImVec2 mousePos, ImVec2 minPos, ImVec2 maxPos
                 if (auto scene = engine->GetSceneManager()->GetCurrentScene()) {
                     std::function<void(const std::shared_ptr<GameObject>&)> Pick3D =
                         [&](const std::shared_ptr<GameObject>& obj) {
-                            if (!obj || obj.get() == closestObj) {
+                            if (!obj || obj->IsDestroyed() || !obj->GetIsActive() || obj.get() == closestObj) {
                                 return;
                             }
 

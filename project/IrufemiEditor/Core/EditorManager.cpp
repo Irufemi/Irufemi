@@ -627,6 +627,14 @@ void EditorManager::OnDrawUI() {
         }
         ImGui::PopStyleColor(2);
 
+        // プレイモード中のピッキング許可チェックボックス
+        ImGui::SameLine();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+        ImGui::Checkbox("Play Picking", &isPickingAllowedInPlayMode_);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Allow selecting objects in SceneView during Play Mode (useful for debugging)");
+        }
+
         ImGui::EndMenuBar();
     }
 

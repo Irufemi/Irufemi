@@ -24,17 +24,6 @@
 #include "Core/Utility/Log.h"
 #include "Physics/CollisionManager.h"
 
-static ColliderComponent* GetColliderFromObj(GameObject* obj) {
-    if (!obj) {
-        return nullptr;
-    }
-    for (auto& comp : obj->GetComponents()) {
-        if (auto col = dynamic_cast<ColliderComponent*>(comp.get())) {
-            return col;
-        }
-    }
-    return nullptr;
-}
 
 float DebrisComponent::GetPullSpeed() const {
     return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f;
@@ -158,8 +147,8 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
         }
         damageable->TakeDamage(damage);
         hit = true;
-    } else if (auto collider = GetColliderFromObj(otherObj)) {
-        auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+    } else if (auto collider = otherObj ? otherObj->GetComponent<ColliderComponent>() : nullptr) {
+        auto cm = GetEngine() ? GetEngine()->GetCollisionManager() : nullptr;
         // 建造物（Environmentレイヤー）との衝突検知
         // 衝突した場合は破砕エフェクトを再生し、プールへ返却（回収）する
         if (cm) {
@@ -175,14 +164,20 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
             Irufemi::Vector3 hitPos = t->GetWorldPosition();
 
             EffectManagerComponent* effectManager = nullptr;
-            if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+            if (auto go = effectManagerObj_.lock()) {
                 effectManager = go->GetComponent<EffectManagerComponent>();
+            } else if (gameObject_ && gameObject_->GetScene()) {
+                if (auto found = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                    effectManagerObj_ = found;
+                    effectManager = found->GetComponent<EffectManagerComponent>();
+                }
             }
             if (effectManager) {
                 effectManager->PlayEffect(hitEffectKey_, hitPos);
             }
 
-            if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {
+            auto engine = GetEngine();
+            if (auto voxelManager = engine ? engine->GetVoxelParticleManager() : nullptr) {
                 VoxelEmitter p{};
                 p.particleType = 5; // DebrisExplosive
                 p.lifeTime = 1.0f;
@@ -263,8 +258,8 @@ void DebrisComponent::ResetForPool() {
 
     UpdateAuraVisuals();
 
-    if (auto collider = GetColliderFromObj(gameObject_)) {
-        auto* cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+    if (auto collider = gameObject_ ? gameObject_->GetComponent<ColliderComponent>() : nullptr) {
+        auto* cm = GetEngine() ? GetEngine()->GetCollisionManager() : nullptr;
         if (cm) {
             uint32_t neutralLayer = cm->GetLayerMask("Debris_Neutral");
             collider->layer_ = neutralLayer;
@@ -287,8 +282,8 @@ void DebrisComponent::SetState(DebrisState newState, bool forceVisualUpdate) {
 
     UpdateAuraVisuals();
 
-    if (auto collider = GetColliderFromObj(gameObject_)) {
-        auto* cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+    if (auto collider = gameObject_ ? gameObject_->GetComponent<ColliderComponent>() : nullptr) {
+        auto* cm = GetEngine() ? GetEngine()->GetCollisionManager() : nullptr;
         if (cm) {
             uint32_t neutralLayer = cm->GetLayerMask("Debris_Neutral");
             uint32_t playerLayer = cm->GetLayerMask("Debris_Player");

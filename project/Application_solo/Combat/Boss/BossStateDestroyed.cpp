@@ -46,8 +46,8 @@ void BossStateDestroyed::Update(BossComponent* boss) {
         if (boss && boss->gameObject_) {
             boss->gameObject_->SetIsActive(false);
         }
-        if (boss && boss->onDeathSequenceFinished) {
-            boss->onDeathSequenceFinished();
+        if (boss) {
+            boss->NotifyDeathSequenceFinished();
         }
     }
 }

@@ -1780,43 +1780,6 @@
             ]
           },
           "type": "DebrisManagerComponent"
-        },
-        {
-          "data": {
-            "modelName": "resources/model/sample/block.obj"
-          },
-          "type": "ModelBatchRendererComponent"
-        },
-        {
-          "data": {
-            "Active Instances (Batch)": 0
-          },
-          "type": "VirtualEntityManagerComponent"
-        },
-        {
-          "data": {
-            "customEffectType": 6,
-            "customParams": {
-              "color1": [
-                0.0,
-                0.0,
-                0.0,
-                1.0
-              ],
-              "color2": [
-                0.0,
-                0.0,
-                0.0,
-                1.0
-              ],
-              "param1": 1.0,
-              "param2": 0.0,
-              "param3": 0.0,
-              "param4": 0.0
-            },
-            "enableEffectMask": true
-          },
-          "type": "EffectMaskComponent"
         }
       ],
       "instanceId": 2738409501711223709,

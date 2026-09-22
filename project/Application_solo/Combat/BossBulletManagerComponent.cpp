@@ -87,19 +87,19 @@ void BossBulletManagerComponent::Update() {
         activeVirtualIds_.pop();
 
         auto& data = bulletDataList_[vid];
-        data.lifeTimer -= dt;
+        data.lifeTimer_ -= dt;
 
         int denseIndex = virtualManager_->GetSparseIndex(vid);
         if (denseIndex >= 0) {
             auto& vi = virtualInstances[denseIndex];
 
-            if (data.lifeTimer <= 0.0f) {
+            if (data.lifeTimer_ <= 0.0f) {
                 playExplosion(vi.position_);
                 ReleaseBullet(vid);
                 continue;
             }
 
-            vi.position_ += data.velocity * dt;
+            vi.position_ += data.velocity_ * dt;
             survivedBulletVids.push_back(vid);
 
             // クラスタAABBの拡張（hitRadius_分も含める）
@@ -276,8 +276,8 @@ void BossBulletManagerComponent::SpawnBullet(const Irufemi::Vector3& position, c
     int vid = virtualManager_->AddVirtualInstance(position, {0, 0, 0}, bulletScale_);
     if (vid >= 0 && vid < maxBullets_) {
         BossBulletData data;
-        data.velocity = velocity;
-        data.lifeTimer = defaultLifeTime_;
+        data.velocity_ = velocity;
+        data.lifeTimer_ = defaultLifeTime_;
         bulletDataList_[vid] = data;
         activeVirtualIds_.push(vid);
     }

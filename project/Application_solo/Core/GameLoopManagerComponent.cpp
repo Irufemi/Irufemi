@@ -16,14 +16,14 @@
 GameLoopManagerComponent::~GameLoopManagerComponent() {
     if (auto player = playerObj_.lock()) {
         if (auto health = player->GetComponent<PlayerHealthComponent>()) {
-            health->onPlayerDied = nullptr;
-            health->onDeathSequenceFinished = nullptr;
+            health->SetOnPlayerDied(nullptr);
+            health->SetOnDeathSequenceFinished(nullptr);
         }
     }
     if (auto boss = bossObj_.lock()) {
         if (auto b = boss->GetComponent<BossComponent>()) {
-            b->onBossDied = nullptr;
-            b->onDeathSequenceFinished = nullptr;
+            b->SetOnBossDied(nullptr);
+            b->SetOnDeathSequenceFinished(nullptr);
         }
     }
 }
@@ -58,8 +58,8 @@ bool GameLoopManagerComponent::BindTargets() {
         if (auto playerObj = scene->FindGameObject(targetPlayerName_)) {
             if (auto playerHealth = playerObj->GetComponent<PlayerHealthComponent>()) {
                 playerObj_ = playerObj;
-                playerHealth->onPlayerDied = [this]() { OnPlayerDied(); };
-                playerHealth->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
+                playerHealth->SetOnPlayerDied([this]() { OnPlayerDied(); });
+                playerHealth->SetOnDeathSequenceFinished([this]() { OnDeathSequenceFinished(); });
             }
         }
     }
@@ -68,8 +68,8 @@ bool GameLoopManagerComponent::BindTargets() {
         if (auto bossObj = scene->FindGameObject(targetBossName_)) {
             if (auto boss = bossObj->GetComponent<BossComponent>()) {
                 bossObj_ = bossObj;
-                boss->onBossDied = [this]() { OnBossDied(); };
-                boss->onDeathSequenceFinished = [this]() { OnDeathSequenceFinished(); };
+                boss->SetOnBossDied([this]() { OnBossDied(); });
+                boss->SetOnDeathSequenceFinished([this]() { OnDeathSequenceFinished(); });
             }
         }
     }

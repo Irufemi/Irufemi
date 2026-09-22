@@ -24,8 +24,8 @@ public:
     void Start() override;
     void Update() override;
 
-    std::function<void()> onBossDied;
-    std::function<void()> onDeathSequenceFinished;
+    void SetOnBossDied(std::function<void()> callback) { onBossDied_ = std::move(callback); }
+    void SetOnDeathSequenceFinished(std::function<void()> callback) { onDeathSequenceFinished_ = std::move(callback); }
 
     /**
      * @brief 被弾時のイベントリスナーを追加する
@@ -50,6 +50,11 @@ public:
      * @brief 撃破を通知する
      */
     void NotifyBossDied();
+
+    /**
+     * @brief 撃破演出シーケンス完了を通知する
+     */
+    void NotifyDeathSequenceFinished();
 
     void OnRegisterProperties() override;
     std::string GetComponentName() const override {
@@ -128,6 +133,8 @@ private:
     std::vector<std::shared_ptr<GameObject>> shields_;
     std::vector<std::function<void(float damage)>> onDamageTakenListeners_;
     std::vector<std::function<void()>> onBossDiedListeners_;
+    std::function<void()> onBossDied_;
+    std::function<void()> onDeathSequenceFinished_;
 
     DebrisManagerComponent* debrisManager_ = nullptr;
     DroneManagerComponent* droneManager_ = nullptr;
