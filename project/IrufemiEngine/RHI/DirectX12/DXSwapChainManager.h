@@ -14,10 +14,12 @@
 class DXSwapChainManager {
 public:
     DXSwapChainManager() = default;
-    ~DXSwapChainManager() = default;
+    ~DXSwapChainManager() {
+        Finalize();
+    }
 
     /**
-     * @brief 初期化処理
+     * @brief 初期化処理。スワップチェーン、RTV/DSVデスクリプタヒープ、レンダーターゲットを生成
      * @param device D3D12デバイス
      * @param dxgiFactory DXGIファクトリー
      * @param commandQueue コマンドキュー (スワップチェーン生成に必要)
@@ -29,7 +31,7 @@ public:
                     int32_t width, int32_t height);
 
     /**
-     * @brief 解放処理
+     * @brief 解放処理。スワップチェーンおよびRTV/DSVリソースを破棄
      */
     void Finalize();
 
@@ -50,18 +52,21 @@ public:
 
     /** @name デスクリプタヒープの割り当て・解放 */
     ///@{
+    /** @brief 新しいRTVデスクリプタインデックスを割り当てる */
     uint32_t AllocateRTVIndex();
     /**
-     * @brief FreeRTVIndex を実行する。
+     * @brief 指定フレームのGPU完了後にRTVデスクリプタを解放・返却する
+     * @param index 解放するRTVインデックス
+     * @param currentFenceValue 現在のフレームフェンス値
      */
     void FreeRTVIndex(uint32_t index, uint64_t currentFenceValue);
 
-    /**
-     * @brief AllocateDSVIndex を実行する。
-     */
+    /** @brief 新しいDSVデスクリプタインデックスを割り当てる */
     uint32_t AllocateDSVIndex();
     /**
-     * @brief FreeDSVIndex を実行する。
+     * @brief 指定フレームのGPU完了後にDSVデスクリプタを解放・返却する
+     * @param index 解放するDSVインデックス
+     * @param currentFenceValue 現在のフレームフェンス値
      */
     void FreeDSVIndex(uint32_t index, uint64_t currentFenceValue);
 

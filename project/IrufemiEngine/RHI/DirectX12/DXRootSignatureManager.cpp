@@ -2,8 +2,9 @@
 #include "RHI/DirectX12/DXRootSignatureManager.h"
 #include "Core/Utility/Log.h"
 #include <cassert>
+#include <iostream>
 
-void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
+void DXRootSignatureManager::Initialize(ID3D12Device* device) {
     // --- 通常描画用 RootSignature ---
     {
         // --- ディスクリプタレンジの定義 (Version 1.1) ---
@@ -276,7 +277,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
             D3D12SerializeVersionedRootSignature(&rsDesc, signatureBlob.GetAddressOf(), errorBlob.GetAddressOf());
 
         if (FAILED(hr)) {
-            Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+            Log::OutPutLog(std::cerr, reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
             IRUFEMI_ASSERT(false);
         }
         hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
@@ -363,7 +364,7 @@ void DXRootSignatureManager::Initialize(ID3D12Device* device, Log* log) {
         HRESULT hr = D3D12SerializeRootSignature(&computeRSDesc, D3D_ROOT_SIGNATURE_VERSION_1,
                                                  computeSignatureBlob.GetAddressOf(), computeErrorBlob.GetAddressOf());
         if (FAILED(hr)) {
-            Log::OutPutLog(log->GetLogStream(), reinterpret_cast<char*>(computeErrorBlob->GetBufferPointer()));
+            Log::OutPutLog(std::cerr, reinterpret_cast<char*>(computeErrorBlob->GetBufferPointer()));
             IRUFEMI_ASSERT(false);
         }
         hr = device->CreateRootSignature(0, computeSignatureBlob->GetBufferPointer(),

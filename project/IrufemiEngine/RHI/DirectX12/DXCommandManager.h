@@ -17,16 +17,18 @@ class DirectXCommon;
 class DXCommandManager {
 public:
     DXCommandManager() = default;
-    ~DXCommandManager() = default;
+    ~DXCommandManager() {
+        Finalize();
+    }
 
     /**
-     * @brief 初期化
+     * @brief 初期化処理。コマンドキュー、アロケータ、コマンドリスト、フェンスを生成
      * @param[in] device D3D12デバイス
      */
     void Initialize(ID3D12Device* device);
 
     /**
-     * @brief 解放処理
+     * @brief 解放処理。GPUの完了を待機し、Win32イベントハンドルおよびCOMリソースを安全に破棄
      */
     void Finalize();
 
@@ -42,97 +44,57 @@ public:
     void ExecuteUploadCommands(std::function<void(ID3D12GraphicsCommandList*)> commands);
 
 public: // ゲッター・セッター
-    /**
-     * @brief CommandQueue を取得する。
-     * @return 取得された CommandQueue
-     */
+    /** @brief メインのコマンドキューを取得する */
     ID3D12CommandQueue* GetCommandQueue() const {
         return commandQueue_.Get();
     }
-    /**
-     * @brief CommandAllocator を取得する。
-     * @return 取得された CommandAllocator
-     */
+    /** @brief 指定フレームインデックスのコマンドアロケータを取得する */
     ID3D12CommandAllocator* GetCommandAllocator(uint32_t frameIndex) const;
-    /**
-     * @brief CommandList を取得する。
-     * @return 取得された CommandList
-     */
+    /** @brief メインのコマンドリストを取得する */
     ID3D12GraphicsCommandList* GetCommandList() const {
         return commandList_.Get();
     }
 
-    /**
-     * @brief Fence を取得する。
-     * @return 取得された Fence
-     */
+    /** @brief フレーム同期用フェンスを取得する */
     ID3D12Fence* GetFence() const {
         return fence_.Get();
     }
-    /**
-     * @brief FenceEvent を取得する。
-     * @return 取得された FenceEvent
-     */
+    /** @brief フェンス待機用のWin32イベントハンドルを取得する */
     HANDLE GetFenceEvent() const {
         return fenceEvent_;
     }
 
-    /**
-     * @brief FenceValue を取得する。
-     * @return 取得された FenceValue
-     */
+    /** @brief 指定フレームのフェンス値への参照を取得する */
     uint64_t& GetFenceValue(uint32_t frameIndex);
-    /**
-     * @brief FenceValue を取得する。
-     * @return 取得された FenceValue
-     */
+    /** @brief 指定フレームのフェンス値を取得する */
     uint64_t GetFenceValue(uint32_t frameIndex) const;
 
-    /**
-     * @brief GlobalFenceValue を取得する。
-     * @return 取得された GlobalFenceValue
-     */
+    /** @brief 現在のグローバルフェンス値を取得する */
     uint64_t GetGlobalFenceValue() const {
         return globalFenceValue_;
     }
-    /**
-     * @brief IncrementGlobalFence を実行する。
-     */
+    /** @brief グローバルフェンス値をインクリメントして新しい値を返す */
     uint64_t IncrementGlobalFence() {
         return ++globalFenceValue_;
     }
 
-    /**
-     * @brief UploadCommandAllocator を取得する。
-     * @return 取得された UploadCommandAllocator
-     */
+    /** @brief アップロード専用のコマンドアロケータを取得する */
     ID3D12CommandAllocator* GetUploadCommandAllocator() const {
         return uploadCommandAllocator_.Get();
     }
-    /**
-     * @brief UploadCommandList を取得する。
-     * @return 取得された UploadCommandList
-     */
+    /** @brief アップロード専用のコマンドリストを取得する */
     ID3D12GraphicsCommandList* GetUploadCommandList() const {
         return uploadCommandList_.Get();
     }
-    /**
-     * @brief UploadFence を取得する。
-     * @return 取得された UploadFence
-     */
+    /** @brief アップロード専用のフェンスを取得する */
     ID3D12Fence* GetUploadFence() const {
         return uploadFence_.Get();
     }
-    /**
-     * @brief UploadFenceValue を取得する。
-     * @return 取得された UploadFenceValue
-     */
+    /** @brief アップロード用フェンス値を取得する */
     uint64_t GetUploadFenceValue() const {
         return uploadFenceValue_;
     }
-    /**
-     * @brief IncrementUploadFenceValue を実行する。
-     */
+    /** @brief アップロード用フェンス値をインクリメントする */
     void IncrementUploadFenceValue() {
         uploadFenceValue_++;
     }

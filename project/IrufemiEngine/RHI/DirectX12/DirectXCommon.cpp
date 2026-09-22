@@ -159,7 +159,7 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     srvPool_ = std::make_unique<DescriptorPool>();
     srvPool_->Initialize(device_.Get());
     rootSignatureManager_ = std::make_unique<DXRootSignatureManager>();
-    rootSignatureManager_->Initialize(device_.Get(), log_);
+    rootSignatureManager_->Initialize(device_.Get());
     CreatePSOs();
 
     CreateDepthSRV();

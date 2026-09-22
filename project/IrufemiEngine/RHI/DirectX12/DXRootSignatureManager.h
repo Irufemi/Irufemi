@@ -4,26 +4,21 @@
 #include <wrl.h>
 #include "RHI/DirectX12/RootSignatureConfig.h"
 
-class Log;
-
-/**
- * @class DXRootSignatureManager
- * @brief DirectX12のルートシグネチャ生成と管理を専門に行うクラス
- */
 class DXRootSignatureManager {
 public:
     DXRootSignatureManager() = default;
-    ~DXRootSignatureManager() = default;
+    ~DXRootSignatureManager() {
+        Finalize();
+    }
 
     /**
-     * @brief 初期化処理。各種ルートシグネチャを生成します。
+     * @brief 初期化処理。描画用およびコンピュート用の各種ルートシグネチャを生成
      * @param[in] device D3D12デバイス
-     * @param[in] log ログ出力用インスタンス
      */
-    void Initialize(ID3D12Device* device, Log* log);
+    void Initialize(ID3D12Device* device);
 
     /**
-     * @brief 解放処理
+     * @brief 解放処理。保持しているルートシグネチャリソースをリセット
      */
     void Finalize();
 
