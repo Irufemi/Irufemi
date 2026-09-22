@@ -46,6 +46,9 @@ void ModelBatchRendererComponent::Draw() {
     }
     if (batch_) {
         batch_->Draw();
+        if (autoClearEveryFrame_) {
+            batch_->ClearInstances();
+        }
     }
 }
 
@@ -120,6 +123,7 @@ bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDis
 nlohmann::json ModelBatchRendererComponent::Serialize() {
     nlohmann::json j;
     j["modelName"] = modelName_;
+    j["autoClearEveryFrame"] = autoClearEveryFrame_;
     return j;
 }
 
@@ -127,6 +131,9 @@ void ModelBatchRendererComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("modelName")) {
         std::string modelName = j["modelName"];
         LoadModel(modelName);
+    }
+    if (j.contains("autoClearEveryFrame")) {
+        autoClearEveryFrame_ = j["autoClearEveryFrame"];
     }
 }
 

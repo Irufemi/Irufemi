@@ -23,19 +23,19 @@ void SpriteRendererComponent::OnAwake() {
         sprite_->Initialize(texturePath_);
 
         // 初期設定
-        sprite_->SetAnchor(anchor_[0], anchor_[1]);
+        sprite_->SetAnchor(anchor_.x, anchor_.y);
         sprite_->SetFlip(isFlipX_, isFlipY_);
         sprite_->SetTopMost(isTopMost_);
         sprite_->SetColor(color_);
     }
 
     // テクスチャサイズを取得して初期サイズに設定（Deserializeで既にサイズが設定されていない場合のみ）
-    if (size_[0] == 640.0f && size_[1] == 360.0f) { // デフォルト値の場合は上書き
-        size_[0] = sprite_->GetSize().x;
-        size_[1] = sprite_->GetSize().y;
-    } else if (size_[0] == 0.0f && size_[1] == 0.0f) {
-        size_[0] = sprite_->GetSize().x;
-        size_[1] = sprite_->GetSize().y;
+    if (size_.x == 640.0f && size_.y == 360.0f) { // デフォルト値の場合は上書き
+        size_.x = sprite_->GetSize().x;
+        size_.y = sprite_->GetSize().y;
+    } else if (size_.x == 0.0f && size_.y == 0.0f) {
+        size_.x = sprite_->GetSize().x;
+        size_.y = sprite_->GetSize().y;
     }
 }
 
@@ -52,7 +52,7 @@ void SpriteRendererComponent::SyncRenderState() {
         sprite_->SetRotation(GetTransform()->GetWorldRotation().z);
 
         // TransformのScaleは、SpriteのBaseサイズに対するスケーリングとして扱う
-        sprite_->SetSize(size_[0] * GetTransform()->GetWorldScale().x, size_[1] * GetTransform()->GetWorldScale().y);
+        sprite_->SetSize(size_.x * GetTransform()->GetWorldScale().x, size_.y * GetTransform()->GetWorldScale().y);
         sprite_->Update();
     }
 }
@@ -72,9 +72,20 @@ void SpriteRendererComponent::SetTexture(const std::string& texturePath) {
     if (sprite_) {
         sprite_->SetTexture(texturePath_);
         // テクスチャ変更に合わせてサイズを更新
-        size_[0] = sprite_->GetSize().x;
-        size_[1] = sprite_->GetSize().y;
+        size_.x = sprite_->GetSize().x;
+        size_.y = sprite_->GetSize().y;
     }
+}
+
+void SpriteRendererComponent::SetAnchor(const Irufemi::Vector2& anchor) {
+    anchor_ = anchor;
+    if (sprite_) {
+        sprite_->SetAnchor(anchor_.x, anchor_.y);
+    }
+}
+
+void SpriteRendererComponent::SetBaseSize(const Irufemi::Vector2& size) {
+    size_ = size;
 }
 
 nlohmann::json SpriteRendererComponent::Serialize() {
@@ -83,8 +94,8 @@ nlohmann::json SpriteRendererComponent::Serialize() {
     j["isTopMost"] = isTopMost_;
     j["isFlipX"] = isFlipX_;
     j["isFlipY"] = isFlipY_;
-    j["anchor"] = nlohmann::json::array({anchor_[0], anchor_[1]});
-    j["size"] = nlohmann::json::array({size_[0], size_[1]});
+    j["anchor"] = nlohmann::json::array({anchor_.x, anchor_.y});
+    j["size"] = nlohmann::json::array({size_.x, size_.y});
     j["color"] = nlohmann::json::array({color_.x, color_.y, color_.z, color_.w});
     return j;
 }
@@ -103,12 +114,12 @@ void SpriteRendererComponent::Deserialize(const nlohmann::json& j) {
         isFlipY_ = j["isFlipY"];
     }
     if (j.contains("anchor") && j["anchor"].is_array() && j["anchor"].size() == 2) {
-        anchor_[0] = j["anchor"][0];
-        anchor_[1] = j["anchor"][1];
+        anchor_.x = j["anchor"][0];
+        anchor_.y = j["anchor"][1];
     }
     if (j.contains("size") && j["size"].is_array() && j["size"].size() == 2) {
-        size_[0] = j["size"][0];
-        size_[1] = j["size"][1];
+        size_.x = j["size"][0];
+        size_.y = j["size"][1];
     }
     if (j.contains("color") && j["color"].is_array() && j["color"].size() == 4) {
         color_.x = j["color"][0];
@@ -119,7 +130,7 @@ void SpriteRendererComponent::Deserialize(const nlohmann::json& j) {
 
     // 反映
     if (sprite_) {
-        sprite_->SetAnchor(anchor_[0], anchor_[1]);
+        sprite_->SetAnchor(anchor_.x, anchor_.y);
         sprite_->SetFlip(isFlipX_, isFlipY_);
         sprite_->SetTopMost(isTopMost_);
         sprite_->SetColor(color_);

@@ -20,38 +20,46 @@ public:
     virtual ~Primitive2DRendererComponent();
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 初期化処理を実行します
      */
     void Initialize() override;
+
     /**
-     * @brief 生成時の自己完結初期化（Primitive2DObjectの生成）を行います
+     * @brief 生成時の自己完結初期化（Primitive2DObjectの生成・初期プロパティ適用）を行います
      */
     void OnAwake() override;
+
     /**
-     * @brief ワールド座標・Transform確定時の描画ステート同期を行います
+     * @brief スポーン時にワールド座標・Transform確定時の描画ステート同期を行います
      */
     void OnSpawned() override;
-    void SyncRenderState() override;
+
     /**
-     * @brief Update を実行する。
+     * @brief TransformComponentの最新位置・回転・スケールを描画オブジェクトへ反映します
+     */
+    void SyncRenderState() override;
+
+    /**
+     * @brief 毎フレームの更新処理（描画ステート同期）を実行します
      */
     void Update() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief 描画マネージャへ2Dプリミティブ描画コマンドを登録します
      */
     void Draw() override;
 
     /**
-     * @brief CanUpdateInEditMode かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief エディタモード中も更新を行うかを判定します
+     * @return 常に true
      */
     bool CanUpdateInEditMode() const override {
         return true;
     }
 
     /**
-     * @brief Renderable を取得する。
-     * @return 取得された Renderable
+     * @brief 描画可能な内部オブジェクト（Primitive2DObject）へのポインタを取得します
+     * @return IRenderable インターフェースポインタ
      */
     IRenderable* GetRenderable() override {
         return primitive_.get();
@@ -63,125 +71,143 @@ public:
 
     // プロパティ操作
     /**
-     * @brief Shape を設定する。
-     * @param[in] type 設定する Shape の値
+     * @brief 描画する2Dプリミティブの形状タイプ（Rect, Circle, Triangle, Line 等）を設定します
+     * @param[in] type プリミティブタイプ
      */
     void SetShape(Irufemi::Primitive2DType type);
+
     /**
-     * @brief Color を設定する。
-     * @param[in] color 設定する Color の値
+     * @brief 基本乗算カラー（RGBA）を設定します
+     * @param[in] color 設定するカラー
      */
     void SetColor(const Irufemi::Vector4& color);
+
     /**
-     * @brief Texture を設定する。
-     * @param[in] texturePath 設定する Texture の値
+     * @brief 表面に貼り付けるテクスチャパスを設定します
+     * @param[in] texturePath テクスチャファイルの相対パス
      */
     void SetTexture(const std::string& texturePath);
+
     /**
-     * @brief Pivot を設定する。
-     * @param[in] pivot 設定する Pivot の値
+     * @brief ピボット（原点位置：0.0f〜1.0f）を設定します
+     * @param[in] pivot ピボット座標
      */
     void SetPivot(const Irufemi::Vector2& pivot);
+
     /**
-     * @brief Size を設定する。
-     * @param[in] size 設定する Size の値
+     * @brief 描画サイズ（幅・高さ）を設定します
+     * @param[in] size 描画サイズ
      */
     void SetSize(const Irufemi::Vector2& size);
+
     /**
-     * @brief Thickness を設定する。
-     * @param[in] thickness 設定する Thickness の値
+     * @brief 枠線の太さ（アウトライン描画時）を設定します
+     * @param[in] thickness 線の太さ
      */
     void SetThickness(float thickness);
+
     /**
-     * @brief Subdivision を設定する。
-     * @param[in] subdivision 設定する Subdivision の値
+     * @brief 円などの曲線の分割数を設定します
+     * @param[in] subdivision 分割数
      */
     void SetSubdivision(int subdivision);
+
     /**
-     * @brief TopMost を設定する。
-     * @param[in] isTopMost 設定する TopMost の値
+     * @brief 最前面（UI TopMostレイヤー）に描画するかどうかを設定します
+     * @param[in] isTopMost 最前面にする場合は true
      */
     void SetTopMost(bool isTopMost);
 
     // プロパティ取得（Editor用など）
     /**
-     * @brief Shape を取得する。
-     * @return 取得された Shape
+     * @brief 形状タイプを取得します
+     * @return プリミティブタイプ
      */
     Irufemi::Primitive2DType GetShape() const {
         return static_cast<Irufemi::Primitive2DType>(currentTypeIndex_);
     }
+
     /**
-     * @brief Color を取得する。
-     * @return 取得された Color
+     * @brief 設定されているカラーを取得します
+     * @return カラー値
      */
     const Irufemi::Vector4& GetColor() const {
         return color_;
     }
+
     /**
-     * @brief Texture を取得する。
-     * @return 取得された Texture
+     * @brief 設定されているテクスチャパスを取得します
+     * @return テクスチャパス文字列
      */
     const std::string& GetTexture() const {
         return texturePath_;
     }
+
     /**
-     * @brief Pivot を取得する。
-     * @return 取得された Pivot
+     * @brief 設定されているピボットを取得します
+     * @return ピボット座標
      */
     const Irufemi::Vector2& GetPivot() const {
         return pivot_;
     }
+
     /**
-     * @brief Size を取得する。
-     * @return 取得された Size
+     * @brief 設定されている描画サイズを取得します
+     * @return サイズ
      */
     const Irufemi::Vector2& GetSize() const {
         return size_;
     }
+
     /**
-     * @brief Thickness を取得する。
-     * @return 取得された Thickness
+     * @brief 設定されている線の太さを取得します
+     * @return 太さ
      */
     float GetThickness() const {
         return thickness_;
     }
+
     /**
-     * @brief Subdivision を取得する。
-     * @return 取得された Subdivision
+     * @brief 曲線の分割数を取得します
+     * @return 分割数
      */
     int GetSubdivision() const {
         return subdivision_;
     }
+
     /**
-     * @brief IsTopMost かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief 最前面描画が有効かどうかを取得します
+     * @return 有効な場合は true
      */
     bool IsTopMost() const {
         return isTopMost_;
     }
 
     /**
-     * @brief Primitive を取得する。
-     * @return 取得された Primitive
+     * @brief 内部の Primitive2DObject を取得します
+     * @return Primitive2DObject 生ポインタ
      */
     Primitive2DObject* GetPrimitive() const {
         return primitive_.get();
     }
+
     /**
-     * @brief ComponentName を取得する。
-     * @return 取得された ComponentName
+     * @brief コンポーネントの識別名を取得します
+     * @return クラス名文字列
      */
     std::string GetComponentName() const override {
         return "Primitive2DRendererComponent";
     }
 
     /**
-     * @brief Serialize を実行する。
+     * @brief コンポーネントの状態を JSON にシリアライズします
+     * @return シリアライズされた JSON オブジェクト
      */
     nlohmann::json Serialize() override;
+
     /**
-     * @brief Deserialize を実行する。
+     * @brief JSON からコンポーネントの状態を復元します
+     * @param[in] j 読み込む JSON オブジェクト
      */
     void Deserialize(const nlohmann::json& j) override;
 
