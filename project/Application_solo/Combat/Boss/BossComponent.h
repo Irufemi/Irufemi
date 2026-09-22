@@ -24,7 +24,16 @@ public:
     void Start() override;
     void Update() override;
 
+    /**
+     * @brief ボス死亡時のコールバックを設定する
+     * @param[in] callback 呼び出される関数オブジェクト
+     */
     void SetOnBossDied(std::function<void()> callback) { onBossDied_ = std::move(callback); }
+
+    /**
+     * @brief 撃破演出シーケンス完了時のコールバックを設定する
+     * @param[in] callback 呼び出される関数オブジェクト
+     */
     void SetOnDeathSequenceFinished(std::function<void()> callback) { onDeathSequenceFinished_ = std::move(callback); }
 
     /**

@@ -271,6 +271,9 @@ void PostProcessManager::DrawSinglePass(ID3D12GraphicsCommandList* commandList, 
                                                        bindlessBufferOffset_ * sizeof(BindlessParams));
     if (bindlessBufferOffset_ + 1 < kMaxPostProcessBufferEntries) {
         bindlessBufferOffset_++;
+    } else {
+        assert(false &&
+               "PostProcess bindless constant buffer overflow! Consider increasing kMaxPostProcessBufferEntries.");
     }
     // -------------------------------------------------------------
 
