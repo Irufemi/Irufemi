@@ -33,11 +33,11 @@
 // キャッシュ系(インスタンス)
 //======================
 
-DirectXCommon* GpuMesh::sDxCommon = nullptr;
+DirectXCommon* GpuMesh::dxCommon_ = nullptr;
 
 GpuMesh::~GpuMesh() {
-    if (sDxCommon && sDxCommon->GetSrvPool() && srvIndex != 0xFFFFFFFF) {
-        sDxCommon->GetSrvPool()->FreeAfterFence(srvIndex, sDxCommon->GetCurrentFrameFenceValue());
+    if (dxCommon_ && dxCommon_->GetSrvPool() && srvIndex != 0xFFFFFFFF) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex, dxCommon_->GetCurrentFrameFenceValue());
     }
 }
 
@@ -52,7 +52,7 @@ ModelManager::~ModelManager() = default;
 
 void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureManager) {
     dxCommon_ = dxCommon;
-    GpuMesh::sDxCommon = dxCommon;
+    GpuMesh::dxCommon_ = dxCommon;
     textureManager_ = textureManager;
     if (rootDir_.empty()) {
         rootDir_ = FileSystem::GetResourcePath("model");

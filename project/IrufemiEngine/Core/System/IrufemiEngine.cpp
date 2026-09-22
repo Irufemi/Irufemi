@@ -603,7 +603,7 @@ void IrufemiEngine::Finalize() {
     Texture::SetDescriptorPool(nullptr);
     Texture::SetDirectXCommon(nullptr);
     Texture::SetWhiteTextureResource(nullptr);
-    GpuMesh::sDxCommon = nullptr;
+    GpuMesh::dxCommon_ = nullptr;
 
     BaseBatch::SetSrvAllocator(nullptr);
     SpriteBatch::SetSrvAllocator(nullptr);
