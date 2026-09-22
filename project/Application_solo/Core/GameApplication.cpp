@@ -52,7 +52,6 @@
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
 #include "Framework/Scene/DebugScene.h"
 #endif
-#include "Scenes/TL1/TL1Scene.h"
 #include "Scenes/Result/ResultScene.h"
 
 #ifdef EditorMode

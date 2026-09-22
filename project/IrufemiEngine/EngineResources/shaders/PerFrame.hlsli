@@ -9,6 +9,7 @@ struct PerFrame
 {
 	float32_t time;
 	float32_t deltaTime;
+	float32_t2 pad;
 };
 
 /**
