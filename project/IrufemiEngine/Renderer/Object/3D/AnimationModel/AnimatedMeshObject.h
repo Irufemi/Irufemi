@@ -82,4 +82,5 @@ private:
 
     uint32_t lastSkinnedFrameIndex_ = 0;
     std::string filename_;
+    bool isCulled_ = false;
 };

@@ -91,6 +91,13 @@ public:
      */
     bool IsAllLoaded() const;
 
+    // アトラスの更新世代（バージョン番号）を取得
+    /**
+     * @brief AtlasVersion を取得する。
+     * @return アトラスがGPU更新されるたびにインクリメントされる世代番号
+     */
+    uint64_t GetAtlasVersion() const;
+
 private:
     void PrecacheTextInternal(const std::string& fontId, const std::wstring& text);
 

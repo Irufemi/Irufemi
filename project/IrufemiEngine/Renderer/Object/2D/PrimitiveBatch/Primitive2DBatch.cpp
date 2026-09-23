@@ -102,22 +102,22 @@ void Primitive2DBatch::SyncBeforeDraw() {
 
     if (isMeshDirty_) {
         RebuildMesh();
-    }
 
-    // データのコピー（GPUへ転送）
-    if (vertexResource_ && !vertexDataList_.empty()) {
-        VertexData* mapped = nullptr;
-        if (SUCCEEDED(vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
-            std::memcpy(mapped, vertexDataList_.data(), sizeof(VertexData) * vertexDataList_.size());
-            vertexResource_->Unmap(0, nullptr);
+        // データのコピー（メッシュ形状変更時のみGPUへ転送）
+        if (vertexResource_ && !vertexDataList_.empty()) {
+            VertexData* mapped = nullptr;
+            if (SUCCEEDED(vertexResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
+                std::memcpy(mapped, vertexDataList_.data(), sizeof(VertexData) * vertexDataList_.size());
+                vertexResource_->Unmap(0, nullptr);
+            }
         }
-    }
 
-    if (indexResource_ && !indexDataList_.empty()) {
-        uint32_t* mapped = nullptr;
-        if (SUCCEEDED(indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
-            std::memcpy(mapped, indexDataList_.data(), sizeof(uint32_t) * indexDataList_.size());
-            indexResource_->Unmap(0, nullptr);
+        if (indexResource_ && !indexDataList_.empty()) {
+            uint32_t* mapped = nullptr;
+            if (SUCCEEDED(indexResource_->Map(0, nullptr, reinterpret_cast<void**>(&mapped))) && mapped) {
+                std::memcpy(mapped, indexDataList_.data(), sizeof(uint32_t) * indexDataList_.size());
+                indexResource_->Unmap(0, nullptr);
+            }
         }
     }
 }

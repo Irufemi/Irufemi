@@ -179,10 +179,7 @@ void Text::GenerateVertices() {
         localBoundsMax_ = {0.0f, 0.0f};
     }
 
-    if (hasPendingGlyphs) {
-        // 次のフレームで再試行するためにフラグを立てる
-        isTextDirty_ = true;
-    }
+    hasPendingGlyphs_ = hasPendingGlyphs;
 
     // SRVを設定
     if (fm) {
@@ -221,9 +218,17 @@ void Text::Update() {
         lastAtlasHandle_ = currentAtlas;
     }
 
+    // 非同期生成中のグリフがあり、アトラスがGPU更新された場合は再試行
+    uint64_t currentAtlasVersion = fm->GetAtlasVersion();
+    if (hasPendingGlyphs_ && lastAtlasVersion_ != currentAtlasVersion) {
+        isTextDirty_ = true;
+        lastAtlasVersion_ = currentAtlasVersion;
+    }
+
     if (isTextDirty_) {
         isTextDirty_ = false;
         GenerateVertices();
+        lastAtlasVersion_ = fm->GetAtlasVersion();
         isDirty_ = true;
     }
 

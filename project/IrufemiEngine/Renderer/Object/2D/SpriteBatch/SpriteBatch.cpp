@@ -131,6 +131,7 @@ void SpriteBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
         if (instanceBuffer_[frameIndex]) {
             instanceBuffer_[frameIndex]->Unmap(0, nullptr);
+            dx_->ReleaseAfterFence(instanceBuffer_[frameIndex]);
             instanceBuffer_[frameIndex].Reset();
         }
 
@@ -178,20 +179,22 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
     for (uint32_t i = 0; i < visibleInstanceCount_; ++i) {
         const auto& inst = instances_[i];
 
-        // スケールは元サイズ(size)をベースに掛ける
-        Irufemi::Vector3 scale = {inst.size.x, inst.size.y, 1.0f};
+        // アンカーとスケールを合成（0..1矩形をアンカー分オフセットさせた上でサイズを乗じる）
+        float offsetX = -inst.anchor.x * inst.size.x;
+        float offsetY = -inst.anchor.y * inst.size.y;
 
-        // アンカーの適用（0..1の四角形を平行移動させる）
-        // 左上が0,0、右下が1,1。アンカーが0.5,0.5なら、-0.5ずらす
-        Irufemi::Matrix4x4 anchorTrans =
-            Irufemi::Math::MakeTranslateMatrix(Irufemi::Vector3{-inst.anchor.x, -inst.anchor.y, 0.0f});
-        Irufemi::Matrix4x4 scaleMat = Irufemi::Math::MakeScaleMatrix(scale);
+        // Local(Anchor * Scale) 行列を直接構築
+        Irufemi::Matrix4x4 localMat = Irufemi::Math::MakeIdentity4x4();
+        localMat.m[0][0] = inst.size.x;
+        localMat.m[1][1] = inst.size.y;
+        localMat.m[3][0] = offsetX;
+        localMat.m[3][1] = offsetY;
+
         Irufemi::Matrix4x4 rotMat = Irufemi::Math::MakeRotateZMatrix(inst.transform.rotate.z);
         Irufemi::Matrix4x4 transMat = Irufemi::Math::MakeTranslateMatrix(inst.transform.translate);
 
-        // World = Anchor * Scale * Rot * Trans
-        Irufemi::Matrix4x4 worldMat = Irufemi::Math::Multiply(anchorTrans, scaleMat);
-        worldMat = Irufemi::Math::Multiply(worldMat, rotMat);
+        // World = Local(Anchor*Scale) * Rot * Trans
+        Irufemi::Matrix4x4 worldMat = Irufemi::Math::Multiply(localMat, rotMat);
         worldMat = Irufemi::Math::Multiply(worldMat, transMat);
 
         instanceData_[frameIndex][i].WVP = Irufemi::Math::Multiply(worldMat, viewProj);

@@ -55,6 +55,9 @@ struct FontManager::Impl {
     // 非同期生成用スレッドプールとタスクグループ
     std::unique_ptr<ThreadPool> threadPool;
     std::shared_ptr<TaskGroup> taskGroup;
+
+    // アトラスの更新世代番号
+    std::atomic<uint64_t> atlasVersion{0};
 };
 
 FontManager::FontManager() : impl_(std::make_unique<Impl>()) {}
@@ -378,6 +381,9 @@ void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wst
                     });
 
                     engine_->GetDirectXCommon()->ReleaseAfterFence(intermediateResource);
+
+                    // GPUアトラスが更新されたため世代番号をインクリメント
+                    ++impl_->atlasVersion;
                 }
             }
         }
@@ -419,4 +425,8 @@ std::optional<GlyphInfo> FontManager::GetGlyph(const std::string& fontId, char32
 
 ResourceHandle FontManager::GetAtlasHandle() const {
     return impl_->atlasHandle;
+}
+
+uint64_t FontManager::GetAtlasVersion() const {
+    return impl_->atlasVersion.load();
 }

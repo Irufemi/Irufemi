@@ -295,6 +295,8 @@ private:
     bool isDirty_ = true;
     bool isTextDirty_ = true;
     bool isTopMost_ = false;
+    bool hasPendingGlyphs_ = false;
+    uint64_t lastAtlasVersion_ = 0;
 
     static FontManager* fontManager_;
     static DrawManager* drawManager_;
