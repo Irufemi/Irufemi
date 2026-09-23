@@ -1,6 +1,7 @@
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
 #include "Renderer/Camera/OrbitCameraController.h"
 #include "Core/Math/MathFunction.h"
-#include <windows.h> // VK_LSHIFT, VK_RSHIFT
 #include <algorithm>
 
 void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* input) {
@@ -10,7 +11,7 @@ void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* inpu
 
     bool isMiddleButtonDown = input->IsMouseButtonDown(Mouse::Button::Middle);
     auto* keyboard = input->GetKeyboard();
-    bool isShiftDown = keyboard->IsKeyDown(VK_LSHIFT) || keyboard->IsKeyDown(VK_RSHIFT);
+    bool isShiftDown = keyboard->IsKeyDownDIK(DIK_LSHIFT) || keyboard->IsKeyDownDIK(DIK_RSHIFT);
     Irufemi::Vector2 mouseDelta = input->GetMouseDelta();
 
     // 初期化されていない場合は現在のカメラからTarget等を逆算する
@@ -41,9 +42,9 @@ void OrbitCameraController::UpdateCameraInput(Camera* camera, InputManager* inpu
         if (isShiftDown) {
             // パン操作 (Shift + 中ボタンドラッグ)
             const float panSpeed = 0.05f;
-            Irufemi::Matrix4x4 viewInverse = Irufemi::Math::Inverse(camera->GetViewMatrix());
-            Irufemi::Vector3 right = {viewInverse.m[0][0], viewInverse.m[0][1], viewInverse.m[0][2]};
-            Irufemi::Vector3 up = {viewInverse.m[1][0], viewInverse.m[1][1], viewInverse.m[1][2]};
+            const auto& worldMat = camera->GetWorldMatrix();
+            Irufemi::Vector3 right = {worldMat.m[0][0], worldMat.m[0][1], worldMat.m[0][2]};
+            Irufemi::Vector3 up = {worldMat.m[1][0], worldMat.m[1][1], worldMat.m[1][2]};
             target_ = Irufemi::Math::Add(target_, Irufemi::Math::Multiply(-panSpeed * mouseDelta.x, right));
             target_ = Irufemi::Math::Add(target_, Irufemi::Math::Multiply(panSpeed * mouseDelta.y, up));
             cameraChanged = true;
