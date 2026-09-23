@@ -55,9 +55,10 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
         dummyPlayer->SetName("Player");
         dummyPlayer->SetScene(this);
 
-        auto transform = dummyPlayer->GetComponent<TransformComponent>();
-        transform->SetPosition(playerData.translation);
-        transform->SetRotation(playerData.rotation);
+        if (auto transform = dummyPlayer->GetTransform()) {
+            transform->SetPosition(playerData.translation);
+            transform->SetRotation(playerData.rotation);
+        }
 
         this->AddGameObject(dummyPlayer);
 
@@ -72,9 +73,10 @@ void TL1Scene::Initialize(IrufemiEngine* engine) {
         dummyEnemy->SetName("Enemy");
         dummyEnemy->SetScene(this);
 
-        auto transform = dummyEnemy->GetComponent<TransformComponent>();
-        transform->SetPosition(enemyData.translation);
-        transform->SetRotation(enemyData.rotation);
+        if (auto transform = dummyEnemy->GetTransform()) {
+            transform->SetPosition(enemyData.translation);
+            transform->SetRotation(enemyData.rotation);
+        }
 
         this->AddGameObject(dummyEnemy);
 
