@@ -29,5 +29,13 @@ public:
     }
 
     // --- クリア結果受け渡し用のフラグ ---
-    static bool s_isClear;
+    static void SetIsClear(bool isClear) {
+        isClear_ = isClear;
+    }
+    static bool IsClear() {
+        return isClear_;
+    }
+
+private:
+    static bool isClear_;
 };

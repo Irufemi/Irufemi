@@ -32,12 +32,33 @@ void ResultManagerComponent::Initialize() {
 
     // ResultScene に渡された静的フラグを使って表示文字を決定
     text->SetFontId("toro_glitch");
-    text->SetText(ResultScene::s_isClear ? L"STAGE CLEAR" : L"GAME OVER");
+    text->SetText(ResultScene::IsClear() ? L"STAGE CLEAR" : L"GAME OVER");
     text->SetTopMost(true);
     text->SetAlignment(TextAlignment::Center);
     // クリア時は緑っぽく、失敗時は赤っぽくするなど
-    text->SetColor(ResultScene::s_isClear ? Irufemi::Vector4{0.5f, 1.0f, 0.5f, 1.0f}
+    text->SetColor(ResultScene::IsClear() ? Irufemi::Vector4{0.5f, 1.0f, 0.5f, 1.0f}
                                           : Irufemi::Vector4{1.0f, 0.2f, 0.2f, 1.0f});
+
+    // "Press SPACE to Return" 用のテキストオブジェクトを事前に生成し非アクティブ化
+    if (gameObject_ && gameObject_->GetScene()) {
+        auto uiObj = std::make_shared<GameObject>("ReturnText");
+        gameObject_->GetScene()->AddGameObject(uiObj);
+        auto t = uiObj->GetTransform();
+        if (t) {
+            t->SetPosition({640.0f, 600.0f, 0.0f});
+        }
+
+        auto returnText = uiObj->AddComponent<TextRendererComponent>().get();
+        returnText->SetFontId("toro_glitch");
+        returnText->SetText(L"Press SPACE to Return");
+        returnText->SetBaseScale(20.0f);
+        returnText->SetTopMost(true);
+        returnText->SetAlignment(TextAlignment::Center);
+
+        uiObj->Initialize();
+        uiObj->SetActive(false); // 初期状態は非表示
+        pressSpaceObj_ = uiObj;
+    }
 }
 
 void ResultManagerComponent::Update() {
@@ -77,23 +98,9 @@ void ResultManagerComponent::Update() {
     if (!canReturnToTitle_ && timer_ >= resultDelayTime_) {
         canReturnToTitle_ = true;
 
-        // "Press SPACE to Return" 用のテキストオブジェクトを動的生成
-        auto uiObj = std::make_shared<GameObject>("ReturnText");
-        gameObject_->GetScene()->AddGameObject(uiObj);
-        auto t = uiObj->GetTransform();
-        if (t) {
-            t->SetPosition({640.0f, 600.0f, 0.0f});
+        if (auto uiObj = pressSpaceObj_.lock()) {
+            uiObj->SetActive(true);
         }
-
-        auto text = uiObj->AddComponent<TextRendererComponent>().get();
-        text->SetFontId("toro_glitch");
-        text->SetText(L"Press SPACE to Return");
-        text->SetBaseScale(20.0f);
-        text->SetTopMost(true);
-        text->SetAlignment(TextAlignment::Center);
-
-        uiObj->Initialize();
-        pressSpaceObj_ = uiObj.get();
     }
 
     if (canReturnToTitle_) {

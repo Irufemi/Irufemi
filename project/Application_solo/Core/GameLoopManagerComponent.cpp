@@ -116,6 +116,6 @@ void GameLoopManagerComponent::OnPlayerDied() {
 }
 
 void GameLoopManagerComponent::OnDeathSequenceFinished() {
-    ResultScene::s_isClear = isClear_;
+    ResultScene::SetIsClear(isClear_);
     BaseModel::GetIrufemiEngine()->GetSceneManager()->PushScene("Result");
 }

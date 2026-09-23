@@ -2,6 +2,8 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <optional>
+#include <cstddef>
 
 namespace Irufemi::Container {
 
@@ -120,16 +122,32 @@ template <typename T, typename Predicate> bool ContainsIf(const std::vector<T>& 
 }
 
 /**
- * @brief 配列内における特定の値のインデックスを取得 (IndexOf)
+ * @brief 配列内における特定の値のインデックスを取得 (FindIndex)
+ * @tparam T 要素型
+ * @tparam U 検索する値の型
+ * @param vec 対象の std::vector
+ * @param value 検索したい値
+ * @return 見つかった場合は std::optional<size_t>、見つからなかった場合は std::nullopt
+ */
+template <typename T, typename U> std::optional<size_t> FindIndex(const std::vector<T>& vec, const U& value) {
+    auto it = std::find(vec.begin(), vec.end(), value);
+    if (it != vec.end()) {
+        return static_cast<size_t>(std::distance(vec.begin(), it));
+    }
+    return std::nullopt;
+}
+
+/**
+ * @brief 配列内における特定の値のインデックスを取得 (IndexOf: 互換用)
  * @tparam T 要素型
  * @tparam U 検索する値の型
  * @param vec 対象の std::vector
  * @param value 検索したい値
  * @return 見つかった場合は 0 以上のインデックス、見つからなかった場合は -1
  */
-template <typename T, typename U> int IndexOf(const std::vector<T>& vec, const U& value) {
+template <typename T, typename U> std::ptrdiff_t IndexOf(const std::vector<T>& vec, const U& value) {
     auto it = std::find(vec.begin(), vec.end(), value);
-    return (it != vec.end()) ? static_cast<int>(std::distance(vec.begin(), it)) : -1;
+    return (it != vec.end()) ? std::distance(vec.begin(), it) : -1;
 }
 
 } // namespace Irufemi::Container

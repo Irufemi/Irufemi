@@ -25,11 +25,25 @@ void BossDamageVisualizerComponent::Start() {
 
     bossComp_ = gameObject_->GetComponent<BossComponent>();
     if (bossComp_) {
+        std::weak_ptr<GameObject> weakObj = gameObject_->shared_from_this();
+
         // 被弾イベントリスナーを登録
-        bossComp_->AddOnDamageTakenListener([this](float damage) { TriggerDamageShake(damage); });
+        bossComp_->AddOnDamageTakenListener([weakObj](float damage) {
+            if (auto obj = weakObj.lock()) {
+                if (auto visualizer = obj->GetComponent<BossDamageVisualizerComponent>()) {
+                    visualizer->TriggerDamageShake(damage);
+                }
+            }
+        });
 
         // 撃破イベントリスナーを登録
-        bossComp_->AddOnBossDiedListener([this]() { TriggerDeathShake(); });
+        bossComp_->AddOnBossDiedListener([weakObj]() {
+            if (auto obj = weakObj.lock()) {
+                if (auto visualizer = obj->GetComponent<BossDamageVisualizerComponent>()) {
+                    visualizer->TriggerDeathShake();
+                }
+            }
+        });
     }
 }
 
