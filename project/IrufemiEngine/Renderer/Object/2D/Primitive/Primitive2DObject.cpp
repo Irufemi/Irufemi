@@ -269,7 +269,7 @@ void Primitive2DObject::BuildRect() {
         {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}} // 右下
     };
 
-    resource_->GetIndexDataList() = {0, 1, 2, 2, 1, 3};
+    resource_->GetIndexDataList() = {0, 1, 3, 0, 3, 2};
 }
 
 void Primitive2DObject::BuildTriangle() {
@@ -370,14 +370,14 @@ void Primitive2DObject::BuildRing(uint32_t subdiv) {
         uint32_t p2 = i * 2 + 2; // 内周 i+1
         uint32_t p3 = i * 2 + 3; // 外周 i+1
 
-        // トライアングル1
+        // トライアングル1 (CW)
         resource_->GetIndexDataList().push_back(p0);
         resource_->GetIndexDataList().push_back(p1);
-        resource_->GetIndexDataList().push_back(p2);
-        // トライアングル2
-        resource_->GetIndexDataList().push_back(p2);
-        resource_->GetIndexDataList().push_back(p1);
         resource_->GetIndexDataList().push_back(p3);
+        // トライアングル2 (CW)
+        resource_->GetIndexDataList().push_back(p0);
+        resource_->GetIndexDataList().push_back(p3);
+        resource_->GetIndexDataList().push_back(p2);
     }
 }
 
@@ -401,5 +401,5 @@ void Primitive2DObject::BuildLine() {
         {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}} // 右下
     };
 
-    resource_->GetIndexDataList() = {0, 1, 2, 2, 1, 3};
+    resource_->GetIndexDataList() = {0, 1, 3, 0, 3, 2};
 }

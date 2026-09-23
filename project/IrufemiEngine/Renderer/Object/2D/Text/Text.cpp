@@ -75,7 +75,7 @@ void Text::GenerateVertices() {
             currentLineWidth = 0.0f;
             continue;
         }
-        const auto* glyph = fontManager_->GetGlyph(fontId_, c);
+        const auto glyph = fontManager_->GetGlyph(fontId_, c);
         if (glyph) {
             if (glyph->width < 0.0f) {
                 hasPendingGlyphs = true;
@@ -111,7 +111,7 @@ void Text::GenerateVertices() {
             continue;
         }
 
-        const auto* glyph = fontManager_->GetGlyph(fontId_, c);
+        const auto glyph = fontManager_->GetGlyph(fontId_, c);
         if (!glyph) {
             continue; // 未知の文字
         }

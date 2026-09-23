@@ -44,8 +44,10 @@ namespace Math::Sequence {
 [[nodiscard]] inline std::vector<float> GenerateArithmetic(float firstTerm, float difference, uint32_t count) {
     std::vector<float> sequence;
     sequence.reserve(count);
+    float current = firstTerm;
     for (uint32_t i = 0; i < count; ++i) {
-        sequence.push_back(CalculateArithmetic(firstTerm, difference, i));
+        sequence.push_back(current);
+        current += difference;
     }
     return sequence;
 }
@@ -60,8 +62,10 @@ namespace Math::Sequence {
 [[nodiscard]] inline std::vector<float> GenerateGeometric(float firstTerm, float ratio, uint32_t count) {
     std::vector<float> sequence;
     sequence.reserve(count);
+    float current = firstTerm;
     for (uint32_t i = 0; i < count; ++i) {
-        sequence.push_back(CalculateGeometric(firstTerm, ratio, i));
+        sequence.push_back(current);
+        current *= ratio;
     }
     return sequence;
 }
