@@ -454,7 +454,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Data\TransformationMatrix.h" />
     <ClInclude Include="Renderer\Data\VertexData.h" />
     <ClInclude Include="RHI\DirectX12\ConstantBuffer.h" />
-    <ClInclude Include="RHI\DirectX12\D3DResourceLeakChecker.h" />
     <ClInclude Include="RHI\DirectX12\DescriptorAllocator.h" />
     <ClInclude Include="RHI\DirectX12\DescriptorPool.h" />
     <ClInclude Include="RHI\DirectX12\DirectXCommon.h" />

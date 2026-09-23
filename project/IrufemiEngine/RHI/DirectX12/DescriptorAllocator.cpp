@@ -1,11 +1,16 @@
 #define NOMINMAX
 #include "RHI/DirectX12/DescriptorAllocator.h"
+#include "Core/Utility/ErrorUtility.h"
 
 DescriptorAllocator::DescriptorAllocator(ID3D12DescriptorHeap* heap, uint32_t descriptorSize, uint32_t baseIndex)
     : descriptorSize_(descriptorSize), baseIndex_(baseIndex) {
     heap_ = heap;
     auto desc = heap_->GetDesc();
     capacity_ = desc.NumDescriptors;
+    inUse_.assign(capacity_, false);
+    for (uint32_t i = 0; i < baseIndex_; ++i) {
+        inUse_[i] = true;
+    }
     nextIndex_ = baseIndex_;
 }
 
@@ -14,10 +19,13 @@ uint32_t DescriptorAllocator::Allocate() {
     if (!freeList_.empty()) {
         uint32_t idx = freeList_.back();
         freeList_.pop_back();
+        inUse_[idx] = true;
         return idx;
     }
     if (nextIndex_ < capacity_) {
-        return nextIndex_++;
+        uint32_t idx = nextIndex_++;
+        inUse_[idx] = true;
+        return idx;
     }
     return kInvalid;
 }
@@ -27,6 +35,9 @@ void DescriptorAllocator::Free(uint32_t index) {
         return;
     }
     std::lock_guard<std::mutex> lk(mutex_);
+    IRUFEMI_ASSERT(index >= baseIndex_ && index < capacity_, "Descriptor index out of range in Free!");
+    IRUFEMI_ASSERT(inUse_[index], "Descriptor double free detected in Free!");
+    inUse_[index] = false;
     freeList_.push_back(index);
 }
 
@@ -35,6 +46,9 @@ void DescriptorAllocator::FreeAfterFence(uint32_t index, uint64_t safeFence) {
         return;
     }
     std::lock_guard<std::mutex> lk(mutex_);
+    IRUFEMI_ASSERT(index >= baseIndex_ && index < capacity_, "Descriptor index out of range in FreeAfterFence!");
+    IRUFEMI_ASSERT(inUse_[index], "Descriptor double free detected in FreeAfterFence!");
+    inUse_[index] = false;
     pending_.push(Pending{safeFence, index});
 }
 
@@ -49,6 +63,15 @@ void DescriptorAllocator::GarbageCollect(uint64_t completedFence) {
 void DescriptorAllocator::RebuildFreeListExcept(const std::vector<uint32_t>& used) {
     std::lock_guard<std::mutex> lk(mutex_);
     freeList_.clear();
+    inUse_.assign(capacity_, false);
+    for (uint32_t i = 0; i < baseIndex_; ++i) {
+        inUse_[i] = true;
+    }
+    for (uint32_t uIdx : used) {
+        if (uIdx < capacity_) {
+            inUse_[uIdx] = true;
+        }
+    }
 
     size_t u = 0, uCount = used.size();
     for (uint32_t idx = baseIndex_; idx < capacity_; ++idx) {
@@ -73,6 +96,9 @@ void DescriptorAllocator::RebuildFreeListExcept(const std::vector<uint32_t>& use
 void DescriptorAllocator::ReservePrefix(uint32_t count) {
     std::lock_guard<std::mutex> lk(mutex_);
     baseIndex_ = (std::min)(capacity_, count);
+    for (uint32_t i = 0; i < baseIndex_; ++i) {
+        inUse_[i] = true;
+    }
     if (nextIndex_ < baseIndex_) {
         nextIndex_ = baseIndex_;
     }

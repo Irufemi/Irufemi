@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RHI/DirectX12/DirectXCommon.h"
-#include "RHI/DirectX12/D3DResourceLeakChecker.h"
 class InputManager;
 class WinApp;
 enum class DisplayMode;
@@ -876,10 +875,6 @@ public:
 
 private: // メンバ変数
     // --- Debug & Logging ---
-
-    // リソース解放リークチェック
-    D3DResourceLeakChecker leakCheck_;
-
     // ログ
     std::unique_ptr<Log> log_ = nullptr;
 

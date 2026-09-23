@@ -82,6 +82,7 @@ private:
     uint32_t nextIndex_ = 0;
 
     std::vector<uint32_t> freeList_;
+    std::vector<bool> inUse_;
     std::priority_queue<Pending> pending_;
     mutable std::mutex mutex_;
 };

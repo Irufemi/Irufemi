@@ -974,9 +974,6 @@
     <ClInclude Include="RHI\DirectX12\ConstantBuffer.h">
       <Filter>RHI\DirectX12</Filter>
     </ClInclude>
-    <ClInclude Include="RHI\DirectX12\D3DResourceLeakChecker.h">
-      <Filter>RHI\DirectX12</Filter>
-    </ClInclude>
     <ClInclude Include="RHI\DirectX12\DescriptorAllocator.h">
       <Filter>RHI\DirectX12</Filter>
     </ClInclude>
