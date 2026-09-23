@@ -1,12 +1,9 @@
 #ifdef EditorMode
 #include "Editor/GravityPlayerComponentEditor.h"
 #include "Player/GravityPlayerComponent.h"
+#include "Core/Utility/JsonUtility.h"
 #include <imgui/imgui.h>
-#include <nlohmann/json.hpp>
-#include <fstream>
 #include <string>
-#include "Core/Utility/Log.h"
-#include <iostream>
 
 void GravityPlayerComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto comp = dynamic_cast<GravityPlayerComponent*>(component);
@@ -26,56 +23,61 @@ void GravityPlayerComponentEditor::Draw(Component* component, EditorActionManage
         comp->SetStatusDataPath(buffer);
     }
 
+    if (path != cachedPath_) {
+        cachedPath_ = path;
+        isJsonLoaded_ = false;
+    }
+
     if (ImGui::Button("Reload JSON", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+        isJsonLoaded_ = false;
         comp->LoadStatusFromJson();
     }
     ImGui::Spacing();
 
     // JSONファイルから直接ロードして編集・保存する
-    if (!path.empty()) {
-        nlohmann::json j;
-        std::ifstream file(path);
-        if (file.is_open()) {
-            file >> j;
-            file.close();
+    if (!cachedPath_.empty()) {
+        if (!isJsonLoaded_) {
+            isJsonLoaded_ = Irufemi::JsonUtility::LoadFromFile(cachedPath_, cachedJson_);
+        }
 
+        if (isJsonLoaded_) {
             bool modified = false;
 
             if (ImGui::TreeNodeEx("Gameplay Data (Saved in JSON)", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-                int maxHp = j.value("maxHp", 100);
+                int maxHp = cachedJson_.value("maxHp", 100);
                 if (ImGui::DragInt("Max HP", &maxHp, 1, 1, 10000)) {
-                    j["maxHp"] = maxHp;
+                    cachedJson_["maxHp"] = maxHp;
                     modified = true;
                 }
 
-                int maxOrbitCount = j.value("maxOrbitCount", 5);
+                int maxOrbitCount = cachedJson_.value("maxOrbitCount", 5);
                 if (ImGui::DragInt("Max Orbit Count", &maxOrbitCount, 1, 1, 50)) {
-                    j["maxOrbitCount"] = maxOrbitCount;
+                    cachedJson_["maxOrbitCount"] = maxOrbitCount;
                     modified = true;
                 }
 
-                float pullRadius = j.value("pullRadius", 100.0f);
+                float pullRadius = cachedJson_.value("pullRadius", 100.0f);
                 if (ImGui::DragFloat("Pull Radius", &pullRadius, 1.0f, 1.0f, 1000.0f)) {
-                    j["pullRadius"] = pullRadius;
+                    cachedJson_["pullRadius"] = pullRadius;
                     modified = true;
                 }
 
-                float throwInterval = j.value("throwInterval", 0.15f);
+                float throwInterval = cachedJson_.value("throwInterval", 0.15f);
                 if (ImGui::DragFloat("Throw Interval", &throwInterval, 0.01f, 0.01f, 5.0f)) {
-                    j["throwInterval"] = throwInterval;
+                    cachedJson_["throwInterval"] = throwInterval;
                     modified = true;
                 }
 
-                float orbitRadiusMin = j.value("orbitRadiusMin", 2.0f);
+                float orbitRadiusMin = cachedJson_.value("orbitRadiusMin", 2.0f);
                 if (ImGui::DragFloat("Orbit Radius Min", &orbitRadiusMin, 0.1f, 0.1f, 20.0f)) {
-                    j["orbitRadiusMin"] = orbitRadiusMin;
+                    cachedJson_["orbitRadiusMin"] = orbitRadiusMin;
                     modified = true;
                 }
 
-                float orbitRadiusMax = j.value("orbitRadiusMax", 4.0f);
+                float orbitRadiusMax = cachedJson_.value("orbitRadiusMax", 4.0f);
                 if (ImGui::DragFloat("Orbit Radius Max", &orbitRadiusMax, 0.1f, 0.1f, 20.0f)) {
-                    j["orbitRadiusMax"] = orbitRadiusMax;
+                    cachedJson_["orbitRadiusMax"] = orbitRadiusMax;
                     modified = true;
                 }
 
@@ -84,19 +86,13 @@ void GravityPlayerComponentEditor::Draw(Component* component, EditorActionManage
 
             // ファイルへの上書き保存とコンポーネントへの反映
             if (modified) {
-                std::ofstream outFile(path);
-                if (outFile.is_open()) {
-                    outFile << j.dump(4);
-                    outFile.close();
-
+                if (Irufemi::JsonUtility::SaveToFile(cachedPath_, cachedJson_, 4)) {
                     // コンポーネント側も即時反映
                     comp->LoadStatusFromJson();
-                } else {
-                    Log::OutPutLog(std::cout, "[Editor] Failed to save JSON: " + path + "\n");
                 }
             }
         } else {
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "JSON File Not Found!");
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "JSON File Not Found or Invalid!");
         }
     }
 }
