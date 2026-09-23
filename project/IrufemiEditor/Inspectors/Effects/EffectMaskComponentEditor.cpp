@@ -82,80 +82,114 @@ void EffectMaskComponentEditor::Draw(Component* component, EditorActionManager* 
             ImGui::TableSetColumnIndex(1);
 
             auto params = maskComp->GetCustomParams();
+            static PostProcessManager::CustomEffectParams startParams;
+            static bool isDragging = false;
             bool changed = false;
+
+            auto checkActive = [&]() {
+                if (ImGui::IsItemActivated()) {
+                    startParams = maskComp->GetCustomParams();
+                    isDragging = true;
+                }
+            };
 
             if (type == 8) { // Dissolve
                 if (ImGui::ColorEdit4("Edge Color", &params.color1.x)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::ColorEdit4("Bg Color", &params.color2.x)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Threshold", &params.param1, 0.01f, 0.0f, 1.0f)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Edge Range", &params.param2, 0.001f, 0.0f, 1.0f)) {
                     changed = true;
                 }
-                int noiseType = (int)params.param3;
+                checkActive();
+                int noiseType = static_cast<int>(params.param3);
                 if (ImGui::Combo("Noise Type", &noiseType, "Type 0\0Type 1\0")) {
-                    params.param3 = (float)noiseType;
+                    params.param3 = static_cast<float>(noiseType);
                     changed = true;
                 }
+                checkActive();
             } else if (type == 15) { // Glitch
                 if (ImGui::DragFloat("Intensity", &params.param1, 0.01f, 0.0f, 10.0f)) {
                     changed = true;
                 }
+                checkActive();
             } else if (type == 13) { // Slide
                 if (ImGui::ColorEdit4("Color", &params.color1.x)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Threshold", &params.param1, 0.01f, 0.0f, 1.0f)) {
                     changed = true;
                 }
+                checkActive();
             } else if (type == 12) { // Fade
                 if (ImGui::ColorEdit4("Color", &params.color1.x)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Intensity", &params.param1, 0.01f, 0.0f, 1.0f)) {
                     changed = true;
                 }
+                checkActive();
             } else if (type == 3) { // Vignette
                 if (ImGui::ColorEdit4("Color", &params.color1.x)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Radius", &params.param1, 0.01f, 0.0f, 2.0f)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Softness", &params.param2, 0.01f, 0.0f, 2.0f)) {
                     changed = true;
                 }
+                checkActive();
             } else if (type == 6 || type == 17) { // Outlines
                 if (ImGui::ColorEdit4("Color", &params.color1.x)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Weight", &params.param1, 0.01f, 0.0f, 10.0f)) {
                     changed = true;
                 }
+                checkActive();
             } else if (type > 0) { // Fallback for other effects
                 if (ImGui::DragFloat("Param 1", &params.param1, 0.01f, 0.0f, 10.0f)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::DragFloat("Param 2", &params.param2, 0.01f, 0.0f, 10.0f)) {
                     changed = true;
                 }
+                checkActive();
                 if (ImGui::ColorEdit4("Color 1", &params.color1.x)) {
                     changed = true;
                 }
+                checkActive();
             }
 
             if (changed) {
-                actionManager->PushAndExecute(
-                    std::make_unique<ChangeValueCommand<PostProcessManager::CustomEffectParams>>(
-                        maskComp->GetCustomParams(), params,
-                        [maskComp](const PostProcessManager::CustomEffectParams& val) {
-                            maskComp->GetCustomParams() = val;
-                        }));
+                maskComp->GetCustomParams() = params;
+            }
+
+            if (ImGui::IsItemDeactivatedAfterEdit() || (isDragging && !ImGui::IsAnyItemActive())) {
+                if (isDragging) {
+                    actionManager->PushAndExecute(
+                        std::make_unique<ChangeValueCommand<PostProcessManager::CustomEffectParams>>(
+                            startParams, maskComp->GetCustomParams(),
+                            [maskComp](const PostProcessManager::CustomEffectParams& val) {
+                                maskComp->GetCustomParams() = val;
+                            }));
+                    isDragging = false;
+                }
             }
 
             ComponentUIHelpers::EndPropertyTable();

@@ -8,6 +8,7 @@
 #include "Renderer/System/Core/BaseModel.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/Object/Line/LineClass.h"
+#include "UI/ComponentUIHelpers.h"
 #include <cmath>
 
 CameraComponentEditor::CameraComponentEditor() {
@@ -30,18 +31,27 @@ void CameraComponentEditor::Draw(Component* component, EditorActionManager* acti
     if (ImGui::SliderFloat("FOV (Degree)", &fovDeg, 10.0f, 170.0f)) {
         cameraComp->SetFovAngleY(fovDeg * Irufemi::Math::PI / 180.0f);
     }
+    ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &fovDeg, [cameraComp](const float& val) {
+        cameraComp->SetFovAngleY(val * Irufemi::Math::PI / 180.0f);
+    });
 
     // Near Z
     float nearZ = cameraComp->GetNearZ();
     if (ImGui::DragFloat("Near Z", &nearZ, 0.1f, 0.01f, 1000.0f)) {
         cameraComp->SetNearZ(nearZ);
     }
+    ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &nearZ, [cameraComp](const float& val) {
+        cameraComp->SetNearZ(val);
+    });
 
     // Far Z
     float farZ = cameraComp->GetFarZ();
     if (ImGui::DragFloat("Far Z", &farZ, 1.0f, nearZ + 0.1f, 10000.0f)) {
         cameraComp->SetFarZ(farZ);
     }
+    ComponentUIHelpers::CheckUndoRedoDrag(actionManager, &farZ, [cameraComp](const float& val) {
+        cameraComp->SetFarZ(val);
+    });
 
     // --- Frustum Gizmo Draw ---
     auto transform = cameraComp->GetTransform();
