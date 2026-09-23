@@ -5,6 +5,8 @@
 
 class PlayerHealthComponent;
 class BaseModel;
+class CameraShakeComponent;
+class ScreenEffectComponent;
 
 /**
  * @class PlayerDamageVisualizerComponent
@@ -90,4 +92,9 @@ private:
     float shakeIntensity_ = 1.0f;
     int shakeFrames_ = 30;
     float shakeFrequency_ = 20.0f;
+
+    // キャッシュ参照
+    std::weak_ptr<GameObject> mainCameraObj_;
+    CameraShakeComponent* cameraShakeComp_ = nullptr;
+    ScreenEffectComponent* screenEffectComp_ = nullptr;
 };

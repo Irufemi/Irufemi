@@ -104,8 +104,6 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
 
         // プールが枯渇した場合、一番古いエフェクトを強制終了して再利用する
         if (!handle.IsValid() && !activeEffects_.empty()) {
-            Log::OutPutLog(std::cout, "[EffectManager] Pool exhausted. Reusing oldest effect.\n");
-
             // 最も古い同じ種類のエフェクトを探す
             auto oldestIt = activeEffects_.begin();
             while (oldestIt != activeEffects_.end() && oldestIt->effectKey != effectKey) {
@@ -138,11 +136,6 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
 
                 // ツリー全体からすべての ParticleEmitterComponent を取得して再発火させる
                 auto emitters = obj->GetComponentsInChildren<ParticleEmitterComponent>();
-                Log::OutPutLog(std::cout,
-                               "[EffectManager] Found " + std::to_string(emitters.size()) + " emitters for " +
-                                   effectKey + " effect. Position: " + std::to_string(worldPosition.x) + ", " +
-                                   std::to_string(worldPosition.y) + ", " + std::to_string(worldPosition.z) + "\n");
-
                 for (auto pe : emitters) {
                     pe->Restart(false);
                 }

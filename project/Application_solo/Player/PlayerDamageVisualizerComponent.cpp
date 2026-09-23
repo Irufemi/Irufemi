@@ -32,6 +32,15 @@ void PlayerDamageVisualizerComponent::Start() {
     }
 
     healthComp_ = gameObject_->GetComponent<PlayerHealthComponent>();
+    screenEffectComp_ = gameObject_->GetComponent<ScreenEffectComponent>();
+
+    if (auto scene = gameObject_->GetScene()) {
+        if (auto mainCam = scene->FindGameObject("MainCamera")) {
+            mainCameraObj_ = mainCam;
+            cameraShakeComp_ = mainCam->GetComponent<CameraShakeComponent>();
+        }
+    }
+
     if (healthComp_) {
         // 被弾イベントリスナーを登録
         healthComp_->AddOnDamageTakenListener([this](int damage) {
@@ -83,26 +92,30 @@ void PlayerDamageVisualizerComponent::TriggerDamageFlash() {
 }
 
 void PlayerDamageVisualizerComponent::TriggerCameraShake() {
-    if (!gameObject_) {
-        return;
-    }
-    if (auto scene = gameObject_->GetScene()) {
-        if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {
-            if (auto shakeComp = mainCameraObj->GetComponent<CameraShakeComponent>()) {
-                shakeComp->PlayShake(shakeIntensity_, shakeFrames_, shakeFrequency_);
+    if (!cameraShakeComp_ || mainCameraObj_.expired()) {
+        cameraShakeComp_ = nullptr;
+        if (gameObject_) {
+            if (auto scene = gameObject_->GetScene()) {
+                if (auto mainCam = scene->FindGameObject("MainCamera")) {
+                    mainCameraObj_ = mainCam;
+                    cameraShakeComp_ = mainCam->GetComponent<CameraShakeComponent>();
+                }
             }
         }
+    }
+
+    if (cameraShakeComp_) {
+        cameraShakeComp_->PlayShake(shakeIntensity_, shakeFrames_, shakeFrequency_);
     }
 }
 
 void PlayerDamageVisualizerComponent::TriggerScreenEffect() {
-    if (!gameObject_) {
-        return;
+    if (!screenEffectComp_ && gameObject_) {
+        screenEffectComp_ = gameObject_->GetComponent<ScreenEffectComponent>();
     }
-    for (auto& comp : gameObject_->GetComponents()) {
-        if (auto screenEffect = std::dynamic_pointer_cast<ScreenEffectComponent>(comp)) {
-            screenEffect->Play();
-        }
+
+    if (screenEffectComp_) {
+        screenEffectComp_->Play();
     }
 }
 

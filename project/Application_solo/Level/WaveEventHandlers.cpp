@@ -95,6 +95,36 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
     return positions;
 }
 
+EnemySpawnerComponent* SpawnEnemyHandler::GetOrFindSpawner(WaveManagerComponent* manager) {
+    if (cachedSpawnerComp_ && !cachedSpawnerObj_.expired()) {
+        return cachedSpawnerComp_;
+    }
+
+    cachedSpawnerComp_ = nullptr;
+    cachedSpawnerObj_.reset();
+
+    BaseScene* baseScene = nullptr;
+    if (manager && manager->GetGameObject()) {
+        baseScene = dynamic_cast<BaseScene*>(manager->GetGameObject()->GetScene());
+    }
+    if (!baseScene) {
+        if (auto engine = BaseModel::GetIrufemiEngine()) {
+            if (auto sceneManager = engine->GetSceneManager()) {
+                baseScene = dynamic_cast<BaseScene*>(sceneManager->GetCurrentScene());
+            }
+        }
+    }
+
+    if (baseScene) {
+        if (auto spawnerObj = baseScene->FindGameObject("EnemySpawner")) {
+            cachedSpawnerObj_ = spawnerObj;
+            cachedSpawnerComp_ = spawnerObj->GetComponent<EnemySpawnerComponent>();
+        }
+    }
+
+    return cachedSpawnerComp_;
+}
+
 void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data,
                                 const Irufemi::Vector3& railPos, const Irufemi::Vector3& railForward,
                                 const Irufemi::Vector3& railRight) {
@@ -105,25 +135,18 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
     float targetDistance = data.parameters.value("TargetDistance", 65.0f);
     float scaleMultiplier = data.parameters.value("Scale", 1.0f);
 
-    auto engine = BaseModel::GetIrufemiEngine();
-    auto scene = engine ? engine->GetSceneManager()->GetCurrentScene() : nullptr;
-    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
-        auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
-        if (spawnerObj) {
-            if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
-                for (const auto& pos : positions) {
-                    if (auto enemyObj = spawner->SpawnEnemy(pos, spawnRot, scaleMultiplier)) {
-                        if (auto enemyComp = enemyObj->GetComponent<RailShooterEnemyComponent>()) {
-                            enemyComp->SetCombatDuration(combatDuration);
-                            enemyComp->SetTargetDistance(targetDistance);
-                        }
-                    }
+    if (auto spawner = GetOrFindSpawner(manager)) {
+        for (const auto& pos : positions) {
+            if (auto enemyObj = spawner->SpawnEnemy(pos, spawnRot, scaleMultiplier)) {
+                if (auto enemyComp = enemyObj->GetComponent<RailShooterEnemyComponent>()) {
+                    enemyComp->SetCombatDuration(combatDuration);
+                    enemyComp->SetTargetDistance(targetDistance);
                 }
-                Log::OutPutLog(std::cout, "[WaveManager] Spawned " + std::to_string(positions.size()) +
-                                              " enemies at distance: " + std::to_string(data.triggerDistance) + "\n");
-                return;
             }
         }
+        Log::OutPutLog(std::cout, "[WaveManager] Spawned " + std::to_string(positions.size()) +
+                                      " enemies at distance: " + std::to_string(data.triggerDistance) + "\n");
+        return;
     }
 
     Log::OutPutLog(std::cout, "[WaveManager] Warning: EnemySpawner not found.\n");
@@ -147,25 +170,19 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
     Irufemi::Vector3 baseScale = {1.2f, 1.2f, 1.2f};
     float baseRadius = 2.0f;
 
-    auto scene = manager->GetGameObject()->GetScene();
-    if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
-        auto spawnerObj = baseScene->FindGameObject("EnemySpawner");
-        if (spawnerObj) {
-            if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
-                modelPath = spawner->GetEnemyModelPath();
-                baseScale = spawner->GetBaseEnemyScale();
-                baseRadius = spawner->GetBaseColliderRadius();
-            }
-        } else {
-            // スポナーが見つからない場合もプレハブから自動解決
-            auto metrics = PrefabUtility::ExtractMetrics("resources/prefabs/Enemy_GravityGolem.json");
-            if (!metrics.modelPath.empty()) {
-                modelPath = metrics.modelPath;
-            }
-            baseScale = metrics.baseScale;
-            if (metrics.hasSphereCollider) {
-                baseRadius = metrics.colliderRadius;
-            }
+    if (auto spawner = GetOrFindSpawner(manager)) {
+        modelPath = spawner->GetEnemyModelPath();
+        baseScale = spawner->GetBaseEnemyScale();
+        baseRadius = spawner->GetBaseColliderRadius();
+    } else {
+        // スポナーが見つからない場合もプレハブから自動解決
+        auto metrics = PrefabUtility::ExtractMetrics("resources/prefabs/Enemy_GravityGolem.json");
+        if (!metrics.modelPath.empty()) {
+            modelPath = metrics.modelPath;
+        }
+        baseScale = metrics.baseScale;
+        if (metrics.hasSphereCollider) {
+            baseRadius = metrics.colliderRadius;
         }
     }
 
