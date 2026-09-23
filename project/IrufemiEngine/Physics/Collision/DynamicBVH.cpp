@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cassert>
+#include <array>
 
 namespace Irufemi {
 namespace {
@@ -273,8 +274,22 @@ void DynamicBVH::GetPotentialCollisionPairs(
     std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
     outPairs.clear();
     if (rootIndex_ != -1) {
-        ComputePairs(nodes_[rootIndex_].leftChildIndex, nodes_[rootIndex_].rightChildIndex, outPairs);
+        ComputeSelfPairs(rootIndex_, outPairs);
     }
+}
+
+void DynamicBVH::ComputeSelfPairs(
+    int32_t nodeIndex, std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
+    if (nodeIndex == -1 || nodes_[nodeIndex].IsLeaf()) {
+        return;
+    }
+
+    int32_t left = nodes_[nodeIndex].leftChildIndex;
+    int32_t right = nodes_[nodeIndex].rightChildIndex;
+
+    ComputePairs(left, right, outPairs);
+    ComputeSelfPairs(left, outPairs);
+    ComputeSelfPairs(right, outPairs);
 }
 
 void DynamicBVH::ComputePairs(int32_t node0, int32_t node1,
@@ -296,8 +311,8 @@ void DynamicBVH::ComputePairs(int32_t node0, int32_t node1,
         ComputePairs(node0, nodes_[node1].leftChildIndex, outPairs);
         ComputePairs(node0, nodes_[node1].rightChildIndex, outPairs);
     } else if (isLeaf1) {
-        ComputePairs(node1, nodes_[node0].leftChildIndex, outPairs);
-        ComputePairs(node1, nodes_[node0].rightChildIndex, outPairs);
+        ComputePairs(nodes_[node0].leftChildIndex, node1, outPairs);
+        ComputePairs(nodes_[node0].rightChildIndex, node1, outPairs);
     } else {
         float area0 = SurfaceArea(nodes_[node0].aabb);
         float area1 = SurfaceArea(nodes_[node1].aabb);
@@ -306,16 +321,9 @@ void DynamicBVH::ComputePairs(int32_t node0, int32_t node1,
             ComputePairs(nodes_[node0].leftChildIndex, node1, outPairs);
             ComputePairs(nodes_[node0].rightChildIndex, node1, outPairs);
         } else {
-            ComputePairs(nodes_[node1].leftChildIndex, node0, outPairs);
-            ComputePairs(nodes_[node1].rightChildIndex, node0, outPairs);
+            ComputePairs(node0, nodes_[node1].leftChildIndex, outPairs);
+            ComputePairs(node0, nodes_[node1].rightChildIndex, outPairs);
         }
-    }
-
-    if (!isLeaf0) {
-        ComputePairs(nodes_[node0].leftChildIndex, nodes_[node0].rightChildIndex, outPairs);
-    }
-    if (!isLeaf1) {
-        ComputePairs(nodes_[node1].leftChildIndex, nodes_[node1].rightChildIndex, outPairs);
     }
 }
 
@@ -324,13 +332,12 @@ void DynamicBVH::Query(const AABB& testAabb, std::vector<ColliderComponent*>& ou
         return;
     }
 
-    std::vector<int32_t> stack;
-    stack.reserve(256);
-    stack.push_back(rootIndex_);
+    std::array<int32_t, 256> stack;
+    int32_t stackCount = 0;
+    stack[stackCount++] = rootIndex_;
 
-    while (!stack.empty()) {
-        int32_t index = stack.back();
-        stack.pop_back();
+    while (stackCount > 0) {
+        int32_t index = stack[--stackCount];
 
         if (Intersects(nodes_[index].aabb, testAabb)) {
             if (nodes_[index].IsLeaf()) {
@@ -338,8 +345,10 @@ void DynamicBVH::Query(const AABB& testAabb, std::vector<ColliderComponent*>& ou
                     outColliders.push_back(nodes_[index].collider);
                 }
             } else {
-                stack.push_back(nodes_[index].leftChildIndex);
-                stack.push_back(nodes_[index].rightChildIndex);
+                if (stackCount + 2 <= static_cast<int32_t>(stack.size())) {
+                    stack[stackCount++] = nodes_[index].leftChildIndex;
+                    stack[stackCount++] = nodes_[index].rightChildIndex;
+                }
             }
         }
     }
@@ -350,16 +359,15 @@ void DynamicBVH::RaycastQuery(const Ray& ray, float maxDistance, std::vector<Col
         return;
     }
 
-    std::vector<int32_t> stack;
-    stack.reserve(256);
-    stack.push_back(rootIndex_);
+    std::array<int32_t, 256> stack;
+    int32_t stackCount = 0;
+    stack[stackCount++] = rootIndex_;
 
     // 簡単なAABB vs Ray の判定距離格納用
     float unusedDistance = 0.0f;
 
-    while (!stack.empty()) {
-        int32_t index = stack.back();
-        stack.pop_back();
+    while (stackCount > 0) {
+        int32_t index = stack[--stackCount];
 
         // ノードのAABBとRayが交差するか
         // (AABBに対するレイキャストは枝刈り目的のため、正確な距離よりも交差するかどうかが重要)
@@ -370,8 +378,10 @@ void DynamicBVH::RaycastQuery(const Ray& ray, float maxDistance, std::vector<Col
                     outHits.push_back(nodes_[index].collider);
                 }
             } else {
-                stack.push_back(nodes_[index].leftChildIndex);
-                stack.push_back(nodes_[index].rightChildIndex);
+                if (stackCount + 2 <= static_cast<int32_t>(stack.size())) {
+                    stack[stackCount++] = nodes_[index].leftChildIndex;
+                    stack[stackCount++] = nodes_[index].rightChildIndex;
+                }
             }
         }
     }

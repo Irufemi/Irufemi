@@ -90,7 +90,11 @@ private:
     /// @brief 下から上に向かってAABBを再計算（Refit）する
     void Refit(int32_t nodeIndex);
 
-    /// @brief ペア抽出の再帰処理
+    /// @brief 単一部分木内の自己衝突ペア抽出の再帰処理
+    void ComputeSelfPairs(int32_t nodeIndex,
+                          std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const;
+
+    /// @brief 異なる2つの部分木間のペア抽出の再帰処理
     void ComputePairs(int32_t node0, int32_t node1,
                       std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const;
 

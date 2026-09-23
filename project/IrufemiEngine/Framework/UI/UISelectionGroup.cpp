@@ -1,3 +1,5 @@
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
 #include "Framework/UI/UISelectionGroup.h"
 #include "Platform/Input/InputManager.h"
 #include "Renderer/Object/2D/Sprite/Sprite.h"
@@ -27,9 +29,8 @@ void UISelectionGroup::Reset() {
     animator_.Reset();
 }
 
-void UISelectionGroup::Update(InputManager* input) {
-    // 1フレームの時間を 1.0f / 60.0f と仮定
-    animator_.Update(1.0f / 60.0f);
+void UISelectionGroup::Update(InputManager* input, float deltaTime) {
+    animator_.Update(deltaTime);
 
     if (!isDecided_) {
         // --- 待機中 ---
@@ -40,7 +41,7 @@ void UISelectionGroup::Update(InputManager* input) {
 
             if (isHorizontal_) {
                 // 左キー (A または LEFT)
-                if (input->IsKeyPressedDIK(0x1E /* A */) || input->IsKeyPressedDIK(0xCB /* LEFT */)) {
+                if (input->IsKeyPressedDIK(DIK_A) || input->IsKeyPressedDIK(DIK_LEFT)) {
                     selectedIndex_--;
                     if (selectedIndex_ < 0) {
                         selectedIndex_ = static_cast<int>(items_.size()) - 1;
@@ -48,7 +49,7 @@ void UISelectionGroup::Update(InputManager* input) {
                     isMenuChanged = true;
                 }
                 // 右キー (D または RIGHT)
-                if (input->IsKeyPressedDIK(0x20 /* D */) || input->IsKeyPressedDIK(0xCD /* RIGHT */)) {
+                if (input->IsKeyPressedDIK(DIK_D) || input->IsKeyPressedDIK(DIK_RIGHT)) {
                     selectedIndex_++;
                     if (selectedIndex_ >= static_cast<int>(items_.size())) {
                         selectedIndex_ = 0;
@@ -57,7 +58,7 @@ void UISelectionGroup::Update(InputManager* input) {
                 }
             } else {
                 // 上キー (W または UP)
-                if (input->IsKeyPressedDIK(0x11 /* W */) || input->IsKeyPressedDIK(0xC8 /* UP */)) {
+                if (input->IsKeyPressedDIK(DIK_W) || input->IsKeyPressedDIK(DIK_UP)) {
                     selectedIndex_--;
                     if (selectedIndex_ < 0) {
                         selectedIndex_ = static_cast<int>(items_.size()) - 1;
@@ -65,7 +66,7 @@ void UISelectionGroup::Update(InputManager* input) {
                     isMenuChanged = true;
                 }
                 // 下キー (S または DOWN)
-                if (input->IsKeyPressedDIK(0x1F /* S */) || input->IsKeyPressedDIK(0xD0 /* DOWN */)) {
+                if (input->IsKeyPressedDIK(DIK_S) || input->IsKeyPressedDIK(DIK_DOWN)) {
                     selectedIndex_++;
                     if (selectedIndex_ >= static_cast<int>(items_.size())) {
                         selectedIndex_ = 0;
@@ -79,8 +80,8 @@ void UISelectionGroup::Update(InputManager* input) {
             }
 
             // 決定キー (Space または Enter または テンキーのEnter)
-            if (input->IsKeyPressedDIK(0x39 /* Space */) || input->IsKeyPressedDIK(0x1C /* Enter */) ||
-                input->IsKeyPressedDIK(0x9C /* Numpad Enter */)) {
+            if (input->IsKeyPressedDIK(DIK_SPACE) || input->IsKeyPressedDIK(DIK_RETURN) ||
+                input->IsKeyPressedDIK(DIK_NUMPADENTER)) {
                 isDecided_ = true;
                 animator_.Reset(); // 決定時にアニメーションをリセット
                 transitionDelayTimer_ = 0.0f;
@@ -108,7 +109,7 @@ void UISelectionGroup::Update(InputManager* input) {
         }
     } else {
         // --- 決定後 ---
-        transitionDelayTimer_ += 1.0f / 60.0f;
+        transitionDelayTimer_ += deltaTime;
 
         // 決定されたアイテムだけを高速フラッシュ
         isVisible_ = animator_.GetFlashVisibility(40.0f);

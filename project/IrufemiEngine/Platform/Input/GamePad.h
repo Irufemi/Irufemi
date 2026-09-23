@@ -96,6 +96,7 @@ public:
     /** @brief 使用するコントローラーのインデックス (0~3) を設定 */
     void SetIndex(int idx) {
         index_ = idx;
+        retryCountdown_ = 0;
     }
     ///@}
 
@@ -315,4 +316,5 @@ private:
     bool connected_ = false;
     int index_ = 0;
     bool invertY_ = false;
+    uint32_t retryCountdown_ = 0;
 };

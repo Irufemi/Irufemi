@@ -210,71 +210,85 @@ bool IsCollision(const OBB& obb, const AABB& aabb);
 /// <summary>
 /// 球と球の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsSphereCollision(const Sphere& s1, const Sphere& s2);
 
 /// <summary>
 /// 球と平面の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsSpherePlaneCollision(const Sphere& sphere, const Plane& plane);
 
 /// <summary>
 /// 線分と平面の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsSegmentPlaneCollision(const Segment& segment, const Plane& plane);
 
 /// <summary>
 /// 半直線と平面の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsRayPlaneCollision(const Ray& ray, const Plane& plane);
 
 /// <summary>
 /// 直線と平面の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsLinePlaneCollision(const Line& line, const Plane& plane);
 
 /// <summary>
 /// 三角形と線分の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsTriangleSegmentCollision(const Triangle& triangle, const Segment& segment);
 
 /// <summary>
 /// AABBとAABBの衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsAABBCollision(const AABB& a, const AABB& b);
 
 /// <summary>
 /// AABBと球の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsAABBSphereCollision(const AABB& aabb, const Sphere& sphere);
 
 /// <summary>
 /// AABBと線分の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsAABBSegmentCollision(const AABB& aabb, const Segment& segment);
 
 /// <summary>
 /// AABBと半直線の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsAABBRayCollision(const AABB& aabb, const Ray& ray);
 
 /// <summary>
 /// AABBと直線の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsAABBLineCollision(const AABB& aabb, const Line& line);
 
 /// <summary>
 /// AABBと点の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsAABBPointCollision(const AABB& aabb, const Vector3& point);
 
 /// <summary>
 /// OBBと球の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsOBBSphereCollision(const OBB& obb, const Sphere& sphere);
 
 /// <summary>
 /// OBBと線分の衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsOBBSegmentCollision(const OBB& obb, const Segment& segment);
 
 /// </summary>
@@ -284,6 +298,7 @@ bool IsOBBSegmentCollision(const OBB& obb, const Segment& segment);
  * @brief IsOBBRayCollision かどうかを判定する。
  * @return 判定結果 (true/false)
  */
+[[deprecated("Use IsCollision instead")]]
 bool IsOBBRayCollision(const OBB& obb, const Ray& ray);
 
 /// </summary>
@@ -293,16 +308,19 @@ bool IsOBBRayCollision(const OBB& obb, const Ray& ray);
  * @brief IsOBBLineCollision かどうかを判定する。
  * @return 判定結果 (true/false)
  */
+[[deprecated("Use IsCollision instead")]]
 bool IsOBBLineCollision(const OBB& obb, const Line& line);
 
 /// <summary>
 /// OBBとOBBの衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsOBBCollision(const OBB& a, const OBB& b);
 
 /// <summary>
 /// OBBとAABBの衝突判定
 /// </summary>
+[[deprecated("Use IsCollision instead")]]
 bool IsOBBAABBCollision(const OBB& obb, const AABB& aabb);
 
 /// <summary>
