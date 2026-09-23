@@ -27,9 +27,7 @@ public:
     ConstantBuffer& operator=(const ConstantBuffer&) = delete;
 
     ConstantBuffer(ConstantBuffer&& other) noexcept
-        : resources_(std::move(other.resources_))
-        , mappedData_(other.mappedData_)
-        , dxCommon_(other.dxCommon_) {
+        : resources_(std::move(other.resources_)), mappedData_(other.mappedData_), dxCommon_(other.dxCommon_) {
         other.mappedData_.fill(nullptr);
         other.dxCommon_ = nullptr;
     }

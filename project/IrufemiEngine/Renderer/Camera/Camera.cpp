@@ -49,8 +49,7 @@ void Camera::DrawDebugTab([[maybe_unused]] const char* label) {
 
 void Camera::DrawDebugContents() {
 #if defined USE_IMGUI
-    if (ImGui::DragFloat3("translate", &translate_.x, 0.1f) ||
-        ImGui::DragFloat3("rotate", &rotate_.x, 0.1f)) {
+    if (ImGui::DragFloat3("translate", &translate_.x, 0.1f) || ImGui::DragFloat3("rotate", &rotate_.x, 0.1f)) {
         isDirtyTransform_ = true;
     }
 #endif

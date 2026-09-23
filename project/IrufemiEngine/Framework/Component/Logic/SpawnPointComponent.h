@@ -5,7 +5,8 @@
 /**
  * @class SpawnPointComponent
  * @brief オブジェクトの生成位置（起点マーカー）を示す汎用コンポーネント。
- * @details グループ識別子（Group ID）や生成種別（Spawn Type）を保持し、レベルデザインや敵・アイテムスポーン制御に利用します。
+ * @details グループ識別子（Group ID）や生成種別（Spawn
+ * Type）を保持し、レベルデザインや敵・アイテムスポーン制御に利用します。
  */
 class SpawnPointComponent : public Component {
 public:
@@ -54,5 +55,5 @@ public:
 
 private:
     std::string groupId_ = "Wave1";          ///< スポーンのグループ・所属識別子（旧 waveId）
-    std::string spawnType_ = "DefaultEnemy";  ///< 生成対象の種別・プレハブ名（旧 enemyType）
+    std::string spawnType_ = "DefaultEnemy"; ///< 生成対象の種別・プレハブ名（旧 enemyType）
 };

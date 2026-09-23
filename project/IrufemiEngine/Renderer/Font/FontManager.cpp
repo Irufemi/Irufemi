@@ -177,9 +177,7 @@ bool FontManager::IsAllLoaded() const {
 
 void FontManager::PrecacheText(const std::string& fontId, const std::wstring& text) {
     // 非同期でタスクを投げる（シーンのロード画面等で待機可能にするため）
-    impl_->threadPool->Enqueue(impl_->taskGroup, [this, fontId, text]() {
-        PrecacheTextInternal(fontId, text);
-    });
+    impl_->threadPool->Enqueue(impl_->taskGroup, [this, fontId, text]() { PrecacheTextInternal(fontId, text); });
 }
 
 void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wstring& text) {
@@ -245,8 +243,7 @@ void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wst
                 double height = bounds.t - bounds.b;
 
                 // スケールの決定 (GLYPH_SIZE に収まるように)
-                double scale =
-                    static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
+                double scale = static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
 
                 int texWidth = static_cast<int>(width * scale) + Impl::PADDING * 2;
                 int texHeight = static_cast<int>(height * scale) + Impl::PADDING * 2;
@@ -256,8 +253,7 @@ void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wst
                 }
 
                 // オフセット計算 (テクスチャ中央に配置)
-                msdfgen::Vector2 translate(-bounds.l + (Impl::PADDING / scale),
-                                           -bounds.b + (Impl::PADDING / scale));
+                msdfgen::Vector2 translate(-bounds.l + (Impl::PADDING / scale), -bounds.b + (Impl::PADDING / scale));
 
                 // MSDF用ビットマップ
                 msdfgen::Bitmap<float, 3> msdf(texWidth, texHeight);
@@ -277,13 +273,13 @@ void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wst
                             int destY = rect.y + y;
                             int destIndex = (destY * Impl::ATLAS_WIDTH + destX) * 4;
                             float pxRange = static_cast<float>(Impl::PX_RANGE);
-                            impl_->cpuAtlasData[destIndex + 0] = static_cast<uint8_t>(
-                                std::clamp((pixel[0] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // R
-                            impl_->cpuAtlasData[destIndex + 1] = static_cast<uint8_t>(
-                                std::clamp((pixel[1] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // G
-                            impl_->cpuAtlasData[destIndex + 2] = static_cast<uint8_t>(
-                                std::clamp((pixel[2] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // B
-                            impl_->cpuAtlasData[destIndex + 3] = 255;                         // A
+                            impl_->cpuAtlasData[destIndex + 0] =
+                                static_cast<uint8_t>(std::clamp((pixel[0] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // R
+                            impl_->cpuAtlasData[destIndex + 1] =
+                                static_cast<uint8_t>(std::clamp((pixel[1] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // G
+                            impl_->cpuAtlasData[destIndex + 2] =
+                                static_cast<uint8_t>(std::clamp((pixel[2] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // B
+                            impl_->cpuAtlasData[destIndex + 3] = 255;                                              // A
                         }
                     }
 
@@ -340,8 +336,7 @@ void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wst
                     for (int y = 0; y < dirtyH; ++y) {
                         int srcY = dirtyMinY + y;
                         int srcIndex = (srcY * Impl::ATLAS_WIDTH + dirtyMinX) * 4;
-                        std::memcpy(mappedData + y * alignedRowPitch, &impl_->cpuAtlasData[srcIndex],
-                                    dirtyW * 4);
+                        std::memcpy(mappedData + y * alignedRowPitch, &impl_->cpuAtlasData[srcIndex], dirtyW * 4);
                     }
                     intermediateResource->Unmap(0, nullptr);
 
@@ -416,9 +411,8 @@ std::optional<GlyphInfo> FontManager::GetGlyph(const std::string& fontId, char32
         singleChar += static_cast<wchar_t>((code & 0x3FF) + 0xDC00);
     }
 
-    impl_->threadPool->Enqueue(impl_->taskGroup, [this, fontId, singleChar]() {
-        PrecacheTextInternal(fontId, singleChar);
-    });
+    impl_->threadPool->Enqueue(impl_->taskGroup,
+                               [this, fontId, singleChar]() { PrecacheTextInternal(fontId, singleChar); });
 
     return dummy;
 }

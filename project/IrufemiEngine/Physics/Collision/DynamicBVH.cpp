@@ -278,8 +278,8 @@ void DynamicBVH::GetPotentialCollisionPairs(
     }
 }
 
-void DynamicBVH::ComputeSelfPairs(
-    int32_t nodeIndex, std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
+void DynamicBVH::ComputeSelfPairs(int32_t nodeIndex,
+                                  std::vector<std::pair<ColliderComponent*, ColliderComponent*>>& outPairs) const {
     if (nodeIndex == -1 || nodes_[nodeIndex].IsLeaf()) {
         return;
     }
