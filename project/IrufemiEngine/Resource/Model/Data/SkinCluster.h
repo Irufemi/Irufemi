@@ -20,7 +20,8 @@ struct SkinningInformation {
     uint32_t numVertices = 0;
     uint32_t pad[3] = {};
 };
-static_assert(sizeof(SkinningInformation) == 16, "SkinningInformation size must be 16 bytes for GPU ConstantBuffer alignment.");
+static_assert(sizeof(SkinningInformation) == 16,
+              "SkinningInformation size must be 16 bytes for GPU ConstantBuffer alignment.");
 
 /**
  * @class SkinCluster
@@ -68,5 +69,5 @@ struct SkinCluster {
 
 } // namespace Irufemi
 
-using Irufemi::SkinningInformation;
 using Irufemi::SkinCluster;
+using Irufemi::SkinningInformation;

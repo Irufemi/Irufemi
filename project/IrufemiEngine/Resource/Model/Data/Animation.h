@@ -22,7 +22,7 @@ inline uint64_t GenerateAnimationId() {
  */
 struct Animation {
     uint64_t id = GenerateAnimationId(); ///< アニメーションインスタンス固有の一意ID（ABA問題対策）
-    float duration = 0.0f; ///< アニメーション全体の尺(単位は秒)
+    float duration = 0.0f;               ///< アニメーション全体の尺(単位は秒)
     /// NodeAnimationの集合。Node名でひけるようにしておく
     std::unordered_map<std::string, NodeAnimation> nodeAnimations;
 };

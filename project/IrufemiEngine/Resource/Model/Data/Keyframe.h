@@ -15,5 +15,5 @@ using KeyframeQuaternion = Keyframe<Irufemi::Quaternion>;
 } // namespace Irufemi
 
 using Irufemi::Keyframe;
-using Irufemi::KeyframeVector3;
 using Irufemi::KeyframeQuaternion;
+using Irufemi::KeyframeVector3;

@@ -24,17 +24,29 @@ Irufemi::Vector4 HueToRGB(float hue, float alpha = 0.6f) {
     Irufemi::Vector4 color = {0.0f, 0.0f, 0.0f, alpha};
 
     if (normalizedHue < 60.0f) {
-        color.x = c; color.y = x; color.z = 0.0f;
+        color.x = c;
+        color.y = x;
+        color.z = 0.0f;
     } else if (normalizedHue < 120.0f) {
-        color.x = x; color.y = c; color.z = 0.0f;
+        color.x = x;
+        color.y = c;
+        color.z = 0.0f;
     } else if (normalizedHue < 180.0f) {
-        color.x = 0.0f; color.y = c; color.z = x;
+        color.x = 0.0f;
+        color.y = c;
+        color.z = x;
     } else if (normalizedHue < 240.0f) {
-        color.x = 0.0f; color.y = x; color.z = c;
+        color.x = 0.0f;
+        color.y = x;
+        color.z = c;
     } else if (normalizedHue < 300.0f) {
-        color.x = x; color.y = 0.0f; color.z = c;
+        color.x = x;
+        color.y = 0.0f;
+        color.z = c;
     } else {
-        color.x = c; color.y = 0.0f; color.z = x;
+        color.x = c;
+        color.y = 0.0f;
+        color.z = x;
     }
     return color;
 }

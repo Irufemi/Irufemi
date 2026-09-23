@@ -77,8 +77,8 @@ void Animator::Update(SkeletonPose& targetPose) {
             }
         } else {
             animationTime_ = (std::min)(animationTime_, currentAnimation_->duration);
-            ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_,
-                              deltaRootTranslation_, deltaRootRotation_);
+            ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_, deltaRootTranslation_,
+                              deltaRootRotation_);
         }
     } else {
         deltaRootTranslation_ = {0.0f, 0.0f, 0.0f};

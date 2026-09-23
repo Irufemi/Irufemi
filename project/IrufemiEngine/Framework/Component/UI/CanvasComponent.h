@@ -49,6 +49,6 @@ public:
     }
 
 private:
-    float groupAlpha_ = 1.0f;          // グループ全体のアルファ値
-    float lastAppliedAlpha_ = -1.0f;   // 前回適用したアルファ値（ダーティ判定用）
+    float groupAlpha_ = 1.0f;        // グループ全体のアルファ値
+    float lastAppliedAlpha_ = -1.0f; // 前回適用したアルファ値（ダーティ判定用）
 };

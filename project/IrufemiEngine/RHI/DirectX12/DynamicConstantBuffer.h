@@ -59,14 +59,13 @@ public:
             return;
         }
         uint64_t completed = dxCommon_->GetFence()->GetCompletedValue();
-        auto it = std::remove_if(pendingFree_.begin(), pendingFree_.end(),
-                                 [this, completed](const PendingFree& p) {
-                                     if (p.fence <= completed) {
-                                         freeIndices_.push_back(p.index);
-                                         return true;
-                                     }
-                                     return false;
-                                 });
+        auto it = std::remove_if(pendingFree_.begin(), pendingFree_.end(), [this, completed](const PendingFree& p) {
+            if (p.fence <= completed) {
+                freeIndices_.push_back(p.index);
+                return true;
+            }
+            return false;
+        });
         pendingFree_.erase(it, pendingFree_.end());
     }
 
