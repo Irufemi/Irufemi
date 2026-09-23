@@ -125,7 +125,7 @@ private:
     /**
      * @brief コンポーネントの全インスタンスを保持する静的レジストリ
      */
-    static std::vector<VirtualEntityManagerComponent*> sInstances_;
+    static std::vector<VirtualEntityManagerComponent*> instances_;
     std::vector<VirtualInstance> dense_;
     std::vector<int> sparse_;
     std::queue<int> freeIds_;

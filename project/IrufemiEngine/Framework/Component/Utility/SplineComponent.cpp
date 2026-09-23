@@ -21,9 +21,11 @@ void SplineComponent::OnAwake() {
     UpdateDistanceTable();
 }
 
-void SplineComponent::Draw() {
+void SplineComponent::Update() {
     UpdateWaypointsFromChildren();
+}
 
+void SplineComponent::Draw() {
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
     if (drawDebugRail_ && debugLineBatch_ && waypoints_.size() >= 2) {
         debugLineBatch_->ClearInstances();
@@ -96,23 +98,38 @@ Irufemi::Vector3 SplineComponent::GetTangentAt(float t) const {
         return {0.0f, 0.0f, 1.0f}; // デフォルトの進行方向
     }
 
-    // 少し先の点を計算して差分から接線を求める (簡易的な近似)
-    float delta = 0.01f;
-    float t1 = std::clamp(t, 0.0f, 1.0f);
-    float t2 = std::clamp(t + delta, 0.0f, 1.0f);
+    t = std::clamp(t, 0.0f, 1.0f);
 
-    // もし終端に近ければ、少し前の点から計算する
-    if (t >= 1.0f - delta) {
-        t1 = std::clamp(t - delta, 0.0f, 1.0f);
-        t2 = std::clamp(t, 0.0f, 1.0f);
+    int segments = static_cast<int>(waypoints_.size()) - 1;
+    float scaledT = t * segments;
+    int index = static_cast<int>(scaledT);
+    if (index >= segments) {
+        index = segments - 1;
+        scaledT = static_cast<float>(segments);
     }
 
-    Irufemi::Vector3 p1 = GetPointAt(t1);
-    Irufemi::Vector3 p2 = GetPointAt(t2);
+    float localT = scaledT - index;
 
-    Irufemi::Vector3 tangent = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+    // Catmull-Rom スプラインの4制御点
+    Irufemi::Vector3 p0 = waypoints_[(std::max)(0, index - 1)];
+    Irufemi::Vector3 p1 = waypoints_[index];
+    Irufemi::Vector3 p2 = waypoints_[(std::min)(segments, index + 1)];
+    Irufemi::Vector3 p3 = waypoints_[(std::min)(segments, index + 2)];
+
+    // Catmull-Rom スプラインの代数導関数（一次微分による高精度な接線算出）
+    // p'(u) = 0.5 * ((-p0 + p2) + 2(2p0 - 5p1 + 4p2 - p3)u + 3(-p0 + 3p1 - 3p2 + p3)u^2)
+    float u = localT;
+    float u2 = u * u;
+
+    Irufemi::Vector3 tangent;
+    tangent.x = 0.5f * ((-p0.x + p2.x) + 2.0f * (2.0f * p0.x - 5.0f * p1.x + 4.0f * p2.x - p3.x) * u +
+                        3.0f * (-p0.x + 3.0f * p1.x - 3.0f * p2.x + p3.x) * u2);
+    tangent.y = 0.5f * ((-p0.y + p2.y) + 2.0f * (2.0f * p0.y - 5.0f * p1.y + 4.0f * p2.y - p3.y) * u +
+                        3.0f * (-p0.y + 3.0f * p1.y - 3.0f * p2.y + p3.y) * u2);
+    tangent.z = 0.5f * ((-p0.z + p2.z) + 2.0f * (2.0f * p0.z - 5.0f * p1.z + 4.0f * p2.z - p3.z) * u +
+                        3.0f * (-p0.z + 3.0f * p1.z - 3.0f * p2.z + p3.z) * u2);
+
     float length = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
-
     if (length > 0.0001f) {
         tangent.x /= length;
         tangent.y /= length;
@@ -226,28 +243,25 @@ Irufemi::Vector3 SplineComponent::GetTangentAtDistance(float distance) const {
         return {0.0f, 0.0f, 1.0f};
     }
 
-    float delta = 0.01f;
-    float d1 = std::clamp(distance, 0.0f, totalLength_);
-    float d2 = std::clamp(distance + delta, 0.0f, totalLength_);
-
-    if (distance >= totalLength_ - delta) {
-        d1 = std::clamp(totalLength_ - delta, 0.0f, totalLength_);
-        d2 = std::clamp(totalLength_, 0.0f, totalLength_);
+    if (distanceLUT_.empty() || totalLength_ <= 0.0f) {
+        return GetTangentAt(0.0f);
     }
 
-    Irufemi::Vector3 p1 = GetPointAtDistance(d1);
-    Irufemi::Vector3 p2 = GetPointAtDistance(d2);
-
-    Irufemi::Vector3 tangent = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
-    float length = std::sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
-
-    if (length > 0.0001f) {
-        tangent.x /= length;
-        tangent.y /= length;
-        tangent.z /= length;
+    float t = 0.0f;
+    if (distance <= 0.0f) {
+        t = 0.0f;
+    } else if (distance >= totalLength_) {
+        t = 1.0f;
     } else {
-        tangent = {0.0f, 0.0f, 1.0f};
+        int numSamples = static_cast<int>(distanceLUT_.size()) - 1;
+        for (int i = 0; i < numSamples; ++i) {
+            if (distanceLUT_[i] <= distance && distance <= distanceLUT_[i + 1]) {
+                float diff = distanceLUT_[i + 1] - distanceLUT_[i];
+                float ratio = (diff > 0.0001f) ? ((distance - distanceLUT_[i]) / diff) : 0.0f;
+                t = (static_cast<float>(i) + ratio) / static_cast<float>(numSamples);
+                break;
+            }
+        }
     }
-
-    return tangent;
+    return GetTangentAt(t);
 }

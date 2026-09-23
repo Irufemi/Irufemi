@@ -62,8 +62,8 @@ private:
     std::vector<SpawnedEnvInfo> spawnedObjects_;
     std::list<BatchCollisionSetting> batchCollisionSettings_;
 
-    // モデルごとのバッチレンダラー
-    std::unordered_map<std::string, std::unique_ptr<ModelBatchRendererComponent>> batchRenderers_;
+    // モデルごとのバッチレンダラー（GameObjectにアタッチされたコンポーネントの共有参照）
+    std::unordered_map<std::string, std::shared_ptr<ModelBatchRendererComponent>> batchRenderers_;
 
     /**
      * @brief 指定モデルのバッチレンダラーを取得（未生成なら生成して初期化・キャッシュ）

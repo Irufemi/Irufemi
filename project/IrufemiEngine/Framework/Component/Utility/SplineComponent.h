@@ -23,6 +23,13 @@ public:
     void Update() override;
 
     /**
+     * @brief エディタモード中も子オブジェクトの配置変更を検知して更新を行うかを判定します
+     */
+    bool CanUpdateInEditMode() const override {
+        return true;
+    }
+
+    /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
      */

@@ -8,7 +8,6 @@
 #include "Environment/DebrisComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Math/Random/Random.h"
 #include "Renderer/Camera/CameraManager.h"
 #include "Renderer/Camera/Camera.h"
@@ -122,13 +121,13 @@ void DebrisManagerComponent::Initialize() {
             gameObject_->AddChild(var.poolObject);
         }
 
-        variations_.push_back(var);
+        variations_.emplace_back(std::move(var));
         varIndex++;
     }
 }
 
 void DebrisManagerComponent::Update() {
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto input = GetEngine() ? GetEngine()->GetInputManager() : nullptr;
 
     auto spawnDebris = [&](int count) {
         Irufemi::Vector3 spawnBase = {0.0f, 0.0f, 0.0f};
@@ -206,7 +205,7 @@ void DebrisManagerComponent::Update() {
         spawnDebris(10000);
     }
 
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float deltaTime = GetEngine() ? GetEngine()->GetGameDeltaTime() : 0.0f;
     if (deltaTime > 0.0f) {
         UpdatePulledDebris(deltaTime);
         UpdateOrbitingDebris(deltaTime);

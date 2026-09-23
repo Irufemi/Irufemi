@@ -7,7 +7,6 @@
 #include "Core/Utility/Log.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Effect/EffectMaskComponent.h"
 #include "Environment/DestructibleEnvironmentComponent.h"
 #include "Player/TargetableComponent.h"
@@ -245,12 +244,16 @@ ModelBatchRendererComponent* EnvironmentManagerComponent::GetOrCreateBatchRender
         return it->second.get();
     }
 
-    auto batchRenderer = std::make_unique<ModelBatchRendererComponent>();
-    batchRenderer->SetGameObject(gameObject_);
+    std::shared_ptr<ModelBatchRendererComponent> batchRenderer;
+    if (gameObject_) {
+        batchRenderer = gameObject_->AddComponent<ModelBatchRendererComponent>();
+    } else {
+        batchRenderer = std::make_shared<ModelBatchRendererComponent>();
+    }
     batchRenderer->LoadModel(modelName);
     batchRenderer->Initialize();
 
     auto* rawPtr = batchRenderer.get();
-    batchRenderers_[modelName] = std::move(batchRenderer);
+    batchRenderers_[modelName] = batchRenderer;
     return rawPtr;
 }
