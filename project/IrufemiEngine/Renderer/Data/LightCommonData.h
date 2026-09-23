@@ -19,5 +19,7 @@ struct LightCommonData {
     uint32_t pointLightBufferIndex; //!< 点光源バッファ (StructuredBuffer, space4)
     uint32_t spotLightBufferIndex;  //!< スポットライトバッファ (StructuredBuffer, space5)
     uint32_t areaLightBufferIndex;  //!< エリアライトバッファ (StructuredBuffer, space6)
-    uint32_t padding[2];            //!< パディング (16進アライメント用)
+    uint32_t padding[2];            //!< パディング (16バイトアライメント用)
 };
+
+static_assert(sizeof(LightCommonData) == 128, "LightCommonData size mismatch with HLSL");

@@ -21,3 +21,5 @@ struct PointLight {
 private:
     float padding;
 };
+
+static_assert(sizeof(PointLight) == 48, "PointLight size mismatch with HLSL");

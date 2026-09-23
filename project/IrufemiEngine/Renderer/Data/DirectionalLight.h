@@ -13,3 +13,5 @@ struct DirectionalLight {
     //!< 輝度
     float intensity;
 };
+
+static_assert(sizeof(DirectionalLight) == 32, "DirectionalLight must be 32 bytes for 16-byte alignment");

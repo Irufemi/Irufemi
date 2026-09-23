@@ -23,3 +23,5 @@ struct PerFrameData {
     uint32_t depthMapIndex;  //!< デプスマップ (Texture2D, space3)
     uint32_t padding[1];     //!< 16バイトアライメント用パディング
 };
+
+static_assert(sizeof(PerFrameData) == 176, "PerFrameData size mismatch with HLSL");

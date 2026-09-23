@@ -18,3 +18,5 @@ struct ExplosionParams {
     float sphereRadius = 10.0f;                //!< 爆発球の半径 (Raymarching用)
     float pad[44];                             //!< 256バイトアライメント用のパディング
 };
+
+static_assert(sizeof(ExplosionParams) == 256, "ExplosionParams size must be 256 bytes");

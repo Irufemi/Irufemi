@@ -20,3 +20,5 @@ struct LightningParams {
     float twistScale = 0.0f;    //!< 螺旋のねじれの強さ
     float pad[3] = {0, 0, 0};   //!< 16バイトアライメント用パディング
 };
+
+static_assert(sizeof(LightningParams) == 80, "LightningParams size must be 80 bytes");

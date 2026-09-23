@@ -9,6 +9,9 @@
 /**
  * @file RenderPackets.h
  * @brief 描画命令（パケット）の構造体定義群
+ * @details 各パケットが保持するリソース生ポインタ（Object3DResource*, ID3D12Resource* 等）は、
+ *          当該フレームの RenderGraph 実行中のみ有効な一時参照です。
+ *          フレームを跨いでキャッシュまたは保持することは厳禁です。
  */
 
 // 前方宣言
