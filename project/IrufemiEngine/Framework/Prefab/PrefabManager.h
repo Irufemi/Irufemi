@@ -49,7 +49,6 @@ public:
     void ClearCache();
 
 private:
-private:
     std::mutex mutex_;
     std::unordered_map<std::string, nlohmann::json> jsonCache_;
     std::unordered_map<std::string, std::shared_ptr<GameObject>> templateCache_;

@@ -48,7 +48,6 @@ std::shared_ptr<GameObject> PrefabManager::Instantiate(const std::string& filepa
 
     // テンプレートからディープコピー (高速クローン)
     auto obj = templateObj->Clone();
-    obj->Initialize();
     return obj;
 }
 

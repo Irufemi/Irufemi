@@ -47,6 +47,7 @@ public:
      * @param obj 保存対象の GameObject
      * @param filepath 保存先のパス (例: resources/prefabs/MyObject.json)
      */
+    [[deprecated("Use PrefabManager instead")]]
     static bool SavePrefab(std::shared_ptr<GameObject> obj, const std::string& filepath);
 
     /**
@@ -54,16 +55,19 @@ public:
      * @param filepath 読み込むファイルのパス
      * @return 生成された GameObject の共有ポインタ
      */
+    [[deprecated("Use PrefabManager instead")]]
     static std::shared_ptr<GameObject> LoadPrefab(const std::string& filepath);
 
     /**
      * @brief キャッシュされているプレハブのJSONデータをクリアする
      */
+    [[deprecated("Use PrefabManager instead")]]
     static void ClearCache();
 
     /**
      * @brief プレハブのJSONデータを取得する（キャッシュ対応）
      */
+    [[deprecated("Use PrefabManager instead")]]
     static nlohmann::json GetPrefabJson(const std::string& filepath);
 
 private:
