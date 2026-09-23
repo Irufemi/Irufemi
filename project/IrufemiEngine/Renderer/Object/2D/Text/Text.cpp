@@ -145,21 +145,21 @@ void Text::GenerateVertices() {
         // 頂点の並び: 左下(0), 左上(1), 右下(2), 右上(3)
         // Spriteコンポーネントに合わせて法線は Z=-1
         resource_->GetVertexDataList().push_back({{left, bottom, 0.0f, 1.0f},
-                                              {glyph->uvTopLeft.x, glyph->uvBottomRight.y},
-                                              {0.0f, 0.0f, -1.0f},
-                                              {1.0f, 1.0f, 1.0f, 1.0f}});
+                                                  {glyph->uvTopLeft.x, glyph->uvBottomRight.y},
+                                                  {0.0f, 0.0f, -1.0f},
+                                                  {1.0f, 1.0f, 1.0f, 1.0f}});
         resource_->GetVertexDataList().push_back({{left, top, 0.0f, 1.0f},
-                                              {glyph->uvTopLeft.x, glyph->uvTopLeft.y},
-                                              {0.0f, 0.0f, -1.0f},
-                                              {1.0f, 1.0f, 1.0f, 1.0f}});
+                                                  {glyph->uvTopLeft.x, glyph->uvTopLeft.y},
+                                                  {0.0f, 0.0f, -1.0f},
+                                                  {1.0f, 1.0f, 1.0f, 1.0f}});
         resource_->GetVertexDataList().push_back({{right, bottom, 0.0f, 1.0f},
-                                              {glyph->uvBottomRight.x, glyph->uvBottomRight.y},
-                                              {0.0f, 0.0f, -1.0f},
-                                              {1.0f, 1.0f, 1.0f, 1.0f}});
+                                                  {glyph->uvBottomRight.x, glyph->uvBottomRight.y},
+                                                  {0.0f, 0.0f, -1.0f},
+                                                  {1.0f, 1.0f, 1.0f, 1.0f}});
         resource_->GetVertexDataList().push_back({{right, top, 0.0f, 1.0f},
-                                              {glyph->uvBottomRight.x, glyph->uvTopLeft.y},
-                                              {0.0f, 0.0f, -1.0f},
-                                              {1.0f, 1.0f, 1.0f, 1.0f}});
+                                                  {glyph->uvBottomRight.x, glyph->uvTopLeft.y},
+                                                  {0.0f, 0.0f, -1.0f},
+                                                  {1.0f, 1.0f, 1.0f, 1.0f}});
 
         resource_->GetIndexDataList().push_back(startIndex + 0);
         resource_->GetIndexDataList().push_back(startIndex + 1);
@@ -198,10 +198,12 @@ void Text::GenerateVertices() {
     resource_->CreateResource();
     resource_->Map();
     if (resource_->GetVertexData()) {
-        std::copy(resource_->GetVertexDataList().begin(), resource_->GetVertexDataList().end(), resource_->GetVertexData());
+        std::copy(resource_->GetVertexDataList().begin(), resource_->GetVertexDataList().end(),
+                  resource_->GetVertexData());
     }
     if (resource_->GetIndexData()) {
-        std::copy(resource_->GetIndexDataList().begin(), resource_->GetIndexDataList().end(), resource_->GetIndexData());
+        std::copy(resource_->GetIndexDataList().begin(), resource_->GetIndexDataList().end(),
+                  resource_->GetIndexData());
     }
 }
 

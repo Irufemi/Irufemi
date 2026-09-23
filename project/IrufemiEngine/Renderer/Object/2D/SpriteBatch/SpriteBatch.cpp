@@ -203,7 +203,8 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
 
 void SpriteBatch::SyncBeforeDraw() {
     if (textureManager_ && baseResource_->GetMaterialData()) {
-        baseResource_->GetMaterialData()->textureIndex = textureManager_->GetSrvIndex(baseResource_->GetTextureHandle());
+        baseResource_->GetMaterialData()->textureIndex =
+            textureManager_->GetSrvIndex(baseResource_->GetTextureHandle());
     }
     baseResource_->SyncBeforeDraw();
 }

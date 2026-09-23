@@ -91,8 +91,8 @@ D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetMaterialVAddress() const {
     if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetMaterialBufferManager()) {
         return 0;
     }
-    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
-        materialCbIndex_, dxCommon->GetFrameIndex());
+    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_,
+                                                                                   dxCommon->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetTransformVAddress() const {
@@ -103,8 +103,8 @@ D3D12_GPU_VIRTUAL_ADDRESS LineResource::GetTransformVAddress() const {
     if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetTransformBufferManager()) {
         return 0;
     }
-    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, dxCommon->GetFrameIndex());
+    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_,
+                                                                                    dxCommon->GetFrameIndex());
 }
 
 void LineResource::SyncBeforeDraw() {

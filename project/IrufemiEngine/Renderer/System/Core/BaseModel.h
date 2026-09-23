@@ -83,7 +83,8 @@ public: // ゲッター・セッター
 
     /**
      * @brief MaterialOverrides を設定する。
-     * @param[in] overrides 設定する MaterialOverrides（メッシュインデックスごとのマテリアルオーバーライド）のマップポインタ
+     * @param[in] overrides 設定する
+     * MaterialOverrides（メッシュインデックスごとのマテリアルオーバーライド）のマップポインタ
      */
     void SetMaterialOverrides(const std::unordered_map<size_t, ObjMaterial>* overrides) {
         materialOverrides_ = overrides;

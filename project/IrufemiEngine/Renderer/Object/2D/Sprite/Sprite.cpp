@@ -49,10 +49,12 @@ void Sprite::Initialize(const std::string& textureName) {
 
     // データのコピー
     if (resource_->GetVertexData()) {
-        std::copy(resource_->GetVertexDataList().begin(), resource_->GetVertexDataList().end(), resource_->GetVertexData());
+        std::copy(resource_->GetVertexDataList().begin(), resource_->GetVertexDataList().end(),
+                  resource_->GetVertexData());
     }
     if (resource_->GetIndexData()) {
-        std::copy(resource_->GetIndexDataList().begin(), resource_->GetIndexDataList().end(), resource_->GetIndexData());
+        std::copy(resource_->GetIndexDataList().begin(), resource_->GetIndexDataList().end(),
+                  resource_->GetIndexData());
     }
 
     // VB/IB作成とMapが済んだ後に一度アンカーを頂点に反映しておく
@@ -124,8 +126,9 @@ void Sprite::Update() {
     // UV 変換(flip → crop → userUV)
     if (resource_->GetMaterialData()) {
         // userUV: 既存の uvTransform(回転/スクロール)
-        Irufemi::Matrix4x4 userUV = Irufemi::Math::MakeAffineMatrix(
-            resource_->GetUVTransform().scale, resource_->GetUVTransform().rotate, resource_->GetUVTransform().translate);
+        Irufemi::Matrix4x4 userUV =
+            Irufemi::Math::MakeAffineMatrix(resource_->GetUVTransform().scale, resource_->GetUVTransform().rotate,
+                                            resource_->GetUVTransform().translate);
 
         // crop: px指定 → 正規化UVに変換
         Irufemi::Matrix4x4 cropUV = Irufemi::Math::MakeIdentity4x4();

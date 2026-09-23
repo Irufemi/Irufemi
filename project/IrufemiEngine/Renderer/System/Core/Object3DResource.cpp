@@ -134,8 +134,8 @@ D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetMaterialVAddress() const {
     if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetMaterialBufferManager()) {
         return 0;
     }
-    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
-        materialCbIndex_, dxCommon->GetFrameIndex());
+    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_,
+                                                                                   dxCommon->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetTransformVAddress() const {
@@ -144,14 +144,14 @@ D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetTransformVAddress() const {
         return 0;
     }
     if (externalTransformCbIndex_) {
-        return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-            *externalTransformCbIndex_, dxCommon->GetFrameIndex());
+        return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(*externalTransformCbIndex_,
+                                                                                        dxCommon->GetFrameIndex());
     }
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
     }
-    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, dxCommon->GetFrameIndex());
+    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_,
+                                                                                    dxCommon->GetFrameIndex());
 }
 
 void Object3DResource::SyncBeforeDraw() {
