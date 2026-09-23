@@ -3,7 +3,6 @@
 #include <string>
 #include "Resource/Model/Data/Animation.h"
 #include "Resource/Model/Data/NodeAnimation.h"
-#include "Resource/Model/Data/Joint.h"
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/SkeletonData.h"
 #include "Resource/Model/Data/SkeletonPose.h"

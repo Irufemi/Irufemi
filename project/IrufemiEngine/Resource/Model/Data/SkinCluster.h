@@ -10,9 +10,17 @@
 #include "Resource/Model/Data/WellForGPU.h"
 #include "RHI/DirectX12/DirectXCommon.h"
 
+namespace Irufemi {
+
+/**
+ * @struct SkinningInformation
+ * @brief コンピュートシェーダーに渡すスキニング情報定数バッファ
+ */
 struct SkinningInformation {
-    uint32_t numVertices;
+    uint32_t numVertices = 0;
+    uint32_t pad[3] = {};
 };
+static_assert(sizeof(SkinningInformation) == 16, "SkinningInformation size must be 16 bytes for GPU ConstantBuffer alignment.");
 
 /**
  * @class SkinCluster
@@ -57,3 +65,8 @@ struct SkinCluster {
     std::array<std::pair<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>, kMaxFramesInFlight>
         skinnedVertexUavHandle;
 };
+
+} // namespace Irufemi
+
+using Irufemi::SkinningInformation;
+using Irufemi::SkinCluster;

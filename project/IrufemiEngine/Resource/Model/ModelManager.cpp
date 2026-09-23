@@ -23,7 +23,6 @@
 #include "Renderer/Data/Material.h"
 #include "Renderer/Data/VertexData.h"
 #include "Resource/Model/Data/Node.h"
-#include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
 #include <thread>
 #include <algorithm>

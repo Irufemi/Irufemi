@@ -1,1 +1,0 @@
-// This file is deprecated. Please use SkeletonData.h and SkeletonPose.h instead.

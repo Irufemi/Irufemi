@@ -57,19 +57,33 @@ void Animator::Update(SkeletonPose& targetPose) {
 
     if (currentAnimation_->duration > 0.0f) {
         if (isLooping_) {
-            animationTime_ = std::fmod(animationTime_, currentAnimation_->duration);
-            // ループをまたいだ時のルートモーション処理が必要な場合はここで行う（簡易実装では省略）
-            if (animationTime_ < prevTime) {
-                prevTime = 0.0f; // ループの瞬間は0からの差分とする等
+            if (animationTime_ >= currentAnimation_->duration) {
+                // ループ周回時: [prevTime, duration] と [0.0f, newTime] の両区間の移動量を正しく合算
+                float newTime = std::fmod(animationTime_, currentAnimation_->duration);
+
+                Irufemi::Vector3 dTrans1{}, dTrans2{};
+                Irufemi::Quaternion dRot1{}, dRot2{};
+                ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, currentAnimation_->duration,
+                                  dTrans1, dRot1);
+                ExtractRootMotion(currentAnimation_.get(), targetPose.data, 0.0f, newTime, dTrans2, dRot2);
+
+                deltaRootTranslation_ = dTrans1 + dTrans2;
+                deltaRootRotation_ = Irufemi::Math::Multiply(dRot1, dRot2);
+
+                animationTime_ = newTime;
+            } else {
+                ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_,
+                                  deltaRootTranslation_, deltaRootRotation_);
             }
         } else {
             animationTime_ = (std::min)(animationTime_, currentAnimation_->duration);
+            ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_,
+                              deltaRootTranslation_, deltaRootRotation_);
         }
+    } else {
+        deltaRootTranslation_ = {0.0f, 0.0f, 0.0f};
+        deltaRootRotation_ = {0.0f, 0.0f, 0.0f, 1.0f};
     }
-
-    // Root Motion の抽出
-    ExtractRootMotion(currentAnimation_.get(), targetPose.data, prevTime, animationTime_, deltaRootTranslation_,
-                      deltaRootRotation_);
 
     if (isBlending_ && previousAnimation_) {
         fadeTimer_ += engine_->GetGameDeltaTime(); // フェードは等速(playbackSpeedに依存しない)
@@ -111,18 +125,11 @@ void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skel
         return;
     }
 
-    // ルートノードの探索（parentが存在しないジョイント）
-    std::string rootNodeName = "";
-    for (const auto& joint : skeleton->joints) {
-        if (!joint.parent) {
-            rootNodeName = joint.name;
-            break;
-        }
-    }
-
-    if (rootNodeName.empty()) {
+    // ルートノードの取得（SkeletonData::root を直接使用して O(1) アクセス）
+    if (skeleton->root < 0 || static_cast<size_t>(skeleton->root) >= skeleton->joints.size()) {
         return;
     }
+    const std::string& rootNodeName = skeleton->joints[skeleton->root].name;
 
     auto rootIt = anim->nodeAnimations.find(rootNodeName);
     if (rootIt == anim->nodeAnimations.end()) {
