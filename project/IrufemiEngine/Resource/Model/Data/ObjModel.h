@@ -14,6 +14,8 @@
 #include <vector>
 #include <unordered_map>
 
+namespace Irufemi {
+
 struct ObjMaterial {
     // Kd
     Irufemi::Vector4 color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -83,3 +85,9 @@ struct ObjModel {
     /** @brief モデル全体のローカルAABB（高精度ピッキング用） */
     Irufemi::AABB boundingBox;
 };
+
+} // namespace Irufemi
+
+using Irufemi::ObjMaterial;
+using Irufemi::ObjMesh;
+using Irufemi::ObjModel;

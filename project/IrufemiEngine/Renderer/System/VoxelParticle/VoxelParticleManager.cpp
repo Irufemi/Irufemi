@@ -1,6 +1,7 @@
 #include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/Pipeline/PSOManager.h"
+#include <vector>
 
 void VoxelParticleManager::Initialize(IrufemiEngine* engine) {
     engine_ = engine;
@@ -132,24 +133,23 @@ void VoxelParticleManager::Update(float deltaTime) {
         }
     }
 
-    for (auto it = oneShots_.begin(); it != oneShots_.end();) {
-        if (it->emitTimer > 0.0f) {
-            it->emitTimer -= deltaTime;
-            if (it->emitTimer <= 0.0f) {
-                VoxelEmitter data = GetEmitterData(it->handle);
+    std::erase_if(oneShots_, [this, deltaTime](OneShotInstance& shot) {
+        if (shot.emitTimer > 0.0f) {
+            shot.emitTimer -= deltaTime;
+            if (shot.emitTimer <= 0.0f) {
+                VoxelEmitter data = GetEmitterData(shot.handle);
                 data.emit = 0;
-                UpdateEmitterData(it->handle, data);
+                UpdateEmitterData(shot.handle, data);
             }
         }
 
-        it->lifeTimer -= deltaTime;
-        if (it->lifeTimer <= 0.0f) {
-            UnregisterEmitter(it->handle);
-            it = oneShots_.erase(it);
-        } else {
-            ++it;
+        shot.lifeTimer -= deltaTime;
+        if (shot.lifeTimer <= 0.0f) {
+            UnregisterEmitter(shot.handle);
+            return true;
         }
-    }
+        return false;
+    });
 }
 
 void VoxelParticleManager::Draw() {

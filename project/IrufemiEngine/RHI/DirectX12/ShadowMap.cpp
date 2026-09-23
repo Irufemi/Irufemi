@@ -29,6 +29,23 @@ ShadowMap::~ShadowMap() {
 
 void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height) {
     IRUFEMI_ASSERT(dxCommon);
+
+    // 既存リソース・ディスクリプタの解放（再初期化時のリーク防止）
+    if (dxCommon_) {
+        if (srvIndex_ != 0xFFFFFFFF && dxCommon_->GetSrvPool()) {
+            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+            srvIndex_ = 0xFFFFFFFF;
+        }
+        if (dsvIndex_ != 0xFFFFFFFF) {
+            dxCommon_->FreeDSVIndex(dsvIndex_);
+            dsvIndex_ = 0xFFFFFFFF;
+        }
+        if (resource_) {
+            dxCommon_->ReleaseAfterFence(resource_);
+            resource_.Reset();
+        }
+    }
+
     dxCommon_ = dxCommon;
     ID3D12Device* device = dxCommon_->GetDevice();
 

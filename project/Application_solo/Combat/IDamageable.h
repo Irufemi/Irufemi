@@ -1,6 +1,6 @@
 #pragma once
 
-enum class DamageableType { Enemy, Boss, Environment, Player };
+enum class DamageableType { Unknown = 0, Enemy, Boss, Environment, Player };
 
 /**
  * @class IDamageable
@@ -20,7 +20,5 @@ public:
      * @brief ダメージ対象の種別を取得する
      * @return DamageableType 種別
      */
-    virtual DamageableType GetDamageableType() const {
-        return DamageableType::Enemy;
-    }
+    virtual DamageableType GetDamageableType() const = 0;
 };
