@@ -10,7 +10,7 @@
 
 /**
  * @class ChangeValueCommand
- * @brief 蛟､縺ｮ螟画峩繧定ｨ倬鹸縺励ゞndo/Redo 繧定｡後≧豎守畑繧ｳ繝槭Φ繝・
+ * @brief 値の変更を記録し、Undo/Redo を行う汎用コマンド
  */
 template <typename T> class ChangeValueCommand : public ICommand {
 public:
@@ -32,23 +32,23 @@ private:
 
 /**
  * @class CreateObjectCommand
- * @brief 繧ｪ繝悶ず繧ｧ繧ｯ繝医・逕滓・繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
+ * @brief オブジェクトの生成を記録するコマンド
  */
 class CreateObjectCommand : public ICommand {
 public:
     CreateObjectCommand(BaseScene* scene, std::shared_ptr<GameObject> object,
-                        std::shared_ptr<GameObject> parent = nullptr, size_t index = (size_t)-1)
+                        std::shared_ptr<GameObject> parent = nullptr, size_t index = static_cast<size_t>(-1))
         : scene_(scene), object_(object), parent_(parent), index_(index) {}
 
     void Do() override {
         if (parent_) {
-            if (index_ == (size_t)-1) {
+            if (index_ == static_cast<size_t>(-1)) {
                 parent_->AddChild(object_);
             } else {
                 parent_->InsertChild(object_, index_);
             }
         } else {
-            if (index_ == (size_t)-1) {
+            if (index_ == static_cast<size_t>(-1)) {
                 scene_->AddGameObject(object_);
             } else {
                 scene_->InsertGameObject(object_, index_);
@@ -73,7 +73,7 @@ private:
 
 /**
  * @class DeleteObjectCommand
- * @brief 繧ｪ繝悶ず繧ｧ繧ｯ繝医・蜑企勁繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
+ * @brief オブジェクトの削除を記録するコマンド
  */
 class DeleteObjectCommand : public ICommand {
 public:
@@ -111,7 +111,7 @@ private:
 
 /**
  * @class AddComponentCommand
- * @brief 繧ｳ繝ｳ繝昴・繝阪Φ繝医・霑ｽ蜉繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
+ * @brief コンポーネントの追加を記録するコマンド
  */
 class AddComponentCommand : public ICommand {
 public:
@@ -133,7 +133,7 @@ private:
 
 /**
  * @class RemoveComponentCommand
- * @brief 繧ｳ繝ｳ繝昴・繝阪Φ繝医・蜑企勁繧定ｨ倬鹸縺吶ｋ繧ｳ繝槭Φ繝・
+ * @brief コンポーネントの削除を記録するコマンド
  */
 class RemoveComponentCommand : public ICommand {
 public:
