@@ -10,6 +10,36 @@
 #include "Resource/Model/Data/SkeletonPose.h"
 #include <cmath>
 
+namespace {
+/**
+ * @brief 色相(Hue 0~360度)からRGBAカラーを生成するヘルパー関数
+ */
+Irufemi::Vector4 HueToRGB(float hue, float alpha = 0.6f) {
+    float normalizedHue = std::fmod(hue, 360.0f);
+    if (normalizedHue < 0.0f) {
+        normalizedHue += 360.0f;
+    }
+    float c = 1.0f;
+    float x = c * (1.0f - std::abs(std::fmod(normalizedHue / 60.0f, 2.0f) - 1.0f));
+    Irufemi::Vector4 color = {0.0f, 0.0f, 0.0f, alpha};
+
+    if (normalizedHue < 60.0f) {
+        color.x = c; color.y = x; color.z = 0.0f;
+    } else if (normalizedHue < 120.0f) {
+        color.x = x; color.y = c; color.z = 0.0f;
+    } else if (normalizedHue < 180.0f) {
+        color.x = 0.0f; color.y = c; color.z = x;
+    } else if (normalizedHue < 240.0f) {
+        color.x = 0.0f; color.y = x; color.z = c;
+    } else if (normalizedHue < 300.0f) {
+        color.x = x; color.y = 0.0f; color.z = c;
+    } else {
+        color.x = c; color.y = 0.0f; color.z = x;
+    }
+    return color;
+}
+} // namespace
+
 SkeletonDebugRendererComponent::SkeletonDebugRendererComponent() {
     boneMeshes_ = std::make_unique<PrimitiveBatch>();
     debugAxesLines_ = std::make_unique<Line3DBatch>();
@@ -124,35 +154,8 @@ void SkeletonDebugRendererComponent::Update() {
             };
             // clang-format on
 
-            float hue = std::fmod(depth * 30.0f, 360.0f);
-            float c = 1.0f;
-            float x = c * (1.0f - std::abs(std::fmod(hue / 60.0f, 2.0f) - 1.0f));
-            Irufemi::Vector4 color = {0, 0, 0, 0.6f};
-            if (hue < 60) {
-                color.x = c;
-                color.y = x;
-                color.z = 0;
-            } else if (hue < 120) {
-                color.x = x;
-                color.y = c;
-                color.z = 0;
-            } else if (hue < 180) {
-                color.x = 0;
-                color.y = c;
-                color.z = x;
-            } else if (hue < 240) {
-                color.x = 0;
-                color.y = x;
-                color.z = c;
-            } else if (hue < 300) {
-                color.x = x;
-                color.y = 0;
-                color.z = c;
-            } else {
-                color.x = c;
-                color.y = 0;
-                color.z = x;
-            }
+            float hue = depth * 30.0f;
+            Irufemi::Vector4 color = HueToRGB(hue, 0.6f);
             boneMeshes_->AddInstanceWorld(boneWorld, color);
         }
 

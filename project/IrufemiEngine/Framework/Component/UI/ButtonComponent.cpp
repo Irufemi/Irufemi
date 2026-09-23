@@ -88,8 +88,8 @@ void ButtonComponent::Update() {
     isHovered_ = CheckBounds(uiPos);
     isClicked_ = false;
 
-    // アニメーターの更新（1/60固定とするか deltaTime を取得するか。簡易的に1/60）
-    animator_.Update(1.0f / 60.0f);
+    // アニメーターの更新（UIアニメーションのため非スケールデルタタイムを適用）
+    animator_.Update(engine->GetDeltaTime());
 
     if (isHovered_) {
         // ホバーした瞬間に押下されたらフラグを立てる

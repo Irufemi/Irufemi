@@ -111,6 +111,25 @@ public:
     }
 
     /**
+     * @brief スプライトの基準カラーを取得します
+     * @return 現在設定されているカラー
+     */
+    const Irufemi::Vector4& GetColor() const {
+        return color_;
+    }
+
+    /**
+     * @brief スプライトの基準カラーを設定します
+     * @param[in] color 設定するカラー
+     */
+    void SetColor(const Irufemi::Vector4& color) {
+        color_ = color;
+        if (sprite_) {
+            sprite_->SetColor(color_);
+        }
+    }
+
+    /**
      * @brief コンポーネントの識別名を取得します
      * @return クラス名文字列
      */

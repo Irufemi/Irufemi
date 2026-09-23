@@ -6,9 +6,9 @@
  * @enum TimeoutAction
  * @brief 寿命を迎えた際のオブジェクトの振る舞い
  */
-enum class TimeoutAction {
-    Destroy, ///< 完全にオブジェクトを破棄する
-    Disable  ///< オブジェクトを非アクティブ（isActive_ = false）にする（プール用）
+enum class TimeoutAction : int {
+    Destroy = 0, ///< 完全にオブジェクトを破棄する
+    Disable = 1  ///< オブジェクトを非アクティブ（isActive_ = false）にする（プール用）
 };
 
 /**
@@ -79,6 +79,7 @@ public:
      */
     void SetTimeoutAction(TimeoutAction action) {
         timeoutAction_ = action;
+        timeoutActionInt_ = static_cast<int>(action);
     }
     /**
      * @brief TimeoutAction を取得する。
@@ -92,4 +93,5 @@ private:
     float lifeTime_ = 1.0f;        // 寿命（秒）
     float currentLifeTime_ = 0.0f; // 経過時間
     TimeoutAction timeoutAction_ = TimeoutAction::Destroy;
+    int timeoutActionInt_ = 0;     // プロパティ登録用の安全な整数メンバ
 };

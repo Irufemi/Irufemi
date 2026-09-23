@@ -3,8 +3,11 @@
 #include "Core/System/IrufemiEngine.h"
 
 void LifetimeComponent::OnRegisterProperties() {
+    timeoutActionInt_ = static_cast<int>(timeoutAction_);
     RegisterProperty("Life Time", &lifeTime_);
-    RegisterEnum("Timeout Action", reinterpret_cast<int*>(&timeoutAction_), {"0: Destroy", "1: Disable"});
+    RegisterEnum("Timeout Action", &timeoutActionInt_, {"0: Destroy", "1: Disable"}).OnChanged([this]() {
+        timeoutAction_ = static_cast<TimeoutAction>(timeoutActionInt_);
+    });
 }
 
 void LifetimeComponent::Initialize() {
@@ -46,5 +49,6 @@ void LifetimeComponent::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("timeoutAction")) {
         timeoutAction_ = static_cast<TimeoutAction>(j["timeoutAction"].get<int>());
+        timeoutActionInt_ = static_cast<int>(timeoutAction_);
     }
 }

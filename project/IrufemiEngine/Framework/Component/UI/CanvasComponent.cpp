@@ -8,22 +8,22 @@ void CanvasComponent::OnRegisterProperties() {
 
 void CanvasComponent::Initialize() {}
 
-static void ApplyAlphaRecursive(GameObject* obj, float alpha) {
+static void ApplyAlphaRecursive(GameObject* obj, float groupAlpha) {
     if (!obj) {
         return;
     }
 
-    // 自身のSpriteRendererがあればAlphaを適用
+    // 自身のSpriteRendererがあればAlphaを元カラーに乗算して適用
     auto sprite = obj->GetComponent<SpriteRendererComponent>();
     if (sprite && sprite->GetSprite()) {
-        Irufemi::Vector4 color = sprite->GetSprite()->GetColor();
-        color.w = alpha; // 今回は単純な上書き（必要なら元Alphaとの乗算にする）
+        Irufemi::Vector4 color = sprite->GetColor();
+        color.w *= groupAlpha;
         sprite->GetSprite()->SetColor(color);
     }
 
     // 子へ再帰
     for (auto& child : obj->GetChildren()) {
-        ApplyAlphaRecursive(child.get(), alpha);
+        ApplyAlphaRecursive(child.get(), groupAlpha);
     }
 }
 
@@ -32,6 +32,9 @@ void CanvasComponent::Update() {
         return;
     }
 
-    // 全ての子オブジェクトのSpriteのAlphaを一括設定
-    ApplyAlphaRecursive(gameObject_, groupAlpha_);
+    // グループアルファが変更された時のみ子階層へ乗算反映
+    if (std::abs(lastAppliedAlpha_ - groupAlpha_) > 0.0001f) {
+        ApplyAlphaRecursive(gameObject_, groupAlpha_);
+        lastAppliedAlpha_ = groupAlpha_;
+    }
 }
