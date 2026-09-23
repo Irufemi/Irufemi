@@ -3,7 +3,6 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Combat/IDamageable.h"
 #include "Combat/Boss/BossComponent.h"
 #include "Player/TargetableComponent.h"

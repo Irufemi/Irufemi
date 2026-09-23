@@ -3,7 +3,6 @@
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Utility/Log.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -58,8 +57,13 @@ void PlayerHealthComponent::Start() {
 }
 
 void PlayerHealthComponent::Update() {
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-    if (BaseModel::GetIrufemiEngine()->GetInputManager()->IsKeyPressed(VK_F9)) {
+    if (engine->GetInputManager() && engine->GetInputManager()->IsKeyPressed(VK_F9)) {
         isGodMode_ = !isGodMode_;
         Log::OutPutLog(std::cout, std::string("[PlayerHealth] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
     }
@@ -75,7 +79,7 @@ void PlayerHealthComponent::Update() {
 
     if (isDead_) {
         if (!hasTriggeredDeathSequenceFinished_) {
-            float currentTime = BaseModel::GetIrufemiEngine()->GetGameTime();
+            float currentTime = engine->GetGameTime();
             if (currentTime >= deathStartTime_ + 3.0f) {
                 hasTriggeredDeathSequenceFinished_ = true;
                 NotifyDeathSequenceFinished();
@@ -84,7 +88,7 @@ void PlayerHealthComponent::Update() {
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float dt = engine->GetGameDeltaTime();
     if (dt <= 0.0f) {
         return;
     }
@@ -118,7 +122,7 @@ void PlayerHealthComponent::TakeDamage(int damage) {
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
-        deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
+        deathStartTime_ = GetEngine() ? GetEngine()->GetGameTime() : 0.0f;
 
         NotifyPlayerDied();
 

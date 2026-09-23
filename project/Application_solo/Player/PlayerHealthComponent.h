@@ -22,7 +22,8 @@ public:
     }
 
     /**
-     * @brief プレイヤー死亡時のコールバックを設定する
+     * @brief プレイヤー死亡時のプライマリコールバック（ゲーム進行制御用）を設定する
+     * @details GameLoopManagerなどの単一オーナーがシーン遷移やリスタート制御を行うために使用します。
      * @param[in] callback 呼び出される関数オブジェクト
      */
     void SetOnPlayerDied(std::function<void()> callback) {
@@ -38,7 +39,7 @@ public:
     }
 
     /**
-     * @brief プレイヤー死亡を通知する
+     * @brief プレイヤー死亡を通知する（プライマリハンドラおよび全登録リスナーを実行）
      */
     void NotifyPlayerDied();
 
@@ -55,7 +56,9 @@ public:
     }
 
     /**
-     * @brief 死亡時のイベントリスナーを追加する
+     * @brief 死亡時のオブザーバーリスナー（演出・UI・サウンド等）を追加する
+     * @details 演出コンポーネント（PlayerDamageVisualizer等）が死亡時のエフェクトトリガーを購読するために使用します。
+     * @param[in] callback 呼び出される関数オブジェクト
      */
     void AddOnPlayerDiedListener(std::function<void()> callback) {
         onPlayerDiedListeners_.push_back(std::move(callback));

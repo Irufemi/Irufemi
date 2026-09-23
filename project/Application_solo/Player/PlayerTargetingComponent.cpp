@@ -11,7 +11,6 @@
 #include "Physics/CollisionManager.h"
 #include "Core/Math/MathFunction.h"
 #include "Core/Shape/LinePrimitive.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include <algorithm>
 #include <limits>
 #include <cmath>

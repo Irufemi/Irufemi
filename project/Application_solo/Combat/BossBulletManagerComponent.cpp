@@ -4,7 +4,6 @@
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Player/GravityPlayerComponent.h"
 #include "Player/PlayerHealthComponent.h"
@@ -55,7 +54,7 @@ void BossBulletManagerComponent::Update() {
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float dt = GetEngine() ? GetEngine()->GetGameDeltaTime() : 0.0f;
     if (dt <= 0.0f) {
         dt = 1.0f / 60.0f;
     }
