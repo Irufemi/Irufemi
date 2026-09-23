@@ -113,40 +113,38 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderCompiler::Compile(const std::wstring& fil
     ASSERT_IF_FAILED(hr);
 
     // 4. エラー・警告の確認
+    HRESULT hrStatus = S_OK;
+    shaderResult->GetStatus(&hrStatus);
+
     Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError;
     shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
     if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
-        // デバッグ出力
         std::string errStr = shaderError->GetStringPointer();
-
-        // 呼び出し元でエラーを処理するために返す
-        if (outErrorLog) {
-            *outErrorLog = errStr;
-        }
-
-        // どのファイルか分かるようにする
         std::string fileStr = ConvertString(filePath);
-        std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
 
-        /**
-         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
-         */
-        Log::OutPutLog(std::cerr, fullErr);
+        if (FAILED(hrStatus)) {
+            // コンパイルエラーの場合
+            std::string fullErr = "Shader Compile Error in " + fileStr + ":\n" + errStr;
+            Log::OutPutLog(std::cerr, fullErr);
 
-        // ログファイルにも出力
-        FILE* f;
-        fopen_s(&f, "shader_error.txt", "w");
-        if (f) {
-            fprintf(f, "%ws: %s\n", filePath.c_str(), errStr.c_str());
-            fclose(f);
-        }
+            // ログファイルにも出力
+            FILE* f = nullptr;
+            fopen_s(&f, "shader_error.txt", "w");
+            if (f) {
+                fprintf(f, "%ws: %s\n", filePath.c_str(), errStr.c_str());
+                fclose(f);
+            }
 
-        // outErrorLog が要求されている場合、アプリケーション側で復帰を試みるため assert を回避する
-        if (outErrorLog) {
-            *outErrorLog = errStr;
-            return nullptr;
+            if (outErrorLog) {
+                *outErrorLog = errStr;
+                return nullptr;
+            } else {
+                IRUFEMI_ASSERT(false && "Shader Compile Error");
+            }
         } else {
-            IRUFEMI_ASSERT(false && "Shader Compile Error");
+            // コンパイル警告（Warning）の場合：ログ出力のみ行い、処理は継続する
+            std::string fullWarn = "Shader Compile Warning in " + fileStr + ":\n" + errStr;
+            Log::OutPutLog(std::cout, fullWarn);
         }
     }
 

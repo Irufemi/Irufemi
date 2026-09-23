@@ -91,7 +91,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(const std::wstring&
         file.seekg(0, std::ios::beg);
         std::vector<uint8_t> buffer(size);
         if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-            blob = new CustomBlob(std::move(buffer));
+            blob.Attach(new CustomBlob(std::move(buffer)));
         }
     } else {
         IRUFEMI_ASSERT_MSG(false,

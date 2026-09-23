@@ -24,6 +24,10 @@ void RenderTexture::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t
         dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = 0xFFFFFFFF;
     }
+    if (dxCommon_ && imGuiSrvIndex_ != 0xFFFFFFFF) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(imGuiSrvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+        imGuiSrvIndex_ = 0xFFFFFFFF;
+    }
 
     dxCommon_ = dxCommon;
     width_ = width;
