@@ -115,6 +115,11 @@ public:
         return vertexResource_;
     }
     void SetVertexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) {
+        if (vertexResource_ && vertexResource_ != res) {
+            if (auto* dx = GetDxCommon()) {
+                dx->ReleaseAfterFence(vertexResource_);
+            }
+        }
         vertexResource_ = res;
     }
 
@@ -122,6 +127,11 @@ public:
         return indexResource_;
     }
     void SetIndexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) {
+        if (indexResource_ && indexResource_ != res) {
+            if (auto* dx = GetDxCommon()) {
+                dx->ReleaseAfterFence(indexResource_);
+            }
+        }
         indexResource_ = res;
     }
 

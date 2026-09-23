@@ -359,6 +359,7 @@ private:
     bool castShadows_ = true;               //!< 影を落とすフラグ
     bool isTransparent_ = false;            //!< 半透明・エフェクト（遅延・Zソート描画）フラグ
     CustomSyncCallback customSyncCallback_; //!< カスタムの同期処理用コールバック
+    Irufemi::Matrix4x4 lastCameraViewProj_{}; //!< 前回同期時のカメラ行列キャッシュ
 
     // インスタンスポインタ（優先）
     TextureManager* instTextureManager_ = nullptr;

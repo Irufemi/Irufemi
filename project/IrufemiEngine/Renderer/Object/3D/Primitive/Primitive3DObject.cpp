@@ -67,12 +67,16 @@ void Primitive3DObject::Update() {
         return;
     }
 
-    // トランスフォームの同期
+    // トランスフォームの同期（トランスフォームまたはカメラが動いた場合のみ実行）
+    const Irufemi::Matrix4x4& currentViewProj = activeCam->GetViewProjectionMatrix3D();
+    bool cameraChanged = (std::memcmp(&lastCameraViewProj_, &currentViewProj, sizeof(Irufemi::Matrix4x4)) != 0);
+
     if (transform_.isDirty) {
         transform_.UpdateTransform(mesh_.resource.get(), *activeCam);
-    } else {
-        // カメラが動いている可能性を考慮して常に更新（最適化が必要ならフラグ管理を厳密にする）
+        lastCameraViewProj_ = currentViewProj;
+    } else if (cameraChanged) {
         mesh_.resource->UpdateTransform(*activeCam);
+        lastCameraViewProj_ = currentViewProj;
     }
 
     // マテリアル情報の最新化

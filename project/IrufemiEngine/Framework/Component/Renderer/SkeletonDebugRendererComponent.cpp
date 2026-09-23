@@ -88,6 +88,17 @@ void SkeletonDebugRendererComponent::Update() {
     Irufemi::Matrix4x4 worldMatrix = Irufemi::Math::MakeAffineMatrix(
         transform->GetWorldScale(), transform->GetWorldRotation(), transform->GetWorldPosition());
 
+    // ジョイント階層深度の一括事前計算 (O(N))
+    std::vector<int> jointDepths(currentPose->jointPoses.size(), 0);
+    for (size_t i = 0; i < currentPose->jointPoses.size(); ++i) {
+        if (currentPose->data->joints[i].parent) {
+            int32_t pIdx = *currentPose->data->joints[i].parent;
+            if (pIdx >= 0 && static_cast<size_t>(pIdx) < jointDepths.size()) {
+                jointDepths[i] = jointDepths[pIdx] + 1;
+            }
+        }
+    }
+
     for (size_t i = 0; i < currentPose->jointPoses.size(); ++i) {
         const Irufemi::Matrix4x4& jointMat = currentPose->jointPoses[i].skeletonSpaceMatrix;
         Irufemi::Matrix4x4 jointWorldMat = jointMat * worldMatrix;
@@ -107,11 +118,9 @@ void SkeletonDebugRendererComponent::Update() {
                                     jointPosition.z - parentPosition.z};
             currentBoneLength = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
 
-            int32_t curr = parentIndex;
-            while (currentPose->data->joints[curr].parent) {
-                depth++;
-                curr = *currentPose->data->joints[curr].parent;
-            }
+            depth = (parentIndex >= 0 && static_cast<size_t>(parentIndex) < jointDepths.size())
+                        ? jointDepths[parentIndex]
+                        : 0;
         }
 
         // ボーン接続の描画（八面体）

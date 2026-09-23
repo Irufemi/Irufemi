@@ -129,11 +129,14 @@ private:
 
     struct SystemKeyHasher {
         std::size_t operator()(const SystemKey& k) const {
-            std::size_t h1 = std::hash<std::string>()(k.modelName);
-            std::size_t h2 = std::hash<int>()(k.resolution.x);
-            std::size_t h3 = std::hash<int>()(k.resolution.y);
-            std::size_t h4 = std::hash<int>()(k.resolution.z);
-            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+            std::size_t seed = std::hash<std::string>()(k.modelName);
+            auto hashCombine = [](std::size_t& s, int v) {
+                s ^= std::hash<int>()(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+            };
+            hashCombine(seed, k.resolution.x);
+            hashCombine(seed, k.resolution.y);
+            hashCombine(seed, k.resolution.z);
+            return seed;
         }
     };
 

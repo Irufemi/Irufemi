@@ -22,6 +22,20 @@ DebugPrimitiveRenderer::~DebugPrimitiveRenderer() {
             }
         }
     }
+    if (dx_) {
+        for (auto& buf : sphereInstanceBuffer_) {
+            if (buf) {
+                dx_->ReleaseAfterFence(buf);
+                buf.Reset();
+            }
+        }
+        for (auto& buf : cubeInstanceBuffer_) {
+            if (buf) {
+                dx_->ReleaseAfterFence(buf);
+                buf.Reset();
+            }
+        }
+    }
 }
 
 void DebugPrimitiveRenderer::Initialize(DirectXCommon* dx, DrawManager* drawM, DescriptorPool* srvAlloc) {
@@ -280,8 +294,16 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
         if (totalSpheres > sphereInstanceCapacity_[frameIndex]) {
             if (sphereInstanceBuffer_[frameIndex]) {
                 sphereInstanceBuffer_[frameIndex]->Unmap(0, nullptr);
+                dx_->ReleaseAfterFence(sphereInstanceBuffer_[frameIndex]);
+                sphereInstanceBuffer_[frameIndex].Reset();
             }
-            sphereInstanceCapacity_[frameIndex] = static_cast<uint32_t>(totalSpheres);
+            uint32_t doubled = sphereInstanceCapacity_[frameIndex] * 2;
+            uint32_t newCapacity =
+                static_cast<uint32_t>(totalSpheres) > doubled ? static_cast<uint32_t>(totalSpheres) : doubled;
+            if (newCapacity < 64) {
+                newCapacity = 64;
+            }
+            sphereInstanceCapacity_[frameIndex] = newCapacity;
             size_t size = sizeof(GPUInstanceData) * sphereInstanceCapacity_[frameIndex];
             sphereInstanceBuffer_[frameIndex] = dx_->CreateBufferResource(size);
             sphereInstanceBuffer_[frameIndex]->Map(0, nullptr,
@@ -322,8 +344,16 @@ void DebugPrimitiveRenderer::BuildInstanceBuffer() {
         if (totalCubes > cubeInstanceCapacity_[frameIndex]) {
             if (cubeInstanceBuffer_[frameIndex]) {
                 cubeInstanceBuffer_[frameIndex]->Unmap(0, nullptr);
+                dx_->ReleaseAfterFence(cubeInstanceBuffer_[frameIndex]);
+                cubeInstanceBuffer_[frameIndex].Reset();
             }
-            cubeInstanceCapacity_[frameIndex] = static_cast<uint32_t>(totalCubes);
+            uint32_t doubled = cubeInstanceCapacity_[frameIndex] * 2;
+            uint32_t newCapacity =
+                static_cast<uint32_t>(totalCubes) > doubled ? static_cast<uint32_t>(totalCubes) : doubled;
+            if (newCapacity < 64) {
+                newCapacity = 64;
+            }
+            cubeInstanceCapacity_[frameIndex] = newCapacity;
             size_t size = sizeof(GPUInstanceData) * cubeInstanceCapacity_[frameIndex];
             cubeInstanceBuffer_[frameIndex] = dx_->CreateBufferResource(size);
             cubeInstanceBuffer_[frameIndex]->Map(0, nullptr,
