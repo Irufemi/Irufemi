@@ -35,37 +35,79 @@ public:
 
 public:
     // --- バッファビュー & 描画情報アクセサ ---
-    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
-    void SetVertexBufferView(const D3D12_VERTEX_BUFFER_VIEW& vbv) { vertexBufferView_ = vbv; }
+    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const {
+        return vertexBufferView_;
+    }
+    void SetVertexBufferView(const D3D12_VERTEX_BUFFER_VIEW& vbv) {
+        vertexBufferView_ = vbv;
+    }
 
-    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return indexBufferView_; }
-    void SetIndexBufferView(const D3D12_INDEX_BUFFER_VIEW& ibv) { indexBufferView_ = ibv; }
+    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const {
+        return indexBufferView_;
+    }
+    void SetIndexBufferView(const D3D12_INDEX_BUFFER_VIEW& ibv) {
+        indexBufferView_ = ibv;
+    }
 
-    uint32_t GetIndexCount() const { return indexCount_; }
-    void SetIndexCount(uint32_t count) { indexCount_ = count; }
+    uint32_t GetIndexCount() const {
+        return indexCount_;
+    }
+    void SetIndexCount(uint32_t count) {
+        indexCount_ = count;
+    }
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> GetVertexResource() const { return vertexResource_; }
-    void SetVertexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) { vertexResource_ = res; }
+    Microsoft::WRL::ComPtr<ID3D12Resource> GetVertexResource() const {
+        return vertexResource_;
+    }
+    void SetVertexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) {
+        vertexResource_ = res;
+    }
 
-    Microsoft::WRL::ComPtr<ID3D12Resource> GetIndexResource() const { return indexResource_; }
-    void SetIndexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) { indexResource_ = res; }
+    Microsoft::WRL::ComPtr<ID3D12Resource> GetIndexResource() const {
+        return indexResource_;
+    }
+    void SetIndexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) {
+        indexResource_ = res;
+    }
 
-    VertexData* GetVertexData() { return vertexData_; }
-    const VertexData* GetVertexData() const { return vertexData_; }
-    uint32_t* GetIndexData() { return indexData_; }
-    const uint32_t* GetIndexData() const { return indexData_; }
+    VertexData* GetVertexData() {
+        return vertexData_;
+    }
+    const VertexData* GetVertexData() const {
+        return vertexData_;
+    }
+    uint32_t* GetIndexData() {
+        return indexData_;
+    }
+    const uint32_t* GetIndexData() const {
+        return indexData_;
+    }
 
     // --- トランスフォームアクセサ ---
-    const Irufemi::Transform& GetTransform() const { return transform_; }
-    Irufemi::Transform& GetTransform() { return transform_; }
-    void SetTransform(const Irufemi::Transform& transform) { transform_ = transform; }
+    const Irufemi::Transform& GetTransform() const {
+        return transform_;
+    }
+    Irufemi::Transform& GetTransform() {
+        return transform_;
+    }
+    void SetTransform(const Irufemi::Transform& transform) {
+        transform_ = transform;
+    }
 
-    const TransformationMatrix& GetTransformationMatrix() const { return transformationMatrix_; }
-    TransformationMatrix& GetTransformationMatrix() { return transformationMatrix_; }
+    const TransformationMatrix& GetTransformationMatrix() const {
+        return transformationMatrix_;
+    }
+    TransformationMatrix& GetTransformationMatrix() {
+        return transformationMatrix_;
+    }
 
     // --- マテリアルアクセサ ---
-    Material* GetMaterialData() { return &cpuMaterialData_; }
-    const Material* GetMaterialData() const { return &cpuMaterialData_; }
+    Material* GetMaterialData() {
+        return &cpuMaterialData_;
+    }
+    const Material* GetMaterialData() const {
+        return &cpuMaterialData_;
+    }
 
     /**
      * @brief MaterialVAddress を取得する。

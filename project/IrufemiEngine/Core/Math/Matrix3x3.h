@@ -12,11 +12,7 @@ struct Matrix3x3 final {
      * @brief 単位行列を取得する
      */
     [[nodiscard]] static constexpr Matrix3x3 Identity() noexcept {
-        return Matrix3x3{
-            {{1.0f, 0.0f, 0.0f},
-             {0.0f, 1.0f, 0.0f},
-             {0.0f, 0.0f, 1.0f}}
-        };
+        return Matrix3x3{{{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}};
     }
 
     /** @name 複合代入演算子 */

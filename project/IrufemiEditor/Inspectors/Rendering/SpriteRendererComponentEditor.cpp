@@ -232,17 +232,13 @@ void SpriteRendererComponentEditor::Draw(Component* component, EditorActionManag
             ImGui::PopItemWidth();
             ComponentUIHelpers::CheckUndoRedoDrag(
                 actionManager, &comp->size_,
-                std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) {
-                    comp->size_ = v;
-                }));
+                std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) { comp->size_ = v; }));
             ComponentUIHelpers::DrawPropertyResetButton(
                 "##BaseSizeReset", comp->size_.x != 100.0f || comp->size_.y != 100.0f, [&]() {
                     Irufemi::Vector2 oldS = comp->size_;
-                    ComponentUIHelpers::PushInstantUndo(
-                        actionManager, oldS, Irufemi::Vector2{100, 100},
-                        std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) {
-                            comp->size_ = v;
-                        }));
+                    ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Irufemi::Vector2{100, 100},
+                                                        std::function<void(const Irufemi::Vector2&)>(
+                                                            [comp](const Irufemi::Vector2& v) { comp->size_ = v; }));
                 });
 
             ImGui::TableNextRow();

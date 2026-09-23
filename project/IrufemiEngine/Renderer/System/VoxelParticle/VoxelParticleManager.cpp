@@ -102,8 +102,7 @@ void VoxelParticleManager::UpdateEmitterData(const EmitterHandle& handle, const 
     if (it != idLookup_.end()) {
         auto* context = it->second;
         if (handle.emitterIndex < context->slotGenerations.size() &&
-            context->slotGenerations[handle.emitterIndex] == handle.generation &&
-            context->system) {
+            context->slotGenerations[handle.emitterIndex] == handle.generation && context->system) {
             context->system->UpdateEmitterData(handle.emitterIndex, data);
         }
     }
@@ -119,8 +118,7 @@ const VoxelEmitter& VoxelParticleManager::GetEmitterData(const EmitterHandle& ha
     if (it != idLookup_.end()) {
         const auto* context = it->second;
         if (handle.emitterIndex < context->slotGenerations.size() &&
-            context->slotGenerations[handle.emitterIndex] == handle.generation &&
-            context->system) {
+            context->slotGenerations[handle.emitterIndex] == handle.generation && context->system) {
             return context->system->GetEmitterData(handle.emitterIndex);
         }
     }

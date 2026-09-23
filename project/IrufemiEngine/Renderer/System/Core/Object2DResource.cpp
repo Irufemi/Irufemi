@@ -129,8 +129,8 @@ D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetTransformVAddress() const {
     if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetTransformBufferManager()) {
         return 0;
     }
-    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, dxCommon->GetFrameIndex());
+    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_,
+                                                                                    dxCommon->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetMaterialVAddress() const {
@@ -141,8 +141,8 @@ D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetMaterialVAddress() const {
     if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetMaterialBufferManager()) {
         return 0;
     }
-    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
-        materialCbIndex_, dxCommon->GetFrameIndex());
+    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_,
+                                                                                   dxCommon->GetFrameIndex());
 }
 
 void Object2DResource::SyncBeforeDraw() {

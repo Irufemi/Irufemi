@@ -22,8 +22,7 @@ D3D12_GPU_VIRTUAL_ADDRESS BaseModel::GetTransformationGpuAddress() const {
     if (!dxCommon) {
         return 0;
     }
-    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, dxCommon->GetFrameIndex());
+    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, dxCommon->GetFrameIndex());
 }
 
 std::shared_ptr<ObjModel> BaseModel::GetCpuModel() const {
