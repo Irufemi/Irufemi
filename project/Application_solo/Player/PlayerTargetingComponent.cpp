@@ -210,10 +210,9 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                                 ray.origin = cameraPos;
                                 ray.diff = dir;
 
-                                cache.pendingTask = std::shared_ptr<std::future<std::pair<bool, RaycastHit>>>(
-                                    new std::future<std::pair<bool, RaycastHit>>(
-                                        engine->GetCollisionManager()->RaycastAsync(
-                                            engine->GetThreadPool(), ray, dist3D + 10.0f, 0xFFFFFFFF, playerObj)));
+                                cache.pendingTask = std::make_shared<std::future<std::pair<bool, RaycastHit>>>(
+                                    engine->GetCollisionManager()->RaycastAsync(
+                                        engine->GetThreadPool(), ray, dist3D + 10.0f, 0xFFFFFFFF, playerObj));
                             }
                         }
 

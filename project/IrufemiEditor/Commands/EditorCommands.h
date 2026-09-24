@@ -7,6 +7,7 @@
 #include "Core/EditorManager.h"
 #include <functional>
 #include <memory>
+#include <limits>
 
 /**
  * @class ChangeValueCommand
@@ -37,18 +38,19 @@ private:
 class CreateObjectCommand : public ICommand {
 public:
     CreateObjectCommand(BaseScene* scene, std::shared_ptr<GameObject> object,
-                        std::shared_ptr<GameObject> parent = nullptr, size_t index = static_cast<size_t>(-1))
+                        std::shared_ptr<GameObject> parent = nullptr,
+                        size_t index = (std::numeric_limits<size_t>::max)())
         : scene_(scene), object_(object), parent_(parent), index_(index) {}
 
     void Do() override {
         if (parent_) {
-            if (index_ == static_cast<size_t>(-1)) {
+            if (index_ == (std::numeric_limits<size_t>::max)()) {
                 parent_->AddChild(object_);
             } else {
                 parent_->InsertChild(object_, index_);
             }
         } else {
-            if (index_ == static_cast<size_t>(-1)) {
+            if (index_ == (std::numeric_limits<size_t>::max)()) {
                 scene_->AddGameObject(object_);
             } else {
                 scene_->InsertGameObject(object_, index_);

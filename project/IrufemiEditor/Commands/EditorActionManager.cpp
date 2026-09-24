@@ -15,6 +15,7 @@
 #include "Commands/EditorCommands.h"
 #include <filesystem>
 #include <algorithm>
+#include <limits>
 
 EditorActionManager::EditorActionManager(EditorManager* editor) : editorManager_(editor) {}
 
@@ -205,7 +206,7 @@ void EditorActionManager::DuplicateObject(std::shared_ptr<GameObject> target) {
 
     // クローンの場合は親をセットしてから生成コマンドを発行する
     auto parent = target->GetParent();
-    size_t index = static_cast<size_t>(-1);
+    size_t index = (std::numeric_limits<size_t>::max)();
     if (parent) {
         index = parent->GetChildIndex(target) + 1; // オリジナルの次に入れる
     } else {
