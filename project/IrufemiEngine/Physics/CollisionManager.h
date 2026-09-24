@@ -180,6 +180,7 @@ private:
     using CollisionPairSet = std::unordered_set<std::pair<ColliderComponent*, ColliderComponent*>, ColliderPairHash>;
 
     CollisionPairSet previousCollisions_;
+    CollisionPairSet currentCollisions_;
 
     Irufemi::DynamicBVH dynamicBVH_;
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <functional>
 #include <cstdint>
+#include <mutex>
 
 /**
  * @enum TargetType
@@ -38,19 +39,15 @@ public:
     }
 
     /**
-     * @brief 登録されているすべての TargetableComponent を取得する
-     * @return ターゲット候補コンポーネントのリスト
+     * @brief 登録されているすべての TargetableComponent のスナップショットを取得する（スレッドセーフ）
+     * @return ターゲット候補コンポーネントのリストのコピー
      */
-    static const std::vector<TargetableComponent*>& GetTargets() {
-        return targets_;
-    }
+    static std::vector<TargetableComponent*> GetTargets();
 
     /**
-     * @brief シーンアンロード時などに登録されているすべてのターゲットを一括クリアする
+     * @brief シーンアンロード時などに登録されているすべてのターゲットを一括クリアする（スレッドセーフ）
      */
-    static void ClearAllTargets() {
-        targets_.clear();
-    }
+    static void ClearAllTargets();
 
     /**
      * @brief ターゲット可能かどうかを判定する外部述語関数を設定する
@@ -82,6 +79,7 @@ public:
 
 private:
     static std::vector<TargetableComponent*> targets_;
+    static std::mutex targetsMutex_;
     TargetablePredicate predicate_ = nullptr;
     TargetType targetType_ = TargetType::Enemy; ///< デフォルトは敵
 };

@@ -250,7 +250,7 @@ void CollisionManager::ResolveKinematicCollision(ColliderComponent* colA, Collid
 void CollisionManager::CheckAllCollisions() {
     FlushPendingCommands();
 
-    CollisionPairSet currentCollisions;
+    currentCollisions_.clear();
 
     // --- BVH Update Phase ---
     {
@@ -328,7 +328,7 @@ void CollisionManager::CheckAllCollisions() {
             CheckNarrowPhase(colA, colB, result);
 
             if (result.isHit) {
-                currentCollisions.insert(pairKey);
+                currentCollisions_.insert(pairKey);
 
                 // --- コールバック呼び出し (Enter / Stay) ---
                 bool isNewHit = (previousCollisions_.find(pairKey) == previousCollisions_.end());
@@ -343,7 +343,7 @@ void CollisionManager::CheckAllCollisions() {
     // --- 離脱処理 (Exit) ---
     for (const auto& pair : previousCollisions_) {
         // 前フレームでは当たっていたが、今フレームでは当たっていない
-        if (currentCollisions.find(pair) == currentCollisions.end()) {
+        if (currentCollisions_.find(pair) == currentCollisions_.end()) {
             ColliderComponent* colA = pair.first;
             ColliderComponent* colB = pair.second;
 
@@ -363,8 +363,8 @@ void CollisionManager::CheckAllCollisions() {
         }
     }
 
-    // 更新
-    previousCollisions_ = std::move(currentCollisions);
+    // 更新（Ping-Pong スワップによりヒープ確保なしでバッファ再利用）
+    std::swap(previousCollisions_, currentCollisions_);
 }
 void CollisionManager::DrawDebug(GameObject* selectedObject) {
     // 保留中のコライダー追加・削除コマンドを確定してデバッグ描画に即時反映
