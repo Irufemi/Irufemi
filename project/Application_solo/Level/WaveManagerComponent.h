@@ -9,6 +9,7 @@
 class SplineFollowerComponent;
 class SpawnPointComponent;
 class ModelBatchRendererComponent;
+class EnemySpawnerComponent;
 
 /**
  * @class WaveManagerComponent
@@ -31,6 +32,7 @@ public:
         return "WaveManagerComponent";
     }
     void OnRegisterProperties() override;
+    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
 
     void ReloadLevelData();
 
@@ -47,21 +49,11 @@ public:
     void CacheSpawnPoints();
     const std::vector<SpawnPointComponent*>& GetSpawnPoints(const std::string& waveId) const;
 
-private:
-    void LoadLevelData(const std::string& filePath);
+    /**
+     * @brief 登録済みまたはシーン内の EnemySpawnerComponent を取得する
+     */
+    EnemySpawnerComponent* GetEnemySpawner() const;
 
-    std::priority_queue<WaveEventData, std::vector<WaveEventData>, std::greater<WaveEventData>> eventQueue_;
-    std::vector<WaveEventData> allEvents_; // パース済みの全イベントリスト（エディタのプレビューおよびUI用）
-    std::unordered_map<std::string, std::shared_ptr<IWaveEventHandler>> handlers_;
-
-    // キャッシュ
-    std::unordered_map<std::string, std::vector<SpawnPointComponent*>> spawnPointsMap_;
-    bool hasCachedSpawnPoints_ = false;
-
-    SplineFollowerComponent* playerFollower_ = nullptr;
-    std::string levelDataPath_ = "resources/GameData/WaveData_Stage1.json";
-
-public:
     std::vector<WaveEventData>& GetAllEventsMutable() {
         return allEvents_;
     }
@@ -92,12 +84,24 @@ public:
         selectedEventIndex_ = index;
     }
 
-    void OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) override;
-
 private:
+    void LoadLevelData(const std::string& filePath);
+
+    std::priority_queue<WaveEventData, std::vector<WaveEventData>, std::greater<WaveEventData>> eventQueue_;
+    std::vector<WaveEventData> allEvents_; // パース済みの全イベントリスト（エディタのプレビューおよびUI用）
+    std::unordered_map<std::string, std::shared_ptr<IWaveEventHandler>> handlers_;
+
+    // キャッシュ
+    std::unordered_map<std::string, std::vector<SpawnPointComponent*>> spawnPointsMap_;
+    bool hasCachedSpawnPoints_ = false;
+
+    std::weak_ptr<GameObject> cachedPlayerCart_;
+    std::string levelDataPath_ = "resources/GameData/WaveData_Stage1.json";
+
     float editorPreviewDistance_ = 0.0f;
     int selectedEventIndex_ = -1;
     std::string currentPreviewModelPath_ = "";
     std::shared_ptr<ModelBatchRendererComponent> previewBatch_;
     uint64_t targetSplineID_ = 0;
+    uint64_t targetEnemySpawnerID_ = 0;
 };

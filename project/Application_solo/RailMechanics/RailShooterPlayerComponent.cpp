@@ -3,8 +3,6 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#define DIRECTINPUT_VERSION 0x0800
-#include <dinput.h>
 #include <algorithm>
 #include <cmath>
 
@@ -48,17 +46,17 @@ void RailShooterPlayerComponent::Update() {
     }
     Irufemi::Vector3 moveDir = {0.0f, 0.0f, 0.0f};
 
-    // WASD または 矢印キーで移動方向を入力 (長押し判定のため IsKeyDownDIK を使用)
-    if (input->IsKeyDownDIK(DIK_W) || input->IsKeyDownDIK(DIK_UP)) {
+    // WASD または 矢印キーで移動方向を入力 (長押し判定)
+    if (input->IsKeyDown('W') || input->IsKeyDown(VK_UP)) {
         moveDir.y += 1.0f;
     }
-    if (input->IsKeyDownDIK(DIK_S) || input->IsKeyDownDIK(DIK_DOWN)) {
+    if (input->IsKeyDown('S') || input->IsKeyDown(VK_DOWN)) {
         moveDir.y -= 1.0f;
     }
-    if (input->IsKeyDownDIK(DIK_A) || input->IsKeyDownDIK(DIK_LEFT)) {
+    if (input->IsKeyDown('A') || input->IsKeyDown(VK_LEFT)) {
         moveDir.x -= 1.0f;
     }
-    if (input->IsKeyDownDIK(DIK_D) || input->IsKeyDownDIK(DIK_RIGHT)) {
+    if (input->IsKeyDown('D') || input->IsKeyDown(VK_RIGHT)) {
         moveDir.x += 1.0f;
     }
 
@@ -93,9 +91,10 @@ void RailShooterPlayerComponent::Update() {
             currentVelocity_.y = (currentVelocity_.y / vLen) * maxSpeed_;
         }
     } else {
-        // 入力がない場合、摩擦（減衰）で急制動
-        currentVelocity_.x = std::lerp(currentVelocity_.x, 0.0f, friction_ * deltaTime);
-        currentVelocity_.y = std::lerp(currentVelocity_.y, 0.0f, friction_ * deltaTime);
+        // 入力がない場合、摩擦（減衰）で急制動（フレームレート完全非依存の指数減衰）
+        float decay = std::exp(-friction_ * deltaTime);
+        currentVelocity_.x *= decay;
+        currentVelocity_.y *= decay;
     }
 
     // レール中心からのズレ幅（オフセット値）を更新
@@ -110,7 +109,8 @@ void RailShooterPlayerComponent::Update() {
     // 横移動の速度（currentVelocity_.x）に応じて機体を傾ける (右移動なら右傾き)
     // -zで傾くか+zで傾くかは座標系によるが、基本は符号反転
     float targetRoll = -(currentVelocity_.x / maxSpeed_) * maxRollAngle_;
-    rollAngle_ = std::lerp(rollAngle_, targetRoll, 10.0f * deltaTime);
+    float rollLerpFactor = 1.0f - std::exp(-10.0f * deltaTime);
+    rollAngle_ = std::lerp(rollAngle_, targetRoll, rollLerpFactor);
 
     // --- 浮遊感（サイン波）の計算 ---
     hoverTimer_ += deltaTime * hoverFrequency_;

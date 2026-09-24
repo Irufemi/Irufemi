@@ -14,6 +14,7 @@
 #include "Resource/Model/ModelManager.h"
 #include "Framework/Component/Logic/SpawnPointComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Combat/EnemySpawnerComponent.h"
 
 WaveManagerComponent::WaveManagerComponent() {
     // デフォルトハンドラの登録（コンポーネント自身のストラテジーとして自己完結カプセル化）
@@ -25,6 +26,7 @@ void WaveManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Level Data Path", &levelDataPath_);
     RegisterGameObjectRef("Target Spline", &targetSplineID_);
+    RegisterGameObjectRef("Enemy Spawner", &targetEnemySpawnerID_);
     RegisterProperty("Editor Preview Distance", &editorPreviewDistance_);
 }
 
@@ -192,28 +194,34 @@ void WaveManagerComponent::Update() {
         return; // エディタモードではイベントの消費とスポーンを行わない
     }
 
-    if (!playerFollower_) {
+    if (cachedPlayerCart_.expired()) {
         // PlayerCart または Player にアタッチされている SplineFollowerComponent を探す
         auto scene = gameObject_->GetScene();
         if (scene) {
             auto cartObj = scene->FindGameObject("PlayerCart");
             if (cartObj) {
-                playerFollower_ = cartObj->GetComponent<SplineFollowerComponent>();
-            }
-            if (!playerFollower_) {
+                cachedPlayerCart_ = cartObj;
+            } else {
                 auto playerObj = scene->FindGameObject("Player");
                 if (playerObj) {
-                    playerFollower_ = playerObj->GetComponent<SplineFollowerComponent>();
+                    cachedPlayerCart_ = playerObj;
                 }
             }
         }
-        if (!playerFollower_) {
-            return;
-        }
     }
 
-    float currentDist = playerFollower_->GetCurrentDistance();
-    auto spline = playerFollower_->GetCachedPath();
+    auto playerObj = cachedPlayerCart_.lock();
+    if (!playerObj) {
+        return;
+    }
+
+    auto playerFollower = playerObj->GetComponent<SplineFollowerComponent>();
+    if (!playerFollower) {
+        return;
+    }
+
+    float currentDist = playerFollower->GetCurrentDistance();
+    auto spline = playerFollower->GetCachedPath();
 
     // 進行距離が先頭イベントのトリガー距離を超えていたら発火
     while (!eventQueue_.empty()) {
@@ -296,11 +304,36 @@ const std::vector<SpawnPointComponent*>& WaveManagerComponent::GetSpawnPoints(co
     return emptyList;
 }
 
+EnemySpawnerComponent* WaveManagerComponent::GetEnemySpawner() const {
+    auto scene = gameObject_ ? gameObject_->GetScene() : nullptr;
+    if (!scene) {
+        return nullptr;
+    }
+    if (targetEnemySpawnerID_ != 0) {
+        if (auto spawnerObj = scene->FindGameObjectByID(targetEnemySpawnerID_)) {
+            if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
+                return spawner;
+            }
+        }
+    }
+    // フォールバック: 従来のシーン内名前探索
+    if (auto spawnerObj = scene->FindGameObject("EnemySpawner")) {
+        return spawnerObj->GetComponent<EnemySpawnerComponent>();
+    }
+    return nullptr;
+}
+
 void WaveManagerComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
     if (targetSplineID_ != 0) {
         auto it = idMap.find(targetSplineID_);
         if (it != idMap.end()) {
             targetSplineID_ = it->second;
+        }
+    }
+    if (targetEnemySpawnerID_ != 0) {
+        auto it = idMap.find(targetEnemySpawnerID_);
+        if (it != idMap.end()) {
+            targetEnemySpawnerID_ = it->second;
         }
     }
 }

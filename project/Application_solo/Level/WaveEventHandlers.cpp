@@ -96,33 +96,10 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
 }
 
 EnemySpawnerComponent* SpawnEnemyHandler::GetOrFindSpawner(WaveManagerComponent* manager) {
-    if (cachedSpawnerComp_ && !cachedSpawnerObj_.expired()) {
-        return cachedSpawnerComp_;
+    if (!manager) {
+        return nullptr;
     }
-
-    cachedSpawnerComp_ = nullptr;
-    cachedSpawnerObj_.reset();
-
-    BaseScene* baseScene = nullptr;
-    if (manager && manager->GetGameObject()) {
-        baseScene = dynamic_cast<BaseScene*>(manager->GetGameObject()->GetScene());
-    }
-    if (!baseScene && manager) {
-        if (auto engine = manager->GetEngine()) {
-            if (auto sceneManager = engine->GetSceneManager()) {
-                baseScene = dynamic_cast<BaseScene*>(sceneManager->GetCurrentScene());
-            }
-        }
-    }
-
-    if (baseScene) {
-        if (auto spawnerObj = baseScene->FindGameObject("EnemySpawner")) {
-            cachedSpawnerObj_ = spawnerObj;
-            cachedSpawnerComp_ = spawnerObj->GetComponent<EnemySpawnerComponent>();
-        }
-    }
-
-    return cachedSpawnerComp_;
+    return manager->GetEnemySpawner();
 }
 
 void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventData& data,

@@ -22,10 +22,6 @@ private:
                                                           const Irufemi::Vector3& railRight);
 
     EnemySpawnerComponent* GetOrFindSpawner(WaveManagerComponent* manager);
-
-private:
-    std::weak_ptr<GameObject> cachedSpawnerObj_;
-    EnemySpawnerComponent* cachedSpawnerComp_ = nullptr;
 };
 
 // BGM変更用のハンドラ（ダミー実装）

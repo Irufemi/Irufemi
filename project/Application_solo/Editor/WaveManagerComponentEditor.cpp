@@ -39,7 +39,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     ImGui::Separator();
 
     std::string path = waveManager->GetLevelDataPath();
-    char buffer[256];
+    char buffer[1024];
     strncpy_s(buffer, sizeof(buffer), path.c_str(), _TRUNCATE);
     buffer[sizeof(buffer) - 1] = '\0';
     if (ImGui::InputText("Level Data Path", buffer, sizeof(buffer))) {
