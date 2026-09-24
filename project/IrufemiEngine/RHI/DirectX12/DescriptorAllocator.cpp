@@ -35,8 +35,8 @@ void DescriptorAllocator::Free(uint32_t index) {
         return;
     }
     std::lock_guard<std::mutex> lk(mutex_);
-    IRUFEMI_ASSERT(index >= baseIndex_ && index < capacity_, "Descriptor index out of range in Free!");
-    IRUFEMI_ASSERT(inUse_[index], "Descriptor double free detected in Free!");
+    IRUFEMI_ASSERT_MSG(index >= baseIndex_ && index < capacity_, "Descriptor index out of range in Free!");
+    IRUFEMI_ASSERT_MSG(inUse_[index], "Descriptor double free detected in Free!");
     inUse_[index] = false;
     freeList_.push_back(index);
 }
@@ -46,8 +46,8 @@ void DescriptorAllocator::FreeAfterFence(uint32_t index, uint64_t safeFence) {
         return;
     }
     std::lock_guard<std::mutex> lk(mutex_);
-    IRUFEMI_ASSERT(index >= baseIndex_ && index < capacity_, "Descriptor index out of range in FreeAfterFence!");
-    IRUFEMI_ASSERT(inUse_[index], "Descriptor double free detected in FreeAfterFence!");
+    IRUFEMI_ASSERT_MSG(index >= baseIndex_ && index < capacity_, "Descriptor index out of range in FreeAfterFence!");
+    IRUFEMI_ASSERT_MSG(inUse_[index], "Descriptor double free detected in FreeAfterFence!");
     inUse_[index] = false;
     pending_.push(Pending{safeFence, index});
 }
