@@ -148,8 +148,8 @@ exit 0</Command>
       <AdditionalOptions>/ignore:4099 /ignore:4098 /ignore:4286 /ignore:4217 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y /D
-xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y /D
+      <Command>xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y
+xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
 if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
