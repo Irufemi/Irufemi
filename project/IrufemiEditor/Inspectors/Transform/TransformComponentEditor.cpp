@@ -12,17 +12,30 @@ void TransformComponentEditor::Draw(Component* component, EditorActionManager* a
     auto* comp = static_cast<TransformComponent*>(component);
     bool headerOpen = ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_DefaultOpen);
 
-    bool pendingRemove = false;
     if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::MenuItem("Remove Component")) {
-            pendingRemove = true;
+        if (ImGui::MenuItem("Reset")) {
+            Irufemi::Vector3 oldPos = comp->GetPosition();
+            Irufemi::Vector3 oldRot = comp->GetRotation();
+            Irufemi::Vector3 oldScale = comp->GetScale();
+            if (oldPos.x != 0.0f || oldPos.y != 0.0f || oldPos.z != 0.0f) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
+                    oldPos, Irufemi::Vector3{0, 0, 0}, [comp](const Irufemi::Vector3& v) { comp->SetPosition(v); }));
+            }
+            if (oldRot.x != 0.0f || oldRot.y != 0.0f || oldRot.z != 0.0f) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
+                    oldRot, Irufemi::Vector3{0, 0, 0}, [comp](const Irufemi::Vector3& v) { comp->SetRotation(v); }));
+            }
+            if (oldScale.x != 1.0f || oldScale.y != 1.0f || oldScale.z != 1.0f) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<Irufemi::Vector3>>(
+                    oldScale, Irufemi::Vector3{1, 1, 1}, [comp](const Irufemi::Vector3& v) { comp->SetScale(v); }));
+            }
+        }
+        ImGui::Separator();
+        ImGui::MenuItem("Remove Component", nullptr, false, false);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("Transform component cannot be removed.");
         }
         ImGui::EndPopup();
-    }
-    if (pendingRemove) {
-        actionManager->PushAndExecute(std::make_unique<RemoveComponentCommand>(
-            comp->GetGameObject()->shared_from_this(),
-            ComponentUIHelpers::GetSharedComponent(comp->GetGameObject(), comp)));
     }
 
     if (headerOpen) {
