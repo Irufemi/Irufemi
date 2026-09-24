@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <shared_mutex>
 #include "Core/Type/BlendMode.h"
 
 /**
@@ -154,6 +155,7 @@ private:
         cacheKeysByName_; ///< ホットリロードのためのキートラッキング (名前ごとの生成済みキャッシュキー)
     std::unordered_map<std::string, ComPtr> computeCache_; ///< Compute PSO キャッシュ
     std::vector<ComPtr> retiredPSOs_; ///< ホットリロード時等に一時退避させて安全に寿命を延ばすための遅延解放リスト
+    mutable std::shared_mutex psoMutex_; ///< マルチスレッド並列アクセス保護用ミューテックス
 
     /** @name 内部生成ヘルパー */
     ///@{

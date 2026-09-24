@@ -298,6 +298,12 @@ void DrawManager::ExecuteComputePasses() {
 }
 
 void DrawManager::Finalize() {
+    // グローバル無名名前空間のNullリソースを明示的解放（DirectXデバイス破棄後のLIVE_OBJECT警告防止）
+    gNullPointLight.Reset();
+    gNullSpotLight.Reset();
+    gNullPointLightVA = 0;
+    gNullSpotLightVA = 0;
+
     auto* srvPool = dxCommon_->GetSrvPool();
     for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
         auto& fr = frameResources_[i];

@@ -48,6 +48,8 @@ void PSOManager::Initialize(ID3D12Device* device, ID3D12RootSignature* rootSig,
 }
 
 void PSOManager::RegisterShader(const std::string& name, const PipelineStateDesc& desc) {
+    std::unique_lock<std::shared_mutex> lock(psoMutex_);
+
     // 同じ名前のシェーダーが上書き登録された場合、関連するキャッシュを削除する（ホットリロード対応）
     auto it = cacheKeysByName_.find(name);
     if (it != cacheKeysByName_.end()) {
@@ -62,16 +64,24 @@ void PSOManager::RegisterShader(const std::string& name, const PipelineStateDesc
 
 ID3D12PipelineState* PSOManager::GetPSO(const std::string& name, Irufemi::BlendMode blend, DepthWrite depth,
                                         CullMode cull) {
+    Key key{Hash(name, blend, depth, cull)};
+    {
+        std::shared_lock<std::shared_mutex> readLock(psoMutex_);
+        if (auto cit = cache_.find(key); cit != cache_.end()) {
+            return cit->second.Get();
+        }
+    }
+
+    std::unique_lock<std::shared_mutex> writeLock(psoMutex_);
+    if (auto cit = cache_.find(key); cit != cache_.end()) {
+        return cit->second.Get();
+    }
+
     auto it = shaderRegistry_.find(name);
     if (it == shaderRegistry_.end()) {
         return nullptr;
     }
     const PipelineStateDesc& psoDesc = it->second;
-
-    Key key{Hash(name, blend, depth, cull)};
-    if (auto cit = cache_.find(key); cit != cache_.end()) {
-        return cit->second.Get();
-    }
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = rootSig_.Get();
@@ -205,6 +215,14 @@ ID3D12PipelineState* PSOManager::GetCopyImage() {
     Key key{static_cast<uint64_t>(
         Hash("CopyImage", Irufemi::BlendMode::kBlendModeNone, DepthWrite::Off, CullMode::None) ^ kCopyTag)};
 
+    {
+        std::shared_lock<std::shared_mutex> readLock(psoMutex_);
+        if (auto it = cache_.find(key); it != cache_.end()) {
+            return it->second.Get();
+        }
+    }
+
+    std::unique_lock<std::shared_mutex> writeLock(psoMutex_);
     if (auto it = cache_.find(key); it != cache_.end()) {
         return it->second.Get();
     }
@@ -264,6 +282,7 @@ void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft:
     if (!csBlob || !computeRootSig) {
         return;
     }
+    std::unique_lock<std::shared_mutex> lock(psoMutex_);
     D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
     desc.pRootSignature = computeRootSig;
     desc.CS = {csBlob->GetBufferPointer(), csBlob->GetBufferSize()};
@@ -300,11 +319,13 @@ void PSOManager::RegisterComputeShader(const std::string& name, const Microsoft:
 }
 
 ID3D12PipelineState* PSOManager::GetComputePSO(const std::string& name) {
+    std::shared_lock<std::shared_mutex> lock(psoMutex_);
     auto it = computeCache_.find(name);
     return (it != computeCache_.end()) ? it->second.Get() : nullptr;
 }
 
 void PSOManager::ClearCache() {
+    std::unique_lock<std::shared_mutex> lock(psoMutex_);
     // 古いPSOを直ちに破棄せず、退避用リストに移動して安全に寿命を延長する（Deferred Release）
     // これにより、ホットリロード直後に古いポインタが一時的に参照されても 0xC0000005 クラッシュを起こさない
     for (auto& [k, pso] : cache_) {

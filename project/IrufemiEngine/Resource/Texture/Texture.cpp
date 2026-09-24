@@ -4,6 +4,8 @@
 #include "../../../externals/DirectXTex/d3dx12.h"
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DescriptorPool.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 #include <cassert>
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
@@ -78,7 +80,12 @@ void Texture::Initialize(const std::string& filePath) {
         }
 
         status_.store(LoadingStatus::Loaded);
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load '" + filePath_ + "': " + e.what() + "\n");
+        status_.store(LoadingStatus::Failed);
+        // 失敗してもSRV自体は白テクスチャを指したままなので描画上は安全
     } catch (...) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load '" + filePath_ + "' (Unknown error)\n");
         status_.store(LoadingStatus::Failed);
         // 失敗してもSRV自体は白テクスチャを指したままなので描画上は安全
     }
@@ -117,7 +124,11 @@ void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixe
         }
 
         status_.store(LoadingStatus::Loaded);
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load memory texture '" + filePath_ + "': " + e.what() + "\n");
+        status_.store(LoadingStatus::Failed);
     } catch (...) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load memory texture '" + filePath_ + "' (Unknown error)\n");
         status_.store(LoadingStatus::Failed);
     }
 }
@@ -162,7 +173,11 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
 
         isCubemap_ = true;
         status_.store(LoadingStatus::Loaded);
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load cubemap '" + filePath_ + "': " + e.what() + "\n");
+        status_.store(LoadingStatus::Failed);
     } catch (...) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load cubemap '" + filePath_ + "' (Unknown error)\n");
         status_.store(LoadingStatus::Failed);
     }
 }

@@ -84,13 +84,6 @@ void TextRendererComponent::Update() {
 }
 
 void TextRendererComponent::Draw() {
-    if (isTopMost_) {
-        static int debugCount = 0;
-        if (debugCount++ % 60 == 0) {
-            std::string msg = "[TextRendererComponent] Drawing TopMost Text\n";
-            Log::OutPutLog(std::cout, msg);
-        }
-    }
     textObj_->Draw();
 }
 

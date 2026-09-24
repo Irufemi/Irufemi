@@ -17,12 +17,12 @@ const float kFarClip = 512.0f;       // ファークリップ
 ShadowMap::~ShadowMap() {
     // SRV の解放
     if (dxCommon_ && dxCommon_->GetSrvPool()) {
-        if (srvIndex_ != 0xFFFFFFFF) {
+        if (srvIndex_ != DescriptorPool::kInvalid) {
             dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         }
     }
     // DSV の解放
-    if (dxCommon_ && dsvIndex_ != 0xFFFFFFFF) {
+    if (dxCommon_ && dsvIndex_ != DescriptorPool::kInvalid) {
         dxCommon_->FreeDSVIndex(dsvIndex_);
     }
 }
@@ -32,13 +32,13 @@ void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t hei
 
     // 既存リソース・ディスクリプタの解放（再初期化時のリーク防止）
     if (dxCommon_) {
-        if (srvIndex_ != 0xFFFFFFFF && dxCommon_->GetSrvPool()) {
+        if (srvIndex_ != DescriptorPool::kInvalid && dxCommon_->GetSrvPool()) {
             dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
-            srvIndex_ = 0xFFFFFFFF;
+            srvIndex_ = DescriptorPool::kInvalid;
         }
-        if (dsvIndex_ != 0xFFFFFFFF) {
+        if (dsvIndex_ != DescriptorPool::kInvalid) {
             dxCommon_->FreeDSVIndex(dsvIndex_);
-            dsvIndex_ = 0xFFFFFFFF;
+            dsvIndex_ = DescriptorPool::kInvalid;
         }
         if (resource_) {
             dxCommon_->ReleaseAfterFence(resource_);
