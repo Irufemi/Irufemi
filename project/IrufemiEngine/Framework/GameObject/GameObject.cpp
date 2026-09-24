@@ -202,20 +202,13 @@ void GameObject::Update(bool isPlayMode) {
         }
     }
 
-    // コンポーネント更新
-    size_t compCount = 0;
+    // コンポーネント更新（単一ロック下でスナップショットを取得し、ループ毎のロック/アンロックを排除）
+    std::vector<std::shared_ptr<Component>> activeComps;
     {
         std::lock_guard<std::recursive_mutex> lock(structureMutex_);
-        compCount = components_.size();
+        activeComps = components_;
     }
-    for (size_t i = 0; i < compCount; ++i) {
-        std::shared_ptr<Component> comp;
-        {
-            std::lock_guard<std::recursive_mutex> lock(structureMutex_);
-            if (i < components_.size()) {
-                comp = components_[i];
-            }
-        }
+    for (const auto& comp : activeComps) {
         if (!comp) {
             continue;
         }
@@ -233,20 +226,13 @@ void GameObject::Update(bool isPlayMode) {
         comp->Update();
     }
 
-    // 子オブジェクト更新（破棄フラグが立っているものはスキップ、GCは同期フェーズで行う）
-    size_t childCount = 0;
+    // 子オブジェクト更新（単一ロック下でスナップショットを取得）
+    std::vector<std::shared_ptr<GameObject>> activeChildren;
     {
         std::lock_guard<std::recursive_mutex> lock(structureMutex_);
-        childCount = children_.size();
+        activeChildren = children_;
     }
-    for (size_t i = 0; i < childCount; ++i) {
-        std::shared_ptr<GameObject> child;
-        {
-            std::lock_guard<std::recursive_mutex> lock(structureMutex_);
-            if (i < children_.size()) {
-                child = children_[i];
-            }
-        }
+    for (const auto& child : activeChildren) {
         if (child && !child->IsDestroyed()) {
             child->Update(isPlayMode);
         }

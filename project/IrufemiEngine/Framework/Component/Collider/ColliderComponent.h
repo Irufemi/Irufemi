@@ -75,6 +75,12 @@ public:
     virtual void Deserialize(const nlohmann::json& j) override;
 
     /**
+     * @brief コンポーネントのプロパティを別のコンポーネントからコピーする
+     * @param other コピー元コンポーネント
+     */
+    void CopyPropertiesFrom(const Component* other) override;
+
+    /**
      * @brief デバッグ用の当たり判定枠線（ワイヤーフレーム）を描画する
      */
     virtual void DrawDebug() = 0;

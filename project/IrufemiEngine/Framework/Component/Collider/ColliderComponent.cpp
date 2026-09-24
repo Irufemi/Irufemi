@@ -79,3 +79,16 @@ void ColliderComponent::Deserialize(const nlohmann::json& j) {
         pushbackMask_.z = j["pushbackMask"][2];
     }
 }
+
+void ColliderComponent::CopyPropertiesFrom(const Component* other) {
+    Component::CopyPropertiesFrom(other);
+    if (const auto* otherCol = dynamic_cast<const ColliderComponent*>(other)) {
+        layer_ = otherCol->layer_;
+        mask_ = otherCol->mask_;
+        isTrigger_ = otherCol->isTrigger_;
+        isStatic_ = otherCol->isStatic_;
+        pushbackMask_ = otherCol->pushbackMask_;
+        debugCategory_ = otherCol->debugCategory_;
+        debugCustomColor_ = otherCol->debugCustomColor_;
+    }
+}
