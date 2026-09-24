@@ -31,7 +31,7 @@ void EffectManagerComponent::Start() {
 }
 
 ObjectPool<GameObject>* EffectManagerComponent::GetOrCreatePool(const std::string& effectKey,
-                                                               const std::string& prefabPath) {
+                                                                const std::string& prefabPath) {
     auto it = effectPools_.find(effectKey);
     if (it != effectPools_.end()) {
         return it->second.get();

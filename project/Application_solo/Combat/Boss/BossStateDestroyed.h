@@ -74,7 +74,7 @@ public:
     void OnTakeDamage(BossComponent* boss, float damage) override;
 
 private:
-    BossDamageVisualizerComponent* visualizer_ = nullptr;   ///< 演出コンポーネントの参照
+    BossDamageVisualizerComponent* visualizer_ = nullptr;    ///< 演出コンポーネントの参照
     std::vector<std::unique_ptr<IDeathSequenceStep>> steps_; ///< 演出ステップのキュー
-    size_t currentStepIndex_ = 0;                           ///< 現在進行中のステップ番号
+    size_t currentStepIndex_ = 0;                            ///< 現在進行中のステップ番号
 };
