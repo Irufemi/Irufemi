@@ -18,15 +18,19 @@
 
 void LockonMarkerUIComponent::Initialize() {
     auto engine = GetEngine();
-    IRUFEMI_ASSERT_MSG(engine != nullptr, "IrufemiEngine is null in Initialize");
+    if (!engine) {
+        return; // シーンへのエンジンバインド完了まで初期化を遅延
+    }
 
-    // 1. SpriteBatch の生成（テクスチャ指定）
-    markerBatch_ = std::make_unique<SpriteBatch>();
-    markerBatch_->Initialize("resources/reticle.jpg");
+    if (!markerBatch_) {
+        // 1. SpriteBatch の生成（テクスチャ指定）
+        markerBatch_ = std::make_unique<SpriteBatch>();
+        markerBatch_->Initialize("resources/reticle.jpg");
 
-    // 2. カスタムシェーダー（輝度アルファ抜き）の適用 (名前指定によるホットリロード安全化)
-    markerBatch_->SetCustomPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off,
-                               PSOManager::CullMode::None);
+        // 2. カスタムシェーダー（輝度アルファ抜き）の適用 (名前指定によるホットリロード安全化)
+        markerBatch_->SetCustomPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off,
+                                   PSOManager::CullMode::None);
+    }
 }
 
 void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets) {
@@ -67,13 +71,20 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
 }
 
 void LockonMarkerUIComponent::Update() {
-    IRUFEMI_ASSERT(markerBatch_ != nullptr && "markerBatch_ is null in Update");
+    if (!markerBatch_) {
+        Initialize();
+        if (!markerBatch_) {
+            return;
+        }
+    }
 
     // バッチへの登録をリセット
     markerBatch_->ClearInstances();
 
     auto engine = GetEngine();
-    IRUFEMI_ASSERT_MSG(engine != nullptr, "IrufemiEngine is null");
+    if (!engine) {
+        return;
+    }
     float deltaTime = engine->GetDeltaTime();
 
     auto cameraManager = engine->GetCameraManager();

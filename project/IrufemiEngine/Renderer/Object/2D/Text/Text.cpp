@@ -75,7 +75,7 @@ void Text::GenerateVertices() {
             currentLineWidth = 0.0f;
             continue;
         }
-        const auto glyph = fontManager_->GetGlyph(fontId_, c);
+        const auto glyph = fm->GetGlyph(fontId_, c);
         if (glyph) {
             if (glyph->width < 0.0f) {
                 hasPendingGlyphs = true;
@@ -111,7 +111,7 @@ void Text::GenerateVertices() {
             continue;
         }
 
-        const auto glyph = fontManager_->GetGlyph(fontId_, c);
+        const auto glyph = fm->GetGlyph(fontId_, c);
         if (!glyph) {
             continue; // 未知の文字
         }
@@ -174,6 +174,16 @@ void Text::GenerateVertices() {
     if (minX <= maxX && minY <= maxY) {
         localBoundsMin_ = {minX, minY};
         localBoundsMax_ = {maxX, maxY};
+
+        // Center アライメント時、描画クアッド全体の幾何学的中心が X=0.0f (オブジェクト中心) に一致するよう補正
+        if (alignment_ == TextAlignment::Center) {
+            float geometricCenterX = (minX + maxX) * 0.5f;
+            for (auto& vertex : resource_->GetVertexDataList()) {
+                vertex.position.x -= geometricCenterX;
+            }
+            localBoundsMin_.x -= geometricCenterX;
+            localBoundsMax_.x -= geometricCenterX;
+        }
     } else {
         localBoundsMin_ = {0.0f, 0.0f};
         localBoundsMax_ = {0.0f, 0.0f};

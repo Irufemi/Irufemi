@@ -27,6 +27,10 @@ void TextRendererComponent::OnAwake() {
             textObj_->SetCameraManagerInstance(engine->GetCameraManager());
         }
     }
+    // リフレクション変数との同期を確実に保証
+    text_ = ConvertString(textU8_);
+    alignment_ = static_cast<TextAlignment>(alignmentInt_);
+
     textObj_->Initialize(fontId_);
     textObj_->SetText(text_);
     textObj_->SetBaseScale(baseScale_);
@@ -160,4 +164,21 @@ void TextRendererComponent::OnRegisterProperties() {
     RegisterProperty("color", &color_);
     RegisterProperty("alignment", &alignmentInt_);
     RegisterProperty("isTopMost", &isTopMost_);
+}
+
+void TextRendererComponent::Deserialize(const nlohmann::json& j) {
+    Component::Deserialize(j);
+
+    // デシリアライズ直後に UTF-8文字列およびアライメント数値を型安全に即時同期
+    text_ = ConvertString(textU8_);
+    alignment_ = static_cast<TextAlignment>(alignmentInt_);
+
+    if (textObj_) {
+        textObj_->SetText(text_);
+        textObj_->SetFontId(fontId_);
+        textObj_->SetBaseScale(baseScale_);
+        textObj_->SetColor(color_);
+        textObj_->SetTopMost(isTopMost_);
+        textObj_->SetAlignment(alignment_);
+    }
 }

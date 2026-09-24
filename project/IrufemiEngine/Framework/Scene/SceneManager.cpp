@@ -103,12 +103,13 @@ bool SceneManager::ChangeTo(const Key& next) {
     item.name = next;
     item.scene = it->second();
 
-    // データがあればロード
-    bool hasData = SceneSerializer::Load(item.scene.get(), next);
-
+    // シーンにエンジンコンテキストを確実に先行バインド
     isInitializing_ = true;
     item.scene->Initialize(engine_);
     isInitializing_ = false;
+
+    // データがあればロード
+    bool hasData = SceneSerializer::Load(item.scene.get(), next);
 
     // データがなくてエディタモードなら、初期状態を自動生成
 #ifdef EditorMode
@@ -151,10 +152,11 @@ void SceneManager::PushScene(const Key& name) {
         engine_->GetAudioManager()->PauseCategory(AudioCategory::SE);
     }
 
+    // シーンにエンジンコンテキストを確実に先行バインド
+    item.scene->Initialize(engine_);
+
     // データがあればロード
     bool hasData = SceneSerializer::Load(item.scene.get(), name);
-
-    item.scene->Initialize(engine_);
 
     // データがなくてエディタモードなら、初期状態を自動生成
 #ifdef EditorMode
@@ -493,11 +495,11 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
         // 新しいシーンを生成
         auto newScene = factory();
 
+        // 初期化（裏ロード: シーンにエンジンコンテキストを先行バインド）
+        newScene->Initialize(engine_);
+
         // データがあればロード
         bool hasData = SceneSerializer::Load(newScene.get(), next);
-
-        // 初期化（裏ロード）
-        newScene->Initialize(engine_);
 
         // データがなくてエディタモードなら、初期状態を自動生成
 #ifdef EditorMode

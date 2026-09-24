@@ -225,9 +225,10 @@ void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wst
             if (char32 == U' ') {
                 double spaceAdvance = 0.0, tabAdvance = 0.0;
                 msdfgen::getFontWhitespaceWidth(spaceAdvance, tabAdvance, font, msdfgen::FONT_SCALING_NONE);
+                double scale = static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
                 GlyphInfo info{};
                 info.character = char32;
-                info.advanceX = static_cast<float>(spaceAdvance);
+                info.advanceX = static_cast<float>(spaceAdvance * scale);
                 fontCache[char32] = info;
                 continue;
             }
@@ -396,9 +397,29 @@ std::optional<GlyphInfo> FontManager::GetGlyph(const std::string& fontId, char32
     }
 
     // ダミー登録 (複数スレッドからの二重生成リクエスト防止)
+    // 業界標準の分離設計: SDF描画は非同期にしつつ、メトリクス(advanceX)は即座に取得してレイアウト破綻を防ぐ
     GlyphInfo dummy{};
     dummy.character = character;
     dummy.width = -1.0f; // 未生成状態を示すフラグとして width = -1 を使用
+
+    auto fontIt = impl_->fonts.find(fontId);
+    if (fontIt != impl_->fonts.end()) {
+        msdfgen::FontHandle* font = fontIt->second;
+        msdfgen::FontMetrics metrics;
+        msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_NONE);
+        double scale = static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
+        if (character == U' ') {
+            double spaceAdvance = 0.0, tabAdvance = 0.0;
+            msdfgen::getFontWhitespaceWidth(spaceAdvance, tabAdvance, font, msdfgen::FONT_SCALING_NONE);
+            dummy.advanceX = static_cast<float>(spaceAdvance * scale);
+        } else {
+            double advance = 0.0;
+            msdfgen::Shape shape;
+            if (msdfgen::loadGlyph(shape, font, character, msdfgen::FONT_SCALING_NONE, &advance)) {
+                dummy.advanceX = static_cast<float>(advance * scale);
+            }
+        }
+    }
     fontCache[character] = dummy;
 
     // 非同期で直接内部処理をタスクキューイング

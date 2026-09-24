@@ -208,6 +208,12 @@ public:
      */
     void OnRegisterProperties() override;
 
+    /**
+     * @brief JSONからコンポーネントデータを復元し、内部状態を即座に同期します
+     * @param[in] j デシリアライズ元のJSONオブジェクト
+     */
+    void Deserialize(const nlohmann::json& j) override;
+
 private:
     std::unique_ptr<Text> textObj_;
     std::wstring text_ = L"Text";
