@@ -44,7 +44,7 @@ template <typename T, typename U> bool EraseSwap(std::vector<T>& vec, const U& v
  * @param it 削除したいイテレータ
  */
 template <typename T> void EraseSwap(std::vector<T>& vec, typename std::vector<T>::iterator it) {
-    if (it == vec.end()) {
+    if (vec.empty() || it == vec.end()) {
         return;
     }
     auto lastIt = std::prev(vec.end());

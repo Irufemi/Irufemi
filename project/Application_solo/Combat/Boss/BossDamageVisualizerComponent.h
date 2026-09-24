@@ -122,16 +122,16 @@ private:
     /**
      * @brief メインカメラのゲームオブジェクトを取得する（弱参照キャッシュ付き）
      */
-    std::shared_ptr<GameObject> GetMainCamera();
+    std::shared_ptr<GameObject> GetMainCamera() const;
 
     /**
      * @brief メインカメラの CameraShakeComponent を取得する
      */
-    CameraShakeComponent* GetCameraShake();
+    CameraShakeComponent* GetCameraShake() const;
 
 private:
     BossComponent* bossComp_ = nullptr;
-    std::weak_ptr<GameObject> mainCameraObj_;
+    mutable std::weak_ptr<GameObject> mainCameraObj_;
 
     // 被弾シェイク
     float damageShakeIntensity_ = 0.4f;

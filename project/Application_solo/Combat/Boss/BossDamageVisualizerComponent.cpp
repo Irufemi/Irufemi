@@ -47,7 +47,7 @@ void BossDamageVisualizerComponent::Start() {
     }
 }
 
-std::shared_ptr<GameObject> BossDamageVisualizerComponent::GetMainCamera() {
+std::shared_ptr<GameObject> BossDamageVisualizerComponent::GetMainCamera() const {
     if (auto cam = mainCameraObj_.lock()) {
         return cam;
     }
@@ -62,7 +62,7 @@ std::shared_ptr<GameObject> BossDamageVisualizerComponent::GetMainCamera() {
     return nullptr;
 }
 
-CameraShakeComponent* BossDamageVisualizerComponent::GetCameraShake() {
+CameraShakeComponent* BossDamageVisualizerComponent::GetCameraShake() const {
     if (auto cam = GetMainCamera()) {
         return cam->GetComponent<CameraShakeComponent>();
     }
@@ -83,10 +83,8 @@ void BossDamageVisualizerComponent::TriggerDeathShake() {
 }
 
 bool BossDamageVisualizerComponent::IsDeathShakePlaying() const {
-    if (auto cam = mainCameraObj_.lock()) {
-        if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
-            return shake->IsPlaying();
-        }
+    if (auto shake = GetCameraShake()) {
+        return shake->IsPlaying();
     }
     return false;
 }

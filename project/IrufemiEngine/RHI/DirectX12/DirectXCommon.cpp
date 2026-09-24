@@ -1036,17 +1036,17 @@ void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> res
         return;
     }
     std::lock_guard<std::mutex> lock(pendingMutex_);
-    pendingResources_.push_back({commandManager_->GetGlobalFenceValue() + 1, resource});
+    pendingResources_.push_back({commandManager_->GetGlobalFenceValue() + 1, std::move(resource)});
 }
 
 void DirectXCommon::ClearPendingResources() {
     uint64_t completed = commandManager_->GetFence()->GetCompletedValue();
     std::lock_guard<std::mutex> lock(pendingMutex_);
 
-    // リソースの回収
-    auto it = std::remove_if(pendingResources_.begin(), pendingResources_.end(),
-                             [completed](const PendingResource& res) { return res.fenceValue <= completed; });
-    pendingResources_.erase(it, pendingResources_.end());
+    // リソースの回収 (C++20 std::erase_if)
+    std::erase_if(pendingResources_, [completed](const PendingResource& res) {
+        return res.fenceValue <= completed;
+    });
 
     // デスクリプタの回収をマネージャに委譲
     swapChainManager_->FlushPendingDescriptors(completed);

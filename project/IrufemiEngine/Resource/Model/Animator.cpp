@@ -153,7 +153,7 @@ void Animator::ExtractRootMotion(const Animation* anim, const SkeletonData* skel
 
 void Animator::Debug([[maybe_unused]] const char* objName) {
 #if defined USE_IMGUI
-    std::string name = std::string("Animator: ") + objName;
+    std::string name = std::string("Animator: ") + (objName ? objName : "Unnamed");
     if (ImGui::TreeNode(name.c_str())) {
         ImGui::Text("Current Animation: %s", currentAnimationName_.c_str());
         ImGui::SliderFloat("Playback Speed", &playbackSpeed_, 0.0f, 3.0f);

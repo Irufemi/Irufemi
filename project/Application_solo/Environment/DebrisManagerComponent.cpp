@@ -440,6 +440,8 @@ void DebrisManagerComponent::UpdatePulledDebris(float deltaTime) {
     float pullSpeed = GetDebrisPullSpeed();
     float pullYOffset = GetDebrisPullYOffset();
 
+    std::vector<DebrisComponent*> caughtDebris;
+
     for (int i = (int)pulledDebris_.size() - 1; i >= 0; --i) {
         DebrisComponent* debris = pulledDebris_[i];
         if (!debris || !debris->gameObject_) {
@@ -463,10 +465,14 @@ void DebrisManagerComponent::UpdatePulledDebris(float deltaTime) {
 
                 float distSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
                 if (distSq < catchDistSq) {
-                    debris->SetState(DebrisState::Orbiting);
+                    caughtDebris.push_back(debris);
                 }
             }
         }
+    }
+
+    for (auto* debris : caughtDebris) {
+        debris->SetState(DebrisState::Orbiting);
     }
 }
 

@@ -26,6 +26,7 @@
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <regex>
+#include <limits>
 
 #ifdef USE_IMGUI
 #include "Framework/UI/DebugUI.h"
@@ -461,7 +462,7 @@ size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
     if (it != gameObjects_.end()) {
         return std::distance(gameObjects_.begin(), it);
     }
-    return (size_t)-1;
+    return std::numeric_limits<size_t>::max();
 }
 
 void BaseScene::SubmitFrameData() {
