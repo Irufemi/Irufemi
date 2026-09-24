@@ -29,6 +29,7 @@ void PlayerHealthComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Status Data Path", &statusDataPath_);
     RegisterProperty("God Mode", &isGodMode_);
+    RegisterPropertyRange("Death Sequence Duration", &deathSequenceDuration_, 0.5f, 10.0f);
 }
 
 void PlayerHealthComponent::Initialize() {
@@ -73,7 +74,7 @@ void PlayerHealthComponent::Update() {
     if (isDead_) {
         if (!hasTriggeredDeathSequenceFinished_) {
             float currentTime = engine->GetGameTime();
-            if (currentTime >= deathStartTime_ + 3.0f) {
+            if (currentTime >= deathStartTime_ + deathSequenceDuration_) {
                 hasTriggeredDeathSequenceFinished_ = true;
                 NotifyDeathSequenceFinished();
             }

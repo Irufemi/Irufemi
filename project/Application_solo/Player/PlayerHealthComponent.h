@@ -93,6 +93,12 @@ public:
     int GetMaxHp() const {
         return maxHp_;
     }
+    float GetDeathSequenceDuration() const {
+        return deathSequenceDuration_;
+    }
+    void SetDeathSequenceDuration(float duration) {
+        deathSequenceDuration_ = duration;
+    }
     bool IsDead() const {
         return isDead_;
     }
@@ -107,6 +113,8 @@ private:
     bool isDead_ = false;
     bool isGodMode_ = false;
 
+    static constexpr float kDefaultDeathSequenceDuration = 3.0f;
+    float deathSequenceDuration_ = kDefaultDeathSequenceDuration;
     float deathStartTime_ = 0.0f;
     bool hasTriggeredDeathSequenceFinished_ = false;
 
