@@ -3789,6 +3789,7 @@
             },
             {
               "data": {
+                "autoClearEveryFrame": true,
                 "modelName": "resources/model/BossDrone/boss_drone.obj"
               },
               "type": "ModelBatchRendererComponent"
@@ -3857,6 +3858,7 @@
             },
             {
               "data": {
+                "autoClearEveryFrame": true,
                 "modelName": "resources/model/BossDroneBullet/BossDroneBullet.obj"
               },
               "type": "ModelBatchRendererComponent"
