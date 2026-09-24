@@ -546,7 +546,8 @@ void DebrisManagerComponent::UpdateThrownDebris(float deltaTime) {
     float throwSpeed = GetDebrisThrowSpeed();
     float maxDistSq = GetMaxThrowDistanceSq();
     EffectManagerComponent* effectManager = nullptr;
-    auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager();
+    auto engine = GetEngine();
+    auto voxelManager = engine ? engine->GetVoxelParticleManager() : nullptr;
 
     if (gameObject_ && gameObject_->GetScene()) {
         if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {

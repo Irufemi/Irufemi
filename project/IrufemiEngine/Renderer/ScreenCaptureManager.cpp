@@ -10,6 +10,7 @@
 
 // DirectXTex
 #include "../../externals/DirectXTex/DirectXTex.h"
+#include "../../externals/DirectXTex/d3dx12.h"
 
 #include <fstream>
 #include <sstream>
@@ -168,6 +169,7 @@ void ScreenCaptureManager::OnPreUIDraw(ID3D12GraphicsCommandList* commandList, R
             if (!colorCopyBuffer_) {
                 auto desc = mainRenderTexture->GetResource()->GetDesc();
                 desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+                CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_DEFAULT);
                 HRESULT hr = dxCommon_->GetDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &desc,
                                                                              D3D12_RESOURCE_STATE_COMMON, nullptr,
                                                                              IID_PPV_ARGS(&colorCopyBuffer_));

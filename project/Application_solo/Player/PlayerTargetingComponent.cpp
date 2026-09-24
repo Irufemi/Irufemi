@@ -55,7 +55,7 @@ void PlayerTargetingComponent::Update() {
     UpdateHoverTarget();
 
     if (lockonMarkerUI_.expired()) {
-        float dt = BaseModel::GetIrufemiEngine() ? BaseModel::GetIrufemiEngine()->GetGameDeltaTime() : (1.0f / 60.0f);
+        float dt = GetEngine() ? GetEngine()->GetGameDeltaTime() : (1.0f / 60.0f);
         uiSearchTimer_ += dt;
         if (uiSearchTimer_ >= kUISearchInterval) {
             uiSearchTimer_ = 0.0f;
@@ -80,7 +80,10 @@ void PlayerTargetingComponent::OnRegisterProperties() {}
 void PlayerTargetingComponent::UpdateHoverTarget() {
     hoverTarget_ = nullptr;
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
     auto cameraManager = engine->GetCameraManager();
     if (!cameraManager || !cameraManager->GetActiveCamera()) {
         return;
@@ -207,9 +210,10 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                                 ray.origin = cameraPos;
                                 ray.diff = dir;
 
-                                cache.pendingTask = std::make_shared<std::future<std::pair<bool, RaycastHit>>>(
-                                    engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
-                                                                                dist3D + 10.0f, 0xFFFFFFFF, playerObj));
+                                cache.pendingTask = std::shared_ptr<std::future<std::pair<bool, RaycastHit>>>(
+                                    new std::future<std::pair<bool, RaycastHit>>(
+                                        engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
+                                                                                    dist3D + 10.0f, 0xFFFFFFFF, playerObj)));
                             }
                         }
 
@@ -251,7 +255,7 @@ std::shared_ptr<GameObject> PlayerTargetingComponent::PopTarget() {
 }
 
 Irufemi::Vector3 PlayerTargetingComponent::CalculateAimPoint(float maxDistance) const {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return {0.0f, 0.0f, 0.0f};
     }

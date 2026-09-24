@@ -479,7 +479,7 @@ std::string AnimationManager::FindFileRecursive(const std::string& filename) con
 /// SkinClusterの生成
 
 // SkinClusterを生成 (ObjModel版)
-SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, const ObjModel& objModel) {
+SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, const Irufemi::ObjModel& objModel) {
     SkinCluster skinCluster;
 
     // 全メッシュの頂点数を合計

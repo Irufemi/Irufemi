@@ -625,7 +625,7 @@ bool IsCollision(const OBB& obb, const Segment& segment) {
     localAABB.max = {obb.size.x, obb.size.y, obb.size.z};
 
     // 3. 既存の AABB と Segment の判定関数を呼び出す
-    return IsAABBSegmentCollision(localAABB, localSegment);
+    return IsCollision(localAABB, localSegment);
 }
 
 // OBBとRay(半直線)の判定

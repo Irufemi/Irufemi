@@ -18,8 +18,8 @@ class ThreadPool;
 class Object3DResource;
 class Object2DResource;
 struct Material;
-struct ObjMaterial;
 namespace Irufemi {
+struct ObjMaterial;
 struct Transform;
 }
 namespace Irufemi {
@@ -31,8 +31,8 @@ struct SpotLight;
 struct AreaLight;
 namespace Irufemi {
 struct Sphere;
-}
 struct Animation;
+}
 struct LightningParams;
 
 #ifdef USE_IMGUI
@@ -141,7 +141,7 @@ public: // メンバ関数
     /**
      * @brief DebugObjMaterial を実行する。
      */
-    static void DebugObjMaterial(ObjMaterial* material, const char* unique_id = "");
+    static void DebugObjMaterial(Irufemi::ObjMaterial* material, const char* unique_id = "");
 
     /**
      * @brief DebugMaterialByParticle を実行する。
@@ -186,7 +186,7 @@ public: // メンバ関数
     /**
      * @brief アニメーション制御UI
      */
-    static void DebugAnimationControl(const Animation& animation, float& currentTime, const char* unique_id = "");
+    static void DebugAnimationControl(const Irufemi::Animation& animation, float& currentTime, const char* unique_id = "");
     ///@}
 
     /** @name エンジン情報のデバッグ */

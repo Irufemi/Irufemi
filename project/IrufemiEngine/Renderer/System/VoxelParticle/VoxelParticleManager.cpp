@@ -133,7 +133,7 @@ void VoxelParticleManager::Update(float deltaTime) {
         }
     }
 
-    std::erase_if(oneShots_, [this, deltaTime](OneShotInstance& shot) {
+    std::erase_if(oneShots_, [this, deltaTime](auto& shot) {
         if (shot.emitTimer > 0.0f) {
             shot.emitTimer -= deltaTime;
             if (shot.emitTimer <= 0.0f) {

@@ -117,7 +117,7 @@ void BossBulletManagerComponent::Update() {
     }
 
     // --- Phase 2: 弾幕クラスタAABBによるBVH事前フェッチ（1フレームに1回のみ） ---
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     auto cm = engine ? engine->GetCollisionManager() : nullptr;
 
     struct CachedTargetProxy {

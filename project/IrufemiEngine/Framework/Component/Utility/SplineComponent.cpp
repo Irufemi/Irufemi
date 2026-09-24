@@ -178,10 +178,6 @@ void SplineComponent::UpdateWaypointsFromChildren() {
     }
 }
 
-void SplineComponent::Update() {
-    UpdateWaypointsFromChildren();
-}
-
 void SplineComponent::UpdateDistanceTable() {
     distanceLUT_.clear();
     distanceLUT_.push_back(0.0f);

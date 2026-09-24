@@ -28,34 +28,24 @@ public:
         }
     }
 
-    template <typename T>
-    static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr,
-                                  std::function<void(const T&)> setter) {
+    template <typename T, typename Func>
+    static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr, Func&& callback) {
         static T startValue;
         if (ImGui::IsItemActivated()) {
             startValue = *valuePtr;
         }
         if (ImGui::IsItemDeactivatedAfterEdit()) {
             T endValue = *valuePtr;
-            actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(startValue, endValue, setter));
-        }
-    }
-
-    template <typename T>
-    static void CheckUndoRedoDrag(EditorActionManager* actionManager, T* valuePtr, std::function<void()> onChanged) {
-        static T startValue;
-        if (ImGui::IsItemActivated()) {
-            startValue = *valuePtr;
-        }
-        if (ImGui::IsItemDeactivatedAfterEdit()) {
-            T endValue = *valuePtr;
-            actionManager->PushAndExecute(
-                std::make_unique<ChangeValueCommand<T>>(startValue, endValue, [valuePtr, onChanged](const T& v) {
-                    *valuePtr = v;
-                    if (onChanged) {
-                        onChanged();
-                    }
-                }));
+            if constexpr (std::is_invocable_v<Func, const T&>) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
+                    startValue, endValue, std::forward<Func>(callback)));
+            } else if constexpr (std::is_invocable_v<Func>) {
+                actionManager->PushAndExecute(
+                    std::make_unique<ChangeValueCommand<T>>(startValue, endValue, [valuePtr, cb = std::forward<Func>(callback)](const T& v) {
+                        *valuePtr = v;
+                        cb();
+                    }));
+            }
         }
     }
 
