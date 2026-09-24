@@ -139,6 +139,8 @@ void EnemyBulletManagerComponent::ReturnBullet(EnemyBulletComponent* bulletComp)
         return;
     }
 
+    bulletComp->ResetForPool();
+
     if (auto bulletGo = bulletComp->GetGameObject()) {
         bulletGo->SetIsActive(false);
     }

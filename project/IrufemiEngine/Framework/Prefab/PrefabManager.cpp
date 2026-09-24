@@ -2,7 +2,7 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Core/Utility/JsonUtility.h"
 
-nlohmann::json PrefabManager::GetPrefabJson(const std::string& filepath) {
+const nlohmann::json& PrefabManager::GetPrefabJson(const std::string& filepath) {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = jsonCache_.find(filepath);
     if (it != jsonCache_.end()) {
@@ -11,11 +11,12 @@ nlohmann::json PrefabManager::GetPrefabJson(const std::string& filepath) {
 
     nlohmann::json root;
     if (!Irufemi::JsonUtility::LoadFromFile(filepath, root)) {
-        return nlohmann::json::object();
+        static const nlohmann::json kEmptyJson = nlohmann::json::object();
+        return kEmptyJson;
     }
 
-    jsonCache_[filepath] = root;
-    return root;
+    auto [insertedIt, success] = jsonCache_.emplace(filepath, std::move(root));
+    return insertedIt->second;
 }
 
 std::shared_ptr<GameObject> PrefabManager::GetTemplate(const std::string& filepath) {
@@ -27,7 +28,7 @@ std::shared_ptr<GameObject> PrefabManager::GetTemplate(const std::string& filepa
         }
     }
 
-    nlohmann::json root = GetPrefabJson(filepath);
+    const nlohmann::json& root = GetPrefabJson(filepath);
     if (root.empty()) {
         return nullptr;
     }
@@ -36,6 +37,11 @@ std::shared_ptr<GameObject> PrefabManager::GetTemplate(const std::string& filepa
     templateObj->Deserialize(root);
 
     std::lock_guard<std::mutex> lock(mutex_);
+    // Double-checked locking
+    auto it = templateCache_.find(filepath);
+    if (it != templateCache_.end()) {
+        return it->second;
+    }
     templateCache_[filepath] = templateObj;
     return templateObj;
 }

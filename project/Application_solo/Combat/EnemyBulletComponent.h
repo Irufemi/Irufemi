@@ -32,6 +32,11 @@ public:
     void Launch(const Irufemi::Vector3& direction, float speed = 30.0f, int damage = 10);
 
     /**
+     * @brief オブジェクトプール再利用時の状態初期化
+     */
+    void ResetForPool();
+
+    /**
      * @brief 管理元マネージャーを設定する
      * @param manager 所属する EnemyBulletManagerComponent のポインタ
      */

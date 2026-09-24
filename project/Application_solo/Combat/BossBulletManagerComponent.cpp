@@ -56,7 +56,7 @@ void BossBulletManagerComponent::Update() {
 
     float dt = GetEngine() ? GetEngine()->GetGameDeltaTime() : 0.0f;
     if (dt <= 0.0f) {
-        dt = 1.0f / 60.0f;
+        return; // ポーズ中（TimeScale == 0）は弾幕更新を完全停止
     }
 
     auto& virtualInstances = virtualManager_->GetDenseInstances();

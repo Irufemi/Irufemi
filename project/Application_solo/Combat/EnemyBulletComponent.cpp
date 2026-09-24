@@ -18,6 +18,12 @@ void EnemyBulletComponent::Launch(const Irufemi::Vector3& direction, float speed
     lifeTimer_ = 0.0f;
 }
 
+void EnemyBulletComponent::ResetForPool() {
+    velocity_ = {0.0f, 0.0f, 0.0f};
+    damage_ = 10;
+    lifeTimer_ = 0.0f;
+}
+
 void EnemyBulletComponent::Deactivate() {
     if (manager_) {
         manager_->ReturnBullet(this);

@@ -25,9 +25,9 @@ public:
     /**
      * @brief プレハブのJSONデータを取得する（キャッシュ対応）
      * @param filepath プレハブファイルのパス
-     * @return 読み込まれたJSONデータ。失敗時は空オブジェクト
+     * @return 読み込まれたJSONデータ参照。失敗時は空オブジェクト
      */
-    nlohmann::json GetPrefabJson(const std::string& filepath);
+    const nlohmann::json& GetPrefabJson(const std::string& filepath);
 
     /**
      * @brief プレハブのテンプレートGameObjectを取得する（キャッシュ対応）

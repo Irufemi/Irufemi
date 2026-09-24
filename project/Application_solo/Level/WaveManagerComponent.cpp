@@ -6,7 +6,7 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/System/Core/BaseModel.h"
 #include "Core/Utility/Log.h"
-#include <fstream>
+#include "Core/Utility/JsonUtility.h"
 #include <iostream>
 #include "Framework/Component/Utility/SplineComponent.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
@@ -155,33 +155,26 @@ void WaveManagerComponent::ReloadLevelData() {
 }
 
 void WaveManagerComponent::LoadLevelData(const std::string& filePath) {
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(filePath, j)) {
         Log::OutPutLog(std::cout, "[WaveManager] Failed to load level data: " + filePath + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
+    if (j.contains("Stage1_LevelData") && j["Stage1_LevelData"].contains("Events")) {
+        for (const auto& eventJson : j["Stage1_LevelData"]["Events"]) {
+            WaveEventData data;
+            data.triggerDistance = eventJson.value("TriggerDistance", 0.0f);
+            data.eventType = eventJson.value("Type", "Unknown");
 
-        if (j.contains("Stage1_LevelData") && j["Stage1_LevelData"].contains("Events")) {
-            for (const auto& eventJson : j["Stage1_LevelData"]["Events"]) {
-                WaveEventData data;
-                data.triggerDistance = eventJson.value("TriggerDistance", 0.0f);
-                data.eventType = eventJson.value("Type", "Unknown");
+            data.parameters = eventJson;
 
-                data.parameters = eventJson;
-
-                eventQueue_.push(data);
-                allEvents_.push_back(data);
-            }
+            eventQueue_.push(data);
+            allEvents_.push_back(data);
         }
-        Log::OutPutLog(std::cout, "[WaveManager] Loaded " + std::to_string(eventQueue_.size()) + " events from " +
-                                      filePath + "\n");
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[WaveManager] JSON Parse Error: ") + e.what() + "\n");
     }
+    Log::OutPutLog(std::cout, "[WaveManager] Loaded " + std::to_string(eventQueue_.size()) + " events from " +
+                                  filePath + "\n");
 }
 
 void WaveManagerComponent::RegisterHandler(const std::string& eventType, std::shared_ptr<IWaveEventHandler> handler) {

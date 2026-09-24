@@ -28,40 +28,33 @@
 #include <iostream>
 #include "Framework/Component/Effect/ScreenEffectComponent.h"
 #include <nlohmann/json.hpp>
-#include <fstream>
+#include "Core/Utility/JsonUtility.h"
 
 void GravityPlayerComponent::LoadStatusFromJson() {
     if (statusDataPath_.empty()) {
         return;
     }
 
-    std::ifstream file(statusDataPath_);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(statusDataPath_, j)) {
         Log::OutPutLog(std::cout, "[GravityPlayer] Failed to load status: " + statusDataPath_ + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
-
-        if (j.contains("maxOrbitCount")) {
-            maxOrbitCount_ = j["maxOrbitCount"].get<int>();
-        }
-        if (j.contains("pullRadius")) {
-            pullRadius_ = j["pullRadius"].get<float>();
-        }
-        if (j.contains("throwInterval")) {
-            throwInterval_ = j["throwInterval"].get<float>();
-        }
-        if (j.contains("orbitRadiusMin")) {
-            orbitRadiusMin_ = j["orbitRadiusMin"].get<float>();
-        }
-        if (j.contains("orbitRadiusMax")) {
-            orbitRadiusMax_ = j["orbitRadiusMax"].get<float>();
-        }
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[GravityPlayer] JSON Parse Error: ") + e.what() + "\n");
+    if (j.contains("maxOrbitCount")) {
+        maxOrbitCount_ = j["maxOrbitCount"].get<int>();
+    }
+    if (j.contains("pullRadius")) {
+        pullRadius_ = j["pullRadius"].get<float>();
+    }
+    if (j.contains("throwInterval")) {
+        throwInterval_ = j["throwInterval"].get<float>();
+    }
+    if (j.contains("orbitRadiusMin")) {
+        orbitRadiusMin_ = j["orbitRadiusMin"].get<float>();
+    }
+    if (j.contains("orbitRadiusMax")) {
+        orbitRadiusMax_ = j["orbitRadiusMax"].get<float>();
     }
 }
 

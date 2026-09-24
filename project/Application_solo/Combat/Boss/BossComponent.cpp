@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <fstream>
+#include "Core/Utility/JsonUtility.h"
 #include "Core/Utility/Log.h"
 #include "Core/Utility/ContainerUtility.h"
 
@@ -23,34 +23,27 @@ void BossComponent::LoadStatusFromJson() {
         return;
     }
 
-    std::ifstream file(statusDataPath_);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(statusDataPath_, j)) {
         Log::OutPutLog(std::cout, "[BossComponent] Failed to load status: " + statusDataPath_ + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
-
-        if (j.contains("maxHp")) {
-            maxHp_ = j["maxHp"].get<float>();
-            hp_ = maxHp_;
-        }
-        if (j.contains("maxShieldCount")) {
-            maxShieldCount_ = j["maxShieldCount"].get<int>();
-        }
-        if (j.contains("shieldRadius")) {
-            shieldRadius_ = j["shieldRadius"].get<float>();
-        }
-        if (j.contains("beamInterval")) {
-            beamInterval_ = j["beamInterval"].get<float>();
-        }
-        if (j.contains("beamRange")) {
-            beamRange_ = j["beamRange"].get<float>();
-        }
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[BossComponent] JSON Parse Error: ") + e.what() + "\n");
+    if (j.contains("maxHp")) {
+        maxHp_ = j["maxHp"].get<float>();
+        hp_ = maxHp_;
+    }
+    if (j.contains("maxShieldCount")) {
+        maxShieldCount_ = j["maxShieldCount"].get<int>();
+    }
+    if (j.contains("shieldRadius")) {
+        shieldRadius_ = j["shieldRadius"].get<float>();
+    }
+    if (j.contains("beamInterval")) {
+        beamInterval_ = j["beamInterval"].get<float>();
+    }
+    if (j.contains("beamRange")) {
+        beamRange_ = j["beamRange"].get<float>();
     }
 }
 

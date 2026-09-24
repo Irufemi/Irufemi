@@ -4,8 +4,8 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Core/Utility/Log.h"
+#include "Core/Utility/JsonUtility.h"
 #include <nlohmann/json.hpp>
-#include <fstream>
 #include <iostream>
 
 void PlayerHealthComponent::LoadStatusFromJson() {
@@ -13,22 +13,15 @@ void PlayerHealthComponent::LoadStatusFromJson() {
         return;
     }
 
-    std::ifstream file(statusDataPath_);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(statusDataPath_, j)) {
         Log::OutPutLog(std::cout, "[PlayerHealth] Failed to load status: " + statusDataPath_ + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
-
-        if (j.contains("maxHp")) {
-            maxHp_ = j["maxHp"].get<int>();
-            hp_ = maxHp_;
-        }
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[PlayerHealth] JSON Parse Error: ") + e.what() + "\n");
+    if (j.contains("maxHp")) {
+        maxHp_ = j["maxHp"].get<int>();
+        hp_ = maxHp_;
     }
 }
 
