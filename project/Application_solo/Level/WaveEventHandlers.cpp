@@ -2,7 +2,6 @@
 #include "Combat/EnemySpawnerComponent.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/GameObject/GameObject.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Framework/Scene/SceneManager.h"
 #include "Audio/AudioManager.h"
@@ -69,6 +68,7 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
     if (data.parameters.contains("Formation")) {
         formation = data.parameters["Formation"].get<std::string>();
     }
+    float formationSpacing = data.parameters.value("FormationSpacing", 5.0f);
 
     for (int i = 0; i < count; ++i) {
         Irufemi::Vector3 currentSpawnPos = spawnPos;
@@ -76,15 +76,15 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
         if (formation == "V_Shape" && count > 1) {
             if (i > 0) {
                 float sideSign = (i % 2 == 0) ? 1.0f : -1.0f;
-                float distanceBack = 5.0f * ((i + 1) / 2);
-                float distanceSide = 5.0f * ((i + 1) / 2) * sideSign;
+                float distanceBack = formationSpacing * ((i + 1) / 2);
+                float distanceSide = formationSpacing * ((i + 1) / 2) * sideSign;
                 currentSpawnPos.x += railRight.x * distanceSide - railForward.x * distanceBack;
                 currentSpawnPos.y += railRight.y * distanceSide - railForward.y * distanceBack;
                 currentSpawnPos.z += railRight.z * distanceSide - railForward.z * distanceBack;
             }
         } else if (formation == "Line" && count > 1) {
             float sideSign = (i % 2 == 0) ? 1.0f : -1.0f;
-            float distanceSide = 5.0f * ((i + 1) / 2) * sideSign;
+            float distanceSide = formationSpacing * ((i + 1) / 2) * sideSign;
             currentSpawnPos.x += railRight.x * distanceSide;
             currentSpawnPos.y += railRight.y * distanceSide;
             currentSpawnPos.z += railRight.z * distanceSide;
@@ -107,8 +107,8 @@ EnemySpawnerComponent* SpawnEnemyHandler::GetOrFindSpawner(WaveManagerComponent*
     if (manager && manager->GetGameObject()) {
         baseScene = dynamic_cast<BaseScene*>(manager->GetGameObject()->GetScene());
     }
-    if (!baseScene) {
-        if (auto engine = BaseModel::GetIrufemiEngine()) {
+    if (!baseScene && manager) {
+        if (auto engine = manager->GetEngine()) {
             if (auto sceneManager = engine->GetSceneManager()) {
                 baseScene = dynamic_cast<BaseScene*>(sceneManager->GetCurrentScene());
             }

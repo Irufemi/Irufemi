@@ -4,7 +4,6 @@
 #include "Framework/Scene/BaseScene.h"
 #include "RailMechanics/SplineFollowerComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Utility/Log.h"
 #include "Core/Utility/JsonUtility.h"
 #include <iostream>
@@ -46,7 +45,7 @@ void WaveManagerComponent::Initialize() {
 
 std::shared_ptr<ModelBatchRendererComponent>
 WaveManagerComponent::GetPreviewBatchRenderer(const std::string& modelPath) {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return nullptr;
     }

@@ -110,6 +110,8 @@ public:
 private:
     VoxelParticleManager(const VoxelParticleManager&) = delete;
     VoxelParticleManager& operator=(const VoxelParticleManager&) = delete;
+    VoxelParticleManager(VoxelParticleManager&&) = delete;
+    VoxelParticleManager& operator=(VoxelParticleManager&&) = delete;
 
     struct SystemKey {
         std::string modelName;
