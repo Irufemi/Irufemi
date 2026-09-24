@@ -21,7 +21,7 @@ struct Material;
 namespace Irufemi {
 struct ObjMaterial;
 struct Transform;
-}
+} // namespace Irufemi
 namespace Irufemi {
 struct Matrix4x4;
 }
@@ -32,7 +32,7 @@ struct AreaLight;
 namespace Irufemi {
 struct Sphere;
 struct Animation;
-}
+} // namespace Irufemi
 struct LightningParams;
 
 #ifdef USE_IMGUI
@@ -186,7 +186,8 @@ public: // メンバ関数
     /**
      * @brief アニメーション制御UI
      */
-    static void DebugAnimationControl(const Irufemi::Animation& animation, float& currentTime, const char* unique_id = "");
+    static void DebugAnimationControl(const Irufemi::Animation& animation, float& currentTime,
+                                      const char* unique_id = "");
     ///@}
 
     /** @name エンジン情報のデバッグ */

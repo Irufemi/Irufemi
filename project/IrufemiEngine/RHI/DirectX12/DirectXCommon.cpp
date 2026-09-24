@@ -1044,9 +1044,7 @@ void DirectXCommon::ClearPendingResources() {
     std::lock_guard<std::mutex> lock(pendingMutex_);
 
     // リソースの回収 (C++20 std::erase_if)
-    std::erase_if(pendingResources_, [completed](const PendingResource& res) {
-        return res.fenceValue <= completed;
-    });
+    std::erase_if(pendingResources_, [completed](const PendingResource& res) { return res.fenceValue <= completed; });
 
     // デスクリプタの回収をマネージャに委譲
     swapChainManager_->FlushPendingDescriptors(completed);

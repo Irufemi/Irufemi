@@ -173,8 +173,8 @@ void WaveManagerComponent::LoadLevelData(const std::string& filePath) {
             allEvents_.push_back(data);
         }
     }
-    Log::OutPutLog(std::cout, "[WaveManager] Loaded " + std::to_string(eventQueue_.size()) + " events from " +
-                                  filePath + "\n");
+    Log::OutPutLog(std::cout,
+                   "[WaveManager] Loaded " + std::to_string(eventQueue_.size()) + " events from " + filePath + "\n");
 }
 
 void WaveManagerComponent::RegisterHandler(const std::string& eventType, std::shared_ptr<IWaveEventHandler> handler) {
