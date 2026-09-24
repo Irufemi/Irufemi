@@ -107,13 +107,14 @@ public:
     /** @name Field Management */
     ///@{
     struct FieldHandle {
-        uint32_t index = 0xFFFFFFFF;
+        static constexpr uint32_t kInvalidIndex = 0xFFFFFFFF;
+        uint32_t index = kInvalidIndex;
         /**
          * @brief IsValid かどうかを判定する。
          * @return 判定結果 (true/false)
          */
         bool IsValid() const {
-            return index != 0xFFFFFFFF;
+            return index != kInvalidIndex;
         }
     };
     /**

@@ -41,11 +41,18 @@ private:
     // 内部的にキーからパスを引くための辞書
     std::unordered_map<std::string, std::string> effectDictionary_;
 
+    /**
+     * @brief 指定したキーのエフェクトプールを取得またはオンデマンド生成する
+     * @param effectKey エフェクトキー
+     * @param prefabPath プレハブパス
+     * @return エフェクトプールへの生ポインタ
+     */
+    ObjectPool<GameObject>* GetOrCreatePool(const std::string& effectKey, const std::string& prefabPath);
+
     int maxHitEffects_ = 50;
     int maxDustEffects_ = 50;
     float effectDuration_ = 2.0f; // エフェクトの生存時間
-    std::unique_ptr<ObjectPool<GameObject>> hitEffectPool_;
-    std::unique_ptr<ObjectPool<GameObject>> dustEffectPool_;
+    std::unordered_map<std::string, std::unique_ptr<ObjectPool<GameObject>>> effectPools_;
 
     struct ActiveEffect {
         ObjectPool<GameObject>::Handle handle;

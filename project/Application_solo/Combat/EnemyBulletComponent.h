@@ -72,4 +72,5 @@ private:
     int damage_ = 10;                                //!< 命中時のダメージ量
     float lifeTimer_ = 0.0f;                         //!< 生存タイマー
     float maxLifeTime_ = 5.0f;                       //!< 最大寿命（秒）
+    mutable std::weak_ptr<GameObject> effectManagerObj_; //!< 着弾エフェクトマネージャーGameObjectへの弱参照キャッシュ
 };

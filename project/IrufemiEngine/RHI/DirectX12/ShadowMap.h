@@ -2,6 +2,7 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <cstdint>
+#include "RHI/DirectX12/DescriptorPool.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Vector3.h"
 

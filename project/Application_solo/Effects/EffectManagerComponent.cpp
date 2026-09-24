@@ -21,11 +21,28 @@ void EffectManagerComponent::OnRegisterProperties() {
 void EffectManagerComponent::Initialize() {
     effectDictionary_["Hit"] = hitEffectPath_;
     effectDictionary_["Dust"] = dustEffectPath_;
+    effectDictionary_["debris_dust_effect"] = dustEffectPath_;
 }
 
 void EffectManagerComponent::Start() {
-    hitEffectPool_ = std::make_unique<ObjectPool<GameObject>>(maxHitEffects_, [this]() {
-        auto obj = gameObject_->Instantiate(hitEffectPath_); // ☛Instantiate内部でシーン登録される
+    for (const auto& [key, path] : effectDictionary_) {
+        GetOrCreatePool(key, path);
+    }
+}
+
+ObjectPool<GameObject>* EffectManagerComponent::GetOrCreatePool(const std::string& effectKey,
+                                                               const std::string& prefabPath) {
+    auto it = effectPools_.find(effectKey);
+    if (it != effectPools_.end()) {
+        return it->second.get();
+    }
+    if (prefabPath.empty()) {
+        return nullptr;
+    }
+
+    int poolCapacity = (effectKey == "Hit") ? maxHitEffects_ : maxDustEffects_;
+    auto pool = std::make_unique<ObjectPool<GameObject>>(poolCapacity, [this, prefabPath]() {
+        auto obj = gameObject_->Instantiate(prefabPath); // ☛Instantiate内部でシーン登録される
         if (obj) {
             obj->SetIsActive(false); // Removeせずに非アクティブ状態で休眠させる
 
@@ -37,43 +54,24 @@ void EffectManagerComponent::Start() {
         return obj;
     });
 
-    dustEffectPool_ = std::make_unique<ObjectPool<GameObject>>(maxDustEffects_, [this]() {
-        auto obj = gameObject_->Instantiate(dustEffectPath_); // ☛Instantiate内部でシーン登録される
-        if (obj) {
-            obj->SetIsActive(false); // Removeせずに非アクティブ状態で休眠させる
-
-            if (auto lifetime = obj->GetComponent<LifetimeComponent>()) {
-                lifetime->SetTimeoutAction(TimeoutAction::Disable);
-            }
-        }
-        return obj;
-    });
+    auto* rawPool = pool.get();
+    effectPools_[effectKey] = std::move(pool);
+    return rawPool;
 }
 
 void EffectManagerComponent::Update() {
     for (auto it = activeEffects_.begin(); it != activeEffects_.end();) {
-        bool handled = false;
-
-        if (it->effectKey == "Hit" && hitEffectPool_) {
-            auto obj = hitEffectPool_->Resolve(it->handle);
-            if (obj && !obj->GetIsActive()) {
-                hitEffectPool_->Release(it->handle);
-                it = activeEffects_.erase(it);
-                continue;
-            }
-            handled = true;
-        } else if (it->effectKey == "Dust" && dustEffectPool_) {
-            auto obj = dustEffectPool_->Resolve(it->handle);
-            if (obj && !obj->GetIsActive()) {
-                dustEffectPool_->Release(it->handle);
-                it = activeEffects_.erase(it);
-                continue;
-            }
-            handled = true;
+        auto poolIt = effectPools_.find(it->effectKey);
+        if (poolIt == effectPools_.end() || !poolIt->second) {
+            // プールがないか不明なエフェクト
+            it = activeEffects_.erase(it);
+            continue;
         }
 
-        if (!handled) {
-            // プールがないか不明なエフェクト
+        auto* pool = poolIt->second.get();
+        auto obj = pool->Resolve(it->handle);
+        if (obj && !obj->GetIsActive()) {
+            pool->Release(it->handle);
             it = activeEffects_.erase(it);
             continue;
         }
@@ -92,19 +90,12 @@ void EffectManagerComponent::PlayEffect(const std::string& effectKey, const Iruf
         return;
     }
 
-    ObjectPool<GameObject>* targetPool = nullptr;
-    if (effectKey == "Hit") {
-        targetPool = hitEffectPool_.get();
-    } else if (effectKey == "Dust") {
-        targetPool = dustEffectPool_.get();
-    }
-
+    ObjectPool<GameObject>* targetPool = GetOrCreatePool(effectKey, it->second);
     if (targetPool) {
         auto handle = targetPool->Acquire();
 
-        // プールが枯渇した場合、一番古いエフェクトを強制終了して再利用する
+        // プールが枯渇した場合、一番古い同じ種類のエフェクトを強制終了して再利用する
         if (!handle.IsValid() && !activeEffects_.empty()) {
-            // 最も古い同じ種類のエフェクトを探す
             auto oldestIt = activeEffects_.begin();
             while (oldestIt != activeEffects_.end() && oldestIt->effectKey != effectKey) {
                 ++oldestIt;

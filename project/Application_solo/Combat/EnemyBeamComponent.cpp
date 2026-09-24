@@ -52,14 +52,14 @@ void EnemyBeamComponent::Initialize() {
     chargeSphere_->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
 
     // --- ビーム本体の初期化 ---
-    attackCylinder_ = std::make_shared<Primitive3DObject>();
+    attackCylinder_ = std::make_unique<Primitive3DObject>();
     attackCylinder_->Initialize(Irufemi::PrimitiveType::Cylinder);
     attackCylinder_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
     attackCylinder_->SetCastShadows(false);
     attackCylinder_->SetCullingEnabled(false);
     attackCylinder_->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
 
-    attackCylinderOuter_ = std::make_shared<Primitive3DObject>();
+    attackCylinderOuter_ = std::make_unique<Primitive3DObject>();
     attackCylinderOuter_->Initialize(Irufemi::PrimitiveType::Cylinder);
     attackCylinderOuter_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
     attackCylinderOuter_->SetCastShadows(false);

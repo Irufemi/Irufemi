@@ -462,7 +462,7 @@ size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
     if (it != gameObjects_.end()) {
         return std::distance(gameObjects_.begin(), it);
     }
-    return std::numeric_limits<size_t>::max();
+    return (std::numeric_limits<size_t>::max)();
 }
 
 void BaseScene::SubmitFrameData() {

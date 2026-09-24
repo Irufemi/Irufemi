@@ -68,13 +68,25 @@ void DroneManagerComponent::Update() {
     float deltaTime = GetEngine() ? GetEngine()->GetGameDeltaTime() : (1.0f / 60.0f);
 
     // Data-Oriented Update Loop (CPUキャッシュ効率化)
-    for (size_t i = 0; i < activeDrones_.size(); ++i) {
-        auto& droneObj = activeDrones_[i].gameObject;
-        auto& anim = animDataList_[i];
+    for (size_t i = 0; i < activeDrones_.size();) {
+        auto& drone = activeDrones_[i];
 
-        if (!droneObj || !droneObj->GetIsActive()) {
+        if (!drone.gameObject || !drone.gameObject->GetIsActive()) {
+            // 個別撃破等で非アクティブになった場合はプールへ返却し、リストから除外
+            if (dronePool_ && drone.handle.IsValid()) {
+                dronePool_->Release(drone.handle);
+            }
+            if (i + 1 < activeDrones_.size()) {
+                activeDrones_[i] = std::move(activeDrones_.back());
+                animDataList_[i] = std::move(animDataList_.back());
+            }
+            activeDrones_.pop_back();
+            animDataList_.pop_back();
             continue;
         }
+
+        auto& droneObj = drone.gameObject;
+        auto& anim = animDataList_[i];
 
         // 1. 旋回角度の更新
         anim.orbitAngle += orbitSpeed_ * deltaTime;
@@ -127,7 +139,10 @@ void DroneManagerComponent::Update() {
             batchT.scale = t->GetScale();
         }
         batchRenderer_->AddInstance(batchT);
+
+        ++i;
     }
+    activeDroneCount_ = static_cast<int>(activeDrones_.size());
 }
 
 void DroneManagerComponent::OnRegisterProperties() {

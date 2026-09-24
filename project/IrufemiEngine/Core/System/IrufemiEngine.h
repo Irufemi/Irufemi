@@ -1,22 +1,7 @@
 #pragma once
 
 #include "RHI/DirectX12/DirectXCommon.h"
-class InputManager;
-class WinApp;
-enum class DisplayMode;
-class DrawManager;
-
-class DebugPrimitiveRenderer;
-class DebugUI;
-class IEngineExtension;
-class TextureManager;
-class AudioManager;
-class ModelManager;
-class AnimationManager;
 #include "Core/Type/BlendMode.h"
-class Log;
-class SceneManager;
-class SceneTransition;
 #include "Core/System/ILoadingScreen.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Vector2.h"
@@ -28,6 +13,9 @@ class SceneTransition;
 #include "Renderer/Data/TransformationMatrix.h"
 #include "Core/System/ResourceHandle.h"
 #include "Core/Profiler/TelemetryGatherer.h"
+#include "Core/System/ThreadPool.h"
+#include "Renderer/ScreenCaptureManager.h"
+
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -40,10 +28,22 @@ class SceneTransition;
 #include <chrono>
 #include <algorithm>
 
-class FontManager;
-
-class SceneManager;
+// --- 前方宣言 ---
+class InputManager;
+class WinApp;
+enum class DisplayMode;
+class DrawManager;
+class DebugPrimitiveRenderer;
 class DebugUI;
+class IEngineExtension;
+class TextureManager;
+class AudioManager;
+class ModelManager;
+class AnimationManager;
+class Log;
+class SceneManager;
+class SceneTransition;
+class FontManager;
 class VoxelParticleManager;
 class GameObject;
 class CameraManager;
@@ -52,8 +52,6 @@ class GPUParticleManager;
 class PrimitiveManager;
 class TelemetrySender;
 class PrefabManager;
-#include "Core/System/ThreadPool.h"
-#include "Renderer/ScreenCaptureManager.h"
 
 /**
  * @class IrufemiEngine

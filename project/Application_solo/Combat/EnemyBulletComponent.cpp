@@ -74,11 +74,16 @@ void EnemyBulletComponent::OnCollisionEnter(GameObject* other) {
 
             // 被弾エフェクトの再生
             if (auto transform = GetTransform()) {
-                if (auto scene = gameObject_->GetScene()) {
-                    if (auto effectGo = scene->FindGameObject("EffectManager")) {
-                        if (auto effectMgr = effectGo->GetComponent<EffectManagerComponent>()) {
-                            effectMgr->PlayEffect("debris_dust_effect", transform->GetWorldPosition());
-                        }
+                auto effectGo = effectManagerObj_.lock();
+                if (!effectGo) {
+                    if (auto scene = gameObject_->GetScene()) {
+                        effectGo = scene->FindGameObject("EffectManager");
+                        effectManagerObj_ = effectGo;
+                    }
+                }
+                if (effectGo) {
+                    if (auto effectMgr = effectGo->GetComponent<EffectManagerComponent>()) {
+                        effectMgr->PlayEffect("debris_dust_effect", transform->GetWorldPosition());
                     }
                 }
             }
