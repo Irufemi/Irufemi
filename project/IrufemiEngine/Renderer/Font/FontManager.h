@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <optional>
 #include <d3d12.h>
 #include "Core/Math/Vector2.h"
 #include "Core/System/TaskGroup.h"
@@ -72,9 +73,9 @@ public:
     // 文字のグリフ情報を取得する (キャッシュにない場合は非同期または即座に生成する)
     /**
      * @brief Glyph を取得する。
-     * @return 取得された Glyph
+     * @return 取得された Glyph (存在しない・生成中の場合は nullopt またはダミー)
      */
-    const GlyphInfo* GetGlyph(const std::string& fontId, char32_t character);
+    std::optional<GlyphInfo> GetGlyph(const std::string& fontId, char32_t character);
 
     // シェーダに渡すための動的アトラスのテクスチャハンドルを取得
     /**
@@ -90,7 +91,16 @@ public:
      */
     bool IsAllLoaded() const;
 
+    // アトラスの更新世代（バージョン番号）を取得
+    /**
+     * @brief AtlasVersion を取得する。
+     * @return アトラスがGPU更新されるたびにインクリメントされる世代番号
+     */
+    uint64_t GetAtlasVersion() const;
+
 private:
+    void PrecacheTextInternal(const std::string& fontId, const std::wstring& text);
+
     // Pimplイディオム：FreeType, msdfgen, stb_rect_pack などの依存を隠蔽する
     struct Impl;
     std::unique_ptr<Impl> impl_;

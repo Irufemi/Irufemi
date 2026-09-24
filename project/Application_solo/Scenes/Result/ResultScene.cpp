@@ -5,7 +5,7 @@
 #include "Engine/Irufemi.h"
 
 // 静的メンバ変数の実体定義
-bool ResultScene::s_isClear = false;
+bool ResultScene::isClear_ = false;
 
 void ResultScene::Initialize(IrufemiEngine* engine) {
     BaseScene::Initialize(engine);

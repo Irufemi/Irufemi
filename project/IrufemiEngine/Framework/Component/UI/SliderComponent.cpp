@@ -13,7 +13,7 @@
 void SliderComponent::OnRegisterProperties() {
     RegisterProperty("Hitbox Scale", &hitboxScale_);
     RegisterProperty("Value", &value_);
-    RegisterProperty("Handle Object ID", &handleObjectID_);
+    RegisterGameObjectRef("Handle Object ID", &handleObjectID_);
 }
 
 void SliderComponent::Initialize() {
@@ -30,29 +30,29 @@ void SliderComponent::Start() {
     ResolveHandleObject();
 }
 
-void SliderComponent::SetHandleObjectID(int id) {
+void SliderComponent::SetHandleObjectID(uint64_t id) {
     handleObjectID_ = id;
     ResolveHandleObject();
 }
 
 void SliderComponent::ResolveHandleObject() {
     if (handleObjectID_ == 0 || !gameObject_) {
-        handleObject_ = nullptr;
+        handleObject_.reset();
         return;
     }
 
     // シーンの高速ハッシュ検索を試みる
     if (auto scene = gameObject_->GetScene()) {
-        if (auto obj = scene->FindGameObjectByID(static_cast<uint64_t>(handleObjectID_))) {
-            handleObject_ = obj.get();
+        if (auto obj = scene->FindGameObjectByID(handleObjectID_)) {
+            handleObject_ = obj;
             return;
         }
     }
 
     // フォールバックとして子オブジェクトから検索
     for (auto& child : gameObject_->GetChildren()) {
-        if (child && child->GetInstanceID() == static_cast<uint64_t>(handleObjectID_)) {
-            handleObject_ = child.get();
+        if (child && child->GetInstanceID() == handleObjectID_) {
+            handleObject_ = child;
             return;
         }
     }
@@ -89,11 +89,7 @@ void SliderComponent::Update() {
         return;
     }
 
-    auto scene = gameObject_->GetScene();
-    if (!scene) {
-        return;
-    }
-    auto engine = scene->GetEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return;
     }
@@ -156,11 +152,12 @@ void SliderComponent::SetValue(float value) {
 }
 
 void SliderComponent::UpdateHandlePosition() {
-    if (!handleObject_ || !backgroundSprite_ || !GetTransform()) {
+    auto handle = handleObject_.lock();
+    if (!handle || !backgroundSprite_ || !GetTransform()) {
         return;
     }
 
-    auto handleTransform = handleObject_->GetTransform();
+    auto handleTransform = handle->GetTransform();
     if (!handleTransform) {
         return;
     }

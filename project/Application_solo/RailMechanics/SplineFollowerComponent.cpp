@@ -4,7 +4,6 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Object/Line/LineClass.h"
 #include <algorithm>
 #include <cmath>
@@ -45,7 +44,12 @@ void SplineFollowerComponent::Update() {
         return;
     }
 
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
+    float deltaTime = engine->GetGameDeltaTime();
     if (deltaTime <= 0.0f) {
         return;
     }
@@ -68,7 +72,7 @@ void SplineFollowerComponent::Update() {
 
             // 進行方向に向くように回転を設定 (Z前方)
             float yaw = std::atan2(tangent.x, tangent.z);
-            float pitch = std::asin(-tangent.y);
+            float pitch = std::asin(std::clamp(-tangent.y, -1.0f, 1.0f));
             transform->SetWorldRotation({pitch, yaw, 0.0f});
         }
     }

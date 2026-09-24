@@ -1,25 +1,42 @@
 #include "Player/TargetableComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Core/Utility/ContainerUtility.h"
 #include <algorithm>
 
-std::vector<TargetableComponent*> TargetableComponent::s_targets;
+std::vector<TargetableComponent*> TargetableComponent::targets_;
+std::mutex TargetableComponent::targetsMutex_;
 
 TargetableComponent::~TargetableComponent() {
-    auto it = std::find(s_targets.begin(), s_targets.end(), this);
-    if (it != s_targets.end()) {
-        s_targets.erase(it);
-    }
+    std::lock_guard<std::mutex> lock(targetsMutex_);
+    Irufemi::Container::EraseSwap(targets_, this);
 }
 
 void TargetableComponent::OnEnable() {
-    auto it = std::find(s_targets.begin(), s_targets.end(), this);
-    if (it == s_targets.end()) {
-        s_targets.push_back(this);
-    }
+    std::lock_guard<std::mutex> lock(targetsMutex_);
+    Irufemi::Container::PushBackUnique(targets_, this);
 }
 
 void TargetableComponent::OnDisable() {
-    auto it = std::find(s_targets.begin(), s_targets.end(), this);
-    if (it != s_targets.end()) {
-        s_targets.erase(it);
+    std::lock_guard<std::mutex> lock(targetsMutex_);
+    Irufemi::Container::EraseSwap(targets_, this);
+}
+
+std::vector<TargetableComponent*> TargetableComponent::GetTargets() {
+    std::lock_guard<std::mutex> lock(targetsMutex_);
+    return targets_;
+}
+
+void TargetableComponent::ClearAllTargets() {
+    std::lock_guard<std::mutex> lock(targetsMutex_);
+    targets_.clear();
+}
+
+bool TargetableComponent::IsTargetable() const {
+    if (!gameObject_ || !gameObject_->GetIsActive() || gameObject_->IsDestroyed()) {
+        return false;
     }
+    if (predicate_) {
+        return predicate_();
+    }
+    return true;
 }

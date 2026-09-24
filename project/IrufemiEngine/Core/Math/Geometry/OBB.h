@@ -12,19 +12,19 @@ namespace Irufemi {
  */
 struct OBB {
     /** @brief ボックスの中心座標 */
-    Vector3 center;
+    Vector3 center{0.0f, 0.0f, 0.0f};
 
     /** @brief ローカルの各軸方向を表す正規化された3つの基底ベクトル（直交必須） */
-    Vector3 orientations[3];
+    Vector3 orientations[3]{Vector3{1.0f, 0.0f, 0.0f}, Vector3{0.0f, 1.0f, 0.0f}, Vector3{0.0f, 0.0f, 1.0f}};
 
     /** @brief 中心から各面までの距離（各軸の長さの半分 / Extents） */
-    Vector3 size;
+    Vector3 size{1.0f, 1.0f, 1.0f};
 
     /**
      * @brief OBBを包含する最小のAABBを計算する
      * @return OBBを内包するワールドAABB
      */
-    AABB ToAABB() const {
+    [[nodiscard]] AABB ToAABB() const {
         AABB aabb;
         Vector3 extents;
         extents.x = std::abs(orientations[0].x * size.x) + std::abs(orientations[1].x * size.y) +

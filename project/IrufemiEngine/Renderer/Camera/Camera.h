@@ -92,6 +92,14 @@ private: // メンバ変数
     // ビューポート行列
     Irufemi::Matrix4x4 viewportMatrix_{};
 
+    // ダーティフラグ
+    bool isDirtyTransform_ = true;
+    bool isDirtyProjection_ = true;
+
+    // キャッシュされたビュープロジェクション行列
+    Irufemi::Matrix4x4 viewProjectionMatrix3D_{};
+    Irufemi::Matrix4x4 viewProjectionMatrix2D_{};
+
 public: // メンバ関数
     /**
      * @brief コンストラクタ
@@ -142,6 +150,7 @@ public: // メンバ関数
      */
     void SetTranslate(const Irufemi::Vector3& translate) {
         this->translate_ = translate;
+        this->isDirtyTransform_ = true;
     }
 
     /**
@@ -150,6 +159,7 @@ public: // メンバ関数
      */
     void SetRotate(const Irufemi::Vector3& rotate) {
         this->rotate_ = rotate;
+        this->isDirtyTransform_ = true;
     }
 
     /**
@@ -158,7 +168,7 @@ public: // メンバ関数
      */
     void SetViewMatrix(const Irufemi::Matrix4x4& viewMatrix) {
         this->viewMatrix_ = viewMatrix;
-        this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
+        this->isDirtyTransform_ = true;
     }
 
     /**
@@ -167,7 +177,7 @@ public: // メンバ関数
      */
     void SetPerspectiveFovMatrix(const Irufemi::Matrix4x4& perspectiveFovMatrix) {
         this->perspectiveFovMatrix_ = perspectiveFovMatrix;
-        this->frustum_.SetFromViewProjection(this->viewMatrix_ * this->perspectiveFovMatrix_);
+        this->isDirtyProjection_ = true;
     }
 
     /**
@@ -176,6 +186,7 @@ public: // メンバ関数
      */
     void SetFarClip(const float& farClip) {
         this->farClip_ = farClip;
+        this->isDirtyProjection_ = true;
     }
 
     /**
@@ -184,6 +195,7 @@ public: // メンバ関数
      */
     void SetFovY(const float& fovY) {
         this->fovAngleY_ = fovY;
+        this->isDirtyProjection_ = true;
     }
 
     // ゲッター
@@ -261,13 +273,13 @@ public: // メンバ関数
      * @brief ViewProjectionMatrix2D を取得する。
      * @return 取得された ViewProjectionMatrix2D
      */
-    Irufemi::Matrix4x4 GetViewProjectionMatrix2D();
+    const Irufemi::Matrix4x4& GetViewProjectionMatrix2D();
 
     /**
      * @brief ViewProjectionMatrix3D を取得する。
      * @return 取得された ViewProjectionMatrix3D
      */
-    Irufemi::Matrix4x4 GetViewProjectionMatrix3D();
+    const Irufemi::Matrix4x4& GetViewProjectionMatrix3D();
 
     /**
      * @brief NearZ を取得する。

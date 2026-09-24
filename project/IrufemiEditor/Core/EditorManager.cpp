@@ -13,6 +13,7 @@
 #include "Framework/Scene/SceneManager.h"
 #include "Framework/Scene/SceneSerializer.h"
 #include "Physics/CollisionManager.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "RHI/DirectX12/RenderTexture.h"
 #include "Renderer/DrawManager.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
@@ -39,8 +40,21 @@
 // FontAwesome 用のヘッダーを含める
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 
-EditorManager::EditorManager() = default;
-EditorManager::~EditorManager() = default;
+static EditorManager* sInstance = nullptr;
+
+EditorManager::EditorManager() {
+    sInstance = this;
+}
+
+EditorManager::~EditorManager() {
+    if (sInstance == this) {
+        sInstance = nullptr;
+    }
+}
+
+EditorManager* EditorManager::GetInstance() {
+    return sInstance;
+}
 
 void EditorManager::OnInitialize(IrufemiEngine* engine) {
     engine_ = engine;
@@ -118,7 +132,7 @@ void EditorManager::EnterPlayMode() {
     SceneSerializer::Save(scene, "temp/.temp_playmode");
     playModeStartSceneName_ = currentSceneName; // 開始時のシーンを記憶
 
-    // === ここから追加: Play開始時にシーンをクリーンな状態にリロードする ===
+    // Play開始時にシーンをクリーンな状態にリロードする
     ClearSelectedObject(); // 選択状態をクリア
 
     // GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄
@@ -131,10 +145,12 @@ void EditorManager::EnterPlayMode() {
     if (auto cm = engine_->GetCollisionManager()) {
         cm->Clear();
     }
+    if (auto debugRenderer = engine_->GetDebugPrimitiveRenderer()) {
+        debugRenderer->ClearInstances();
+    }
 
     // 保存したばかりのバックアップから復元して、完全に初期化し直す
     SceneSerializer::Load(scene, "temp/.temp_playmode");
-    // === ここまで追加 ===
 
     currentMode_ = EditorModeState::Playing;
     engine_->SetPlayMode(true);
@@ -165,7 +181,7 @@ void EditorManager::ExitPlayMode() {
     // プレイモード中の選択状態をクリア
     ClearSelectedObject();
 
-    // === 追加: GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄する ===
+    // GPUがすべての描画コマンドを完了するのを待機してからオブジェクトを破棄する
     // （実行中のフレームで使われているリソースが削除されることによるクラッシュを防ぐため）
     if (auto dxCommon = engine_->GetDirectXCommon()) {
         dxCommon->WaitForGPU();
@@ -176,6 +192,9 @@ void EditorManager::ExitPlayMode() {
     }
     if (auto cm = engine_->GetCollisionManager()) {
         cm->Clear();
+    }
+    if (auto debugRenderer = engine_->GetDebugPrimitiveRenderer()) {
+        debugRenderer->ClearInstances();
     }
 
     // バックアップから復元
@@ -228,6 +247,10 @@ void EditorManager::EnterPrefabMode(const std::string& prefabPath) {
     // Prefabの読み込み
     auto prefabObj = SceneSerializer::LoadPrefab(prefabPath);
     if (prefabObj) {
+        // プレハブ編集モードでの表示名はファイル名（拡張子なし）に統一し、(Clone)が付かないようにする
+        std::string prefabName = std::filesystem::path(prefabPath).stem().string();
+        prefabObj->SetName(prefabName);
+
         if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
             baseScene->AddGameObject(prefabObj);
             SetSelectedObject(prefabObj);
@@ -253,8 +276,15 @@ void EditorManager::ExitPrefabMode(bool saveChanges) {
         if (auto baseScene = dynamic_cast<BaseScene*>(scene)) {
             auto gameObjects = baseScene->GetGameObjects();
             if (!gameObjects.empty()) {
+                auto rootObj = gameObjects.front();
+                // 保存時もプレハブ名に正規化
+                std::string prefabName = std::filesystem::path(editingPrefabPath_).stem().string();
+                rootObj->SetName(prefabName);
+
                 // シーン内の最初のルートオブジェクトをPrefabとして上書き保存
-                SceneSerializer::SavePrefab(gameObjects.front(), editingPrefabPath_);
+                SceneSerializer::SavePrefab(rootObj, editingPrefabPath_);
+                // 保存したプレハブのメモリキャッシュをクリアして次回生成時に最新データをロード
+                SceneSerializer::ClearCache();
                 Log::OutPutLog(std::cout, "Prefab saved successfully: " + editingPrefabPath_);
             }
         }
@@ -489,6 +519,46 @@ void EditorManager::OnDrawUI() {
             ImGui::EndMenu();
         }
 
+        if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+            auto debugRenderer = engine_->GetDebugPrimitiveRenderer();
+            if (ImGui::BeginMenu("Gizmos")) {
+                bool isAllEnabled = debugRenderer->IsEnabled();
+                if (ImGui::Checkbox("Show All Gizmos", &isAllEnabled)) {
+                    debugRenderer->SetEnabled(isAllEnabled);
+                }
+                ImGui::SameLine();
+                ImGui::TextDisabled("(G)");
+
+                ImGui::Separator();
+
+                if (ImGui::Button("Select All", ImVec2(90, 0))) {
+                    debugRenderer->SetCategoryMask(static_cast<uint32_t>(DebugCategory::All));
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Deselect All", ImVec2(90, 0))) {
+                    debugRenderer->SetCategoryMask(0);
+                }
+
+                ImGui::Separator();
+
+                auto drawCategoryItem = [&](const char* label, DebugCategory cat) {
+                    bool enabled = debugRenderer->IsCategoryEnabled(cat);
+                    if (ImGui::Checkbox(label, &enabled)) {
+                        debugRenderer->SetCategoryEnabled(cat, enabled);
+                    }
+                };
+
+                drawCategoryItem("Collision (Colliders)", DebugCategory::Collision);
+                drawCategoryItem("Combat (Bullets/Hitboxes)", DebugCategory::Combat);
+                drawCategoryItem("Particle (Emitters)", DebugCategory::Particle);
+                drawCategoryItem("Level (Spawners/Triggers)", DebugCategory::Level);
+                drawCategoryItem("Path (Spline Rails)", DebugCategory::Path);
+                drawCategoryItem("General (Other)", DebugCategory::General);
+
+                ImGui::EndMenu();
+            }
+        }
+
         // --- 中央への Play / Pause / Step / Stop コントロール配置 ---
         float playButtonWidth = 45.0f;
         float playButtonHeight = 20.0f;
@@ -557,6 +627,14 @@ void EditorManager::OnDrawUI() {
         }
         ImGui::PopStyleColor(2);
 
+        // プレイモード中のピッキング許可チェックボックス
+        ImGui::SameLine();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.0f);
+        ImGui::Checkbox("Play Picking", &isPickingAllowedInPlayMode_);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Allow selecting objects in SceneView during Play Mode (useful for debugging)");
+        }
+
         ImGui::EndMenuBar();
     }
 
@@ -582,6 +660,14 @@ void EditorManager::OnDrawUI() {
 #ifdef USE_IMGUI
     // 描画呼び出しをDebugUI.cppに移動しました
 #endif // USE_IMGUI
+
+    // ショートカットキー 'G' で全デバッグ描画のトグル（テキスト入力中は無視）
+    if (engine_ && engine_->GetDebugPrimitiveRenderer() && !ImGui::GetIO().WantTextInput) {
+        if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
+            auto debugRenderer = engine_->GetDebugPrimitiveRenderer();
+            debugRenderer->SetEnabled(!debugRenderer->IsEnabled());
+        }
+    }
 
     ImGui::End(); // Editor DockSpace
 }

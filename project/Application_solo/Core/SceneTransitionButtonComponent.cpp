@@ -42,10 +42,10 @@ void SceneTransitionButtonComponent::Update() {
         return;
     }
 
-    animator_.Update(1.0f / 60.0f);
+    float dt = engine->GetDeltaTime();
+    animator_.Update(dt);
 
     if (isTransitionPending_) {
-        float dt = 1.0f / 60.0f; // 簡易フレームレート
         transitionTimer_ -= dt;
 
         if (GetTransform()) {

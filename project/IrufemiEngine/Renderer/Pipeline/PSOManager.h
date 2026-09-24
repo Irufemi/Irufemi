@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <shared_mutex>
 #include "Core/Type/BlendMode.h"
 
 /**
@@ -133,7 +134,7 @@ private:
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_{D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE};
 
     std::unordered_map<std::string, PipelineStateDesc> shaderRegistry_;
-    ShaderSet copyImageShaders_{}; // GetCopyImage用は内部処理として一旦残す
+    ShaderSet copyImageShaders_{}; //!< GetCopyImage内部処理用シェーダーセット
 
     /** @brief キャッシュキー構造体 */
     struct Key {
@@ -153,21 +154,11 @@ private:
     std::unordered_map<std::string, std::vector<Key>>
         cacheKeysByName_; ///< ホットリロードのためのキートラッキング (名前ごとの生成済みキャッシュキー)
     std::unordered_map<std::string, ComPtr> computeCache_; ///< Compute PSO キャッシュ
+    std::vector<ComPtr> retiredPSOs_; ///< ホットリロード時等に一時退避させて安全に寿命を延ばすための遅延解放リスト
+    mutable std::shared_mutex psoMutex_; ///< マルチスレッド並列アクセス保護用ミューテックス
 
     /** @name 内部生成ヘルパー */
     ///@{
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSO(const ShaderSet& shaders, const D3D12_BLEND_DESC& blendDesc,
-                                                          const D3D12_DEPTH_STENCIL_DESC& depthDesc, CullMode cull,
-                                                          bool useNullInputLayout = false) const;
-
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreatePSOWithTopology(const ShaderSet& shaders,
-                                                                      const D3D12_BLEND_DESC& blendDesc,
-                                                                      const D3D12_DEPTH_STENCIL_DESC& depthDesc,
-                                                                      D3D12_PRIMITIVE_TOPOLOGY_TYPE topology,
-                                                                      CullMode cull) const;
-
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> CreateShadowPSO(const ShaderSet& shaders, CullMode cull) const;
-
     /** @brief Irufemi::BlendMode から D3D12_BLEND_DESC を作成 */
     static D3D12_BLEND_DESC MakeBlend(Irufemi::BlendMode m);
     /** @brief DepthWrite から D3D12_DEPTH_STENCIL_DESC を作成 */

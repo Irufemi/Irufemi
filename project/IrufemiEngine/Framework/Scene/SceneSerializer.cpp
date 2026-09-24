@@ -56,15 +56,17 @@ bool SceneSerializer::SavePrefab(std::shared_ptr<GameObject> obj, const std::str
 }
 
 nlohmann::json SceneSerializer::GetPrefabJson(const std::string& filepath) {
-    return PrefabManager::GetInstance().GetPrefabJson(filepath);
+    return prefabManager_ ? prefabManager_->GetPrefabJson(filepath) : nlohmann::json::object();
 }
 
 std::shared_ptr<GameObject> SceneSerializer::LoadPrefab(const std::string& filepath) {
-    return PrefabManager::GetInstance().Instantiate(filepath);
+    return prefabManager_ ? prefabManager_->Instantiate(filepath) : nullptr;
 }
 
 void SceneSerializer::ClearCache() {
-    PrefabManager::GetInstance().ClearCache();
+    if (prefabManager_) {
+        prefabManager_->ClearCache();
+    }
 }
 
 std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& sceneName) {
@@ -73,8 +75,5 @@ std::string SceneSerializer::GetSceneFilePath(IScene* scene, const std::string& 
         dir = scene->GetEngine()->GetSceneDirectory();
     }
     fs::path filePath = dir / (sceneName + ".json");
-    // Windows環境でもスラッシュ区切りにするための工夫（必要に応じて）
-    std::string pathStr = filePath.string();
-    std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-    return pathStr;
+    return filePath.generic_string();
 }

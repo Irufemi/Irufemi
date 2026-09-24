@@ -4,6 +4,7 @@
 #include <imgui/imgui.h>
 #include <filesystem>
 #include "UI/ComponentUIHelpers.h"
+#include "UI/EditorDragDrop.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Commands/EditorActionManager.h"
@@ -82,7 +83,7 @@ void ModelBatchRendererComponentEditor::Draw(Component* component, EditorActionM
             }
 
             if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_ASSET_PATH")) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(EditorDragDrop::PayloadAssetPath)) {
                     std::string droppedPathStr = static_cast<const char*>(payload->Data);
                     std::filesystem::path droppedPath(reinterpret_cast<const char8_t*>(droppedPathStr.c_str()));
                     std::string ext = droppedPath.extension().string();

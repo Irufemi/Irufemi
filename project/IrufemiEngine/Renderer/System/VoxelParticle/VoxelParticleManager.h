@@ -34,15 +34,33 @@ public:
      */
     void Clear();
 
+    /**
+     * @brief シーン開始前に基本モデルやComputeパイプラインを事前ウォームアップする
+     */
+    void WarmUp();
+
+    /**
+     * @struct EmitterHandle
+     * @brief ボクセルパーティクルエミッターを一意に識別・操作するための不透明ハンドル (Opaque Handle)
+     */
     struct EmitterHandle {
-        VoxelParticleSystem* system = nullptr;
-        uint32_t emitterIndex = 0xFFFFFFFF;
+        uint32_t systemId = 0;          ///< システム一意ID（0は無効値）
+        uint16_t emitterIndex = 0xFFFF; ///< スロット番号
+        uint16_t generation = 0;        ///< スロット世代番号（解放・再利用の検知用）
+
         /**
-         * @brief IsValid かどうかを判定する。
+         * @brief 有効なハンドルかどうかを判定する。
          * @return 判定結果 (true/false)
          */
         bool IsValid() const {
-            return system != nullptr && emitterIndex != 0xFFFFFFFF;
+            return systemId != 0 && emitterIndex != 0xFFFF;
+        }
+
+        bool operator==(const EmitterHandle& other) const {
+            return systemId == other.systemId && emitterIndex == other.emitterIndex && generation == other.generation;
+        }
+        bool operator!=(const EmitterHandle& other) const {
+            return !(*this == other);
         }
     };
 
@@ -92,6 +110,8 @@ public:
 private:
     VoxelParticleManager(const VoxelParticleManager&) = delete;
     VoxelParticleManager& operator=(const VoxelParticleManager&) = delete;
+    VoxelParticleManager(VoxelParticleManager&&) = delete;
+    VoxelParticleManager& operator=(VoxelParticleManager&&) = delete;
 
     struct SystemKey {
         std::string modelName;
@@ -111,21 +131,31 @@ private:
 
     struct SystemKeyHasher {
         std::size_t operator()(const SystemKey& k) const {
-            std::size_t h1 = std::hash<std::string>()(k.modelName);
-            std::size_t h2 = std::hash<int>()(k.resolution.x);
-            std::size_t h3 = std::hash<int>()(k.resolution.y);
-            std::size_t h4 = std::hash<int>()(k.resolution.z);
-            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+            std::size_t seed = std::hash<std::string>()(k.modelName);
+            auto hashCombine = [](std::size_t& s, int v) {
+                s ^= std::hash<int>()(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+            };
+            hashCombine(seed, k.resolution.x);
+            hashCombine(seed, k.resolution.y);
+            hashCombine(seed, k.resolution.z);
+            return seed;
         }
     };
 
     struct SystemContext {
+        uint32_t systemId = 0;
         std::unique_ptr<VoxelParticleSystem> system;
         std::vector<uint32_t> freeIndices;
+        std::vector<uint16_t> slotGenerations;
         uint32_t nextIndex = 0;
     };
 
     std::unordered_map<SystemKey, SystemContext, SystemKeyHasher> systems_;
+    /**
+     * @brief システムIDからシステムコンテキストへの高速逆引きマップ (O(1) 解除・更新用)
+     */
+    std::unordered_map<uint32_t, SystemContext*> idLookup_;
+    uint32_t nextSystemId_ = 1;
     std::vector<OneShotEmitter> oneShots_;
     IrufemiEngine* engine_ = nullptr;
 };

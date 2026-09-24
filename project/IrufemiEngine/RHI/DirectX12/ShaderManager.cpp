@@ -1,7 +1,9 @@
 #include "RHI/DirectX12/ShaderManager.h"
 #include "Core/Utility/ErrorUtility.h"
+#include "Core/Utility/Log.h"
 #include <cassert>
 #include <fstream>
+#include <iostream>
 #include <vector>
 #include <filesystem>
 
@@ -91,9 +93,11 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderManager::GetOrCompile(const std::wstring&
         file.seekg(0, std::ios::beg);
         std::vector<uint8_t> buffer(size);
         if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-            blob = new CustomBlob(std::move(buffer));
+            blob.Attach(new CustomBlob(std::move(buffer)));
         }
     } else {
+        std::string err = "[ShaderManager] Failed to open compiled shader (.cso) file: " + compiledPath.string() + "\n";
+        Log::OutPutLog(std::cerr, err);
         IRUFEMI_ASSERT_MSG(false,
                            "Failed to open compiled shader (.cso) file. Check if the shader compiled successfully.");
     }

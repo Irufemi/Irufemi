@@ -95,6 +95,7 @@ private:
             for (size_t i = 0; i < ChunkSize; ++i) {
                 if (chunk->active[i]) {
                     reinterpret_cast<T*>(&chunk->data[i])->~T();
+                    chunk->active[i] = false;
                 }
             }
         }
@@ -111,6 +112,9 @@ private:
          * @brief lock を実行する。
          */
         std::lock_guard<std::mutex> lock(mutex_);
+        if (!chunks_[chunkIdx]->active[itemIdx]) {
+            return; // 既に破棄済みの場合は多重デストラクトを防ぐ
+        }
         p->~T(); // デストラクタを明示的に呼び出す
         chunks_[chunkIdx]->active[itemIdx] = false;
     }

@@ -12,8 +12,9 @@ class TransformComponent;
 
 /**
  * @class ModelBatchRendererComponent
- * @brief インスタンシング（バッチ）描画を行うためのコンポーネント。
- *        毎フレーム外部から AddInstance() を呼び出してインスタンスを登録して使用します。
+ * @brief インスタンシング（バッチ）描画を行うためのレンダラーコンポーネント
+ * @details 同一3Dモデルの複数インスタンスを一括でGPU描画（バッチ描画）します。
+ *          デフォルトで描画後にインスタンスを自動クリアするため、毎フレーム AddInstance() で登録して使用します。
  */
 class ModelBatchRendererComponent : public Component {
 public:
@@ -21,100 +22,134 @@ public:
     ~ModelBatchRendererComponent() override;
 
     /**
-     * @brief 初期化時にモデルファイル名を指定します
-     * @param filename 読み込む .obj などのファイル名
+     * @brief 描画するモデルファイル（.obj 等）を指定して読み込みます
+     * @param[in] filename モデルファイル名
      */
     void LoadModel(const std::string& filename);
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 初期化処理を実行します
      */
     void Initialize() override;
+
     /**
-     * @brief 生成時の自己完結初期化（ModelBatchの生成）を行います
+     * @brief 生成時の自己完結初期化（ModelBatchインスタンスの生成とモデル読み込み）を行います
      */
     void OnAwake() override;
+
     /**
-     * @brief Update を実行する。
+     * @brief 毎フレームの更新処理を実行します
      */
     void Update() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief 登録された全インスタンスをバッチ描画します（autoClearEveryFrame が有効な場合は描画後にクリアします）
      */
     void Draw() override;
 
     /**
-     * @brief CanUpdateInEditMode かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief エディタモード中も更新を行うかを判定します
+     * @return 常に true
      */
     bool CanUpdateInEditMode() const override {
         return true;
     }
 
     /**
-     * @brief Renderable を取得する。
-     * @return 取得された Renderable
+     * @brief 描画可能な内部オブジェクト（ModelBatch）へのポインタを取得します
+     * @return IRenderable インターフェースポインタ
      */
     IRenderable* GetRenderable() override;
 
     // エディタのRaycast用
     /**
-     * @brief WorldSphere を取得する。
-     * @return 取得された WorldSphere
+     * @brief エディタピッキング用のワールドバウンディングスフィアを取得します
+     * @return バウンディングスフィア
      */
     Irufemi::Sphere GetWorldSphere() const;
+
     /**
-     * @brief Raycast を実行する。
+     * @brief エディタピッキング用のレイキャスト判定を行います
+     * @param[in] ray 判定用レイ
+     * @param[out] outDistance ヒット時の距離
+     * @return ヒットした場合は true
      */
     bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
 
     /**
-     * @brief ComponentName を取得する。
-     * @return 取得された ComponentName
+     * @brief コンポーネントの識別名を取得します
+     * @return クラス名文字列
      */
     std::string GetComponentName() const override {
         return "ModelBatchRendererComponent";
     }
+
     /**
-     * @brief Serialize を実行する。
+     * @brief コンポーネントの状態を JSON にシリアライズします
+     * @return シリアライズされた JSON オブジェクト
      */
     nlohmann::json Serialize() override;
+
     /**
-     * @brief Deserialize を実行する。
+     * @brief JSON からコンポーネントの状態を復元します
+     * @param[in] j 読み込む JSON オブジェクト
      */
     void Deserialize(const nlohmann::json& j) override;
 
     /**
-     * @brief 現在読み込まれているモデル名を取得します。
-     * @return モデル名
+     * @brief 現在読み込まれているモデル名を取得します
+     * @return モデル名文字列
      */
     const std::string& GetModelName() const {
         return modelName_;
     }
 
     /**
-     * @brief バッチ描画するインスタンスを追加します。
-     * @param t インスタンスのローカルトランスフォーム（またはワールド）
+     * @brief バッチ描画するインスタンスを追加します
+     * @param[in] t インスタンスのローカルトランスフォーム
+     * @param[in] effectType 適用するエフェクトタイプ（シェーダー側で解釈）
+     * @param[in] effectParam エフェクトパラメータ
+     * @param[in] enableMask マスク描画を有効にするか
      */
     void AddInstance(const Irufemi::Transform& t, int32_t effectType = 0, float effectParam = 0.0f,
                      bool enableMask = false);
 
     /**
-     * @brief ワールド行列を直接指定してインスタンスを追加します。
-     * @param world ワールド行列
+     * @brief ワールド行列を直接指定してインスタンスを追加します
+     * @param[in] world ワールド変換行列
+     * @param[in] effectType 適用するエフェクトタイプ
+     * @param[in] effectParam エフェクトパラメータ
+     * @param[in] enableMask マスク描画を有効にするか
      */
     void AddInstanceWorld(const Irufemi::Matrix4x4& world, int32_t effectType = 0, float effectParam = 0.0f,
                           bool enableMask = false);
 
     /**
-     * @brief 登録されたインスタンスをすべてクリアします。毎フレーム呼ぶ必要があります。
+     * @brief 登録されたインスタンスをすべてクリアします
      */
     void ClearInstances();
 
     /**
      * @brief GPUフラスタムカリングを有効にするか設定します
+     * @param[in] use 有効にする場合は true
      */
     void SetUseGPUCulling(bool use);
+
+    /**
+     * @brief 描画後にインスタンスを自動クリアするかどうかを設定します
+     * @param[in] enable 自動クリアする場合は true（デフォルト: true）
+     */
+    void SetAutoClearEveryFrame(bool enable) {
+        autoClearEveryFrame_ = enable;
+    }
+
+    /**
+     * @brief 描画後の自動クリアが有効かどうかを取得します
+     * @return 自動クリアが有効な場合は true
+     */
+    bool IsAutoClearEveryFrame() const {
+        return autoClearEveryFrame_;
+    }
 
 #ifdef EditorMode
     friend class ModelBatchRendererComponentEditor;
@@ -124,4 +159,5 @@ private:
     std::unique_ptr<ModelBatch> batch_;   ///< 実際のバッチ描画を担うクラス
     std::string modelName_ = "plane.obj"; ///< 読み込むモデル名
     bool useGPUCulling_ = false;          ///< GPUカリングの有効フラグ
+    bool autoClearEveryFrame_ = true;     ///< 描画後にインスタンスを自動クリアするかどうか
 };

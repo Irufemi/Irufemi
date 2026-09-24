@@ -1,6 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include <string>
+#include <memory>
 
 class ResultManagerComponent : public Component {
 public:
@@ -30,5 +31,5 @@ private:
     // プロパティ化してエディタで設定可能にする
     std::string nextSceneName_ = "Title";
 
-    class GameObject* pressSpaceObj_ = nullptr;
+    std::weak_ptr<GameObject> pressSpaceObj_;
 };

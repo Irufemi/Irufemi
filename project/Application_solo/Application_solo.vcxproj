@@ -142,13 +142,14 @@ exit 0</Command>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(SolutionDir)externals\assimp\lib\Release;$(SolutionDir)..\generated\outputs\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d12.lib;dxgi.lib;dxcompiler.lib;Dbghelp.lib;Xinput.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/ignore:4099</AdditionalOptions>
+      <AdditionalOptions>/ignore:4099 /ignore:4098 /ignore:4286 /ignore:4217 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y /D
-xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y /D
+      <Command>xcopy "$(ProjectDir)..\IrufemiEngine\EngineResources" "$(OutDir)EngineResources" /E /I /Y
+xcopy "$(ProjectDir)resources" "$(OutDir)resources" /E /I /Y
 if exist "$(ProjectDir)imgui.ini" copy /Y "$(ProjectDir)imgui.ini" "$(OutDir)imgui.ini"
 exit 0</Command>
     </PostBuildEvent>
@@ -175,9 +176,10 @@ exit 0</Command>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration />
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(SolutionDir)externals\assimp\lib\Release;$(SolutionDir)..\generated\outputs\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d12.lib;dxgi.lib;dxcompiler.lib;Dbghelp.lib;Xinput.lib;imgui.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/ignore:4099</AdditionalOptions>
+      <AdditionalOptions>/ignore:4099 /ignore:4098 /ignore:4286 /ignore:4217 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
@@ -211,9 +213,10 @@ exit 0</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(SolutionDir)externals\assimp\lib\Release;$(SolutionDir)..\generated\outputs\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d12.lib;dxgi.lib;dxcompiler.lib;Dbghelp.lib;Xinput.lib;imgui.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalOptions>/ignore:4099</AdditionalOptions>
+      <AdditionalOptions>/ignore:4099 /ignore:4098 /ignore:4286 /ignore:4217 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
@@ -254,10 +257,13 @@ exit 0</Command>
     <ClCompile Include="Environment\DebrisComponent.cpp" />
     <ClCompile Include="Player\TargetableComponent.cpp" />
     <ClCompile Include="Combat\Boss\BossComponent.cpp" />
+    <ClCompile Include="Combat\Boss\BossDamageVisualizerComponent.cpp" />
     <ClCompile Include="Combat\Boss\BossStateIdle.cpp" />
     <ClCompile Include="Combat\Boss\BossStateCoreExposed.cpp" />
     <ClCompile Include="Combat\Boss\BossStateDestroyed.cpp" />
     <ClCompile Include="Combat\BossBulletManagerComponent.cpp" />
+    <ClCompile Include="Combat\EnemyBulletComponent.cpp" />
+    <ClCompile Include="Combat\EnemyBulletManagerComponent.cpp" />
 
     <ClCompile Include="Combat\DroneManagerComponent.cpp" />
     <ClCompile Include="Environment\DebrisManagerComponent.cpp" />
@@ -265,9 +271,10 @@ exit 0</Command>
     <ClCompile Include="Environment\DestructibleEnvironmentComponent.cpp" />
     <ClCompile Include="Player\GravityPlayerComponent.cpp" />
     <ClCompile Include="Player\PlayerHealthComponent.cpp" />
+    <ClCompile Include="Player\PlayerDamageVisualizerComponent.cpp" />
     <ClCompile Include="Core\GameLoopManagerComponent.cpp" />
     <ClCompile Include="Core\ResultManagerComponent.cpp" />
-    <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp" />
+    <ClCompile Include="Combat\EnemySpawnerComponent.cpp" />
     <ClCompile Include="Core\SceneTransitionButtonComponent.cpp" />
     <ClCompile Include="Effects\EffectManagerComponent.cpp" />
     <ClCompile Include="Combat\EnemyBeamComponent.cpp" />
@@ -303,11 +310,14 @@ exit 0</Command>
     <ClInclude Include="Environment\DebrisComponent.h" />
     <ClInclude Include="Player\TargetableComponent.h" />
     <ClInclude Include="Combat\Boss\BossComponent.h" />
+    <ClInclude Include="Combat\Boss\BossDamageVisualizerComponent.h" />
     <ClInclude Include="Combat\Boss\IBossState.h" />
     <ClInclude Include="Combat\Boss\BossStateIdle.h" />
     <ClInclude Include="Combat\Boss\BossStateCoreExposed.h" />
     <ClInclude Include="Combat\Boss\BossStateDestroyed.h" />
     <ClInclude Include="Combat\BossBulletManagerComponent.h" />
+    <ClInclude Include="Combat\EnemyBulletComponent.h" />
+    <ClInclude Include="Combat\EnemyBulletManagerComponent.h" />
 
     <ClInclude Include="Combat\DroneManagerComponent.h" />
     <ClInclude Include="Environment\DebrisManagerComponent.h" />
@@ -315,9 +325,10 @@ exit 0</Command>
     <ClInclude Include="Environment\DestructibleEnvironmentComponent.h" />
     <ClInclude Include="Player\GravityPlayerComponent.h" />
     <ClInclude Include="Player\PlayerHealthComponent.h" />
+    <ClInclude Include="Player\PlayerDamageVisualizerComponent.h" />
     <ClInclude Include="Core\GameLoopManagerComponent.h" />
     <ClInclude Include="Core\ResultManagerComponent.h" />
-    <ClInclude Include="Combat\DebugEnemySpawnerComponent.h" />
+    <ClInclude Include="Combat\EnemySpawnerComponent.h" />
     <ClInclude Include="Core\SceneTransitionButtonComponent.h" />
     <ClInclude Include="Effects\EffectManagerComponent.h" />
     <ClInclude Include="Combat\EnemyBeamComponent.h" />

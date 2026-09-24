@@ -1,5 +1,6 @@
 #include "Audio/Sound.h"
 #include <cassert>
+#include <propvarutil.h>
 
 // ~Sound() は default のため、ここの定義は不要です
 
@@ -36,12 +37,22 @@ bool Sound::Load(const std::wstring& filePath) {
     }
 
     pMFMediaType.Reset();
+
     hr = pMFSourceReader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, &pMFMediaType);
     if (FAILED(hr)) {
         return false;
     }
 
-    // オーディオデータ形式の取得
+    hr = pMFMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+    if (FAILED(hr)) {
+        return false;
+    }
+
+    hr = pMFMediaType->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+    if (FAILED(hr)) {
+        return false;
+    }
+
     WAVEFORMATEX* rawWaveFormat = nullptr;
     hr = MFCreateWaveFormatExFromMFMediaType(pMFMediaType.Get(), &rawWaveFormat, nullptr);
     if (FAILED(hr)) {
@@ -54,6 +65,23 @@ bool Sound::Load(const std::wstring& filePath) {
 
     // データの読み込み
     mediaData_.clear();
+
+    // 再生時間から推定バッファサイズを計算し、事前にメモリを確保してヒープ断片化を防ぐ
+    PROPVARIANT var;
+    PropVariantInit(&var);
+    hr = pMFSourceReader->GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &var);
+    if (SUCCEEDED(hr)) {
+        if (var.vt == VT_UI8 && pWaveFormat_) {
+            // var.uhVal.QuadPart は 100ナノ秒単位 (1秒 = 10,000,000単位)
+            LONGLONG durationHns = var.uhVal.QuadPart;
+            double durationSec = static_cast<double>(durationHns) / 10000000.0;
+            size_t estimatedBytes = static_cast<size_t>(durationSec * pWaveFormat_->nAvgBytesPerSec);
+            if (estimatedBytes > 0) {
+                mediaData_.reserve(estimatedBytes);
+            }
+        }
+        PropVariantClear(&var);
+    }
     while (true) {
         Microsoft::WRL::ComPtr<IMFSample> pMFSample;
         DWORD dwStreamFlags{0};

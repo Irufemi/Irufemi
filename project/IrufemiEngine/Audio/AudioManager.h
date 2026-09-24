@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 #include <wrl/client.h> // ComPtr用
 
 // IXAudio2SourceVoice構造体を前方宣言
@@ -30,6 +31,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Sound>> soundRegistry_;
 
     // 再生中の VoiceInstance を一元管理
+    mutable std::mutex voiceMutex_; ///< activeVoices_ 保護用ミューテックス
     std::vector<std::shared_ptr<VoiceInstance>> activeVoices_;
 
     // カテゴリ名 → その中にあるファイル名リスト

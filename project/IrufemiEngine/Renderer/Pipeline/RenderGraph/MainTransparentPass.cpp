@@ -2,48 +2,59 @@
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "RHI/DirectX12/ShadowMap.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 #include "RHI/DirectX12/RootSignatureConfig.h"
 #include "RHI/DirectX12/DirectXUtils.h"
+#include "Renderer/Data/RenderContext.h"
 #include <algorithm>
 
-void MainTransparentPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    if (auto shadowMap = drawManager->GetShadowMap()) {
-        builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+void MainTransparentPass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+
+    if (drawManager) {
+        if (auto shadowMap = drawManager->GetShadowMap()) {
+            builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (auto dx = drawManager->GetDxCommon()) {
+            builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        }
+        // GPUParticleのリソースを読み取り専用として要求
+        for (const auto& p : drawManager->GetGPUParticleQueue()) {
+            if (p.particleResource) {
+                builder.RequireState(p.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
+                                                             D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+            }
+        }
     }
 
-    // G-Bufferをレンダーターゲットとして要求
-    if (auto tex = engine->GetMainRenderTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetEffectMaskTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetNormalTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetMaterialTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetVelocityTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-
-    // 深度バッファを書き込み可能として要求
-    if (auto dx = drawManager->GetDxCommon()) {
-        builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    }
-
-    // GPUParticleのリソースを読み取り専用として要求
-    for (const auto& p : drawManager->GetGPUParticleQueue()) {
-        if (p.particleResource) {
-            builder.RequireState(p.particleResource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE |
-                                                         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+    if (engine) {
+        // G-Bufferをレンダーターゲットとして要求
+        if (auto tex = engine->GetMainRenderTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetEffectMaskTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetNormalTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetMaterialTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetVelocityTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
     }
 }
 
-void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+void MainTransparentPass::Execute(const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
     auto cmdList = engine->GetCommandList();
     auto dxCommon = engine->GetDirectXCommon();
     auto depthResource = dxCommon->GetDepthStencilResource();
@@ -82,7 +93,8 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
         first = true;
     };
 
-    auto ApplyAndDrawPacket = [&](const auto& p, auto drawFunc, bool isParticle, bool isLine, bool isDebugPrimitive) {
+    auto ApplyAndDrawPacket = [&](const auto& p, auto drawFunc, bool isParticle, bool isLine, bool isDebugPrimitive,
+                                  bool isGPUParticle = false) {
         bool stateChanged =
             first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
         bool psoChanged = (p.customPSO != currentCustomPSO);
@@ -101,6 +113,8 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
                     engine->ApplyPSO("LineBatch");
                 } else if (isDebugPrimitive) {
                     engine->ApplyPSO("DebugPrimitive");
+                } else if (isGPUParticle) {
+                    engine->ApplyPSO("GpuParticle");
                 }
             }
 
@@ -122,13 +136,13 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
     };
 
     auto DrawWithPSO = [&](const auto& queue, auto drawFunc, bool isParticle = false, bool isLine = false,
-                           bool isDebugPrimitive = false) {
+                           bool isDebugPrimitive = false, bool isGPUParticle = false) {
         if (queue.empty()) {
             return;
         }
         ResetPSOState();
         for (const auto& p : queue) {
-            ApplyAndDrawPacket(p, drawFunc, isParticle, isLine, isDebugPrimitive);
+            ApplyAndDrawPacket(p, drawFunc, isParticle, isLine, isDebugPrimitive, isGPUParticle);
         }
     };
 
@@ -171,40 +185,9 @@ void MainTransparentPass::Execute(DrawManager* drawManager, IrufemiEngine* engin
         true);
 
     // 6. GPU Particles
-    const auto& gpuParticleQueue = drawManager->GetGPUParticleQueue();
-    if (!gpuParticleQueue.empty()) {
-        Irufemi::BlendMode currentBlend = Irufemi::BlendMode::kBlendModeNormal;
-        PSOManager::DepthWrite currentDepth = PSOManager::DepthWrite::Enable;
-        PSOManager::CullMode currentCull = PSOManager::CullMode::Back;
-        ID3D12PipelineState* currentCustomPSO = nullptr;
-        bool psoApplied = false;
-        bool first = true;
-        for (const auto& p : gpuParticleQueue) {
-            bool stateChanged =
-                first || p.blendMode != currentBlend || p.depthWrite != currentDepth || p.cullMode != currentCull;
-            bool psoChanged = (p.customPSO != currentCustomPSO);
-
-            if (stateChanged || psoChanged || !psoApplied) {
-                engine->SetBlend(p.blendMode);
-                engine->SetDepthWrite(p.depthWrite);
-                engine->SetCull(p.cullMode);
-
-                if (p.customPSO) {
-                    drawManager->BindPSO(p.customPSO);
-                } else {
-                    engine->ApplyPSO("GpuParticle");
-                }
-
-                currentBlend = p.blendMode;
-                currentDepth = p.depthWrite;
-                currentCull = p.cullMode;
-                currentCustomPSO = p.customPSO;
-                psoApplied = true;
-                first = false;
-            }
-            drawManager->DrawGPUParticle(p);
-        }
-    }
+    DrawWithPSO(
+        drawManager->GetGPUParticleQueue(), [&](const auto& p) { drawManager->DrawGPUParticle(p); }, false, false,
+        false, true);
     // 7. Irufemi::Voxel Particles
     const auto& voxelParticleQueue = drawManager->GetVoxelParticleQueue();
     if (!voxelParticleQueue.empty()) {

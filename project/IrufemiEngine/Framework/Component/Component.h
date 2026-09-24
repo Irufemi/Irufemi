@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <functional>
 
 class GameObject;
 class BaseScene;
@@ -47,6 +48,7 @@ struct ComponentProperty {
     std::vector<std::string> enumNames;
     std::string tooltip = "";
     nlohmann::json defaultValue;
+    std::function<void()> onChanged = nullptr;
 
     /**
      * @brief 指定した型のポインタを安全に取得する。型が一致しない場合は nullptr を返す。
@@ -91,6 +93,15 @@ struct ComponentProperty {
     ComponentProperty& SetMinMax(float min, float max) {
         minVal = min;
         maxVal = max;
+        return *this;
+    }
+
+    /**
+     * @brief 値変更時の通知コールバックを設定する。
+     * @param[in] callback コールバック関数
+     */
+    ComponentProperty& OnChanged(std::function<void()> callback) {
+        onChanged = std::move(callback);
         return *this;
     }
 };
@@ -142,6 +153,12 @@ public:
      * @brief コンポーネントが無効化された時に呼ばれる
      */
     virtual void OnDisable() {}
+
+    /**
+     * @brief 所属するシーンが設定・変更された時に呼ばれる
+     * @param scene 設定されたシーンのポインタ（破棄・シーン離脱時はnullptr）
+     */
+    virtual void OnSetScene(class BaseScene* scene) {}
 
     /**
      * @brief 毎フレームの更新処理

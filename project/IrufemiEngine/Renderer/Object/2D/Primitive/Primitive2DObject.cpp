@@ -104,7 +104,7 @@ void Primitive2DObject::Debug(const char* label) {
 
         Irufemi::Vector3 rot = GetRotation();
         if (ImGui::DragFloat3("Rotation", &rot.x, 0.01f)) {
-            resource_->transform_.rotate = rot;
+            resource_->GetTransform().rotate = rot;
         }
 
         Irufemi::Vector3 scale = GetScale();
@@ -174,19 +174,19 @@ void Primitive2DObject::SetPivot(const Irufemi::Vector2& pivot) {
 
 void Primitive2DObject::SetPosition(const Irufemi::Vector3& position) {
     if (resource_) {
-        resource_->transform_.translate = position;
+        resource_->GetTransform().translate = position;
     }
 }
 
 void Primitive2DObject::SetRotationZ(float rad) {
     if (resource_) {
-        resource_->transform_.rotate.z = rad;
+        resource_->GetTransform().rotate.z = rad;
     }
 }
 
 void Primitive2DObject::SetScale(const Irufemi::Vector3& scale) {
     if (resource_) {
-        resource_->transform_.scale = scale;
+        resource_->GetTransform().scale = scale;
     }
 }
 
@@ -200,7 +200,7 @@ void Primitive2DObject::SetTexture(const std::string& textureName) {
     if (textureManager_) {
         ResourceHandle handle = textureManager_->LoadTexture(textureName);
         if (resource_) {
-            resource_->textureHandle_ = handle;
+            resource_->SetTextureHandle(handle);
             resource_->GetMaterialData()->hasTexture = true;
         }
 
@@ -226,8 +226,8 @@ void Primitive2DObject::RebuildMesh() {
         return;
     }
 
-    resource_->vertexDataList_.clear();
-    resource_->indexDataList_.clear();
+    resource_->GetVertexDataList().clear();
+    resource_->GetIndexDataList().clear();
 
     switch (type_) {
     case Irufemi::Primitive2DType::Rect:
@@ -262,14 +262,14 @@ void Primitive2DObject::BuildRect() {
     float top = -size_.y * pivot_.y;
     float bottom = size_.y * (1.0f - pivot_.y);
 
-    resource_->vertexDataList_ = {
+    resource_->GetVertexDataList() = {
         {{left, top, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},    // 左上
         {{right, top, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},   // 右上
         {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}, // 左下
         {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}} // 右下
     };
 
-    resource_->indexDataList_ = {0, 1, 2, 2, 1, 3};
+    resource_->GetIndexDataList() = {0, 1, 3, 0, 3, 2};
 }
 
 void Primitive2DObject::BuildTriangle() {
@@ -279,13 +279,13 @@ void Primitive2DObject::BuildTriangle() {
     float bottom = size_.y * (1.0f - pivot_.y);
     float centerX = left + size_.x * 0.5f;
 
-    resource_->vertexDataList_ = {
+    resource_->GetVertexDataList() = {
         {{centerX, top, 0.0f, 1.0f}, {0.5f, 0.0f}, {0.0f, 0.0f, -1.0f}},  // 上
         {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}, // 右下
         {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}   // 左下
     };
 
-    resource_->indexDataList_ = {0, 1, 2};
+    resource_->GetIndexDataList() = {0, 1, 2};
 }
 
 void Primitive2DObject::BuildCircle(uint32_t subdiv) {
@@ -303,7 +303,7 @@ void Primitive2DObject::BuildCircle(uint32_t subdiv) {
     float offsetY = (0.5f - pivot_.y) * size_.y;
 
     // 中心点
-    resource_->vertexDataList_.push_back({{offsetX, offsetY, 0.0f, 1.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, -1.0f}});
+    resource_->GetVertexDataList().push_back({{offsetX, offsetY, 0.0f, 1.0f}, {0.5f, 0.5f}, {0.0f, 0.0f, -1.0f}});
 
     float pi = 3.141592654f;
     for (uint32_t i = 0; i <= subdiv; ++i) {
@@ -317,13 +317,13 @@ void Primitive2DObject::BuildCircle(uint32_t subdiv) {
         float u = cosA * 0.5f + 0.5f;
         float v = sinA * 0.5f + 0.5f;
 
-        resource_->vertexDataList_.push_back({{vx, vy, 0.0f, 1.0f}, {u, v}, {0.0f, 0.0f, -1.0f}});
+        resource_->GetVertexDataList().push_back({{vx, vy, 0.0f, 1.0f}, {u, v}, {0.0f, 0.0f, -1.0f}});
     }
 
     for (uint32_t i = 0; i < subdiv; ++i) {
-        resource_->indexDataList_.push_back(0); // 中心
-        resource_->indexDataList_.push_back(i + 1);
-        resource_->indexDataList_.push_back(i + 2);
+        resource_->GetIndexDataList().push_back(0); // 中心
+        resource_->GetIndexDataList().push_back(i + 1);
+        resource_->GetIndexDataList().push_back(i + 2);
     }
 }
 
@@ -354,14 +354,14 @@ void Primitive2DObject::BuildRing(uint32_t subdiv) {
         float inY = offsetY + sinA * innerRadiusY;
         float uIn = cosA * 0.5f * (innerRadiusX / outerRadiusX) + 0.5f;
         float vIn = sinA * 0.5f * (innerRadiusY / outerRadiusY) + 0.5f;
-        resource_->vertexDataList_.push_back({{inX, inY, 0.0f, 1.0f}, {uIn, vIn}, {0.0f, 0.0f, -1.0f}});
+        resource_->GetVertexDataList().push_back({{inX, inY, 0.0f, 1.0f}, {uIn, vIn}, {0.0f, 0.0f, -1.0f}});
 
         // 外周頂点
         float outX = offsetX + cosA * outerRadiusX;
         float outY = offsetY + sinA * outerRadiusY;
         float uOut = cosA * 0.5f + 0.5f;
         float vOut = sinA * 0.5f + 0.5f;
-        resource_->vertexDataList_.push_back({{outX, outY, 0.0f, 1.0f}, {uOut, vOut}, {0.0f, 0.0f, -1.0f}});
+        resource_->GetVertexDataList().push_back({{outX, outY, 0.0f, 1.0f}, {uOut, vOut}, {0.0f, 0.0f, -1.0f}});
     }
 
     for (uint32_t i = 0; i < subdiv; ++i) {
@@ -370,14 +370,14 @@ void Primitive2DObject::BuildRing(uint32_t subdiv) {
         uint32_t p2 = i * 2 + 2; // 内周 i+1
         uint32_t p3 = i * 2 + 3; // 外周 i+1
 
-        // トライアングル1
-        resource_->indexDataList_.push_back(p0);
-        resource_->indexDataList_.push_back(p1);
-        resource_->indexDataList_.push_back(p2);
-        // トライアングル2
-        resource_->indexDataList_.push_back(p2);
-        resource_->indexDataList_.push_back(p1);
-        resource_->indexDataList_.push_back(p3);
+        // トライアングル1 (CW)
+        resource_->GetIndexDataList().push_back(p0);
+        resource_->GetIndexDataList().push_back(p1);
+        resource_->GetIndexDataList().push_back(p3);
+        // トライアングル2 (CW)
+        resource_->GetIndexDataList().push_back(p0);
+        resource_->GetIndexDataList().push_back(p3);
+        resource_->GetIndexDataList().push_back(p2);
     }
 }
 
@@ -394,12 +394,12 @@ void Primitive2DObject::BuildLine() {
     float top = -thick * pivot_.y;
     float bottom = thick * (1.0f - pivot_.y);
 
-    resource_->vertexDataList_ = {
+    resource_->GetVertexDataList() = {
         {{left, top, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},    // 左上
         {{right, top, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}},   // 右上
         {{left, bottom, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}}, // 左下
         {{right, bottom, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}} // 右下
     };
 
-    resource_->indexDataList_ = {0, 1, 2, 2, 1, 3};
+    resource_->GetIndexDataList() = {0, 1, 3, 0, 3, 2};
 }

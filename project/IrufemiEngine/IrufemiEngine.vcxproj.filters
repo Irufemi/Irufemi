@@ -336,26 +336,8 @@
     <ClCompile Include="Core\Math\MathFunction.cpp">
       <Filter>Core\Math</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Math\Matrix4x4.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\NumericalSequence.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Quaternion.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Math\Random\Random.cpp">
       <Filter>Core\Math\Random</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Vector2.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Vector3.cpp">
-      <Filter>Core\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Math\Vector4.cpp">
-      <Filter>Core\Math</Filter>
     </ClCompile>
     <ClCompile Include="Core\System\DirectoryWatcher.cpp">
       <Filter>Core\System</Filter>
@@ -624,6 +606,9 @@
     <ClCompile Include="Framework\Prefab\PrefabManager.cpp">
       <Filter>Framework\Prefab</Filter>
     </ClCompile>
+    <ClCompile Include="Framework\Prefab\PrefabUtility.cpp">
+      <Filter>Framework\Prefab</Filter>
+    </ClCompile>
     <ClCompile Include="Framework\Scene\OptionsScene.cpp">
       <Filter>Framework\Scene</Filter>
     </ClCompile>
@@ -848,9 +833,6 @@
     <ClInclude Include="Core\Math\Random\Random.h">
       <Filter>Core\Math\Random</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Pattern\Singleton.h">
-      <Filter>Core\Pattern</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Shape\Ball.h">
       <Filter>Core\Shape</Filter>
     </ClInclude>
@@ -968,6 +950,9 @@
     <ClInclude Include="Renderer\Data\PointLight.h">
       <Filter>Renderer\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Data\RenderContext.h">
+      <Filter>Renderer\Data</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\Data\RenderPackets.h">
       <Filter>Renderer\Data</Filter>
     </ClInclude>
@@ -987,9 +972,6 @@
       <Filter>Renderer\Data</Filter>
     </ClInclude>
     <ClInclude Include="RHI\DirectX12\ConstantBuffer.h">
-      <Filter>RHI\DirectX12</Filter>
-    </ClInclude>
-    <ClInclude Include="RHI\DirectX12\D3DResourceLeakChecker.h">
       <Filter>RHI\DirectX12</Filter>
     </ClInclude>
     <ClInclude Include="RHI\DirectX12\DescriptorAllocator.h">
@@ -1152,6 +1134,9 @@
       <Filter>Framework\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Prefab\PrefabManager.h">
+      <Filter>Framework\Prefab</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework\Prefab\PrefabUtility.h">
       <Filter>Framework\Prefab</Filter>
     </ClInclude>
     <ClInclude Include="Framework\Scene\OptionsScene.h">

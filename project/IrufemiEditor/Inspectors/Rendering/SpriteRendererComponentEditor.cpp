@@ -197,29 +197,27 @@ void SpriteRendererComponentEditor::Draw(Component* component, EditorActionManag
             ComponentUIHelpers::DrawPropertyLabel("Anchor");
             ImGui::TableSetColumnIndex(1);
             ImGui::PushItemWidth(-1);
-            if (ImGui::SliderFloat2("##Anchor", comp->anchor_, 0.0f, 1.0f)) {
+            if (ImGui::SliderFloat2("##Anchor", &comp->anchor_.x, 0.0f, 1.0f)) {
                 if (comp->GetSprite()) {
-                    comp->GetSprite()->SetAnchor(comp->anchor_[0], comp->anchor_[1]);
+                    comp->GetSprite()->SetAnchor(comp->anchor_.x, comp->anchor_.y);
                 }
             }
             ImGui::PopItemWidth();
             ComponentUIHelpers::CheckUndoRedoDrag(
-                actionManager, reinterpret_cast<Irufemi::Vector2*>(comp->anchor_),
+                actionManager, &comp->anchor_,
                 std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) {
-                    comp->anchor_[0] = v.x;
-                    comp->anchor_[1] = v.y;
+                    comp->anchor_ = v;
                     if (comp->GetSprite()) {
                         comp->GetSprite()->SetAnchor(v.x, v.y);
                     }
                 }));
             ComponentUIHelpers::DrawPropertyResetButton(
-                "##AnchorReset", comp->anchor_[0] != 0.5f || comp->anchor_[1] != 0.5f, [&]() {
-                    Irufemi::Vector2 oldA = Irufemi::Vector2(comp->anchor_[0], comp->anchor_[1]);
+                "##AnchorReset", comp->anchor_.x != 0.5f || comp->anchor_.y != 0.5f, [&]() {
+                    Irufemi::Vector2 oldA = comp->anchor_;
                     ComponentUIHelpers::PushInstantUndo(
                         actionManager, oldA, Irufemi::Vector2{0.5f, 0.5f},
                         std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) {
-                            comp->anchor_[0] = v.x;
-                            comp->anchor_[1] = v.y;
+                            comp->anchor_ = v;
                             if (comp->GetSprite()) {
                                 comp->GetSprite()->SetAnchor(v.x, v.y);
                             }
@@ -230,23 +228,17 @@ void SpriteRendererComponentEditor::Draw(Component* component, EditorActionManag
             ComponentUIHelpers::DrawPropertyLabel("Base Size");
             ImGui::TableSetColumnIndex(1);
             ImGui::PushItemWidth(-1);
-            ImGui::DragFloat2("##Base Size", comp->size_, 1.0f, 1.0f, 8192.0f);
+            ImGui::DragFloat2("##Base Size", &comp->size_.x, 1.0f, 1.0f, 8192.0f);
             ImGui::PopItemWidth();
             ComponentUIHelpers::CheckUndoRedoDrag(
-                actionManager, reinterpret_cast<Irufemi::Vector2*>(comp->size_),
-                std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) {
-                    comp->size_[0] = v.x;
-                    comp->size_[1] = v.y;
-                }));
+                actionManager, &comp->size_,
+                std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) { comp->size_ = v; }));
             ComponentUIHelpers::DrawPropertyResetButton(
-                "##BaseSizeReset", comp->size_[0] != 100.0f || comp->size_[1] != 100.0f, [&]() {
-                    Irufemi::Vector2 oldS = Irufemi::Vector2(comp->size_[0], comp->size_[1]);
-                    ComponentUIHelpers::PushInstantUndo(
-                        actionManager, oldS, Irufemi::Vector2{100, 100},
-                        std::function<void(const Irufemi::Vector2&)>([comp](const Irufemi::Vector2& v) {
-                            comp->size_[0] = v.x;
-                            comp->size_[1] = v.y;
-                        }));
+                "##BaseSizeReset", comp->size_.x != 100.0f || comp->size_.y != 100.0f, [&]() {
+                    Irufemi::Vector2 oldS = comp->size_;
+                    ComponentUIHelpers::PushInstantUndo(actionManager, oldS, Irufemi::Vector2{100, 100},
+                                                        std::function<void(const Irufemi::Vector2&)>(
+                                                            [comp](const Irufemi::Vector2& v) { comp->size_ = v; }));
                 });
 
             ImGui::TableNextRow();

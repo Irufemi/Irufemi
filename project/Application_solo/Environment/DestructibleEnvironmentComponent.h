@@ -4,6 +4,7 @@
 #include <string>
 
 class DebrisManagerComponent;
+class EffectManagerComponent;
 
 /**
  * @class DestructibleEnvironmentComponent
@@ -16,16 +17,24 @@ public:
     DestructibleEnvironmentComponent() = default;
     ~DestructibleEnvironmentComponent() override = default;
 
+    void Initialize() override;
     void Start() override;
 
     std::string GetComponentName() const override {
         return "DestructibleEnvironmentComponent";
     }
 
-    // パラメータ設定用
+    /**
+     * @brief 破壊時にスポーンする破片の数を設定する
+     * @param[in] count 破片の個数
+     */
     void SetDebrisSpawnCount(int count) {
         debrisSpawnCount_ = count;
     }
+    /**
+     * @brief 破壊時にスポーンする破片の数を取得する
+     * @return 破片の個数
+     */
     int GetDebrisSpawnCount() const {
         return debrisSpawnCount_;
     }
@@ -41,8 +50,22 @@ public:
     }
 
 private:
+    /**
+     * @brief 破片生成マネージャーを取得する（キャッシュ付き）
+     */
+    DebrisManagerComponent* GetDebrisManager();
+
+    /**
+     * @brief 破壊エフェクトマネージャーを取得する（キャッシュ付き）
+     */
+    EffectManagerComponent* GetEffectManager();
+
     int hp_ = 1;
     int debrisSpawnCount_ = 3;
 
-    DebrisManagerComponent* debrisManager_ = nullptr;
+    DebrisManagerComponent* debrisManager_ = nullptr; ///< 破片生成マネージャーへの参照
+    /**
+     * @brief 破壊エフェクトを再生するためのエフェクトマネージャーへの参照
+     */
+    EffectManagerComponent* effectManager_ = nullptr;
 };

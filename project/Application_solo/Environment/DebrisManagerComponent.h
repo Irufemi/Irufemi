@@ -13,8 +13,8 @@ enum class DebrisState;
 
 // がれきのアニメーション用並行データ（Data-Oriented Parallel Array）
 struct DebrisAnimData {
-    float baseIdleY_;
-    float idleTimeY_;
+    float baseIdleY = 0.0f;
+    float idleTimeY = 0.0f;
 };
 
 /**
@@ -131,9 +131,9 @@ private:
     struct DebrisVariation {
         std::string id;
         std::string modelPath;
-        int maxVirtualCount;
-        int maxPoolSize;
-        int spawnWeight;
+        int maxVirtualCount = 0;
+        int maxPoolSize = 0;
+        int spawnWeight = 1;
         VirtualEntityManagerComponent* virtualManager = nullptr;
         std::vector<DebrisAnimData> animDataList;
         std::queue<int> activeIds;
@@ -174,4 +174,5 @@ private:
     std::vector<DebrisComponent*> orbitingDebris_;
     std::vector<DebrisComponent*> bossOrbitingDebris_;
     std::vector<DebrisComponent*> thrownDebris_;
+    std::vector<DebrisComponent*> activeIdleDebris_; ///< 実体化されているIdle状態のがれきリスト
 };

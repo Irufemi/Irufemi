@@ -292,7 +292,7 @@ Matrix4x4 MakeIdentity4x4() {
     // clang-format on
 }
 
-Matrix4x4 MakeTranslateMatrix(Vector3 translate) {
+Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
     Matrix4x4 result = MakeIdentity4x4();
     result.m[3][0] = translate.x;
     result.m[3][1] = translate.y;
@@ -300,7 +300,7 @@ Matrix4x4 MakeTranslateMatrix(Vector3 translate) {
     return result;
 }
 
-Matrix4x4 MakeScaleMatrix(Vector3 scale) {
+Matrix4x4 MakeScaleMatrix(const Vector3& scale) {
     Matrix4x4 result = MakeIdentity4x4();
     result.m[0][0] = scale.x;
     result.m[1][1] = scale.y;
@@ -308,7 +308,7 @@ Matrix4x4 MakeScaleMatrix(Vector3 scale) {
     return result;
 }
 
-Vector3 Transform(Vector3 vector, const Matrix4x4& m) {
+Vector3 Transform(const Vector3& vector, const Matrix4x4& m) {
     Vector3 result{};
     result.x = vector.x * m.m[0][0] + vector.y * m.m[1][0] + vector.z * m.m[2][0] + m.m[3][0];
     result.y = vector.x * m.m[0][1] + vector.y * m.m[1][1] + vector.z * m.m[2][1] + m.m[3][1];
@@ -322,7 +322,7 @@ Vector3 Transform(Vector3 vector, const Matrix4x4& m) {
     return result;
 }
 
-Vector3 TransformNormal(Vector3 vector, const Matrix4x4& m) {
+Vector3 TransformNormal(const Vector3& vector, const Matrix4x4& m) {
     Vector3 result{};
     result.x = vector.x * m.m[0][0] + vector.y * m.m[1][0] + vector.z * m.m[2][0];
     result.y = vector.x * m.m[0][1] + vector.y * m.m[1][1] + vector.z * m.m[2][1];
@@ -369,7 +369,7 @@ Matrix4x4 MakeRotateZMatrix(float theta) {
     // clang-format on
 }
 
-Matrix4x4 MakeRotateXYZMatrix(Vector3 rotate) {
+Matrix4x4 MakeRotateXYZMatrix(const Vector3& rotate) {
     return MakeRotateXMatrix(rotate.x) * MakeRotateYMatrix(rotate.y) * MakeRotateZMatrix(rotate.z);
 }
 
@@ -377,15 +377,16 @@ Matrix4x4 MakeRotateXYZMatrix(float x, float y, float z) {
     return MakeRotateXYZMatrix(Vector3{x, y, z});
 }
 
-Matrix4x4 MakeAffineMatrix(Vector3 scale, Vector3 rotate, Vector3 translate) {
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
     return MakeScaleMatrix(scale) * MakeRotateXYZMatrix(rotate) * Math::MakeTranslateMatrix(translate);
 }
 
-Matrix4x4 MakeAffineMatrix(Vector3 scale, float rotateX, float rotateY, float rotateZ, Vector3 translate) {
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, float rotateX, float rotateY, float rotateZ,
+                           const Vector3& translate) {
     return MakeAffineMatrix(scale, Vector3{rotateX, rotateY, rotateZ}, translate);
 }
 
-Matrix4x4 MakeAffineMatrix(Vector3 scale, const Quaternion& rotateQuaternion, Vector3 translate) {
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Quaternion& rotateQuaternion, const Vector3& translate) {
     return MakeScaleMatrix(scale) * MakeRotateMatrix(rotateQuaternion) * MakeTranslateMatrix(translate);
 }
 
@@ -749,7 +750,7 @@ void DecomposeAffineMatrixSafe(const Matrix4x4& mat, const Vector3& scaleSignHin
 
 #pragma endregion
 
-Vector3 Perpendicular(Vector3 vector) {
+Vector3 Perpendicular(const Vector3& vector) {
     if (std::abs(vector.x) > 1e-6f || std::abs(vector.y) > 1e-6f) {
         return Math::Normalize(Vector3{-vector.y, vector.x, 0.0f});
     }

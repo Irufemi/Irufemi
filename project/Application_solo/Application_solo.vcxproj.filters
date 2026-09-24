@@ -114,6 +114,9 @@
     <ClCompile Include="Combat\Boss\BossComponent.cpp">
       <Filter>Combat\Boss</Filter>
     </ClCompile>
+    <ClCompile Include="Combat\Boss\BossDamageVisualizerComponent.cpp">
+      <Filter>Combat\Boss</Filter>
+    </ClCompile>
     <ClCompile Include="Combat\Boss\BossStateIdle.cpp">
       <Filter>Combat\Boss</Filter>
     </ClCompile>
@@ -124,6 +127,12 @@
       <Filter>Combat\Boss</Filter>
     </ClCompile>
     <ClCompile Include="Combat\BossBulletManagerComponent.cpp">
+      <Filter>Combat</Filter>
+    </ClCompile>
+    <ClCompile Include="Combat\EnemyBulletComponent.cpp">
+      <Filter>Combat</Filter>
+    </ClCompile>
+    <ClCompile Include="Combat\EnemyBulletManagerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
     <ClCompile Include="Combat\DroneManagerComponent.cpp">
@@ -159,7 +168,10 @@
     <ClCompile Include="Player\PlayerHealthComponent.cpp">
       <Filter>Player</Filter>
     </ClCompile>
-    <ClCompile Include="Combat\DebugEnemySpawnerComponent.cpp">
+    <ClCompile Include="Player\PlayerDamageVisualizerComponent.cpp">
+      <Filter>Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Combat\EnemySpawnerComponent.cpp">
       <Filter>Combat</Filter>
     </ClCompile>
     <ClCompile Include="Core\SceneTransitionButtonComponent.cpp">
@@ -246,6 +258,9 @@
     <ClInclude Include="Combat\Boss\BossComponent.h">
       <Filter>Combat\Boss</Filter>
     </ClInclude>
+    <ClInclude Include="Combat\Boss\BossDamageVisualizerComponent.h">
+      <Filter>Combat\Boss</Filter>
+    </ClInclude>
     <ClInclude Include="Combat\Boss\IBossState.h">
       <Filter>Combat\Boss</Filter>
     </ClInclude>
@@ -259,6 +274,12 @@
       <Filter>Combat\Boss</Filter>
     </ClInclude>
     <ClInclude Include="Combat\BossBulletManagerComponent.h">
+      <Filter>Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Combat\EnemyBulletComponent.h">
+      <Filter>Combat</Filter>
+    </ClInclude>
+    <ClInclude Include="Combat\EnemyBulletManagerComponent.h">
       <Filter>Combat</Filter>
     </ClInclude>
     <ClInclude Include="Combat\DroneManagerComponent.h">
@@ -291,7 +312,10 @@
     <ClInclude Include="Player\PlayerHealthComponent.h">
       <Filter>Player</Filter>
     </ClInclude>
-    <ClInclude Include="Combat\DebugEnemySpawnerComponent.h">
+    <ClInclude Include="Player\PlayerDamageVisualizerComponent.h">
+      <Filter>Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Combat\EnemySpawnerComponent.h">
       <Filter>Combat</Filter>
     </ClInclude>
     <ClInclude Include="Core\SceneTransitionButtonComponent.h">

@@ -234,9 +234,11 @@ private:
     Microsoft::WRL::ComPtr<ID3D12PipelineState> drawPSO_;
 
     struct VoxelPerFrame {
-        float time;
-        float deltaTime;
+        float time = 0.0f;
+        float deltaTime = 0.0f;
+        float pad[2] = {};
     };
+    static_assert(sizeof(VoxelPerFrame) == 16, "VoxelPerFrame size must be 16 bytes for ConstantBuffer alignment.");
     ConstantBuffer<VoxelPerFrame> perFrameBuffer_;
     VoxelPerFrame perFrameData_{};
 

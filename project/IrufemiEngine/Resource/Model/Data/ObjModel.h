@@ -14,6 +14,8 @@
 #include <vector>
 #include <unordered_map>
 
+namespace Irufemi {
+
 struct ObjMaterial {
     // Kd
     Irufemi::Vector4 color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -56,9 +58,9 @@ struct ObjMaterial {
 struct ObjMesh {
 
     std::vector<VertexData> vertices;
-    std::vector<uint32_t> indices; // 追加
+    std::vector<uint32_t> indices; //!< インデックスバッファデータ
     ObjMaterial material;
-    std::string nodeName; // 追加: このメッシュが属するノード名
+    std::string nodeName; //!< このメッシュが属するノード名
 };
 
 // 階層(Node)を統合した拡張版 ObjModel
@@ -72,14 +74,20 @@ struct ObjModel {
     std::vector<ObjMesh> meshes;
 
     /** @brief シーン階層のルートノード */
-    Node rootNode; // 追加: シーン階層ルート
+    Node rootNode;
 
     /** @brief スキンクラスター（ボーンウェイト）データのマップ */
     std::unordered_map<std::string, JointWeightData> skinClusterData;
 
     /** @brief モデル全体の境界球（高速なカリング用） */
-    Irufemi::Sphere boundingSphere; // 追加: モデル全体の境界球
+    Irufemi::Sphere boundingSphere;
 
     /** @brief モデル全体のローカルAABB（高精度ピッキング用） */
-    Irufemi::AABB boundingBox; // 追加: モデル全体のローカルAABB（高精度ピッキング用）
+    Irufemi::AABB boundingBox;
 };
+
+} // namespace Irufemi
+
+using Irufemi::ObjMaterial;
+using Irufemi::ObjMesh;
+using Irufemi::ObjModel;

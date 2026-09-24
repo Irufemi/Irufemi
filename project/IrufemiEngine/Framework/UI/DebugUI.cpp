@@ -54,10 +54,49 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Renderer/ScreenCaptureManager.h"
 #include <chrono>
 #include <iomanip>
-// 静的宣言
-std::unique_ptr<PointLight> DebugUI::templatePointLight_;
-std::unique_ptr<SpotLight> DebugUI::templateSpotLight_;
-std::unique_ptr<AreaLight> DebugUI::templateAreaLight_;
+
+namespace {
+#ifdef USE_IMGUI
+/**
+ * @struct LightEditorContext
+ * @brief エディタでのライト新規作成用一時パラメータ（ViewとStateの分離）
+ */
+struct LightEditorContext {
+    PointLight pointLight{};
+    SpotLight spotLight{};
+    AreaLight areaLight{};
+
+    LightEditorContext() {
+        pointLight.color = {1.0f, 1.0f, 1.0f, 1.0f};
+        pointLight.position = {0.0f, 1.0f, 0.0f};
+        pointLight.intensity = 1.0f;
+        pointLight.radius = 10.0f;
+        pointLight.decay = 1.0f;
+        pointLight.isActive = 1;
+
+        spotLight.color = {1.0f, 1.0f, 1.0f, 1.0f};
+        spotLight.position = {0.0f, 1.0f, 0.0f};
+        spotLight.intensity = 1.0f;
+        spotLight.direction = {0.0f, -1.0f, 0.0f};
+        spotLight.distance = 10.0f;
+        spotLight.decay = 1.0f;
+        spotLight.cosAngle = 0.86602540378f; // cos(pi / 6)
+        spotLight.falloff = 1.0f;
+        spotLight.isActive = 1;
+
+        areaLight.color = {1.0f, 1.0f, 1.0f, 1.0f};
+        areaLight.position = {0.0f, 1.0f, 0.0f};
+        areaLight.intensity = 1.0f;
+        areaLight.direction = {0.0f, -1.0f, 0.0f};
+        areaLight.range = 10.0f;
+        areaLight.size = {1.0f, 1.0f};
+        areaLight.isActive = 1;
+    }
+};
+
+LightEditorContext s_lightEditorContext;
+#endif // USE_IMGUI
+} // namespace
 
 void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCommon* dxCommon) {
 #ifdef USE_IMGUI
@@ -97,7 +136,7 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     dxCommon_ = dxCommon;
 
     /*開発UIを出そう*/
-    // ImGuiの初期化。詳細はさして重要ではないので開設は省略する。
+    // ImGuiの初期化。詳細はさして重要ではないので解説は省略する。
     // こういうもんである
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -158,34 +197,6 @@ void DebugUI::Initialize([[maybe_unused]] HWND hwnd, [[maybe_unused]] DirectXCom
     io.Fonts->Build();
     ImGui_ImplDX12_CreateDeviceObjects();
     ImGui_ImplDX12_UpdateTexture(io.Fonts->TexData);
-
-    // テンプレートライトの初期化
-    templatePointLight_ = std::make_unique<PointLight>();
-    templatePointLight_->color = {1.0f, 1.0f, 1.0f, 1.0f};
-    templatePointLight_->position = {0.0f, 1.0f, 0.0f};
-    templatePointLight_->intensity = 1.0f;
-    templatePointLight_->radius = 10.0f;
-    templatePointLight_->decay = 1.0f;
-    templatePointLight_->isActive = 1;
-
-    templateSpotLight_ = std::make_unique<SpotLight>();
-    templateSpotLight_->color = {1.0f, 1.0f, 1.0f, 1.0f};
-    templateSpotLight_->position = {0.0f, 1.0f, 0.0f};
-    templateSpotLight_->distance = 10.0f;
-    templateSpotLight_->direction = {0.0f, -1.0f, 0.0f};
-    templateSpotLight_->intensity = 1.0f;
-    templateSpotLight_->decay = 1.0f;
-    templateSpotLight_->cosAngle = std::cos(std::numbers::pi_v<float> / 6.0f);
-    templateSpotLight_->isActive = 1;
-
-    templateAreaLight_ = std::make_unique<AreaLight>();
-    templateAreaLight_->color = {1.0f, 1.0f, 1.0f, 1.0f};
-    templateAreaLight_->position = {0.0f, 1.0f, 0.0f};
-    templateAreaLight_->intensity = 1.0f;
-    templateAreaLight_->direction = {0.0f, -1.0f, 0.0f};
-    templateAreaLight_->range = 10.0f;
-    templateAreaLight_->size = {1.0f, 1.0f};
-    templateAreaLight_->isActive = 1;
 
 #endif // USE_IMGUI
 }
@@ -287,44 +298,46 @@ void DebugUI::DebugLights([[maybe_unused]] DirectionalLight* directionalLight,
             // Light Editor タブ
             if (ImGui::BeginTabItem("Editor")) {
                 ImGui::SeparatorText("PointLight Template");
-                ImGui::ColorEdit4("PL Color", &templatePointLight_->color.x);
-                ImGui::DragFloat3("PL Position", &templatePointLight_->position.x, 0.01f);
-                ImGui::DragFloat("PL Intensity", &templatePointLight_->intensity, 0.01f, 0.0f);
-                ImGui::DragFloat("PL Radius", &templatePointLight_->radius, 0.01f, 0.0f);
-                ImGui::DragFloat("PL Decay", &templatePointLight_->decay, 0.01f, 0.0f);
+                ImGui::ColorEdit4("PL Color", &s_lightEditorContext.pointLight.color.x);
+                ImGui::DragFloat3("PL Position", &s_lightEditorContext.pointLight.position.x, 0.01f);
+                ImGui::DragFloat("PL Intensity", &s_lightEditorContext.pointLight.intensity, 0.01f, 0.0f);
+                ImGui::DragFloat("PL Radius", &s_lightEditorContext.pointLight.radius, 0.01f, 0.0f);
+                ImGui::DragFloat("PL Decay", &s_lightEditorContext.pointLight.decay, 0.01f, 0.0f);
                 if (ImGui::Button("Add PointLight to Scene")) {
-                    auto newLight = std::make_unique<PointLight>(*templatePointLight_);
+                    auto newLight = std::make_unique<PointLight>(s_lightEditorContext.pointLight);
                     pointLights.push_back(std::move(newLight));
                 }
 
                 ImGui::Separator();
 
                 ImGui::SeparatorText("SpotLight Template");
-                ImGui::ColorEdit4("SL Color", &templateSpotLight_->color.x);
-                ImGui::DragFloat3("SL Position", &templateSpotLight_->position.x, 0.01f);
-                ImGui::DragFloat("SL Intensity", &templateSpotLight_->intensity, 0.01f, 0.0f);
-                ImGui::DragFloat3("SL Direction", &templateSpotLight_->direction.x, 0.01f);
-                templateSpotLight_->direction = Irufemi::Math::Normalize(templateSpotLight_->direction);
-                ImGui::DragFloat("SL Distance", &templateSpotLight_->distance, 0.01f, 0.0f);
-                ImGui::DragFloat("SL Decay", &templateSpotLight_->decay, 0.01f, 0.0f);
-                ImGui::DragFloat("SL CosAngle", &templateSpotLight_->cosAngle, 0.01f, 0.0f, 1.0f);
+                ImGui::ColorEdit4("SL Color", &s_lightEditorContext.spotLight.color.x);
+                ImGui::DragFloat3("SL Position", &s_lightEditorContext.spotLight.position.x, 0.01f);
+                ImGui::DragFloat("SL Intensity", &s_lightEditorContext.spotLight.intensity, 0.01f, 0.0f);
+                ImGui::DragFloat3("SL Direction", &s_lightEditorContext.spotLight.direction.x, 0.01f);
+                s_lightEditorContext.spotLight.direction =
+                    Irufemi::Math::Normalize(s_lightEditorContext.spotLight.direction);
+                ImGui::DragFloat("SL Distance", &s_lightEditorContext.spotLight.distance, 0.01f, 0.0f);
+                ImGui::DragFloat("SL Decay", &s_lightEditorContext.spotLight.decay, 0.01f, 0.0f);
+                ImGui::DragFloat("SL CosAngle", &s_lightEditorContext.spotLight.cosAngle, 0.01f, 0.0f, 1.0f);
                 if (ImGui::Button("Add SpotLight to Scene")) {
-                    auto newLight = std::make_unique<SpotLight>(*templateSpotLight_);
+                    auto newLight = std::make_unique<SpotLight>(s_lightEditorContext.spotLight);
                     spotLights.push_back(std::move(newLight));
                 }
 
                 ImGui::Separator();
 
                 ImGui::SeparatorText("AreaLight Template");
-                ImGui::ColorEdit4("AL Color", &templateAreaLight_->color.x);
-                ImGui::DragFloat3("AL Position", &templateAreaLight_->position.x, 0.01f);
-                ImGui::DragFloat("AL Intensity", &templateAreaLight_->intensity, 0.01f, 0.0f);
-                ImGui::DragFloat3("AL Direction", &templateAreaLight_->direction.x, 0.01f);
-                templateAreaLight_->direction = Irufemi::Math::Normalize(templateAreaLight_->direction);
-                ImGui::DragFloat("AL Range", &templateAreaLight_->range, 0.01f, 0.0f);
-                ImGui::DragFloat2("AL Size", &templateAreaLight_->size.x, 0.01f, 0.0f);
+                ImGui::ColorEdit4("AL Color", &s_lightEditorContext.areaLight.color.x);
+                ImGui::DragFloat3("AL Position", &s_lightEditorContext.areaLight.position.x, 0.01f);
+                ImGui::DragFloat("AL Intensity", &s_lightEditorContext.areaLight.intensity, 0.01f, 0.0f);
+                ImGui::DragFloat3("AL Direction", &s_lightEditorContext.areaLight.direction.x, 0.01f);
+                s_lightEditorContext.areaLight.direction =
+                    Irufemi::Math::Normalize(s_lightEditorContext.areaLight.direction);
+                ImGui::DragFloat("AL Range", &s_lightEditorContext.areaLight.range, 0.01f, 0.0f);
+                ImGui::DragFloat2("AL Size", &s_lightEditorContext.areaLight.size.x, 0.01f, 0.0f);
                 if (ImGui::Button("Add AreaLight to Scene")) {
-                    auto newLight = std::make_unique<AreaLight>(*templateAreaLight_);
+                    auto newLight = std::make_unique<AreaLight>(s_lightEditorContext.areaLight);
                     areaLights.push_back(std::move(newLight));
                 }
 
@@ -672,10 +685,10 @@ void DebugUI::DebugTexture([[maybe_unused]] Object3DResource* resource, [[maybe_
                     bool isSelected = (i == selectedTextureIndex);
                     if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
                         selectedTextureIndex = i;
-                        if (resource->textureHandle_.IsValid()) {
-                            textureManager_->ReleaseTexture(resource->textureHandle_);
+                        if (resource->GetTextureHandle().IsValid()) {
+                            textureManager_->ReleaseTexture(resource->GetTextureHandle());
                         }
-                        resource->textureHandle_ = textureManager_->LoadTexture(textureNames[i]);
+                        resource->SetTextureHandle(textureManager_->LoadTexture(textureNames[i]));
                     }
                 }
                 ImGui::EndCombo();
@@ -697,10 +710,10 @@ void DebugUI::DebugTexture([[maybe_unused]] Object2DResource* resource, [[maybe_
                     bool isSelected = (i == selectedTextureIndex);
                     if (ImGui::Selectable(textureNames[i].c_str(), isSelected)) {
                         selectedTextureIndex = i;
-                        if (resource->textureHandle_.IsValid()) {
-                            textureManager_->ReleaseTexture(resource->textureHandle_);
+                        if (resource->GetTextureHandle().IsValid()) {
+                            textureManager_->ReleaseTexture(resource->GetTextureHandle());
                         }
-                        resource->textureHandle_ = textureManager_->LoadTexture(textureNames[i]);
+                        resource->SetTextureHandle(textureManager_->LoadTexture(textureNames[i]));
                     }
                 }
                 ImGui::EndCombo();

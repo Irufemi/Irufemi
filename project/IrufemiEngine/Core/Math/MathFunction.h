@@ -5,6 +5,7 @@
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Quaternion.h"
+#include <algorithm>
 
 namespace Irufemi {
 // 前方宣言
@@ -229,22 +230,22 @@ Matrix4x4 MakeIdentity4x4();
 /**
  * @brief 平行移動行列の作成
  */
-Matrix4x4 MakeTranslateMatrix(Vector3 translate);
+Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
 
 /**
  * @brief 拡大縮小行列の作成
  */
-Matrix4x4 MakeScaleMatrix(Vector3 scale);
+Matrix4x4 MakeScaleMatrix(const Vector3& scale);
 
 /**
  * @brief 座標変換 (w=1として計算後、w除算)
  */
-Vector3 Transform(Vector3 vector, const Matrix4x4& matrix);
+Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
 
 /**
  * @brief ベクトル変換 (平行移動を無視)
  */
-Vector3 TransformNormal(Vector3 vector, const Matrix4x4& matrix);
+Vector3 TransformNormal(const Vector3& vector, const Matrix4x4& matrix);
 
 /**
  * @brief X軸周り回転行列の作成
@@ -264,7 +265,7 @@ Matrix4x4 MakeRotateZMatrix(float theta);
 /**
  * @brief 3軸合成回転行列の作成 (XYZ順)
  */
-Matrix4x4 MakeRotateXYZMatrix(Vector3 rotate);
+Matrix4x4 MakeRotateXYZMatrix(const Vector3& rotate);
 
 /**
  * @brief 3軸合成回転行列の作成 (XYZ順) - 各成分指定版
@@ -274,17 +275,17 @@ Matrix4x4 MakeRotateXYZMatrix(float x, float y, float z);
 /**
  * @brief アフィン変換行列の作成 (Euler回転版)
  */
-Matrix4x4 MakeAffineMatrix(Vector3 scale, Vector3 rotate, Vector3 translate);
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate);
 
 /**
  * @brief アフィン変換行列の作成 (Euler回転版) - 各成分指定版
  */
-Matrix4x4 MakeAffineMatrix(Vector3 scale, float rotateX, float rotateY, float rotateZ, Vector3 translate);
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, float rotateX, float rotateY, float rotateZ, const Vector3& translate);
 
 /**
  * @brief アフィン変換行列の作成 (Quaternion回転版)
  */
-Matrix4x4 MakeAffineMatrix(Vector3 scale, const Quaternion& rotateQuaternion, Vector3 translate);
+Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Quaternion& rotateQuaternion, const Vector3& translate);
 
 /**
  * @brief 透視投影行列の作成
@@ -447,17 +448,17 @@ void DecomposeAffineMatrixSafe(const Matrix4x4& mat, const Vector3& scaleSignHin
 /**
  * @brief 垂直なベクトルを求める
  */
-Vector3 Perpendicular(Vector3 vector);
+Vector3 Perpendicular(const Vector3& vector);
 
 /**
  * @brief 値を最小値と最大値の間にクランプする
+ * @param v 対象の値
+ * @param lo 最小値
+ * @param hi 最大値
+ * @return クランプされた値
  */
-template <typename T>
-/**
- * @brief Clamp を実行する。
- */
-constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
-    return (v < lo) ? lo : (hi < v) ? hi : v;
+template <typename T> [[nodiscard]] constexpr const T& Clamp(const T& v, const T& lo, const T& hi) {
+    return (std::clamp)(v, lo, hi);
 }
 
 /**

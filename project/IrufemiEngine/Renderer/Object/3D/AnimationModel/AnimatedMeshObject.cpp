@@ -52,15 +52,15 @@ void AnimatedMeshObject::InitializeResources() {
         res->SetExternalTransformCbIndex(&transformCbIndex_);
 
         const auto& gpuMesh = m->gpuMeshes[i];
-        res->vertexBufferView_ = gpuMesh->vertexBufferView;
-        res->indexBufferView_ = gpuMesh->indexBufferView;
-        res->indexCount_ = gpuMesh->indexCount;
+        res->SetVertexBufferView(gpuMesh->vertexBufferView);
+        res->SetIndexBufferView(gpuMesh->indexBufferView);
+        res->SetIndexCount(gpuMesh->indexCount);
 
         res->CreateResource();
 
         const auto& gpuMaterial = (i < m->gpuMaterials.size()) ? m->gpuMaterials[i] : nullptr;
         if (gpuMaterial) {
-            res->textureHandle_ = gpuMaterial->textureHandle;
+            res->SetTextureHandle(gpuMaterial->textureHandle);
         }
         meshResources_.push_back(std::move(res));
     }
@@ -164,12 +164,14 @@ void AnimatedMeshObject::DispatchCompute() {
         return;
     }
 
+    isCulled_ = false;
     if (isCullingEnabled_) {
         float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
         Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
         boundingSphere.radius = m->cpuModel->boundingSphere.radius * maxScale * 1.5f;
         if (!Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
+            isCulled_ = true;
             return;
         }
     }
@@ -183,12 +185,15 @@ void AnimatedMeshObject::Draw() {
     if (!m || !m->cpuModel || !engine_ || meshResources_.empty()) {
         return;
     }
+    if (isCulled_) {
+        return;
+    }
     Camera* activeCam = engine_->GetCameraManager()->GetActiveCamera();
     if (!activeCam) {
         return;
     }
 
-    if (isCullingEnabled_) {
+    if (isCullingEnabled_ && m->cpuModel->skinClusterData.empty()) {
         float maxScale = (std::max)({transform_.scale.x, transform_.scale.y, transform_.scale.z});
         Irufemi::Sphere boundingSphere;
         boundingSphere.center = transform_.translate;
@@ -230,7 +235,7 @@ void AnimatedMeshObject::Draw() {
 
 void AnimatedMeshObject::DrawOutlineMask() {
     auto m = engine_ ? engine_->GetObjModelManager()->Resolve(modelHandle_) : nullptr;
-    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty()) {
+    if (!m || !engine_ || !engine_->GetDrawManager() || meshResources_.empty() || isCulled_) {
         return;
     }
     uint32_t vertexOffset = 0;

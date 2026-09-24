@@ -64,7 +64,6 @@
 // --- Resource (素材管理) ---
 #include "Resource/Texture/TextureManager.h"
 #include "Resource/Model/ModelManager.h"
-#include "Audio/AudioManager.h"
 
 // --- Framework (シーン) ---
 // #include "Framework/Scene/SceneManager.h"

@@ -6,16 +6,17 @@
 class MainTransparentPass : public IRenderPass {
 public:
     /**
-     * @brief up を設定する。
-     * @param[in] builder 設定する up の値
-     * @param[in] drawManager 設定する up の値
-     * @param[in] engine 設定する up の値
+     * @brief パスのセットアップ処理（半透明描画パスで必要なリソース状態やバリアをレンダーグラフに登録する）
+     * @param[in,out] builder リソース使用状態を記録するビルダー
+     * @param[in] rc 描画コンテキスト
      */
-    void Setup(RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) override;
+    void Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) override;
+
     /**
-     * @brief Execute を実行する。
+     * @brief パスの実行処理（カメラ距離による奥から手前のソートおよび半透明描画）
+     * @param[in] rc 描画コンテキスト
      */
-    void Execute(class DrawManager* drawManager, class IrufemiEngine* engine) override;
+    void Execute(const Irufemi::RenderContext& rc) override;
 
 private:
     /// @brief 半透明描画のインデックスソート用軽量キー (8 bytes)

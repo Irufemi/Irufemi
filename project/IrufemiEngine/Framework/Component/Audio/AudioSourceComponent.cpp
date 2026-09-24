@@ -46,14 +46,7 @@ void AudioSourceComponent::InitializeAudio() {
     if (player_) {
         return;
     }
-    if (!gameObject_) {
-        return;
-    }
-    auto scene = gameObject_->GetScene();
-    if (!scene) {
-        return;
-    }
-    auto engine = scene->GetEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return;
     }
@@ -68,6 +61,7 @@ void AudioSourceComponent::InitializeAudio() {
         }
         player_->Initialize(fullPath);
         player_->SetVolume(volume_);
+        lastVolume_ = volume_;
     }
 
     if (playOnAwake_) {
@@ -76,9 +70,10 @@ void AudioSourceComponent::InitializeAudio() {
 }
 
 void AudioSourceComponent::Update() {
-    // インスペクターからの動的変更を反映（EditorMode等での調整を想定）
-    if (player_) {
+    // インスペクターからの動的変更を反映（変更があった場合のみSetVolumeを実行）
+    if (player_ && lastVolume_ != volume_) {
         player_->SetVolume(volume_);
+        lastVolume_ = volume_;
     }
 }
 
@@ -107,8 +102,9 @@ void AudioSourceComponent::SetAudioPath(const std::string& path) {
 
 void AudioSourceComponent::SetVolume(float volume) {
     volume_ = volume;
-    if (player_) {
+    if (player_ && lastVolume_ != volume_) {
         player_->SetVolume(volume);
+        lastVolume_ = volume;
     }
 }
 

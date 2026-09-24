@@ -33,60 +33,69 @@ public:
     ~SpriteBatch() override;
 
     /**
-     * @brief Initialize を実行する。
+     * @brief スプライトバッチを初期化し、テクスチャロードおよび基底メッシュリソースを構築する。
+     * @param[in] textureName 使用するテクスチャのファイルパス
      */
     void Initialize(const std::string& textureName = "resources/uvChecker.png");
     /**
-     * @brief Update を実行する。
+     * @brief スプライトバッチの内部状態を更新する。
      */
     void Update();
 
     // インスタンスの追加
     /**
-     * @brief AddInstance を実行する。
+     * @brief Transform とカラーを指定してスプライトインスタンスを追加する。
+     * @param[in] transform スプライトのトランスフォーム（拡縮・回転・位置）
+     * @param[in] color 乗算カラー (RGBA)
      */
     void AddInstance(const Irufemi::Transform& transform, const Irufemi::Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f});
     /**
-     * @brief AddInstance を実行する。
+     * @brief 座標・サイズ・回転・カラー・アンカーを指定してスプライトインスタンスを追加する。
+     * @param[in] position スクリーン座標 (X, Y)
+     * @param[in] size スプライトの描画サイズ (幅, 高さ)
+     * @param[in] rotation 回転角度（ラジアン）
+     * @param[in] color 乗算カラー (RGBA)
+     * @param[in] anchor 原点アンカーポイント (0.0~1.0, デフォルトは中心 {0.5f, 0.5f})
      */
     void AddInstance(const Irufemi::Vector2& position, const Irufemi::Vector2& size, float rotation = 0.0f,
                      const Irufemi::Vector4& color = {1.0f, 1.0f, 1.0f, 1.0f},
                      const Irufemi::Vector2& anchor = {0.5f, 0.5f});
 
     /**
-     * @brief ClearInstances を実行する。
+     * @brief 登録されたすべてのスプライトインスタンスをクリアする。
      */
     void ClearInstances();
 
     /**
-     * @brief SyncBeforeDraw を実行する。
+     * @brief 描画直前にインスタンスバッファを同期・転送する。
      */
     void SyncBeforeDraw() override;
     /**
-     * @brief Draw を実行する。
+     * @brief スプライトバッチを描画キューへ発行する。
      */
     void Draw() override;
     /**
-     * @brief Draw を実行する。
+     * @brief 最前面フラグを指定してスプライトバッチを描画キューへ発行する。
+     * @param[in] isTopMost 最前面に描画するかどうかのフラグ
      */
     void Draw(bool isTopMost);
 
     // Getters
     /**
-     * @brief D3D12Resource を取得する。
-     * @return 取得された D3D12Resource
+     * @brief 内部で保持している Object2DResource へのポインタを取得する。
+     * @return Object2DResource へのポインタ
      */
     Object2DResource* GetD3D12Resource() const {
         return baseResource_.get();
     }
     /**
-     * @brief InstancingSrvHandleGPU を取得する。
-     * @return 取得された InstancingSrvHandleGPU
+     * @brief 現在フレームのインスタンシングバッファ SRV の GPU ハンドルを取得する。
+     * @return D3D12_GPU_DESCRIPTOR_HANDLE
      */
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const;
     /**
-     * @brief InstanceCount を取得する。
-     * @return 取得された InstanceCount
+     * @brief 描画対象の可視インスタンス総数を取得する。
+     * @return 有効なインスタンス数
      */
     UINT GetInstanceCount() const {
         return static_cast<UINT>(visibleInstanceCount_);
@@ -100,12 +109,34 @@ public:
         isTopMost_ = isTopMost;
     }
     /**
-     * @brief CustomPSO を設定する。
+     * @brief CustomPSO を設定する（生ポインタ指定・下位互換用）。
      * @param[in] pso 設定する CustomPSO の値
      */
     void SetCustomPSO(ID3D12PipelineState* pso) {
+        customPSOName_.clear();
         customPSO_ = pso;
     }
+    /**
+     * @brief CustomPSO を設定する（名前指定・推奨）。
+     * @param[in] psoName 設定する PSO 名
+     * @param[in] blend ブレンドモード
+     * @param[in] depth 深度設定
+     * @param[in] cull カリングモード
+     */
+    void SetCustomPSO(const std::string& psoName, Irufemi::BlendMode blend = Irufemi::BlendMode::kBlendModeNormal,
+                      PSOManager::DepthWrite depth = PSOManager::DepthWrite::Off,
+                      PSOManager::CullMode cull = PSOManager::CullMode::None) {
+        customPSOName_ = psoName;
+        customBlend_ = blend;
+        customDepth_ = depth;
+        customCull_ = cull;
+    }
+    /**
+     * @brief CustomPSO を取得する。名前指定がある場合は PSOManager から動的解決する。
+     * @return 取得された CustomPSO
+     */
+    ID3D12PipelineState* GetCustomPSO() const;
+
     /**
      * @brief CustomCBV を設定する。
      * @param[in] cbv 設定する CustomCBV の値
@@ -164,15 +195,17 @@ private:
     };
 
     /**
-     * @brief CreateOrResizeInstanceBuffer を実行する。
+     * @brief 要求されたインスタンス数に応じてインスタンスバッファを生成または容量を拡張する。
+     * @param[in] instanceCount 必要なインスタンス数
      */
     void CreateOrResizeInstanceBuffer(uint32_t instanceCount);
     /**
-     * @brief BuildInstanceBuffer を実行する。
+     * @brief 登録された各スプライトの WVP 行列とカラーを計算し、GPU インスタンスバッファへ書き込む。
+     * @param[in] force true の場合はダーティフラグに関わらず強制再構築
      */
     void BuildInstanceBuffer(bool force = false);
     /**
-     * @brief ApplyAnchorToVertices を実行する。
+     * @brief アンカーポイント設定に応じてスプライトの基準頂点座標オフセットを再計算・適用する。
      */
     void ApplyAnchorToVertices();
 
@@ -186,6 +219,10 @@ private:
     Irufemi::Vector2 textureSize_{0.0f, 0.0f};
 
     ID3D12PipelineState* customPSO_ = nullptr;
+    std::string customPSOName_ = "";
+    Irufemi::BlendMode customBlend_ = Irufemi::BlendMode::kBlendModeNormal;
+    PSOManager::DepthWrite customDepth_ = PSOManager::DepthWrite::Off;
+    PSOManager::CullMode customCull_ = PSOManager::CullMode::None;
     D3D12_GPU_VIRTUAL_ADDRESS customCBVAddress_ = 0;
 
     // インスタンシング用バッファ

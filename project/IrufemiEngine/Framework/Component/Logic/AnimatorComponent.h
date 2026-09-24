@@ -64,4 +64,6 @@ private:
     std::string currentLoadedAnimation_ = "";
     float playbackSpeed_ = 1.0f;
     bool applyRootMotion_ = false;
+
+    class SkinnedMeshRendererComponent* cachedRenderer_ = nullptr;
 };

@@ -2,6 +2,8 @@
 
 #ifdef EditorMode
 #include "IrufemiEditor/Core/IComponentEditor.h"
+#include "Level/WaveManagerComponent.h"
+#include <vector>
 
 class WaveManagerComponentEditor : public IComponentEditor {
 public:
@@ -9,5 +11,10 @@ public:
     ~WaveManagerComponentEditor() override = default;
 
     void Draw(Component* component, class EditorActionManager* actionManager) override;
+
+private:
+    std::vector<WaveEventData> oldState_;
+    bool isDraggingModified_ = false;
+    int draggingNodeIndex_ = -1;
 };
 #endif

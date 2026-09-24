@@ -29,6 +29,14 @@ public:
     const std::vector<InputBinding>& GetBindings(const std::string& actionName) const;
 
     /**
+     * @brief 登録されているすべてのマッピング（アクション名とバインディング一覧のペア）を取得する
+     * @return マッピング連想配列への const 参照
+     */
+    const std::unordered_map<std::string, std::vector<InputBinding>>& GetMappings() const {
+        return mappings_;
+    }
+
+    /**
      * @brief 登録されているすべてのアクション名を取得する
      * @return アクション名のリスト
      */

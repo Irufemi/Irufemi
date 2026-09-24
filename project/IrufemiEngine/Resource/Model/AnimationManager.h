@@ -3,7 +3,6 @@
 #include <string>
 #include "Resource/Model/Data/Animation.h"
 #include "Resource/Model/Data/NodeAnimation.h"
-#include "Resource/Model/Data/Joint.h"
 #include "Resource/Model/Data/Node.h"
 #include "Resource/Model/Data/SkeletonData.h"
 #include "Resource/Model/Data/SkeletonPose.h"
@@ -21,7 +20,9 @@
 // 前方宣言
 class DirectXCommon;
 struct ModelData;
-struct ObjModel; // 追加
+namespace Irufemi {
+struct ObjModel;
+}
 
 /**
  * @class AnimationManager
@@ -59,7 +60,7 @@ public:
      * @param[in] objModel モデルデータ
      * @return 生成された SkinCluster
      */
-    SkinCluster CreateSkinCluster(const SkeletonData& skeleton, const ObjModel& objModel);
+    SkinCluster CreateSkinCluster(const SkeletonData& skeleton, const Irufemi::ObjModel& objModel);
 
     // アニメーションファイルの列挙用
     /**

@@ -67,7 +67,7 @@ public:
      */
     void SetPosition(const float& x, const float& y, const float& z = 0.0f) {
         if (resource_) {
-            resource_->transform_.translate = {x, y, z};
+            resource_->GetTransform().translate = {x, y, z};
         }
         isDirty_ = true;
     }
@@ -77,7 +77,7 @@ public:
      */
     void SetRotation(const float& rotate) {
         if (resource_) {
-            resource_->transform_.rotate = {0.0f, 0.0f, rotate};
+            resource_->GetTransform().rotate = {0.0f, 0.0f, rotate};
         }
         isDirty_ = true;
     }
@@ -88,7 +88,7 @@ public:
      */
     void SetScale(const float& scaleX, const float& scaleY) {
         if (resource_) {
-            resource_->transform_.scale = {scaleX, scaleY, 1.0f};
+            resource_->GetTransform().scale = {scaleX, scaleY, 1.0f};
         }
         isDirty_ = true;
     }
@@ -194,9 +194,53 @@ public:
 
     // Engine dependencies
     /**
-     * @brief FontManager を設定する。
-     * @param[in] fm 設定する FontManager の値
+     * @brief インスタンス固有の FontManager を設定する。
+     * @param[in] fm 設定する FontManager のポインタ
      */
+    void SetFontManagerInstance(FontManager* fm) {
+        instFontManager_ = fm;
+    }
+
+    /**
+     * @brief インスタンス固有の DrawManager を設定する。
+     * @param[in] dm 設定する DrawManager のポインタ
+     */
+    void SetDrawManagerInstance(DrawManager* dm) {
+        instDrawManager_ = dm;
+    }
+
+    /**
+     * @brief インスタンス固有の CameraManager を設定する。
+     * @param[in] cm 設定する CameraManager のポインタ
+     */
+    void SetCameraManagerInstance(CameraManager* cm) {
+        instCameraManager_ = cm;
+    }
+
+    /**
+     * @brief 使用する FontManager を取得する（インスタンスメンバ優先）。
+     * @return FontManager のポインタ
+     */
+    FontManager* GetFontManagerInstance() const {
+        return instFontManager_ ? instFontManager_ : fontManager_;
+    }
+
+    /**
+     * @brief 使用する DrawManager を取得する（インスタンスメンバ優先）。
+     * @return DrawManager のポインタ
+     */
+    DrawManager* GetDrawManagerInstance() const {
+        return instDrawManager_ ? instDrawManager_ : drawManager_;
+    }
+
+    /**
+     * @brief 使用する CameraManager を取得する（インスタンスメンバ優先）。
+     * @return CameraManager のポインタ
+     */
+    CameraManager* GetCameraManagerInstance() const {
+        return instCameraManager_ ? instCameraManager_ : cameraManager_;
+    }
+
     static void SetFontManager(FontManager* fm) {
         fontManager_ = fm;
     }
@@ -230,6 +274,9 @@ public:
     }
 
 private:
+    FontManager* instFontManager_ = nullptr;
+    DrawManager* instDrawManager_ = nullptr;
+    CameraManager* instCameraManager_ = nullptr;
     /**
      * @brief GenerateVertices を実行する。
      */
@@ -248,6 +295,8 @@ private:
     bool isDirty_ = true;
     bool isTextDirty_ = true;
     bool isTopMost_ = false;
+    bool hasPendingGlyphs_ = false;
+    uint64_t lastAtlasVersion_ = 0;
 
     static FontManager* fontManager_;
     static DrawManager* drawManager_;

@@ -9,54 +9,54 @@
 #include "Combat/EnemyBeamComponent.h"
 #include "Combat/DroneManagerComponent.h"
 #include "Combat/BossBulletManagerComponent.h"
+#include "Combat/Boss/BossDamageVisualizerComponent.h"
 #include "Player/TargetableComponent.h"
 #include <algorithm>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <fstream>
+#include "Core/Utility/JsonUtility.h"
 #include "Core/Utility/Log.h"
+#include "Core/Utility/ContainerUtility.h"
 
 void BossComponent::LoadStatusFromJson() {
     if (statusDataPath_.empty()) {
         return;
     }
 
-    std::ifstream file(statusDataPath_);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(statusDataPath_, j)) {
         Log::OutPutLog(std::cout, "[BossComponent] Failed to load status: " + statusDataPath_ + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
-
-        if (j.contains("maxHp")) {
-            maxHp_ = j["maxHp"].get<float>();
-            hp_ = maxHp_;
-        }
-        if (j.contains("maxShieldCount")) {
-            maxShieldCount_ = j["maxShieldCount"].get<int>();
-        }
-        if (j.contains("shieldRadius")) {
-            shieldRadius_ = j["shieldRadius"].get<float>();
-        }
-        if (j.contains("beamInterval")) {
-            beamInterval_ = j["beamInterval"].get<float>();
-        }
-        if (j.contains("beamRange")) {
-            beamRange_ = j["beamRange"].get<float>();
-        }
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[BossComponent] JSON Parse Error: ") + e.what() + "\n");
+    if (j.contains("maxHp")) {
+        maxHp_ = j["maxHp"].get<float>();
+        hp_ = maxHp_;
+    }
+    if (j.contains("maxShieldCount")) {
+        maxShieldCount_ = j["maxShieldCount"].get<int>();
+    }
+    if (j.contains("shieldRadius")) {
+        shieldRadius_ = j["shieldRadius"].get<float>();
+    }
+    if (j.contains("beamInterval")) {
+        beamInterval_ = j["beamInterval"].get<float>();
+    }
+    if (j.contains("beamRange")) {
+        beamRange_ = j["beamRange"].get<float>();
     }
 }
 
 BossComponent::BossComponent() {}
 
 void BossComponent::Initialize() {
-    if (!gameObject_->GetComponent<TargetableComponent>()) {
-        gameObject_->AddComponent<TargetableComponent>();
+    auto targetable = gameObject_->GetComponent<TargetableComponent>();
+    if (!targetable) {
+        auto comp = gameObject_->AddComponent<TargetableComponent>();
+        targetable = comp.get();
+    }
+    if (targetable) {
+        targetable->SetTargetablePredicate([this]() { return IsCoreExposed(); });
     }
 
     LoadStatusFromJson();
@@ -80,6 +80,10 @@ void BossComponent::Initialize() {
             beamComponent_ = comp.get();
             beamComponent_->Initialize();
         }
+
+        if (!gameObject_->GetComponent<BossDamageVisualizerComponent>()) {
+            gameObject_->AddComponent<BossDamageVisualizerComponent>();
+        }
     }
     beamTimer_ = 0.0f;
 
@@ -91,6 +95,12 @@ void BossComponent::Start() {
     if (!gameObject_) {
         return;
     }
+
+    if (auto col = gameObject_->GetComponent<SphereColliderComponent>()) {
+        col->SetDebugCategory(DebugCategory::Combat);
+        col->SetDebugCustomColor(Irufemi::Vector4{1.0f, 0.0f, 1.0f, 1.0f});
+    }
+
     auto scene = gameObject_->GetScene();
     if (scene) {
         auto container = scene->FindGameObject("BossContainer");
@@ -171,10 +181,7 @@ std::shared_ptr<GameObject> BossComponent::ExtractDebris() {
 }
 
 void BossComponent::RemoveShield(std::shared_ptr<GameObject> shield) {
-    auto it = std::find(shields_.begin(), shields_.end(), shield);
-    if (it != shields_.end()) {
-        shields_.erase(it);
-    }
+    Irufemi::Container::EraseSwap(shields_, shield);
 }
 
 void BossComponent::TakeDamage(float damage) {
@@ -190,5 +197,30 @@ void BossComponent::ChangeState(std::unique_ptr<IBossState> newState) {
     currentState_ = std::move(newState);
     if (currentState_) {
         currentState_->Enter(this);
+    }
+}
+
+void BossComponent::NotifyDamageTaken(float damage) {
+    for (auto& listener : onDamageTakenListeners_) {
+        if (listener) {
+            listener(damage);
+        }
+    }
+}
+
+void BossComponent::NotifyBossDied() {
+    if (onBossDied_) {
+        onBossDied_();
+    }
+    for (auto& listener : onBossDiedListeners_) {
+        if (listener) {
+            listener();
+        }
+    }
+}
+
+void BossComponent::NotifyDeathSequenceFinished() {
+    if (onDeathSequenceFinished_) {
+        onDeathSequenceFinished_();
     }
 }

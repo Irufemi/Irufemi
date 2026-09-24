@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include "Resource/Model/Data/Animation.h"
+#include "Resource/Model/Data/SkeletonData.h"
 #include "Resource/Model/Data/SkeletonPose.h"
 
 class IrufemiEngine;

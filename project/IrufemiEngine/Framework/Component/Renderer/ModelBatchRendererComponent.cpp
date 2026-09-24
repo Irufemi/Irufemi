@@ -4,6 +4,7 @@
 #include "Renderer/Object/Batch/ModelBatch.h"
 #include "Physics/Collision/Collision.h"
 #include "Core/Math/Geometry/OBB.h"
+#include "Core/System/IrufemiEngine.h"
 #include <cmath>
 
 ModelBatchRendererComponent::ModelBatchRendererComponent() {}
@@ -44,11 +45,14 @@ void ModelBatchRendererComponent::Draw() {
     }
     if (batch_) {
         batch_->Draw();
+        if (autoClearEveryFrame_) {
+            batch_->ClearInstances();
+        }
     }
 }
 
 IRenderable* ModelBatchRendererComponent::GetRenderable() {
-    return reinterpret_cast<IRenderable*>(batch_.get());
+    return batch_.get();
 }
 
 Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {
@@ -65,6 +69,13 @@ Irufemi::Sphere ModelBatchRendererComponent::GetWorldSphere() const {
 bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) const {
     if (!batch_ || !GetTransform()) {
         return false;
+    }
+
+    // プレイモード中は、バッチ親オブジェクトのダミー当たり判定による誤選択を防止する
+    if (auto engine = GetEngine()) {
+        if (engine->IsPlayMode()) {
+            return false;
+        }
     }
 
     // バッチ全体のAABBや個々のインスタンスとのRaycastは重いため、
@@ -111,6 +122,7 @@ bool ModelBatchRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDis
 nlohmann::json ModelBatchRendererComponent::Serialize() {
     nlohmann::json j;
     j["modelName"] = modelName_;
+    j["autoClearEveryFrame"] = autoClearEveryFrame_;
     return j;
 }
 
@@ -118,6 +130,9 @@ void ModelBatchRendererComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("modelName")) {
         std::string modelName = j["modelName"];
         LoadModel(modelName);
+    }
+    if (j.contains("autoClearEveryFrame")) {
+        autoClearEveryFrame_ = j["autoClearEveryFrame"];
     }
 }
 

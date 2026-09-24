@@ -95,6 +95,7 @@ def main():
     
     max_retries = 3
     review_result = ""
+    last_error_msg = ""
     for attempt in range(max_retries):
         try:
             client = genai.Client(api_key=api_key)
@@ -108,14 +109,23 @@ def main():
             review_result = response.text
             break
         except Exception as e:
-            error_str = str(e)
-            print(f"Gemini API Error (Attempt {attempt + 1}/{max_retries}): {error_str}")
-            if any(code in error_str for code in ["429", "RESOURCE_EXHAUSTED", "Quota exceeded", "503"]) and attempt < max_retries - 1:
+            last_error_msg = str(e)
+            print(f"Gemini API Error (Attempt {attempt + 1}/{max_retries}): {last_error_msg}")
+            if any(code in last_error_msg for code in ["429", "RESOURCE_EXHAUSTED", "Quota exceeded", "503"]) and attempt < max_retries - 1:
                 sleep_time = 15 * (attempt + 1)
                 print(f"Rate limited or quota exceeded. Retrying in {sleep_time} seconds...")
                 time.sleep(sleep_time)
             else:
-                sys.exit(1)
+                break
+
+    if not review_result:
+        review_result = (
+            "> [!WARNING]\n"
+            "> **Gemini API の一時的な混雑またはエラーにより、自動レビューをスキップしました。**\n\n"
+            f"- **試行回数**: {max_retries} 回\n"
+            f"- **詳細**: `{last_error_msg}`\n\n"
+            "※ CI（ビルド・テスト等）への影響はありません。必要な場合はGitHub Actionsから手動で再実行してください。"
+        )
 
     comment_body = f"## 🤖 Gemini Push Review\n\n{review_result}"
     post_commit_comment(repo, commit_sha, github_token, comment_body)

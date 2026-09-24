@@ -7,6 +7,7 @@
 
 class GameObject;
 class VirtualEntityManagerComponent;
+class ColliderComponent;
 
 class BossBulletManagerComponent : public Component {
 public:
@@ -44,8 +45,8 @@ public:
 
 private:
     struct BossBulletData {
-        Irufemi::Vector3 velocity;
-        float lifeTimer;
+        Irufemi::Vector3 velocity = {0.0f, 0.0f, 0.0f};
+        float lifeTimer = 0.0f;
     };
 
     int maxBullets_ = 2000;
@@ -53,11 +54,12 @@ private:
     Irufemi::Vector3 bulletScale_ = {0.5f, 0.5f, 0.5f};
     float hitRadius_ = 2.0f;
     std::string hitEffectKey_ = "Dust";
-    std::string explosionModelPath_ = "resources/model/BossBulletSphere.obj";
     /// @brief 攻撃対象となるプレイヤーのGameObject ID
     uint64_t targetPlayerID_ = 0;
 
     VirtualEntityManagerComponent* virtualManager_ = nullptr;
     std::vector<BossBulletData> bulletDataList_;
     std::queue<int> activeVirtualIds_;
+    std::vector<ColliderComponent*> prefetchedColliders_;
+    class EffectManagerComponent* effectManager_ = nullptr;
 };

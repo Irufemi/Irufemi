@@ -1,5 +1,6 @@
 #include "Physics/CollisionManager.h"
 #include "Core/Utility/Log.h"
+#include "Core/Utility/ContainerUtility.h"
 #include <iostream>
 #include "Framework/Component/Collider/ColliderComponent.h"
 #include "Framework/Component/Collider/AABBColliderComponent.h"
@@ -11,11 +12,7 @@
 #include "Renderer/Object/Line/LineClass.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <nlohmann/json.hpp>
-#include <iostream>
-#include <nlohmann/json.hpp>
+#include "Core/Utility/JsonUtility.h"
 #include "Core/Math/MathFunction.h"
 #include "Core/System/ThreadPool.h"
 
@@ -48,10 +45,8 @@ void CollisionManager::RegisterCollider(ColliderComponent* collider) {
         return;
     }
     std::lock_guard<std::mutex> lock(pendingMutex_);
-    // 重複を避ける
-    if (std::find(pendingAdds_.begin(), pendingAdds_.end(), collider) == pendingAdds_.end()) {
-        pendingAdds_.push_back(collider);
-    }
+    // 重複を避けて末尾に追加
+    Irufemi::Container::PushBackUnique(pendingAdds_, collider);
 }
 
 void CollisionManager::UnregisterCollider(ColliderComponent* collider) {
@@ -85,9 +80,7 @@ void CollisionManager::FlushPendingCommands() {
     // 削除の適用
     for (const PendingRemove& removeInfo : removes) {
         ColliderComponent* collider = removeInfo.collider;
-        auto it = std::find(colliders_.begin(), colliders_.end(), collider);
-        if (it != colliders_.end()) {
-            colliders_.erase(it);
+        if (Irufemi::Container::EraseSwap(colliders_, collider)) {
             if (removeInfo.bvhNodeId != -1) {
                 dynamicBVH_.Remove(removeInfo.bvhNodeId);
                 // Note: We cannot set collider->bvhNodeId_ = -1 here because collider might be destroyed
@@ -125,10 +118,139 @@ void CollisionManager::FlushPendingCommands() {
     }
 }
 
+void CollisionManager::CheckNarrowPhase(ColliderComponent* colA, ColliderComponent* colB,
+                                        Irufemi::Collision::CollisionResult& outResult) const {
+    outResult.isHit = false;
+    if (!colA || !colB) {
+        return;
+    }
+
+    auto typeA = colA->GetColliderType();
+    auto typeB = colB->GetColliderType();
+
+    if (typeA == ColliderComponent::ColliderType::AABB) {
+        Irufemi::AABB boxA = static_cast<AABBColliderComponent*>(colA)->GetWorldAABB();
+
+        if (typeB == ColliderComponent::ColliderType::AABB) {
+            Irufemi::AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+            outResult = Irufemi::Collision::GetCollisionResult(boxA, boxB);
+        } else if (typeB == ColliderComponent::ColliderType::Sphere) {
+            Irufemi::Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+            outResult = Irufemi::Collision::GetCollisionResult(boxA, sphereB);
+        } else if (typeB == ColliderComponent::ColliderType::OBB) {
+            Irufemi::OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+            outResult = Irufemi::Collision::GetCollisionResult(obbB, boxA);      // OBB vs AABB
+            outResult.normal = Irufemi::Math::Multiply(-1.0f, outResult.normal); // OBBを押し出す方向の逆にする
+        }
+    } else if (typeA == ColliderComponent::ColliderType::Sphere) {
+        Irufemi::Sphere sphereA = static_cast<SphereColliderComponent*>(colA)->GetWorldSphere();
+
+        if (typeB == ColliderComponent::ColliderType::AABB) {
+            Irufemi::AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+            outResult = Irufemi::Collision::GetCollisionResult(boxB, sphereA);
+            outResult.normal = Irufemi::Math::Multiply(-1.0f, outResult.normal);
+        } else if (typeB == ColliderComponent::ColliderType::Sphere) {
+            Irufemi::Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+            outResult = Irufemi::Collision::GetCollisionResult(sphereA, sphereB);
+        } else if (typeB == ColliderComponent::ColliderType::OBB) {
+            Irufemi::OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+            outResult = Irufemi::Collision::GetCollisionResult(obbB, sphereA);
+            outResult.normal = Irufemi::Math::Multiply(-1.0f, outResult.normal);
+        }
+    } else if (typeA == ColliderComponent::ColliderType::OBB) {
+        Irufemi::OBB obbA = static_cast<OBBColliderComponent*>(colA)->GetWorldOBB();
+
+        if (typeB == ColliderComponent::ColliderType::AABB) {
+            Irufemi::AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
+            outResult = Irufemi::Collision::GetCollisionResult(obbA, boxB);
+        } else if (typeB == ColliderComponent::ColliderType::Sphere) {
+            Irufemi::Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
+            outResult = Irufemi::Collision::GetCollisionResult(obbA, sphereB);
+        } else if (typeB == ColliderComponent::ColliderType::OBB) {
+            Irufemi::OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
+            outResult = Irufemi::Collision::GetCollisionResult(obbA, obbB);
+        }
+    }
+}
+
+void CollisionManager::DispatchCollisionEvents(ColliderComponent* colA, ColliderComponent* colB,
+                                               const Irufemi::Collision::CollisionResult& result, bool isNewHit) {
+    if (!colA || !colB || !result.isHit) {
+        return;
+    }
+
+    if (isNewHit) {
+        if (colA->onCollisionEnter_) {
+            colA->onCollisionEnter_(colB);
+        }
+        if (colB->onCollisionEnter_) {
+            colB->onCollisionEnter_(colA);
+        }
+
+        if (colA->GetGameObject()) {
+            colA->GetGameObject()->SendCollisionEnter(colB->GetGameObject());
+        }
+        if (colB->GetGameObject()) {
+            colB->GetGameObject()->SendCollisionEnter(colA->GetGameObject());
+        }
+    } else {
+        if (colA->onCollisionStay_) {
+            colA->onCollisionStay_(colB);
+        }
+        if (colB->onCollisionStay_) {
+            colB->onCollisionStay_(colA);
+        }
+
+        if (colA->GetGameObject()) {
+            colA->GetGameObject()->SendCollisionStay(colB->GetGameObject());
+        }
+        if (colB->GetGameObject()) {
+            colB->GetGameObject()->SendCollisionStay(colA->GetGameObject());
+        }
+    }
+}
+
+void CollisionManager::ResolveKinematicCollision(ColliderComponent* colA, ColliderComponent* colB,
+                                                 const Irufemi::Collision::CollisionResult& result) {
+    if (!colA || !colB || colA->isTrigger_ || colB->isTrigger_) {
+        return;
+    }
+
+    TransformComponent* transformA =
+        colA->GetGameObject() ? colA->GetGameObject()->GetComponent<TransformComponent>() : nullptr;
+    TransformComponent* transformB =
+        colB->GetGameObject() ? colB->GetGameObject()->GetComponent<TransformComponent>() : nullptr;
+
+    bool canMoveA = transformA && !colA->isStatic_;
+    bool canMoveB = transformB && !colB->isStatic_;
+
+    Irufemi::Vector3 pushA = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 pushB = {0.0f, 0.0f, 0.0f};
+
+    if (canMoveA && canMoveB) {
+        // 両方動く場合は半分の距離ずつ押し戻す
+        pushA = Irufemi::Math::Multiply(result.depth * 0.5f, result.normal);
+        pushB = Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
+    } else if (canMoveA) {
+        pushA = Irufemi::Math::Multiply(result.depth, result.normal);
+    } else if (canMoveB) {
+        pushB = Irufemi::Math::Multiply(result.depth, Irufemi::Math::Multiply(-1.0f, result.normal));
+    }
+
+    if (canMoveA) {
+        pushA = pushA * colA->pushbackMask_;
+        transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
+    }
+    if (canMoveB) {
+        pushB = pushB * colB->pushbackMask_;
+        transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
+    }
+}
+
 void CollisionManager::CheckAllCollisions() {
     FlushPendingCommands();
 
-    CollisionPairSet currentCollisions;
+    currentCollisions_.clear();
 
     // --- BVH Update Phase ---
     {
@@ -139,23 +261,14 @@ void CollisionManager::CheckAllCollisions() {
                 continue;
             }
             auto go = collider->GetGameObject();
-            if (!go) {
-                continue;
-            }
-            if (reinterpret_cast<uintptr_t>(go) < 0x1000) {
-                Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
-                                              std::format("{:X}", reinterpret_cast<uintptr_t>(go)) +
-                                              ") in CollisionManager!\n");
-                continue;
-            }
-            if (!go->GetIsActive()) {
+            if (!go || !go->GetIsActive()) {
                 continue;
             }
             dynamicBVH_.Update(collider->bvhNodeId_, collider->GetBoundingBox());
         }
     }
 
-    // --- Broad Phase ---
+    // --- Broad Phase & Narrow Phase & Resolution ---
     // BVHの更新が終わったため、判定自体はリードロック（Shared Lock）で行う
     std::shared_lock<std::shared_mutex> sharedLock(collidersMutex_);
     std::vector<ColliderComponent*> potentialHits;
@@ -166,16 +279,7 @@ void CollisionManager::CheckAllCollisions() {
             continue;
         }
         auto goA = colA->GetGameObject();
-        if (!goA) {
-            continue;
-        }
-        if (reinterpret_cast<uintptr_t>(goA) < 0x1000) {
-            Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
-                                          std::format("{:X}", reinterpret_cast<uintptr_t>(goA)) +
-                                          ") in CheckAllCollisions (colA)!\n");
-            continue;
-        }
-        if (!goA->GetIsActive()) {
+        if (!goA || !goA->GetIsActive()) {
             continue;
         }
 
@@ -187,16 +291,7 @@ void CollisionManager::CheckAllCollisions() {
                 continue;
             }
             auto goB = colB->GetGameObject();
-            if (!goB) {
-                continue;
-            }
-            if (reinterpret_cast<uintptr_t>(goB) < 0x1000) {
-                Log::OutPutLog(std::cerr, "[CollisionManager] CRITICAL ERROR: Caught invalid GameObject pointer (0x" +
-                                              std::format("{:X}", reinterpret_cast<uintptr_t>(goB)) +
-                                              ") in CheckAllCollisions (colB)!\n");
-                continue;
-            }
-            if (!goB->GetIsActive()) {
+            if (!goB || !goB->GetIsActive()) {
                 continue;
             }
 
@@ -230,122 +325,17 @@ void CollisionManager::CheckAllCollisions() {
 
             // --- Narrow Phase (判定ディスパッチ) ---
             Irufemi::Collision::CollisionResult result;
-
-            if (colA->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                Irufemi::AABB boxA = static_cast<AABBColliderComponent*>(colA)->GetWorldAABB();
-
-                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                    Irufemi::AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
-                    result = Irufemi::Collision::GetCollisionResult(boxA, boxB);
-                } else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                    Irufemi::Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
-                    result = Irufemi::Collision::GetCollisionResult(boxA, sphereB);
-                } else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                    Irufemi::OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
-                    result = Irufemi::Collision::GetCollisionResult(obbB, boxA); // Irufemi::OBB vs Irufemi::AABB
-                    result.normal = Irufemi::Math::Multiply(-1.0f, result.normal); // OBBを押し出す方向の逆にする
-                }
-            } else if (colA->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                Irufemi::Sphere sphereA = static_cast<SphereColliderComponent*>(colA)->GetWorldSphere();
-
-                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                    Irufemi::AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
-                    result = Irufemi::Collision::GetCollisionResult(boxB, sphereA);
-                    result.normal = Irufemi::Math::Multiply(-1.0f, result.normal);
-                } else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                    Irufemi::Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
-                    result = Irufemi::Collision::GetCollisionResult(sphereA, sphereB);
-                } else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                    Irufemi::OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
-                    result = Irufemi::Collision::GetCollisionResult(obbB, sphereA);
-                    result.normal = Irufemi::Math::Multiply(-1.0f, result.normal);
-                }
-            } else if (colA->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                Irufemi::OBB obbA = static_cast<OBBColliderComponent*>(colA)->GetWorldOBB();
-
-                if (colB->GetColliderType() == ColliderComponent::ColliderType::AABB) {
-                    Irufemi::AABB boxB = static_cast<AABBColliderComponent*>(colB)->GetWorldAABB();
-                    result = Irufemi::Collision::GetCollisionResult(obbA, boxB);
-                } else if (colB->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
-                    Irufemi::Sphere sphereB = static_cast<SphereColliderComponent*>(colB)->GetWorldSphere();
-                    result = Irufemi::Collision::GetCollisionResult(obbA, sphereB);
-                } else if (colB->GetColliderType() == ColliderComponent::ColliderType::OBB) {
-                    Irufemi::OBB obbB = static_cast<OBBColliderComponent*>(colB)->GetWorldOBB();
-                    result = Irufemi::Collision::GetCollisionResult(obbA, obbB);
-                }
-            }
+            CheckNarrowPhase(colA, colB, result);
 
             if (result.isHit) {
-                currentCollisions.insert(pairKey);
+                currentCollisions_.insert(pairKey);
 
                 // --- コールバック呼び出し (Enter / Stay) ---
-                if (previousCollisions_.find(pairKey) == previousCollisions_.end()) {
-                    // 新規衝突 (Enter)
-                    if (result.isHit) {
-                        if (colA->onCollisionEnter_) {
-                            colA->onCollisionEnter_(colB);
-                        }
-                        if (colB->onCollisionEnter_) {
-                            colB->onCollisionEnter_(colA);
-                        }
-
-                        if (colA->GetGameObject()) {
-                            colA->GetGameObject()->SendCollisionEnter(colB->GetGameObject());
-                        }
-                        if (colB->GetGameObject()) {
-                            colB->GetGameObject()->SendCollisionEnter(colA->GetGameObject());
-                        }
-                    }
-                } else {
-                    // 継続衝突 (Stay)
-                    if (colA->onCollisionStay_) {
-                        colA->onCollisionStay_(colB);
-                    }
-                    if (colB->onCollisionStay_) {
-                        colB->onCollisionStay_(colA);
-                    }
-
-                    if (colA->GetGameObject()) {
-                        colA->GetGameObject()->SendCollisionStay(colB->GetGameObject());
-                    }
-                    if (colB->GetGameObject()) {
-                        colB->GetGameObject()->SendCollisionStay(colA->GetGameObject());
-                    }
-                }
+                bool isNewHit = (previousCollisions_.find(pairKey) == previousCollisions_.end());
+                DispatchCollisionEvents(colA, colB, result, isNewHit);
 
                 // --- 押し戻し処理 (Kinematic Resolution) ---
-                if (!colA->isTrigger_ && !colB->isTrigger_) {
-                    TransformComponent* transformA =
-                        colA->GetGameObject() ? colA->GetGameObject()->GetComponent<TransformComponent>() : nullptr;
-                    TransformComponent* transformB =
-                        colB->GetGameObject() ? colB->GetGameObject()->GetComponent<TransformComponent>() : nullptr;
-
-                    bool canMoveA = transformA && !colA->isStatic_;
-                    bool canMoveB = transformB && !colB->isStatic_;
-
-                    Irufemi::Vector3 pushA = {0.0f, 0.0f, 0.0f};
-                    Irufemi::Vector3 pushB = {0.0f, 0.0f, 0.0f};
-
-                    if (canMoveA && canMoveB) {
-                        // 両方動く場合は半分の距離ずつ押し戻す
-                        pushA = Irufemi::Math::Multiply(result.depth * 0.5f, result.normal);
-                        pushB =
-                            Irufemi::Math::Multiply(result.depth * 0.5f, Irufemi::Math::Multiply(-1.0f, result.normal));
-                    } else if (canMoveA) {
-                        pushA = Irufemi::Math::Multiply(result.depth, result.normal);
-                    } else if (canMoveB) {
-                        pushB = Irufemi::Math::Multiply(result.depth, Irufemi::Math::Multiply(-1.0f, result.normal));
-                    }
-
-                    if (canMoveA) {
-                        pushA = pushA * colA->pushbackMask_;
-                        transformA->SetWorldPosition(Irufemi::Math::Add(transformA->GetWorldPosition(), pushA));
-                    }
-                    if (canMoveB) {
-                        pushB = pushB * colB->pushbackMask_;
-                        transformB->SetWorldPosition(Irufemi::Math::Add(transformB->GetWorldPosition(), pushB));
-                    }
-                }
+                ResolveKinematicCollision(colA, colB, result);
             }
         }
     }
@@ -353,7 +343,7 @@ void CollisionManager::CheckAllCollisions() {
     // --- 離脱処理 (Exit) ---
     for (const auto& pair : previousCollisions_) {
         // 前フレームでは当たっていたが、今フレームでは当たっていない
-        if (currentCollisions.find(pair) == currentCollisions.end()) {
+        if (currentCollisions_.find(pair) == currentCollisions_.end()) {
             ColliderComponent* colA = pair.first;
             ColliderComponent* colB = pair.second;
 
@@ -373,10 +363,13 @@ void CollisionManager::CheckAllCollisions() {
         }
     }
 
-    // 更新
-    previousCollisions_ = std::move(currentCollisions);
+    // 更新（Ping-Pong スワップによりヒープ確保なしでバッファ再利用）
+    std::swap(previousCollisions_, currentCollisions_);
 }
 void CollisionManager::DrawDebug(GameObject* selectedObject) {
+    // 保留中のコライダー追加・削除コマンドを確定してデバッグ描画に即時反映
+    FlushPendingCommands();
+
     if (!debugLine_) {
         return;
     }
@@ -444,8 +437,10 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             continue;
         }
 
+        DebugCategory category = collider->GetDebugCategory();
         Irufemi::Vector4 color =
-            isSelected ? Irufemi::Vector4{1.0f, 0.5f, 0.0f, 1.0f} : Irufemi::Vector4{0.0f, 1.0f, 0.0f, 1.0f};
+            isSelected ? Irufemi::Vector4{1.0f, 0.5f, 0.0f, 1.0f}
+                       : collider->GetDebugCustomColor().value_or(Irufemi::Vector4{0.0f, 1.0f, 0.0f, 1.0f});
 
         if (collider->GetColliderType() == ColliderComponent::ColliderType::AABB) {
             AABBColliderComponent* aabbCol = static_cast<AABBColliderComponent*>(collider);
@@ -457,14 +452,14 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(size, Irufemi::Vector3{0, 0, 0}, center);
 
             if (debugPrimitiveRenderer_) {
-                debugPrimitiveRenderer_->AddCube(transform, color);
+                debugPrimitiveRenderer_->AddCube(transform, color, category);
             }
         } else if (collider->GetColliderType() == ColliderComponent::ColliderType::Sphere) {
             SphereColliderComponent* sphereCol = static_cast<SphereColliderComponent*>(collider);
             Irufemi::Sphere sphere = sphereCol->GetWorldSphere();
 
             if (debugPrimitiveRenderer_) {
-                debugPrimitiveRenderer_->AddSphere(sphere.center, sphere.radius, color);
+                debugPrimitiveRenderer_->AddSphere(sphere.center, sphere.radius, color, category);
             }
         } else if (collider->GetColliderType() == ColliderComponent::ColliderType::OBB) {
             OBBColliderComponent* obbCol = static_cast<OBBColliderComponent*>(collider);
@@ -489,7 +484,7 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
             transform.m[3][3] = 1.0f;
 
             if (debugPrimitiveRenderer_) {
-                debugPrimitiveRenderer_->AddCube(transform, color);
+                debugPrimitiveRenderer_->AddCube(transform, color, category);
             }
         }
     } // end for colliders_
@@ -508,22 +503,13 @@ void CollisionManager::DrawDebug(GameObject* selectedObject) {
 }
 
 void CollisionManager::LoadLayers(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (file.is_open()) {
-        try {
-            nlohmann::json j;
-            file >> j;
-            if (j.contains("layers") && j["layers"].is_array()) {
-                layerNames_.clear();
-                for (const auto& name : j["layers"]) {
-                    layerNames_.push_back(name);
-                }
+    nlohmann::json j;
+    if (Irufemi::JsonUtility::LoadFromFile(filepath, j)) {
+        if (j.contains("layers") && j["layers"].is_array()) {
+            layerNames_.clear();
+            for (const auto& name : j["layers"]) {
+                layerNames_.push_back(name);
             }
-        } catch (const std::exception& e) {
-            /**
-             * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
-             */
-            Log::OutPutLog(std::cerr, "Failed to load layers config: " + std::string(e.what()));
         }
     }
 }
@@ -531,11 +517,7 @@ void CollisionManager::LoadLayers(const std::string& filepath) {
 void CollisionManager::SaveLayers(const std::string& filepath) {
     nlohmann::json j;
     j["layers"] = layerNames_;
-
-    std::ofstream file(filepath);
-    if (file.is_open()) {
-        file << j.dump(4);
-    }
+    Irufemi::JsonUtility::SaveToFile(filepath, j, 4);
 }
 
 void CollisionManager::AddLayer(const std::string& name) {
@@ -648,12 +630,12 @@ void CollisionManager::DrawDebugRay(const Irufemi::Ray& ray, float distance, con
     debugRays_.push_back({ray, distance, color});
 }
 
-void CollisionManager::DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color) {
+void CollisionManager::DrawDebugAABB(const Irufemi::AABB& aabb, const Irufemi::Vector4& color, DebugCategory category) {
     if (debugPrimitiveRenderer_) {
         Irufemi::Vector3 center = (aabb.min + aabb.max) * 0.5f;
         Irufemi::Vector3 size = aabb.max - aabb.min;
         Irufemi::Matrix4x4 transform = Irufemi::Math::MakeAffineMatrix(size, Irufemi::Vector3::zero, center);
-        debugPrimitiveRenderer_->AddCube(transform, color);
+        debugPrimitiveRenderer_->AddCube(transform, color, category);
     }
 }
 

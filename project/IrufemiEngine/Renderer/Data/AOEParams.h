@@ -9,3 +9,5 @@ struct AOEParams {
     float warningRatio = 0.0f; //!< 警告の進行度 (0.0 ~ 1.0)
     float pad[2] = {0, 0};     //!< 16バイトアライメント用パディング
 };
+
+static_assert(sizeof(AOEParams) % 16 == 0, "AOEParams must be 16-byte aligned for HLSL constant buffer");

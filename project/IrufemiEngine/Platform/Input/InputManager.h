@@ -60,20 +60,15 @@ public:
 
     /** @name デバイス取得（推奨API） */
     ///@{
+    /** @brief キーボードデバイスインスタンスを取得する */
     Keyboard* GetKeyboard() {
         return keyboard_.get();
     }
-    /**
-     * @brief GamePad を取得する。
-     * @return 取得された GamePad
-     */
+    /** @brief ゲームパッドデバイスインスタンスを取得する */
     GamePad* GetGamePad() {
         return gamepad_.get();
     }
-    /**
-     * @brief Mouse を取得する。
-     * @return 取得された Mouse
-     */
+    /** @brief マウスデバイスインスタンスを取得する */
     Mouse* GetMouse() {
         return mouse_.get();
     }
@@ -153,91 +148,49 @@ public:
      */
     float GetRightStickY() const;
 
-    /**
-     * @brief LeftTrigger を取得する。
-     * @return 取得された LeftTrigger
-     */
+    /** @brief 左トリガー（LT）のアナログ押し込み量を取得する */
     float GetLeftTrigger() const;
-    /**
-     * @brief RightTrigger を取得する。
-     * @return 取得された RightTrigger
-     */
+    /** @brief 右トリガー（RT）のアナログ押し込み量を取得する */
     float GetRightTrigger() const;
 
-    /**
-     * @brief StartDown を実行する。
-     */
+    /** @brief STARTボタンが押されているか判定 */
     bool StartDown() const;
-    /**
-     * @brief StartPressed を実行する。
-     */
+    /** @brief STARTボタンが押された瞬間か判定（立ち上がり検出） */
     bool StartPressed() const;
-    /**
-     * @brief StartReleased を実行する。
-     */
+    /** @brief STARTボタンが離された瞬間か判定（立ち下がり検出） */
     bool StartReleased() const;
 
-    /**
-     * @brief DPadUp を実行する。
-     */
+    /** @brief D-Pad 上が押されているか判定 */
     bool DPadUp() const;
-    /**
-     * @brief DPadDown を実行する。
-     */
+    /** @brief D-Pad 下が押されているか判定 */
     bool DPadDown() const;
-    /**
-     * @brief DPadLeft を実行する。
-     */
+    /** @brief D-Pad 左が押されているか判定 */
     bool DPadLeft() const;
-    /**
-     * @brief DPadRight を実行する。
-     */
+    /** @brief D-Pad 右が押されているか判定 */
     bool DPadRight() const;
-    /**
-     * @brief DPadUpPressed を実行する。
-     */
+    /** @brief D-Pad 上が押された瞬間か判定（立ち上がり検出） */
     bool DPadUpPressed() const;
-    /**
-     * @brief DPadDownPressed を実行する。
-     */
+    /** @brief D-Pad 下が押された瞬間か判定（立ち上がり検出） */
     bool DPadDownPressed() const;
-    /**
-     * @brief DPadLeftPressed を実行する。
-     */
+    /** @brief D-Pad 左が押された瞬間か判定（立ち上がり検出） */
     bool DPadLeftPressed() const;
-    /**
-     * @brief DPadRightPressed を実行する。
-     */
+    /** @brief D-Pad 右が押された瞬間か判定（立ち上がり検出） */
     bool DPadRightPressed() const;
     ///@}
 
     /** @name マウス入力（互換用API） */
     ///@{
+    /** @brief 指定したマウスボタンが押されているか判定 */
     bool IsMouseButtonDown(Mouse::Button button) const;
-    /**
-     * @brief IsMouseButtonPressed かどうかを判定する。
-     * @return 判定結果 (true/false)
-     */
+    /** @brief 指定したマウスボタンが押された瞬間か判定（立ち上がり検出） */
     bool IsMouseButtonPressed(Mouse::Button button) const;
-    /**
-     * @brief IsMouseButtonReleased かどうかを判定する。
-     * @return 判定結果 (true/false)
-     */
+    /** @brief 指定したマウスボタンが離された瞬間か判定（立ち下がり検出） */
     bool IsMouseButtonReleased(Mouse::Button button) const;
-    /**
-     * @brief MousePosition を取得する。
-     * @return 取得された MousePosition
-     */
+    /** @brief 現在のマウス座標を取得する */
     const Irufemi::Vector2& GetMousePosition() const;
-    /**
-     * @brief MouseDelta を取得する。
-     * @return 取得された MouseDelta
-     */
+    /** @brief 前フレームからのマウス移動量を取得する */
     const Irufemi::Vector2& GetMouseDelta() const;
-    /**
-     * @brief MouseWheelDelta を取得する。
-     * @return 取得された MouseWheelDelta
-     */
+    /** @brief マウスホイールの回転差分を取得する */
     float GetMouseWheelDelta() const;
 
     /** @brief エディタ用：仮想的なマウスローカル座標を上書き設定する */

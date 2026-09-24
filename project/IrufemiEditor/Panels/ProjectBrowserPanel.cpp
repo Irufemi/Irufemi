@@ -27,21 +27,7 @@ void ProjectBrowserPanel::Initialize(EditorManager* editorManager) {
     RefreshCache();
 
     // バックグラウンドでの自動監視を開始
-    directoryWatcher_ = std::make_unique<DirectoryWatcher>(projectRootPath_, [this]() {
-        isCacheDirty_ = true;
-
-        // エンジンの各マネージャにも再スキャンを通知
-        if (editorManager_) {
-            if (auto* engine = editorManager_->GetEngine()) {
-                if (auto* mm = engine->GetObjModelManager()) {
-                    mm->RefreshAvailableModels();
-                }
-                if (auto* tm = engine->GetTextureManager()) {
-                    tm->LoadAllFromFolder("resources/");
-                }
-            }
-        }
-    });
+    directoryWatcher_ = std::make_unique<DirectoryWatcher>(projectRootPath_, [this]() { isCacheDirty_ = true; });
 }
 
 void ProjectBrowserPanel::BuildDirectoryTree(DirectoryNode* node) {
@@ -54,13 +40,13 @@ void ProjectBrowserPanel::BuildDirectoryTree(DirectoryNode* node) {
             if (entry.is_directory()) {
                 auto childNode = std::make_unique<DirectoryNode>();
                 childNode->path = entry.path();
-                childNode->folderName = reinterpret_cast<const char*>(entry.path().filename().u8string().c_str());
+                childNode->folderName = entry.path().filename().string();
                 BuildDirectoryTree(childNode.get());
                 node->subDirectories.push_back(std::move(childNode));
             } else if (entry.is_regular_file()) {
                 FileEntry fileEntry;
                 fileEntry.path = entry.path();
-                fileEntry.filenameString = reinterpret_cast<const char*>(entry.path().filename().u8string().c_str());
+                fileEntry.filenameString = entry.path().filename().string();
                 fileEntry.ext = entry.path().extension().string();
                 std::transform(fileEntry.ext.begin(), fileEntry.ext.end(), fileEntry.ext.begin(), ::tolower);
                 fileEntry.isDirectory = false;
@@ -74,7 +60,7 @@ void ProjectBrowserPanel::BuildDirectoryTree(DirectoryNode* node) {
 void ProjectBrowserPanel::RefreshCache() {
     auto newRoot = std::make_unique<DirectoryNode>();
     newRoot->path = projectRootPath_;
-    std::string folderName = reinterpret_cast<const char*>(projectRootPath_.filename().u8string().c_str());
+    std::string folderName = projectRootPath_.filename().string();
     if (folderName.empty()) {
         folderName = "Root";
     }
@@ -152,6 +138,16 @@ void ProjectBrowserPanel::Draw() {
     // 監視スレッドからの通知があれば自動リフレッシュ
     if (isCacheDirty_.exchange(false)) {
         RefreshCache();
+
+        // エンジンの各マネージャへの再スキャン通知をメインスレッド上で安全に実行
+        if (auto* engine = editorManager_->GetEngine()) {
+            if (auto* mm = engine->GetObjModelManager()) {
+                mm->RefreshAvailableModels();
+            }
+            if (auto* tm = engine->GetTextureManager()) {
+                tm->LoadAllFromFolder("resources/");
+            }
+        }
     }
 
     ImGui::Begin(GetName(), &isOpen_);

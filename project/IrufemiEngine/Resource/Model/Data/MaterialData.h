@@ -6,6 +6,8 @@
 
 /// ModelData構造体と読み込み関数
 
+namespace Irufemi {
+
 /**
  * @class MaterialData
  * @brief 3Dモデルのマテリアル（質感）設定を保持する構造体
@@ -15,3 +17,7 @@ struct MaterialData {
     /** @brief 使用するテクスチャのファイルパス */
     std::string textureFilePath;
 };
+
+} // namespace Irufemi
+
+using Irufemi::MaterialData;

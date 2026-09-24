@@ -47,20 +47,19 @@ void EnemyBeamComponent::Initialize() {
     // 警戒色と赤黒さを混ぜたベース色（アルファ値は中心コアの透明度として利用）
     chargeSphere_->SetColor(chargeColor_); // プロパティから適用
     chargeSphere_->SetCullingEnabled(false);
-    chargeSphere_->SetCustomPSO(
-        engine->GetPSOManager()->GetPSO("EnergyCore", Irufemi::BlendMode::kBlendModePremultiplied,
-                                        PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back));
+    chargeSphere_->SetCustomPSO("EnergyCore", Irufemi::BlendMode::kBlendModePremultiplied,
+                                PSOManager::DepthWrite::Disable, PSOManager::CullMode::Back);
     chargeSphere_->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
 
     // --- ビーム本体の初期化 ---
-    attackCylinder_ = std::make_shared<Primitive3DObject>();
+    attackCylinder_ = std::make_unique<Primitive3DObject>();
     attackCylinder_->Initialize(Irufemi::PrimitiveType::Cylinder);
     attackCylinder_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
     attackCylinder_->SetCastShadows(false);
     attackCylinder_->SetCullingEnabled(false);
     attackCylinder_->SetIsTransparent(true); // ★半透明パスでZソートして描画させる
 
-    attackCylinderOuter_ = std::make_shared<Primitive3DObject>();
+    attackCylinderOuter_ = std::make_unique<Primitive3DObject>();
     attackCylinderOuter_->Initialize(Irufemi::PrimitiveType::Cylinder);
     attackCylinderOuter_->SetColor({1.0f, 1.0f, 1.0f, 1.0f});
     attackCylinderOuter_->SetCastShadows(false);
@@ -106,14 +105,27 @@ void EnemyBeamComponent::Initialize() {
     state_ = State::IDLE;
 }
 
+void EnemyBeamComponent::EnsureResources() {
+    if (!chargeSphere_ || !attackCylinder_ || !attackCylinderOuter_) {
+        Initialize();
+    }
+}
+
 void EnemyBeamComponent::Fire(const Irufemi::Vector3& startPos, const Irufemi::Vector3& targetPos) {
+    EnsureResources();
+
     state_ = State::CHARGING;
     stateTimer_ = 0.0f;
     startPos_ = startPos;
 
     // 発射方向の計算 (演算子オーバーロードによる近代化)
     Irufemi::Vector3 diff = targetPos - startPos_;
-    direction_ = Irufemi::Math::Normalize(diff);
+    float diffDistSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+    if (diffDistSq > 1e-6f) {
+        direction_ = Irufemi::Math::Normalize(diff);
+    } else {
+        direction_ = {0.0f, 0.0f, 1.0f}; // ゼロ距離の場合はデフォルトのZ前方を設定
+    }
 }
 
 void EnemyBeamComponent::UpdateParameters() {
@@ -166,16 +178,23 @@ void EnemyBeamComponent::UpdateCharging(float deltaTime) {
 
         // ベクトル演算子を用いた直感的な計算
         Irufemi::Vector3 toCamera = cameraPos - startPos_;
-        Irufemi::Vector3 toCameraDir = Irufemi::Math::Normalize(toCamera);
+        float distSq = toCamera.x * toCamera.x + toCamera.y * toCamera.y + toCamera.z * toCamera.z;
+        if (distSq > 1e-4f) {
+            Irufemi::Vector3 toCameraDir = Irufemi::Math::Normalize(toCamera);
 
-        // 少しカメラ側に引き寄せてモデルに埋まらないようにする
-        tForm.translate = startPos_ + toCameraDir * (currentScale * 0.5f);
+            // 少しカメラ側に引き寄せてモデルに埋まらないようにする
+            tForm.translate = startPos_ + toCameraDir * (currentScale * 0.5f);
 
-        toCamera = cameraPos - tForm.translate;
-        float distXZ = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
-        tForm.rotate.y = std::atan2(-toCamera.x, -toCamera.z);
-        tForm.rotate.x = std::atan2(toCamera.y, distXZ);
-        tForm.rotate.z = 0.0f;
+            toCamera = cameraPos - tForm.translate;
+            float distXZ = std::sqrt(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
+            tForm.rotate.y = std::atan2(-toCamera.x, -toCamera.z);
+            tForm.rotate.x = std::atan2(toCamera.y, distXZ);
+            tForm.rotate.z = 0.0f;
+        } else {
+            // カメラと極端に近い/一致する場合はオフセットと回転計算をスキップ
+            tForm.translate = startPos_;
+            tForm.rotate = {0.0f, 0.0f, 0.0f};
+        }
 
         chargeSphere_->GetTransform().transform = tForm;
         chargeSphere_->GetTransform().isDirty = true;
@@ -263,6 +282,8 @@ void EnemyBeamComponent::Update() {
 }
 
 void EnemyBeamComponent::Draw() {
+    EnsureResources();
+
     auto engine = GetEngine();
     if (!engine || !engine->GetDirectXCommon()) {
         return;
@@ -277,9 +298,8 @@ void EnemyBeamComponent::Draw() {
     } else if (state_ == State::FIRING) {
         // 外側オーラ (LightningCrawl)
         if (attackCylinderOuter_) {
-            attackCylinderOuter_->SetCustomPSO(
-                engine->GetPSOManager()->GetPSO("LightningCrawl", Irufemi::BlendMode::kBlendModeAdd,
-                                                PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinderOuter_->SetCustomPSO("LightningCrawl", Irufemi::BlendMode::kBlendModeAdd,
+                                               PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             attackCylinderOuter_->SetCustomCBVAddress(auraParamsBuffer_.GetGPUVirtualAddress(frameIndex));
 
             attackCylinderOuter_->Draw();
@@ -287,9 +307,8 @@ void EnemyBeamComponent::Draw() {
 
         // 内側コア (EnergyBeam)
         if (attackCylinder_) {
-            attackCylinder_->SetCustomPSO(
-                engine->GetPSOManager()->GetPSO("EnergyBeam", Irufemi::BlendMode::kBlendModeAdd,
-                                                PSOManager::DepthWrite::Disable, PSOManager::CullMode::None));
+            attackCylinder_->SetCustomPSO("EnergyBeam", Irufemi::BlendMode::kBlendModeAdd,
+                                          PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
             attackCylinder_->SetCustomCBVAddress(beamParamsBuffer_.GetGPUVirtualAddress(frameIndex));
 
             attackCylinder_->Draw();

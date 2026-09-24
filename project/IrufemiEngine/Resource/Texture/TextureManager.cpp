@@ -111,22 +111,24 @@ ResourceHandle TextureManager::LoadTexture(const std::string& name) {
 
     auto& tex = textureResources_[handle.index];
 
-    // メタデータ（サイズ）のみ同期的に取得して設定
-    DirectX::TexMetadata metadata = dxCommon_->GetTextureMetadata(name);
-    if (metadata.width > 0 && metadata.height > 0) {
-        tex->SetSize(static_cast<uint32_t>(metadata.width), static_cast<uint32_t>(metadata.height));
-        // 実際の概算サイズをプールに更新（幅 * 高さ * 4バイト想定）
-        size_t actualSize = metadata.width * metadata.height * 4;
-        texturePool_.UpdateSlotSize(handle, actualSize);
-    }
-
     nameToHandleMap_[name] = handle;
 
     // 非同期タスクとして投入
     // shared_ptrをキャプチャして、タスク実行中も生存させる
     auto texPtr = tex;
-    const_cast<TextureManager*>(this)->EnqueueTask([texPtr, name, handle, this]() {
+    EnqueueTask([texPtr, name, handle, this]() {
         texPtr->Initialize(name);
+
+        // ロード完了後にサイズとプールスロットサイズを更新（メインスレッドのI/Oブロックを排除）
+        uint32_t width = texPtr->GetWidth();
+        uint32_t height = texPtr->GetHeight();
+        if (width > 0 && height > 0) {
+            size_t actualSize = static_cast<size_t>(width) * height * 4;
+            std::lock_guard<std::mutex> lock(mutex_);
+            texturePool_.UpdateSlotSize(handle, actualSize);
+        }
+
+        std::lock_guard<std::mutex> lock(mutex_);
         texturePool_.SetLoaded(handle, true);
     });
 

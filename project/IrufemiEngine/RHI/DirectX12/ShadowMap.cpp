@@ -17,18 +17,35 @@ const float kFarClip = 512.0f;       // ファークリップ
 ShadowMap::~ShadowMap() {
     // SRV の解放
     if (dxCommon_ && dxCommon_->GetSrvPool()) {
-        if (srvIndex_ != 0xFFFFFFFF) {
+        if (srvIndex_ != DescriptorPool::kInvalid) {
             dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         }
     }
     // DSV の解放
-    if (dxCommon_ && dsvIndex_ != 0xFFFFFFFF) {
+    if (dxCommon_ && dsvIndex_ != DescriptorPool::kInvalid) {
         dxCommon_->FreeDSVIndex(dsvIndex_);
     }
 }
 
 void ShadowMap::Initialize(DirectXCommon* dxCommon, uint32_t width, uint32_t height) {
     IRUFEMI_ASSERT(dxCommon);
+
+    // 既存リソース・ディスクリプタの解放（再初期化時のリーク防止）
+    if (dxCommon_) {
+        if (srvIndex_ != DescriptorPool::kInvalid && dxCommon_->GetSrvPool()) {
+            dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+            srvIndex_ = DescriptorPool::kInvalid;
+        }
+        if (dsvIndex_ != DescriptorPool::kInvalid) {
+            dxCommon_->FreeDSVIndex(dsvIndex_);
+            dsvIndex_ = DescriptorPool::kInvalid;
+        }
+        if (resource_) {
+            dxCommon_->ReleaseAfterFence(resource_);
+            resource_.Reset();
+        }
+    }
+
     dxCommon_ = dxCommon;
     ID3D12Device* device = dxCommon_->GetDevice();
 

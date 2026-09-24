@@ -38,6 +38,16 @@ public:
     void AddOverride(std::shared_ptr<IPostProcessSettings> setting) {
         overrides_.push_back(setting);
     }
+    /**
+     * @brief 指定インデックスに設定を挿入する（エディタのUndo/Redo用）
+     */
+    void InsertOverride(size_t index, std::shared_ptr<IPostProcessSettings> setting) {
+        if (index <= overrides_.size()) {
+            overrides_.insert(overrides_.begin() + index, setting);
+        } else {
+            overrides_.push_back(setting);
+        }
+    }
     void RemoveOverride(size_t index) {
         if (index < overrides_.size()) {
             overrides_.erase(overrides_.begin() + index);

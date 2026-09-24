@@ -23,6 +23,59 @@ class CameraManager;
  * テクスチャの表示、座標変換（位置・回転・拡縮）、アンカーポイントの設定、トリミング（Rect指定）などを行います。
  */
 class Sprite : public IRenderable {
+public:
+    Sprite() = default;
+    explicit Sprite(TextureManager* tm, DrawManager* dm = nullptr, CameraManager* cm = nullptr)
+        : instTextureManager_(tm), instDrawManager_(dm), instCameraManager_(cm) {}
+
+    /**
+     * @brief インスタンス固有の TextureManager を設定する。
+     * @param[in] tm 設定する TextureManager のポインタ
+     */
+    void SetTextureManagerInstance(TextureManager* tm) {
+        instTextureManager_ = tm;
+    }
+
+    /**
+     * @brief インスタンス固有の DrawManager を設定する。
+     * @param[in] dm 設定する DrawManager のポインタ
+     */
+    void SetDrawManagerInstance(DrawManager* dm) {
+        instDrawManager_ = dm;
+    }
+
+    /**
+     * @brief インスタンス固有の CameraManager を設定する。
+     * @param[in] cm 設定する CameraManager のポインタ
+     */
+    void SetCameraManagerInstance(CameraManager* cm) {
+        instCameraManager_ = cm;
+    }
+
+    /**
+     * @brief 使用する TextureManager を取得する（インスタンスメンバ優先）。
+     * @return TextureManager のポインタ
+     */
+    TextureManager* GetTextureManagerInstance() const {
+        return instTextureManager_ ? instTextureManager_ : textureManager_;
+    }
+
+    /**
+     * @brief 使用する DrawManager を取得する（インスタンスメンバ優先）。
+     * @return DrawManager のポインタ
+     */
+    DrawManager* GetDrawManagerInstance() const {
+        return instDrawManager_ ? instDrawManager_ : drawManager_;
+    }
+
+    /**
+     * @brief 使用する CameraManager を取得する（インスタンスメンバ優先）。
+     * @return CameraManager のポインタ
+     */
+    CameraManager* GetCameraManagerInstance() const {
+        return instCameraManager_ ? instCameraManager_ : cameraManager_;
+    }
+
 private:
     std::unique_ptr<Object2DResource> resource_ = nullptr;
 
@@ -30,12 +83,15 @@ private:
 
     int selectedTextureIndex_ = 0;
 
+    // インスタンス依存ポインタ（優先）
+    TextureManager* instTextureManager_ = nullptr;
+    DrawManager* instDrawManager_ = nullptr;
+    CameraManager* instCameraManager_ = nullptr;
+
+    // 静的フォールバックポインタ
     static CameraManager* cameraManager_;
-
     static TextureManager* textureManager_;
-
     static DrawManager* drawManager_;
-
     static DebugUI* ui_;
 
     // サイズとアンカー
@@ -83,11 +139,12 @@ public: // メンバ関数
     void Update();
 
     /**
-     * @brief 描画コマンドの積み込み
+     * @brief 描画前フレーム同期（DrawManagerへの描画パケット登録）
      */
     void SyncBeforeDraw() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief スプライトの直接描画処理
      */
     void Draw() override;
 
@@ -99,59 +156,71 @@ public: // メンバ関数
 
     /** @name ゲッター */
     ///@{
+    /**
+     * @brief 2D描画用リソースを取得する
+     * @return Object2DResource ポインタ
+     */
     Object2DResource* GetD3D12Resource() {
         return this->resource_.get();
     }
+
     /**
-     * @brief Size を取得する。
-     * @return 取得された Size
+     * @brief スプライトの表示サイズを取得する
+     * @return 幅と高さ（ピクセル単位）
      */
     const Irufemi::Vector2& GetSize() const {
         return size_;
     }
+
     /**
-     * @brief Anchor を取得する。
-     * @return 取得された Anchor
+     * @brief アンカーポイント（原点位置比率）を取得する
+     * @return アンカー座標 (0.0 ~ 1.0)
      */
     const Irufemi::Vector2& GetAnchor() const {
         return anchor_;
     }
+
     /**
-     * @brief Position2D を取得する。
-     * @return 取得された Position2D
+     * @brief 2Dスクリーン座標位置を取得する
+     * @return XY座標
      */
     const Irufemi::Vector2 GetPosition2D() const;
+
     /**
-     * @brief Rotation を取得する。
-     * @return 取得された Rotation
+     * @brief 回転角を取得する
+     * @return オイラー回転角ベクトル
      */
     const Irufemi::Vector3& GetRotation() const {
-        return resource_ ? resource_->transform_.rotate : Irufemi::Vector3{};
+        return resource_ ? resource_->GetTransform().rotate : Irufemi::Vector3{};
     }
+
     /**
-     * @brief Color を取得する。
-     * @return 取得された Color
+     * @brief スプライトのカラー値を取得する
+     * @return RGBA カラー
      */
     const Irufemi::Vector4& GetColor() const {
         return resource_->GetMaterialData()->color;
     }
+
     /**
-     * @brief IsFlipX かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief 水平方向（X軸）の反転フラグを取得する
+     * @return 反転している場合 true
      */
     bool IsFlipX() const {
         return isFlipX_;
     }
+
     /**
-     * @brief IsFlipY かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief 垂直方向（Y軸）の反転フラグを取得する
+     * @return 反転している場合 true
      */
     bool IsFlipY() const {
         return isFlipY_;
     }
+
     /**
-     * @brief TextureName を取得する。
-     * @return 取得された TextureName
+     * @brief 適用されているテクスチャのファイル名を取得する
+     * @return テクスチャパス/名前
      */
     std::string GetTextureName() const;
     ///@}
@@ -186,7 +255,7 @@ public: // メンバ関数
      */
     void SetPosition(const float& x, const float& y, const float& z = 0.0f) {
         if (resource_) {
-            resource_->transform_.translate = {x, y, z};
+            resource_->GetTransform().translate = {x, y, z};
         }
         isDirty_ = true;
     }
@@ -196,7 +265,7 @@ public: // メンバ関数
      */
     void SetRotation(const float& rotate) {
         if (resource_) {
-            resource_->transform_.rotate = Irufemi::Vector3{0.0f, 0.0f, rotate};
+            resource_->GetTransform().rotate = Irufemi::Vector3{0.0f, 0.0f, rotate};
         }
         isDirty_ = true;
     }

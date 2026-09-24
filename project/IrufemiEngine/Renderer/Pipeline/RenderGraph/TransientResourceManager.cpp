@@ -28,11 +28,17 @@ void TransientResourceManager::Initialize(DirectXCommon* dxCommon, uint64_t heap
 }
 
 void TransientResourceManager::Finalize() {
+    if (dxCommon_) {
+        dxCommon_->WaitForGPU();
+    }
     resourcePool_.clear();
     heap_.Reset();
 }
 
 void TransientResourceManager::ClearCache() {
+    if (dxCommon_) {
+        dxCommon_->WaitForGPU();
+    }
     resourcePool_.clear();
 }
 

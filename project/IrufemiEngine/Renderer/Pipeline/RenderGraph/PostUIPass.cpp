@@ -6,8 +6,14 @@
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DirectXUtils.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraph.h"
+#include "Renderer/Data/RenderContext.h"
 
-void PostUIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
+void PostUIPass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!engine) {
+        return;
+    }
     auto ppMgr = engine->GetPostProcessManager();
     const auto& activeModes = ppMgr->GetActiveModes(PostProcessManager::Layer::PostUI);
     auto mainRenderTex = engine->GetMainRenderTexture();
@@ -52,7 +58,12 @@ void PostUIPass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, Ir
     }
 }
 
-void PostUIPass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+void PostUIPass::Execute(const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
     auto ppMgr = engine->GetPostProcessManager();
     auto* cmdList = drawManager->GetDxCommon()->GetCommandList();
     auto* renderGraph = drawManager->GetRenderGraph();

@@ -12,10 +12,27 @@ MeshRendererComponent::~MeshRendererComponent() {}
 
 void MeshRendererComponent::LoadModel(const std::string& filename) {
     modelName_ = filename;
+    currentLoadedFilename_ = filename;
     if (!obj_) {
         obj_ = std::make_unique<StaticModelObject>();
     }
     obj_->Initialize(modelName_);
+}
+
+IRenderable* MeshRendererComponent::GetRenderable() {
+    return obj_.get();
+}
+
+void MeshRendererComponent::OnRegisterProperties() {
+    RegisterProperty("Model File", &modelName_)
+        .SetTooltip("The path to the GLTF or OBJ file to load")
+        .OnChanged([this]() {
+            if (modelName_ != currentLoadedFilename_) {
+                LoadModel(modelName_);
+            }
+        });
+    RegisterProperty("Visible", &isVisible_);
+    RegisterProperty("Cast Shadows", &castShadows_);
 }
 
 void MeshRendererComponent::Initialize() {
@@ -26,9 +43,9 @@ void MeshRendererComponent::Initialize() {
 void MeshRendererComponent::OnAwake() {
     if (!obj_) {
         obj_ = std::make_unique<StaticModelObject>();
-        if (!modelName_.empty()) {
-            obj_->Initialize(modelName_);
-        }
+    }
+    if (!modelName_.empty()) {
+        LoadModel(modelName_);
     }
 }
 
@@ -156,14 +173,37 @@ bool MeshRendererComponent::Raycast(const Irufemi::Ray& ray, float& outDistance)
 
 nlohmann::json MeshRendererComponent::Serialize() {
     nlohmann::json j;
-    j["modelName"] = modelName_;
+    j["modelName"] = modelName_; // 正規キーに統一
+
+    // デフォルト値(true)と異なる場合のみ出力（プレハブオーバーライド最小化・疎シリアライズ）
+    if (!isVisible_) {
+        j["isVisible"] = false;
+    }
+    if (!castShadows_) {
+        j["castShadows"] = false;
+    }
     return j;
 }
 
 void MeshRendererComponent::Deserialize(const nlohmann::json& j) {
+    // modelName または Model File の両対応（後方互換性維持）
     if (j.contains("modelName")) {
-        std::string modelName = j["modelName"];
-        LoadModel(modelName);
+        modelName_ = j["modelName"].get<std::string>();
+        LoadModel(modelName_);
+    } else if (j.contains("Model File")) {
+        modelName_ = j["Model File"].get<std::string>();
+        LoadModel(modelName_);
+    }
+
+    if (j.contains("isVisible")) {
+        isVisible_ = j["isVisible"].get<bool>();
+    } else {
+        isVisible_ = true;
+    }
+    if (j.contains("castShadows")) {
+        castShadows_ = j["castShadows"].get<bool>();
+    } else {
+        castShadows_ = true;
     }
 }
 

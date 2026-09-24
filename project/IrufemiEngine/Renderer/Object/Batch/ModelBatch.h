@@ -17,47 +17,51 @@ public:
     ~ModelBatch() override = default;
 
     /**
-     * @brief ModelManager を設定する。
-     * @param[in] mm 設定する ModelManager の値
+     * @brief バッチ描画で使用する ModelManager を設定する
+     * @param[in] mm 設定する ModelManager のポインタ
      */
     static void SetModelManager(ModelManager* mm) {
         modelManager_ = mm;
     }
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 指定したモデルファイル名からバッチ描画領域を初期化する
+     * @param[in] objFilename モデルファイル名（例: "cube.obj"）
      */
     void Initialize(const std::string& objFilename);
 
     /**
-     * @brief Draw を実行する。
+     * @brief インスタンシングバッチ描画を実行する
      */
     void Draw() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief UI向け設定でインスタンシングバッチ描画を実行する
+     * @param[in] isUI UIフラグ
      */
     void Draw(bool isUI);
 
     /**
-     * @brief GpuMesh を取得する。
-     * @return 取得された GpuMesh
+     * @brief 描画に使用する GPU メッシュリソースを取得する
+     * @return 共有 GPU メッシュのポインタ
      */
     const GpuMesh* GetGpuMesh() const; // 共有メッシュ取得
 
 protected:
     /**
-     * @brief BoundingSphereRadius を取得する。
-     * @return 取得された BoundingSphereRadius
+     * @brief フラストゥムカリング用のモデル外接球半径を取得する
+     * @return モデルの外接球半径
      */
     float GetBoundingSphereRadius() const override;
 
 private:
     /**
-     * @brief InitializeResources を実行する。
+     * @brief インスタンシング用の頂点・定数バッファ等のリソースを初期化する
      */
     void InitializeResources();
+
     /**
-     * @brief CreateMaterialResources を実行する。
+     * @brief メッシュのマテリアル定数バッファを生成・割り当てする
      */
     void CreateMaterialResources(const ObjMesh& mesh);
     /**

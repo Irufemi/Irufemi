@@ -1,12 +1,9 @@
 #ifdef EditorMode
 #include "Editor/BossComponentEditor.h"
 #include "Combat/Boss/BossComponent.h"
+#include "Core/Utility/JsonUtility.h"
 #include <imgui/imgui.h>
-#include <nlohmann/json.hpp>
-#include <fstream>
 #include <string>
-#include "Core/Utility/Log.h"
-#include <iostream>
 
 void BossComponentEditor::Draw(Component* component, EditorActionManager* actionManager) {
     auto comp = dynamic_cast<BossComponent*>(component);
@@ -26,49 +23,54 @@ void BossComponentEditor::Draw(Component* component, EditorActionManager* action
         comp->SetStatusDataPath(buffer);
     }
 
+    if (path != cachedPath_) {
+        cachedPath_ = path;
+        isJsonLoaded_ = false;
+    }
+
     if (ImGui::Button("Reload JSON", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+        isJsonLoaded_ = false;
         comp->LoadStatusFromJson();
     }
     ImGui::Spacing();
 
-    if (!path.empty()) {
-        nlohmann::json j;
-        std::ifstream file(path);
-        if (file.is_open()) {
-            file >> j;
-            file.close();
+    if (!cachedPath_.empty()) {
+        if (!isJsonLoaded_) {
+            isJsonLoaded_ = Irufemi::JsonUtility::LoadFromFile(cachedPath_, cachedJson_);
+        }
 
+        if (isJsonLoaded_) {
             bool modified = false;
 
             if (ImGui::TreeNodeEx("Gameplay Data (Saved in JSON)", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-                float maxHp = j.value("maxHp", 1000.0f);
+                float maxHp = cachedJson_.value("maxHp", 1000.0f);
                 if (ImGui::DragFloat("Max HP", &maxHp, 10.0f, 1.0f, 100000.0f)) {
-                    j["maxHp"] = maxHp;
+                    cachedJson_["maxHp"] = maxHp;
                     modified = true;
                 }
 
-                int maxShieldCount = j.value("maxShieldCount", 100);
+                int maxShieldCount = cachedJson_.value("maxShieldCount", 100);
                 if (ImGui::DragInt("Max Shield Count", &maxShieldCount, 1, 0, 500)) {
-                    j["maxShieldCount"] = maxShieldCount;
+                    cachedJson_["maxShieldCount"] = maxShieldCount;
                     modified = true;
                 }
 
-                float shieldRadius = j.value("shieldRadius", 8.0f);
+                float shieldRadius = cachedJson_.value("shieldRadius", 8.0f);
                 if (ImGui::DragFloat("Shield Radius", &shieldRadius, 0.1f, 1.0f, 50.0f)) {
-                    j["shieldRadius"] = shieldRadius;
+                    cachedJson_["shieldRadius"] = shieldRadius;
                     modified = true;
                 }
 
-                float beamInterval = j.value("beamInterval", 10.0f);
+                float beamInterval = cachedJson_.value("beamInterval", 10.0f);
                 if (ImGui::DragFloat("Beam Interval", &beamInterval, 0.1f, 0.1f, 60.0f)) {
-                    j["beamInterval"] = beamInterval;
+                    cachedJson_["beamInterval"] = beamInterval;
                     modified = true;
                 }
 
-                float beamRange = j.value("beamRange", 1000.0f);
+                float beamRange = cachedJson_.value("beamRange", 1000.0f);
                 if (ImGui::DragFloat("Beam Range", &beamRange, 10.0f, 10.0f, 10000.0f)) {
-                    j["beamRange"] = beamRange;
+                    cachedJson_["beamRange"] = beamRange;
                     modified = true;
                 }
 
@@ -76,18 +78,12 @@ void BossComponentEditor::Draw(Component* component, EditorActionManager* action
             }
 
             if (modified) {
-                std::ofstream outFile(path);
-                if (outFile.is_open()) {
-                    outFile << j.dump(4);
-                    outFile.close();
-
+                if (Irufemi::JsonUtility::SaveToFile(cachedPath_, cachedJson_, 4)) {
                     comp->LoadStatusFromJson();
-                } else {
-                    Log::OutPutLog(std::cout, "[Editor] Failed to save JSON: " + path + "\n");
                 }
             }
         } else {
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "JSON File Not Found!");
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "JSON File Not Found or Invalid!");
         }
     }
 }

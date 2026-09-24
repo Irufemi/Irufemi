@@ -5,20 +5,33 @@
 void GamePad::Initialize() {
     ZeroMemory(&state_, sizeof(state_));
     ZeroMemory(&prev_, sizeof(prev_));
+    retryCountdown_ = 0;
 }
 
 void GamePad::Clear() {
     ZeroMemory(&state_, sizeof(state_));
     ZeroMemory(&prev_, sizeof(prev_));
+    retryCountdown_ = 0;
 }
 
 void GamePad::Update() {
     prev_ = state_;
     ZeroMemory(&state_, sizeof(state_));
+
+    // 未接続時は毎フレームポーリングすると Windows のデバイス探索スパイクが発生するため、
+    // 約60フレーム（約1秒）に1回の頻度に間引いて再接続を試行する
+    if (!connected_ && retryCountdown_ > 0) {
+        --retryCountdown_;
+        return;
+    }
+
     DWORD result = ::XInputGetState(index_, &state_);
     connected_ = (result == ERROR_SUCCESS);
     if (!connected_) {
         ZeroMemory(&state_, sizeof(state_));
+        retryCountdown_ = 60; // 60フレーム待機
+    } else {
+        retryCountdown_ = 0;
     }
 }
 

@@ -19,6 +19,14 @@ public:
     ParticleObject();
     ~ParticleObject();
 
+    // コピー禁止 (GPUエミッターハンドルの二重解放防止。パラメータ複製は CopyFrom を使用すること)
+    ParticleObject(const ParticleObject&) = delete;
+    ParticleObject& operator=(const ParticleObject&) = delete;
+
+    // ムーブ操作の明示的許可
+    ParticleObject(ParticleObject&&) noexcept = default;
+    ParticleObject& operator=(ParticleObject&&) noexcept = default;
+
     /**
      * @brief Initialize を実行する。
      */
@@ -87,6 +95,12 @@ public:
      * @brief LoadFromJson を実行する。
      */
     bool LoadFromJson(const std::string& filepath);
+
+    /**
+     * @brief 他の ParticleObject から全パラメータを直接ディープコピーする
+     * @param other コピー元オブジェクト
+     */
+    void CopyFrom(const ParticleObject& other);
 
     // --- Getters & Setters ---
 
@@ -820,7 +834,7 @@ private:
     float trailFrequency_ = 0.05f;
     bool enableDeathEmit_ = false;
     bool enableRandomRotation_ = false;
-    bool showDebugArea_ = true; // 追加：デバッグエリア表示フラグ
+    bool showDebugArea_ = true; //!< デバッグエリア表示フラグ
 
     // ビジュアル・ライフタイム
     int billboardMode_ = 1; // 0: None, 1: Billboard, 2: Y-Axis

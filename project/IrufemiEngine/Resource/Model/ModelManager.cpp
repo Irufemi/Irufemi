@@ -23,7 +23,6 @@
 #include "Renderer/Data/Material.h"
 #include "Renderer/Data/VertexData.h"
 #include "Resource/Model/Data/Node.h"
-#include "Resource/Model/Data/Skeleton.h"
 #include "Resource/Model/Data/SkinCluster.h"
 #include <thread>
 #include <algorithm>
@@ -33,19 +32,17 @@
 // キャッシュ系(インスタンス)
 //======================
 
-DirectXCommon* GpuMesh::sDxCommon = nullptr;
+DirectXCommon* GpuMesh::dxCommon_ = nullptr;
 
 GpuMesh::~GpuMesh() {
-    if (sDxCommon && sDxCommon->GetSrvPool() && srvIndex != 0xFFFFFFFF) {
-        sDxCommon->GetSrvPool()->FreeAfterFence(srvIndex, sDxCommon->GetCurrentFrameFenceValue());
+    if (dxCommon_ && dxCommon_->GetSrvPool() && srvIndex != 0xFFFFFFFF) {
+        dxCommon_->GetSrvPool()->FreeAfterFence(srvIndex, dxCommon_->GetCurrentFrameFenceValue());
     }
 }
 
-TextureManager* GpuMaterial::sTextureManager = nullptr;
-
 GpuMaterial::~GpuMaterial() {
-    if (sTextureManager && textureHandle.IsValid()) {
-        sTextureManager->ReleaseTexture(textureHandle);
+    if (textureManager_ && textureHandle.IsValid()) {
+        textureManager_->ReleaseTexture(textureHandle);
     }
 }
 
@@ -54,9 +51,8 @@ ModelManager::~ModelManager() = default;
 
 void ModelManager::Initialize(DirectXCommon* dxCommon, TextureManager* textureManager) {
     dxCommon_ = dxCommon;
-    GpuMesh::sDxCommon = dxCommon;
-    textureManager_ = textureManager;              // 追加
-    GpuMaterial::sTextureManager = textureManager; // 追加
+    GpuMesh::dxCommon_ = dxCommon;
+    textureManager_ = textureManager;
     if (rootDir_.empty()) {
         rootDir_ = FileSystem::GetResourcePath("model");
     }
@@ -263,7 +259,7 @@ void ModelManager::LoadInternal(std::shared_ptr<ManagedModel> managedModel, cons
             managedModel->gpuMeshes.push_back(std::move(gpuMesh));
 
             // Materialリソース生成
-            auto gpuMaterial = std::make_shared<GpuMaterial>();
+            auto gpuMaterial = std::make_shared<GpuMaterial>(textureManager_);
             gpuMaterial->materialResource = dxCommon_->CreateBufferResource(sizeof(Material));
             Material* materialData = nullptr;
             gpuMaterial->materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));

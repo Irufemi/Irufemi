@@ -60,7 +60,7 @@ struct VoxelEmitter
 
 
 
-// 追加: 頂点シェーダー出力構造体
+// 頂点シェーダー出力構造体
 struct VertexShaderOutput
 {
 	float4 position : SV_POSITION;

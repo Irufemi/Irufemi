@@ -1,40 +1,27 @@
 #include "Player/PlayerHealthComponent.h"
-#include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/Renderer/SkinnedMeshRendererComponent.h"
-#include "Framework/Component/Effect/ScreenEffectComponent.h"
-#include "Framework/Component/Camera/CameraShakeComponent.h"
 #include "Framework/GameObject/GameObject.h"
-#include "Framework/Scene/BaseScene.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Utility/Log.h"
+#include "Core/Utility/JsonUtility.h"
 #include <nlohmann/json.hpp>
-#include <fstream>
 #include <iostream>
-#include <cmath>
 
 void PlayerHealthComponent::LoadStatusFromJson() {
     if (statusDataPath_.empty()) {
         return;
     }
 
-    std::ifstream file(statusDataPath_);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(statusDataPath_, j)) {
         Log::OutPutLog(std::cout, "[PlayerHealth] Failed to load status: " + statusDataPath_ + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
-
-        if (j.contains("maxHp")) {
-            maxHp_ = j["maxHp"].get<int>();
-            hp_ = maxHp_;
-        }
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[PlayerHealth] JSON Parse Error: ") + e.what() + "\n");
+    if (j.contains("maxHp")) {
+        maxHp_ = j["maxHp"].get<int>();
+        hp_ = maxHp_;
     }
 }
 
@@ -42,73 +29,69 @@ void PlayerHealthComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Status Data Path", &statusDataPath_);
     RegisterProperty("God Mode", &isGodMode_);
+    RegisterPropertyRange("Death Sequence Duration", &deathSequenceDuration_, 0.5f, 10.0f);
 }
 
 void PlayerHealthComponent::Initialize() {
     LoadStatusFromJson();
 
     invincibilityTimer_ = 0.0f;
-    flashTimer_ = 0.0f;
-    flashInterval_ = 0.1f;
-    colorCached_ = false;
+    onDamageTakenListeners_.clear();
+    onPlayerDiedListeners_.clear();
 }
 
-void PlayerHealthComponent::Start() {}
+void PlayerHealthComponent::Start() {
+    if (gameObject_) {
+        collider_ = gameObject_->GetComponentByInterface<ColliderComponent>();
+        if (collider_) {
+            collider_->SetDebugCategory(DebugCategory::Combat);
+            collider_->SetDebugCustomColor(Irufemi::Vector4{0.0f, 1.0f, 1.0f, 1.0f});
+        }
+    }
+}
 
 void PlayerHealthComponent::Update() {
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
 #if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-    if (BaseModel::GetIrufemiEngine()->GetInputManager()->IsKeyPressed(VK_F9)) {
+    if (engine->GetInputManager() && engine->GetInputManager()->IsKeyPressed(VK_F9)) {
         isGodMode_ = !isGodMode_;
         Log::OutPutLog(std::cout, std::string("[PlayerHealth] God Mode ") + (isGodMode_ ? "ON\n" : "OFF\n"));
     }
 #endif
 
+    if (collider_) {
+        if (IsInvincible()) {
+            collider_->SetDebugCustomColor(Irufemi::Vector4{1.0f, 1.0f, 1.0f, 1.0f});
+        } else {
+            collider_->SetDebugCustomColor(Irufemi::Vector4{0.0f, 1.0f, 1.0f, 1.0f});
+        }
+    }
+
     if (isDead_) {
         if (!hasTriggeredDeathSequenceFinished_) {
-            float currentTime = BaseModel::GetIrufemiEngine()->GetGameTime();
-            if (currentTime >= deathStartTime_ + 3.0f) {
+            float currentTime = engine->GetGameTime();
+            if (currentTime >= deathStartTime_ + deathSequenceDuration_) {
                 hasTriggeredDeathSequenceFinished_ = true;
-                if (onDeathSequenceFinished) {
-                    onDeathSequenceFinished();
-                }
+                NotifyDeathSequenceFinished();
             }
         }
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float dt = engine->GetGameDeltaTime();
     if (dt <= 0.0f) {
         return;
     }
 
-    // --- 被弾時の無敵時間と点滅処理 ---
+    // 無敵タイマーの更新
     if (invincibilityTimer_ > 0.0f) {
         invincibilityTimer_ -= dt;
-        flashTimer_ += dt;
-
-        BaseModel* model = nullptr;
-        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
-            model = reinterpret_cast<BaseModel*>(mesh->GetRenderable());
-        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
-            model = reinterpret_cast<BaseModel*>(skinned->GetRenderable());
-        }
-
-        if (model) {
-            if (!colorCached_) {
-                originalBaseColor_ = model->GetColor();
-                colorCached_ = true;
-            }
-            if (fmod(flashTimer_, flashInterval_ * 2.0f) < flashInterval_) {
-                model->SetColor({1.0f, 0.0f, 0.0f, 1.0f}); // 赤色
-            } else {
-                model->SetColor(originalBaseColor_); // 通常色
-            }
-        }
-
-        if (invincibilityTimer_ <= 0.0f) {
-            if (model && colorCached_) {
-                model->SetColor(originalBaseColor_);
-            }
+        if (invincibilityTimer_ < 0.0f) {
+            invincibilityTimer_ = 0.0f;
         }
     }
 }
@@ -133,41 +116,36 @@ void PlayerHealthComponent::TakeDamage(int damage) {
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
-        deathStartTime_ = BaseModel::GetIrufemiEngine()->GetGameTime();
-        if (onPlayerDied) {
-            onPlayerDied();
-        }
+        deathStartTime_ = GetEngine() ? GetEngine()->GetGameTime() : 0.0f;
+
+        NotifyPlayerDied();
+
         Log::OutPutLog(std::cout, "[PlayerHealth] Player Died!\n");
-
-        // 自機が死んだときに自機のモデルの描画を切る
-        if (auto mesh = gameObject_->GetComponent<MeshRendererComponent>()) {
-            mesh->SetVisible(false);
-        } else if (auto skinned = gameObject_->GetComponent<SkinnedMeshRendererComponent>()) {
-            skinned->SetVisible(false);
-        }
-
         return;
     }
 
-    Log::OutPutLog(std::cout, "[PlayerHealth] Triggering flashing...\n");
     invincibilityTimer_ = maxInvincibilityTime_;
-    isFlashing_ = true;
-    flashTimer_ = 0.0f;
 
-    // カメラシェイク発火 (プレイヤー被弾時なので強め)
-    if (auto scene = gameObject_->GetScene()) {
-        if (auto mainCameraObj = scene->FindGameObject("MainCamera")) {
-            if (auto shakeComp = mainCameraObj->GetComponent<CameraShakeComponent>()) {
-                shakeComp->PlayShake(1.0f, 30, 20.0f); // Intensity=1.0, 30 Frames, Freq=20
-            }
+    for (const auto& listener : onDamageTakenListeners_) {
+        if (listener) {
+            listener(damage);
         }
     }
+}
 
-    // ポストエフェクト演出の再生
-    auto& comps = gameObject_->GetComponents();
-    for (auto& comp : comps) {
-        if (auto screenEffect = std::dynamic_pointer_cast<ScreenEffectComponent>(comp)) {
-            screenEffect->Play();
+void PlayerHealthComponent::NotifyPlayerDied() {
+    if (onPlayerDied_) {
+        onPlayerDied_();
+    }
+    for (const auto& listener : onPlayerDiedListeners_) {
+        if (listener) {
+            listener();
         }
+    }
+}
+
+void PlayerHealthComponent::NotifyDeathSequenceFinished() {
+    if (onDeathSequenceFinished_) {
+        onDeathSequenceFinished_();
     }
 }

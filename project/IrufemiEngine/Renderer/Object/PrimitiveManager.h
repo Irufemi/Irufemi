@@ -82,66 +82,138 @@ public:
 
     /** @name 形状生成メソッド（静的） */
     ///@{
-    // 個別生成用（キャッシュしない。特殊なパラメータが必要な場合用）
-    static PrimitiveData CreateSphere(float radius, uint32_t subdivision);
     /**
-     * @brief CreateCube を実行する。
+     * @brief UV球（Sphere）メッシュデータを生成する
+     * @param[in] radius 球の半径
+     * @param[in] subdivision 緯度・経度方向の分割数
+     * @return 生成された球の頂点およびインデックスデータ
+     */
+    static PrimitiveData CreateSphere(float radius, uint32_t subdivision);
+
+    /**
+     * @brief 直方体・立方体（Cube / Box）メッシュデータを生成する
+     * @param[in] width X軸方向の幅
+     * @param[in] height Y軸方向の高さ
+     * @param[in] depth Z軸方向の奥行き
+     * @return 生成された立方体の頂点およびインデックスデータ
      */
     static PrimitiveData CreateCube(float width, float height, float depth);
+
     /**
-     * @brief CreateCylinder を実行する。
+     * @brief 上下面の半径が異なる円柱・円錐台（Cylinder / Truncated Cone）メッシュデータを生成する
+     * @param[in] bottomRadius 底面の半径
+     * @param[in] topRadius 上面の半径
+     * @param[in] height 円柱の高さ
+     * @param[in] segments 円周方向の分割数
+     * @param[in] hasTop 上面のフタを生成するかどうか
+     * @param[in] hasBottom 底面のフタを生成するかどうか
+     * @param[in] centered 原点を円柱の中心（高さの1/2）に配置するか（falseの場合は底面が原点）
+     * @return 生成された円柱の頂点およびインデックスデータ
      */
     static PrimitiveData CreateCylinder(float bottomRadius, float topRadius, float height, uint32_t segments,
                                         bool hasTop = true, bool hasBottom = true, bool centered = true);
+
     /**
-     * @brief CreateCylinder を実行する。
+     * @brief 上下面の半径が等しい等径円柱（Cylinder）メッシュデータを生成する
+     * @param[in] radius 円柱の半径
+     * @param[in] height 円柱の高さ
+     * @param[in] segments 円周方向の分割数
+     * @param[in] hasTop 上面のフタを生成するかどうか
+     * @param[in] hasBottom 底面のフタを生成するかどうか
+     * @return 生成された円柱の頂点およびインデックスデータ
      */
     static PrimitiveData CreateCylinder(float radius, float height, uint32_t segments, bool hasTop = true,
                                         bool hasBottom = true);
+
     /**
-     * @brief CreateCone を実行する。
+     * @brief 円錐（Cone）メッシュデータを生成する
+     * @param[in] radius 底面の半径
+     * @param[in] height 円錐の高さ
+     * @param[in] segments 円周方向の分割数
+     * @return 生成された円錐の頂点およびインデックスデータ
      */
     static PrimitiveData CreateCone(float radius, float height, uint32_t segments);
+
     /**
-     * @brief CreateTorus を実行する。
+     * @brief ドーナツ型（Torus）メッシュデータを生成する
+     * @param[in] majorRadius トーラス中心からチューブ中心までの大半径
+     * @param[in] minorRadius チューブ自体の小半径
+     * @param[in] majorSegments 大円周方向の分割数
+     * @param[in] minorSegments 小円周方向の分割数
+     * @return 生成されたトーラスの頂点およびインデックスデータ
      */
     static PrimitiveData CreateTorus(float majorRadius, float minorRadius, uint32_t majorSegments,
                                      uint32_t minorSegments);
+
     /**
-     * @brief CreateIcoSphere を実行する。
+     * @brief 正二十面体分割による均一球（IcoSphere）メッシュデータを生成する
+     * @param[in] radius 球の半径
+     * @param[in] subdivision 再帰分割レベル
+     * @return 生成されたアイコスフィアの頂点およびインデックスデータ
      */
     static PrimitiveData CreateIcoSphere(float radius, uint32_t subdivision);
+
     /**
-     * @brief CreateGrid を実行する。
+     * @brief 格子状の平面グリッド（Grid）メッシュデータを生成する
+     * @param[in] width X軸方向の幅
+     * @param[in] height Z軸方向の奥行き/高さ
+     * @param[in] xSegments X方向の分割数
+     * @param[in] ySegments Y/Z方向の分割数
+     * @return 生成されたグリッドの頂点およびインデックスデータ
      */
     static PrimitiveData CreateGrid(float width, float height, uint32_t xSegments, uint32_t ySegments);
+
     /**
-     * @brief CreateRing を実行する。
+     * @brief パラメータ構造体を指定して円環（Ring）メッシュデータを生成する
+     * @param[in] params 円環生成パラメータ（内径・外径・開始/終了角・分割数等）
+     * @return 生成された円環の頂点およびインデックスデータ
      */
     static PrimitiveData CreateRing(const RingParams& params);
+
     /**
-     * @brief CreateRing を実行する。
+     * @brief パラメータを個別に指定して円環・扇形（Ring / Arc）メッシュデータを生成する
+     * @param[in] innerRadius 内半径
+     * @param[in] outerRadius 外半径
+     * @param[in] startAngle 開始角度（ラジアン）
+     * @param[in] endAngle 終了角度（ラジアン）
+     * @param[in] segments 円周方向の分割数
+     * @param[in] verticalUV UV座標を垂直方向にマッピングするかどうか
+     * @return 生成された円環の頂点およびインデックスデータ
      */
     static PrimitiveData CreateRing(float innerRadius, float outerRadius, float startAngle, float endAngle,
                                     uint32_t segments, bool verticalUV);
+
     /**
-     * @brief CreatePlane を実行する。
+     * @brief 単純な四角形平面（Plane / Quad）メッシュデータを生成する
+     * @param[in] width X軸方向の幅
+     * @param[in] height Y軸方向の高さ
+     * @return 生成された平面の頂点およびインデックスデータ
      */
     static PrimitiveData CreatePlane(float width = 1.0f, float height = 1.0f);
+
     /**
-     * @brief CreateTriangle を実行する。
+     * @brief 正三角形（Triangle）メッシュデータを生成する
+     * @return 生成された三角形の頂点およびインデックスデータ
      */
     static PrimitiveData CreateTriangle();
+
     /**
-     * @brief CreateTetra を実行する。
+     * @brief 正四面体（Tetrahedron）メッシュデータを生成する
+     * @return 生成された四面体の頂点およびインデックスデータ
      */
     static PrimitiveData CreateTetra();
+
     /**
-     * @brief CreateCircle を実行する。
+     * @brief 2D円盤（Circle）メッシュデータを生成する
+     * @param[in] radius 円の半径
+     * @param[in] segments 円周方向の分割数
+     * @return 生成された円盤の頂点およびインデックスデータ
      */
     static PrimitiveData CreateCircle(float radius, uint32_t segments);
+
     /**
-     * @brief CreateOctahedron を実行する。
+     * @brief 正八面体（Octahedron）メッシュデータを生成する
+     * @return 生成された八面体の頂点およびインデックスデータ
      */
     static PrimitiveData CreateOctahedron();
     ///@}

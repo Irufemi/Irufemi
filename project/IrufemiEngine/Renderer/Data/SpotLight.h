@@ -27,3 +27,5 @@ struct SpotLight {
 private:
     float padding[4]; // 16byteアラインメント用 (合計80バイト)
 };
+
+static_assert(sizeof(SpotLight) == 80, "SpotLight size mismatch with HLSL");

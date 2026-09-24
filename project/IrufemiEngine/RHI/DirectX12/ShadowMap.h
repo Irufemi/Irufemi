@@ -2,6 +2,7 @@
 #include <d3d12.h>
 #include <wrl.h>
 #include <cstdint>
+#include "RHI/DirectX12/DescriptorPool.h"
 #include "Core/Math/Matrix4x4.h"
 #include "Core/Math/Vector3.h"
 
@@ -94,12 +95,12 @@ private:
 
     // DSV 関連
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandleCPU_{};
-    uint32_t dsvIndex_ = 0xFFFFFFFF;
+    uint32_t dsvIndex_ = DescriptorPool::kInvalid;
 
     // SRV 関連
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCPU_{};
     D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU_{};
-    uint32_t srvIndex_ = 0xFFFFFFFF;
+    uint32_t srvIndex_ = DescriptorPool::kInvalid;
 
     // ビューポート・シザーレクト
     D3D12_VIEWPORT viewport_{};

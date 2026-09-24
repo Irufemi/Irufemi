@@ -44,10 +44,7 @@ public:
     /**
      * @brief シーンが保持する GameObject のリストを取得する
      */
-    virtual const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const {
-        static std::vector<std::shared_ptr<GameObject>> empty;
-        return empty;
-    }
+    virtual const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const;
 
     /**
      * @brief エンジンのポインタを取得する
@@ -61,9 +58,7 @@ public:
     /**
      * @brief シーンの情報をJSONとしてシリアライズする
      */
-    virtual nlohmann::json Serialize() const {
-        return nlohmann::json::object();
-    }
+    virtual nlohmann::json Serialize() const;
 
     /**
      * @brief JSONからシーンの情報をデシリアライズする

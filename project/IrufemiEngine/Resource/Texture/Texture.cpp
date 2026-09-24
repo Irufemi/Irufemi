@@ -4,38 +4,40 @@
 #include "../../../externals/DirectXTex/d3dx12.h"
 #include "RHI/DirectX12/DirectXCommon.h"
 #include "RHI/DirectX12/DescriptorPool.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 #include <cassert>
 
 DirectXCommon* Texture::dxCommon_ = nullptr;
 uint32_t Texture::index_ = 0;
-DescriptorPool* Texture::s_srvPool_ = nullptr;
-ID3D12Resource* Texture::s_whiteResource_ = nullptr;
+DescriptorPool* Texture::srvPool_ = nullptr;
+ID3D12Resource* Texture::whiteResource_ = nullptr;
 
 Texture::Texture() {
-    // コンストラクタでSRV枠を先に確保して、暫定的に白テクスチャを割り当てておく
-    if (s_srvPool_) {
-        srvIndex_ = s_srvPool_->Allocate();
+    // コンストラクタでSRV枠を確保し、初期状態として白テクスチャを割り当てておく
+    if (srvPool_) {
+        srvIndex_ = srvPool_->Allocate();
         if (srvIndex_ != DescriptorPool::kInvalid) {
-            textureSrvHandleCPU_ = s_srvPool_->GetCPUHandle(srvIndex_);
-            textureSrvHandleGPU_ = s_srvPool_->GetGPUHandle(srvIndex_);
+            textureSrvHandleCPU_ = srvPool_->GetCPUHandle(srvIndex_);
+            textureSrvHandleGPU_ = srvPool_->GetGPUHandle(srvIndex_);
 
-            // とりあえず白テクスチャでSRVを作っておく(セーフティ)
-            if (s_whiteResource_ && dxCommon_) {
+            // 未ロード時のアクセス違反を防ぐため白テクスチャSRVで初期化（フォールバック）
+            if (whiteResource_ && dxCommon_) {
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
                 srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
                 srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
                 srvDesc.Texture2D.MipLevels = 1;
-                dxCommon_->GetDevice()->CreateShaderResourceView(s_whiteResource_, &srvDesc, textureSrvHandleCPU_);
+                dxCommon_->GetDevice()->CreateShaderResourceView(whiteResource_, &srvDesc, textureSrvHandleCPU_);
             }
         }
     }
 }
 
 Texture::~Texture() {
-    if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
+    if (srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
         // GPU が参照し終わるまで遅延解放
-        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+        srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
         srvIndex_ = UINT32_MAX;
     }
 }
@@ -78,7 +80,12 @@ void Texture::Initialize(const std::string& filePath) {
         }
 
         status_.store(LoadingStatus::Loaded);
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load '" + filePath_ + "': " + e.what() + "\n");
+        status_.store(LoadingStatus::Failed);
+        // 失敗してもSRV自体は白テクスチャを指したままなので描画上は安全
     } catch (...) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load '" + filePath_ + "' (Unknown error)\n");
         status_.store(LoadingStatus::Failed);
         // 失敗してもSRV自体は白テクスチャを指したままなので描画上は安全
     }
@@ -117,7 +124,11 @@ void Texture::InitializeFromMemory(const std::string& name, const uint32_t* pixe
         }
 
         status_.store(LoadingStatus::Loaded);
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load memory texture '" + filePath_ + "': " + e.what() + "\n");
+        status_.store(LoadingStatus::Failed);
     } catch (...) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load memory texture '" + filePath_ + "' (Unknown error)\n");
         status_.store(LoadingStatus::Failed);
     }
 }
@@ -162,7 +173,11 @@ void Texture::InitializeCubeFromMemory(const std::string& name, const uint32_t* 
 
         isCubemap_ = true;
         status_.store(LoadingStatus::Loaded);
+    } catch (const std::exception& e) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load cubemap '" + filePath_ + "': " + e.what() + "\n");
+        status_.store(LoadingStatus::Failed);
     } catch (...) {
+        Log::OutPutLog(std::cerr, "[Texture] Failed to load cubemap '" + filePath_ + "' (Unknown error)\n");
         status_.store(LoadingStatus::Failed);
     }
 }
@@ -173,8 +188,8 @@ void Texture::InitializeFromExternalResource(const std::string& name, Microsoft:
     this->textureResource_ = resource;
 
     // Textureコンストラクタで確保済みの古いsrvIndexを解放する
-    if (s_srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
-        s_srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
+    if (srvPool_ && srvIndex_ != UINT32_MAX && dxCommon_) {
+        srvPool_->FreeAfterFence(srvIndex_, dxCommon_->GetCurrentFrameFenceValue());
     }
 
     // 新しいインデックスとハンドルを保持

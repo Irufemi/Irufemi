@@ -25,7 +25,7 @@ enum class EffectType {
     kImpact,    // スライドの表現（PlaneとRingの複合ヒットエフェクト）
     kAura,      // オーラエフェクト
     kSwing,     // スイングエフェクト（風切りエフェクト）
-    kExplosion, // ★追加: 3D爆発エフェクト（球体膨張＋パーティクル＋衝撃波）
+    kExplosion, //!< 3D爆発エフェクト（球体膨張＋パーティクル＋衝撃波）
     // 今後増えるエフェクトの種類をここに追加
 };
 
@@ -202,15 +202,15 @@ private:
     std::unique_ptr<ParticleObject> explosionSparkParticle_;
     std::unique_ptr<Primitive3DObject> auraObject_;
     std::unique_ptr<Primitive3DObject> swingObject_;         //!< スイング用プリミティブオブジェクト
-    std::unique_ptr<Primitive3DObject> explosionObject_;     //!< ★追加: 3D爆風コア用
-    std::unique_ptr<Primitive3DObject> explosionWaveObject_; //!< ★追加: 衝撃波用
+    std::unique_ptr<Primitive3DObject> explosionObject_;     //!< 3D爆風コア用プリミティブ
+    std::unique_ptr<Primitive3DObject> explosionWaveObject_; //!< 衝撃波用プリミティブ
     EffectType type_;
 
     HitEffectConfig hitConfig_;
     ImpactConfig impactConfig_;
     AuraConfig auraConfig_;
     SwingConfig swingConfig_;         //!< スイング設定パラメータ
-    ExplosionConfig explosionConfig_; //!< ★追加: 3D爆破設定
+    ExplosionConfig explosionConfig_; //!< 3D爆破設定パラメータ
     Irufemi::Vector2 currentUVOffset_ = {0.0f, 0.0f};
     PrimitiveResource customAuraResource_; //!< カスタム炎型オーラのリソース
 

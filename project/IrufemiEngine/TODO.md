@@ -457,3 +457,66 @@ private:
 - **Phase 3 (IrufemiEngine のファサード化)**:
   - `IrufemiEngine.cpp` のコード量を 100〜200行程度にスリム化し、単なるブートストラップ（起動エントリーポイント）とサブシステムへのアクセス窓口（Facade パターン）へ純化する。
 
+### 📦 静的ポインタキャッシュ群のコンテキスト集約（Context Struct / Dependency Injection 改革）
+
+#### 1. 現状の課題とアーキテクチャ背景
+- [x] ~~`BaseResource::s_dxCommon_` / `BaseResource::GetDirectXCommon()`~~ (Phase 3完了: インスタンス優先メンバ移行)
+- [x] ~~`Sprite::s_textureManager_` / `Sprite::GetTextureManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
+- [x] ~~`Text::s_fontManager_` / `Text::GetFontManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
+- [x] ~~`Primitive3DObject::s_textureManager_` / `Primitive3DObject::GetTextureManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
+- `ParticleObject::s_textureManager_` / `ParticleObject::GetTextureManager()`
+- [x] ~~`BaseModel::s_engine_` / `BaseModel::GetIrufemiEngine()`~~ (完了: GetIrufemiEngine() を完全撤廃し、Component::GetEngine() 経由へ統一)
+- `GPUParticleSystem::s_engine_`, `s_textureManager_`
+- [x] ~~`Object2DResource::sTextureManager`, `Object3DResource::sTextureManager`, `GpuMaterial::sTextureManager`~~ (Phase 2完了: インスタンス所有へ移行)
+- [x] ~~`RenderContext` 基盤新設と全レンダーパス移行~~ (Phase 1完了: IRenderPass / RenderGraph 統合)
+
+これらは `IrufemiEngine::Initialize()` 時に一括注入されエンジン破棄時に解放されるため現状クラッシュのリスクはないが、**「将来のマルチスレッド描画（並列コマンドリスト構築）」「複数ワールド・エディタ同時実行（PIE）」** を導入する際にグローバル衝突の原因となる。
+
+#### 2. 一線級エンジン（UE / Frostbite）準拠の解決策：`RenderContext`
+個別の静的ポインタを排除し、描画パスやリソース操作時に軽量なコンテキスト構造体を参照渡しする設計へ移行する。
+
+```cpp
+struct RenderContext {
+    DirectXCommon* dxCommon = nullptr;
+    TextureManager* textureManager = nullptr;
+    FontManager* fontManager = nullptr;
+    PSOManager* psoManager = nullptr;
+    ID3D12GraphicsCommandList* commandList = nullptr;
+};
+```
+
+#### 3. 段階的移行フェーズ (Phased Roadmap)
+- [x] ~~**Phase 1: 描画パイプライン（`DrawManager` / `RenderGraph`）のコンテキスト化**~~ (完了)
+- [x] ~~**Phase 2: リソース層（`Object2DResource` / `Object3DResource` / `GpuMaterial`）の静的ポインタ撤廃**~~ (完了)
+- [x] ~~**Phase 3: オブジェクト層（`Sprite` / `Text` / `Primitive3DObject` / `BaseResource`）の純化**~~ (完了: コンポーネント自動DIによる後方互換100%維持)
+
+---
+
+### 🛡️ レンダリングリソースのカプセル化刷新（Low-Level Resource Encapsulation）
+
+#### 1. 課題と背景
+- `Object3DResource`, `Object2DResource`, `LineResource` において、頂点バッファポインタ（`vertexData_`）、ビュー（`vertexBufferView_`）、インデックスバッファ（`indexBufferView_`）、トランスフォーム（`transform_`）などの低レベルメンバが `public` で公開されている。
+- `DrawManager.cpp` や `StaticModelObject.cpp`, `AnimatedMeshObject.cpp`, `Effect.cpp`, `RenderData.cpp` などエンジン各所で直接生メンバがアクセスされているため、安全なカプセル化と一貫したアクセサ経由へのリファクタリングを段階的に実施する。
+
+#### 2. 段階的実装計画
+- [x] ~~**Step 1: アクセサ API（Getter / Read-Only View）の整備**~~ (完了: VBV, IBV, IndexCount, Transform, TextureHandle, GPU Resource アクセサ新設)
+- [x] ~~**Step 2: 呼び出し側（`DrawManager`, 各 Model/Object クラス, 2D オブジェクト群, UI）の移行**~~ (完了: 全直接アクセスをアクセサ経由へ安全移行)
+- [x] ~~**Step 3: メンバ変数の `protected` 化**~~ (完了: Object3DResource / Object2DResource / LineResource の低レベルリソースを完全カプセル化)
+
+---
+
+### 🛡️ パーティクルエミッターハンドルの安全化（Opaque Handle パターン刷新）
+
+#### 1. 課題と背景
+- `GPUParticleManager::EmitterHandle` および `VoxelParticleManager::EmitterHandle` において、内部システムへの生ポインタ（`GPUParticleSystem*`）を保持して外部（`ParticleObject`, 各シーン等）へ返却している。
+- マネージャー側でシステムが再生成・解放された際に、ダングリングポインタが発生するリスクを排除するため、AAA水準の世代番号付き不透明ハンドル（Opaque Handle: SystemId + Generation + EmitterIndex）への刷新を検討する。
+
+#### 2. 段階的実装計画
+- [x] ~~**Step 1: Opaque Handle 型の設計と世代カウンタの実装**~~ (完了: `uint32_t systemId`, `uint16_t emitterIndex`, `uint16_t generation` を 64bit 値型として定義)
+- [x] ~~**Step 2: GPUParticleManager / VoxelParticleManager でのハンドル解決・検証 API の整備**~~ (完了: `idLookup_` による O(1) 解決、世代番号インクリメントによる Use-After-Free/二重解放防止、VoxelParticleManagerの線形探索撤廃)
+- [x] ~~**Step 3: 呼び出し元（`ParticleObject`, `DebugScene` 等）の移行と生ポインタ完全撤廃**~~ (完了: 100% 後方互換 API により呼び出し元無変更で生ポインタを完全排除)
+
+
+
+
+

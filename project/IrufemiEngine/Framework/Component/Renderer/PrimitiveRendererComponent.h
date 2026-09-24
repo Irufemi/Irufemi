@@ -9,57 +9,73 @@
 class Primitive3DObject;
 class TransformComponent;
 
+/**
+ * @class PrimitiveRendererComponent
+ * @brief 3D基本プリミティブ描画用レンダラーコンポーネント
+ * @details Cube, Sphere, Cylinder, Capsule, Torus などの3D基本形状を動的生成し、
+ *          PBRマテリアルパラメータ（Metallic, Roughness等）やライティング設定を適用して描画します。
+ */
 class PrimitiveRendererComponent : public Component {
 public:
     PrimitiveRendererComponent();
     ~PrimitiveRendererComponent() override;
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 初期化処理を実行します
      */
     void Initialize() override;
+
     /**
-     * @brief 生成時の自己完結初期化（Primitive3DObjectの生成）を行います
+     * @brief 生成時の自己完結初期化（Primitive3DObjectの生成・メッシュ構築）を行います
      */
     void OnAwake() override;
+
     /**
-     * @brief ワールド座標・Transform確定時の描画ステート同期を行います
+     * @brief スポーン時にワールド座標・Transform確定時の描画ステート同期を行います
      */
     void OnSpawned() override;
-    void SyncRenderState() override;
+
     /**
-     * @brief Update を実行する。
+     * @brief TransformComponentの最新位置・回転・スケールを描画オブジェクトへ反映します
+     */
+    void SyncRenderState() override;
+
+    /**
+     * @brief 毎フレームの更新処理（描画ステート同期）を実行します
      */
     void Update() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief 描画マネージャへプリミティブ描画コマンドを登録します
      */
     void Draw() override;
 
     /**
-     * @brief CanUpdateInEditMode かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief エディタモード中も更新を行うかを判定します
+     * @return 常に true
      */
     bool CanUpdateInEditMode() const override {
         return true;
     }
 
     /**
-     * @brief Renderable を取得する。
-     * @return 取得された Renderable
+     * @brief 描画可能な内部オブジェクト（Primitive3DObject）へのポインタを取得します
+     * @return IRenderable インターフェースポインタ
      */
-    IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(primitive_.get());
-    }
+    IRenderable* GetRenderable() override;
 
     // エディタのRaycast用
     /**
-     * @brief WorldSphere を取得する。
-     * @return 取得された WorldSphere
+     * @brief エディタピッキング用のワールドバウンディングスフィアを取得します
+     * @return バウンディングスフィア
      */
     Irufemi::Sphere GetWorldSphere() const;
+
     /**
-     * @brief Raycast を実行する。
+     * @brief エディタピッキング用のレイキャスト判定を行います
+     * @param[in] ray 判定用レイ
+     * @param[out] outDistance ヒット時の距離
+     * @return ヒットした場合は true
      */
     bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
 
@@ -68,71 +84,83 @@ public:
 #endif
 
     /**
-     * @brief ComponentName を取得する。
-     * @return 取得された ComponentName
+     * @brief コンポーネントの識別名を取得します
+     * @return クラス名文字列
      */
     std::string GetComponentName() const override {
         return "PrimitiveRendererComponent";
     }
+
     /**
-     * @brief Serialize を実行する。
+     * @brief コンポーネントの状態を JSON にシリアライズします
+     * @return シリアライズされた JSON オブジェクト
      */
     nlohmann::json Serialize() override;
+
     /**
-     * @brief Deserialize を実行する。
+     * @brief JSON からコンポーネントの状態を復元します
+     * @param[in] j 読み込む JSON オブジェクト
      */
     void Deserialize(const nlohmann::json& j) override;
 
     // プロパティ操作
     /**
-     * @brief Shape を設定する。
-     * @param[in] type 設定する Shape の値
+     * @brief 描画するプリミティブ形状のタイプを設定し、メッシュを再構築します
+     * @param[in] type プリミティブ形状タイプ（Cube, Sphere 等）
      */
     void SetShape(Irufemi::PrimitiveType type);
+
     /**
-     * @brief Color を設定する。
-     * @param[in] color 設定する Color の値
+     * @brief 基本乗算カラー（RGBA）を設定します
+     * @param[in] color 設定するカラー
      */
     void SetColor(const Irufemi::Vector4& color);
+
     /**
-     * @brief Texture を設定する。
-     * @param[in] texturePath 設定する Texture の値
+     * @brief 表面に貼り付けるテクスチャパスを設定します
+     * @param[in] texturePath テクスチャファイルの相対パス
      */
     void SetTexture(const std::string& texturePath);
+
     /**
-     * @brief EnableLighting を設定する。
-     * @param[in] enable 設定する EnableLighting の値
+     * @brief ライティング計算を有効にするかどうかを設定します
+     * @param[in] enable 有効にする場合は true
      */
     void SetEnableLighting(bool enable);
+
     /**
-     * @brief LightingMode を設定する。
-     * @param[in] mode 設定する LightingMode の値
+     * @brief ライティングモデル（Lambert, Half-Lambert, Phong, PBR等）を設定します
+     * @param[in] mode ライティングモード番号
      */
     void SetLightingMode(int mode);
+
     /**
-     * @brief Metallic を設定する。
-     * @param[in] metallic 設定する Metallic の値
+     * @brief PBR メタリック（金属度：0.0f〜1.0f）を設定します
+     * @param[in] metallic メタリック値
      */
     void SetMetallic(float metallic);
+
     /**
-     * @brief Roughness を設定する。
-     * @param[in] roughness 設定する Roughness の値
+     * @brief PBR ラフネス（粗さ：0.0f〜1.0f）を設定します
+     * @param[in] roughness ラフネス値
      */
     void SetRoughness(float roughness);
+
     /**
-     * @brief AlphaReference を設定する。
-     * @param[in] alphaRef 設定する AlphaReference の値
+     * @brief アルファテストの基準値（カットオフ閾値）を設定します
+     * @param[in] alphaRef 閾値
      */
     void SetAlphaReference(float alphaRef);
+
     /**
-     * @brief UseClampSampler を設定する。
-     * @param[in] useClamp 設定する UseClampSampler の値
+     * @brief テクスチャサンプラーを Clamp に固定するかどうかを設定します
+     * @param[in] useClamp Clamp サンプラーを使用する場合は 1
      */
     void SetUseClampSampler(int32_t useClamp);
 
 private:
     /**
-     * @brief RebuildMesh を実行する。
+     * @brief 現在の形状設定・分割数パラメータに基づいて 3D メッシュを再生成します
      */
     void RebuildMesh();
 

@@ -72,32 +72,36 @@ void CVarSystem::RegisterString(const std::string& name, const std::string& defa
 // ---------------------------------------------------------
 int CVarSystem::GetInt(const std::string& name) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::Int) {
-        return std::get<int>(reg[name]->value);
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::Int) {
+        return std::get<int>(it->second->value);
     }
     return 0;
 }
 
 float CVarSystem::GetFloat(const std::string& name) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::Float) {
-        return std::get<float>(reg[name]->value);
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::Float) {
+        return std::get<float>(it->second->value);
     }
     return 0.0f;
 }
 
 bool CVarSystem::GetBool(const std::string& name) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::Bool) {
-        return std::get<bool>(reg[name]->value);
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::Bool) {
+        return std::get<bool>(it->second->value);
     }
     return false;
 }
 
 std::string CVarSystem::GetString(const std::string& name) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::String) {
-        return std::get<std::string>(reg[name]->value);
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::String) {
+        return std::get<std::string>(it->second->value);
     }
     return "";
 }
@@ -107,40 +111,44 @@ std::string CVarSystem::GetString(const std::string& name) {
 // ---------------------------------------------------------
 void CVarSystem::SetInt(const std::string& name, int value) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::Int) {
-        reg[name]->value = value;
-        if (reg[name]->onChangeCallback) {
-            reg[name]->onChangeCallback();
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::Int) {
+        it->second->value = value;
+        if (it->second->onChangeCallback) {
+            it->second->onChangeCallback();
         }
     }
 }
 
 void CVarSystem::SetFloat(const std::string& name, float value) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::Float) {
-        reg[name]->value = value;
-        if (reg[name]->onChangeCallback) {
-            reg[name]->onChangeCallback();
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::Float) {
+        it->second->value = value;
+        if (it->second->onChangeCallback) {
+            it->second->onChangeCallback();
         }
     }
 }
 
 void CVarSystem::SetBool(const std::string& name, bool value) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::Bool) {
-        reg[name]->value = value;
-        if (reg[name]->onChangeCallback) {
-            reg[name]->onChangeCallback();
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::Bool) {
+        it->second->value = value;
+        if (it->second->onChangeCallback) {
+            it->second->onChangeCallback();
         }
     }
 }
 
 void CVarSystem::SetString(const std::string& name, const std::string& value) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end() && reg[name]->type == CVar::Type::String) {
-        reg[name]->value = value;
-        if (reg[name]->onChangeCallback) {
-            reg[name]->onChangeCallback();
+    auto it = reg.find(name);
+    if (it != reg.end() && it->second->type == CVar::Type::String) {
+        it->second->value = value;
+        if (it->second->onChangeCallback) {
+            it->second->onChangeCallback();
         }
     }
 }
@@ -150,11 +158,12 @@ void CVarSystem::SetString(const std::string& name, const std::string& value) {
 // ---------------------------------------------------------
 void CVarSystem::SetOnChangeCallback(const std::string& name, std::function<void()> callback) {
     auto& reg = GetRegistry();
-    if (reg.find(name) != reg.end()) {
-        reg[name]->onChangeCallback = std::move(callback);
+    auto it = reg.find(name);
+    if (it != reg.end()) {
+        it->second->onChangeCallback = std::move(callback);
         // Call it immediately once when registered so current values apply
-        if (reg[name]->onChangeCallback) {
-            reg[name]->onChangeCallback();
+        if (it->second->onChangeCallback) {
+            it->second->onChangeCallback();
         }
     }
 }
@@ -218,6 +227,18 @@ void CVarSystem::Save(const std::string& filepath) {
     if (file.is_open()) {
         file << j.dump(4);
     }
+}
+
+// ---------------------------------------------------------
+// Direct Access
+// ---------------------------------------------------------
+CVar* CVarSystem::GetCVar(const std::string& name) {
+    auto& reg = GetRegistry();
+    auto it = reg.find(name);
+    if (it != reg.end()) {
+        return it->second.get();
+    }
+    return nullptr;
 }
 
 } // namespace Irufemi

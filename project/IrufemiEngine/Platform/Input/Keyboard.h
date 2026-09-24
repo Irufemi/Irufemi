@@ -11,7 +11,7 @@
  */
 class Keyboard {
 public:
-    static const int KEY_COUNT = 256;
+    static constexpr size_t kKeyCount = 256;
 
     Keyboard() = default;
     ~Keyboard() = default;
@@ -20,52 +20,42 @@ public:
     ///@{
     void Initialize();
     /**
-     * @brief Update を実行する。
+     * @brief キーボードの入力状態（Windows API GetKeyboardState）を毎フレーム更新する
      */
     void Update();
     /**
-     * @brief Clear を実行する。
+     * @brief 全キーの入力状態をクリア（非アクティブ時等）する
      */
     void Clear();
     ///@}
 
     /** @name キー状態の取得 */
     ///@{
+    /** @brief 指定した仮想キー（VK）が押されているか判定 */
     bool IsKeyDown(uint8_t key) const;
-    /**
-     * @brief IsKeyUp かどうかを判定する。
-     * @return 判定結果 (true/false)
-     */
+    /** @brief 指定した仮想キー（VK）が離されているか判定 */
     bool IsKeyUp(uint8_t key) const;
-    /** @brief キーが押された瞬間か判定（立ち上がり） */
+    /** @brief 指定した仮想キー（VK）が押された瞬間か判定（立ち上がり検出） */
     bool IsKeyPressed(uint8_t key) const;
-    /** @brief キーが離された瞬間か判定（立ち下がり） */
+    /** @brief 指定した仮想キー（VK）が離された瞬間か判定（立ち下がり検出） */
     bool IsKeyReleased(uint8_t key) const;
     ///@}
 
     /** @name DIK互換API */
     ///@{
+    /** @brief 指定したDirectInputキー（DIK）が押されているか判定 */
     bool IsKeyDownDIK(uint8_t dik) const;
-    /**
-     * @brief IsKeyUpDIK かどうかを判定する。
-     * @return 判定結果 (true/false)
-     */
+    /** @brief 指定したDirectInputキー（DIK）が離されているか判定 */
     bool IsKeyUpDIK(uint8_t dik) const;
-    /**
-     * @brief IsKeyPressedDIK かどうかを判定する。
-     * @return 判定結果 (true/false)
-     */
+    /** @brief 指定したDirectInputキー（DIK）が押された瞬間か判定（立ち上がり検出） */
     bool IsKeyPressedDIK(uint8_t dik) const;
-    /**
-     * @brief IsKeyReleasedDIK かどうかを判定する。
-     * @return 判定結果 (true/false)
-     */
+    /** @brief 指定したDirectInputキー（DIK）が離された瞬間か判定（立ち下がり検出） */
     bool IsKeyReleasedDIK(uint8_t dik) const;
     ///@}
 
 private:
-    std::array<BYTE, KEY_COUNT> currentKeys_{};
-    std::array<BYTE, KEY_COUNT> previousKeys_{};
+    std::array<BYTE, kKeyCount> currentKeys_{};
+    std::array<BYTE, kKeyCount> previousKeys_{};
 
     /**
      * @brief DIKからVKへの変換

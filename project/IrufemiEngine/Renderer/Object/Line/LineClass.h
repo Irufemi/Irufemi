@@ -29,68 +29,82 @@ public:
     ~Line3DBatch();
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 3Dラインバッチレンダラーの初期化（ベースメッシュおよびインスタンシングリソースの構築）
      */
     void Initialize();
+
     /**
-     * @brief Update を実行する。
+     * @brief 描画中ラインの寿命更新処理
      */
     void Update();
+
     /**
-     * @brief AddInstance を実行する。
+     * @brief 新しい3Dラインインスタンスを追加する
+     * @param[in] start ラインの始点ワールド座標
+     * @param[in] end ラインの終点ワールド座標
+     * @param[in] color ラインのカラー（RGBA）
+     * @param[in] life ラインの表示持続時間（秒、デフォルト 1.0f）
      */
     void AddInstance(const Irufemi::Vector3& start, const Irufemi::Vector3& end, const Irufemi::Vector4& color,
                      float life = 1.0f);
+
     /**
-     * @brief ClearInstances を実行する。
+     * @brief 登録されているすべてのラインインスタンスをクリアする
      */
     void ClearInstances();
+
     /**
-     * @brief BuildInstanceBuffer を実行する。
+     * @brief インスタンスデータをGPUバッファへ転送・構築する
+     * @param[in] force 変更有無に関わらず強制転送するかどうか
      */
     void BuildInstanceBuffer(bool force = false);
+
     /**
-     * @brief SyncBeforeDraw を実行する。
+     * @brief 描画前フレーム同期（DrawManagerへのパケット登録）
      */
     void SyncBeforeDraw() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief 3Dラインバッチの直接描画処理
      */
     void Draw() override;
 
     // --- DrawManager から参照する Getter 群 ---
     /**
-     * @brief BaseResource を取得する。
-     * @return 取得された BaseResource
+     * @brief ベースとなるラインリソースを取得する
+     * @return ラインリソースの生ポインタ
      */
     LineResource* GetBaseResource() const {
         return baseLineResource_.get();
     }
+
     /**
-     * @brief InstancingSrvHandleGPU を取得する。
-     * @return 取得された InstancingSrvHandleGPU
+     * @brief 現在フレームのインスタンシングSRVのGPUハンドルを取得する
+     * @return GPUデスクリプタハンドル
      */
     D3D12_GPU_DESCRIPTOR_HANDLE GetInstancingSrvHandleGPU() const {
         return instancingSrvGPU_[lastUpdateFrameIndex_];
     }
+
     /**
-     * @brief InstanceCountU32 を取得する。
-     * @return 取得された InstanceCountU32
+     * @brief アクティブなラインインスタンス数を取得する
+     * @return 描画対象のインスタンス総数
      */
     UINT GetInstanceCountU32() const {
         return static_cast<UINT>(activeCount_);
     }
 
     /**
-     * @brief DepthWrite を設定する。
-     * @param[in] depthWrite 設定する DepthWrite の値
+     * @brief 深度書き込み（DepthWrite）の有効/無効を設定する
+     * @param[in] depthWrite 設定する DepthWrite モード
      */
     void SetDepthWrite(PSOManager::DepthWrite depthWrite) {
         depthWrite_ = depthWrite;
     }
+
     /**
-     * @brief DepthWrite を取得する。
-     * @return 取得された DepthWrite
+     * @brief 現在の深度書き込みモードを取得する
+     * @return DepthWrite モード
      */
     PSOManager::DepthWrite GetDepthWrite() const {
         return depthWrite_;
@@ -98,29 +112,32 @@ public:
 
     // 依存注入
     /**
-     * @brief DirectXCommon を設定する。
-     * @param[in] dx 設定する DirectXCommon の値
+     * @brief DirectXCommon インスタンスを設定する
+     * @param[in] dx DirectXCommon ポインタ
      */
     static void SetDirectXCommon(DirectXCommon* dx) {
         dx_ = dx;
     }
+
     /**
-     * @brief SrvAllocator を設定する。
-     * @param[in] alloc 設定する SrvAllocator の値
+     * @brief SRV用デスクリプタプールを設定する
+     * @param[in] alloc DescriptorPool ポインタ
      */
     static void SetSrvAllocator(DescriptorPool* alloc) {
         s_srvAllocator_ = alloc;
     }
+
     /**
-     * @brief DrawManager を設定する。
-     * @param[in] drawM 設定する DrawManager の値
+     * @brief DrawManager インスタンスを設定する
+     * @param[in] drawM DrawManager ポインタ
      */
     static void SetDrawManager(DrawManager* drawM) {
         drawManager_ = drawM;
     }
+
     /**
-     * @brief Engine を設定する。
-     * @param[in] engine 設定する Engine の値
+     * @brief IrufemiEngine インスタンスを設定する
+     * @param[in] engine エンジンポインタ
      */
     static void SetEngine(class IrufemiEngine* engine) {
         engine_ = engine;

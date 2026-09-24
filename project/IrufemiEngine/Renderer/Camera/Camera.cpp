@@ -25,13 +25,17 @@ void Camera::Initialize(const int& windowWidth, const int& windowHeight) {
     right_ = 1280.0f;
     bottom_ = 720.0f;
 
+    isDirtyTransform_ = true;
+    isDirtyProjection_ = true;
     UpdateMatrix();
 }
 
 // 更新
 void Camera::Update() {
-    // 毎フレーム行列を更新する
-    UpdateMatrix();
+    // ダーティな場合のみ行列を更新する
+    if (isDirtyTransform_ || isDirtyProjection_) {
+        UpdateMatrix();
+    }
 }
 
 void Camera::DrawDebugTab([[maybe_unused]] const char* label) {
@@ -45,17 +49,24 @@ void Camera::DrawDebugTab([[maybe_unused]] const char* label) {
 
 void Camera::DrawDebugContents() {
 #if defined USE_IMGUI
-    ImGui::DragFloat3("translate", &translate_.x, 0.1f);
-    ImGui::DragFloat3("rotate", &rotate_.x, 0.1f);
+    if (ImGui::DragFloat3("translate", &translate_.x, 0.1f) || ImGui::DragFloat3("rotate", &rotate_.x, 0.1f)) {
+        isDirtyTransform_ = true;
+    }
 #endif
 }
 
-Irufemi::Matrix4x4 Camera::GetViewProjectionMatrix2D() {
-    return viewMatrix_ * orthographicMatrix_;
+const Irufemi::Matrix4x4& Camera::GetViewProjectionMatrix2D() {
+    if (isDirtyTransform_ || isDirtyProjection_) {
+        UpdateMatrix();
+    }
+    return viewProjectionMatrix2D_;
 }
 
-Irufemi::Matrix4x4 Camera::GetViewProjectionMatrix3D() {
-    return viewMatrix_ * perspectiveFovMatrix_;
+const Irufemi::Matrix4x4& Camera::GetViewProjectionMatrix3D() {
+    if (isDirtyTransform_ || isDirtyProjection_) {
+        UpdateMatrix();
+    }
+    return viewProjectionMatrix3D_;
 }
 
 // ワールド行列の作成
@@ -89,14 +100,28 @@ void Camera::UpdateViewportMatrix() {
 
 // 各行列の更新
 void Camera::UpdateMatrix() {
-    MakeWorldMatrix();
-    MakeViewMatrix();
-    UpdatePerspectiveFovMatrix();
-    UpdateOrthographicMatrix();
-    UpdateViewportMatrix();
+    bool matrixChanged = false;
+    if (isDirtyTransform_) {
+        MakeWorldMatrix();
+        MakeViewMatrix();
+        isDirtyTransform_ = false;
+        matrixChanged = true;
+    }
+    if (isDirtyProjection_) {
+        UpdatePerspectiveFovMatrix();
+        UpdateOrthographicMatrix();
+        UpdateViewportMatrix();
+        isDirtyProjection_ = false;
+        matrixChanged = true;
+    }
 
-    // 視錐台の更新
-    frustum_.SetFromViewProjection(viewMatrix_ * perspectiveFovMatrix_);
+    if (matrixChanged) {
+        viewProjectionMatrix3D_ = viewMatrix_ * perspectiveFovMatrix_;
+        viewProjectionMatrix2D_ = viewMatrix_ * orthographicMatrix_;
+
+        // 視錐台の更新
+        frustum_.SetFromViewProjection(viewProjectionMatrix3D_);
+    }
 }
 
 Irufemi::Vector2 Camera::ScreenToUIPosition(const Irufemi::Vector2& screenPos) const {

@@ -151,7 +151,7 @@ void DebugScene::Initialize(IrufemiEngine* engine) {
         lightningParamsData_->noiseThreshold = 0.2f; // 出現しやすくする
         lightningParamsData_->intensity = 5.0f;      // 輝きを強める
     }
-    lightningCylinder_->SetCullingEnabled(false); // 確実に描画されるように一旦OFF
+    lightningCylinder_->SetCullingEnabled(false); // シリンダー内面も可視化するためカリングを無効化
 }
 
 // 更新

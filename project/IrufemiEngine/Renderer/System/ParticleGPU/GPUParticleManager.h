@@ -37,15 +37,33 @@ public:
      */
     void ClearAllParticles();
 
+    /**
+     * @brief シーン開始前にパーティクル基盤のウォームアップを行う
+     */
+    void WarmUp();
+
+    /**
+     * @struct EmitterHandle
+     * @brief パーティクルエミッターを一意に識別・操作するための不透明ハンドル (Opaque Handle)
+     */
     struct EmitterHandle {
-        GPUParticleSystem* system = nullptr;
-        uint32_t emitterIndex = 0xFFFFFFFF;
+        uint32_t systemId = 0;          ///< システム一意ID（0は無効値）
+        uint16_t emitterIndex = 0xFFFF; ///< スロット番号
+        uint16_t generation = 0;        ///< スロット世代番号（解放・再利用の検知用）
+
         /**
-         * @brief IsValid かどうかを判定する。
+         * @brief 有効なハンドルかどうかを判定する。
          * @return 判定結果 (true/false)
          */
         bool IsValid() const {
-            return system != nullptr && emitterIndex != 0xFFFFFFFF;
+            return systemId != 0 && emitterIndex != 0xFFFF;
+        }
+
+        bool operator==(const EmitterHandle& other) const {
+            return systemId == other.systemId && emitterIndex == other.emitterIndex && generation == other.generation;
+        }
+        bool operator!=(const EmitterHandle& other) const {
+            return !(*this == other);
         }
     };
 
@@ -89,13 +107,14 @@ public:
     /** @name Field Management */
     ///@{
     struct FieldHandle {
-        uint32_t index = 0xFFFFFFFF;
+        static constexpr uint32_t kInvalidIndex = 0xFFFFFFFF;
+        uint32_t index = kInvalidIndex;
         /**
          * @brief IsValid かどうかを判定する。
          * @return 判定結果 (true/false)
          */
         bool IsValid() const {
-            return index != 0xFFFFFFFF;
+            return index != kInvalidIndex;
         }
     };
     /**
@@ -117,8 +136,10 @@ private:
     GPUParticleManager& operator=(const GPUParticleManager&) = delete;
 
     struct SystemContext {
+        uint32_t systemId = 0;
         std::unique_ptr<GPUParticleSystem> system;
         std::vector<uint32_t> freeIndices;
+        std::vector<uint16_t> slotGenerations;
         uint32_t nextIndex = 0;
     };
 
@@ -148,6 +169,11 @@ private:
     };
 
     std::unordered_map<SystemKey, SystemContext, SystemKeyHasher> systems_;
+    /**
+     * @brief システムIDからシステムコンテキストへの高速逆引きマップ (O(1) 解除・更新用)
+     */
+    std::unordered_map<uint32_t, SystemContext*> idLookup_;
+    uint32_t nextSystemId_ = 1;
 
     // グローバルなField管理
     std::vector<ParticleField> globalFields_;

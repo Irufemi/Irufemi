@@ -33,17 +33,19 @@ void TransformComponent::SetScale(const Irufemi::Vector3& scale) {
 
 // --- GetParentMatrixForChild ---
 Irufemi::Matrix4x4 TransformComponent::GetParentMatrixForChild() const {
-    if (auto parent = gameObject_->GetParent()) {
-        if (auto parentT = parent->GetComponent<TransformComponent>()) {
-            if (!inheritScale_) {
-                // スケールを除去し、回転と位置だけで再構築（せん断・マイナススケール破綻防止）
-                // 負のスケール時の回転抽出バグを防ぐため、安全に抽出されたWorldRotationQuat等を使用する
-                Irufemi::Vector3 pPos = parentT->GetWorldPosition();
-                Irufemi::Quaternion quat = parentT->GetWorldRotationQuat();
-                Irufemi::Vector3 pScale = {1.0f, 1.0f, 1.0f};
-                return Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
+    if (gameObject_) {
+        if (auto parent = gameObject_->GetParent()) {
+            if (auto parentT = parent->GetComponent<TransformComponent>()) {
+                if (!inheritScale_) {
+                    // スケールを除去し、回転と位置だけで再構築（せん断・マイナススケール破綻防止）
+                    // 負のスケール時の回転抽出バグを防ぐため、安全に抽出されたWorldRotationQuat等を使用する
+                    Irufemi::Vector3 pPos = parentT->GetWorldPosition();
+                    Irufemi::Quaternion quat = parentT->GetWorldRotationQuat();
+                    Irufemi::Vector3 pScale = {1.0f, 1.0f, 1.0f};
+                    return Irufemi::Math::MakeAffineMatrix(pScale, quat, pPos);
+                }
+                return parentT->GetWorldMatrix();
             }
-            return parentT->GetWorldMatrix();
         }
     }
     return Irufemi::Math::MakeIdentity4x4();
@@ -234,7 +236,7 @@ Irufemi::Vector3 TransformComponent::GetWorldForward() const {
 void TransformComponent::ComputeMatrix(bool force) const {
     bool parentChanged = false;
 
-    GameObject* currentParent = gameObject_->GetParent().get();
+    GameObject* currentParent = gameObject_ ? gameObject_->GetParent().get() : nullptr;
     TransformComponent* parentT = currentParent ? currentParent->GetComponent<TransformComponent>() : nullptr;
 
     if (parentT) {

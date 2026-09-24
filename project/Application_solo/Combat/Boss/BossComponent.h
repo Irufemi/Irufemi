@@ -24,8 +24,50 @@ public:
     void Start() override;
     void Update() override;
 
-    std::function<void()> onBossDied;
-    std::function<void()> onDeathSequenceFinished;
+    /**
+     * @brief ボス死亡時のコールバックを設定する
+     * @param[in] callback 呼び出される関数オブジェクト
+     */
+    void SetOnBossDied(std::function<void()> callback) {
+        onBossDied_ = std::move(callback);
+    }
+
+    /**
+     * @brief 撃破演出シーケンス完了時のコールバックを設定する
+     * @param[in] callback 呼び出される関数オブジェクト
+     */
+    void SetOnDeathSequenceFinished(std::function<void()> callback) {
+        onDeathSequenceFinished_ = std::move(callback);
+    }
+
+    /**
+     * @brief 被弾時のイベントリスナーを追加する
+     */
+    void AddOnDamageTakenListener(std::function<void(float damage)> callback) {
+        onDamageTakenListeners_.push_back(std::move(callback));
+    }
+
+    /**
+     * @brief 撃破時のイベントリスナーを追加する
+     */
+    void AddOnBossDiedListener(std::function<void()> callback) {
+        onBossDiedListeners_.push_back(std::move(callback));
+    }
+
+    /**
+     * @brief 被弾を通知する
+     */
+    void NotifyDamageTaken(float damage);
+
+    /**
+     * @brief 撃破を通知する
+     */
+    void NotifyBossDied();
+
+    /**
+     * @brief 撃破演出シーケンス完了を通知する
+     */
+    void NotifyDeathSequenceFinished();
 
     void OnRegisterProperties() override;
     std::string GetComponentName() const override {
@@ -102,6 +144,10 @@ private:
 
     std::weak_ptr<GameObject> bossContainer_;
     std::vector<std::shared_ptr<GameObject>> shields_;
+    std::vector<std::function<void(float damage)>> onDamageTakenListeners_;
+    std::vector<std::function<void()>> onBossDiedListeners_;
+    std::function<void()> onBossDied_;
+    std::function<void()> onDeathSequenceFinished_;
 
     DebrisManagerComponent* debrisManager_ = nullptr;
     DroneManagerComponent* droneManager_ = nullptr;

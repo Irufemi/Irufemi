@@ -52,6 +52,12 @@ template <typename T> void WriteCurve(std::ofstream& ofs, const AnimationCurve<T
 template <typename T> void ReadCurve(std::ifstream& ifs, AnimationCurve<T>& curve) {
     uint32_t size = 0;
     ReadPOD(ifs, size);
+    if (size > 65536) {
+        Log::OutPutLog(std::cerr, "[AnimationSerializer] Error: Unreasonable keyframe count (" + std::to_string(size) +
+                                      "). File corrupted.\n");
+        curve.keyframes.clear();
+        return;
+    }
     if (size > 0) {
         curve.keyframes.resize(size);
         ifs.read(reinterpret_cast<char*>(curve.keyframes.data()), size * sizeof(Keyframe<T>));

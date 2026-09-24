@@ -23,7 +23,7 @@
 
 class DXCommandManager;
 class DXSwapChainManager;
-class DXSwapChainManager;
+class GpuProfiler;
 
 class Log;
 class IrufemiEngine;
@@ -312,6 +312,13 @@ public: // ゲッター
         return srvPool_.get();
     }
     /**
+     * @brief GPUプロファイラを取得する。
+     * @return 取得された GPUプロファイラ
+     */
+    GpuProfiler* GetGpuProfiler() const {
+        return gpuProfiler_.get();
+    }
+    /**
      * @brief RtvHandles を取得する。
      * @return 取得された RtvHandles
      */
@@ -557,6 +564,7 @@ private: // メンバ変数
     // --- 制御用クラス ---
     std::unique_ptr<FrameRateController> fpsController_ = nullptr;
     std::unique_ptr<ShaderManager> shaderManager_ = nullptr;
+    std::unique_ptr<GpuProfiler> gpuProfiler_ = nullptr;
 
     // --- リソース遅延解放用 ---
     struct PendingResource {

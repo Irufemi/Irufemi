@@ -32,6 +32,23 @@ public:
      */
     void OnRegisterProperties() override;
 
+    /**
+     * @brief グループ全体のアルファ値を設定します
+     * @param[in] alpha 設定するアルファ値 (0.0f〜1.0f)
+     */
+    void SetGroupAlpha(float alpha) {
+        groupAlpha_ = alpha;
+    }
+
+    /**
+     * @brief グループ全体のアルファ値を取得します
+     * @return 現在のグループアルファ値
+     */
+    float GetGroupAlpha() const {
+        return groupAlpha_;
+    }
+
 private:
-    float groupAlpha_ = 1.0f; // グループ全体のアルファ値
+    float groupAlpha_ = 1.0f;        // グループ全体のアルファ値
+    float lastAppliedAlpha_ = -1.0f; // 前回適用したアルファ値（ダーティ判定用）
 };

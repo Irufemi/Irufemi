@@ -14,6 +14,7 @@ struct VertexInfluence
 struct SkinningInformation
 {
 	uint32_t numVertices;
+	uint32_t3 pad;
 };
 
 // SkinningObject3d.VS.hlslで作ったものと同じPalette

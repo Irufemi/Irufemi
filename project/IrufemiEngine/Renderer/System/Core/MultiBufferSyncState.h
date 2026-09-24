@@ -1,4 +1,6 @@
 #pragma once
+#include <array>
+#include <cassert>
 #include <cstdint>
 #include "RHI/DirectX12/DirectXCommon.h" // kMaxFramesInFlight
 
@@ -22,17 +24,20 @@ public:
      * @details オブジェクトの座標や色、マテリアルパラメータなどが変更された際に呼び出します。
      */
     virtual void MarkAsDirty() {
-        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
-            isDirtyBuffer_[i] = true;
-        }
+        isDirtyBuffer_.fill(true);
     }
 
     /**
      * @brief 指定したフレームバッファがダーティか確認し、ダーティであればフラグを下ろす
      * @param frameIndex 確認するフレームインデックス（通常はDirectXCommonから取得）
-     * @return ダーティだった場合は true
+     * @return ダーティだった場合は true（範囲外の場合は false）
      */
     bool CheckAndClearDirty(uint32_t frameIndex) {
+        assert(frameIndex < kMaxFramesInFlight && "frameIndex exceeds kMaxFramesInFlight!");
+        if (frameIndex >= kMaxFramesInFlight) {
+            return false;
+        }
+
         if (isDirtyBuffer_[frameIndex]) {
             isDirtyBuffer_[frameIndex] = false;
             return true;
@@ -41,5 +46,5 @@ public:
     }
 
 protected:
-    bool isDirtyBuffer_[kMaxFramesInFlight] = {true, true, true};
+    std::array<bool, kMaxFramesInFlight> isDirtyBuffer_{};
 };

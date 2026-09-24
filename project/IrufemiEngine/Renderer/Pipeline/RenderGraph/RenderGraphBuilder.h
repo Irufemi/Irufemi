@@ -47,6 +47,15 @@ public:
      */
     void RequireState(ID3D12Resource* resource, D3D12_RESOURCE_STATES state) {
         if (resource) {
+            for (auto it = usages_.rbegin(); it != usages_.rend(); ++it) {
+                if (it->passIndex != currentPassIndex_) {
+                    break;
+                }
+                if (it->resource == resource) {
+                    it->state = state;
+                    return;
+                }
+            }
             usages_.push_back({resource, state, currentPassIndex_});
         }
     }
@@ -75,6 +84,15 @@ public:
      */
     void RequireTransientState(TransientResourceHandle handle, D3D12_RESOURCE_STATES state) {
         if (handle != kInvalidHandle) {
+            for (auto it = transientUsages_.rbegin(); it != transientUsages_.rend(); ++it) {
+                if (it->passIndex != currentPassIndex_) {
+                    break;
+                }
+                if (it->handle == handle) {
+                    it->state = state;
+                    return;
+                }
+            }
             transientUsages_.push_back({handle, state, currentPassIndex_});
         }
     }

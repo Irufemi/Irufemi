@@ -5,8 +5,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 
-TextureManager* Object3DResource::sTextureManager = nullptr;
-
 Object3DResource::~Object3DResource() {
     Unmap();
 
@@ -27,21 +25,30 @@ Object3DResource::~Object3DResource() {
             }
         }
     }
-    if (sTextureManager && textureHandle_.IsValid()) {
-        sTextureManager->ReleaseTexture(textureHandle_);
+    auto* tm = textureManager_;
+    if (!tm) {
+        if (auto dxCommon = BaseResource::GetDirectXCommon()) {
+            if (auto engine = dxCommon->GetEngine()) {
+                tm = engine->GetTextureManager();
+            }
+        }
+    }
+    if (tm && textureHandle_.IsValid()) {
+        tm->ReleaseTexture(textureHandle_);
     }
 }
 
 void Object3DResource::CreateResource() {
-    if (!s_dxCommon_) {
+    auto* dxCommon = GetDxCommon();
+    if (!dxCommon) {
         return;
     }
 
     if (!vertexDataList_.empty()) {
         if (vertexResource_) {
-            s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+            dxCommon->ReleaseAfterFence(std::move(vertexResource_));
         }
-        vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
+        vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * vertexDataList_.size());
         vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
         vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexDataList_.size());
         vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -49,16 +56,16 @@ void Object3DResource::CreateResource() {
 
     if (!indexDataList_.empty()) {
         if (indexResource_) {
-            s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+            dxCommon->ReleaseAfterFence(std::move(indexResource_));
         }
-        indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexDataList_.size());
+        indexResource_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * indexDataList_.size());
         indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
         indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexDataList_.size());
         indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+    if (auto engine = dxCommon->GetEngine()) {
         materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
 
         cpuMaterialData_.color = {1, 1, 1, 1};
@@ -123,37 +130,52 @@ D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetMaterialVAddress() const {
     if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
     }
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
-        materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetMaterialBufferManager()) {
+        return 0;
+    }
+    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_,
+                                                                                   dxCommon->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object3DResource::GetTransformVAddress() const {
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetTransformBufferManager()) {
+        return 0;
+    }
     if (externalTransformCbIndex_) {
-        return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-            *externalTransformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+        return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(*externalTransformCbIndex_,
+                                                                                        dxCommon->GetFrameIndex());
     }
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
     }
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_,
+                                                                                    dxCommon->GetFrameIndex());
 }
 
 void Object3DResource::SyncBeforeDraw() {
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon) {
+        return;
+    }
+    uint32_t frameIndex = dxCommon->GetFrameIndex();
 
     if (CheckAndClearDirty(frameIndex)) {
-        if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        if (auto engine = dxCommon->GetEngine()) {
             // 外部バッファがなければ自身を更新
             if (!externalTransformCbIndex_ && transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
 
             // テクスチャのインデックスを解決して反映
-            if (sTextureManager) {
-                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
-                cpuMaterialData_.envMapIndex =
-                    sTextureManager->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
+            auto* tm = textureManager_;
+            if (!tm) {
+                tm = engine->GetTextureManager();
+            }
+            if (tm) {
+                cpuMaterialData_.textureIndex = tm->GetSrvIndex(textureHandle_);
+                cpuMaterialData_.envMapIndex = tm->GetWhiteCubeMapSrvIndex(); // TODO: 環境マップ設定を追加する
             } else {
                 cpuMaterialData_.textureIndex = 0;
                 cpuMaterialData_.envMapIndex = 0;

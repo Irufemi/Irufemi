@@ -5,8 +5,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Resource/Texture/TextureManager.h"
 
-TextureManager* Object2DResource::sTextureManager = nullptr;
-
 Object2DResource::~Object2DResource() {
     Unmap();
     if (auto dxCommon = BaseResource::GetDirectXCommon()) {
@@ -26,13 +24,22 @@ Object2DResource::~Object2DResource() {
             }
         }
     }
-    if (sTextureManager && textureHandle_.IsValid()) {
-        sTextureManager->ReleaseTexture(textureHandle_);
+    auto* tm = textureManager_;
+    if (!tm) {
+        if (auto dxCommon = BaseResource::GetDirectXCommon()) {
+            if (auto engine = dxCommon->GetEngine()) {
+                tm = engine->GetTextureManager();
+            }
+        }
+    }
+    if (tm && textureHandle_.IsValid()) {
+        tm->ReleaseTexture(textureHandle_);
     }
 }
 
 void Object2DResource::CreateResource() {
-    if (!s_dxCommon_) {
+    auto* dxCommon = GetDxCommon();
+    if (!dxCommon) {
         return;
     }
 
@@ -40,10 +47,10 @@ void Object2DResource::CreateResource() {
         if (vertexCapacity_ < vertexDataList_.size()) {
             if (vertexResource_) {
                 Unmap();
-                s_dxCommon_->ReleaseAfterFence(std::move(vertexResource_));
+                dxCommon->ReleaseAfterFence(std::move(vertexResource_));
             }
             vertexCapacity_ = static_cast<uint32_t>(vertexDataList_.size() + 32);
-            vertexResource_ = s_dxCommon_->CreateBufferResource(sizeof(VertexData) * vertexCapacity_);
+            vertexResource_ = dxCommon->CreateBufferResource(sizeof(VertexData) * vertexCapacity_);
             vertexBufferView_.BufferLocation = vertexResource_->GetGPUVirtualAddress();
             vertexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(VertexData) * vertexCapacity_);
             vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -54,10 +61,10 @@ void Object2DResource::CreateResource() {
         if (indexCapacity_ < indexDataList_.size()) {
             if (indexResource_) {
                 Unmap();
-                s_dxCommon_->ReleaseAfterFence(std::move(indexResource_));
+                dxCommon->ReleaseAfterFence(std::move(indexResource_));
             }
             indexCapacity_ = static_cast<uint32_t>(indexDataList_.size() + 64);
-            indexResource_ = s_dxCommon_->CreateBufferResource(sizeof(uint32_t) * indexCapacity_);
+            indexResource_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * indexCapacity_);
             indexBufferView_.BufferLocation = indexResource_->GetGPUVirtualAddress();
             indexBufferView_.SizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indexCapacity_);
             indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
@@ -65,7 +72,7 @@ void Object2DResource::CreateResource() {
         indexCount_ = static_cast<uint32_t>(indexDataList_.size());
     }
 
-    if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+    if (auto engine = dxCommon->GetEngine()) {
         if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
             materialCbIndex_ = engine->GetMaterialBufferManager()->Allocate();
 
@@ -118,29 +125,45 @@ D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetTransformVAddress() const {
     if (transformCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
     }
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetTransformBufferManager()) {
+        return 0;
+    }
+    return dxCommon->GetEngine()->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_,
+                                                                                    dxCommon->GetFrameIndex());
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS Object2DResource::GetMaterialVAddress() const {
     if (materialCbIndex_ == static_cast<uint32_t>(-1)) {
         return 0;
     }
-    return BaseResource::GetDirectXCommon()->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(
-        materialCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon || !dxCommon->GetEngine() || !dxCommon->GetEngine()->GetMaterialBufferManager()) {
+        return 0;
+    }
+    return dxCommon->GetEngine()->GetMaterialBufferManager()->GetGPUVirtualAddress(materialCbIndex_,
+                                                                                   dxCommon->GetFrameIndex());
 }
 
 void Object2DResource::SyncBeforeDraw() {
-    uint32_t frameIndex = BaseResource::GetDirectXCommon()->GetFrameIndex();
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon) {
+        return;
+    }
+    uint32_t frameIndex = dxCommon->GetFrameIndex();
     if (CheckAndClearDirty(frameIndex)) {
-        if (auto engine = BaseResource::GetDirectXCommon()->GetEngine()) {
+        if (auto engine = dxCommon->GetEngine()) {
             if (transformCbIndex_ != static_cast<uint32_t>(-1)) {
                 engine->GetTransformBufferManager()->Update(transformCbIndex_, transformationMatrix_, frameIndex);
             }
 
             // テクスチャのインデックスを解決して反映
-            if (sTextureManager) {
-                cpuMaterialData_.textureIndex = sTextureManager->GetSrvIndex(textureHandle_);
+            auto* tm = textureManager_;
+            if (!tm) {
+                tm = engine->GetTextureManager();
+            }
+            if (tm) {
+                cpuMaterialData_.textureIndex = tm->GetSrvIndex(textureHandle_);
             } else {
                 cpuMaterialData_.textureIndex = 0;
             }

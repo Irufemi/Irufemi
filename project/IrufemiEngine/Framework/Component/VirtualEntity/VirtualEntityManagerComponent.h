@@ -17,13 +17,13 @@ class ModelBatchRendererComponent;
  * @brief 仮想オブジェクトのデータ
  */
 struct VirtualInstance {
-    int id_;
-    Irufemi::Vector3 position_ = {0.0f, 0.0f, 0.0f};
-    Irufemi::Vector3 rotation_ = {0.0f, 0.0f, 0.0f};
-    Irufemi::Vector3 scale_ = {1.0f, 1.0f, 1.0f};
-    bool isPromoted_ = false;
-    bool isDestroyed_;
-    ObjectPool<GameObject>::Handle promotedHandle_;
+    int id;
+    Irufemi::Vector3 position = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 rotation = {0.0f, 0.0f, 0.0f};
+    Irufemi::Vector3 scale = {1.0f, 1.0f, 1.0f};
+    bool isPromoted = false;
+    bool isDestroyed;
+    ObjectPool<GameObject>::Handle promotedHandle;
 };
 
 /**
@@ -47,6 +47,10 @@ public:
      * @brief Update を実行する。
      */
     void Update() override;
+    /**
+     * @brief コンポーネント破棄時の処理。プール内の全GameObjectを安全にDestroyする。
+     */
+    void OnDestroy() override;
     /**
      * @brief ComponentName を取得する。
      * @return 取得された ComponentName
@@ -121,13 +125,15 @@ private:
     /**
      * @brief コンポーネントの全インスタンスを保持する静的レジストリ
      */
-    static std::vector<VirtualEntityManagerComponent*> sInstances_;
+    static std::vector<VirtualEntityManagerComponent*> instances_;
     std::vector<VirtualInstance> dense_;
     std::vector<int> sparse_;
     std::queue<int> freeIds_;
     int activeInstanceCount_ = 0;
     int maxVirtualInstances_ = 0;
     int nextId_ = 0; // Backup if freeIds is empty or we don't want strict pre-alloc
+
+    void CleanUpPool();
 
     std::unique_ptr<ObjectPool<GameObject>> pool_;
     int maxPoolSize_ = 0;

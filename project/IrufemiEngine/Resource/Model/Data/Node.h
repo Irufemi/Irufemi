@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace Irufemi {
+
 /**
  * @class Node
  * @brief 3Dモデルの階層構造を表現するノードデータ
@@ -12,10 +14,10 @@
  */
 struct Node {
     /** @brief ローカル空間での位置・回転・スケール */
-    Irufemi::QuaternionTransform transform;
+    QuaternionTransform transform;
 
     /** @brief 計算済みのローカル変換行列 */
-    Irufemi::Matrix4x4 localMatrix;
+    Matrix4x4 localMatrix;
 
     /** @brief ノードの名前 */
     std::string name;
@@ -23,3 +25,7 @@ struct Node {
     /** @brief 子ノードのリスト */
     std::vector<Node> children;
 };
+
+} // namespace Irufemi
+
+using Irufemi::Node;

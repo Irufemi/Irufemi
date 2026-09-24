@@ -190,12 +190,26 @@ public:
         transform_.isDirty = true;
     }
     /**
-     * @brief CustomPSO を設定する。
+     * @brief CustomPSO を設定する（生ポインタ指定・下位互換用）。
      * @param[in] pso 設定する CustomPSO の値
      */
     void SetCustomPSO(ID3D12PipelineState* pso) {
         if (mesh_.resource) {
             mesh_.resource->SetCustomPSO(pso);
+        }
+    }
+    /**
+     * @brief CustomPSO を設定する（名前指定・推奨）。
+     * @param[in] psoName 設定する PSO 名
+     * @param[in] blend ブレンドモード
+     * @param[in] depth 深度書き込み設定
+     * @param[in] cull カリングモード
+     */
+    void SetCustomPSO(const std::string& psoName, Irufemi::BlendMode blend = Irufemi::BlendMode::kBlendModeNormal,
+                      PSOManager::DepthWrite depth = PSOManager::DepthWrite::Enable,
+                      PSOManager::CullMode cull = PSOManager::CullMode::Back) {
+        if (mesh_.resource) {
+            mesh_.resource->SetCustomPSO(psoName, blend, depth, cull);
         }
     }
     /**
@@ -252,6 +266,54 @@ public:
         isTransparent_ = isTransparent;
     }
 
+    /**
+     * @brief インスタンス固有の TextureManager を設定する。
+     * @param[in] tm 設定する TextureManager のポインタ
+     */
+    void SetTextureManagerInstance(TextureManager* tm) {
+        instTextureManager_ = tm;
+    }
+
+    /**
+     * @brief インスタンス固有の DrawManager を設定する。
+     * @param[in] dm 設定する DrawManager のポインタ
+     */
+    void SetDrawManagerInstance(DrawManager* dm) {
+        instDrawManager_ = dm;
+    }
+
+    /**
+     * @brief インスタンス固有の IrufemiEngine を設定する。
+     * @param[in] engine 設定する IrufemiEngine のポインタ
+     */
+    void SetEngineInstance(class IrufemiEngine* engine) {
+        instEngine_ = engine;
+    }
+
+    /**
+     * @brief 使用する TextureManager を取得する（インスタンスメンバ優先）。
+     * @return TextureManager のポインタ
+     */
+    TextureManager* GetTextureManagerInstance() const {
+        return instTextureManager_ ? instTextureManager_ : textureManager_;
+    }
+
+    /**
+     * @brief 使用する DrawManager を取得する（インスタンスメンバ優先）。
+     * @return DrawManager のポインタ
+     */
+    DrawManager* GetDrawManagerInstance() const {
+        return instDrawManager_ ? instDrawManager_ : drawManager_;
+    }
+
+    /**
+     * @brief 使用する IrufemiEngine を取得する（インスタンスメンバ優先）。
+     * @return IrufemiEngine のポインタ
+     */
+    class IrufemiEngine* GetEngineInstance() const {
+        return instEngine_ ? instEngine_ : engine_;
+    }
+
     // --- 静的各種マネージャの設定 ---
     /**
      * @brief TextureManager を設定する。
@@ -290,13 +352,19 @@ public:
     }
 
 private:
-    PrimitiveTransform transform_;          //!< トランスフォームコンポーネント
-    MeshDesc mesh_;                         // 形状データ
-    MaterialDesc material_;                 // マテリアルデータコンポーネント
-    bool isCullingEnabled_ = true;          //!< 視錐台カリングの有効フラグ
-    bool castShadows_ = true;               //!< 影を落とすフラグ
-    bool isTransparent_ = false;            //!< 半透明・エフェクト（遅延・Zソート描画）フラグ
-    CustomSyncCallback customSyncCallback_; //!< カスタムの同期処理用コールバック
+    PrimitiveTransform transform_;            //!< トランスフォームコンポーネント
+    MeshDesc mesh_;                           // 形状データ
+    MaterialDesc material_;                   // マテリアルデータコンポーネント
+    bool isCullingEnabled_ = true;            //!< 視錐台カリングの有効フラグ
+    bool castShadows_ = true;                 //!< 影を落とすフラグ
+    bool isTransparent_ = false;              //!< 半透明・エフェクト（遅延・Zソート描画）フラグ
+    CustomSyncCallback customSyncCallback_;   //!< カスタムの同期処理用コールバック
+    Irufemi::Matrix4x4 lastCameraViewProj_{}; //!< 前回同期時のカメラ行列キャッシュ
+
+    // インスタンスポインタ（優先）
+    TextureManager* instTextureManager_ = nullptr;
+    DrawManager* instDrawManager_ = nullptr;
+    class IrufemiEngine* instEngine_ = nullptr;
 
     // 静的ポインタ（既存の設計パターンを継承）
     static TextureManager* textureManager_;

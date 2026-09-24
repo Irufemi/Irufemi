@@ -2,7 +2,7 @@
 #include "Framework/Component/Component.h"
 #include <functional>
 #include <string>
-#include "Core/Math/Vector4.h"
+#include <vector>
 
 /**
  * @class PlayerHealthComponent
@@ -21,8 +21,48 @@ public:
         return "PlayerHealthComponent";
     }
 
-    std::function<void()> onPlayerDied;
-    std::function<void()> onDeathSequenceFinished;
+    /**
+     * @brief プレイヤー死亡時のプライマリコールバック（ゲーム進行制御用）を設定する
+     * @details GameLoopManagerなどの単一オーナーがシーン遷移やリスタート制御を行うために使用します。
+     * @param[in] callback 呼び出される関数オブジェクト
+     */
+    void SetOnPlayerDied(std::function<void()> callback) {
+        onPlayerDied_ = std::move(callback);
+    }
+
+    /**
+     * @brief 死亡演出シーケンス完了時のコールバックを設定する
+     * @param[in] callback 呼び出される関数オブジェクト
+     */
+    void SetOnDeathSequenceFinished(std::function<void()> callback) {
+        onDeathSequenceFinished_ = std::move(callback);
+    }
+
+    /**
+     * @brief プレイヤー死亡を通知する（プライマリハンドラおよび全登録リスナーを実行）
+     */
+    void NotifyPlayerDied();
+
+    /**
+     * @brief 死亡シーケンス完了を通知する
+     */
+    void NotifyDeathSequenceFinished();
+
+    /**
+     * @brief 被弾時のイベントリスナーを追加する
+     */
+    void AddOnDamageTakenListener(std::function<void(int damage)> callback) {
+        onDamageTakenListeners_.push_back(std::move(callback));
+    }
+
+    /**
+     * @brief 死亡時のオブザーバーリスナー（演出・UI・サウンド等）を追加する
+     * @details 演出コンポーネント（PlayerDamageVisualizer等）が死亡時のエフェクトトリガーを購読するために使用します。
+     * @param[in] callback 呼び出される関数オブジェクト
+     */
+    void AddOnPlayerDiedListener(std::function<void()> callback) {
+        onPlayerDiedListeners_.push_back(std::move(callback));
+    }
 
     void LoadStatusFromJson();
 
@@ -37,6 +77,12 @@ public:
     bool IsInvincible() const {
         return invincibilityTimer_ > 0.0f;
     }
+    float GetInvincibilityTimer() const {
+        return invincibilityTimer_;
+    }
+    float GetMaxInvincibilityTime() const {
+        return maxInvincibilityTime_;
+    }
     void SetGodMode(bool godMode) {
         isGodMode_ = godMode;
     }
@@ -46,6 +92,12 @@ public:
     }
     int GetMaxHp() const {
         return maxHp_;
+    }
+    float GetDeathSequenceDuration() const {
+        return deathSequenceDuration_;
+    }
+    void SetDeathSequenceDuration(float duration) {
+        deathSequenceDuration_ = duration;
     }
     bool IsDead() const {
         return isDead_;
@@ -61,15 +113,19 @@ private:
     bool isDead_ = false;
     bool isGodMode_ = false;
 
+    static constexpr float kDefaultDeathSequenceDuration = 3.0f;
+    float deathSequenceDuration_ = kDefaultDeathSequenceDuration;
     float deathStartTime_ = 0.0f;
     bool hasTriggeredDeathSequenceFinished_ = false;
 
-    // 被弾処理
+    // 被弾・無敵時間
     float invincibilityTimer_ = 0.0f;
     float maxInvincibilityTime_ = 1.0f;
-    bool isFlashing_ = false;
-    float flashTimer_ = 0.0f;
-    float flashInterval_ = 0.05f;
-    Irufemi::Vector4 originalBaseColor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    bool colorCached_ = false;
+
+    std::vector<std::function<void(int damage)>> onDamageTakenListeners_;
+    std::vector<std::function<void()>> onPlayerDiedListeners_;
+    std::function<void()> onPlayerDied_;
+    std::function<void()> onDeathSequenceFinished_;
+
+    class ColliderComponent* collider_ = nullptr;
 };

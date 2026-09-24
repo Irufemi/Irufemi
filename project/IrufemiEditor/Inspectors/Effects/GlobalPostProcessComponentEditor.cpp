@@ -3,9 +3,60 @@
 #ifdef EditorMode
 #include "Framework/Component/Effect/GlobalPostProcessComponent.h"
 #include "Commands/EditorActionManager.h"
+#include "Core/ICommand.h"
 #include "UI/ComponentUIHelpers.h"
 #include "EngineResources/FontAwesome/IconsFontAwesome6.h"
 #include <imgui/imgui.h>
+
+namespace {
+
+/**
+ * @class AddOverrideCommand
+ * @brief GlobalPostProcessComponent へのエフェクト設定追加を記録・Undo/Redoするコマンド
+ */
+class AddOverrideCommand : public ICommand {
+public:
+    AddOverrideCommand(GlobalPostProcessComponent* comp, std::shared_ptr<IPostProcessSettings> setting, size_t index)
+        : comp_(comp), setting_(setting), index_(index) {}
+
+    void Do() override {
+        comp_->InsertOverride(index_, setting_);
+    }
+
+    void Undo() override {
+        comp_->RemoveOverride(index_);
+    }
+
+private:
+    GlobalPostProcessComponent* comp_;
+    std::shared_ptr<IPostProcessSettings> setting_;
+    size_t index_;
+};
+
+/**
+ * @class RemoveOverrideCommand
+ * @brief GlobalPostProcessComponent からのエフェクト設定削除を記録・Undo/Redoするコマンド
+ */
+class RemoveOverrideCommand : public ICommand {
+public:
+    RemoveOverrideCommand(GlobalPostProcessComponent* comp, std::shared_ptr<IPostProcessSettings> setting, size_t index)
+        : comp_(comp), setting_(setting), index_(index) {}
+
+    void Do() override {
+        comp_->RemoveOverride(index_);
+    }
+
+    void Undo() override {
+        comp_->InsertOverride(index_, setting_);
+    }
+
+private:
+    GlobalPostProcessComponent* comp_;
+    std::shared_ptr<IPostProcessSettings> setting_;
+    size_t index_;
+};
+
+} // namespace
 
 void GlobalPostProcessComponentEditor::DrawFloatProperty(const char* label, float& value, float defaultValue,
                                                          float minVal, float maxVal,
@@ -123,8 +174,11 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
     }
 
     if (indexToRemove >= 0) {
-        // Undo対応にする場合はCommandを作りますが、今回は簡略化して直接削除
-        pp->RemoveOverride(indexToRemove);
+        size_t idx = static_cast<size_t>(indexToRemove);
+        if (idx < pp->GetOverrides().size()) {
+            auto setting = pp->GetOverrides()[idx];
+            actionManager->PushAndExecute(std::make_unique<RemoveOverrideCommand>(pp, setting, idx));
+        }
     }
 
     ImGui::Separator();
@@ -161,7 +215,8 @@ void GlobalPostProcessComponentEditor::Draw(Component* component, EditorActionMa
             if (!exists) {
                 auto newSetting = PostProcessSettingsFactory::Create(mode);
                 if (newSetting) {
-                    pp->AddOverride(newSetting);
+                    size_t insertIndex = pp->GetOverrides().size();
+                    actionManager->PushAndExecute(std::make_unique<AddOverrideCommand>(pp, newSetting, insertIndex));
                 }
             }
         }

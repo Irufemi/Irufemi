@@ -14,47 +14,56 @@ public:
 
     DescriptorPool() = default;
     /**
-     * @brief Initialize を実行する。
+     * @brief CBV/SRV/UAV用デスクリプタヒープを初期化する
+     * @param[in] device D3D12デバイス
      */
     void Initialize(ID3D12Device* device);
 
     /**
-     * @brief Allocate を実行する。
+     * @brief デスクリプタヒープから連続するスロットを割り当てる
+     * @param[in] count 確保するデスクリプタ数
+     * @return 割り当てられた先頭インデックス（失敗時は kInvalid）
      */
     uint32_t Allocate(uint32_t count = 1);
     /**
-     * @brief Free を実行する。
+     * @brief デスクリプタスロットを即時解放してフリーリストに返却する
+     * @param[in] index 解放するインデックス
      */
     void Free(uint32_t index);
     /**
-     * @brief FreeAfterFence を実行する。
+     * @brief 指定フレームのGPU実行完了後にデスクリプタスロットを解放する
+     * @param[in] index 解放するインデックス
+     * @param[in] safeFence 解放が可能になる完了目標フェンス値
      */
     void FreeAfterFence(uint32_t index, uint64_t safeFence);
     /**
-     * @brief GarbageCollect を実行する。
+     * @brief 完了したフェンス値に基づいて保留中のデスクリプタを回収する
+     * @param[in] completedFence 現在完了しているGPUフェンス値
      */
     void GarbageCollect(uint64_t completedFence);
 
-    // 使用中インデックス集合(昇順ユニーク)を渡してフリーリストを再構築
     /**
-     * @brief RebuildFreeListExcept を実行する。
+     * @brief 使用中インデックス集合(昇順ユニーク)以外の未使用スロットでフリーリストを再構築する
+     * @param[in] usedSortedUnique 現在使用中のソート済みユニークインデックスリスト
      */
     void RebuildFreeListExcept(const std::vector<uint32_t>& usedSortedUnique);
 
-    // 先頭の予約(ImGui 等)
     /**
-     * @brief ReservePrefix を実行する。
+     * @brief ヒープ先頭の特定スロット数（ImGui 等用）を予約確保する
+     * @param[in] count 予約するスロット数
      */
     void ReservePrefix(uint32_t count);
 
     /**
-     * @brief CPUHandle を取得する。
-     * @return 取得された CPUHandle
+     * @brief 指定インデックスの CPU デスクリプタハンドルを取得する
+     * @param[in] index 取得対象インデックス
+     * @return CPU デスクリプタハンドル
      */
     D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(uint32_t index) const;
     /**
-     * @brief GPUHandle を取得する。
-     * @return 取得された GPUHandle
+     * @brief 指定インデックスの GPU デスクリプタハンドルを取得する
+     * @param[in] index 取得対象インデックス
+     * @return GPU デスクリプタハンドル
      */
     D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(uint32_t index) const;
     /**

@@ -22,9 +22,10 @@ public:
      * @brief タスクの完了を通知（カウントダウン）
      */
     void NotifyTaskFinished() {
-        // カウントが 0 の状態で呼ばれることがないよう注意が必要（通常は ThreadPool 側で保証）
-        if (pendingCount_ > 0) {
-            pendingCount_.fetch_sub(1, std::memory_order_release);
+        uint32_t current = pendingCount_.load(std::memory_order_relaxed);
+        while (current > 0 && !pendingCount_.compare_exchange_weak(current, current - 1, std::memory_order_release,
+                                                                   std::memory_order_relaxed)) {
+            // CASループにより、0未満へのアンダーフロー（UINT32_MAX化）を防止
         }
     }
 

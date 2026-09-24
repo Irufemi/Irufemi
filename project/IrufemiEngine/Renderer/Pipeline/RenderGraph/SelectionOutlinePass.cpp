@@ -6,9 +6,15 @@
 #include "RHI/DirectX12/DirectXUtils.h"
 #include "RHI/DirectX12/RenderTexture.h"
 #include "RHI/DirectX12/RootSignatureConfig.h"
+#include "Renderer/Data/RenderContext.h"
 
-void SelectionOutlinePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
+void SelectionOutlinePass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
 #ifdef EditorMode
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
     if (drawManager->GetSelectionMaskQueue().empty() && drawManager->GetSelectionMaskQueue2D().empty()) {
         return;
     }
@@ -24,8 +30,13 @@ void SelectionOutlinePass::Setup(RenderGraphBuilder& builder, DrawManager* drawM
 #endif
 }
 
-void SelectionOutlinePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+void SelectionOutlinePass::Execute(const Irufemi::RenderContext& rc) {
 #ifdef EditorMode
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
     const auto& queue3D = drawManager->GetSelectionMaskQueue();
     const auto& queue2D = drawManager->GetSelectionMaskQueue2D();
     if (queue3D.empty() && queue2D.empty()) {

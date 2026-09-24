@@ -38,19 +38,6 @@ void ParticleEmitterComponent::Update() {
         particleObj_->SetPosition(GetTransform()->GetWorldPosition());
     }
 
-#ifdef _DEBUG
-    // エディタからの値変更をリアルタイム反映させるため、常にDirtyフラグを立てる
-    particleObj_->MarkDirty();
-#endif
-
-    static int frameCounter = 0;
-    if (frameCounter++ % 60 == 0) {
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-        Log::OutPutLog(std::cout, "[ParticleEmitterComponent] Update called. Pos: " +
-                                      std::to_string(GetTransform()->GetWorldPosition().x) + "\n");
-#endif
-    }
-
     particleObj_->Update();
 }
 
@@ -115,9 +102,7 @@ std::shared_ptr<Component> ParticleEmitterComponent::Clone() {
     auto clone = std::make_shared<ParticleEmitterComponent>();
     clone->CopyPropertiesFrom(this);
     if (this->particleObj_) {
-        nlohmann::json particleJson;
-        this->particleObj_->Serialize(particleJson);
-        clone->particleObj_->Deserialize(particleJson);
+        clone->particleObj_->CopyFrom(*this->particleObj_);
     }
     return clone;
 }

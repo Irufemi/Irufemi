@@ -10,13 +10,16 @@ namespace Irufemi {
 class PerlinNoise;
 }
 
+/**
+ * @brief カメラシェイクの再生イベント情報
+ */
 struct ShakeEvent {
-    float maxIntensity;
-    float duration;
-    float currentTime;
-    float frequency;
-    Irufemi::Vector3 axisIntensity;
-    unsigned int seed;
+    float maxIntensity = 0.0f;                        ///< 最大振幅
+    float duration = 0.0f;                            ///< 継続時間（秒）
+    float currentTime = 0.0f;                         ///< 経過時間（秒）
+    float frequency = 10.0f;                          ///< 揺れの周波数
+    Irufemi::Vector3 axisIntensity{1.0f, 1.0f, 0.5f}; ///< 軸ごとの揺れ比率
+    unsigned int seed = 0;                            ///< ノイズシード値
 };
 
 /**

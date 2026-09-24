@@ -1,6 +1,9 @@
 #pragma once
 #include "Level/WaveEvent.h"
 
+class EnemySpawnerComponent;
+class GameObject;
+
 // 敵スポーン用のハンドラ
 class SpawnEnemyHandler : public IWaveEventHandler {
 public:
@@ -17,6 +20,8 @@ private:
                                                           const Irufemi::Vector3& railPos,
                                                           const Irufemi::Vector3& railForward,
                                                           const Irufemi::Vector3& railRight);
+
+    EnemySpawnerComponent* GetOrFindSpawner(WaveManagerComponent* manager);
 };
 
 // BGM変更用のハンドラ（ダミー実装）

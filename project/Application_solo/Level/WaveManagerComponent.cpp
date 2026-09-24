@@ -4,9 +4,8 @@
 #include "Framework/Scene/BaseScene.h"
 #include "RailMechanics/SplineFollowerComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Utility/Log.h"
-#include <fstream>
+#include "Core/Utility/JsonUtility.h"
 #include <iostream>
 #include "Framework/Component/Utility/SplineComponent.h"
 #include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
@@ -15,13 +14,19 @@
 #include "Resource/Model/ModelManager.h"
 #include "Framework/Component/Logic/SpawnPointComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
+#include "Combat/EnemySpawnerComponent.h"
 
-WaveManagerComponent::WaveManagerComponent() {}
+WaveManagerComponent::WaveManagerComponent() {
+    // デフォルトハンドラの登録（コンポーネント自身のストラテジーとして自己完結カプセル化）
+    RegisterHandler("SpawnEnemy", std::make_shared<SpawnEnemyHandler>());
+    RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
+}
 
 void WaveManagerComponent::OnRegisterProperties() {
     Component::OnRegisterProperties();
     RegisterProperty("Level Data Path", &levelDataPath_);
     RegisterGameObjectRef("Target Spline", &targetSplineID_);
+    RegisterGameObjectRef("Enemy Spawner", &targetEnemySpawnerID_);
     RegisterProperty("Editor Preview Distance", &editorPreviewDistance_);
 }
 
@@ -31,16 +36,18 @@ void WaveManagerComponent::Deserialize(const nlohmann::json& j) {
 }
 
 void WaveManagerComponent::Initialize() {
-    // デフォルトハンドラの登録
-    RegisterHandler("SpawnEnemy", std::make_shared<SpawnEnemyHandler>());
-    RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
+    // ハンドラがクリアされている等の場合のみフォールバック登録
+    if (handlers_.empty()) {
+        RegisterHandler("SpawnEnemy", std::make_shared<SpawnEnemyHandler>());
+        RegisterHandler("PlayBGM", std::make_shared<PlayBGMHandler>());
+    }
 
     ReloadLevelData();
 }
 
 std::shared_ptr<ModelBatchRendererComponent>
 WaveManagerComponent::GetPreviewBatchRenderer(const std::string& modelPath) {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return nullptr;
     }
@@ -61,7 +68,7 @@ WaveManagerComponent::GetPreviewBatchRenderer(const std::string& modelPath) {
 
 void WaveManagerComponent::Draw() {
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (engine && engine->GetSelectedObject().get() == gameObject_) {
         auto scene = gameObject_->GetScene();
         if (!scene) {
@@ -72,6 +79,8 @@ void WaveManagerComponent::Draw() {
             previewBatch_->ClearInstances();
         }
 
+        // 1. レールスプラインの取得: インスペクターで設定された Target Spline を唯一の真実（Single Source of
+        // Truth）として使用
         SplineComponent* spline = nullptr;
         if (targetSplineID_ != 0) {
             auto splineObj = scene->FindGameObjectByID(targetSplineID_);
@@ -80,40 +89,23 @@ void WaveManagerComponent::Draw() {
             }
         }
 
+        // 2. プレイヘッドのギズモ描画
+        if (spline && engine->GetDebugPrimitiveRenderer()) {
+            Irufemi::Vector3 phPos = spline->GetPointAtDistance(editorPreviewDistance_);
+            Irufemi::Vector3 scale = {3.0f, 3.0f, 3.0f};
+            Irufemi::Matrix4x4 transform =
+                Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, phPos);
+            Irufemi::Vector4 color = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow for Playhead
+            engine->GetDebugPrimitiveRenderer()->AddCube(transform, color, DebugCategory::Level);
+        }
+
+        // 3. イベントのプレビュー描画（Target Spline を基準レールとして使用）
         if (spline) {
-            if (engine->GetDebugPrimitiveRenderer()) {
-                Irufemi::Vector3 phPos = spline->GetPointAtDistance(editorPreviewDistance_);
-                Irufemi::Vector3 scale = {3.0f, 3.0f, 3.0f};
-                Irufemi::Matrix4x4 transform =
-                    Irufemi::Math::MakeAffineMatrix(scale, Irufemi::Vector3{0.0f, 0.0f, 0.0f}, phPos);
-                Irufemi::Vector4 color = {1.0f, 1.0f, 0.0f, 1.0f}; // Yellow for Playhead
-                engine->GetDebugPrimitiveRenderer()->AddCube(transform, color);
-            }
-        }
-
-        auto cartObj = scene->FindGameObject("PlayerCart");
-        if (!cartObj) {
-            cartObj = scene->FindGameObject("Player");
-        }
-        auto follower = cartObj ? cartObj->GetComponent<SplineFollowerComponent>() : nullptr;
-        SplineComponent* railSpline = nullptr;
-        if (follower) {
-            if (auto pathObj = scene->FindGameObjectByID(follower->GetTargetPathID())) {
-                railSpline = pathObj->GetComponent<SplineComponent>();
-            }
-        }
-
-        if (railSpline) {
-            for (const auto& ev : allEvents_) {
-                // GPU負荷軽減のため、現在のプレイヘッド距離から遠すぎるイベントはプレビュー描画をスキップする
-                if (std::abs(ev.triggerDistance - editorPreviewDistance_) > 300.0f) {
-                    continue;
-                }
-
+            auto drawEvent = [this, spline](const WaveEventData& ev) {
                 auto it = handlers_.find(ev.eventType);
                 if (it != handlers_.end() && it->second) {
-                    Irufemi::Vector3 pos = railSpline->GetPointAtDistance(ev.triggerDistance);
-                    Irufemi::Vector3 fwd = railSpline->GetTangentAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 pos = spline->GetPointAtDistance(ev.triggerDistance);
+                    Irufemi::Vector3 fwd = spline->GetTangentAtDistance(ev.triggerDistance);
                     Irufemi::Vector3 up = {0.0f, 1.0f, 0.0f};
                     Irufemi::Vector3 right = {up.y * fwd.z - up.z * fwd.y, up.z * fwd.x - up.x * fwd.z,
                                               up.x * fwd.y - up.y * fwd.x};
@@ -125,6 +117,25 @@ void WaveManagerComponent::Draw() {
                     }
 
                     it->second->DrawEditorPreview(this, ev, pos, fwd, right);
+                }
+            };
+
+            if (selectedEventIndex_ >= 0 && selectedEventIndex_ < (int)allEvents_.size()) {
+                // タイムラインで選択中のイベントのみを単独プレビュー！
+                drawEvent(allEvents_[selectedEventIndex_]);
+            } else {
+                // 未選択時は、プレイヘッド距離に最も近い直近の1イベントのみプレビュー
+                const WaveEventData* nearestEv = nullptr;
+                float minDiff = 150.0f;
+                for (const auto& ev : allEvents_) {
+                    float diff = std::abs(ev.triggerDistance - editorPreviewDistance_);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        nearestEv = &ev;
+                    }
+                }
+                if (nearestEv) {
+                    drawEvent(*nearestEv);
                 }
             }
         }
@@ -145,33 +156,26 @@ void WaveManagerComponent::ReloadLevelData() {
 }
 
 void WaveManagerComponent::LoadLevelData(const std::string& filePath) {
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(filePath, j)) {
         Log::OutPutLog(std::cout, "[WaveManager] Failed to load level data: " + filePath + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
+    if (j.contains("Stage1_LevelData") && j["Stage1_LevelData"].contains("Events")) {
+        for (const auto& eventJson : j["Stage1_LevelData"]["Events"]) {
+            WaveEventData data;
+            data.triggerDistance = eventJson.value("TriggerDistance", 0.0f);
+            data.eventType = eventJson.value("Type", "Unknown");
 
-        if (j.contains("Stage1_LevelData") && j["Stage1_LevelData"].contains("Events")) {
-            for (const auto& eventJson : j["Stage1_LevelData"]["Events"]) {
-                WaveEventData data;
-                data.triggerDistance = eventJson.value("TriggerDistance", 0.0f);
-                data.eventType = eventJson.value("Type", "Unknown");
+            data.parameters = eventJson;
 
-                data.parameters = eventJson;
-
-                eventQueue_.push(data);
-                allEvents_.push_back(data);
-            }
+            eventQueue_.push(data);
+            allEvents_.push_back(data);
         }
-        Log::OutPutLog(std::cout, "[WaveManager] Loaded " + std::to_string(eventQueue_.size()) + " events from " +
-                                      filePath + "\n");
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[WaveManager] JSON Parse Error: ") + e.what() + "\n");
     }
+    Log::OutPutLog(std::cout,
+                   "[WaveManager] Loaded " + std::to_string(eventQueue_.size()) + " events from " + filePath + "\n");
 }
 
 void WaveManagerComponent::RegisterHandler(const std::string& eventType, std::shared_ptr<IWaveEventHandler> handler) {
@@ -184,34 +188,40 @@ void WaveManagerComponent::Update() {
         hasCachedSpawnPoints_ = true;
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     bool isPlayMode = engine && engine->IsPlayMode();
     if (!isPlayMode) {
         return; // エディタモードではイベントの消費とスポーンを行わない
     }
 
-    if (!playerFollower_) {
+    if (cachedPlayerCart_.expired()) {
         // PlayerCart または Player にアタッチされている SplineFollowerComponent を探す
         auto scene = gameObject_->GetScene();
         if (scene) {
             auto cartObj = scene->FindGameObject("PlayerCart");
             if (cartObj) {
-                playerFollower_ = cartObj->GetComponent<SplineFollowerComponent>();
-            }
-            if (!playerFollower_) {
+                cachedPlayerCart_ = cartObj;
+            } else {
                 auto playerObj = scene->FindGameObject("Player");
                 if (playerObj) {
-                    playerFollower_ = playerObj->GetComponent<SplineFollowerComponent>();
+                    cachedPlayerCart_ = playerObj;
                 }
             }
         }
-        if (!playerFollower_) {
-            return;
-        }
     }
 
-    float currentDist = playerFollower_->GetCurrentDistance();
-    auto spline = playerFollower_->GetCachedPath();
+    auto playerObj = cachedPlayerCart_.lock();
+    if (!playerObj) {
+        return;
+    }
+
+    auto playerFollower = playerObj->GetComponent<SplineFollowerComponent>();
+    if (!playerFollower) {
+        return;
+    }
+
+    float currentDist = playerFollower->GetCurrentDistance();
+    auto spline = playerFollower->GetCachedPath();
 
     // 進行距離が先頭イベントのトリガー距離を超えていたら発火
     while (!eventQueue_.empty()) {
@@ -294,11 +304,36 @@ const std::vector<SpawnPointComponent*>& WaveManagerComponent::GetSpawnPoints(co
     return emptyList;
 }
 
+EnemySpawnerComponent* WaveManagerComponent::GetEnemySpawner() const {
+    auto scene = gameObject_ ? gameObject_->GetScene() : nullptr;
+    if (!scene) {
+        return nullptr;
+    }
+    if (targetEnemySpawnerID_ != 0) {
+        if (auto spawnerObj = scene->FindGameObjectByID(targetEnemySpawnerID_)) {
+            if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
+                return spawner;
+            }
+        }
+    }
+    // フォールバック: 従来のシーン内名前探索
+    if (auto spawnerObj = scene->FindGameObject("EnemySpawner")) {
+        return spawnerObj->GetComponent<EnemySpawnerComponent>();
+    }
+    return nullptr;
+}
+
 void WaveManagerComponent::OnIDRemapped(const std::unordered_map<uint64_t, uint64_t>& idMap) {
     if (targetSplineID_ != 0) {
         auto it = idMap.find(targetSplineID_);
         if (it != idMap.end()) {
             targetSplineID_ = it->second;
+        }
+    }
+    if (targetEnemySpawnerID_ != 0) {
+        auto it = idMap.find(targetEnemySpawnerID_);
+        if (it != idMap.end()) {
+            targetEnemySpawnerID_ = it->second;
         }
     }
 }

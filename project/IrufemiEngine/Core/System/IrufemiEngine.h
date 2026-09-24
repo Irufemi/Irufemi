@@ -1,23 +1,7 @@
 #pragma once
 
 #include "RHI/DirectX12/DirectXCommon.h"
-#include "RHI/DirectX12/D3DResourceLeakChecker.h"
-class InputManager;
-class WinApp;
-enum class DisplayMode;
-class DrawManager;
-
-class DebugPrimitiveRenderer;
-class DebugUI;
-class IEngineExtension;
-class TextureManager;
-class AudioManager;
-class ModelManager;
-class AnimationManager;
 #include "Core/Type/BlendMode.h"
-class Log;
-class SceneManager;
-class SceneTransition;
 #include "Core/System/ILoadingScreen.h"
 #include "Core/Math/Vector4.h"
 #include "Core/Math/Vector2.h"
@@ -29,6 +13,9 @@ class SceneTransition;
 #include "Renderer/Data/TransformationMatrix.h"
 #include "Core/System/ResourceHandle.h"
 #include "Core/Profiler/TelemetryGatherer.h"
+#include "Core/System/ThreadPool.h"
+#include "Renderer/ScreenCaptureManager.h"
+
 #include <memory>
 #include <Windows.h>
 #include <d3d12.h>
@@ -41,18 +28,30 @@ class SceneTransition;
 #include <chrono>
 #include <algorithm>
 
-class FontManager;
-
-class SceneManager;
+// --- 前方宣言 ---
+class InputManager;
+class WinApp;
+enum class DisplayMode;
+class DrawManager;
+class DebugPrimitiveRenderer;
 class DebugUI;
+class IEngineExtension;
+class TextureManager;
+class AudioManager;
+class ModelManager;
+class AnimationManager;
+class Log;
+class SceneManager;
+class SceneTransition;
+class FontManager;
 class VoxelParticleManager;
 class GameObject;
 class CameraManager;
 class CollisionManager;
 class GPUParticleManager;
 class PrimitiveManager;
-#include "Core/System/ThreadPool.h"
-#include "Renderer/ScreenCaptureManager.h"
+class TelemetrySender;
+class PrefabManager;
 
 /**
  * @class IrufemiEngine
@@ -464,6 +463,20 @@ public: // ゲッター
         return voxelParticleManager_.get();
     }
     /**
+     * @brief TelemetrySender を取得する。
+     * @return 取得された TelemetrySender
+     */
+    TelemetrySender* GetTelemetrySender() const {
+        return telemetrySender_.get();
+    }
+    /**
+     * @brief PrefabManager を取得する。
+     * @return 取得された PrefabManager
+     */
+    PrefabManager* GetPrefabManager() const {
+        return prefabManager_.get();
+    }
+    /**
      * @brief ThreadPool を取得する。
      * @return 取得された ThreadPool
      */
@@ -591,7 +604,7 @@ public: // ゲッター
         return totalTime_;
     }
 
-    // 追加: ポーズ対応のゲーム内時間関連
+    // ポーズ対応のゲーム内時間制御
     /**
      * @brief GameTime を取得する。
      * @return 取得された GameTime
@@ -677,7 +690,6 @@ public: // ゲッター
         sceneDirectory_ = dir;
     }
 
-    // 追加: アセットがロード中かどうかを判定する
     /**
      * @brief IsAssetLoading かどうかを判定する。
      * @return 判定結果 (true/false)
@@ -736,7 +748,6 @@ public: // セッター
     void SetDepthWrite(PSOManager::DepthWrite w) {
         currentDepth_ = w;
     }
-    // 追加: Cull の切替
     /**
      * @brief Cull を設定する。
      * @param[in] c 設定する Cull の値
@@ -745,7 +756,6 @@ public: // セッター
         currentCull_ = c;
     }
 
-    // 追加: クリアカラーのセッター(いつでも変更可能)
     /**
      * @brief 画面のクリアカラー（背景色）を設定する。
      * @param[in] color クリアカラー(RGBA)
@@ -760,7 +770,6 @@ public: // セッター
     void SetClearColor(const std::array<float, 4>& c) {
         clearColor_ = c;
     }
-    // 追加: Irufemi::Vector4 版
     /**
      * @brief 画面のクリアカラー（背景色）を設定する。
      * @param[in] color クリアカラー(RGBA)
@@ -860,14 +869,10 @@ public:
     // 状態(現在のブレンドと深度書き込み)
     Irufemi::BlendMode currentBlend_ = Irufemi::BlendMode::kBlendModeNormal;
     PSOManager::DepthWrite currentDepth_ = PSOManager::DepthWrite::Enable;
-    PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; // 追加: デフォルトは Back
+    PSOManager::CullMode currentCull_ = PSOManager::CullMode::Back; //!< 現在のカリングモード（デフォルトは背面）
 
 private: // メンバ変数
     // --- Debug & Logging ---
-
-    // リソース解放リークチェック
-    D3DResourceLeakChecker leakCheck_;
-
     // ログ
     std::unique_ptr<Log> log_ = nullptr;
 
@@ -971,8 +976,12 @@ private: // メンバ変数
     std::unique_ptr<PostProcessManager> postProcessManager_ = nullptr;
     std::unique_ptr<SceneTransition> sceneTransition_ = nullptr;
 
-    // Telemetry Gatherer
+    // Telemetry
+    std::unique_ptr<TelemetrySender> telemetrySender_ = nullptr;
     std::unique_ptr<TelemetryGatherer> telemetryGatherer_ = nullptr;
+
+    // Prefab Manager
+    std::unique_ptr<PrefabManager> prefabManager_ = nullptr;
 
     uint32_t depthSrvIndex_ = 0xFFFFFFFF; // 深度SRVのインデックスを保持
     bool isFinalized_ = false;            // 終了処理済みフラグ

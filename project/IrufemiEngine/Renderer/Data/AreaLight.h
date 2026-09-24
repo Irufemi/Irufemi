@@ -24,3 +24,5 @@ struct AreaLight {
 private:
     float padding;
 };
+
+static_assert(sizeof(AreaLight) % 16 == 0, "AreaLight must be 16-byte aligned for HLSL constant buffer");

@@ -26,6 +26,7 @@
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <regex>
+#include <limits>
 
 #ifdef USE_IMGUI
 #include "Framework/UI/DebugUI.h"
@@ -138,6 +139,16 @@ void BaseScene::Update() {
     }
 #endif
 
+    bool isPaused = false;
+    if (engine_) {
+        isPaused = (engine_->GetTimeScale() == 0.0f);
+    }
+
+    auto debugRenderer = engine_ ? engine_->GetDebugPrimitiveRenderer() : nullptr;
+    if (debugRenderer && isPlayMode && !isPaused) {
+        debugRenderer->BeginSimulationFrame();
+    }
+
     // --- 遅延キューの処理 ---
     {
         std::lock_guard<std::recursive_mutex> lock(sceneMutex_);
@@ -223,6 +234,9 @@ void BaseScene::Update() {
     // PlayMode 時のみ衝突判定（イベント発火など）を行う
     if (isPlayMode && engine_) {
         engine_->GetCollisionManager()->CheckAllCollisions();
+    } else if (engine_) {
+        // 非プレイモード（エディタ・プレハブ編集モード）時もコライダーの登録・削除キューを同期
+        engine_->GetCollisionManager()->FlushPendingCommands();
     }
 
     // 破棄フラグが立った子オブジェクトを一括削除 (GC)
@@ -232,11 +246,20 @@ void BaseScene::Update() {
         }
     }
 
-    // 破棄フラグが立ったオブジェクトを一括削除 (GC)
-    gameObjects_.erase(
-        std::remove_if(gameObjects_.begin(), gameObjects_.end(),
-                       [](const std::shared_ptr<GameObject>& obj) { return !obj || obj->IsDestroyed(); }),
-        gameObjects_.end());
+    // 破棄フラグが立ったオブジェクトを一括削除 (GC - C++20 std::erase_if) と同時にレジストリからも解除
+    std::erase_if(gameObjects_, [this](const std::shared_ptr<GameObject>& obj) {
+        if (!obj || obj->IsDestroyed()) {
+            if (obj && objectRegistry_) {
+                objectRegistry_->Unregister(obj);
+            }
+            return true;
+        }
+        return false;
+    });
+
+    if (debugRenderer && isPlayMode && !isPaused) {
+        debugRenderer->EndSimulationFrame();
+    }
 
     SubmitFrameData();
 }
@@ -351,6 +374,16 @@ void BaseScene::WarmUpRenderState() {
 
     // 5. 初回フレームデータ（カメラ行列、ライト、フォグ等）をレンダラーへ提出
     SubmitFrameData();
+
+    // 6. 演出サブシステム（Voxel / GPU Particle）のシーン開始前ウォームアップ
+    if (engine_) {
+        if (auto vpm = engine_->GetVoxelParticleManager()) {
+            vpm->WarmUp();
+        }
+        if (auto gpm = engine_->GetGPUParticleManager()) {
+            gpm->WarmUp();
+        }
+    }
 }
 
 void BaseScene::AddGameObject(std::shared_ptr<GameObject> obj) {
@@ -429,7 +462,7 @@ size_t BaseScene::GetGameObjectIndex(std::shared_ptr<GameObject> obj) const {
     if (it != gameObjects_.end()) {
         return std::distance(gameObjects_.begin(), it);
     }
-    return (size_t)-1;
+    return (std::numeric_limits<size_t>::max)();
 }
 
 void BaseScene::SubmitFrameData() {
@@ -639,6 +672,7 @@ void BaseScene::Deserialize(const nlohmann::json& j) {
     if (goArray) {
         for (const auto& objJson : *goArray) {
             auto obj = std::make_shared<GameObject>();
+            obj->SetScene(this);
             obj->Deserialize(objJson);
             obj->Initialize();
             AddGameObject(obj);

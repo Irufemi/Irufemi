@@ -4,7 +4,9 @@
 
 /**
  * @class SpawnPointComponent
- * @brief 敵やオブジェクトの生成位置（起点）を示すコンポーネント。
+ * @brief オブジェクトの生成位置（起点マーカー）を示す汎用コンポーネント。
+ * @details グループ識別子（Group ID）や生成種別（Spawn
+ * Type）を保持し、レベルデザインや敵・アイテムスポーン制御に利用します。
  */
 class SpawnPointComponent : public Component {
 public:
@@ -21,22 +23,37 @@ public:
     nlohmann::json Serialize() override;
     void Deserialize(const nlohmann::json& json) override;
 
-    // Getter / Setter
+    // --- 汎用アクセサ ---
+    const std::string& GetGroupId() const {
+        return groupId_;
+    }
+    void SetGroupId(const std::string& id) {
+        groupId_ = id;
+    }
+
+    const std::string& GetSpawnType() const {
+        return spawnType_;
+    }
+    void SetSpawnType(const std::string& type) {
+        spawnType_ = type;
+    }
+
+    // --- 後方互換性用エイリアス (Wave/Enemy仕様) ---
     const std::string& GetWaveId() const {
-        return waveId_;
+        return groupId_;
     }
     void SetWaveId(const std::string& id) {
-        waveId_ = id;
+        groupId_ = id;
     }
 
     const std::string& GetEnemyType() const {
-        return enemyType_;
+        return spawnType_;
     }
     void SetEnemyType(const std::string& type) {
-        enemyType_ = type;
+        spawnType_ = type;
     }
 
 private:
-    std::string waveId_ = "Wave1";
-    std::string enemyType_ = "DefaultEnemy";
+    std::string groupId_ = "Wave1";          ///< スポーンのグループ・所属識別子（旧 waveId）
+    std::string spawnType_ = "DefaultEnemy"; ///< 生成対象の種別・プレハブ名（旧 enemyType）
 };

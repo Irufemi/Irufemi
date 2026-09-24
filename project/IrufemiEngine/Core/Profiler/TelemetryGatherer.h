@@ -5,6 +5,7 @@
 #include <functional>
 
 class IrufemiEngine;
+class TelemetrySender;
 
 /**
  * @brief 外部プロファイラ（Telemetry）へ送信する数値を一括で収集・登録するマニフェストクラス
@@ -40,4 +41,5 @@ private:
     void RegisterMetric(const std::string& name, std::function<float()> fetcher);
 
     std::vector<MetricBinding> metrics_;
+    TelemetrySender* sender_ = nullptr;
 };

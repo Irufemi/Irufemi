@@ -5,22 +5,39 @@
 #include "Core/Math/MathFunction.h"
 #include <algorithm>
 
-std::vector<VirtualEntityManagerComponent*> VirtualEntityManagerComponent::sInstances_;
+std::vector<VirtualEntityManagerComponent*> VirtualEntityManagerComponent::instances_;
 
 VirtualEntityManagerComponent::VirtualEntityManagerComponent() {
-    sInstances_.push_back(this);
+    instances_.push_back(this);
 }
 
 VirtualEntityManagerComponent::~VirtualEntityManagerComponent() {
-    auto it = std::find(sInstances_.begin(), sInstances_.end(), this);
-    if (it != sInstances_.end()) {
-        sInstances_.erase(it);
+    CleanUpPool();
+    auto it = std::find(instances_.begin(), instances_.end(), this);
+    if (it != instances_.end()) {
+        instances_.erase(it);
     }
+}
+
+void VirtualEntityManagerComponent::OnDestroy() {
+    CleanUpPool();
+}
+
+void VirtualEntityManagerComponent::CleanUpPool() {
+    if (pool_) {
+        pool_->ForEach([](const std::shared_ptr<GameObject>& obj) {
+            if (obj && !obj->IsDestroyed()) {
+                obj->Destroy();
+            }
+        });
+        pool_.reset();
+    }
+    activeHandles_.clear();
 }
 
 int VirtualEntityManagerComponent::GetTotalActiveVirtualInstances() {
     int total = 0;
-    for (auto* instance : sInstances_) {
+    for (auto* instance : instances_) {
         total += instance->activeInstanceCount_;
     }
     return total;
@@ -71,13 +88,13 @@ int VirtualEntityManagerComponent::AddVirtualInstance(const Irufemi::Vector3& po
     freeIds_.pop();
 
     VirtualInstance vi;
-    vi.id_ = id;
-    vi.position_ = pos;
-    vi.rotation_ = rot;
-    vi.scale_ = scale;
-    vi.isPromoted_ = false;
-    vi.isDestroyed_ = false;
-    vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
+    vi.id = id;
+    vi.position = pos;
+    vi.rotation = rot;
+    vi.scale = scale;
+    vi.isPromoted = false;
+    vi.isDestroyed = false;
+    vi.promotedHandle = ObjectPool<GameObject>::Handle();
 
     dense_.push_back(vi);
     sparse_[id] = static_cast<int>(dense_.size() - 1);
@@ -95,16 +112,16 @@ void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
     }
 
     auto& vi = dense_[denseIndex];
-    if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
-        auto obj = pool_ ? pool_->Resolve(vi.promotedHandle_) : nullptr;
+    if (vi.isPromoted && vi.promotedHandle.IsValid()) {
+        auto obj = pool_ ? pool_->Resolve(vi.promotedHandle) : nullptr;
         if (obj) {
             obj->SetIsActive(false);
             activeHandles_.erase(obj.get());
         }
         if (pool_) {
-            pool_->Release(vi.promotedHandle_);
+            pool_->Release(vi.promotedHandle);
         }
-        vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
+        vi.promotedHandle = ObjectPool<GameObject>::Handle();
     }
 
     // Sparse Setの実装：削除対象と末尾要素をスワップして削除（O(1)）
@@ -113,7 +130,7 @@ void VirtualEntityManagerComponent::RemoveVirtualInstance(int id) {
         // 末尾の要素を削除対象の位置に移動
         dense_[denseIndex] = dense_[lastDenseIndex];
         // 移動した要素のsparse_を更新
-        sparse_[dense_[denseIndex].id_] = denseIndex;
+        sparse_[dense_[denseIndex].id] = denseIndex;
     }
 
     dense_.pop_back();
@@ -135,7 +152,7 @@ std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
     }
 
     auto& vi = dense_[denseIndex];
-    if (!vi.isDestroyed_ && !vi.isPromoted_) {
+    if (!vi.isDestroyed && !vi.isPromoted) {
         auto handle = pool_->Acquire();
         if (handle.IsValid()) {
             auto obj = pool_->Resolve(handle);
@@ -143,12 +160,12 @@ std::shared_ptr<GameObject> VirtualEntityManagerComponent::Promote(int id) {
                 obj->SetIsActive(true);
                 auto t = obj->GetComponent<TransformComponent>();
                 if (t) {
-                    t->SetPosition(vi.position_);
-                    t->SetRotation(vi.rotation_);
-                    t->SetScale(vi.scale_);
+                    t->SetPosition(vi.position);
+                    t->SetRotation(vi.rotation);
+                    t->SetScale(vi.scale);
                 }
-                vi.isPromoted_ = true;
-                vi.promotedHandle_ = handle;
+                vi.isPromoted = true;
+                vi.promotedHandle = handle;
                 activeHandles_[obj.get()] = handle;
                 gameObject_->AddChild(obj);
                 return obj;
@@ -173,15 +190,15 @@ void VirtualEntityManagerComponent::Demote(int id) {
     }
 
     auto& vi = dense_[denseIndex];
-    if (vi.isPromoted_ && vi.promotedHandle_.IsValid()) {
-        auto obj = pool_ ? pool_->Resolve(vi.promotedHandle_) : nullptr;
+    if (vi.isPromoted && vi.promotedHandle.IsValid()) {
+        auto obj = pool_ ? pool_->Resolve(vi.promotedHandle) : nullptr;
         if (obj) {
             // 現在のTransformをVirtualに書き戻す
             auto t = obj->GetComponent<TransformComponent>();
             if (t) {
-                vi.position_ = t->GetPosition();
-                vi.rotation_ = t->GetRotation();
-                vi.scale_ = t->GetScale();
+                vi.position = t->GetPosition();
+                vi.rotation = t->GetRotation();
+                vi.scale = t->GetScale();
             }
 
             obj->SetIsActive(false);
@@ -190,11 +207,11 @@ void VirtualEntityManagerComponent::Demote(int id) {
         }
 
         if (pool_) {
-            pool_->Release(vi.promotedHandle_);
+            pool_->Release(vi.promotedHandle);
         }
 
-        vi.promotedHandle_ = ObjectPool<GameObject>::Handle();
-        vi.isPromoted_ = false;
+        vi.promotedHandle = ObjectPool<GameObject>::Handle();
+        vi.isPromoted = false;
     }
 }
 
@@ -223,11 +240,11 @@ void VirtualEntityManagerComponent::Update() {
 
     // 仮想インスタンス（未昇格）の描画
     for (auto& vi : dense_) {
-        if (!vi.isPromoted_) {
+        if (!vi.isPromoted) {
             Irufemi::Transform t;
-            t.translate = vi.position_;
-            t.rotate = vi.rotation_;
-            t.scale = vi.scale_;
+            t.translate = vi.position;
+            t.rotate = vi.rotation;
+            t.scale = vi.scale;
             batchRenderer_->AddInstance(t);
         }
     }

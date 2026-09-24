@@ -4,22 +4,27 @@
 #include <vector>
 #include <array>
 
+/**
+ * @class PostUIPass
+ * @brief UI描画後のポストプロセス処理（画面全体の最終ポストエフェクト等）を実行するパス
+ */
 class PostUIPass : public IRenderPass {
 public:
     PostUIPass() = default;
     ~PostUIPass() override = default;
 
     /**
-     * @brief up を設定する。
-     * @param[in] builder 設定する up の値
-     * @param[in] drawManager 設定する up の値
-     * @param[in] engine 設定する up の値
+     * @brief パスのセットアップ処理（ポストUI用の一時テクスチャ確保・要求）
+     * @param[in,out] builder リソースの使用状態を記録するビルダー
+     * @param[in] rc 描画コンテキスト
      */
-    void Setup(class RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) override;
+    void Setup(class RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) override;
+
     /**
-     * @brief Execute を実行する。
+     * @brief パスの実行処理（ポストUIエフェクトの描画）
+     * @param[in] rc 描画コンテキスト
      */
-    void Execute(class DrawManager* drawManager, class IrufemiEngine* engine) override;
+    void Execute(const Irufemi::RenderContext& rc) override;
 
 private:
     std::vector<TransientResourceHandle> workTextureHandles_;

@@ -33,7 +33,7 @@ void SplineNodeComponent::Draw() {
     }
     auto debugRenderer = engine->GetDebugPrimitiveRenderer();
     if (debugRenderer) {
-        debugRenderer->AddSphere(transform->GetWorldPosition(), radius_, color_);
+        debugRenderer->AddSphere(transform->GetWorldPosition(), radius_, color_, DebugCategory::Path);
     }
 #endif
 }
@@ -48,12 +48,21 @@ bool SplineNodeComponent::Raycast(const Irufemi::Ray& ray, float& outDistance) c
         return false;
     }
 
+    // レイの方向ベクトルが非正規化またはゼロの場合を考慮
+    float diffLengthSq = ray.diff.x * ray.diff.x + ray.diff.y * ray.diff.y + ray.diff.z * ray.diff.z;
+    if (diffLengthSq < 1e-6f) {
+        return false;
+    }
+
+    float invLength = 1.0f / std::sqrt(diffLengthSq);
+    Irufemi::Vector3 dir = {ray.diff.x * invLength, ray.diff.y * invLength, ray.diff.z * invLength};
+
     Irufemi::Vector3 center = transform->GetWorldPosition();
 
     // Rayと球の交差判定 (線分・直線の交点計算)
     Irufemi::Vector3 m = {ray.origin.x - center.x, ray.origin.y - center.y, ray.origin.z - center.z};
 
-    float b = m.x * ray.diff.x + m.y * ray.diff.y + m.z * ray.diff.z;
+    float b = m.x * dir.x + m.y * dir.y + m.z * dir.z;
     float c = (m.x * m.x + m.y * m.y + m.z * m.z) - radius_ * radius_;
 
     // 始点が球の外側にあり、レイが球から遠ざかっている場合は交差しない

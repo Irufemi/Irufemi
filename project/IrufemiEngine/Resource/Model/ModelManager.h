@@ -48,7 +48,7 @@ struct GpuMesh {
     D3D12_GPU_DESCRIPTOR_HANDLE vertexSrvHandle{};
     uint32_t srvIndex = 0xFFFFFFFF;
 
-    static DirectXCommon* sDxCommon;
+    static DirectXCommon* dxCommon_;
 };
 
 /**
@@ -57,11 +57,11 @@ struct GpuMesh {
  */
 struct GpuMaterial {
     GpuMaterial() = default;
+    explicit GpuMaterial(TextureManager* tm) : textureManager_(tm) {}
     ~GpuMaterial();
     Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
     ResourceHandle textureHandle;
-
-    static TextureManager* sTextureManager;
+    TextureManager* textureManager_ = nullptr;
 };
 
 /**
@@ -283,7 +283,7 @@ private:
 
     std::unique_ptr<DirectoryWatcher> directoryWatcher_;
     /**
-     * @brief OnDirectoryChanged を実行する。
+     * @brief モデルアセットディレクトリの変更（追加・更新・削除）を検知した際のハンドラー
      */
     void OnDirectoryChanged();
 };

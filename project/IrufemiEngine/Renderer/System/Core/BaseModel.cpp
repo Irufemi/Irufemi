@@ -15,11 +15,14 @@ BaseModel::~BaseModel() {
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS BaseModel::GetTransformationGpuAddress() const {
-    if (transformCbIndex_ == static_cast<uint32_t>(-1) || !engine_) {
+    if (transformCbIndex_ == static_cast<uint32_t>(-1) || !engine_ || !engine_->GetTransformBufferManager()) {
         return 0;
     }
-    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(
-        transformCbIndex_, BaseResource::GetDirectXCommon()->GetFrameIndex());
+    auto* dxCommon = BaseResource::GetDirectXCommon();
+    if (!dxCommon) {
+        return 0;
+    }
+    return engine_->GetTransformBufferManager()->GetGPUVirtualAddress(transformCbIndex_, dxCommon->GetFrameIndex());
 }
 
 std::shared_ptr<ObjModel> BaseModel::GetCpuModel() const {

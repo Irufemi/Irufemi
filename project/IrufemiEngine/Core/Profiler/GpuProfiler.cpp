@@ -46,7 +46,20 @@ void GpuProfiler::Initialize(DirectXCommon* dxCommon) {
                                          nullptr, IID_PPV_ARGS(&queryResultBuffer_));
     IRUFEMI_ASSERT(SUCCEEDED(hr));
 
+    // リードバックバッファを永続マップ (Persistent Mapping) してCPUポインタをキャッシュ
+    D3D12_RANGE readRange = {0, sizeof(uint64_t) * kMaxFramesInFlight * 2};
+    hr = queryResultBuffer_->Map(0, &readRange, reinterpret_cast<void**>(&mappedData_));
+    IRUFEMI_ASSERT(SUCCEEDED(hr));
+
     isInitialized_ = true;
+}
+
+GpuProfiler::~GpuProfiler() {
+    if (queryResultBuffer_ && mappedData_) {
+        D3D12_RANGE writeRange = {0, 0};
+        queryResultBuffer_->Unmap(0, &writeRange);
+        mappedData_ = nullptr;
+    }
 }
 
 void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
@@ -63,20 +76,15 @@ void GpuProfiler::StartFrame(ID3D12GraphicsCommandList* commandList) {
     // ストールを防ぐため、安全にGPU処理が終わっている（現在のフェンスで待機完了した）フレームの結果をリードバックする
     uint32_t safeFrameIndex = frameIndex;
 
-    // CPUでマップして読む
-    uint64_t* pData = nullptr;
-    D3D12_RANGE readRange = {safeFrameIndex * 2 * sizeof(uint64_t), (safeFrameIndex * 2 + 2) * sizeof(uint64_t)};
-    if (SUCCEEDED(queryResultBuffer_->Map(0, &readRange, reinterpret_cast<void**>(&pData)))) {
-        uint64_t startTimestamp = pData[safeFrameIndex * 2];
-        uint64_t endTimestamp = pData[safeFrameIndex * 2 + 1];
+    // 永続マップ済みポインタから直接読み取る（毎フレームのMap/Unmapオーバーヘッドを完全排除）
+    if (mappedData_) {
+        uint64_t startTimestamp = mappedData_[safeFrameIndex * 2];
+        uint64_t endTimestamp = mappedData_[safeFrameIndex * 2 + 1];
 
         if (endTimestamp > startTimestamp && startTimestamp > 0) {
             uint64_t delta = endTimestamp - startTimestamp;
             lastGpuTimeMs_ = (static_cast<float>(delta) / static_cast<float>(gpuFrequency_)) * 1000.0f;
         }
-
-        D3D12_RANGE writeRange = {0, 0};
-        queryResultBuffer_->Unmap(0, &writeRange);
     }
 }
 

@@ -5,10 +5,19 @@
 #include "Core/Math/Vector3Int.h"
 #include <vector>
 
-// ボクセル化されたモデル全体を管理する構造体
+namespace Irufemi {
+
+/**
+ * @struct VoxelizedModel
+ * @brief ボクセル化されたモデル全体を管理する構造体
+ */
 struct VoxelizedModel {
-    std::vector<Irufemi::Voxel> voxels;
-    Irufemi::Vector3 aabbMin;
-    Irufemi::Vector3 aabbMax;
-    Irufemi::Vector3Int resolution;
+    std::vector<Voxel> voxels;
+    Vector3 aabbMin;
+    Vector3 aabbMax;
+    Vector3Int resolution;
 };
+
+} // namespace Irufemi
+
+using Irufemi::VoxelizedModel;

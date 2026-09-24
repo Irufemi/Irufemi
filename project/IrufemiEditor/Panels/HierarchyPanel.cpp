@@ -54,7 +54,7 @@ void HierarchyPanel::Draw() {
             };
 
             // 再帰描画用ラムダ関数
-            std::function<void(std::shared_ptr<GameObject>)> DrawNode = [&](std::shared_ptr<GameObject> obj) {
+            auto DrawNode = [&](auto& self, const std::shared_ptr<GameObject>& obj) -> void {
                 if (!obj) {
                     return;
                 }
@@ -199,7 +199,7 @@ void HierarchyPanel::Draw() {
                     // vector のコピーを回す（描画中に要素が削除・追加されても安全なように）
                     auto childrenCopy = obj->GetChildren();
                     for (auto& child : childrenCopy) {
-                        DrawNode(child);
+                        self(self, child);
                     }
                     ImGui::TreePop();
                 }
@@ -210,7 +210,7 @@ void HierarchyPanel::Draw() {
             for (auto& obj : gameObjectsCopy) {
                 // ルートオブジェクトのみを描画開始（子は再帰的に呼ばれる）
                 if (obj && !obj->GetParent()) {
-                    DrawNode(obj);
+                    DrawNode(DrawNode, obj);
                 }
             }
 

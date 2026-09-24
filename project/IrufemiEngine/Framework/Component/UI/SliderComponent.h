@@ -2,6 +2,7 @@
 #include "Framework/Component/Component.h"
 #include <string>
 #include <functional>
+#include <memory>
 #include "Core/Math/Vector2.h"
 #include "Core/Math/Vector4.h"
 
@@ -43,13 +44,13 @@ public:
      * @brief 値が変更されたときに呼ばれるコールバックを設定
      */
     void SetOnValueChangedCallback(std::function<void(float)> callback) {
-        onValueChangedCallback_ = callback;
+        onValueChangedCallback_ = std::move(callback);
     }
 
     /**
      * @brief ハンドル（ツマミ）となるGameObjectのIDを設定
      */
-    void SetHandleObjectID(int id);
+    void SetHandleObjectID(uint64_t id);
 
 private:
     bool CheckBounds(const Irufemi::Vector2& mousePos);
@@ -57,9 +58,9 @@ private:
     void ResolveHandleObject();
 
     SpriteRendererComponent* backgroundSprite_ = nullptr;
-    GameObject* handleObject_ = nullptr;
+    std::weak_ptr<GameObject> handleObject_;
 
-    int handleObjectID_ = 0;                   // Prefabからの復元用
+    uint64_t handleObjectID_ = 0;              // Prefabからの復元用
     float value_ = 1.0f;                       // 0.0 ~ 1.0 の割合
     bool isDragging_ = false;                  // ドラッグ中か
     Irufemi::Vector2 hitboxScale_{1.0f, 1.0f}; // 当たり判定のスケール

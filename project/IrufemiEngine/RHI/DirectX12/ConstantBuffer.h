@@ -23,6 +23,34 @@ public:
         }
     }
 
+    ConstantBuffer(const ConstantBuffer&) = delete;
+    ConstantBuffer& operator=(const ConstantBuffer&) = delete;
+
+    ConstantBuffer(ConstantBuffer&& other) noexcept
+        : resources_(std::move(other.resources_)), mappedData_(other.mappedData_), dxCommon_(other.dxCommon_) {
+        other.mappedData_.fill(nullptr);
+        other.dxCommon_ = nullptr;
+    }
+
+    ConstantBuffer& operator=(ConstantBuffer&& other) noexcept {
+        if (this != &other) {
+            Unmap();
+            if (dxCommon_) {
+                for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+                    if (resources_[i]) {
+                        dxCommon_->ReleaseAfterFence(resources_[i]);
+                    }
+                }
+            }
+            resources_ = std::move(other.resources_);
+            mappedData_ = other.mappedData_;
+            dxCommon_ = other.dxCommon_;
+            other.mappedData_.fill(nullptr);
+            other.dxCommon_ = nullptr;
+        }
+        return *this;
+    }
+
     // バッファを生成しマッピングする（kMaxFramesInFlight分）
     /**
      * @brief Initialize を実行する。

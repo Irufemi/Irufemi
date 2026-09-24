@@ -93,7 +93,7 @@ struct BloomParams {
 
 struct DissolveParams {
     float32_t4 edgeColor;
-    float32_t4 backgroundColor; // 追加：C++側との位置合わせのため
+    float32_t4 backgroundColor; // C++側構造体とのメモリレイアウト整合用
     float32_t threshold;
     float32_t edgeRange;
     int32_t noiseType;

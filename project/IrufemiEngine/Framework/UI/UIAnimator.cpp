@@ -1,4 +1,5 @@
 #include "Framework/UI/UIAnimator.h"
+#include "Core/Utility/Ease.h"
 #include <cmath>
 
 void UIAnimator::Update(float deltaTime) {
@@ -10,7 +11,8 @@ void UIAnimator::Reset() {
 }
 
 float UIAnimator::GetPulseAlpha(float base, float amplitude, float speed) const {
-    return base + std::sin(time_ * speed) * amplitude;
+    float normSin = 0.5f * (1.0f + std::sin(time_ * speed));
+    return Lerp(base, base + amplitude, normSin);
 }
 
 bool UIAnimator::GetFlashVisibility(float speed) const {

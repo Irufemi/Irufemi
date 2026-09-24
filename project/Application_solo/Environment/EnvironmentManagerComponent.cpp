@@ -7,7 +7,6 @@
 #include "Core/Utility/Log.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
-#include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Effect/EffectMaskComponent.h"
 #include "Environment/DestructibleEnvironmentComponent.h"
 #include "Player/TargetableComponent.h"
@@ -106,6 +105,10 @@ void EnvironmentManagerComponent::Start() {
                     if (!child->GetComponent<TargetableComponent>()) {
                         child->AddComponent<TargetableComponent>();
                     }
+                    if (auto targetable = child->GetComponent<TargetableComponent>()) {
+                        targetable->SetTargetType(TargetType::Environment);
+                    }
+
                     if (!child->GetComponent<DestructibleEnvironmentComponent>()) {
                         auto destructible = child->AddComponent<DestructibleEnvironmentComponent>();
                         destructible->SetDebrisSpawnCount(setting.debrisSpawnCount);
@@ -129,6 +132,19 @@ void EnvironmentManagerComponent::Start() {
                         obb->pushbackMask_ = setting.pushbackMask;
                         break;
                     }
+                }
+            }
+        }
+    }
+
+    // 環境オブジェクトのモデルバッチレンダラーを事前ロード・初期化
+    for (const auto& info : spawnedObjects_) {
+        if (auto obj = info.obj.lock()) {
+            if (auto meshRenderer = obj->GetComponent<MeshRendererComponent>()) {
+                meshRenderer->SetVisible(false); // 個別の描画を停止
+                std::string modelName = meshRenderer->GetModelName();
+                if (!modelName.empty()) {
+                    GetOrCreateBatchRenderer(modelName);
                 }
             }
         }
@@ -188,18 +204,9 @@ void EnvironmentManagerComponent::Draw() {
                 meshRenderer->SetVisible(false);
 
                 std::string modelName = meshRenderer->GetModelName();
-                if (modelName.empty()) {
+                auto* batchRenderer = GetOrCreateBatchRenderer(modelName);
+                if (!batchRenderer) {
                     continue;
-                }
-
-                // 未登録のモデルならバッチレンダラーを新規作成
-                if (batchRenderers_.find(modelName) == batchRenderers_.end() || !batchRenderers_[modelName]) {
-                    auto batchRenderer = std::make_unique<ModelBatchRendererComponent>();
-                    // ModelBatchRendererComponent 自体の初期化
-                    batchRenderer->SetGameObject(gameObject_);
-                    batchRenderer->LoadModel(modelName);
-                    batchRenderer->Initialize();
-                    batchRenderers_[modelName] = std::move(batchRenderer);
                 }
 
                 int32_t effectType = 0;
@@ -213,8 +220,7 @@ void EnvironmentManagerComponent::Draw() {
 
                 // ワールド行列を取得してバッチにインスタンスを追加
                 if (auto transform = obj->GetComponent<TransformComponent>()) {
-                    batchRenderers_[modelName]->AddInstanceWorld(transform->GetWorldMatrix(), effectType, effectParam,
-                                                                 enableMask);
+                    batchRenderer->AddInstanceWorld(transform->GetWorldMatrix(), effectType, effectParam, enableMask);
                 }
             }
         }
@@ -226,4 +232,28 @@ void EnvironmentManagerComponent::Draw() {
             pair.second->Draw();
         }
     }
+}
+
+ModelBatchRendererComponent* EnvironmentManagerComponent::GetOrCreateBatchRenderer(const std::string& modelName) {
+    if (modelName.empty()) {
+        return nullptr;
+    }
+
+    auto it = batchRenderers_.find(modelName);
+    if (it != batchRenderers_.end() && it->second) {
+        return it->second.get();
+    }
+
+    std::shared_ptr<ModelBatchRendererComponent> batchRenderer;
+    if (gameObject_) {
+        batchRenderer = gameObject_->AddComponent<ModelBatchRendererComponent>();
+    } else {
+        batchRenderer = std::make_shared<ModelBatchRendererComponent>();
+    }
+    batchRenderer->LoadModel(modelName);
+    batchRenderer->Initialize();
+
+    auto* rawPtr = batchRenderer.get();
+    batchRenderers_[modelName] = batchRenderer;
+    return rawPtr;
 }

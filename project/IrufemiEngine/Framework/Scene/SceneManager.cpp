@@ -12,6 +12,8 @@
 #include "Renderer/System/ParticleGPU/GPUParticleManager.h"
 #include "Physics/CollisionManager.h"
 #include "Renderer/Camera/CameraManager.h"
+#include "Core/Utility/Log.h"
+#include <iostream>
 
 namespace {
 /**
@@ -101,12 +103,13 @@ bool SceneManager::ChangeTo(const Key& next) {
     item.name = next;
     item.scene = it->second();
 
-    // データがあればロード
-    bool hasData = SceneSerializer::Load(item.scene.get(), next);
-
+    // シーンにエンジンコンテキストを確実に先行バインド
     isInitializing_ = true;
     item.scene->Initialize(engine_);
     isInitializing_ = false;
+
+    // データがあればロード
+    bool hasData = SceneSerializer::Load(item.scene.get(), next);
 
     // データがなくてエディタモードなら、初期状態を自動生成
 #ifdef EditorMode
@@ -149,10 +152,11 @@ void SceneManager::PushScene(const Key& name) {
         engine_->GetAudioManager()->PauseCategory(AudioCategory::SE);
     }
 
+    // シーンにエンジンコンテキストを確実に先行バインド
+    item.scene->Initialize(engine_);
+
     // データがあればロード
     bool hasData = SceneSerializer::Load(item.scene.get(), name);
-
-    item.scene->Initialize(engine_);
 
     // データがなくてエディタモードなら、初期状態を自動生成
 #ifdef EditorMode
@@ -269,22 +273,30 @@ void SceneManager::ProcessTransitionPhase(bool& isLoading) {
         }
     } else if (transitionPhase_ == TransitionPhase::Initializing) {
         // バックグラウンドでのシーン破棄・初期化完了待ち
-        if (!isAsyncInitializing_.load()) {
-            if (initFuture_.valid()) {
-                initFuture_.get(); // 例外があればキャッチ
+        if (initFuture_.valid() && initFuture_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            try {
+                initFuture_.get(); // ワーカースレッドの完了待機および例外の再スロー
+            } catch (const std::exception& e) {
+                Log::OutPutLog(std::cerr,
+                               std::string("[SceneManager] Scene async initialization failed: ") + e.what() + "\n");
+            } catch (...) {
+                Log::OutPutLog(std::cerr, "[SceneManager] Scene async initialization failed with unknown exception\n");
             }
 
             {
                 std::lock_guard<std::mutex> lock(nextSceneMutex_);
-                SceneStackItem item;
-                item.name = pendingTransition_;
-                item.scene = std::move(nextScene_);
-                // ここではまだ呼ばない（ロード完了後に呼ぶ）
-                sceneStack_.push_back(std::move(item));
+                if (nextScene_) {
+                    SceneStackItem item;
+                    item.name = pendingTransition_;
+                    item.scene = std::move(nextScene_);
+                    // ここではまだ呼ばない（ロード完了後に呼ぶ）
+                    sceneStack_.push_back(std::move(item));
+                }
             }
 
             pendingTransition_.clear(); // ロード完了後にクリアする
             isInitializing_ = false;
+            isAsyncInitializing_.store(false);
 
             // ポーズ可能なシーンかどうかに応じてマウスをロック
             if (!sceneStack_.empty()) {
@@ -483,11 +495,11 @@ void SceneManager::StartAsyncInitialize(const Key& next) {
         // 新しいシーンを生成
         auto newScene = factory();
 
+        // 初期化（裏ロード: シーンにエンジンコンテキストを先行バインド）
+        newScene->Initialize(engine_);
+
         // データがあればロード
         bool hasData = SceneSerializer::Load(newScene.get(), next);
-
-        // 初期化（裏ロード）
-        newScene->Initialize(engine_);
 
         // データがなくてエディタモードなら、初期状態を自動生成
 #ifdef EditorMode

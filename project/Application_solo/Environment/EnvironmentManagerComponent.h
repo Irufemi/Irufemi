@@ -50,10 +50,10 @@ private:
         Irufemi::Vector3 previousSize;
         Irufemi::Vector3 collisionOffset;
         Irufemi::Vector3 previousOffset;
-        int placementType; // 0: Building (スナップ), 1: Floating (そのまま)
-        int previousPlacementType;
-        bool isDestructible;
-        int debrisSpawnCount;
+        int placementType = 0; // 0: Building (スナップ), 1: Floating (そのまま)
+        int previousPlacementType = 0;
+        bool isDestructible = false;
+        int debrisSpawnCount = 3;
         Irufemi::Vector3 pushbackMask = {1.0f, 1.0f, 1.0f};
         Irufemi::Vector3 previousPushbackMask = {1.0f, 1.0f, 1.0f};
     };
@@ -62,6 +62,13 @@ private:
     std::vector<SpawnedEnvInfo> spawnedObjects_;
     std::list<BatchCollisionSetting> batchCollisionSettings_;
 
-    // モデルごとのバッチレンダラー
-    std::unordered_map<std::string, std::unique_ptr<ModelBatchRendererComponent>> batchRenderers_;
+    // モデルごとのバッチレンダラー（GameObjectにアタッチされたコンポーネントの共有参照）
+    std::unordered_map<std::string, std::shared_ptr<ModelBatchRendererComponent>> batchRenderers_;
+
+    /**
+     * @brief 指定モデルのバッチレンダラーを取得（未生成なら生成して初期化・キャッシュ）
+     * @param modelName 3Dモデル名
+     * @return バッチレンダラーへのポインタ（生成失敗時は nullptr）
+     */
+    ModelBatchRendererComponent* GetOrCreateBatchRenderer(const std::string& modelName);
 };

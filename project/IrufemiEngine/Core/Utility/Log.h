@@ -4,7 +4,7 @@
 #include <ostream>
 #include <string>
 
-#include <vector>
+#include <deque>
 #include <mutex>
 
 class Log {
@@ -14,11 +14,13 @@ public:
         bool isError;
     };
 
+    using LogContainer = std::deque<LogEntry>;
+
 private: // メンバ変数
     std::ofstream logStream;
-    inline static std::vector<LogEntry> logHistory_; // ログの履歴バッファ
-    inline static std::mutex logMutex_;              // ログ履歴保護用ミューテックス
-    static const size_t MAX_LOG_LINES = 1000;        // メモリ保護のための最大行数
+    inline static LogContainer logHistory_;   // ログの履歴バッファ (O(1) pop_front)
+    inline static std::mutex logMutex_;       // ログ履歴保護用ミューテックス
+    static const size_t MAX_LOG_LINES = 1000; // メモリ保護のための最大行数
 
 public: // メンバ関数
     /// <summary>
@@ -42,9 +44,19 @@ public: // メンバ関数
     static void OutPutLog(std::ostream& os, const std::string& message);
 
     /**
+     * @brief ログ履歴を排他ロック下でゼロコピー走査・処理します（エディタコンソール等での高速描画用）
+     * @tparam Func 呼び出し可能オブジェクト型 (void(const std::vector<LogEntry>&))
+     * @param[in] func ログ履歴を受け取る関数またはラムダ式
+     */
+    template <typename Func> static void WithLogHistory(Func&& func) {
+        std::lock_guard<std::mutex> lock(logMutex_);
+        func(logHistory_);
+    }
+
+    /**
      * @brief 現在のログ履歴を取得します（エディタのコンソールパネル用）
      */
-    static std::vector<LogEntry> GetLogHistory() {
+    static LogContainer GetLogHistory() {
         std::lock_guard<std::mutex> lock(logMutex_);
         return logHistory_;
     }

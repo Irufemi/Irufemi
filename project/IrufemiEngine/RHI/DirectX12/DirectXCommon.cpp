@@ -159,13 +159,14 @@ void DirectXCommon::Initialize(HWND hwnd, int32_t w, int32_t h) {
     srvPool_ = std::make_unique<DescriptorPool>();
     srvPool_->Initialize(device_.Get());
     rootSignatureManager_ = std::make_unique<DXRootSignatureManager>();
-    rootSignatureManager_->Initialize(device_.Get(), log_);
+    rootSignatureManager_->Initialize(device_.Get());
     CreatePSOs();
 
     CreateDepthSRV();
 
     // GpuProfilerの初期化
-    GpuProfiler::GetInstance().Initialize(this);
+    gpuProfiler_ = std::make_unique<GpuProfiler>();
+    gpuProfiler_->Initialize(this);
 }
 
 void DirectXCommon::CreateDepthSRV() {
@@ -770,6 +771,15 @@ DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
                 image.OverrideFormat(DirectX::MakeSRGB(metadata.format));
             }
         }
+    } else if (fileType == TextureUtility::TextureFileType::TGA) {
+        hr = LoadFromTGAFile(filePathW.c_str(), TGA_FLAGS_NONE, nullptr, image);
+
+        if (SUCCEEDED(hr) && isSRGB) {
+            const auto& metadata = image.GetMetadata();
+            if (DirectX::FormatDataType(metadata.format) != DirectX::FORMAT_TYPE_FLOAT) {
+                image.OverrideFormat(DirectX::MakeSRGB(metadata.format));
+            }
+        }
     } else {
         WIC_FLAGS wicFlags = isSRGB ? WIC_FLAGS_FORCE_SRGB : WIC_FLAGS_NONE;
         hr = LoadFromWICFile(filePathW.c_str(), wicFlags, nullptr, image);
@@ -827,8 +837,11 @@ DirectX::TexMetadata DirectXCommon::GetTextureMetadata(const std::string& filePa
     using namespace DirectX;
     std::wstring filePathW = ConvertString(filePath);
     TexMetadata metadata{};
-    if (StringUtility::EndsWith(filePathW, L".dds")) {
+    TextureUtility::TextureFileType fileType = TextureUtility::GetTextureFileType(filePathW);
+    if (fileType == TextureUtility::TextureFileType::DDS) {
         GetMetadataFromDDSFile(filePathW.c_str(), DDS_FLAGS_NONE, metadata);
+    } else if (fileType == TextureUtility::TextureFileType::TGA) {
+        GetMetadataFromTGAFile(filePathW.c_str(), TGA_FLAGS_NONE, metadata);
     } else {
         GetMetadataFromWICFile(filePathW.c_str(), WIC_FLAGS_NONE, metadata);
     }
@@ -1002,7 +1015,7 @@ void DirectXCommon::ResizeSwapChain(int32_t width, int32_t height) {
 
     // DXSwapChainManager 側でバッファ再構築
     swapChainManager_->ResizeSwapChain(device_.Get(), width, height);
-    CreateDepthSRV(); // 追加: リサイズ後にSRVを作り直す
+    CreateDepthSRV(); // ウィンドウリサイズに伴う深度SRVの再生成
 
     // ビューポートとシザーレクトの更新
     viewport_.Width = static_cast<float>(width);
@@ -1023,17 +1036,15 @@ void DirectXCommon::ReleaseAfterFence(Microsoft::WRL::ComPtr<ID3D12Resource> res
         return;
     }
     std::lock_guard<std::mutex> lock(pendingMutex_);
-    pendingResources_.push_back({commandManager_->GetGlobalFenceValue() + 1, resource});
+    pendingResources_.push_back({commandManager_->GetGlobalFenceValue() + 1, std::move(resource)});
 }
 
 void DirectXCommon::ClearPendingResources() {
     uint64_t completed = commandManager_->GetFence()->GetCompletedValue();
     std::lock_guard<std::mutex> lock(pendingMutex_);
 
-    // リソースの回収
-    auto it = std::remove_if(pendingResources_.begin(), pendingResources_.end(),
-                             [completed](const PendingResource& res) { return res.fenceValue <= completed; });
-    pendingResources_.erase(it, pendingResources_.end());
+    // リソースの回収 (C++20 std::erase_if)
+    std::erase_if(pendingResources_, [completed](const PendingResource& res) { return res.fenceValue <= completed; });
 
     // デスクリプタの回収をマネージャに委譲
     swapChainManager_->FlushPendingDescriptors(completed);

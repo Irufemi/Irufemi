@@ -70,8 +70,8 @@ private:
 
     // 描画オブジェクト
     std::unique_ptr<Primitive3DObject> chargeSphere_ = nullptr;
-    std::shared_ptr<Primitive3DObject> attackCylinder_ = nullptr;      // 内側の極太レーザーコア
-    std::shared_ptr<Primitive3DObject> attackCylinderOuter_ = nullptr; // 外側の電撃オーラ
+    std::unique_ptr<Primitive3DObject> attackCylinder_ = nullptr;      // 内側の極太レーザーコア
+    std::unique_ptr<Primitive3DObject> attackCylinderOuter_ = nullptr; // 外側の電撃オーラ
 
     // シェーダーパラメータ定数バッファ
     ConstantBuffer<LightningParams> beamParamsBuffer_;
@@ -79,6 +79,11 @@ private:
 
     ConstantBuffer<LightningParams> auraParamsBuffer_;
     LightningParams auraParamsData_{};
+
+    /**
+     * @brief 描画リソースが未生成の場合に遅延初期化する
+     */
+    void EnsureResources();
 
     /**
      * @brief インスペクターやプロパティの変更を定数バッファデータへ同期する

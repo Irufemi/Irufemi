@@ -3,9 +3,9 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Combat/IDamageable.h"
 #include "Combat/Boss/BossComponent.h"
+#include "Player/TargetableComponent.h"
 #include "Environment/DebrisManagerComponent.h"
 #include "Effects/EffectManagerComponent.h"
 #include "Core/Math/Random/Random.h"
@@ -22,18 +22,6 @@
 #include <iostream>
 #include "Core/Utility/Log.h"
 #include "Physics/CollisionManager.h"
-
-static ColliderComponent* GetColliderFromObj(GameObject* obj) {
-    if (!obj) {
-        return nullptr;
-    }
-    for (auto& comp : obj->GetComponents()) {
-        if (auto col = dynamic_cast<ColliderComponent*>(comp.get())) {
-            return col;
-        }
-    }
-    return nullptr;
-}
 
 float DebrisComponent::GetPullSpeed() const {
     return manager_ ? manager_->GetDebrisPullSpeed() : 10.0f;
@@ -84,7 +72,14 @@ void DebrisComponent::Initialize() {
 void DebrisComponent::OnEnable() {
     state_ = DebrisState::Idle;
     targetObject_.reset();
-    idleTimeY_ = static_cast<float>(rand() % 100); // ランダムな位相で開始
+    idleTimeY_ = Irufemi::Random::GeneratorFloat(0.0f, 100.0f); // ランダムな位相で開始
+
+    if (gameObject_) {
+        if (auto targetable = gameObject_->GetComponent<TargetableComponent>()) {
+            targetable->SetTargetType(TargetType::BossShield);
+            targetable->SetTargetablePredicate([this]() { return state_ == DebrisState::BossOrbiting; });
+        }
+    }
 
     if (auto transform = GetTransform()) {
         baseIdleY_ = transform->GetPosition().y;
@@ -150,8 +145,8 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
         }
         damageable->TakeDamage(damage);
         hit = true;
-    } else if (auto collider = GetColliderFromObj(otherObj)) {
-        auto cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+    } else if (auto collider = otherObj ? otherObj->GetComponent<ColliderComponent>() : nullptr) {
+        auto cm = GetEngine() ? GetEngine()->GetCollisionManager() : nullptr;
         // 建造物（Environmentレイヤー）との衝突検知
         // 衝突した場合は破砕エフェクトを再生し、プールへ返却（回収）する
         if (cm) {
@@ -167,14 +162,20 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
             Irufemi::Vector3 hitPos = t->GetWorldPosition();
 
             EffectManagerComponent* effectManager = nullptr;
-            if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+            if (auto go = effectManagerObj_.lock()) {
                 effectManager = go->GetComponent<EffectManagerComponent>();
+            } else if (gameObject_ && gameObject_->GetScene()) {
+                if (auto found = gameObject_->GetScene()->FindGameObject("EffectManager")) {
+                    effectManagerObj_ = found;
+                    effectManager = found->GetComponent<EffectManagerComponent>();
+                }
             }
             if (effectManager) {
                 effectManager->PlayEffect(hitEffectKey_, hitPos);
             }
 
-            if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {
+            auto engine = GetEngine();
+            if (auto voxelManager = engine ? engine->GetVoxelParticleManager() : nullptr) {
                 VoxelEmitter p{};
                 p.particleType = 5; // DebrisExplosive
                 p.lifeTime = 1.0f;
@@ -204,8 +205,69 @@ void DebrisComponent::OnCollisionEnter(GameObject* otherObj) {
     }
 }
 
-void DebrisComponent::SetState(DebrisState newState) {
-    if (state_ == newState) {
+void DebrisComponent::UpdateAuraVisuals() {
+    if (!gameObject_) {
+        return;
+    }
+
+    for (auto& child : gameObject_->GetChildren()) {
+        if (child && child->GetName() == "DebrisAura") {
+            bool isActive = false;
+            Irufemi::Vector4 auraColor =
+                manager_ ? manager_->GetIdleAuraColor() : Irufemi::Vector4{0.6f, 0.2f, 1.0f, 0.4f};
+
+            switch (state_) {
+            case DebrisState::Pulled:
+            case DebrisState::Orbiting:
+            case DebrisState::Thrown:
+                isActive = true;
+                auraColor = GetPlayerAuraColor();
+                break;
+            case DebrisState::BossOrbiting:
+                isActive = true;
+                auraColor = GetBossAuraColor();
+                break;
+            case DebrisState::Idle:
+            default:
+                isActive = false;
+                break;
+            }
+
+            child->SetIsActive(isActive);
+
+            if (auto auraModel = child->GetComponent<PrimitiveRendererComponent>()) {
+                if (auto primitive = dynamic_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
+                    primitive->SetColor(auraColor);
+                }
+            }
+        }
+    }
+}
+
+void DebrisComponent::ResetForPool() {
+    if (manager_) {
+        manager_->UnregisterDebris(this, state_);
+    }
+    state_ = DebrisState::Idle;
+    targetObject_.reset();
+    orbitAngle_ = 0.0f;
+    throwDirection_ = {0.0f, 0.0f, 0.0f};
+    throwOrigin_ = {0.0f, 0.0f, 0.0f};
+
+    UpdateAuraVisuals();
+
+    if (auto collider = gameObject_ ? gameObject_->GetComponent<ColliderComponent>() : nullptr) {
+        auto* cm = GetEngine() ? GetEngine()->GetCollisionManager() : nullptr;
+        if (cm) {
+            uint32_t neutralLayer = cm->GetLayerMask("Debris_Neutral");
+            collider->layer_ = neutralLayer;
+            collider->mask_ = 0;
+        }
+    }
+}
+
+void DebrisComponent::SetState(DebrisState newState, bool forceVisualUpdate) {
+    if (state_ == newState && !forceVisualUpdate) {
         return;
     }
     if (manager_) {
@@ -216,43 +278,10 @@ void DebrisComponent::SetState(DebrisState newState) {
         manager_->RegisterDebris(this, state_);
     }
 
-    // オーラ用子オブジェクトの表示切り替えと色の変更
-    if (gameObject_) {
-        for (auto& child : gameObject_->GetChildren()) {
-            if (child && child->GetName() == "DebrisAura") {
-                bool isActive = false;
-                Irufemi::Vector4 auraColor = {1.0f, 1.0f, 1.0f, 0.7f};
+    UpdateAuraVisuals();
 
-                switch (state_) {
-                case DebrisState::Pulled:
-                case DebrisState::Orbiting:
-                case DebrisState::Thrown:
-                    isActive = true;
-                    auraColor = GetPlayerAuraColor();
-                    break;
-                case DebrisState::BossOrbiting:
-                    isActive = true;
-                    auraColor = GetBossAuraColor();
-                    break;
-                default:
-                    break;
-                }
-
-                child->SetIsActive(isActive);
-
-                if (isActive) {
-                    if (auto auraModel = child->GetComponent<PrimitiveRendererComponent>()) {
-                        if (auto primitive = static_cast<Primitive3DObject*>(auraModel->GetRenderable())) {
-                            primitive->SetColor(auraColor);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (auto collider = GetColliderFromObj(gameObject_)) {
-        auto* cm = BaseModel::GetIrufemiEngine()->GetCollisionManager();
+    if (auto collider = gameObject_ ? gameObject_->GetComponent<ColliderComponent>() : nullptr) {
+        auto* cm = GetEngine() ? GetEngine()->GetCollisionManager() : nullptr;
         if (cm) {
             uint32_t neutralLayer = cm->GetLayerMask("Debris_Neutral");
             uint32_t playerLayer = cm->GetLayerMask("Debris_Player");

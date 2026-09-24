@@ -4,18 +4,19 @@
 #include "Framework/Component/VirtualEntity/VirtualEntityManagerComponent.h"
 #include "Framework/Component/Renderer/ModelBatchRendererComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Player/GravityPlayerComponent.h"
 #include "Player/PlayerHealthComponent.h"
-#include "Environment/DebrisComponent.h"
+#include "Combat/IDamageable.h"
+#include "Environment/DestructibleEnvironmentComponent.h"
 #include "Physics/CollisionManager.h"
 #include "Framework/Component/Collider/ColliderComponent.h"
+#include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Core/Utility/Log.h"
-#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 #include "Effects/EffectManagerComponent.h"
 #include <iostream>
 #include <algorithm>
+#include <limits>
 BossBulletManagerComponent::BossBulletManagerComponent() {}
 
 void BossBulletManagerComponent::Initialize() {
@@ -26,8 +27,8 @@ void BossBulletManagerComponent::Initialize() {
 
     // バッチレンダラに球モデルを設定
     if (auto batchRenderer = gameObject_->GetComponent<ModelBatchRendererComponent>()) {
-        batchRenderer->LoadModel("resources/model/BossBulletSphere.obj");
-        // 紫色などはマテリアル側で設定する必要がありますが、ここでは一旦モデルを描画します
+        batchRenderer->LoadModel("resources/model/BossDroneBullet/BossDroneBullet.obj");
+        // TODO: マテリアル側での弾色設定（紫色等）に対応後、マテリアルパラメータを反映する
     }
 
     auto factory = []() -> std::shared_ptr<GameObject> { return nullptr; };
@@ -39,21 +40,47 @@ void BossBulletManagerComponent::Initialize() {
     }
 }
 
-void BossBulletManagerComponent::Start() {}
+void BossBulletManagerComponent::Start() {
+    // シーン開始時に依存マネージャーを事前解決（Updateループでの検索負荷を完全排除）
+    if (auto scene = gameObject_->GetScene()) {
+        if (auto go = scene->FindGameObject("EffectManager")) {
+            effectManager_ = go->GetComponent<EffectManagerComponent>();
+        }
+    }
+}
 
 void BossBulletManagerComponent::Update() {
     if (!virtualManager_) {
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float dt = GetEngine() ? GetEngine()->GetGameDeltaTime() : 0.0f;
     if (dt <= 0.0f) {
-        dt = 1.0f / 60.0f;
+        return; // ポーズ中（TimeScale == 0）は弾幕更新を完全停止
     }
 
     auto& virtualInstances = virtualManager_->GetDenseInstances();
-
     int activeCount = static_cast<int>(activeVirtualIds_.size());
+    if (activeCount == 0) {
+        return;
+    }
+
+    // 共通の爆発エフェクト処理ラムダ（プレハブデータから自動再生）
+    auto playExplosion = [&](const Irufemi::Vector3& pos) {
+        if (effectManager_) {
+            effectManager_->PlayEffect(hitEffectKey_, pos);
+        }
+    };
+
+    // --- Phase 1: 弾の移動 & 寿命判定 & 弾幕クラスタAABBの算出 ---
+    std::vector<int> survivedBulletVids;
+    survivedBulletVids.reserve(activeCount);
+
+    Irufemi::Vector3 clusterMin = {(std::numeric_limits<float>::max)(), (std::numeric_limits<float>::max)(),
+                                   (std::numeric_limits<float>::max)()};
+    Irufemi::Vector3 clusterMax = {-(std::numeric_limits<float>::max)(), -(std::numeric_limits<float>::max)(),
+                                   -(std::numeric_limits<float>::max)()};
+
     for (int i = 0; i < activeCount; ++i) {
         int vid = activeVirtualIds_.front();
         activeVirtualIds_.pop();
@@ -61,99 +88,164 @@ void BossBulletManagerComponent::Update() {
         auto& data = bulletDataList_[vid];
         data.lifeTimer -= dt;
 
-        // Find index in dense_ array
         int denseIndex = virtualManager_->GetSparseIndex(vid);
         if (denseIndex >= 0) {
             auto& vi = virtualInstances[denseIndex];
 
-            // 共通の爆発エフェクト処理ラムダ
-            auto playExplosion = [&](const Irufemi::Vector3& pos) {
-                EffectManagerComponent* effectManager = nullptr;
-                if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
-                    effectManager = go->GetComponent<EffectManagerComponent>();
-                }
-                if (effectManager) {
-                    effectManager->PlayEffect(hitEffectKey_, pos);
-                }
-
-                if (auto voxelManager = BaseModel::GetIrufemiEngine()->GetVoxelParticleManager()) {
-                    VoxelEmitter p{};
-                    p.particleType = 5; // DebrisExplosive
-                    p.lifeTime = 1.0f;
-                    p.gravity = 5.0f;
-                    p.dispersion = 12.0f;
-                    p.scale = {0.5f, 0.5f, 0.5f};
-
-                    Irufemi::Vector4 aura = {0.8f, 0.0f, 0.6f, 0.4f}; // Boss Aura
-                    Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
-                    p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f,
-                                    rockColor.z + aura.z * 2.0f, 1.0f};
-                    p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
-                    p.dissolveEdgeColor = aura;
-
-                    voxelManager->PlayExplosion(explosionModelPath_, pos, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, p,
-                                                {2, 2, 2});
-                }
-            };
-
             if (data.lifeTimer <= 0.0f) {
-                playExplosion(vi.position_);
+                playExplosion(vi.position);
                 ReleaseBullet(vid);
                 continue;
             }
 
-            vi.position_ += data.velocity * dt;
+            vi.position += data.velocity * dt;
+            survivedBulletVids.push_back(vid);
 
-            auto engine = BaseModel::GetIrufemiEngine();
-            auto cm = engine->GetCollisionManager();
-            if (cm) {
-                Irufemi::Vector3 minPos = {vi.position_.x - hitRadius_, vi.position_.y - hitRadius_,
-                                           vi.position_.z - hitRadius_};
-                Irufemi::Vector3 maxPos = {vi.position_.x + hitRadius_, vi.position_.y + hitRadius_,
-                                           vi.position_.z + hitRadius_};
-                Irufemi::AABB aabb{minPos, maxPos};
+            // クラスタAABBの拡張（hitRadius_分も含める）
+            clusterMin.x = (std::min)(clusterMin.x, vi.position.x - hitRadius_);
+            clusterMin.y = (std::min)(clusterMin.y, vi.position.y - hitRadius_);
+            clusterMin.z = (std::min)(clusterMin.z, vi.position.z - hitRadius_);
 
-                std::vector<ColliderComponent*> hits;
-                cm->QueryAABB(aabb, hits);
+            clusterMax.x = (std::max)(clusterMax.x, vi.position.x + hitRadius_);
+            clusterMax.y = (std::max)(clusterMax.y, vi.position.y + hitRadius_);
+            clusterMax.z = (std::max)(clusterMax.z, vi.position.z + hitRadius_);
+        }
+    }
 
-#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
-                if (cm->GetIsDrawDebugLinePtr() && *cm->GetIsDrawDebugLinePtr()) {
-                    cm->DrawDebugAABB(aabb, {1.0f, 0.0f, 0.0f, 1.0f});
-                }
-#endif
+    if (survivedBulletVids.empty()) {
+        return;
+    }
 
-                bool isHit = false;
-                for (auto col : hits) {
-                    if (!col) {
-                        continue;
-                    }
-                    auto obj = col->GetGameObject();
-                    if (!obj) {
-                        continue;
-                    }
+    // --- Phase 2: 弾幕クラスタAABBによるBVH事前フェッチ（1フレームに1回のみ） ---
+    auto engine = GetEngine();
+    auto cm = engine ? engine->GetCollisionManager() : nullptr;
 
-                    // 文字列比較は行わず、高速な数値ID比較およびPlayerHealthComponentの所持チェックで判定
-                    auto healthComp = obj->GetComponent<PlayerHealthComponent>();
-                    if (healthComp != nullptr) {
-                        const bool isTarget = (targetPlayerID_ == 0 || obj->GetInstanceID() == targetPlayerID_);
-                        if (isTarget && !healthComp->IsInvincible()) {
-                            healthComp->TakeDamage(1);
-                            isHit = true;
-                            break;
-                        }
-                    }
-                }
+    struct CachedTargetProxy {
+        ColliderComponent* collider = nullptr;
+        GameObject* gameObject = nullptr;
+        PlayerHealthComponent* playerHealth = nullptr;
+        DestructibleEnvironmentComponent* destructible = nullptr;
+        bool isSphere = false;
+        Irufemi::Sphere sphere{};
+        Irufemi::AABB broadAABB{};
+    };
 
-                if (isHit) {
-                    playExplosion(vi.position_);
-                    ReleaseBullet(vid);
-                    continue;
-                }
+    std::vector<CachedTargetProxy> targetProxies;
+
+    if (cm) {
+        Irufemi::AABB clusterAABB{clusterMin, clusterMax};
+        prefetchedColliders_.clear();
+        cm->QueryAABB(clusterAABB, prefetchedColliders_);
+
+        targetProxies.reserve(prefetchedColliders_.size());
+        for (auto col : prefetchedColliders_) {
+            if (!col) {
+                continue;
+            }
+            auto obj = col->GetGameObject();
+            if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
+                continue;
             }
 
-            activeVirtualIds_.push(vid); // Keep active
+            // 被弾対象となるコンポーネントをチェック
+            auto healthComp = obj->GetComponent<PlayerHealthComponent>();
+            auto destructibleComp = obj->GetComponent<DestructibleEnvironmentComponent>();
+
+            // プレイヤーでもなく、破壊可能環境物でもない場合はスキップ
+            if (!healthComp && !destructibleComp) {
+                continue;
+            }
+
+            // プレイヤーが無敵中の場合は被弾対象から除外
+            if (healthComp && healthComp->IsInvincible()) {
+                continue;
+            }
+
+            CachedTargetProxy proxy{};
+            proxy.collider = col;
+            proxy.gameObject = obj;
+            proxy.playerHealth = healthComp;
+            proxy.destructible = destructibleComp;
+
+            if (auto sphereCol = dynamic_cast<SphereColliderComponent*>(col)) {
+                proxy.isSphere = true;
+                proxy.sphere = sphereCol->GetWorldSphere();
+                float totalR = proxy.sphere.radius + hitRadius_;
+                proxy.broadAABB.min = {proxy.sphere.center.x - totalR, proxy.sphere.center.y - totalR,
+                                       proxy.sphere.center.z - totalR};
+                proxy.broadAABB.max = {proxy.sphere.center.x + totalR, proxy.sphere.center.y + totalR,
+                                       proxy.sphere.center.z + totalR};
+            } else {
+                proxy.isSphere = false;
+                Irufemi::AABB bbox = col->GetBoundingBox();
+                proxy.broadAABB.min = {bbox.min.x - hitRadius_, bbox.min.y - hitRadius_, bbox.min.z - hitRadius_};
+                proxy.broadAABB.max = {bbox.max.x + hitRadius_, bbox.max.y + hitRadius_, bbox.max.z + hitRadius_};
+            }
+
+            targetProxies.push_back(proxy);
+        }
+    }
+
+    // --- Phase 3: 弾 vs 事前フェッチされた被弾候補のバッチ判定 ---
+    for (int vid : survivedBulletVids) {
+        int denseIndex = virtualManager_->GetSparseIndex(vid);
+        if (denseIndex < 0) {
+            continue;
+        }
+        auto& vi = virtualInstances[denseIndex];
+        const auto& p = vi.position;
+
+#if defined(_DEBUG) || defined(DEVELOPMENT) || defined(EditorMode)
+        if (cm && cm->GetIsDrawDebugLinePtr() && *cm->GetIsDrawDebugLinePtr()) {
+            Irufemi::Vector3 minPos = {p.x - hitRadius_, p.y - hitRadius_, p.z - hitRadius_};
+            Irufemi::Vector3 maxPos = {p.x + hitRadius_, p.y + hitRadius_, p.z + hitRadius_};
+            cm->DrawDebugAABB(Irufemi::AABB{minPos, maxPos}, {1.0f, 0.0f, 0.0f, 1.0f}, DebugCategory::Combat);
+        }
+#endif
+
+        bool isHit = false;
+        if (!targetProxies.empty()) {
+            for (const auto& proxy : targetProxies) {
+                // 1. Broadphase: ターゲットの拡張AABB内かチェック
+                if (p.x < proxy.broadAABB.min.x || p.x > proxy.broadAABB.max.x || p.y < proxy.broadAABB.min.y ||
+                    p.y > proxy.broadAABB.max.y || p.z < proxy.broadAABB.min.z || p.z > proxy.broadAABB.max.z) {
+                    continue;
+                }
+
+                // 2. Narrowphase
+                if (proxy.isSphere) {
+                    float totalR = proxy.sphere.radius + hitRadius_;
+                    float dx = p.x - proxy.sphere.center.x;
+                    float dy = p.y - proxy.sphere.center.y;
+                    float dz = p.z - proxy.sphere.center.z;
+                    if (dx * dx + dy * dy + dz * dz > totalR * totalR) {
+                        continue;
+                    }
+                }
+
+                // 命中確定！
+                if (proxy.playerHealth) {
+                    const bool isTarget =
+                        (targetPlayerID_ == 0 || proxy.gameObject->GetInstanceID() == targetPlayerID_);
+                    if (isTarget && !proxy.playerHealth->IsInvincible()) {
+                        proxy.playerHealth->TakeDamage(1);
+                        isHit = true;
+                        break;
+                    }
+                } else if (proxy.destructible) {
+                    // 環境物破壊
+                    proxy.destructible->TakeDamage(1);
+                    isHit = true;
+                    break;
+                }
+            }
+        }
+
+        if (isHit) {
+            playExplosion(vi.position);
+            ReleaseBullet(vid);
         } else {
-            // Already destroyed somewhere else
+            activeVirtualIds_.push(vid); // 生存弾をキューに維持
         }
     }
 }
@@ -163,7 +255,6 @@ void BossBulletManagerComponent::OnRegisterProperties() {
     RegisterProperty("Default Life Time", &defaultLifeTime_);
     RegisterPropertyRange("Hit Radius", &hitRadius_, 0.1f, 10.0f);
     RegisterProperty("Hit Effect Key", &hitEffectKey_);
-    RegisterProperty("Explosion Model Path", &explosionModelPath_);
     RegisterGameObjectRef("Target Player", &targetPlayerID_);
 }
 

@@ -3,6 +3,7 @@
 #include "Renderer/Object/2D/Sprite/Sprite.h"
 #include <memory>
 #include <string>
+#include "Core/Math/Vector2.h"
 #include "Core/Math/Vector4.h"
 
 class TransformComponent;
@@ -10,7 +11,7 @@ class TransformComponent;
 /**
  * @class SpriteRendererComponent
  * @brief 2Dスプライト描画用コンポーネント
- * @details GameObjectにアタッチして2D画像の描画とUI操作を提供します
+ * @details 2D画像テクスチャのアンカー・フリップ・カラー・サイズ管理を行い、ワールドトランスフォームに同期して描画します
  */
 class SpriteRendererComponent : public Component {
 public:
@@ -18,71 +19,133 @@ public:
     virtual ~SpriteRendererComponent();
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 初期化処理を実行します
      */
     void Initialize() override;
+
     /**
      * @brief 生成時の自己完結初期化（Spriteオブジェクトの生成・初期プロパティ適用）を行います
      */
     void OnAwake() override;
+
     /**
-     * @brief ワールド座標・Transform確定時の描画ステート同期を行います
+     * @brief スポーン時にワールド座標・Transform確定時の描画ステート同期を行います
      */
     void OnSpawned() override;
-    void SyncRenderState() override;
+
     /**
-     * @brief Update を実行する。
+     * @brief TransformComponentの最新位置・回転・スケールを描画オブジェクトへ反映します
+     */
+    void SyncRenderState() override;
+
+    /**
+     * @brief 毎フレームの更新処理（描画ステート同期）を実行します
      */
     void Update() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief 描画マネージャへスプライト描画コマンドを登録します
      */
     void Draw() override;
 
     /**
-     * @brief CanUpdateInEditMode かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief エディタモード中も更新を行うかを判定します
+     * @return 常に true
      */
     bool CanUpdateInEditMode() const override {
         return true;
     }
 
     /**
-     * @brief Renderable を取得する。
-     * @return 取得された Renderable
+     * @brief 描画可能な内部オブジェクト（Sprite）へのポインタを取得します
+     * @return IRenderable インターフェースポインタ
      */
     IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(sprite_.get());
+        return sprite_.get();
     }
+
 #ifdef EditorMode
     friend class SpriteRendererComponentEditor;
 #endif
+
     /**
-     * @brief Texture を設定する。
-     * @param[in] texturePath 設定する Texture の値
+     * @brief 描画するテクスチャパスを設定します
+     * @param[in] texturePath 読み込むテクスチャの相対パス
      */
     void SetTexture(const std::string& texturePath);
+
     /**
-     * @brief Sprite を取得する。
-     * @return 取得された Sprite
+     * @brief 内部の Sprite オブジェクトを取得します
+     * @return Sprite オブジェクトの生ポインタ
      */
     Sprite* GetSprite() const {
         return sprite_.get();
     }
 
     /**
-     * @brief ComponentName を取得する。
-     * @return 取得された ComponentName
+     * @brief アンカーポイント（原点位置：0.0f〜1.0f）を設定します
+     * @param[in] anchor 設定するアンカー座標
+     */
+    void SetAnchor(const Irufemi::Vector2& anchor);
+
+    /**
+     * @brief アンカーポイントを取得します
+     * @return 現在のアンカー座標
+     */
+    const Irufemi::Vector2& GetAnchor() const {
+        return anchor_;
+    }
+
+    /**
+     * @brief ベース描画サイズを設定します
+     * @param[in] size 設定するサイズ（幅・高さ）
+     */
+    void SetBaseSize(const Irufemi::Vector2& size);
+
+    /**
+     * @brief ベース描画サイズを取得します
+     * @return 現在のベースサイズ
+     */
+    const Irufemi::Vector2& GetBaseSize() const {
+        return size_;
+    }
+
+    /**
+     * @brief スプライトの基準カラーを取得します
+     * @return 現在設定されているカラー
+     */
+    const Irufemi::Vector4& GetColor() const {
+        return color_;
+    }
+
+    /**
+     * @brief スプライトの基準カラーを設定します
+     * @param[in] color 設定するカラー
+     */
+    void SetColor(const Irufemi::Vector4& color) {
+        color_ = color;
+        if (sprite_) {
+            sprite_->SetColor(color_);
+        }
+    }
+
+    /**
+     * @brief コンポーネントの識別名を取得します
+     * @return クラス名文字列
      */
     std::string GetComponentName() const override {
         return "SpriteRendererComponent";
     }
+
     /**
-     * @brief Serialize を実行する。
+     * @brief コンポーネントの状態を JSON にシリアライズします
+     * @return シリアライズされた JSON オブジェクト
      */
     nlohmann::json Serialize() override;
+
     /**
-     * @brief Deserialize を実行する。
+     * @brief JSON からコンポーネントの状態を復元します
+     * @param[in] j 読み込む JSON オブジェクト
      */
     void Deserialize(const nlohmann::json& j) override;
 
@@ -92,7 +155,7 @@ private:
     bool isTopMost_ = false;
     bool isFlipX_ = false;
     bool isFlipY_ = false;
-    float anchor_[2] = {0.5f, 0.5f};
-    float size_[2] = {640.0f, 360.0f};
+    Irufemi::Vector2 anchor_{0.5f, 0.5f};
+    Irufemi::Vector2 size_{640.0f, 360.0f};
     Irufemi::Vector4 color_ = {1.0f, 1.0f, 1.0f, 1.0f};
 };

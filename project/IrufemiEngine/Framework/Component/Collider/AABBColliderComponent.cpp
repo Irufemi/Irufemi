@@ -19,21 +19,22 @@ void AABBColliderComponent::OnRegisterProperties() {
 
 Irufemi::AABB AABBColliderComponent::GetWorldAABB() const {
     Irufemi::AABB aabb;
-    if (GetTransform()) {
-        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
-        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
+    auto* transform = GetTransform();
+    if (transform) {
+        Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+        Irufemi::Vector3 worldScale = transform->GetWorldScale();
 
         // オブジェクトの回転とスケールを考慮したワールド空間のローカルオフセット
-        Irufemi::Vector3 worldOffset = GetTransform()->GetWorldRight() * (localOffset_.x * worldScale.x) +
-                                       GetTransform()->GetWorldUp() * (localOffset_.y * worldScale.y) +
-                                       GetTransform()->GetWorldForward() * (localOffset_.z * worldScale.z);
+        Irufemi::Vector3 worldOffset = transform->GetWorldRight() * (localOffset_.x * worldScale.x) +
+                                       transform->GetWorldUp() * (localOffset_.y * worldScale.y) +
+                                       transform->GetWorldForward() * (localOffset_.z * worldScale.z);
 
         Irufemi::Vector3 center = worldPos + worldOffset;
 
         // ローカル軸ごとのサイズベクトルをワールド空間に変換
-        Irufemi::Vector3 rightSize = GetTransform()->GetWorldRight() * (localSize_.x * worldScale.x);
-        Irufemi::Vector3 upSize = GetTransform()->GetWorldUp() * (localSize_.y * worldScale.y);
-        Irufemi::Vector3 forwardSize = GetTransform()->GetWorldForward() * (localSize_.z * worldScale.z);
+        Irufemi::Vector3 rightSize = transform->GetWorldRight() * (localSize_.x * worldScale.x);
+        Irufemi::Vector3 upSize = transform->GetWorldUp() * (localSize_.y * worldScale.y);
+        Irufemi::Vector3 forwardSize = transform->GetWorldForward() * (localSize_.z * worldScale.z);
 
         // 各ワールド軸（X, Y, Z）への射影の絶対値の和がAABBのサイズ（extent）になる
         Irufemi::Vector3 extent;
@@ -63,11 +64,19 @@ void AABBColliderComponent::Deserialize(const nlohmann::json& j) {
         localOffset_.x = j["localOffset"][0];
         localOffset_.y = j["localOffset"][1];
         localOffset_.z = j["localOffset"][2];
+    } else if (j.contains("center")) {
+        localOffset_.x = j["center"][0];
+        localOffset_.y = j["center"][1];
+        localOffset_.z = j["center"][2];
     }
     if (j.contains("localSize")) {
         localSize_.x = j["localSize"][0];
         localSize_.y = j["localSize"][1];
         localSize_.z = j["localSize"][2];
+    } else if (j.contains("size")) {
+        localSize_.x = j["size"][0];
+        localSize_.y = j["size"][1];
+        localSize_.z = j["size"][2];
     }
 }
 

@@ -29,14 +29,6 @@ void OptionsScene::Update() {
         BindUIComponents();
         uiBound_ = true;
     }
-
-    if (closeBtn_ && closeBtn_->IsClicked()) {
-        if (auto engine = GetEngine()) {
-            if (auto sm = engine->GetSceneManager()) {
-                sm->PopScene();
-            }
-        }
-    }
 }
 
 void OptionsScene::Finalize() {
@@ -70,11 +62,11 @@ void OptionsScene::BindUIComponents() {
     // Close / Cancel ボタン
     if (auto obj = FindGameObject("Button_Cancel")) {
         if (auto btn = obj->GetComponent<ButtonComponent>()) {
-            closeBtn_ = btn;
+            btn->SetOnClickCallback(closeScene);
         }
     } else if (auto objClose = FindGameObject("Button_Close")) {
         if (auto btn = objClose->GetComponent<ButtonComponent>()) {
-            closeBtn_ = btn;
+            btn->SetOnClickCallback(closeScene);
         }
     }
 

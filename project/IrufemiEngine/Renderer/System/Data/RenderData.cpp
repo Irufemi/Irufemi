@@ -13,7 +13,7 @@ void PrimitiveTransform::UpdateTransform(Object3DResource* resource, const Camer
     // 行列の更新
     // 既存の Object3DResource::UpdateTransform は内部で world 行列を再計算するため、
     // ここでは Irufemi::Transform の値を resource に同期させるだけで済む
-    resource->transform_ = transform;
+    resource->SetTransform(transform);
     resource->UpdateTransform(camera);
 
     isDirty = false;
@@ -34,9 +34,9 @@ void MeshDesc::ChangeMesh(Irufemi::PrimitiveType newType) {
     }
 
     // リソースの共有設定
-    resource->vertexBufferView_ = primitiveResource.vertexBufferView;
-    resource->indexBufferView_ = primitiveResource.indexBufferView;
-    resource->indexCount_ = primitiveResource.indexCount;
+    resource->SetVertexBufferView(primitiveResource.vertexBufferView);
+    resource->SetIndexBufferView(primitiveResource.indexBufferView);
+    resource->SetIndexCount(primitiveResource.indexCount);
 
     // 定数バッファ等の生成は最初だけ行う
     if (isNewResource) {
@@ -56,11 +56,11 @@ void MeshDesc::ChangeMesh(const PrimitiveData& data) {
     PrimitiveResource customResource;
     primitiveManager_->CreateGPUResource(data, customResource);
 
-    resource->vertexResource_ = customResource.vertexResource;
-    resource->indexResource_ = customResource.indexResource;
-    resource->vertexBufferView_ = customResource.vertexBufferView;
-    resource->indexBufferView_ = customResource.indexBufferView;
-    resource->indexCount_ = customResource.indexCount;
+    resource->SetVertexResource(customResource.vertexResource);
+    resource->SetIndexResource(customResource.indexResource);
+    resource->SetVertexBufferView(customResource.vertexBufferView);
+    resource->SetIndexBufferView(customResource.indexBufferView);
+    resource->SetIndexCount(customResource.indexCount);
 }
 
 // --- MaterialComponent ---
@@ -95,7 +95,7 @@ void MaterialDesc::UpdateMaterial(Object3DResource* resource, TextureManager* te
     }
 
     if (textureManager) {
-        resource->textureHandle_ = textureHandle;
+        resource->SetTextureHandle(textureHandle);
         resource->GetMaterialData()->hasTexture =
             (textureManager->Resolve(textureHandle).ptr != textureManager->GetWhiteTextureHandle().ptr);
     } else {

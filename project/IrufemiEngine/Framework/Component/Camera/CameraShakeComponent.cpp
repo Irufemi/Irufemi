@@ -4,12 +4,13 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Utility/PerlinNoise.h"
 #include "Core/Utility/Ease.h"
-#include "Renderer/System/Core/BaseModel.h"
+#include "Core/Math/Random/Random.h"
 #include <algorithm>
-#include <cstdlib>
+#include <climits>
 
 CameraShakeComponent::CameraShakeComponent() {
-    perlinNoise_ = std::make_shared<Irufemi::PerlinNoise>(std::rand());
+    perlinNoise_ = std::make_shared<Irufemi::PerlinNoise>(
+        static_cast<unsigned int>(Irufemi::Random::GeneratorUint64(0, UINT_MAX)));
 }
 
 CameraShakeComponent::~CameraShakeComponent() = default;
@@ -42,7 +43,7 @@ void CameraShakeComponent::PlayShakeSeconds(float intensity, float durationSecon
     ev.frequency = frequency;
     // X, Y, Z の揺れやすさにバラツキを持たせる
     ev.axisIntensity = {1.0f, 1.0f, 0.5f};
-    ev.seed = std::rand();
+    ev.seed = static_cast<unsigned int>(Irufemi::Random::GeneratorUint64(0, UINT_MAX));
 
     activeShakes_.push_back(ev);
 }
@@ -57,7 +58,7 @@ void CameraShakeComponent::Update() {
         }
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine) {
         return;
     }
@@ -91,10 +92,8 @@ void CameraShakeComponent::Update() {
         totalOffset.z += nz * currentIntensity * ev.axisIntensity.z;
     }
 
-    // 終了したイベントを削除
-    activeShakes_.erase(std::remove_if(activeShakes_.begin(), activeShakes_.end(),
-                                       [](const ShakeEvent& e) { return e.currentTime >= e.duration; }),
-                        activeShakes_.end());
+    // 終了したイベントを削除 (C++20 std::erase_if)
+    std::erase_if(activeShakes_, [](const ShakeEvent& e) { return e.currentTime >= e.duration; });
 
     cameraComp_->SetPositionOffset(totalOffset);
 }

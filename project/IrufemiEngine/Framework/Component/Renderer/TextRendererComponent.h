@@ -17,30 +17,38 @@ public:
     virtual ~TextRendererComponent();
 
     /**
-     * @brief Initialize を実行する。
+     * @brief 初期化処理を実行します
      */
     void Initialize() override;
+
     /**
-     * @brief 生成時の自己完結初期化（Textオブジェクトの生成・初期プロパティ適用）を行います
+     * @brief 生成時の自己完結初期化（Textオブジェクトの生成・フォントやアライメントの初期プロパティ適用）を行います
      */
     void OnAwake() override;
+
     /**
-     * @brief ワールド座標・Transform確定時の描画ステート同期を行います
+     * @brief スポーン時にワールド座標・Transform確定時の描画ステート同期を行います
      */
     void OnSpawned() override;
-    void SyncRenderState() override;
+
     /**
-     * @brief Update を実行する。
+     * @brief TransformComponentの最新位置・回転・スケールを描画オブジェクトへ反映します
+     */
+    void SyncRenderState() override;
+
+    /**
+     * @brief 毎フレームの更新処理（描画ステート同期）を実行します
      */
     void Update() override;
+
     /**
-     * @brief Draw を実行する。
+     * @brief 描画マネージャへテキスト描画コマンドを登録します
      */
     void Draw() override;
 
     /**
-     * @brief CanUpdateInEditMode かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief エディタモード中も更新を行うかを判定します
+     * @return 常に true
      */
     bool CanUpdateInEditMode() const override {
         return true;
@@ -48,19 +56,23 @@ public:
 
     // エディタのRaycast用
     /**
-     * @brief Raycast を実行する。
+     * @brief エディタピッキング用のレイキャスト判定を行います
+     * @param[in] ray 判定用レイ
+     * @param[out] outDistance ヒット時の距離
+     * @return ヒットした場合は true
      */
     bool Raycast(const Irufemi::Ray& ray, float& outDistance) const override;
 
     /**
-     * @brief Renderable を取得する。
-     * @return 取得された Renderable
+     * @brief 描画可能な内部オブジェクト（Text）へのポインタを取得します
+     * @return IRenderable インターフェースポインタ
      */
     IRenderable* GetRenderable() override {
-        return reinterpret_cast<IRenderable*>(textObj_.get());
+        return textObj_.get();
     }
+
     /**
-     * @brief DrawOutlineMask を実行する。
+     * @brief エディタ選択ハイライト用のアウトラインマスクを描画します
      */
     void DrawOutlineMask() override {
         if (textObj_) {
@@ -70,13 +82,14 @@ public:
 
     // 文字列の設定
     /**
-     * @brief Text を設定する。
-     * @param[in] text 設定する Text の値
+     * @brief 描画するテキスト文字列（ワイド文字列）を設定します
+     * @param[in] text 設定する文字列
      */
     void SetText(const std::wstring& text);
+
     /**
-     * @brief Text を取得する。
-     * @return 取得された Text
+     * @brief 現在設定されているテキスト文字列を取得します
+     * @return テキスト文字列
      */
     std::wstring GetText() const {
         return text_;
@@ -84,13 +97,14 @@ public:
 
     // フォントの変更
     /**
-     * @brief FontId を設定する。
-     * @param[in] fontId 設定する FontId の値
+     * @brief 使用するフォントのアセットID（FontManager登録名）を設定します
+     * @param[in] fontId フォントID
      */
     void SetFontId(const std::string& fontId);
+
     /**
-     * @brief FontId を取得する。
-     * @return 取得された FontId
+     * @brief 現在設定されているフォントIDを取得します
+     * @return フォントID
      */
     std::string GetFontId() const {
         return fontId_;
@@ -98,13 +112,14 @@ public:
 
     // ベーススケール（文字サイズ）
     /**
-     * @brief BaseScale を設定する。
-     * @param[in] baseScale 設定する BaseScale の値
+     * @brief 基本フォントサイズ（ピクセル相当スケール）を設定します
+     * @param[in] baseScale フォントサイズ
      */
     void SetBaseScale(float baseScale);
+
     /**
-     * @brief BaseScale を取得する。
-     * @return 取得された BaseScale
+     * @brief 基本フォントサイズを取得します
+     * @return フォントサイズ
      */
     float GetBaseScale() const {
         return baseScale_;
@@ -112,13 +127,14 @@ public:
 
     // アライメント
     /**
-     * @brief Alignment を設定する。
-     * @param[in] align 設定する Alignment の値
+     * @brief テキストの横揃えアライメント（左揃え・中央揃え・右揃え）を設定します
+     * @param[in] align アライメント指定
      */
     void SetAlignment(TextAlignment align);
+
     /**
-     * @brief Alignment を取得する。
-     * @return 取得された Alignment
+     * @brief テキストの横揃えアライメントを取得します
+     * @return アライメント
      */
     TextAlignment GetAlignment() const {
         return alignment_;
@@ -126,13 +142,14 @@ public:
 
     // 文字色
     /**
-     * @brief Color を設定する。
-     * @param[in] color 設定する Color の値
+     * @brief テキストの乗算カラー（RGBA）を設定します
+     * @param[in] color カラー値
      */
     void SetColor(const Irufemi::Vector4& color);
+
     /**
-     * @brief Color を取得する。
-     * @return 取得された Color
+     * @brief テキストの乗算カラーを取得します
+     * @return カラー値
      */
     Irufemi::Vector4 GetColor() const {
         return color_;
@@ -140,13 +157,14 @@ public:
 
     // UIとして最前面に描画するか
     /**
-     * @brief TopMost を設定する。
-     * @param[in] isTopMost 設定する TopMost の値
+     * @brief 最前面（UI TopMostレイヤー）に描画するかどうかを設定します
+     * @param[in] isTopMost 最前面にする場合は true
      */
     void SetTopMost(bool isTopMost);
+
     /**
-     * @brief IsTopMost かどうかを判定する。
-     * @return 判定結果 (true/false)
+     * @brief 最前面描画が有効かどうかを取得します
+     * @return 有効な場合は true
      */
     bool IsTopMost() const {
         return isTopMost_;
@@ -154,39 +172,47 @@ public:
 
     // バウンディングボックス取得（ローカル座標系）
     /**
-     * @brief LocalBoundsMin を取得する。
-     * @return 取得された LocalBoundsMin
+     * @brief テキスト全体のローカルバウンディングボックスの最小座標（左上等）を取得します
+     * @return 最小座標
      */
     Irufemi::Vector2 GetLocalBoundsMin() const {
         return textObj_ ? textObj_->GetLocalBoundsMin() : Irufemi::Vector2{0.0f, 0.0f};
     }
+
     /**
-     * @brief LocalBoundsMax を取得する。
-     * @return 取得された LocalBoundsMax
+     * @brief テキスト全体のローカルバウンディングボックスの最大座標（右下等）を取得します
+     * @return 最大座標
      */
     Irufemi::Vector2 GetLocalBoundsMax() const {
         return textObj_ ? textObj_->GetLocalBoundsMax() : Irufemi::Vector2{0.0f, 0.0f};
     }
 
     /**
-     * @brief TextObject を取得する。
-     * @return 取得された TextObject
+     * @brief 内部の Text オブジェクトを取得します
+     * @return Text 生ポインタ
      */
     Text* GetTextObject() const {
         return textObj_.get();
     }
 
     /**
-     * @brief ComponentName を取得する。
-     * @return 取得された ComponentName
+     * @brief コンポーネントの識別名を取得します
+     * @return クラス名文字列
      */
     std::string GetComponentName() const override {
         return "TextRendererComponent";
     }
+
     /**
-     * @brief OnRegisterProperties を実行する。
+     * @brief リフレクションシステムへコンポーネントのプロパティを登録します
      */
     void OnRegisterProperties() override;
+
+    /**
+     * @brief JSONからコンポーネントデータを復元し、内部状態を即座に同期します
+     * @param[in] j デシリアライズ元のJSONオブジェクト
+     */
+    void Deserialize(const nlohmann::json& j) override;
 
 private:
     std::unique_ptr<Text> textObj_;

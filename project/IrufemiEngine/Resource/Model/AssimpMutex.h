@@ -5,8 +5,8 @@ namespace Irufemi {
 class AssimpMutex {
 public:
     /**
-     * @brief  を取得する。
-     * @return 取得された
+     * @brief Assimp の非スレッドセーフなパース処理を直列化するための排他制御ミューテックスを取得する
+     * @return スレッド間で共有される排他制御ミューテックスの参照
      */
     static std::mutex& Get() {
         static std::mutex mutex;

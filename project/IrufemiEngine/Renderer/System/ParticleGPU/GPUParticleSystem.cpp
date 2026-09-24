@@ -20,6 +20,7 @@
 #include "Renderer/DrawManager.h"
 #include "Renderer/Object/PrimitiveManager.h"
 #include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include "Resource/Texture/TextureManager.h"
 #include <algorithm>
 #include <cassert>
@@ -42,6 +43,7 @@ GPUParticleSystem::~GPUParticleSystem() {
         if (auto* srvPool = dxCommon_->GetSrvPool()) {
             for (int i = 0; i < 3; ++i) {
                 srvPool->FreeAfterFence(emittersSrvIndex_[i], fv);
+                srvPool->FreeAfterFence(fieldsSrvIndex_[i], fv);
             }
             srvPool->FreeAfterFence(perFrameSrvIndex_, fv);
             srvPool->FreeAfterFence(particleUavIndex_, fv);
@@ -50,6 +52,10 @@ GPUParticleSystem::~GPUParticleSystem() {
             srvPool->FreeAfterFence(freeListUavIndex_, fv);
             srvPool->FreeAfterFence(sortIndex_, fv);
             srvPool->FreeAfterFence(sortSrvIndex_, fv);
+        }
+        for (int i = 0; i < 3; ++i) {
+            dxCommon_->ReleaseAfterFence(emittersResource_[i]);
+            dxCommon_->ReleaseAfterFence(fieldsResource_[i]);
         }
         dxCommon_->ReleaseAfterFence(particleResource_);
         dxCommon_->ReleaseAfterFence(freeListIndexResource_);
@@ -230,13 +236,36 @@ void GPUParticleSystem::Update() {
     if (isCullingEnabled_) {
         bool anyVisible = false;
         for (const auto& em : emittersData_) {
+            // 基本形状の半径/半対角長
+            float baseRadius = em.radius;
+            if (em.type == 4) { // Box
+                baseRadius =
+                    std::sqrt(em.areaSizeX * em.areaSizeX + em.areaSizeY * em.areaSizeY + em.areaSizeZ * em.areaSizeZ) *
+                    0.5f;
+            }
+
+            // 粒子の最大到達距離 (初速 + 拡散度) * 寿命
+            float maxSpeed = em.velocity * (1.0f + (std::max)(0.0f, em.spread));
+            float maxTravelDistance = maxSpeed * em.maxLife;
+            float maxGravityDrop = 0.5f * std::abs(em.gravity) * em.maxLife * em.maxLife;
+            float maxScale =
+                (std::max)({em.startScaleMaxX, em.startScaleMaxY, em.startScaleMaxZ, em.endScaleMaxX, em.endScaleMaxY,
+                            em.endScaleMaxZ, em.midScaleMaxX, em.midScaleMaxY, em.midScaleMaxZ});
+
             Irufemi::Sphere boundingSphere;
-            boundingSphere.center = {em.translateX, em.translateY, em.translateZ};
-            // Boundingを計算。Sphereなら半径*3 (最低20.0fを保証)、Beamなら広めに設定
-            if (em.type == 0) {
-                boundingSphere.radius = (std::max)(20.0f, em.radius * 3.0f);
+            if (em.type == 1) { // Beam: 進行方向に中心をオフセットして無駄な肥大化を防ぐ
+                Irufemi::Vector3 rawDir = {em.directionX, em.directionY, em.directionZ};
+                float lenSq = rawDir.x * rawDir.x + rawDir.y * rawDir.y + rawDir.z * rawDir.z;
+                Irufemi::Vector3 dir =
+                    (lenSq > 0.0001f) ? Irufemi::Math::Normalize(rawDir) : Irufemi::Vector3{0.0f, 0.0f, 1.0f};
+                boundingSphere.center = {em.translateX + dir.x * (maxTravelDistance * 0.5f),
+                                         em.translateY + dir.y * (maxTravelDistance * 0.5f),
+                                         em.translateZ + dir.z * (maxTravelDistance * 0.5f)};
+                boundingSphere.radius =
+                    (baseRadius + (maxTravelDistance * 0.5f) + maxGravityDrop + maxScale + em.jitter) * 1.1f;
             } else {
-                boundingSphere.radius = 50.0f; // ビームは長いので広めに
+                boundingSphere.center = {em.translateX, em.translateY, em.translateZ};
+                boundingSphere.radius = (baseRadius + maxTravelDistance + maxGravityDrop + maxScale + em.jitter) * 1.1f;
             }
 
             if (Irufemi::Collision::IsCollision(activeCam->GetFrustum(), boundingSphere)) {
@@ -334,10 +363,15 @@ void GPUParticleSystem::SyncBeforeDraw() {
 
     // 今回のburstCountをクリアする前に、DispatchComputeShadersを実行する。
 
-    if (fieldsData_.empty()) {
-        fieldsData_.emplace_back();
+    if (globalFields_ && !globalFields_->empty()) {
+        uint32_t count = (std::min)(static_cast<uint32_t>(globalFields_->size()), kMaxFields);
+        memcpy(fieldsMappedData_[frameIndex], globalFields_->data(), sizeof(ParticleField) * count);
+        if (count < kMaxFields) {
+            memset(fieldsMappedData_[frameIndex] + count, 0, sizeof(ParticleField) * (kMaxFields - count));
+        }
+    } else {
+        memset(fieldsMappedData_[frameIndex], 0, sizeof(ParticleField) * kMaxFields);
     }
-    memcpy(fieldsMappedData_[frameIndex], fieldsData_.data(), sizeof(ParticleField) * fieldsData_.size());
 
     // [Bindless] テクスチャインデックスの反映
     if (engine_ && engine_->GetTextureManager()) {
@@ -455,6 +489,13 @@ void GPUParticleSystem::UpdateDebugLines() {
 #if defined(USE_IMGUI)
     if (debugLineRegion_) {
         debugLineRegion_->ClearInstances();
+    }
+
+    if (engine_ && engine_->GetDebugPrimitiveRenderer()) {
+        auto* debugRenderer = engine_->GetDebugPrimitiveRenderer();
+        if (!debugRenderer->IsEnabled() || !debugRenderer->IsCategoryEnabled(DebugCategory::Particle)) {
+            return;
+        }
     }
 
     if (showEmitterArea_) {
@@ -1034,7 +1075,7 @@ void GPUParticleSystem::CreateBuffersAndViews() {
         emittersSrvHandleGPU_[i] = srvPool->GetGPUHandle(emittersSrvIndex_[i]);
 
         // Field Resource Initialization
-        fieldsResource_[i] = dxCommon_->CreateBufferResource(sizeof(ParticleField) * 64); // max 64 fields
+        fieldsResource_[i] = dxCommon_->CreateBufferResource(sizeof(ParticleField) * kMaxFields);
         fieldsResource_[i]->Map(0, nullptr, reinterpret_cast<void**>(&fieldsMappedData_[i]));
 
         fieldsSrvIndex_[i] = srvPool->Allocate();
@@ -1043,7 +1084,7 @@ void GPUParticleSystem::CreateBuffersAndViews() {
         fieldSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
         fieldSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         fieldSrvDesc.Buffer.FirstElement = 0;
-        fieldSrvDesc.Buffer.NumElements = 64;
+        fieldSrvDesc.Buffer.NumElements = kMaxFields;
         fieldSrvDesc.Buffer.StructureByteStride = sizeof(ParticleField);
         fieldSrvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
@@ -1123,8 +1164,6 @@ void GPUParticleSystem::CreateBuffersAndViews() {
     sortIndex_ = srvPool->Allocate();
     sortUavHandleCPU_ = srvPool->GetCPUHandle(sortIndex_);
     sortUavHandleGPU_ = srvPool->GetGPUHandle(sortIndex_);
-    sortSrvHandleCPU_ = sortUavHandleCPU_; // 同じディスクリプタヒープ領域を使用
-    sortSrvHandleGPU_ = sortUavHandleGPU_;
     // UAV
     D3D12_UNORDERED_ACCESS_VIEW_DESC sortUavDesc{};
     sortUavDesc.Format = DXGI_FORMAT_UNKNOWN;

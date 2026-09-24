@@ -1,94 +1,97 @@
-#include "Core/Utility/ErrorUtility.h"
 #include "Core/System/IrufemiEngine.h"
-#ifdef USE_IMGUI
-#include <imgui.h>
-#endif
-
-#include "Platform/Input/InputManager.h"
-
-#include "Platform/WindowsAPI/WinApp.h"
-#include "Renderer/DrawManager.h"
-#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
-#include "Core/System/IEngineExtension.h"
-#include "Resource/Texture/TextureManager.h"
-#include "Audio/AudioManager.h"
-#include "Resource/Model/ModelManager.h"
-#include "Resource/Model/AnimationManager.h"
-#include "Physics/CollisionManager.h"
-#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
-#include "Framework/Component/Collider/ColliderComponent.h"
-#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Core/Utility/ErrorUtility.h"
 #include "Core/Utility/Log.h"
 #include "Core/Utility/FileSystem.h"
-#include "Framework/Scene/SceneManager.h"
-#include "Framework/Scene/SceneTransition.h"
-#include "Framework/Scene/SceneSerializer.h"
+#include "Core/System/IEngineExtension.h"
 #include "Core/System/DirectoryWatcher.h"
-#include "Renderer/Font/FontManager.h"
+#include "Core/Math/Math.h"
+#include "Core/Math/Random/Random.h"
 #include "Core/Profiler/TelemetrySender.h"
 #include "Core/Profiler/GpuProfiler.h"
 #include "Framework/Utility/CVar.h"
 
-namespace Irufemi {
-extern void ReferenceEngineCVars();
-}
-
-IrufemiEngine::IrufemiEngine() = default;
-
-#include "Core/Math/Math.h"
-#include "Core/Math/Random/Random.h"
-
-#include <DbgHelp.h>
+// 標準 / OS ライブラリ
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <format>
-#include "Audio/AudioManager.h"
-#include "Audio/AudioPlayer.h"
-#include "Framework/Component/Audio/AudioSourceComponent.h"
-#include "Renderer/Camera/CameraManager.h"
-#include "RHI/DirectX12/DirectXUtils.h"
-#include "Framework/UI/DebugUI.h"
-#include "Renderer/Object/PrimitiveManager.h"
-#include "Renderer/System/Core/BaseResource.h"
-#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
-#include "Renderer/Object/Effect/Effect.h"
-#include "Renderer/Object/Line/LineClass.h"
-#include "Renderer/System/Core/LineResource.h"
-#include "Renderer/System/Core/Object2DResource.h"
-#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
-#include "Renderer/Object/2D/Sprite/Sprite.h"
-#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
-#include "Renderer/Object/2D/Text/Text.h"
-
-#include "Renderer/System/Core/BaseModel.h"
-#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
-#include "Renderer/System/Core/Object3DResource.h"
-#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
-
-#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
-#include "Renderer/Object/Particle/ParticleObject.h"
-#include "Renderer/Object/Batch/ModelBatch.h"
-
-namespace {
-static float s_gpuWaitTimeMs = 0.0f;
-}
-#include "Renderer/Object/Batch/PrimitiveBatch.h"
-#include "Renderer/System/Data/RenderData.h"
-#include "Renderer/Object/Skybox/Skybox.h"
-#include "Renderer/Data/VertexData.h"
-#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
-#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
-#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
-#include "Framework/Scene/IScene.h"
-#include "Framework/Component/ComponentFactory.h"
+#include <DbgHelp.h>
+#include <mmsystem.h>
+#ifdef USE_IMGUI
+#include <imgui.h>
+#endif
 
 #pragma comment(lib, "Dbghelp.lib")
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxcompiler.lib")
 #pragma comment(lib, "winmm.lib")
-#include <mmsystem.h>
+
+// プラットフォーム & RHI
+#include "Platform/Input/InputManager.h"
+#include "Platform/WindowsAPI/WinApp.h"
+#include "RHI/DirectX12/DirectXUtils.h"
+
+// サブシステムマネージャー
+#include "Renderer/DrawManager.h"
+#include "Renderer/Camera/CameraManager.h"
+#include "Renderer/Font/FontManager.h"
+#include "Resource/Texture/TextureManager.h"
+#include "Resource/Model/ModelManager.h"
+#include "Resource/Model/AnimationManager.h"
+#include "Audio/AudioManager.h"
+#include "Audio/AudioPlayer.h"
+#include "Physics/CollisionManager.h"
+
+// レンダリングリソース & オブジェクト
+#include "Renderer/Data/VertexData.h"
+#include "Renderer/System/Data/RenderData.h"
+#include "Renderer/System/Core/BaseResource.h"
+#include "Renderer/System/Core/BaseModel.h"
+#include "Renderer/System/Core/LineResource.h"
+#include "Renderer/System/Core/Object2DResource.h"
+#include "Renderer/System/Core/Object3DResource.h"
+#include "Renderer/Object/PrimitiveManager.h"
+#include "Renderer/Object/Effect/Effect.h"
+#include "Renderer/Object/Line/LineClass.h"
+#include "Renderer/Object/Skybox/Skybox.h"
+#include "Renderer/Object/2D/Primitive/Primitive2DObject.h"
+#include "Renderer/Object/2D/Sprite/Sprite.h"
+#include "Renderer/Object/2D/SpriteBatch/SpriteBatch.h"
+#include "Renderer/Object/2D/Text/Text.h"
+#include "Renderer/Object/3D/StaticModelObject/StaticModelObject.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
+#include "Renderer/Object/Batch/ModelBatch.h"
+#include "Renderer/Object/Batch/PrimitiveBatch.h"
+
+// パーティクルシステム
+#include "Renderer/Object/Particle/ParticleObject.h"
+#include "Renderer/System/ParticleGPU/GPUParticleManager.h"
+#include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleSystem.h"
+
+// フレームワーク & シーン
+#include "Framework/UI/DebugUI.h"
+#include "Framework/Scene/IScene.h"
+#include "Framework/Scene/SceneManager.h"
+#include "Framework/Scene/SceneTransition.h"
+#include "Framework/Scene/SceneSerializer.h"
+#include "Framework/Prefab/PrefabManager.h"
+#include "Framework/Component/ComponentFactory.h"
+#include "Framework/Component/Collider/ColliderComponent.h"
+#include "Framework/Component/Audio/AudioSourceComponent.h"
+
+namespace Irufemi {
+extern void ReferenceEngineCVars();
+}
+
+namespace {
+static float s_gpuWaitTimeMs = 0.0f;
+}
+
+IrufemiEngine::IrufemiEngine() = default;
 
 // デストラクタ
 IrufemiEngine::~IrufemiEngine() {
@@ -272,9 +275,6 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     ui_ = std::make_unique<DebugUI>();
     ui_->Initialize(dxCommon_->GetHwnd(), dxCommon_.get());
 
-    Object2DResource::sTextureManager = textureManager_.get();
-    Object3DResource::sTextureManager = textureManager_.get();
-
     for (auto& ext : extensions_) {
         ext->OnInitialize(this);
     }
@@ -457,11 +457,16 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
         this->SetVSync(vsync);
     });
     // -------------------------------------------------------------
-    TelemetrySender::GetInstance().Initialize();
+    telemetrySender_ = std::make_unique<TelemetrySender>();
+    telemetrySender_->Initialize();
 
     // TelemetryGatherer の初期化 (ここでプロファイル項目をバインド)
     telemetryGatherer_ = std::make_unique<TelemetryGatherer>();
     telemetryGatherer_->Initialize(this);
+
+    // PrefabManager の初期化と SceneSerializer へのバインド
+    prefabManager_ = std::make_unique<PrefabManager>();
+    SceneSerializer::SetPrefabManager(prefabManager_.get());
 }
 
 // クリアカラーをfloat配列で持つ初期化
@@ -480,7 +485,7 @@ void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientW
     Initialize(title, clientWidth, clientHeight);
 }
 
-// 追加: Irufemi::Vector4 版 Initialize
+// Irufemi::Vector4 版 Initialize
 void IrufemiEngine::Initialize(const std::wstring& title, const int32_t& clientWidth, const int32_t& clientHeight,
                                const Irufemi::Vector4& clearColor) {
     clearColor_ = {clearColor.x, clearColor.y, clearColor.z, clearColor.w};
@@ -598,7 +603,7 @@ void IrufemiEngine::Finalize() {
     Texture::SetDescriptorPool(nullptr);
     Texture::SetDirectXCommon(nullptr);
     Texture::SetWhiteTextureResource(nullptr);
-    GpuMesh::sDxCommon = nullptr;
+    GpuMesh::dxCommon_ = nullptr;
 
     BaseBatch::SetSrvAllocator(nullptr);
     SpriteBatch::SetSrvAllocator(nullptr);
@@ -704,7 +709,15 @@ void IrufemiEngine::Finalize() {
 
     Irufemi::CVarSystem::Save("resources/settings_local.json");
 
-    TelemetrySender::GetInstance().Finalize();
+    SceneSerializer::SetPrefabManager(nullptr);
+    if (prefabManager_) {
+        prefabManager_->ClearCache();
+        prefabManager_.reset();
+    }
+
+    if (telemetrySender_) {
+        telemetrySender_->Finalize();
+    }
 
     // OSタイマー精度の引き上げを解除
     timeEndPeriod(1);
@@ -938,7 +951,7 @@ void IrufemiEngine::EndFrame() {
         srvPool->GarbageCollect(completed);
     }
 
-    // --- 追加: 中間リソースの遅延解放を実行 ---
+    // --- 中間リソースの遅延解放を実行 ---
     dxCommon_->ClearPendingResources();
 
     // 指数移動平均(EMA)を用いてFPSの変動を平滑化
@@ -988,9 +1001,7 @@ void IrufemiEngine::OnResize(int32_t width, int32_t height) {
         // EditorMode時は描画先が1280x720固定のため、ウィンドウサイズに関わらずゲーム解像度をアスペクト比計算に使用する
         cameraManager_->OnResize(gameResWidth_, gameResHeight_);
 #else
-        // Standaloneでもレターボックスが有効ならゲーム解像度を維持すべきだが、
-        // 万が一の仕様変更に備え一旦従来通りとするか、もしくは常に固定するか。
-        // 現状はPostProcessでレターボックス処理をしているのでゲーム解像度を使用するのが正しい。
+        // Standalone環境でもPostProcess側でレターボックス処理を行うため、ゲーム解像度基準でアスペクト比を維持する
         cameraManager_->OnResize(gameResWidth_, gameResHeight_);
 #endif
     }

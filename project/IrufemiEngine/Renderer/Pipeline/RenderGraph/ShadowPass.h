@@ -1,17 +1,24 @@
 #pragma once
 #include "Renderer/Pipeline/RenderGraph/IRenderPass.h"
 
+/**
+ * @class ShadowPass
+ * @brief シャドウマップを生成するための深度描画パス
+ */
 class ShadowPass : public IRenderPass {
 public:
+    ~ShadowPass() override = default;
+
     /**
-     * @brief up を設定する。
-     * @param[in] builder 設定する up の値
-     * @param[in] drawManager 設定する up の値
-     * @param[in] engine 設定する up の値
+     * @brief パスのセットアップ処理
+     * @param[in,out] builder リソースの使用状態を記録するビルダー
+     * @param[in] rc 描画コンテキスト
      */
-    void Setup(RenderGraphBuilder& builder, class DrawManager* drawManager, class IrufemiEngine* engine) override;
+    void Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) override;
+
     /**
-     * @brief Execute を実行する。
+     * @brief パスの実行処理（シャドウマップ深度描画コマンドの発行）
+     * @param[in] rc 描画コンテキスト
      */
-    void Execute(class DrawManager* drawManager, class IrufemiEngine* engine) override;
+    void Execute(const Irufemi::RenderContext& rc) override;
 };

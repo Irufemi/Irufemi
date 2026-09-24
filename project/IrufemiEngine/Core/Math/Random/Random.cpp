@@ -1,12 +1,11 @@
 #include "Core/Math/Random/Random.h"
 
 namespace Irufemi {
-// 静的メンバの実体と初期化
-std::random_device Random::seedGenerator_;
-std::mt19937_64 Random::randomEngine_;
+// スレッドローカルな乱数生成エンジンの実体と初期化
+thread_local std::mt19937_64 Random::randomEngine_{std::random_device{}()};
 
 void Random::SeedEngine() {
-    randomEngine_.seed(seedGenerator_());
+    randomEngine_.seed(std::random_device{}());
 }
 
 float Random::GeneratorFloat(float min, float max) {

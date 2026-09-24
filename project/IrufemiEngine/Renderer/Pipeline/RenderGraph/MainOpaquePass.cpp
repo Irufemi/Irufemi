@@ -2,37 +2,50 @@
 #include "Renderer/DrawManager.h"
 #include "Core/System/IrufemiEngine.h"
 #include "RHI/DirectX12/ShadowMap.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
+#include "Renderer/Data/RenderContext.h"
 
-void MainOpaquePass::Setup(RenderGraphBuilder& builder, DrawManager* drawManager, IrufemiEngine* engine) {
-    if (auto shadowMap = drawManager->GetShadowMap()) {
-        builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-    }
+void MainOpaquePass::Setup(RenderGraphBuilder& builder, const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
 
-    // G-Bufferをレンダーターゲットとして要求
-    if (auto tex = engine->GetMainRenderTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetEffectMaskTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetNormalTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetMaterialTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-    }
-    if (auto tex = engine->GetVelocityTexture()) {
-        builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (drawManager) {
+        if (auto shadowMap = drawManager->GetShadowMap()) {
+            builder.RequireState(shadowMap->GetResource(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
+        if (auto dx = drawManager->GetDxCommon()) {
+            builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        }
     }
 
-    // 深度バッファを書き込み可能として要求
-    if (auto dx = drawManager->GetDxCommon()) {
-        builder.RequireState(dx->GetDepthStencilResource(), D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    if (engine) {
+        // G-Bufferをレンダーターゲットとして要求
+        if (auto tex = engine->GetMainRenderTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetEffectMaskTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetNormalTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetMaterialTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (auto tex = engine->GetVelocityTexture()) {
+            builder.RequireState(tex->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
     }
 }
 
-void MainOpaquePass::Execute(DrawManager* drawManager, IrufemiEngine* engine) {
+void MainOpaquePass::Execute(const Irufemi::RenderContext& rc) {
+    auto* drawManager = rc.drawManager;
+    auto* engine = rc.engine;
+    if (!drawManager || !engine) {
+        return;
+    }
+
     // 1. Skybox
     const auto& skyboxQueue = drawManager->GetSkyboxQueue();
     if (!skyboxQueue.empty()) {

@@ -16,7 +16,7 @@ namespace DirectXUtils {
 inline void TransitionBarrier(ID3D12GraphicsCommandList* cmdList, ID3D12Resource* resource,
                               D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter,
                               UINT subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES) {
-    if (!resource || !cmdList) {
+    if (!resource || !cmdList || stateBefore == stateAfter) {
         return;
     }
     D3D12_RESOURCE_BARRIER barrier{};

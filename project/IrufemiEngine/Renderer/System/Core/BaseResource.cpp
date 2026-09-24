@@ -1,3 +1,3 @@
 #include "Renderer/System/Core/BaseResource.h"
 
-DirectXCommon* BaseResource::s_dxCommon_ = nullptr;
+DirectXCommon* BaseResource::defaultDxCommon_ = nullptr;

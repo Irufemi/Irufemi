@@ -3,7 +3,6 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 
 CameraComponent::CameraComponent() = default;
 CameraComponent::~CameraComponent() {
@@ -12,7 +11,7 @@ CameraComponent::~CameraComponent() {
 
 void CameraComponent::OnDestroy() {
     if (gameObject_) {
-        auto* engine = BaseModel::GetIrufemiEngine();
+        auto* engine = GetEngine();
         if (engine && engine->GetCameraManager()) {
             engine->GetCameraManager()->RemoveCamera(gameObject_->GetName());
         }
@@ -28,14 +27,13 @@ void CameraComponent::OnRegisterProperties() {
 
 void CameraComponent::Initialize() {
     OnAwake();
-    Start();
 }
 
 void CameraComponent::OnAwake() {
     if (!camera_) {
         camera_ = std::make_shared<Camera>();
 
-        auto* engine = BaseModel::GetIrufemiEngine();
+        auto* engine = GetEngine();
         int clientWidth = engine ? engine->GetGameResolutionWidth() : 1280;
         int clientHeight = engine ? engine->GetGameResolutionHeight() : 720;
         camera_->Initialize(clientWidth, clientHeight);
@@ -48,7 +46,7 @@ void CameraComponent::OnAwake() {
 
 void CameraComponent::Start() {
     if (gameObject_) {
-        auto* engine = BaseModel::GetIrufemiEngine();
+        auto* engine = GetEngine();
         if (engine && engine->GetCameraManager() && camera_) {
             engine->GetCameraManager()->AddCamera(gameObject_->GetName(), camera_);
             if (makeActive_) {

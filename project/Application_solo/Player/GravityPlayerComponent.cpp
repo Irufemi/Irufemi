@@ -13,7 +13,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Platform/Input/Mouse.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Math/Random/Random.h"
 #include "Renderer/Camera/CameraManager.h"
 #include "Core/Math/MathFunction.h"
@@ -28,40 +27,33 @@
 #include <iostream>
 #include "Framework/Component/Effect/ScreenEffectComponent.h"
 #include <nlohmann/json.hpp>
-#include <fstream>
+#include "Core/Utility/JsonUtility.h"
 
 void GravityPlayerComponent::LoadStatusFromJson() {
     if (statusDataPath_.empty()) {
         return;
     }
 
-    std::ifstream file(statusDataPath_);
-    if (!file.is_open()) {
+    nlohmann::json j;
+    if (!Irufemi::JsonUtility::LoadFromFile(statusDataPath_, j)) {
         Log::OutPutLog(std::cout, "[GravityPlayer] Failed to load status: " + statusDataPath_ + "\n");
         return;
     }
 
-    try {
-        nlohmann::json j;
-        file >> j;
-
-        if (j.contains("maxOrbitCount")) {
-            maxOrbitCount_ = j["maxOrbitCount"].get<int>();
-        }
-        if (j.contains("pullRadius")) {
-            pullRadius_ = j["pullRadius"].get<float>();
-        }
-        if (j.contains("throwInterval")) {
-            throwInterval_ = j["throwInterval"].get<float>();
-        }
-        if (j.contains("orbitRadiusMin")) {
-            orbitRadiusMin_ = j["orbitRadiusMin"].get<float>();
-        }
-        if (j.contains("orbitRadiusMax")) {
-            orbitRadiusMax_ = j["orbitRadiusMax"].get<float>();
-        }
-    } catch (const std::exception& e) {
-        Log::OutPutLog(std::cout, std::string("[GravityPlayer] JSON Parse Error: ") + e.what() + "\n");
+    if (j.contains("maxOrbitCount")) {
+        maxOrbitCount_ = j["maxOrbitCount"].get<int>();
+    }
+    if (j.contains("pullRadius")) {
+        pullRadius_ = j["pullRadius"].get<float>();
+    }
+    if (j.contains("throwInterval")) {
+        throwInterval_ = j["throwInterval"].get<float>();
+    }
+    if (j.contains("orbitRadiusMin")) {
+        orbitRadiusMin_ = j["orbitRadiusMin"].get<float>();
+    }
+    if (j.contains("orbitRadiusMax")) {
+        orbitRadiusMax_ = j["orbitRadiusMax"].get<float>();
     }
 }
 
@@ -89,10 +81,7 @@ void GravityPlayerComponent::Start() {
 
     auto scene = gameObject_->GetScene();
     if (scene) {
-        auto debrisManagerObj = scene->FindGameObject("DebrisManager");
-        if (debrisManagerObj) {
-            debrisManager_ = debrisManagerObj->GetComponent<DebrisManagerComponent>();
-        }
+        debrisManagerObj_ = scene->FindGameObject("DebrisManager");
     }
 }
 
@@ -101,22 +90,24 @@ void GravityPlayerComponent::Update() {
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
+    float dt = engine->GetGameDeltaTime();
     if (dt <= 0.0f) {
         return;
     }
 
-    // 無効になったガレキを除外
-    orbitingDebris_.erase(std::remove_if(orbitingDebris_.begin(), orbitingDebris_.end(),
-                                         [](const std::shared_ptr<GameObject>& obj) {
-                                             if (!obj || !obj->GetIsActive()) {
-                                                 return true;
-                                             }
-                                             auto comp = obj->GetComponent<DebrisComponent>();
-                                             return !comp || (comp->GetState() != DebrisState::Orbiting &&
-                                                              comp->GetState() != DebrisState::Pulled);
-                                         }),
-                          orbitingDebris_.end());
+    // 無効になったガレキを除外 (C++20 std::erase_if による一括クリーンアップ)
+    std::erase_if(orbitingDebris_, [](const std::shared_ptr<GameObject>& obj) {
+        if (!obj || !obj->GetIsActive()) {
+            return true;
+        }
+        auto comp = obj->GetComponent<DebrisComponent>();
+        return !comp || (comp->GetState() != DebrisState::Orbiting && comp->GetState() != DebrisState::Pulled);
+    });
 
     if (isThrowing_) {
         UpdateThrowing();
@@ -135,7 +126,8 @@ void GravityPlayerComponent::Update() {
 }
 
 void GravityPlayerComponent::HandlePullInput() {
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }
@@ -211,18 +203,18 @@ void GravityPlayerComponent::HandlePullInput() {
             return; // ボスから奪った場合はフリーガレキは吸わない
         }
 
-        if (!debrisManager_) {
-            return;
-        }
-
-        auto debrisObj = debrisManager_->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_);
-        if (debrisObj) {
-            if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
-                debrisComp->SetState(DebrisState::Pulled);
-                debrisComp->SetTarget(gameObject_->shared_from_this());
-                debrisComp->SetOrbitParams(Irufemi::Random::GeneratorFloat(0.0f, orbitAngleRandomMax_),
-                                           Irufemi::Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
-                orbitingDebris_.push_back(debrisObj);
+        if (auto debrisManagerObj = debrisManagerObj_.lock()) {
+            if (auto debrisManager = debrisManagerObj->GetComponent<DebrisManagerComponent>()) {
+                auto debrisObj = debrisManager->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_);
+                if (debrisObj) {
+                    if (auto debrisComp = debrisObj->GetComponent<DebrisComponent>()) {
+                        debrisComp->SetState(DebrisState::Pulled);
+                        debrisComp->SetTarget(gameObject_->shared_from_this());
+                        debrisComp->SetOrbitParams(Irufemi::Random::GeneratorFloat(0.0f, orbitAngleRandomMax_),
+                                                   Irufemi::Random::GeneratorFloat(orbitRadiusMin_, orbitRadiusMax_));
+                        orbitingDebris_.push_back(debrisObj);
+                    }
+                }
             }
         }
     }
@@ -232,7 +224,8 @@ void GravityPlayerComponent::HandleMarkInput() {
     if (!targetingComp_) {
         return;
     }
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }
@@ -253,7 +246,8 @@ void GravityPlayerComponent::HandleMarkInput() {
 }
 
 void GravityPlayerComponent::HandleThrowInput() {
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }
@@ -288,8 +282,10 @@ void GravityPlayerComponent::UpdateThrowing() {
         return;
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
-    throwTimer_ += engine->GetDeltaTime();
+    auto engine = GetEngine();
+    if (engine) {
+        throwTimer_ += engine->GetGameDeltaTime();
+    }
 
     if (throwTimer_ >= throwInterval_) {
         throwTimer_ = 0.0f;
@@ -320,32 +316,13 @@ void GravityPlayerComponent::UpdateThrowing() {
                             Irufemi::Math::Normalize(Irufemi::Math::Subtract(deadPos, debrisPos));
                         comp->SetThrowDirection(throwDir);
                     } else {
-                        // 完全なノーロック時の場合、マウスカーソルの奥へレイキャスト
-                        auto cameraManager = engine->GetCameraManager();
-                        auto inputManager = engine->GetInputManager();
-                        if (cameraManager && cameraManager->GetActiveCamera() && inputManager) {
-                            auto camera = cameraManager->GetActiveCamera();
-                            float width = camera->GetViewportWidth();
-                            float height = camera->GetViewportHeight();
-                            Irufemi::Vector2 mousePos = inputManager->GetMousePosition();
-
-                            Irufemi::Matrix4x4 viewProjInv =
-                                Irufemi::Math::Inverse(camera->GetViewProjectionMatrix3D());
-                            Irufemi::Ray ray = Irufemi::Math::ScreenPointToRay(mousePos, width, height, viewProjInv);
-
-                            RaycastHit hitInfo;
-                            Irufemi::Vector3 targetPoint;
-                            if (engine->GetCollisionManager()->Raycast(ray, hitInfo, noLockThrowDistance_)) {
-                                targetPoint = hitInfo.hitPoint;
-                            } else {
-                                targetPoint = Irufemi::Math::Add(
-                                    ray.origin, Irufemi::Math::Multiply(noLockThrowDistance_, ray.diff));
-                            }
-
-                            Irufemi::Vector3 throwDir =
-                                Irufemi::Math::Normalize(Irufemi::Math::Subtract(targetPoint, debrisPos));
-                            comp->SetThrowDirection(throwDir);
-                        }
+                        // 完全なノーロック時の場合、照準点（マウスカーソル位置へのレイキャスト）へ投擲
+                        Irufemi::Vector3 targetPoint =
+                            targetingComp_ ? targetingComp_->CalculateAimPoint(noLockThrowDistance_)
+                                           : (debrisPos + Irufemi::Vector3{0.0f, 0.0f, noLockThrowDistance_});
+                        Irufemi::Vector3 throwDir =
+                            Irufemi::Math::Normalize(Irufemi::Math::Subtract(targetPoint, debrisPos));
+                        comp->SetThrowDirection(throwDir);
                     }
                 }
             }

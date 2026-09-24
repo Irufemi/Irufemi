@@ -3,7 +3,6 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Camera/CameraManager.h"
 #include "Renderer/Camera/Camera.h"
 
@@ -22,7 +21,10 @@ void ReticleUIComponent::Update() {
     }
 
     // マウスカーソルの座標を取得
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
     auto inputManager = engine->GetInputManager();
     auto cameraManager = engine->GetCameraManager();
     if (inputManager && cameraManager && cameraManager->GetActiveCamera()) {

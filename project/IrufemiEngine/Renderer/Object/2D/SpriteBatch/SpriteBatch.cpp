@@ -32,28 +32,28 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     baseResource_ = std::make_unique<Object2DResource>();
 
     // 頂点データはSpriteと同じ単位矩形
-    baseResource_->vertexDataList_.push_back({{0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
-    baseResource_->vertexDataList_.push_back({{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.00}, {0.0f, 0.0f, -1.0f}});
-    baseResource_->vertexDataList_.push_back({{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
-    baseResource_->vertexDataList_.push_back({{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{0.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.00}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{1.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f}});
+    baseResource_->GetVertexDataList().push_back({{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}});
 
-    baseResource_->indexDataList_.push_back(0);
-    baseResource_->indexDataList_.push_back(1);
-    baseResource_->indexDataList_.push_back(2);
-    baseResource_->indexDataList_.push_back(1);
-    baseResource_->indexDataList_.push_back(3);
-    baseResource_->indexDataList_.push_back(2);
+    baseResource_->GetIndexDataList().push_back(0);
+    baseResource_->GetIndexDataList().push_back(1);
+    baseResource_->GetIndexDataList().push_back(2);
+    baseResource_->GetIndexDataList().push_back(1);
+    baseResource_->GetIndexDataList().push_back(3);
+    baseResource_->GetIndexDataList().push_back(2);
 
     baseResource_->CreateResource();
     baseResource_->Map();
 
-    if (baseResource_->vertexData_) {
-        std::copy(baseResource_->vertexDataList_.begin(), baseResource_->vertexDataList_.end(),
-                  baseResource_->vertexData_);
+    if (baseResource_->GetVertexData()) {
+        std::copy(baseResource_->GetVertexDataList().begin(), baseResource_->GetVertexDataList().end(),
+                  baseResource_->GetVertexData());
     }
-    if (baseResource_->indexData_) {
-        std::copy(baseResource_->indexDataList_.begin(), baseResource_->indexDataList_.end(),
-                  baseResource_->indexData_);
+    if (baseResource_->GetIndexData()) {
+        std::copy(baseResource_->GetIndexDataList().begin(), baseResource_->GetIndexDataList().end(),
+                  baseResource_->GetIndexData());
     }
 
     if (baseResource_->GetMaterialData()) {
@@ -65,10 +65,10 @@ void SpriteBatch::Initialize(const std::string& textureName) {
     }
 
     if (textureManager_) {
-        if (baseResource_->textureHandle_.IsValid()) {
-            textureManager_->ReleaseTexture(baseResource_->textureHandle_);
+        if (baseResource_->GetTextureHandle().IsValid()) {
+            textureManager_->ReleaseTexture(baseResource_->GetTextureHandle());
         }
-        baseResource_->textureHandle_ = textureManager_->LoadTexture(textureName);
+        baseResource_->SetTextureHandle(textureManager_->LoadTexture(textureName));
         uint32_t tw = 0, th = 0;
         if (textureManager_->GetTextureSize(textureName, tw, th)) {
             textureSize_ = {static_cast<float>(tw), static_cast<float>(th)};
@@ -77,7 +77,7 @@ void SpriteBatch::Initialize(const std::string& textureName) {
         // Bindless用にtextureIndexをマテリアルに設定
         if (baseResource_->GetMaterialData()) {
             baseResource_->GetMaterialData()->textureIndex =
-                textureManager_->GetSrvIndex(baseResource_->textureHandle_);
+                textureManager_->GetSrvIndex(baseResource_->GetTextureHandle());
         }
     }
 
@@ -131,6 +131,7 @@ void SpriteBatch::CreateOrResizeInstanceBuffer(uint32_t instanceCount) {
 
         if (instanceBuffer_[frameIndex]) {
             instanceBuffer_[frameIndex]->Unmap(0, nullptr);
+            dx_->ReleaseAfterFence(instanceBuffer_[frameIndex]);
             instanceBuffer_[frameIndex].Reset();
         }
 
@@ -178,20 +179,22 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
     for (uint32_t i = 0; i < visibleInstanceCount_; ++i) {
         const auto& inst = instances_[i];
 
-        // スケールは元サイズ(size)をベースに掛ける
-        Irufemi::Vector3 scale = {inst.size.x, inst.size.y, 1.0f};
+        // アンカーとスケールを合成（0..1矩形をアンカー分オフセットさせた上でサイズを乗じる）
+        float offsetX = -inst.anchor.x * inst.size.x;
+        float offsetY = -inst.anchor.y * inst.size.y;
 
-        // アンカーの適用（0..1の四角形を平行移動させる）
-        // 左上が0,0、右下が1,1。アンカーが0.5,0.5なら、-0.5ずらす
-        Irufemi::Matrix4x4 anchorTrans =
-            Irufemi::Math::MakeTranslateMatrix(Irufemi::Vector3{-inst.anchor.x, -inst.anchor.y, 0.0f});
-        Irufemi::Matrix4x4 scaleMat = Irufemi::Math::MakeScaleMatrix(scale);
+        // Local(Anchor * Scale) 行列を直接構築
+        Irufemi::Matrix4x4 localMat = Irufemi::Math::MakeIdentity4x4();
+        localMat.m[0][0] = inst.size.x;
+        localMat.m[1][1] = inst.size.y;
+        localMat.m[3][0] = offsetX;
+        localMat.m[3][1] = offsetY;
+
         Irufemi::Matrix4x4 rotMat = Irufemi::Math::MakeRotateZMatrix(inst.transform.rotate.z);
         Irufemi::Matrix4x4 transMat = Irufemi::Math::MakeTranslateMatrix(inst.transform.translate);
 
-        // World = Anchor * Scale * Rot * Trans
-        Irufemi::Matrix4x4 worldMat = Irufemi::Math::Multiply(anchorTrans, scaleMat);
-        worldMat = Irufemi::Math::Multiply(worldMat, rotMat);
+        // World = Local(Anchor*Scale) * Rot * Trans
+        Irufemi::Matrix4x4 worldMat = Irufemi::Math::Multiply(localMat, rotMat);
         worldMat = Irufemi::Math::Multiply(worldMat, transMat);
 
         instanceData_[frameIndex][i].WVP = Irufemi::Math::Multiply(worldMat, viewProj);
@@ -203,7 +206,8 @@ void SpriteBatch::BuildInstanceBuffer(bool force) {
 
 void SpriteBatch::SyncBeforeDraw() {
     if (textureManager_ && baseResource_->GetMaterialData()) {
-        baseResource_->GetMaterialData()->textureIndex = textureManager_->GetSrvIndex(baseResource_->textureHandle_);
+        baseResource_->GetMaterialData()->textureIndex =
+            textureManager_->GetSrvIndex(baseResource_->GetTextureHandle());
     }
     baseResource_->SyncBeforeDraw();
 }
@@ -226,7 +230,7 @@ void SpriteBatch::Draw(bool isTopMost) {
     packet.blendMode = Irufemi::BlendMode::kBlendModeNormal;
     packet.depthWrite = PSOManager::DepthWrite::Off;
     packet.cullMode = PSOManager::CullMode::None;
-    packet.customPSO = customPSO_;
+    packet.customPSO = GetCustomPSO();
     packet.customCBVAddress = customCBVAddress_;
 
     if (isTopMost) {
@@ -234,6 +238,15 @@ void SpriteBatch::Draw(bool isTopMost) {
     } else {
         drawManager_->SubmitSpriteBatch(packet);
     }
+}
+
+ID3D12PipelineState* SpriteBatch::GetCustomPSO() const {
+    if (!customPSOName_.empty() && dx_) {
+        if (auto* pm = dx_->GetPSOManager()) {
+            return pm->GetPSO(customPSOName_, customBlend_, customDepth_, customCull_);
+        }
+    }
+    return customPSO_;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE SpriteBatch::GetInstancingSrvHandleGPU() const {

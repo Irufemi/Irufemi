@@ -25,33 +25,33 @@ public:
     void InitializeRing(const RingParams& params, const std::string& textureName = "resources/uvChecker.png");
 
     /**
-     * @brief PrimitiveManager を設定する。
-     * @param[in] manager 設定する PrimitiveManager の値
+     * @brief バッチ描画で使用する PrimitiveManager を設定する
+     * @param[in] manager 設定する PrimitiveManager のポインタ
      */
     static void SetPrimitiveManager(PrimitiveManager* manager) {
         primitiveManager_ = manager;
     }
 
     /**
-     * @brief Draw を実行する。
+     * @brief インスタンシングバッチ描画を実行する
      */
     void Draw() override;
 
 protected:
     inline static PrimitiveManager* primitiveManager_ = nullptr;
     /**
-     * @brief BoundingSphereRadius を取得する。
-     * @return 取得された BoundingSphereRadius
+     * @brief フラストゥムカリング用の外接球半径を取得する
+     * @return 形状に応じた外接球半径
      */
     float GetBoundingSphereRadius() const override;
 
 private:
     /**
-     * @brief EnsureMaterialResources を実行する。
+     * @brief 定数バッファ等のマテリアルリソースを確保・初期化する
      */
     void EnsureMaterialResources();
     /**
-     * @brief EnsureSharedTexture を実行する。
+     * @brief 共有テクスチャリソースのロードまたは更新を行う
      */
     void EnsureSharedTexture(const std::string& textureName);
 
@@ -59,4 +59,5 @@ private:
     Irufemi::PrimitiveType type_ = Irufemi::PrimitiveType::Sphere;
     bool isCustomPrimitive_ = false;            // リングなどの個別パラメータを使用するか
     PrimitiveResource customPrimitiveResource_; // カスタム用のリソース
+    float boundingSphereRadius_ = 1.0f;         // カリング用外接球半径
 };

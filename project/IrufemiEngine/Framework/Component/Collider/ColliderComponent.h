@@ -1,6 +1,9 @@
 #pragma once
 #include "Framework/Component/Component.h"
+#include "Core/Math/Vector4.h"
+#include "Renderer/Object/Batch/DebugPrimitiveRenderer.h"
 #include <functional>
+#include <optional>
 
 class CollisionManager;
 
@@ -39,6 +42,11 @@ public:
     virtual void OnDisable() override;
 
     /**
+     * @brief 所属するシーンが設定・変更された時の通知（シーン所属実体のみ物理登録）
+     */
+    virtual void OnSetScene(BaseScene* scene) override;
+
+    /**
      * @brief Initialize を実行する。
      */
     virtual void Initialize() override {}
@@ -66,7 +74,15 @@ public:
      */
     virtual void Deserialize(const nlohmann::json& j) override;
 
-    /// @brief デバッグ用の当たり判定の枠線を描画する
+    /**
+     * @brief コンポーネントのプロパティを別のコンポーネントからコピーする
+     * @param other コピー元コンポーネント
+     */
+    void CopyPropertiesFrom(const Component* other) override;
+
+    /**
+     * @brief デバッグ用の当たり判定枠線（ワイヤーフレーム）を描画する
+     */
     virtual void DrawDebug() = 0;
 
     /**
@@ -81,17 +97,33 @@ protected:
     inline static CollisionManager* collisionManager_ = nullptr;
 
 public:
-    /// @brief 自身の当たり判定の種類を返す
+    /**
+     * @brief 自身の当たり判定の種類（AABB, Sphere, OBB）を取得する
+     * @return コライダー種別 enum
+     */
     virtual ColliderType GetColliderType() const = 0;
 
-    /// @brief BVH等空間分割用の大まかなAABBを返す
+    /**
+     * @brief 空間分割（DynamicBVH）登録用のワールドAABBを取得する
+     * @return ワールド空間のバウンディングボックス AABB
+     */
     virtual Irufemi::AABB GetBoundingBox() const = 0;
 
     // --- コールバック機能 ---
-    // 衝突時に呼ばれる関数を登録できる
-    std::function<void(ColliderComponent*)> onCollisionEnter_; // 衝突した瞬間に呼ばれる
-    std::function<void(ColliderComponent*)> onCollisionStay_;  // 衝突している間呼ばれ続ける
-    std::function<void(ColliderComponent*)> onCollisionExit_;  // 離れた瞬間に呼ばれる
+    /**
+     * @brief 他のコライダーと接触した瞬間に呼ばれるコールバック
+     */
+    std::function<void(ColliderComponent*)> onCollisionEnter_;
+
+    /**
+     * @brief 他のコライダーと接触し続けている間毎フレーム呼ばれるコールバック
+     */
+    std::function<void(ColliderComponent*)> onCollisionStay_;
+
+    /**
+     * @brief 他のコライダーと離れた瞬間に呼ばれるコールバック
+     */
+    std::function<void(ColliderComponent*)> onCollisionExit_;
 
     // --- レイヤー設定 ---
     uint32_t layer_ = 1;         // 1 << 0 (Default)
@@ -106,4 +138,37 @@ public:
 
     // --- BVH (空間分割) 連携 ---
     int32_t bvhNodeId_ = -1; //!< 自身が登録されている Irufemi::DynamicBVH 内のノードインデックス
+
+    // --- デバッグ描画設定 ---
+    /**
+     * @brief デバッグプリミティブ描画時のカテゴリを取得する
+     */
+    DebugCategory GetDebugCategory() const {
+        return debugCategory_;
+    }
+
+    /**
+     * @brief デバッグプリミティブ描画時のカテゴリを設定する
+     */
+    void SetDebugCategory(DebugCategory category) {
+        debugCategory_ = category;
+    }
+
+    /**
+     * @brief デバッグ描画時のカスタムカラーを取得する (設定されていない場合は std::nullopt)
+     */
+    const std::optional<Irufemi::Vector4>& GetDebugCustomColor() const {
+        return debugCustomColor_;
+    }
+
+    /**
+     * @brief デバッグ描画時のカスタムカラーを設定する
+     */
+    void SetDebugCustomColor(const std::optional<Irufemi::Vector4>& color) {
+        debugCustomColor_ = color;
+    }
+
+protected:
+    DebugCategory debugCategory_ = DebugCategory::Collision; //!< デバッグ描画カテゴリ (デフォルト: Collision)
+    std::optional<Irufemi::Vector4> debugCustomColor_ = std::nullopt; //!< デバッグ描画カスタムカラー
 };

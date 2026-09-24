@@ -23,9 +23,12 @@ TextureFileType GetTextureFileType(const std::wstring& filePath) {
         return TextureFileType::DDS;
     }
 
+    if (ext == L".tga") {
+        return TextureFileType::TGA;
+    }
+
     // 一般的なWIC対応拡張子
-    if (ext == L".png" || ext == L".jpg" || ext == L".jpeg" || ext == L".bmp" || ext == L".gif" || ext == L".tiff" ||
-        ext == L".tga") {
+    if (ext == L".png" || ext == L".jpg" || ext == L".jpeg" || ext == L".bmp" || ext == L".gif" || ext == L".tiff") {
         return TextureFileType::WIC;
     }
 

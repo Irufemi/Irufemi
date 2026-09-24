@@ -296,8 +296,8 @@ void AnimationManager::ApplyAnimation(SkeletonPose& skeleton, const Animation& a
     }
 
     // アニメーションが変更された場合（または初回）のみ、バインディングを再構築する
-    if (skeleton.lastAppliedAnimation != &animation) {
-        skeleton.lastAppliedAnimation = &animation;
+    if (skeleton.lastAppliedAnimationId != animation.id) {
+        skeleton.lastAppliedAnimationId = animation.id;
         skeleton.activeAnimationBindings.clear();
 
         // アニメーション側のノード名から、対象のジョイントを探してキャッシュ
@@ -343,9 +343,9 @@ void AnimationManager::BlendAnimation(SkeletonPose& skeleton, const Animation& a
     }
 
     // ブレンド対象のアニメーションが変更された場合のみバインディングを再構築する
-    if (skeleton.lastBlendAnimA != &animA || skeleton.lastBlendAnimB != &animB) {
-        skeleton.lastBlendAnimA = &animA;
-        skeleton.lastBlendAnimB = &animB;
+    if (skeleton.lastBlendAnimAId != animA.id || skeleton.lastBlendAnimBId != animB.id) {
+        skeleton.lastBlendAnimAId = animA.id;
+        skeleton.lastBlendAnimBId = animB.id;
         skeleton.activeBlendBindings.clear();
 
         for (size_t jointIndex = 0; jointIndex < skeleton.jointPoses.size(); ++jointIndex) {
@@ -479,7 +479,7 @@ std::string AnimationManager::FindFileRecursive(const std::string& filename) con
 /// SkinClusterの生成
 
 // SkinClusterを生成 (ObjModel版)
-SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, const ObjModel& objModel) {
+SkinCluster AnimationManager::CreateSkinCluster(const SkeletonData& skeleton, const Irufemi::ObjModel& objModel) {
     SkinCluster skinCluster;
 
     // 全メッシュの頂点数を合計

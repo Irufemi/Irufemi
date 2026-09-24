@@ -16,18 +16,18 @@ class GameObject;
  */
 class PrefabManager {
 public:
-    /**
-     * @brief シングルトンインスタンスを取得する
-     * @return PrefabManagerの参照
-     */
-    static PrefabManager& GetInstance();
+    PrefabManager() = default;
+    ~PrefabManager();
+
+    PrefabManager(const PrefabManager&) = delete;
+    PrefabManager& operator=(const PrefabManager&) = delete;
 
     /**
      * @brief プレハブのJSONデータを取得する（キャッシュ対応）
      * @param filepath プレハブファイルのパス
-     * @return 読み込まれたJSONデータ。失敗時は空オブジェクト
+     * @return 読み込まれたJSONデータ参照。失敗時は空オブジェクト
      */
-    nlohmann::json GetPrefabJson(const std::string& filepath);
+    const nlohmann::json& GetPrefabJson(const std::string& filepath);
 
     /**
      * @brief プレハブのテンプレートGameObjectを取得する（キャッシュ対応）
@@ -47,12 +47,6 @@ public:
      * @brief キャッシュされているすべてのプレハブデータ（JSONおよびテンプレート）を解放する
      */
     void ClearCache();
-
-private:
-    PrefabManager() = default;
-    ~PrefabManager() = default;
-    PrefabManager(const PrefabManager&) = delete;
-    PrefabManager& operator=(const PrefabManager&) = delete;
 
 private:
     std::mutex mutex_;

@@ -55,8 +55,9 @@ public:
     /**
      * @brief 更新処理（キー入力によるカーソル移動、アニメーション更新）
      * @param input InputManagerへのポインタ
+     * @param deltaTime デルタタイム（秒、デフォルトは 1.0f / 60.0f）
      */
-    void Update(InputManager* input);
+    void Update(InputManager* input, float deltaTime = 1.0f / 60.0f);
 
     /**
      * @brief 描画処理（標準の描画を行う場合に使用）

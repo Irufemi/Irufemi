@@ -78,6 +78,15 @@ void SceneTransition::Update(float deltaTime) {
             }
             activeTransitionModes_.clear();
         }
+
+        if (isOut_ && onOutFinishedCallback_) {
+            auto cb = std::move(onOutFinishedCallback_);
+            cb();
+        }
+        if (onFinishedCallback_) {
+            auto cb = std::move(onFinishedCallback_);
+            cb();
+        }
     }
 
     // 演出自体の進行度 (0.0 ~ 1.0)

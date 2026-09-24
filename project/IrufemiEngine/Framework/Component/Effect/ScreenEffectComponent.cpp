@@ -1,6 +1,5 @@
 #include "Framework/Component/Effect/ScreenEffectComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Utility/Ease.h"
 #include <algorithm>
 
@@ -12,7 +11,7 @@ ScreenEffectComponent::~ScreenEffectComponent() {
 
 void ScreenEffectComponent::OnDestroy() {
     if (isPlaying_) {
-        auto engine = BaseModel::GetIrufemiEngine();
+        auto engine = GetEngine();
         if (engine && engine->GetPostProcessManager()) {
             engine->GetPostProcessManager()->RemoveActiveMode(mode_);
         }
@@ -25,7 +24,7 @@ void ScreenEffectComponent::Initialize() {
 }
 
 void ScreenEffectComponent::Play() {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine || !engine->GetPostProcessManager()) {
         return;
     }
@@ -54,7 +53,7 @@ void ScreenEffectComponent::Update() {
         return;
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (!engine || !engine->GetPostProcessManager()) {
         return;
     }

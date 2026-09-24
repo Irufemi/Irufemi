@@ -1,5 +1,5 @@
-#include "Renderer/System/Core/IRenderable.h"
 #pragma once
+#include "Renderer/System/Core/IRenderable.h"
 
 #include "Core/Math/Vector3.h"
 #include "Core/Math/Vector4.h"
@@ -177,9 +177,18 @@ class GPUParticleSystem : public IComputeTask, public IRenderable {
 public:
     friend class GPUParticleManager;
     static const uint32_t kMaxEmitters = 2048;
+    static const uint32_t kMaxFields = 64;
 
     GPUParticleSystem();
     ~GPUParticleSystem();
+
+    /**
+     * @brief グローバルフィールドデータへのポインタを設定する
+     * @param[in] fields フィールドデータのvectorポインタ
+     */
+    void SetGlobalFields(const std::vector<ParticleField>* fields) {
+        globalFields_ = fields;
+    }
 
     /** @name 初期化・更新・描画 */
     ///@{
@@ -661,7 +670,7 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE emittersSrvHandleGPU_[3]{};
 
     /** @name Fieldリソース */
-    std::vector<ParticleField> fieldsData_;
+    const std::vector<ParticleField>* globalFields_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> fieldsResource_[3];
     ParticleField* fieldsMappedData_[3] = {nullptr, nullptr, nullptr};
     uint32_t fieldsSrvIndex_[3] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};

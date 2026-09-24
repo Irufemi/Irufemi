@@ -10,18 +10,44 @@
 #include "Environment/DebrisComponent.h"
 #include <iostream>
 
-void DestructibleEnvironmentComponent::Start() {
-    if (!gameObject_) {
-        return;
-    }
+void DestructibleEnvironmentComponent::Initialize() {
+    debrisManager_ = nullptr;
+    effectManager_ = nullptr;
+    hp_ = 1;
+}
 
-    auto scene = gameObject_->GetScene();
-    if (scene) {
-        auto managerObj = scene->FindGameObject("DebrisManager");
-        if (managerObj) {
-            debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
+void DestructibleEnvironmentComponent::Start() {
+    // 起動時に先行キャッシュを試みる
+    GetDebrisManager();
+    GetEffectManager();
+}
+
+DebrisManagerComponent* DestructibleEnvironmentComponent::GetDebrisManager() {
+    if (debrisManager_) {
+        return debrisManager_;
+    }
+    if (gameObject_) {
+        if (auto scene = gameObject_->GetScene()) {
+            if (auto managerObj = scene->FindGameObject("DebrisManager")) {
+                debrisManager_ = managerObj->GetComponent<DebrisManagerComponent>();
+            }
         }
     }
+    return debrisManager_;
+}
+
+EffectManagerComponent* DestructibleEnvironmentComponent::GetEffectManager() {
+    if (effectManager_) {
+        return effectManager_;
+    }
+    if (gameObject_) {
+        if (auto scene = gameObject_->GetScene()) {
+            if (auto effectObj = scene->FindGameObject("EffectManager")) {
+                effectManager_ = effectObj->GetComponent<EffectManagerComponent>();
+            }
+        }
+    }
+    return effectManager_;
 }
 
 void DestructibleEnvironmentComponent::TakeDamage(int damage) {
@@ -36,21 +62,18 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
         Log::OutPutLog(std::cout, "[DestructibleEnv] Environment Destroyed: " + gameObject_->GetName() + "\n");
 
         auto transform = gameObject_->GetTransform();
-        if (transform && debrisManager_) {
+        auto debrisMgr = GetDebrisManager();
+        if (transform && debrisMgr) {
             Irufemi::Vector3 pos = transform->GetWorldPosition();
 
-            // 破壊エフェクト（ヒットエフェクト流用）
-            EffectManagerComponent* effectManager = nullptr;
-            if (auto go = gameObject_->GetScene()->FindGameObject("EffectManager")) {
-                effectManager = go->GetComponent<EffectManagerComponent>();
-            }
-            if (effectManager) {
-                effectManager->PlayEffect("Dust", pos);
+            // 破壊エフェクト（煙・粉塵）
+            if (auto effectMgr = GetEffectManager()) {
+                effectMgr->PlayEffect("Dust", pos);
             }
 
             // 瓦礫のスポーン（散らばるように）
             for (int i = 0; i < debrisSpawnCount_; ++i) {
-                auto debris = debrisManager_->GetDebris();
+                auto debris = debrisMgr->GetDebris();
                 if (debris) {
                     if (auto debrisTransform = debris->GetTransform()) {
                         // ランダムなオフセットと上方向への位置調整
@@ -61,7 +84,7 @@ void DestructibleEnvironmentComponent::TakeDamage(int damage) {
                     }
 
                     if (auto comp = debris->GetComponent<DebrisComponent>()) {
-                        comp->SetState(DebrisState::Idle); // TODO: 空中にばらまく物理挙動を入れる場合はここで処理
+                        comp->SetState(DebrisState::Idle, true); // オーラ消灯・状態同期を強制
                         comp->SetTarget(std::weak_ptr<GameObject>());
                     }
                 }

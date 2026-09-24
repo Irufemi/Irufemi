@@ -10,10 +10,12 @@
 
 // DirectXTex
 #include "../../externals/DirectXTex/DirectXTex.h"
+#include "../../externals/DirectXTex/d3dx12.h"
 
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include "Core/Utility/ErrorUtility.h"
 
 #pragma comment(lib, "Pathcch.lib")
 
@@ -167,11 +169,14 @@ void ScreenCaptureManager::OnPreUIDraw(ID3D12GraphicsCommandList* commandList, R
             if (!colorCopyBuffer_) {
                 auto desc = mainRenderTexture->GetResource()->GetDesc();
                 desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-                D3D12_HEAP_PROPERTIES heapProps{};
-                heapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
-                dxCommon_->GetDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &desc,
-                                                                D3D12_RESOURCE_STATE_COMMON, nullptr,
-                                                                IID_PPV_ARGS(&colorCopyBuffer_));
+                CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_DEFAULT);
+                HRESULT hr = dxCommon_->GetDevice()->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &desc,
+                                                                             D3D12_RESOURCE_STATE_COMMON, nullptr,
+                                                                             IID_PPV_ARGS(&colorCopyBuffer_));
+                IRUFEMI_ASSERT(SUCCEEDED(hr) && "Failed to create color copy buffer for screen capture!");
+                if (FAILED(hr)) {
+                    return;
+                }
             }
 
             DirectXUtils::TransitionBarrier(commandList, mainRenderTexture->GetResource(),

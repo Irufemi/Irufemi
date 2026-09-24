@@ -3,8 +3,6 @@
 #include "Combat/Boss/BossComponent.h"
 #include "Combat/EnemyBeamComponent.h"
 #include "Framework/Component/TransformComponent.h"
-#include "Framework/GameObject/GameObject.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Core/Utility/Log.h"
 #include <iostream>
@@ -21,9 +19,12 @@ void BossStateIdle::Update(BossComponent* boss) {
 
     // --- ビーム攻撃のタイマー処理 ---
     if (boss->beamComponent_) {
-        float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
-        if (deltaTime <= 0.0f) {
-            deltaTime = 1.0f / 60.0f;
+        float deltaTime = 1.0f / 60.0f;
+        if (auto engine = boss->GetEngine()) {
+            float dt = engine->GetGameDeltaTime();
+            if (dt > 0.0f) {
+                deltaTime = dt;
+            }
         }
 
         if (!boss->beamComponent_->IsActive()) {
@@ -34,9 +35,7 @@ void BossStateIdle::Update(BossComponent* boss) {
                 if (auto myTrans = boss->GetTransform()) {
                     Irufemi::Vector3 startPos = myTrans->GetWorldPosition();
 
-                    Irufemi::Matrix4x4 worldMat = myTrans->GetWorldMatrix();
-                    Irufemi::Vector3 forward = {-worldMat.m[2][0], -worldMat.m[2][1], -worldMat.m[2][2]};
-                    forward = Irufemi::Math::Normalize(forward);
+                    Irufemi::Vector3 forward = -myTrans->GetWorldForward();
 
                     startPos = Irufemi::Math::Add(startPos, Irufemi::Math::Multiply(boss->beamOffsetZ_, forward));
                     startPos.y += boss->beamOffsetY_;

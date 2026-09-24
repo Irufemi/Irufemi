@@ -13,7 +13,7 @@ enum class RootSlot : UINT {
     Transform = 1,   ///< 座標変換行列 (register b0) - VS
     BindlessSRV = 2, ///< フル Bindless用 SRVテーブル (register t0, space1-6) - ALL
     LightCommon = 3, ///< ライト共通データ (register b1) - VS/PS
-    // Instancing (t0, space0) や Special (b6) はバインド方法を維持するか定数に回すか、とりあえずそのままの枠は残す
+    // NOTE: Instancing (t0, space0) および Special (b6) は既存シェーダー互換性のためバインド枠を維持
     Instancing = 4,          ///< インスタンシング用 SRV (register t0, space0) - VS
     Camera = 5,              ///< カメラ/PerFrameData (register b2) - VS/PS
     Special = 6,             ///< 特殊用 (GSなど) (register b6) - ALL

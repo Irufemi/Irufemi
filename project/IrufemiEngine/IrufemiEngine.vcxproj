@@ -240,13 +240,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Physics\Collision\Collision.cpp" />
     <ClCompile Include="Physics\Collision\DynamicBVH.cpp" />
     <ClCompile Include="Core\Math\MathFunction.cpp" />
-    <ClCompile Include="Core\Math\Matrix4x4.cpp" />
-    <ClCompile Include="Core\Math\NumericalSequence.cpp" />
-    <ClCompile Include="Core\Math\Quaternion.cpp" />
     <ClCompile Include="Core\Math\Random\Random.cpp" />
-    <ClCompile Include="Core\Math\Vector2.cpp" />
-    <ClCompile Include="Core\Math\Vector3.cpp" />
-    <ClCompile Include="Core\Math\Vector4.cpp" />
     <ClCompile Include="Core\System\DirectoryWatcher.cpp" />
     <ClCompile Include="Core\System\ResourceCachePool.cpp" />
     <ClCompile Include="Core\Utility\Ease.cpp" />
@@ -336,6 +330,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="Framework\Scene\SceneManager.cpp" />
     <ClCompile Include="Framework\Scene\SceneSerializer.cpp" />
     <ClCompile Include="Framework\Prefab\PrefabManager.cpp" />
+    <ClCompile Include="Framework\Prefab\PrefabUtility.cpp" />
     <ClCompile Include="Framework\Scene\SceneTransition.cpp" />
     <ClCompile Include="Framework\Scene\OptionsScene.cpp" />
     <ClCompile Include="Framework\UI\UIAnimator.cpp" />
@@ -411,7 +406,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Core\Math\Geometry\Frustum.h" />
     <ClInclude Include="Core\Math\Geometry\OBB.h" />
     <ClInclude Include="Core\Math\Random\Random.h" />
-    <ClInclude Include="Core\Pattern\Singleton.h" />
     <ClInclude Include="Core\Shape\Ball.h" />
     <ClInclude Include="Core\Shape\LinePrimitive.h" />
     <ClInclude Include="Core\Shape\Plane.h" />
@@ -435,6 +429,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Core\Utility\Log.h" />
     <ClInclude Include="Core\Utility\FileSystem.h" />
     <ClInclude Include="Core\Utility\ErrorUtility.h" />
+    <ClInclude Include="Core\Utility\ContainerUtility.h" />
     <ClInclude Include="Core\Utility\ObjectPool.h" />
     <ClInclude Include="Core\Utility\StringUtility.h" />
     <ClInclude Include="Renderer\Camera\Camera.h" />
@@ -451,6 +446,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Data\LightningParams.h" />
     <ClInclude Include="Renderer\Data\Material.h" />
     <ClInclude Include="Renderer\Data\PointLight.h" />
+    <ClInclude Include="Renderer\Data\RenderContext.h" />
     <ClInclude Include="Renderer\Data\RenderPackets.h" />
     <ClInclude Include="Renderer\Data\SceneGPUStructs.h" />
     <ClInclude Include="Renderer\Data\SpotLight.h" />
@@ -458,7 +454,6 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Renderer\Data\TransformationMatrix.h" />
     <ClInclude Include="Renderer\Data\VertexData.h" />
     <ClInclude Include="RHI\DirectX12\ConstantBuffer.h" />
-    <ClInclude Include="RHI\DirectX12\D3DResourceLeakChecker.h" />
     <ClInclude Include="RHI\DirectX12\DescriptorAllocator.h" />
     <ClInclude Include="RHI\DirectX12\DescriptorPool.h" />
     <ClInclude Include="RHI\DirectX12\DirectXCommon.h" />
@@ -512,6 +507,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="Framework\Scene\SceneManager.h" />
     <ClInclude Include="Framework\Scene\SceneSerializer.h" />
     <ClInclude Include="Framework\Prefab\PrefabManager.h" />
+    <ClInclude Include="Framework\Prefab\PrefabUtility.h" />
     <ClInclude Include="Framework\Scene\SceneTransition.h" />
     <ClInclude Include="Framework\Scene\OptionsScene.h" />
     <ClInclude Include="Framework\UI\UIAnimator.h" />

@@ -47,8 +47,9 @@ void ComponentFactory::Register(const std::string& typeName, const char* categor
 
 std::shared_ptr<Component> ComponentFactory::Create(const std::string& typeName) {
     auto& map = GetMap();
-    if (map.find(typeName) != map.end()) {
-        return map[typeName].creator();
+    auto it = map.find(typeName);
+    if (it != map.end()) {
+        return it->second.creator();
     }
     Log::OutPutLog(std::cerr, "[ComponentFactory] Error: Component type '" + typeName + "' is not registered.\n");
     return nullptr;

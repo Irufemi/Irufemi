@@ -1,8 +1,5 @@
 #include "Player/PlayerTargetingComponent.h"
 #include "Player/TargetableComponent.h"
-#include "RailMechanics/RailShooterEnemyComponent.h"
-#include "Combat/Boss/BossComponent.h"
-#include "Environment/DebrisComponent.h"
 #include "UI/LockonMarkerUIComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
@@ -14,85 +11,67 @@
 #include "Physics/CollisionManager.h"
 #include "Core/Math/MathFunction.h"
 #include "Core/Shape/LinePrimitive.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include <algorithm>
 #include <limits>
 #include <cmath>
 
 void PlayerTargetingComponent::Initialize() {
-    // UIコンポーネントを検索
-    auto scene = gameObject_->GetScene();
-    if (scene) {
+    TryFindLockonMarkerUI();
+}
+
+void PlayerTargetingComponent::Start() {
+    TryFindLockonMarkerUI();
+}
+
+void PlayerTargetingComponent::TryFindLockonMarkerUI() {
+    if (!lockonMarkerUI_.expired() || !gameObject_) {
+        return;
+    }
+    if (auto scene = gameObject_->GetScene()) {
         for (const auto& obj : scene->GetGameObjects()) {
             if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                lockonMarkerUI_ = ui;
+                lockonMarkerUI_ = ui->weak_from_this();
                 break;
             }
         }
     }
 }
 
-void PlayerTargetingComponent::Start() {
-    if (!lockonMarkerUI_ && gameObject_) {
-        if (auto scene = gameObject_->GetScene()) {
-            for (const auto& obj : scene->GetGameObjects()) {
-                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                    lockonMarkerUI_ = ui;
-                    break;
-                }
-            }
-        }
-    }
-}
-
 void PlayerTargetingComponent::Update() {
-    // 死んだオブジェクトなどをキューから削除する
-    queuedTargets_.erase(std::remove_if(queuedTargets_.begin(), queuedTargets_.end(),
-                                        [](const std::shared_ptr<GameObject>& obj) {
-                                            if (!obj || !obj->GetIsActive()) {
-                                                return true;
-                                            }
+    // 死んだオブジェクトやターゲット不可になったオブジェクトをキューから削除する (C++20 std::erase_if)
+    std::erase_if(queuedTargets_, [this](const std::shared_ptr<GameObject>& obj) {
+        if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
+            return true;
+        }
 
-                                            // 生死判定
-                                            if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
-                                                if (!enemyComp->IsAlive()) {
-                                                    return true;
-                                                }
-                                            } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-                                                if (!bossComp->IsCoreExposed()) {
-                                                    return true;
-                                                }
-                                            } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
-                                                if (debrisComp->GetState() != DebrisState::BossOrbiting) {
-                                                    return true;
-                                                }
-                                            }
+        // TargetableComponent による共通ターゲット可否判定
+        if (auto targetable = obj->GetComponent<TargetableComponent>()) {
+            return !targetable->IsTargetable() || !IsTargetTypeAllowed(targetable->GetTargetType());
+        }
 
-                                            return false;
-                                        }),
-                         queuedTargets_.end());
+        return true;
+    });
 
     UpdateHoverTarget();
 
-    if (!lockonMarkerUI_) {
-        auto scene = gameObject_->GetScene();
-        if (scene) {
-            for (auto obj : scene->GetGameObjects()) {
-                if (auto ui = obj->GetComponent<LockonMarkerUIComponent>()) {
-                    lockonMarkerUI_ = ui;
-                    break;
-                }
-            }
+    if (lockonMarkerUI_.expired()) {
+        float dt = GetEngine() ? GetEngine()->GetGameDeltaTime() : (1.0f / 60.0f);
+        uiSearchTimer_ += dt;
+        if (uiSearchTimer_ >= kUISearchInterval) {
+            uiSearchTimer_ = 0.0f;
+            TryFindLockonMarkerUI();
         }
+    } else {
+        uiSearchTimer_ = 0.0f;
     }
 
-    if (lockonMarkerUI_) {
-        lockonMarkerUI_->SetMaxLockonCount(maxLockonCount_);
-        std::vector<std::shared_ptr<GameObject>> displayTargets = queuedTargets_;
+    if (auto markerUI = lockonMarkerUI_.lock()) {
+        markerUI->SetMaxLockonCount(maxLockonCount_);
+        std::vector<std::shared_ptr<GameObject>> displayTargets(queuedTargets_.begin(), queuedTargets_.end());
         if (hoverTarget_) {
             displayTargets.push_back(hoverTarget_);
         }
-        lockonMarkerUI_->SyncTargets(displayTargets);
+        markerUI->SyncTargets(displayTargets);
     }
 }
 
@@ -101,7 +80,10 @@ void PlayerTargetingComponent::OnRegisterProperties() {}
 void PlayerTargetingComponent::UpdateHoverTarget() {
     hoverTarget_ = nullptr;
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
     auto cameraManager = engine->GetCameraManager();
     if (!cameraManager || !cameraManager->GetActiveCamera()) {
         return;
@@ -119,11 +101,11 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 
     // 1. 保留中の非同期レイキャストをポーリングして視線キャッシュを更新
     for (auto it = visibilityCache_.begin(); it != visibilityCache_.end();) {
-        GameObject* objPtr = it->first;
+        auto targetObj = it->second.targetObject.lock();
         TargetVisibilityCache& cache = it->second;
 
-        // オブジェクトが破棄されていたらキャッシュから削除
-        if (!objPtr || !objPtr->GetIsActive()) {
+        // オブジェクトが破棄されていたらキャッシュから安全に削除 (UAF防止)
+        if (!targetObj || !targetObj->GetIsActive() || targetObj->IsDestroyed()) {
             it = visibilityCache_.erase(it);
             continue;
         }
@@ -135,19 +117,20 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                 RaycastHit hitInfo = result.second;
 
                 bool canSee = true;
-                auto transform = objPtr->GetComponent<TransformComponent>();
+                auto transform = targetObj->GetComponent<TransformComponent>();
                 if (transform) {
                     Irufemi::Vector3 targetPos = transform->GetWorldPosition();
                     Irufemi::Vector3 cameraPos = camera->GetTranslate();
                     float dist3D = Irufemi::Math::Length(Irufemi::Math::Subtract(targetPos, cameraPos));
 
                     if (hit && hitInfo.hitObject != nullptr) {
-                        if (hitInfo.hitObject != objPtr && hitInfo.distance < dist3D - 1.0f) {
+                        if (hitInfo.hitObject != targetObj.get() && hitInfo.distance < dist3D - 1.0f) {
                             canSee = false; // 障害物に遮蔽されている
                         }
                     }
                 }
                 cache.canSee = canSee;
+                cache.hasCheckedOnce = true;
                 cache.pendingTask.reset();
             }
         }
@@ -165,51 +148,61 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 
     // 2. ターゲット候補のスコアリングと評価
     for (auto targetComp : TargetableComponent::GetTargets()) {
-        auto obj = targetComp->GetGameObject();
-        if (!obj || !obj->GetIsActive()) {
+        if (!targetComp || !targetComp->IsTargetable() || !IsTargetTypeAllowed(targetComp->GetTargetType())) {
             continue;
         }
 
-        bool isTargetable = false;
-        if (auto enemyComp = obj->GetComponent<RailShooterEnemyComponent>()) {
-            if (enemyComp->IsAlive()) {
-                isTargetable = true;
-            }
-        } else if (auto bossComp = obj->GetComponent<BossComponent>()) {
-            if (bossComp->IsCoreExposed()) {
-                isTargetable = true;
-            }
-        } else if (auto debrisComp = obj->GetComponent<DebrisComponent>()) {
-            if (debrisComp->GetState() == DebrisState::BossOrbiting) {
-                isTargetable = true;
-            }
+        auto obj = targetComp->GetGameObject();
+        if (!obj || !obj->GetIsActive() || obj->IsDestroyed()) {
+            continue;
         }
 
-        if (isTargetable) {
-            auto transform = obj->GetComponent<TransformComponent>();
-            if (transform) {
-                Irufemi::Vector3 worldPos = transform->GetWorldPosition();
-                Irufemi::Vector3 clipPos = Irufemi::Math::Transform(worldPos, viewProj);
+        auto transform = obj->GetComponent<TransformComponent>();
+        if (transform) {
 
-                if (clipPos.z >= 0.0f && clipPos.z <= 1.0f) {
-                    float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
-                    float screenY = (1.0f - clipPos.y) * 0.5f * viewHeight;
+            Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+            Irufemi::Vector3 clipPos = Irufemi::Math::Transform(worldPos, viewProj);
 
-                    float dx = screenX - screenCenter.x;
-                    float dy = screenY - screenCenter.y;
-                    float dist2DSq = dx * dx + dy * dy;
+            if (clipPos.z >= 0.0f && clipPos.z <= 1.0f) {
+                float screenX = (clipPos.x + 1.0f) * 0.5f * viewWidth;
+                float screenY = (1.0f - clipPos.y) * 0.5f * viewHeight;
 
-                    if (dist2DSq <= lockonRadius2D_ * lockonRadius2D_) {
-                        Irufemi::Vector3 cameraPos = camera->GetTranslate();
-                        Irufemi::Vector3 toTarget = Irufemi::Math::Subtract(worldPos, cameraPos);
-                        float dist3D = Irufemi::Math::Length(toTarget);
+                float dx = screenX - screenCenter.x;
+                float dy = screenY - screenCenter.y;
+                float dist2DSq = dx * dx + dy * dy;
 
-                        float score = std::sqrt(dist2DSq) * weight2D_ + dist3D * weight3D_;
+                if (dist2DSq <= lockonRadius2D_ * lockonRadius2D_) {
+                    Irufemi::Vector3 cameraPos = camera->GetTranslate();
+                    Irufemi::Vector3 toTarget = Irufemi::Math::Subtract(worldPos, cameraPos);
+                    float dist3D = Irufemi::Math::Length(toTarget);
 
-                        if (score < bestScore) {
-                            auto& cache = visibilityCache_[obj];
+                    float score = std::sqrt(dist2DSq) * weight2D_ + dist3D * weight3D_;
 
-                            // 0.1秒以上経過していれば、非同期レイキャストを発行（Amortization）
+                    if (score < bestScore) {
+                        auto& cache = visibilityCache_[obj->GetInstanceID()];
+                        cache.targetObject = obj->shared_from_this();
+
+                        if (!cache.hasCheckedOnce) {
+                            // 初回は同期Raycastで遮蔽を即座に確定し、壁裏敵の一瞬の透過ロックオンを防止
+                            Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
+                            Irufemi::Ray ray;
+                            ray.origin = cameraPos;
+                            ray.diff = dir;
+                            RaycastHit hitInfo{};
+                            bool hit = engine->GetCollisionManager()->Raycast(ray, hitInfo, dist3D + 10.0f, 0xFFFFFFFF,
+                                                                              playerObj);
+
+                            bool canSee = true;
+                            if (hit && hitInfo.hitObject != nullptr) {
+                                if (hitInfo.hitObject != obj && hitInfo.distance < dist3D - 1.0f) {
+                                    canSee = false;
+                                }
+                            }
+                            cache.canSee = canSee;
+                            cache.hasCheckedOnce = true;
+                            cache.lastCheckTime = currentTime;
+                        } else {
+                            // 2回目以降: 0.1秒以上経過していれば、非同期レイキャストを発行（Amortization）
                             if (currentTime - cache.lastCheckTime > 0.1f && !cache.pendingTask) {
                                 cache.lastCheckTime = currentTime;
                                 Irufemi::Vector3 dir = Irufemi::Math::Normalize(toTarget);
@@ -221,12 +214,12 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
                                     engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
                                                                                 dist3D + 10.0f, 0xFFFFFFFF, playerObj));
                             }
+                        }
 
-                            // 非同期判定中の場合は、過去のキャッシュ(canSee)を利用して即座に評価を続ける
-                            if (cache.canSee) {
-                                bestScore = score;
-                                bestTarget = obj->shared_from_this();
-                            }
+                        // 視認可能な場合のみベストターゲット候補とする
+                        if (cache.canSee) {
+                            bestScore = score;
+                            bestTarget = obj->shared_from_this();
                         }
                     }
                 }
@@ -255,7 +248,37 @@ std::shared_ptr<GameObject> PlayerTargetingComponent::PopTarget() {
     if (queuedTargets_.empty()) {
         return nullptr;
     }
-    auto target = queuedTargets_.front();
-    queuedTargets_.erase(queuedTargets_.begin());
+    auto target = std::move(queuedTargets_.front());
+    queuedTargets_.pop_front();
     return target;
+}
+
+Irufemi::Vector3 PlayerTargetingComponent::CalculateAimPoint(float maxDistance) const {
+    auto engine = GetEngine();
+    if (!engine) {
+        return {0.0f, 0.0f, 0.0f};
+    }
+
+    auto cameraManager = engine->GetCameraManager();
+    auto inputManager = engine->GetInputManager();
+    if (!cameraManager || !cameraManager->GetActiveCamera() || !inputManager) {
+        return {0.0f, 0.0f, 0.0f};
+    }
+
+    auto camera = cameraManager->GetActiveCamera();
+    float width = camera->GetViewportWidth();
+    float height = camera->GetViewportHeight();
+    Irufemi::Vector2 mousePos = inputManager->GetMousePosition();
+
+    Irufemi::Matrix4x4 viewProjInv = Irufemi::Math::Inverse(camera->GetViewProjectionMatrix3D());
+    Irufemi::Ray ray = Irufemi::Math::ScreenPointToRay(mousePos, width, height, viewProjInv);
+
+    RaycastHit hitInfo;
+    if (auto collisionManager = engine->GetCollisionManager()) {
+        if (collisionManager->Raycast(ray, hitInfo, maxDistance)) {
+            return hitInfo.hitPoint;
+        }
+    }
+
+    return Irufemi::Math::Add(ray.origin, Irufemi::Math::Multiply(maxDistance, ray.diff));
 }

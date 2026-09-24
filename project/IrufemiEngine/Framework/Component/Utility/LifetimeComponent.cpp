@@ -1,11 +1,13 @@
 #include "Framework/Component/Utility/LifetimeComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 
 void LifetimeComponent::OnRegisterProperties() {
+    timeoutActionInt_ = static_cast<int>(timeoutAction_);
     RegisterProperty("Life Time", &lifeTime_);
-    RegisterEnum("Timeout Action", reinterpret_cast<int*>(&timeoutAction_), {"0: Destroy", "1: Disable"});
+    RegisterEnum("Timeout Action", &timeoutActionInt_, {"0: Destroy", "1: Disable"}).OnChanged([this]() {
+        timeoutAction_ = static_cast<TimeoutAction>(timeoutActionInt_);
+    });
 }
 
 void LifetimeComponent::Initialize() {
@@ -21,7 +23,8 @@ void LifetimeComponent::OnEnable() {
 }
 
 void LifetimeComponent::Update() {
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    float dt = engine ? engine->GetGameDeltaTime() : 0.0f;
     currentLifeTime_ += dt;
     if (currentLifeTime_ >= lifeTime_) {
         if (timeoutAction_ == TimeoutAction::Destroy) {
@@ -46,5 +49,6 @@ void LifetimeComponent::Deserialize(const nlohmann::json& j) {
     }
     if (j.contains("timeoutAction")) {
         timeoutAction_ = static_cast<TimeoutAction>(j["timeoutAction"].get<int>());
+        timeoutActionInt_ = static_cast<int>(timeoutAction_);
     }
 }

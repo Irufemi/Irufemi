@@ -2,7 +2,6 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Pipeline/PSOManager.h"
 #include "Core/Utility/Ease.h"
 #include "Renderer/Camera/CameraManager.h"
@@ -18,22 +17,20 @@
 #include <unordered_map>
 
 void LockonMarkerUIComponent::Initialize() {
-    auto engine = BaseModel::GetIrufemiEngine();
-    IRUFEMI_ASSERT(engine != nullptr && "IrufemiEngine is null in Initialize");
+    auto engine = GetEngine();
+    if (!engine) {
+        return; // シーンへのエンジンバインド完了まで初期化を遅延
+    }
 
-    // 1. SpriteBatch の生成（テクスチャ指定）
-    markerBatch_ = std::make_unique<SpriteBatch>();
-    markerBatch_->Initialize("resources/reticle.jpg");
+    if (!markerBatch_) {
+        // 1. SpriteBatch の生成（テクスチャ指定）
+        markerBatch_ = std::make_unique<SpriteBatch>();
+        markerBatch_->Initialize("resources/reticle.jpg");
 
-    // 2. カスタムシェーダー（輝度アルファ抜き）の登録・取得と適用
-    auto psoManager = engine->GetPSOManager();
-    IRUFEMI_ASSERT(psoManager != nullptr && "PSOManager is null");
-
-    // 2D用のブレンドモード(通常透過: Normal)を指定
-    auto pso = psoManager->GetPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off,
-                                  PSOManager::CullMode::None);
-    IRUFEMI_ASSERT(pso != nullptr && "LuminanceAlpha2D PSO not found!");
-    markerBatch_->SetCustomPSO(pso);
+        // 2. カスタムシェーダー（輝度アルファ抜き）の適用 (名前指定によるホットリロード安全化)
+        markerBatch_->SetCustomPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal,
+                                   PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
+    }
 }
 
 void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<GameObject>>& targets) {
@@ -45,7 +42,7 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
             continue;
         }
 
-        int occurrenceIndex = targetCountsCache_[target.get()]++;
+        int occurrenceIndex = targetCountsCache_[target->GetInstanceID()]++;
 
         bool found = false;
         int activeOccurrence = 0;
@@ -74,13 +71,20 @@ void LockonMarkerUIComponent::SyncTargets(const std::vector<std::shared_ptr<Game
 }
 
 void LockonMarkerUIComponent::Update() {
-    IRUFEMI_ASSERT(markerBatch_ != nullptr && "markerBatch_ is null in Update");
+    if (!markerBatch_) {
+        Initialize();
+        if (!markerBatch_) {
+            return;
+        }
+    }
 
     // バッチへの登録をリセット
     markerBatch_->ClearInstances();
 
-    auto engine = BaseModel::GetIrufemiEngine();
-    IRUFEMI_ASSERT(engine != nullptr && "IrufemiEngine is null");
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
     float deltaTime = engine->GetDeltaTime();
 
     auto cameraManager = engine->GetCameraManager();
@@ -140,7 +144,7 @@ void LockonMarkerUIComponent::Update() {
         float easedT = EaseOutCubic(marker.animationT);
         marker.currentScale = std::lerp(3.0f, marker.targetScale, easedT);
 
-        int idx = drawCountsCache_[target.get()]++;
+        int idx = drawCountsCache_[target->GetInstanceID()]++;
         float finalScale = marker.currentScale;
         Irufemi::Vector2 finalPos = {screenPos.x, screenPos.y};
 

@@ -38,11 +38,6 @@ void SkinnedMeshRendererComponent::LoadModel(const std::string& filename) {
 }
 
 void SkinnedMeshRendererComponent::Update() {
-    // エディタ等で文字列が変更された場合の動的ロード検知
-    if (modelFilename_ != currentLoadedFilename_) {
-        LoadModel(modelFilename_);
-    }
-
     if (auto transform = GetTransform()) {
         animatedMesh_->SetTranslate(transform->GetWorldPosition());
         animatedMesh_->SetRotate(transform->GetWorldRotation());
@@ -148,11 +143,35 @@ nlohmann::json SkinnedMeshRendererComponent::Serialize() {
 }
 
 void SkinnedMeshRendererComponent::OnRegisterProperties() {
-    RegisterProperty("Model File", &modelFilename_).SetTooltip("The path to the GLTF or OBJ file to load");
+    RegisterProperty("Model File", &modelFilename_)
+        .SetTooltip("The path to the GLTF or OBJ file to load")
+        .OnChanged([this]() {
+            if (modelFilename_ != currentLoadedFilename_) {
+                LoadModel(modelFilename_);
+            }
+        });
 }
 
 void SkinnedMeshRendererComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("Model File")) {
         modelFilename_ = j["Model File"].get<std::string>();
+    }
+}
+
+void SkinnedMeshRendererComponent::SetEnableEffectMask(bool enable) {
+    if (animatedMesh_) {
+        animatedMesh_->SetEnableEffectMask(enable);
+    }
+}
+
+void SkinnedMeshRendererComponent::SetCustomEffectType(int32_t type) {
+    if (animatedMesh_) {
+        animatedMesh_->SetCustomEffectType(type);
+    }
+}
+
+void SkinnedMeshRendererComponent::SetCustomEffectParam(float param) {
+    if (animatedMesh_) {
+        animatedMesh_->SetCustomEffectParam(param);
     }
 }

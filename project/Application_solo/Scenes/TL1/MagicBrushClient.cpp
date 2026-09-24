@@ -127,7 +127,16 @@ void MagicBrushClient::StopPythonServer() {
         // cmd.exe経由で起動したため、子プロセスのpython.exeもまとめてツリー終了させる
         if (pythonProcessId_ != 0) {
             std::string killCmd = "taskkill /F /PID " + std::to_string(pythonProcessId_) + " /T";
-            system(killCmd.c_str());
+            STARTUPINFOA si = {sizeof(si)};
+            PROCESS_INFORMATION pi = {};
+            si.dwFlags = STARTF_USESHOWWINDOW;
+            si.wShowWindow = SW_HIDE;
+            if (CreateProcessA(nullptr, killCmd.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr,
+                               &si, &pi)) {
+                WaitForSingleObject(pi.hProcess, 3000);
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
+            }
         }
 
         CloseHandle((HANDLE)pythonProcessHandle_);
@@ -360,8 +369,7 @@ void MagicBrushClient::ProcessThread(std::string prompt, std::string referenceIm
         std::filesystem::create_directories(outputDirectory, ec); // ディレクトリが無ければ作成
 
         std::string filename = outputDirectory + shaderName + ".hlsl";
-        // wstringへの変換 (Shift-JIS環境等でも動作する簡易変換)
-        std::wstring tempHlslPath(filename.begin(), filename.end());
+        std::wstring tempHlslPath = ConvertString(filename);
 
         {
             std::ofstream hlslFile(filename);

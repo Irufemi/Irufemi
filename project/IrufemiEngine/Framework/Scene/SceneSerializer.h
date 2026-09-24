@@ -6,6 +6,7 @@
 
 class IScene;
 class GameObject;
+class PrefabManager;
 
 /**
  * @class SceneSerializer
@@ -13,6 +14,13 @@ class GameObject;
  */
 class SceneSerializer {
 public:
+    /**
+     * @brief PrefabManager を設定する（エンジン初期化時にバインド）
+     */
+    static void SetPrefabManager(PrefabManager* prefabManager) {
+        prefabManager_ = prefabManager;
+    }
+
     /**
      * @brief シーンの状態をファイルに保存する
      * @param scene 保存対象のシーン
@@ -63,4 +71,6 @@ private:
      * @brief シーン名からファイルパスを生成する(設定されたパス/[Name].json)
      */
     static std::string GetSceneFilePath(IScene* scene, const std::string& sceneName);
+
+    static inline PrefabManager* prefabManager_ = nullptr;
 };

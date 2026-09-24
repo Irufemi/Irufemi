@@ -34,6 +34,98 @@ public:
     void UpdateTransform(const Camera& camera);
 
 public:
+    // --- バッファビュー & 描画情報アクセサ ---
+    const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const {
+        return vertexBufferView_;
+    }
+    void SetVertexBufferView(const D3D12_VERTEX_BUFFER_VIEW& vbv) {
+        vertexBufferView_ = vbv;
+    }
+
+    const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const {
+        return indexBufferView_;
+    }
+    void SetIndexBufferView(const D3D12_INDEX_BUFFER_VIEW& ibv) {
+        indexBufferView_ = ibv;
+    }
+
+    uint32_t GetIndexCount() const {
+        return indexCount_;
+    }
+    void SetIndexCount(uint32_t count) {
+        indexCount_ = count;
+    }
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> GetVertexResource() const {
+        return vertexResource_;
+    }
+    void SetVertexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) {
+        vertexResource_ = res;
+    }
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> GetIndexResource() const {
+        return indexResource_;
+    }
+    void SetIndexResource(Microsoft::WRL::ComPtr<ID3D12Resource> res) {
+        indexResource_ = res;
+    }
+
+    VertexData* GetVertexData() {
+        return vertexData_;
+    }
+    const VertexData* GetVertexData() const {
+        return vertexData_;
+    }
+    uint32_t* GetIndexData() {
+        return indexData_;
+    }
+    const uint32_t* GetIndexData() const {
+        return indexData_;
+    }
+
+    // --- トランスフォームアクセサ ---
+    const Irufemi::Transform& GetTransform() const {
+        return transform_;
+    }
+    Irufemi::Transform& GetTransform() {
+        return transform_;
+    }
+    void SetTransform(const Irufemi::Transform& transform) {
+        transform_ = transform;
+    }
+
+    const TransformationMatrix& GetTransformationMatrix() const {
+        return transformationMatrix_;
+    }
+    TransformationMatrix& GetTransformationMatrix() {
+        return transformationMatrix_;
+    }
+
+    // --- マテリアルアクセサ ---
+    Material* GetMaterialData() {
+        return &cpuMaterialData_;
+    }
+    const Material* GetMaterialData() const {
+        return &cpuMaterialData_;
+    }
+
+    /**
+     * @brief MaterialVAddress を取得する。
+     * @return 取得された MaterialVAddress
+     */
+    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
+    /**
+     * @brief TransformVAddress を取得する。
+     * @return 取得された TransformVAddress
+     */
+    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
+
+    /**
+     * @brief SyncBeforeDraw を実行する。
+     */
+    void SyncBeforeDraw();
+
+protected:
     // --- 頂点バッファ ---
     VertexData* vertexData_ = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource_ = nullptr;
@@ -53,20 +145,4 @@ public:
     Irufemi::Transform transform_{{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
     TransformationMatrix transformationMatrix_{};
     uint32_t transformCbIndex_ = static_cast<uint32_t>(-1);
-
-    /**
-     * @brief MaterialVAddress を取得する。
-     * @return 取得された MaterialVAddress
-     */
-    D3D12_GPU_VIRTUAL_ADDRESS GetMaterialVAddress() const;
-    /**
-     * @brief TransformVAddress を取得する。
-     * @return 取得された TransformVAddress
-     */
-    D3D12_GPU_VIRTUAL_ADDRESS GetTransformVAddress() const;
-
-    /**
-     * @brief SyncBeforeDraw を実行する。
-     */
-    void SyncBeforeDraw();
 };

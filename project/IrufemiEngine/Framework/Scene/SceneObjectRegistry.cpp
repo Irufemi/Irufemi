@@ -153,7 +153,9 @@ void SceneObjectRegistry::OnNameChanged(const std::shared_ptr<GameObject>& obj, 
             nameIndex_.erase(itOld);
         }
     }
-    nameIndex_[newName].push_back(obj);
+    if (!newName.empty()) {
+        nameIndex_[newName].push_back(obj);
+    }
 }
 
 std::string SceneObjectRegistry::GenerateUniqueName(const std::string& baseName,
@@ -186,7 +188,7 @@ std::string SceneObjectRegistry::GenerateUniqueName(const std::string& baseName,
     std::string prefix = baseName;
     int nextIndex = 1;
 
-    std::regex re("^(.*) \\((\\d+)\\)$");
+    static const std::regex re(R"(^(.*) \((\d+)\)$)");
     std::smatch match;
     if (std::regex_match(baseName, match, re)) {
         prefix = match[1].str();

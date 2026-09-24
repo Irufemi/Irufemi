@@ -8,6 +8,50 @@
 
 using Mode = PostProcessManager::Mode;
 
+namespace {
+void SetupOutputViewport(IrufemiEngine* engine, DirectXCommon* dxCommon, bool isBackBufferTarget,
+                         D3D12_VIEWPORT& outViewport, D3D12_RECT& outScissor) {
+    if (isBackBufferTarget) {
+#ifdef EditorMode
+        outViewport.Width = static_cast<FLOAT>(engine->GetGameResolutionWidth());
+        outViewport.Height = static_cast<FLOAT>(engine->GetGameResolutionHeight());
+        outViewport.TopLeftX = 0;
+        outViewport.TopLeftY = 0;
+        outScissor.left = 0;
+        outScissor.right = engine->GetGameResolutionWidth();
+        outScissor.top = 0;
+        outScissor.bottom = engine->GetGameResolutionHeight();
+#else
+        float clientW = static_cast<float>(dxCommon->GetClientWidth());
+        float clientH = static_cast<float>(dxCommon->GetClientHeight());
+        float gameW = static_cast<float>(engine->GetGameResolutionWidth());
+        float gameH = static_cast<float>(engine->GetGameResolutionHeight());
+        Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
+
+        outViewport.Width = view.viewW;
+        outViewport.Height = view.viewH;
+        outViewport.TopLeftX = view.viewX;
+        outViewport.TopLeftY = view.viewY;
+        outScissor.left = static_cast<LONG>(outViewport.TopLeftX);
+        outScissor.right = static_cast<LONG>(outViewport.TopLeftX + outViewport.Width);
+        outScissor.top = static_cast<LONG>(outViewport.TopLeftY);
+        outScissor.bottom = static_cast<LONG>(outViewport.TopLeftY + outViewport.Height);
+#endif
+    } else {
+        outViewport.Width = static_cast<FLOAT>(engine->GetGameResolutionWidth());
+        outViewport.Height = static_cast<FLOAT>(engine->GetGameResolutionHeight());
+        outViewport.TopLeftX = 0;
+        outViewport.TopLeftY = 0;
+        outScissor.left = 0;
+        outScissor.right = engine->GetGameResolutionWidth();
+        outScissor.top = 0;
+        outScissor.bottom = engine->GetGameResolutionHeight();
+    }
+    outViewport.MinDepth = 0.0f;
+    outViewport.MaxDepth = 1.0f;
+}
+} // namespace
+
 bool PostProcessRunner::RequiresSeparatePass(Mode mode) const {
     return (mode == Mode::GaussianFilter || mode == Mode::DepthBasedOutline || mode == Mode::RadialBlur ||
             mode == Mode::Glitch || mode == Mode::DualKawaseBlur || mode == Mode::Pointillism ||
@@ -37,7 +81,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
 
         // 1) Bloom
         if (mode == Mode::Bloom) {
-            bool writeToScreen = false;
+            writeToScreen = false;
             RenderTexture* nextTarget = writeToScreen ? nullptr : workspace.workTextures[pingPongIdx % 2];
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
@@ -100,7 +144,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                                                            manager->bindlessCB_->GetGPUVirtualAddress() +
                                                                manager->bindlessBufferOffset_ *
                                                                    sizeof(PostProcessManager::BindlessParams));
-            manager->bindlessBufferOffset_++;
+            manager->TryIncrementBindlessOffset();
 
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
                                                            manager->bloomCB_->GetGPUVirtualAddress());
@@ -120,7 +164,6 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         }
         // 1-LS) Light Shafts (ゴッドレイ)
         else if (mode == Mode::LightShafts) {
-            bool writeToScreen = false;
             RenderTexture* nextTarget = writeToScreen ? nullptr : workspace.workTextures[pingPongIdx % 2];
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
@@ -150,7 +193,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                                                            manager->bindlessCB_->GetGPUVirtualAddress() +
                                                                manager->bindlessBufferOffset_ *
                                                                    sizeof(PostProcessManager::BindlessParams));
-            manager->bindlessBufferOffset_++;
+            manager->TryIncrementBindlessOffset();
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
                                                            manager->lightShaftsCB_->GetGPUVirtualAddress());
             commandList->DrawInstanced(3, 1, 0, 0);
@@ -170,7 +213,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                                                            manager->bindlessCB_->GetGPUVirtualAddress() +
                                                                manager->bindlessBufferOffset_ *
                                                                    sizeof(PostProcessManager::BindlessParams));
-            manager->bindlessBufferOffset_++;
+            manager->TryIncrementBindlessOffset();
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
                                                            manager->lightShaftsCB_->GetGPUVirtualAddress());
             commandList->DrawInstanced(3, 1, 0, 0);
@@ -188,7 +231,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                                                            manager->bindlessCB_->GetGPUVirtualAddress() +
                                                                manager->bindlessBufferOffset_ *
                                                                    sizeof(PostProcessManager::BindlessParams));
-            manager->bindlessBufferOffset_++;
+            manager->TryIncrementBindlessOffset();
             commandList->DrawInstanced(3, 1, 0, 0);
 
             if (!writeToScreen) {
@@ -205,7 +248,6 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         }
         // 1-B) Smoothing / GaussianFilter
         else if (mode == Mode::Smoothing || mode == Mode::GaussianFilter) {
-            bool writeToScreen = false;
             RenderTexture* nextTarget = writeToScreen ? nullptr : workspace.workTextures[pingPongIdx % 2];
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
@@ -276,7 +318,6 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         }
         // 1-C) DualKawaseBlur
         else if (mode == Mode::DualKawaseBlur) {
-            bool writeToScreen = false;
             RenderTexture* nextTarget = writeToScreen ? nullptr : workspace.workTextures[pingPongIdx % 2];
             D3D12_CPU_DESCRIPTOR_HANDLE targetHandle = writeToScreen ? rtvHandle : nextTarget->GetRtvHandle();
 
@@ -382,49 +423,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             D3D12_VIEWPORT fullViewport{};
             D3D12_RECT fullScissorRect{};
 
-            if (writeToScreen && isBackBufferTarget) {
-                // 画面に出力する場合はレターボックス（黒帯）処理を行う
-#ifdef EditorMode
-                // EditorMode時は最終出力先が mainRenderTexture_ (1280x720) なので、そのままの解像度を使用する
-                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
-                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
-                fullViewport.TopLeftX = 0;
-                fullViewport.TopLeftY = 0;
-                fullScissorRect.left = 0;
-                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
-                fullScissorRect.top = 0;
-                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
-#else
-                float clientW = static_cast<float>(manager->dxCommon_->GetClientWidth());
-                float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
-                float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
-                float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
-
-                Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
-
-                fullViewport.Width = view.viewW;
-                fullViewport.Height = view.viewH;
-                fullViewport.TopLeftX = view.viewX;
-                fullViewport.TopLeftY = view.viewY;
-                fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
-                fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
-                fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
-                fullScissorRect.bottom = static_cast<LONG>(fullViewport.TopLeftY + fullViewport.Height);
-#endif
-            } else {
-                // 中間テクスチャ または mainRenderTexture_ に出力する場合はゲーム解像度をそのまま使う
-                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
-                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
-                fullViewport.TopLeftX = 0;
-                fullViewport.TopLeftY = 0;
-                fullScissorRect.left = 0;
-                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
-                fullScissorRect.top = 0;
-                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
-            }
-
-            fullViewport.MinDepth = 0.0f;
-            fullViewport.MaxDepth = 1.0f;
+            SetupOutputViewport(manager->engine_, manager->dxCommon_, writeToScreen && isBackBufferTarget, fullViewport,
+                                fullScissorRect);
             commandList->RSSetViewports(1, &fullViewport);
             commandList->RSSetScissorRects(1, &fullScissorRect);
 
@@ -488,45 +488,8 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
             // Viewport と Scissor の設定
             D3D12_VIEWPORT fullViewport{};
             D3D12_RECT fullScissorRect{};
-            if (writeToScreen && isBackBufferTarget) {
-#ifdef EditorMode
-                // EditorMode時は最終出力先が mainRenderTexture_ なので、そのままの解像度を使用する
-                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
-                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
-                fullViewport.TopLeftX = 0;
-                fullViewport.TopLeftY = 0;
-                fullScissorRect.left = 0;
-                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
-                fullScissorRect.top = 0;
-                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
-#else
-                float clientW = static_cast<float>(manager->dxCommon_->GetClientWidth());
-                float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
-                float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
-                float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
-                Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
-
-                fullViewport.Width = view.viewW;
-                fullViewport.Height = view.viewH;
-                fullViewport.TopLeftX = view.viewX;
-                fullViewport.TopLeftY = view.viewY;
-                fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
-                fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
-                fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
-                fullScissorRect.bottom = static_cast<LONG>(fullViewport.TopLeftY + fullViewport.Height);
-#endif
-            } else {
-                fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
-                fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
-                fullViewport.TopLeftX = 0;
-                fullViewport.TopLeftY = 0;
-                fullScissorRect.left = 0;
-                fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
-                fullScissorRect.top = 0;
-                fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
-            }
-            fullViewport.MinDepth = 0.0f;
-            fullViewport.MaxDepth = 1.0f;
+            SetupOutputViewport(manager->engine_, manager->dxCommon_, writeToScreen && isBackBufferTarget, fullViewport,
+                                fullScissorRect);
             commandList->RSSetViewports(1, &fullViewport);
             commandList->RSSetScissorRects(1, &fullScissorRect);
 
@@ -550,13 +513,13 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                                                            manager->bindlessCB_->GetGPUVirtualAddress() +
                                                                manager->bindlessBufferOffset_ *
                                                                    sizeof(PostProcessManager::BindlessParams));
-            manager->bindlessBufferOffset_++;
+            manager->TryIncrementBindlessOffset();
 
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::Material,
                                                            manager->combinedCB_->GetGPUVirtualAddress() +
                                                                manager->combinedBufferOffset_ *
                                                                    sizeof(PostProcessManager::CombinedParams));
-            manager->combinedBufferOffset_++;
+            manager->TryIncrementCombinedOffset();
 
             commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams,
                                                            manager->customEffectParamsCB_->GetGPUVirtualAddress());
@@ -593,45 +556,7 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
         // Viewport と Scissor の設定
         D3D12_VIEWPORT fullViewport{};
         D3D12_RECT fullScissorRect{};
-        if (isBackBufferTarget) {
-#ifdef EditorMode
-            // EditorMode時は最終出力先が mainRenderTexture_ なので、そのままの解像度を使用する
-            fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
-            fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
-            fullViewport.TopLeftX = 0;
-            fullViewport.TopLeftY = 0;
-            fullScissorRect.left = 0;
-            fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
-            fullScissorRect.top = 0;
-            fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
-#else
-            float clientW = static_cast<float>(manager->dxCommon_->GetClientWidth());
-            float clientH = static_cast<float>(manager->dxCommon_->GetClientHeight());
-            float gameW = static_cast<float>(manager->engine_->GetGameResolutionWidth());
-            float gameH = static_cast<float>(manager->engine_->GetGameResolutionHeight());
-            Irufemi::Math::LetterboxInfo view = Irufemi::Math::CalculateLetterbox(clientW, clientH, gameW, gameH);
-
-            fullViewport.Width = view.viewW;
-            fullViewport.Height = view.viewH;
-            fullViewport.TopLeftX = view.viewX;
-            fullViewport.TopLeftY = view.viewY;
-            fullScissorRect.left = static_cast<LONG>(fullViewport.TopLeftX);
-            fullScissorRect.right = static_cast<LONG>(fullViewport.TopLeftX + fullViewport.Width);
-            fullScissorRect.top = static_cast<LONG>(fullViewport.TopLeftY);
-            fullScissorRect.bottom = static_cast<LONG>(fullViewport.TopLeftY + fullViewport.Height);
-#endif
-        } else {
-            fullViewport.Width = (FLOAT)manager->engine_->GetGameResolutionWidth();
-            fullViewport.Height = (FLOAT)manager->engine_->GetGameResolutionHeight();
-            fullViewport.TopLeftX = 0;
-            fullViewport.TopLeftY = 0;
-            fullScissorRect.left = 0;
-            fullScissorRect.right = manager->engine_->GetGameResolutionWidth();
-            fullScissorRect.top = 0;
-            fullScissorRect.bottom = manager->engine_->GetGameResolutionHeight();
-        }
-        fullViewport.MinDepth = 0.0f;
-        fullViewport.MaxDepth = 1.0f;
+        SetupOutputViewport(manager->engine_, manager->dxCommon_, isBackBufferTarget, fullViewport, fullScissorRect);
         commandList->RSSetViewports(1, &fullViewport);
         commandList->RSSetScissorRects(1, &fullScissorRect);
 
@@ -645,12 +570,12 @@ RenderTexture* PostProcessRunner::Run(PostProcessManager* manager, ID3D12Graphic
                                                        manager->bindlessCB_->GetGPUVirtualAddress() +
                                                            manager->bindlessBufferOffset_ *
                                                                sizeof(PostProcessManager::BindlessParams));
-        manager->bindlessBufferOffset_++;
+        manager->TryIncrementBindlessOffset();
 
         commandList->SetGraphicsRootConstantBufferView(
             (UINT)RootSlot::Material, manager->combinedCB_->GetGPUVirtualAddress() +
                                           manager->combinedBufferOffset_ * sizeof(PostProcessManager::CombinedParams));
-        manager->combinedBufferOffset_++;
+        manager->TryIncrementCombinedOffset();
 
         commandList->SetGraphicsRootConstantBufferView((UINT)RootSlot::CustomEffectParams,
                                                        manager->customEffectParamsCB_->GetGPUVirtualAddress());

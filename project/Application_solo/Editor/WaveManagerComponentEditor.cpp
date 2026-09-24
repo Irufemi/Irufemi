@@ -16,9 +16,6 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     auto& events = waveManager->GetAllEventsMutable();
 
     // --- Undo/Redo Setup ---
-    static std::vector<WaveEventData> oldState;
-    static bool isDraggingModified = false;
-
     auto pushUndo = [&](const std::vector<WaveEventData>& oldData) {
         if (!actionManager) {
             return;
@@ -30,10 +27,10 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
 
     auto handleItemUndo = [&]() {
         if (ImGui::IsItemActivated()) {
-            oldState = events;
+            oldState_ = events;
         }
         if (ImGui::IsItemDeactivatedAfterEdit()) {
-            pushUndo(oldState);
+            pushUndo(oldState_);
         }
     };
     // -----------------------
@@ -42,7 +39,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     ImGui::Separator();
 
     std::string path = waveManager->GetLevelDataPath();
-    char buffer[256];
+    char buffer[1024];
     strncpy_s(buffer, sizeof(buffer), path.c_str(), _TRUNCATE);
     buffer[sizeof(buffer) - 1] = '\0';
     if (ImGui::InputText("Level Data Path", buffer, sizeof(buffer))) {
@@ -61,8 +58,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
 
     ImGui::Separator();
 
-    static int selectedEventIndex = -1;
-    static int draggingNodeIndex = -1;
+    int selectedEventIndex = waveManager->GetSelectedEventIndex();
 
     // Timeline drawing
     ImGui::Text("Event Timeline (Distance)");
@@ -101,8 +97,8 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     ImVec2 mousePos = ImGui::GetIO().MousePos;
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && isTimelineHovered) {
-        oldState = events; // Capture state before dragging
-        isDraggingModified = false;
+        oldState_ = events; // Capture state before dragging
+        isDraggingModified_ = false;
         int hitIndex = -1;
         // Search backwards to hit topmost (if overlapped)
         for (int i = (int)events.size() - 1; i >= 0; --i) {
@@ -115,22 +111,24 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         }
         if (hitIndex != -1) {
             selectedEventIndex = hitIndex;
-            draggingNodeIndex = hitIndex;
+            draggingNodeIndex_ = hitIndex;
+            waveManager->SetSelectedEventIndex(hitIndex);
         } else {
             float newDist = (mousePos.x - p.x) / scale;
             waveManager->SetEditorPreviewDistance((std::max)(0.0f, newDist));
             selectedEventIndex = -1;
+            waveManager->SetSelectedEventIndex(-1);
         }
     }
 
     if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-        if (draggingNodeIndex != -1 && draggingNodeIndex < events.size()) {
+        if (draggingNodeIndex_ != -1 && draggingNodeIndex_ < events.size()) {
             if (ImGui::GetIO().MouseDelta.x != 0.0f) {
-                events[draggingNodeIndex].triggerDistance += ImGui::GetIO().MouseDelta.x / scale;
-                if (events[draggingNodeIndex].triggerDistance < 0) {
-                    events[draggingNodeIndex].triggerDistance = 0.0f;
+                events[draggingNodeIndex_].triggerDistance += ImGui::GetIO().MouseDelta.x / scale;
+                if (events[draggingNodeIndex_].triggerDistance < 0) {
+                    events[draggingNodeIndex_].triggerDistance = 0.0f;
                 }
-                isDraggingModified = true;
+                isDraggingModified_ = true;
             }
         } else if (isTimelineActive) {
             float newDist = (mousePos.x - p.x) / scale;
@@ -139,11 +137,11 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
     }
 
     if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-        if (draggingNodeIndex != -1 && isDraggingModified) {
-            pushUndo(oldState);
+        if (draggingNodeIndex_ != -1 && isDraggingModified_) {
+            pushUndo(oldState_);
         }
-        draggingNodeIndex = -1;
-        isDraggingModified = false;
+        draggingNodeIndex_ = -1;
+        isDraggingModified_ = false;
     }
 
     // Draw Event Nodes
@@ -185,6 +183,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         newEvent.eventType = "SpawnEnemy";
         events.push_back(newEvent);
         selectedEventIndex = (int)events.size() - 1;
+        waveManager->SetSelectedEventIndex(selectedEventIndex);
         pushUndo(preEdit);
     }
     ImGui::SameLine();
@@ -192,6 +191,7 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
         auto preEdit = events;
         events.erase(events.begin() + selectedEventIndex);
         selectedEventIndex = -1;
+        waveManager->SetSelectedEventIndex(-1);
         pushUndo(preEdit);
     }
     ImGui::SameLine();
@@ -270,10 +270,36 @@ void WaveManagerComponentEditor::Draw(Component* component, EditorActionManager*
             }
         };
 
+        auto editFloatParam = [&](const char* key, float defaultVal, float speed, float minVal, float maxVal) {
+            bool hasKey = ev.parameters.contains(key);
+            float val = hasKey ? ev.parameters[key].get<float>() : defaultVal;
+            if (ImGui::DragFloat(key, &val, speed, minVal, maxVal, "%.2f")) {
+                ev.parameters[key] = val;
+            }
+            handleItemUndo();
+            ImGui::SameLine();
+            if (hasKey) {
+                if (ImGui::Button((std::string("Remove##") + key).c_str())) {
+                    auto preEdit = events;
+                    ev.parameters.erase(key);
+                    pushUndo(preEdit);
+                }
+            } else {
+                if (ImGui::Button((std::string("Add##") + key).c_str())) {
+                    auto preEdit = events;
+                    ev.parameters[key] = defaultVal;
+                    pushUndo(preEdit);
+                }
+            }
+        };
+
         editStringParam("WaveId");
         editStringParam("BossID");
         editStringParam("Formation");
         editIntParam("Count");
+        editFloatParam("Scale", 1.0f, 0.05f, 0.2f, 5.0f);
+        editFloatParam("CombatDuration", 7.5f, 0.5f, 1.0f, 60.0f);
+        editFloatParam("TargetDistance", 65.0f, 1.0f, 10.0f, 200.0f);
 
         bool hasOffset = ev.parameters.contains("OffsetFromRail");
         if (hasOffset) {

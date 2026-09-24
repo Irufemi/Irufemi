@@ -3,6 +3,7 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Physics/CollisionManager.h"
 #include "Core/Math/MathFunction.h"
+#include <cmath>
 
 OBBColliderComponent::OBBColliderComponent() {}
 
@@ -20,20 +21,22 @@ void OBBColliderComponent::OnRegisterProperties() {
 
 Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
     Irufemi::OBB obb;
-    if (GetTransform()) {
-        Irufemi::Vector3 worldPos = GetTransform()->GetWorldPosition();
-        Irufemi::Vector3 worldScale = GetTransform()->GetWorldScale();
+    auto* transform = GetTransform();
+    if (transform) {
+        Irufemi::Vector3 worldPos = transform->GetWorldPosition();
+        Irufemi::Vector3 worldScale = transform->GetWorldScale();
 
-        obb.orientations[0] = GetTransform()->GetWorldRight();
-        obb.orientations[1] = GetTransform()->GetWorldUp();
-        obb.orientations[2] = GetTransform()->GetWorldForward();
+        obb.orientations[0] = transform->GetWorldRight();
+        obb.orientations[1] = transform->GetWorldUp();
+        obb.orientations[2] = transform->GetWorldForward();
 
         // Offsetも回転・スケールを考慮
         obb.center = worldPos + obb.orientations[0] * (localOffset_.x * worldScale.x) +
                      obb.orientations[1] * (localOffset_.y * worldScale.y) +
                      obb.orientations[2] * (localOffset_.z * worldScale.z);
 
-        obb.size = {localSize_.x * worldScale.x, localSize_.y * worldScale.y, localSize_.z * worldScale.z};
+        obb.size = {std::abs(localSize_.x * worldScale.x), std::abs(localSize_.y * worldScale.y),
+                    std::abs(localSize_.z * worldScale.z)};
     } else {
         obb.center = localOffset_;
         obb.orientations[0] = {1.0f, 0.0f, 0.0f};

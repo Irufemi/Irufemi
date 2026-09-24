@@ -27,7 +27,6 @@
 #include <mutex>
 #include <filesystem>
 #include <algorithm>
-#include <algorithm>
 
 // 内部実装の定義
 struct FontManager::Impl {
@@ -56,6 +55,9 @@ struct FontManager::Impl {
     // 非同期生成用スレッドプールとタスクグループ
     std::unique_ptr<ThreadPool> threadPool;
     std::shared_ptr<TaskGroup> taskGroup;
+
+    // アトラスの更新世代番号
+    std::atomic<uint64_t> atlasVersion{0};
 };
 
 FontManager::FontManager() : impl_(std::make_unique<Impl>()) {}
@@ -175,218 +177,271 @@ bool FontManager::IsAllLoaded() const {
 
 void FontManager::PrecacheText(const std::string& fontId, const std::wstring& text) {
     // 非同期でタスクを投げる（シーンのロード画面等で待機可能にするため）
-    impl_->threadPool->Enqueue(impl_->taskGroup, [this, fontId, text]() {
-        std::lock_guard<std::mutex> lock(impl_->cacheMutex);
-        auto it = impl_->fonts.find(fontId);
-        if (it == impl_->fonts.end()) {
-            return;
+    impl_->threadPool->Enqueue(impl_->taskGroup, [this, fontId, text]() { PrecacheTextInternal(fontId, text); });
+}
+
+void FontManager::PrecacheTextInternal(const std::string& fontId, const std::wstring& text) {
+    std::lock_guard<std::mutex> lock(impl_->cacheMutex);
+    auto it = impl_->fonts.find(fontId);
+    if (it == impl_->fonts.end()) {
+        return;
+    }
+    msdfgen::FontHandle* font = it->second;
+
+    auto& fontCache = impl_->glyphCache[fontId];
+
+    msdfgen::FontMetrics metrics;
+    msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_NONE);
+
+    // バッチ転送用のダーティ矩形
+    bool hasNewGlyphs = false;
+    int dirtyMinX = Impl::ATLAS_WIDTH;
+    int dirtyMinY = Impl::ATLAS_HEIGHT;
+    int dirtyMaxX = 0;
+    int dirtyMaxY = 0;
+
+    for (size_t i = 0; i < text.size(); ++i) {
+        wchar_t c1 = text[i];
+        char32_t char32 = 0;
+        if (c1 >= 0xD800 && c1 <= 0xDBFF && (i + 1 < text.size())) {
+            wchar_t c2 = text[i + 1];
+            if (c2 >= 0xDC00 && c2 <= 0xDFFF) {
+                char32 = 0x10000 + ((static_cast<char32_t>(c1) - 0xD800) << 10) + (static_cast<char32_t>(c2) - 0xDC00);
+                ++i;
+            } else {
+                char32 = static_cast<char32_t>(c1);
+            }
+        } else {
+            char32 = static_cast<char32_t>(c1);
         }
-        msdfgen::FontHandle* font = it->second;
 
-        auto& fontCache = impl_->glyphCache[fontId];
+        auto cacheIt = fontCache.find(char32);
+        // キャッシュに存在しない、またはダミー（width < 0）の場合は生成
+        if (cacheIt == fontCache.end() || cacheIt->second.width < 0.0f) {
+            msdfgen::Shape shape;
+            double advance = 0.0;
 
-        msdfgen::FontMetrics metrics;
-        msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_NONE);
+            // スペースなどの空文字対策
+            if (char32 == U' ') {
+                double spaceAdvance = 0.0, tabAdvance = 0.0;
+                msdfgen::getFontWhitespaceWidth(spaceAdvance, tabAdvance, font, msdfgen::FONT_SCALING_NONE);
+                double scale = static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
+                GlyphInfo info{};
+                info.character = char32;
+                info.advanceX = static_cast<float>(spaceAdvance * scale);
+                fontCache[char32] = info;
+                continue;
+            }
 
-        for (wchar_t c : text) {
-            char32_t char32 = static_cast<char32_t>(c);
+            if (msdfgen::loadGlyph(shape, font, char32, msdfgen::FONT_SCALING_NONE, &advance)) {
+                shape.normalize();
+                shape.orientContours();
+                msdfgen::edgeColoringSimple(shape, 3.0);
 
-            auto cacheIt = fontCache.find(char32);
-            // キャッシュに存在しない、またはダミー（width < 0）の場合は生成
-            if (cacheIt == fontCache.end() || cacheIt->second.width < 0.0f) {
-                msdfgen::Shape shape;
-                double advance = 0.0;
+                msdfgen::Shape::Bounds bounds = shape.getBounds();
+                // フォントの高さと幅を算出
+                double width = bounds.r - bounds.l;
+                double height = bounds.t - bounds.b;
 
-                // スペースなどの空文字対策
-                if (char32 == U' ') {
-                    double spaceAdvance = 0.0, tabAdvance = 0.0;
-                    msdfgen::getFontWhitespaceWidth(spaceAdvance, tabAdvance, font, msdfgen::FONT_SCALING_NONE);
-                    GlyphInfo info{};
-                    info.character = char32;
-                    info.advanceX = static_cast<float>(spaceAdvance);
-                    fontCache[char32] = info;
+                // スケールの決定 (GLYPH_SIZE に収まるように)
+                double scale = static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
+
+                int texWidth = static_cast<int>(width * scale) + Impl::PADDING * 2;
+                int texHeight = static_cast<int>(height * scale) + Impl::PADDING * 2;
+
+                if (texWidth <= 0 || texHeight <= 0) {
                     continue;
                 }
 
-                if (msdfgen::loadGlyph(shape, font, char32, msdfgen::FONT_SCALING_NONE, &advance)) {
-                    shape.normalize();
-                    shape.orientContours();
-                    msdfgen::edgeColoringSimple(shape, 3.0);
+                // オフセット計算 (テクスチャ中央に配置)
+                msdfgen::Vector2 translate(-bounds.l + (Impl::PADDING / scale), -bounds.b + (Impl::PADDING / scale));
 
-                    msdfgen::Shape::Bounds bounds = shape.getBounds();
-                    // フォントの高さと幅を算出
-                    double width = bounds.r - bounds.l;
-                    double height = bounds.t - bounds.b;
+                // MSDF用ビットマップ
+                msdfgen::Bitmap<float, 3> msdf(texWidth, texHeight);
+                msdfgen::generateMSDF(msdf, shape, msdfgen::Projection(msdfgen::Vector2(scale), translate),
+                                      Impl::PX_RANGE, msdfgen::MSDFGeneratorConfig());
 
-                    // スケールの決定 (GLYPH_SIZE に収まるように)
-                    double scale =
-                        static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
-
-                    int texWidth = static_cast<int>(width * scale) + Impl::PADDING * 2;
-                    int texHeight = static_cast<int>(height * scale) + Impl::PADDING * 2;
-
-                    if (texWidth <= 0 || texHeight <= 0) {
-                        continue;
+                // stbrp_pack_rects でパッキング
+                stbrp_rect rect{};
+                rect.w = texWidth;
+                rect.h = texHeight;
+                if (stbrp_pack_rects(&impl_->packContext, &rect, 1) == 1) {
+                    // CPUアトラスにコピー (上下反転に対応するためY座標を反転しながらコピー)
+                    for (int y = 0; y < texHeight; ++y) {
+                        for (int x = 0; x < texWidth; ++x) {
+                            const float* pixel = msdf(x, texHeight - 1 - y); // Y反転
+                            int destX = rect.x + x;
+                            int destY = rect.y + y;
+                            int destIndex = (destY * Impl::ATLAS_WIDTH + destX) * 4;
+                            float pxRange = static_cast<float>(Impl::PX_RANGE);
+                            impl_->cpuAtlasData[destIndex + 0] =
+                                static_cast<uint8_t>(std::clamp((pixel[0] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // R
+                            impl_->cpuAtlasData[destIndex + 1] =
+                                static_cast<uint8_t>(std::clamp((pixel[1] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // G
+                            impl_->cpuAtlasData[destIndex + 2] =
+                                static_cast<uint8_t>(std::clamp((pixel[2] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // B
+                            impl_->cpuAtlasData[destIndex + 3] = 255;                                              // A
+                        }
                     }
 
-                    // オフセット計算 (テクスチャ中央に配置)
-                    msdfgen::Vector2 translate(-bounds.l + (Impl::PADDING / scale),
-                                               -bounds.b + (Impl::PADDING / scale));
+                    // GlyphInfo作成
+                    GlyphInfo info{};
+                    info.character = char32;
+                    info.uvTopLeft = Irufemi::Vector2(static_cast<float>(rect.x) / Impl::ATLAS_WIDTH,
+                                                      static_cast<float>(rect.y) / Impl::ATLAS_HEIGHT);
+                    info.uvBottomRight = Irufemi::Vector2(static_cast<float>(rect.x + rect.w) / Impl::ATLAS_WIDTH,
+                                                          static_cast<float>(rect.y + rect.h) / Impl::ATLAS_HEIGHT);
+                    info.width = static_cast<float>(rect.w);
+                    info.height = static_cast<float>(rect.h);
+                    info.offsetX = static_cast<float>(bounds.l * scale) - Impl::PADDING;
+                    info.offsetY = static_cast<float>((metrics.ascenderY - bounds.t) * scale) -
+                                   Impl::PADDING; // ベースライン基準のオフセット
+                    info.advanceX = static_cast<float>(advance * scale);
 
-                    // MSDF用ビットマップ
-                    msdfgen::Bitmap<float, 3> msdf(texWidth, texHeight);
-                    msdfgen::generateMSDF(msdf, shape, msdfgen::Projection(msdfgen::Vector2(scale), translate),
-                                          Impl::PX_RANGE, msdfgen::MSDFGeneratorConfig());
+                    fontCache[char32] = info;
 
-                    // stbrp_pack_rects でパッキング
-                    stbrp_rect rect{};
-                    rect.w = texWidth;
-                    rect.h = texHeight;
-                    if (stbrp_pack_rects(&impl_->packContext, &rect, 1) == 1) {
-                        // CPUアトラスにコピー (上下反転に対応するためY座標を反転しながらコピー)
-                        for (int y = 0; y < texHeight; ++y) {
-                            for (int x = 0; x < texWidth; ++x) {
-                                const float* pixel = msdf(x, texHeight - 1 - y); // Y反転
-                                int destX = rect.x + x;
-                                int destY = rect.y + y;
-                                int destIndex = (destY * Impl::ATLAS_WIDTH + destX) * 4;
-                                float pxRange = static_cast<float>(Impl::PX_RANGE);
-                                impl_->cpuAtlasData[destIndex + 0] = static_cast<uint8_t>(
-                                    std::clamp((pixel[0] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // R
-                                impl_->cpuAtlasData[destIndex + 1] = static_cast<uint8_t>(
-                                    std::clamp((pixel[1] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // G
-                                impl_->cpuAtlasData[destIndex + 2] = static_cast<uint8_t>(
-                                    std::clamp((pixel[2] / pxRange + 0.5f) * 255.f, 0.f, 255.f)); // B
-                                impl_->cpuAtlasData[destIndex + 3] = 255;                         // A
-                            }
-                        }
-
-                        // GlyphInfo作成
-                        GlyphInfo info{};
-                        info.character = char32;
-                        info.uvTopLeft = Irufemi::Vector2(static_cast<float>(rect.x) / Impl::ATLAS_WIDTH,
-                                                          static_cast<float>(rect.y) / Impl::ATLAS_HEIGHT);
-                        info.uvBottomRight = Irufemi::Vector2(static_cast<float>(rect.x + rect.w) / Impl::ATLAS_WIDTH,
-                                                              static_cast<float>(rect.y + rect.h) / Impl::ATLAS_HEIGHT);
-                        info.width = static_cast<float>(rect.w);
-                        info.height = static_cast<float>(rect.h);
-                        info.offsetX = static_cast<float>(bounds.l * scale) - Impl::PADDING;
-                        info.offsetY = static_cast<float>((metrics.ascenderY - bounds.t) * scale) -
-                                       Impl::PADDING; // ベースライン基準のオフセット
-                        info.advanceX = static_cast<float>(advance * scale);
-
-                        fontCache[char32] = info;
-
-                        // --- VRAM(GPU)への部分転送 ---
-                        // DirectX12のRowPitchは256バイト境界である必要がある
-                        uint32_t alignedRowPitch = (rect.w * 4 + 255) & ~255;
-                        uint32_t slicePitch = alignedRowPitch * rect.h;
-
-                        auto intermediateResource = engine_->GetDirectXCommon()->CreateBufferResource(slicePitch);
-
-                        uint8_t* mappedData = nullptr;
-                        if (SUCCEEDED(intermediateResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedData)))) {
-                            for (int y = 0; y < rect.h; ++y) {
-                                int srcY = rect.y + y;
-                                int srcIndex = (srcY * Impl::ATLAS_WIDTH + rect.x) * 4;
-                                std::memcpy(mappedData + y * alignedRowPitch, &impl_->cpuAtlasData[srcIndex],
-                                            rect.w * 4);
-                            }
-                            intermediateResource->Unmap(0, nullptr);
-
-                            engine_->GetDirectXCommon()->ExecuteUploadCommands([&](ID3D12GraphicsCommandList* cmdList) {
-                                DirectXUtils::TransitionBarrier(cmdList, impl_->atlasTexture.Get(),
-                                                                D3D12_RESOURCE_STATE_GENERIC_READ,
-                                                                D3D12_RESOURCE_STATE_COPY_DEST);
-
-                                D3D12_TEXTURE_COPY_LOCATION dst{};
-                                dst.pResource = impl_->atlasTexture.Get();
-                                dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-                                dst.SubresourceIndex = 0;
-
-                                D3D12_TEXTURE_COPY_LOCATION src{};
-                                src.pResource = intermediateResource.Get();
-                                src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-                                src.PlacedFootprint.Offset = 0;
-                                src.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                                src.PlacedFootprint.Footprint.Width = rect.w;
-                                src.PlacedFootprint.Footprint.Height = rect.h;
-                                src.PlacedFootprint.Footprint.Depth = 1;
-                                src.PlacedFootprint.Footprint.RowPitch = alignedRowPitch;
-
-                                D3D12_BOX srcBox{};
-                                srcBox.left = 0;
-                                srcBox.top = 0;
-                                srcBox.right = rect.w;
-                                srcBox.bottom = rect.h;
-                                srcBox.front = 0;
-                                srcBox.back = 1;
-
-                                cmdList->CopyTextureRegion(&dst, rect.x, rect.y, 0, &src, &srcBox);
-
-                                DirectXUtils::TransitionBarrier(cmdList, impl_->atlasTexture.Get(),
-                                                                D3D12_RESOURCE_STATE_COPY_DEST,
-                                                                D3D12_RESOURCE_STATE_GENERIC_READ);
-                            });
-
-                            engine_->GetDirectXCommon()->ReleaseAfterFence(intermediateResource);
-                        }
-                    } else {
-                        // アトラスがいっぱいの場合は、毎フレーム再生成を試みるのを防ぐため、仮の文字として登録
-                        /**
-                         * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
-                         */
-                        Log::OutPutLog(std::cerr, "Font atlas is full! Could not pack glyph for character.");
-                        GlyphInfo info{};
-                        info.character = char32;
-                        info.width = 0.0f;                                   // 描画されない
-                        info.advanceX = static_cast<float>(advance * scale); // 幅だけは進める
-                        fontCache[char32] = info;
-                    }
+                    // ダーティ領域の更新
+                    hasNewGlyphs = true;
+                    dirtyMinX = (std::min)(dirtyMinX, static_cast<int>(rect.x));
+                    dirtyMinY = (std::min)(dirtyMinY, static_cast<int>(rect.y));
+                    dirtyMaxX = (std::max)(dirtyMaxX, static_cast<int>(rect.x + rect.w));
+                    dirtyMaxY = (std::max)(dirtyMaxY, static_cast<int>(rect.y + rect.h));
+                } else {
+                    // アトラスがいっぱいの場合は、毎フレーム再生成を試みるのを防ぐため、仮の文字として登録
+                    /**
+                     * @brief エディタのコンソールパネルにも出力するため、Log::OutPutLog を使用
+                     */
+                    Log::OutPutLog(std::cerr, "Font atlas is full! Could not pack glyph for character.");
+                    GlyphInfo info{};
+                    info.character = char32;
+                    info.width = 0.0f;                                   // 描画されない
+                    info.advanceX = static_cast<float>(advance * scale); // 幅だけは進める
+                    fontCache[char32] = info;
                 }
             }
         }
-    });
-}
-
-const GlyphInfo* FontManager::GetGlyph(const std::string& fontId, char32_t character) {
-    {
-        std::lock_guard<std::mutex> lock(impl_->cacheMutex);
-        auto& fontCache = impl_->glyphCache[fontId];
-        auto it = fontCache.find(character);
-
-        // すでに正常な文字データが存在する場合はそれを返す
-        if (it != fontCache.end() && it->second.width >= 0.0f) {
-            return &it->second;
-        }
-
-        // ダミー登録 (複数スレッドからの二重生成リクエスト防止)
-        if (it == fontCache.end()) {
-            GlyphInfo dummy{};
-            dummy.character = character;
-            dummy.width = -1.0f; // 未生成状態を示すフラグとして width = -1 を使用
-            fontCache[character] = dummy;
-        } else if (it->second.width < 0.0f) {
-            // すでに生成タスクが走っているのでダミーを返す
-            return &it->second;
-        }
     }
 
-    // 非同期で生成タスクを投げる
-    std::wstring singleChar;
-    singleChar += static_cast<wchar_t>(character);
+    // --- VRAM(GPU)への一括バッチ転送 ---
+    if (hasNewGlyphs && engine_ && engine_->GetDirectXCommon()) {
+        int dirtyW = dirtyMaxX - dirtyMinX;
+        int dirtyH = dirtyMaxY - dirtyMinY;
+        if (dirtyW > 0 && dirtyH > 0) {
+            uint32_t alignedRowPitch = (dirtyW * 4 + 255) & ~255;
+            uint32_t slicePitch = alignedRowPitch * dirtyH;
 
-    // 既存のPrecacheTextと同様にタスクグループ経由で生成リクエスト
-    impl_->threadPool->Enqueue(impl_->taskGroup, [this, fontId, singleChar]() {
-        // PrecacheText 自体が Enqueue するため、直接内部処理を呼ぶか、そのままPrecacheTextを呼ぶか
-        // PrecacheTextは関数全体がEnqueueになったので、ここでPrecacheTextを呼ぶとさらにEnqueueされる。
-        PrecacheText(fontId, singleChar);
-    });
+            auto intermediateResource = engine_->GetDirectXCommon()->CreateBufferResource(slicePitch);
+            if (intermediateResource) {
+                uint8_t* mappedData = nullptr;
+                if (SUCCEEDED(intermediateResource->Map(0, nullptr, reinterpret_cast<void**>(&mappedData)))) {
+                    for (int y = 0; y < dirtyH; ++y) {
+                        int srcY = dirtyMinY + y;
+                        int srcIndex = (srcY * Impl::ATLAS_WIDTH + dirtyMinX) * 4;
+                        std::memcpy(mappedData + y * alignedRowPitch, &impl_->cpuAtlasData[srcIndex], dirtyW * 4);
+                    }
+                    intermediateResource->Unmap(0, nullptr);
 
+                    engine_->GetDirectXCommon()->ExecuteUploadCommands([&](ID3D12GraphicsCommandList* cmdList) {
+                        DirectXUtils::TransitionBarrier(cmdList, impl_->atlasTexture.Get(),
+                                                        D3D12_RESOURCE_STATE_GENERIC_READ,
+                                                        D3D12_RESOURCE_STATE_COPY_DEST);
+
+                        D3D12_TEXTURE_COPY_LOCATION dst{};
+                        dst.pResource = impl_->atlasTexture.Get();
+                        dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+                        dst.SubresourceIndex = 0;
+
+                        D3D12_TEXTURE_COPY_LOCATION src{};
+                        src.pResource = intermediateResource.Get();
+                        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+                        src.PlacedFootprint.Offset = 0;
+                        src.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+                        src.PlacedFootprint.Footprint.Width = dirtyW;
+                        src.PlacedFootprint.Footprint.Height = dirtyH;
+                        src.PlacedFootprint.Footprint.Depth = 1;
+                        src.PlacedFootprint.Footprint.RowPitch = alignedRowPitch;
+
+                        D3D12_BOX srcBox{};
+                        srcBox.left = 0;
+                        srcBox.top = 0;
+                        srcBox.right = dirtyW;
+                        srcBox.bottom = dirtyH;
+                        srcBox.front = 0;
+                        srcBox.back = 1;
+
+                        cmdList->CopyTextureRegion(&dst, dirtyMinX, dirtyMinY, 0, &src, &srcBox);
+
+                        DirectXUtils::TransitionBarrier(cmdList, impl_->atlasTexture.Get(),
+                                                        D3D12_RESOURCE_STATE_COPY_DEST,
+                                                        D3D12_RESOURCE_STATE_GENERIC_READ);
+                    });
+
+                    engine_->GetDirectXCommon()->ReleaseAfterFence(intermediateResource);
+
+                    // GPUアトラスが更新されたため世代番号をインクリメント
+                    ++impl_->atlasVersion;
+                }
+            }
+        }
+    }
+}
+
+std::optional<GlyphInfo> FontManager::GetGlyph(const std::string& fontId, char32_t character) {
     std::lock_guard<std::mutex> lock(impl_->cacheMutex);
-    return &impl_->glyphCache[fontId][character];
+    auto& fontCache = impl_->glyphCache[fontId];
+    auto it = fontCache.find(character);
+
+    // すでに正常な文字データが存在する場合はそれを返す
+    if (it != fontCache.end()) {
+        return it->second;
+    }
+
+    // ダミー登録 (複数スレッドからの二重生成リクエスト防止)
+    // 業界標準の分離設計: SDF描画は非同期にしつつ、メトリクス(advanceX)は即座に取得してレイアウト破綻を防ぐ
+    GlyphInfo dummy{};
+    dummy.character = character;
+    dummy.width = -1.0f; // 未生成状態を示すフラグとして width = -1 を使用
+
+    auto fontIt = impl_->fonts.find(fontId);
+    if (fontIt != impl_->fonts.end()) {
+        msdfgen::FontHandle* font = fontIt->second;
+        msdfgen::FontMetrics metrics;
+        msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_NONE);
+        double scale = static_cast<double>(Impl::GLYPH_SIZE) / (metrics.emSize > 0.0 ? metrics.emSize : 1.0);
+        if (character == U' ') {
+            double spaceAdvance = 0.0, tabAdvance = 0.0;
+            msdfgen::getFontWhitespaceWidth(spaceAdvance, tabAdvance, font, msdfgen::FONT_SCALING_NONE);
+            dummy.advanceX = static_cast<float>(spaceAdvance * scale);
+        } else {
+            double advance = 0.0;
+            msdfgen::Shape shape;
+            if (msdfgen::loadGlyph(shape, font, character, msdfgen::FONT_SCALING_NONE, &advance)) {
+                dummy.advanceX = static_cast<float>(advance * scale);
+            }
+        }
+    }
+    fontCache[character] = dummy;
+
+    // 非同期で直接内部処理をタスクキューイング
+    std::wstring singleChar;
+    if (character <= 0xFFFF) {
+        singleChar += static_cast<wchar_t>(character);
+    } else {
+        char32_t code = character - 0x10000;
+        singleChar += static_cast<wchar_t>((code >> 10) + 0xD800);
+        singleChar += static_cast<wchar_t>((code & 0x3FF) + 0xDC00);
+    }
+
+    impl_->threadPool->Enqueue(impl_->taskGroup,
+                               [this, fontId, singleChar]() { PrecacheTextInternal(fontId, singleChar); });
+
+    return dummy;
 }
 
 ResourceHandle FontManager::GetAtlasHandle() const {
     return impl_->atlasHandle;
+}
+
+uint64_t FontManager::GetAtlasVersion() const {
+    return impl_->atlasVersion.load();
 }

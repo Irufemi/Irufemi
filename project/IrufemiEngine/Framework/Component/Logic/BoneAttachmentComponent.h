@@ -62,7 +62,10 @@ public:
      * @param[in] targetName 対象のGameObject名
      */
     void SetTargetName(const std::string& targetName) {
-        targetName_ = targetName;
+        if (targetName_ != targetName) {
+            targetName_ = targetName;
+            InvalidateCache();
+        }
     }
 
     /**
@@ -70,10 +73,28 @@ public:
      * @param[in] boneName 対象のボーン名（例: "RightHand"）
      */
     void SetTargetBoneName(const std::string& boneName) {
-        targetBoneName_ = boneName;
+        if (targetBoneName_ != boneName) {
+            targetBoneName_ = boneName;
+            InvalidateCache();
+        }
+    }
+
+    /**
+     * @brief 解決済みボーンおよびオブジェクトのキャッシュを無効化する
+     */
+    void InvalidateCache() {
+        cachedTargetObj_.reset();
+        cachedRenderer_ = nullptr;
+        cachedTargetTransform_ = nullptr;
+        cachedBoneIndex_ = -1;
     }
 
 private:
     std::string targetName_ = "";
     std::string targetBoneName_ = "";
+
+    std::weak_ptr<GameObject> cachedTargetObj_;
+    class SkinnedMeshRendererComponent* cachedRenderer_ = nullptr;
+    class TransformComponent* cachedTargetTransform_ = nullptr;
+    int cachedBoneIndex_ = -1;
 };

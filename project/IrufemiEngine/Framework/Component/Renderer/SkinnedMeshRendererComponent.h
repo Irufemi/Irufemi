@@ -118,6 +118,22 @@ public:
         return isVisible_;
     }
 
+    /**
+     * @brief EnableEffectMask を設定する。
+     * @param[in] enable 設定する EnableEffectMask の値
+     */
+    void SetEnableEffectMask(bool enable);
+    /**
+     * @brief CustomEffectType を設定する。
+     * @param[in] type 設定する CustomEffectType の値
+     */
+    void SetCustomEffectType(int32_t type);
+    /**
+     * @brief CustomEffectParam を設定する。
+     * @param[in] param 設定する CustomEffectParam の値
+     */
+    void SetCustomEffectParam(float param);
+
 private:
     std::unique_ptr<AnimatedMeshObject> animatedMesh_;
     std::string modelFilename_ = "";

@@ -5,6 +5,7 @@
 #include "Core/System/IrufemiEngine.h"
 ParticleFieldComponent::ParticleFieldComponent() {
     fieldData_.type = 1; // Default to Point Attractor
+    fieldType_ = static_cast<int>(fieldData_.type);
     fieldData_.strength = 10.0f;
     fieldData_.range = 50.0f;
     fieldData_.falloff = 1.0f;
@@ -49,22 +50,20 @@ void ParticleFieldComponent::Update() {
         }
     }
 
+    fieldData_.type = static_cast<uint32_t>(fieldType_);
     if (fieldHandle_.IsValid() && gpuParticleManager_) {
         gpuParticleManager_->UpdateFieldData(fieldHandle_, fieldData_);
     }
 }
 
 void ParticleFieldComponent::OnRegisterProperties() {
-    RegisterProperty("Field Type", (int*)&fieldData_.type).SetTooltip("0: Directional, 1: Point Attractor, 2: Vortex");
+    static const std::vector<std::string> fieldTypeNames = {"Directional", "Point Attractor", "Vortex"};
+    RegisterEnum("Field Type", &fieldType_, fieldTypeNames);
     RegisterProperty("Strength", &fieldData_.strength).SetMinMax(-1000.0f, 1000.0f);
     RegisterProperty("Effect Range", &fieldData_.range).SetMinMax(0.0f, 10000.0f);
     RegisterProperty("Falloff", &fieldData_.falloff).SetMinMax(0.0f, 10.0f);
-    RegisterProperty("Direction X", &fieldData_.direction.x).SetMinMax(-1.0f, 1.0f);
-    RegisterProperty("Direction Y", &fieldData_.direction.y).SetMinMax(-1.0f, 1.0f);
-    RegisterProperty("Direction Z", &fieldData_.direction.z).SetMinMax(-1.0f, 1.0f);
-    RegisterProperty("Axis X", &fieldData_.axis.x).SetMinMax(-1.0f, 1.0f);
-    RegisterProperty("Axis Y", &fieldData_.axis.y).SetMinMax(-1.0f, 1.0f);
-    RegisterProperty("Axis Z", &fieldData_.axis.z).SetMinMax(-1.0f, 1.0f);
+    RegisterProperty("Direction", &fieldData_.direction);
+    RegisterProperty("Axis", &fieldData_.axis);
 }
 
 nlohmann::json ParticleFieldComponent::Serialize() {
@@ -81,6 +80,7 @@ nlohmann::json ParticleFieldComponent::Serialize() {
 void ParticleFieldComponent::Deserialize(const nlohmann::json& j) {
     if (j.contains("type")) {
         fieldData_.type = j["type"];
+        fieldType_ = static_cast<int>(fieldData_.type);
     }
     if (j.contains("strength")) {
         fieldData_.strength = j["strength"];

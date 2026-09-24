@@ -2,6 +2,8 @@
 #include "Renderer/PostProcess/PostProcessManager.h"
 #include <memory>
 #include <string>
+#include <vector>
+#include <functional>
 #include "Core/Utility/Ease.h"
 
 /**
@@ -63,6 +65,22 @@ public:
         return !isActive_ && isOut_;
     }
 
+    /**
+     * @brief 演出完了時（イン/アウト完了問わず）のコールバックを設定
+     * @param callback 呼び出される関数
+     */
+    void SetOnFinishedCallback(std::function<void()> callback) {
+        onFinishedCallback_ = std::move(callback);
+    }
+
+    /**
+     * @brief フェードアウト完了時のコールバックを設定
+     * @param callback 呼び出される関数
+     */
+    void SetOnOutFinishedCallback(std::function<void()> callback) {
+        onOutFinishedCallback_ = std::move(callback);
+    }
+
     /** @brief 画面が完全に隠れた後の静止時間（秒） */
     static constexpr float kDwellTime = 0.15f;
 
@@ -75,6 +93,9 @@ private:
     float duration_ = 1.0f;
     bool isOut_ = true;
     bool isActive_ = false;
+
+    std::function<void()> onFinishedCallback_;
+    std::function<void()> onOutFinishedCallback_;
 
     // トランジションが現在適用しているポストプロセスモードの追跡用
     std::vector<PostProcessMode> activeTransitionModes_;

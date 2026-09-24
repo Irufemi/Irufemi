@@ -89,11 +89,17 @@ DirectXGame/imgui.ini
 /project/Application_team/Dumps/
 
 # ====================================================================
-# AntiGravity / AI tools
+# AntiGravity / AI Agent Workflows & Skills
 # ====================================================================
+# Ignore runtime task states, sessions, logs, and caches
+.agents/*
+!.agents/skills/
+!.agents/workflows/
+.agents/skills/**/temp_*
+.agents/skills/**/reports/
+.agents/skills/**/*.log
+.agents/skills/**/cache/
 
-# AntiGravity workflow definitions and task files
-.agents/
 .agent/
 _agents/
 _agent/
@@ -163,3 +169,4 @@ resources/shaders/generated/
 
 # Screenshots
 **/resources/screenshots/
+

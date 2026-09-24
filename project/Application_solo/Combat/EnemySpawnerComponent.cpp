@@ -1,22 +1,22 @@
-#include "Combat/DebugEnemySpawnerComponent.h"
+#include "Combat/EnemySpawnerComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "RailMechanics/RailShooterEnemyComponent.h"
 #include "Core/Math/Random/Random.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Player/TargetableComponent.h"
+#include "Framework/Prefab/PrefabUtility.h"
 
 // AAAタイトルのアプローチ (Data-Oriented Design & Instancing)
 // 個々の敵オブジェクトにMeshRendererを持たせるのではなく、Spawnerが一括でModelBatchRendererComponentを管理します。
 // これにより、数千体の敵を描画する際でもドローコールが1回（Instancing）に削減され、
 // CPUとGPUのオーバーヘッドが劇的に改善されます（Unreal EngineのHISMやUnityのDOTSに近いアーキテクチャ）。
 
-DebugEnemySpawnerComponent::~DebugEnemySpawnerComponent() {
+EnemySpawnerComponent::~EnemySpawnerComponent() {
     if (enemyPool_) {
         enemyPool_->ForEach([](const std::shared_ptr<GameObject>& enemy) {
             if (enemy) {
@@ -28,13 +28,26 @@ DebugEnemySpawnerComponent::~DebugEnemySpawnerComponent() {
     }
 }
 
-void DebugEnemySpawnerComponent::Initialize() {}
+void EnemySpawnerComponent::Initialize() {}
 
-void DebugEnemySpawnerComponent::OnRegisterProperties() {
+void EnemySpawnerComponent::OnRegisterProperties() {
     RegisterProperty("Enemy Model Path", &enemyModelPath_);
+    RegisterProperty("Enemy Prefab Path", &enemyPrefabPath_);
+    RegisterProperty("Base Enemy Scale", &baseEnemyScale_);
+    RegisterProperty("Base Collider Radius", &baseColliderRadius_);
 }
 
-void DebugEnemySpawnerComponent::Start() {
+void EnemySpawnerComponent::Start() {
+    // プレハブ（Archetype）からモデル・基本スケール・当たり判定半径を自動解決
+    auto metrics = PrefabUtility::ExtractMetrics(enemyPrefabPath_);
+    if (!metrics.modelPath.empty()) {
+        enemyModelPath_ = metrics.modelPath;
+    }
+    baseEnemyScale_ = metrics.baseScale;
+    if (metrics.hasSphereCollider) {
+        baseColliderRadius_ = metrics.colliderRadius;
+    }
+
     batchRenderer_ = gameObject_->AddComponent<ModelBatchRendererComponent>();
     batchRenderer_->LoadModel(enemyModelPath_);
 
@@ -43,31 +56,63 @@ void DebugEnemySpawnerComponent::Start() {
         return;
     }
 
-    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, scene]() {
-        auto enemy = std::make_shared<GameObject>("DebugEnemy");
-        scene->AddGameObject(enemy);
+    auto weakObj = gameObject_->weak_from_this();
+
+    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, weakObj]() {
+        std::shared_ptr<GameObject> enemy = nullptr;
+        if (auto spawnerObj = weakObj.lock()) {
+            enemy = spawnerObj->Instantiate(enemyPrefabPath_);
+        }
+        if (!enemy) {
+            enemy = std::make_shared<GameObject>("DebugEnemy");
+            enemy->AddComponent<RailShooterEnemyComponent>();
+        }
+
+        enemy->SetIsSerializable(false); // セーブデータ（JSON）への混入を防止
+
+        // スポナーの子オブジェクトとして登録しライフサイクルを同期
+        if (auto spawnerObj = weakObj.lock()) {
+            spawnerObj->AddChild(enemy);
+        }
+
+        // プレハブ単体プレビュー用レンダラーがあれば削除し、SpawnerのBatchRenderer（Instancing）で一括描画
+        if (auto meshRenderer = enemy->GetComponent<MeshRendererComponent>()) {
+            enemy->RemoveComponent(meshRenderer);
+        }
 
         auto transform = enemy->GetTransform();
-        transform->SetScale({1.2f, 1.2f, 1.2f});
+        if (transform) {
+            transform->SetScale(baseEnemyScale_);
+        }
 
-        auto enemyComp = enemy->AddComponent<RailShooterEnemyComponent>();
-        enemyComp->SetOnDeathCallback([this, scene](GameObject* deadObj) {
-            deadObj->SetIsActive(false);
-            if (enemyPool_) {
-                auto it = activeEnemyHandles_.find(deadObj);
-                if (it != activeEnemyHandles_.end()) {
-                    enemyPool_->Release(it->second);
-                    activeEnemyHandles_.erase(it);
+        if (auto collider = enemy->GetComponent<SphereColliderComponent>()) {
+            collider->SetLocalRadius(baseColliderRadius_);
+        }
+
+        if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
+            enemyComp->SetOnDeathCallback([weakObj](GameObject* deadObj) {
+                deadObj->SetIsActive(false);
+                // スポナーの生存確認（ダングリングポインタによるクラッシュを防止）
+                if (auto spawnerObj = weakObj.lock()) {
+                    if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
+                        if (spawner->enemyPool_) {
+                            auto it = spawner->activeEnemyHandles_.find(deadObj);
+                            if (it != spawner->activeEnemyHandles_.end()) {
+                                spawner->enemyPool_->Release(it->second);
+                                spawner->activeEnemyHandles_.erase(it);
+                            }
+                        }
+                    }
                 }
-            }
-        });
+            });
+        }
 
         enemy->SetIsActive(false);
         return enemy;
     });
 }
 
-void DebugEnemySpawnerComponent::Update() {
+void EnemySpawnerComponent::Update() {
     if (batchRenderer_) {
         // 毎フレーム、バッチレンダラーのインスタンス（描画キュー）をクリアします。
         batchRenderer_->ClearInstances();
@@ -81,7 +126,8 @@ void DebugEnemySpawnerComponent::Update() {
         }
     }
 
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }
@@ -125,14 +171,15 @@ void DebugEnemySpawnerComponent::Update() {
     }
 }
 
-void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation) {
+GameObject* EnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
+                                              float scaleMultiplier) {
     if (!enemyPool_) {
-        return;
+        return nullptr;
     }
 
     auto handle = enemyPool_->Acquire();
     if (!handle.IsValid()) {
-        return;
+        return nullptr;
     }
 
     auto enemy = enemyPool_->Resolve(handle);
@@ -142,13 +189,21 @@ void DebugEnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, co
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
             transform->SetWorldPosition(position);
             transform->SetWorldRotation(rotation);
+            transform->SetScale(baseEnemyScale_ * scaleMultiplier);
+        }
+
+        if (auto collider = enemy->GetComponent<SphereColliderComponent>()) {
+            collider->SetLocalRadius(baseColliderRadius_ * scaleMultiplier);
         }
 
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
-            // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ想定
+            // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ
             enemyComp->Initialize();
         }
 
         enemy->SetIsActive(true);
+        return enemy.get();
     }
+
+    return nullptr;
 }

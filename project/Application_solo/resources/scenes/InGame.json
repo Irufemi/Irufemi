@@ -1518,6 +1518,12 @@
             },
             {
               "data": {
+                "Acceleration": 150.0,
+                "Friction": 10.0,
+                "HoverAmplitude": 0.5,
+                "HoverFrequency": 2.0,
+                "MaxRollAngle": 1.0,
+                "MaxSpeed": 15.0,
                 "MoveLimitMax": [
                   8.0,
                   6.0,
@@ -1549,6 +1555,14 @@
                 "Status Data Path": "resources/GameData/PlayerStatus.json"
               },
               "type": "PlayerHealthComponent"
+            },
+            {
+              "data": {
+                "Flash Duration": 1.0,
+                "Flash Interval": 0.05000000074505806,
+                "Shake Intensity": 1.0
+              },
+              "type": "PlayerDamageVisualizerComponent"
             },
             {
               "data": {
@@ -1766,43 +1780,6 @@
             ]
           },
           "type": "DebrisManagerComponent"
-        },
-        {
-          "data": {
-            "modelName": "resources/model/sample/block.obj"
-          },
-          "type": "ModelBatchRendererComponent"
-        },
-        {
-          "data": {
-            "Active Instances (Batch)": 0
-          },
-          "type": "VirtualEntityManagerComponent"
-        },
-        {
-          "data": {
-            "customEffectType": 6,
-            "customParams": {
-              "color1": [
-                0.0,
-                0.0,
-                0.0,
-                1.0
-              ],
-              "color2": [
-                0.0,
-                0.0,
-                0.0,
-                1.0
-              ],
-              "param1": 1.0,
-              "param2": 0.0,
-              "param3": 0.0,
-              "param4": 0.0
-            },
-            "enableEffectMask": true
-          },
-          "type": "EffectMaskComponent"
         }
       ],
       "instanceId": 2738409501711223709,
@@ -3402,9 +3379,16 @@
         },
         {
           "data": {
-            "Enemy Model Path": "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj"
+            "Base Collider Radius": 2.0,
+            "Base Enemy Scale": [
+              1.2000000476837158,
+              1.2000000476837158,
+              1.2000000476837158
+            ],
+            "Enemy Model Path": "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj",
+            "Enemy Prefab Path": "resources/prefabs/Enemy_GravityGolem.json"
           },
-          "type": "DebugEnemySpawnerComponent"
+          "type": "EnemySpawnerComponent"
         }
       ],
       "instanceId": 7610254239322583345,
@@ -3579,6 +3563,17 @@
             "Fire Duration": 0.800000011920929
           },
           "type": "EnemyBeamComponent"
+        },
+        {
+          "data": {
+            "Damage Shake Frames": 10,
+            "Damage Shake Frequency": 15.0,
+            "Damage Shake Intensity": 0.4000000059604645,
+            "Death Shake Frames": 60,
+            "Death Shake Frequency": 10.0,
+            "Death Shake Intensity": 2.0
+          },
+          "type": "BossDamageVisualizerComponent"
         }
       ],
       "instanceId": 12219067998687025011,
@@ -3794,6 +3789,7 @@
             },
             {
               "data": {
+                "autoClearEveryFrame": true,
                 "modelName": "resources/model/BossDrone/boss_drone.obj"
               },
               "type": "ModelBatchRendererComponent"
@@ -3862,7 +3858,8 @@
             },
             {
               "data": {
-                "modelName": "resources/model/BossBulletSphere.obj"
+                "autoClearEveryFrame": true,
+                "modelName": "resources/model/BossDroneBullet/BossDroneBullet.obj"
               },
               "type": "ModelBatchRendererComponent"
             },
@@ -3875,7 +3872,6 @@
             {
               "data": {
                 "Default Life Time": 5.0,
-                "Explosion Model Path": "resources/model/BossBulletSphere.obj",
                 "Hit Effect Key": "Dust",
                 "Hit Radius": 1.0,
                 "Max Bullets": 2000,

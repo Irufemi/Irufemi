@@ -15,8 +15,8 @@ struct Ray {
 };
 
 struct Segment2D {
-    Vector2 origin; //!< 始点
-    Vector2 end;    //!< 終点への差分ベクトル
+    Vector2 origin; ///< 始点座標
+    Vector2 end;    ///< 終点座標
 };
 
 struct Segment {

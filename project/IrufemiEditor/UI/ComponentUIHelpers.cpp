@@ -12,6 +12,7 @@
 #include "Framework/Component/Utility/SplineNodeComponent.h"
 #include "Renderer/Object/Particle/ParticleObject.h"
 #include "Framework/Component/TransformComponent.h"
+#include "Core/EditorManager.h"
 #include <algorithm>
 #include <functional>
 
@@ -206,47 +207,63 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     if (!prop.defaultValue.is_null()) {
                         bool isModified = false;
                         switch (prop.type) {
-                        case ComponentPropertyType::Float:
-                            isModified = (*static_cast<float*>(prop.GetRawData()) != prop.defaultValue.get<float>());
+                        case ComponentPropertyType::Float: {
+                            if (auto* v = prop.GetData<float>()) {
+                                isModified = (*v != prop.defaultValue.get<float>());
+                            }
                             break;
+                        }
                         case ComponentPropertyType::Enum:
-                        case ComponentPropertyType::Int:
-                            isModified = (*static_cast<int*>(prop.GetRawData()) != prop.defaultValue.get<int>());
+                        case ComponentPropertyType::Int: {
+                            if (auto* v = prop.GetData<int>()) {
+                                isModified = (*v != prop.defaultValue.get<int>());
+                            }
                             break;
-                        case ComponentPropertyType::Bool:
-                            isModified = (*static_cast<bool*>(prop.GetRawData()) != prop.defaultValue.get<bool>());
+                        }
+                        case ComponentPropertyType::Bool: {
+                            if (auto* v = prop.GetData<bool>()) {
+                                isModified = (*v != prop.defaultValue.get<bool>());
+                            }
                             break;
-                        case ComponentPropertyType::String:
-                            isModified =
-                                (*static_cast<std::string*>(prop.GetRawData()) != prop.defaultValue.get<std::string>());
+                        }
+                        case ComponentPropertyType::String: {
+                            if (auto* v = prop.GetData<std::string>()) {
+                                isModified = (*v != prop.defaultValue.get<std::string>());
+                            }
                             break;
-                        case ComponentPropertyType::GameObjectRef:
-                            isModified =
-                                (*static_cast<uint64_t*>(prop.GetRawData()) != prop.defaultValue.get<uint64_t>());
+                        }
+                        case ComponentPropertyType::GameObjectRef: {
+                            if (auto* v = prop.GetData<uint64_t>()) {
+                                isModified = (*v != prop.defaultValue.get<uint64_t>());
+                            }
                             break;
+                        }
                         case ComponentPropertyType::Float2: {
-                            auto* v = static_cast<Irufemi::Vector2*>(prop.GetRawData());
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 2) {
-                                isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
+                            if (auto* v = prop.GetData<Irufemi::Vector2>()) {
+                                auto arr = prop.defaultValue;
+                                if (arr.is_array() && arr.size() >= 2) {
+                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
+                                }
                             }
                             break;
                         }
                         case ComponentPropertyType::Float3: {
-                            auto* v = static_cast<Irufemi::Vector3*>(prop.GetRawData());
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 3) {
-                                isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
-                                              v->z != arr[2].get<float>());
+                            if (auto* v = prop.GetData<Irufemi::Vector3>()) {
+                                auto arr = prop.defaultValue;
+                                if (arr.is_array() && arr.size() >= 3) {
+                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
+                                                  v->z != arr[2].get<float>());
+                                }
                             }
                             break;
                         }
                         case ComponentPropertyType::Float4: {
-                            auto* v = static_cast<Irufemi::Vector4*>(prop.GetRawData());
-                            auto arr = prop.defaultValue;
-                            if (arr.is_array() && arr.size() >= 4) {
-                                isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
-                                              v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
+                            if (auto* v = prop.GetData<Irufemi::Vector4>()) {
+                                auto arr = prop.defaultValue;
+                                if (arr.is_array() && arr.size() >= 4) {
+                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
+                                                  v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
+                                }
                             }
                             break;
                         }
@@ -259,45 +276,72 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             if (ImGui::Button((std::string(ICON_FA_ARROW_ROTATE_LEFT) + "##" + prop.name).c_str(),
                                               ImVec2(20, 0))) {
                                 switch (prop.type) {
-                                case ComponentPropertyType::Float:
-                                    *static_cast<float*>(prop.GetRawData()) = prop.defaultValue.get<float>();
+                                case ComponentPropertyType::Float: {
+                                    if (auto* ptr = prop.GetData<float>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<float>(), ptr,
+                                                        prop.onChanged);
+                                    }
                                     break;
+                                }
                                 case ComponentPropertyType::Enum:
-                                case ComponentPropertyType::Int:
-                                    *static_cast<int*>(prop.GetRawData()) = prop.defaultValue.get<int>();
+                                case ComponentPropertyType::Int: {
+                                    if (auto* ptr = prop.GetData<int>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<int>(), ptr,
+                                                        prop.onChanged);
+                                    }
                                     break;
-                                case ComponentPropertyType::Bool:
-                                    *static_cast<bool*>(prop.GetRawData()) = prop.defaultValue.get<bool>();
+                                }
+                                case ComponentPropertyType::Bool: {
+                                    if (auto* ptr = prop.GetData<bool>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<bool>(), ptr,
+                                                        prop.onChanged);
+                                    }
                                     break;
-                                case ComponentPropertyType::String:
-                                    *static_cast<std::string*>(prop.GetRawData()) =
-                                        prop.defaultValue.get<std::string>();
+                                }
+                                case ComponentPropertyType::String: {
+                                    if (auto* ptr = prop.GetData<std::string>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<std::string>(), ptr,
+                                                        prop.onChanged);
+                                    }
                                     break;
-                                case ComponentPropertyType::GameObjectRef:
-                                    *static_cast<uint64_t*>(prop.GetRawData()) = prop.defaultValue.get<uint64_t>();
+                                }
+                                case ComponentPropertyType::GameObjectRef: {
+                                    if (auto* ptr = prop.GetData<uint64_t>()) {
+                                        PushInstantUndo(actionManager, *ptr, prop.defaultValue.get<uint64_t>(), ptr,
+                                                        prop.onChanged);
+                                    }
                                     break;
+                                }
                                 case ComponentPropertyType::Float2: {
-                                    auto* v = static_cast<Irufemi::Vector2*>(prop.GetRawData());
-                                    auto arr = prop.defaultValue;
-                                    v->x = arr[0].get<float>();
-                                    v->y = arr[1].get<float>();
+                                    if (auto* ptr = prop.GetData<Irufemi::Vector2>()) {
+                                        auto arr = prop.defaultValue;
+                                        if (arr.is_array() && arr.size() >= 2) {
+                                            Irufemi::Vector2 defaultVal{arr[0].get<float>(), arr[1].get<float>()};
+                                            PushInstantUndo(actionManager, *ptr, defaultVal, ptr, prop.onChanged);
+                                        }
+                                    }
                                     break;
                                 }
                                 case ComponentPropertyType::Float3: {
-                                    auto* v = static_cast<Irufemi::Vector3*>(prop.GetRawData());
-                                    auto arr = prop.defaultValue;
-                                    v->x = arr[0].get<float>();
-                                    v->y = arr[1].get<float>();
-                                    v->z = arr[2].get<float>();
+                                    if (auto* ptr = prop.GetData<Irufemi::Vector3>()) {
+                                        auto arr = prop.defaultValue;
+                                        if (arr.is_array() && arr.size() >= 3) {
+                                            Irufemi::Vector3 defaultVal{arr[0].get<float>(), arr[1].get<float>(),
+                                                                        arr[2].get<float>()};
+                                            PushInstantUndo(actionManager, *ptr, defaultVal, ptr, prop.onChanged);
+                                        }
+                                    }
                                     break;
                                 }
                                 case ComponentPropertyType::Float4: {
-                                    auto* v = static_cast<Irufemi::Vector4*>(prop.GetRawData());
-                                    auto arr = prop.defaultValue;
-                                    v->x = arr[0].get<float>();
-                                    v->y = arr[1].get<float>();
-                                    v->z = arr[2].get<float>();
-                                    v->w = arr[3].get<float>();
+                                    if (auto* ptr = prop.GetData<Irufemi::Vector4>()) {
+                                        auto arr = prop.defaultValue;
+                                        if (arr.is_array() && arr.size() >= 4) {
+                                            Irufemi::Vector4 defaultVal{arr[0].get<float>(), arr[1].get<float>(),
+                                                                        arr[2].get<float>(), arr[3].get<float>()};
+                                            PushInstantUndo(actionManager, *ptr, defaultVal, ptr, prop.onChanged);
+                                        }
+                                    }
                                     break;
                                 }
                                 default:
@@ -410,11 +454,19 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     case ComponentPropertyType::Float: {
                         float* ptr = static_cast<float*>(prop.GetRawData());
                         if (prop.minVal != prop.maxVal) {
-                            ImGui::SliderFloat(hiddenName.c_str(), ptr, prop.minVal, prop.maxVal);
+                            if (ImGui::SliderFloat(hiddenName.c_str(), ptr, prop.minVal, prop.maxVal)) {
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
+                            }
                         } else {
-                            ImGui::DragFloat(hiddenName.c_str(), ptr, 0.1f);
+                            if (ImGui::DragFloat(hiddenName.c_str(), ptr, 0.1f)) {
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
+                            }
                         }
-                        CheckUndoRedoDrag(actionManager, ptr);
+                        CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
                         break;
                     }
                     case ComponentPropertyType::Enum: {
@@ -426,7 +478,10 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             }
                             int oldVal = *ptr;
                             if (ImGui::Combo(hiddenName.c_str(), ptr, cStrs.data(), static_cast<int>(cStrs.size()))) {
-                                PushInstantUndo(actionManager, oldVal, *ptr, ptr);
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
+                                PushInstantUndo(actionManager, oldVal, *ptr, ptr, prop.onChanged);
                             }
                         }
                         break;
@@ -434,43 +489,70 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                     case ComponentPropertyType::Int: {
                         int* ptr = static_cast<int*>(prop.GetRawData());
                         if (prop.minVal != prop.maxVal) {
-                            ImGui::SliderInt(hiddenName.c_str(), ptr, static_cast<int>(prop.minVal),
-                                             static_cast<int>(prop.maxVal));
+                            if (ImGui::SliderInt(hiddenName.c_str(), ptr, static_cast<int>(prop.minVal),
+                                                 static_cast<int>(prop.maxVal))) {
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
+                            }
                         } else {
-                            ImGui::DragInt(hiddenName.c_str(), ptr, 1);
+                            if (ImGui::DragInt(hiddenName.c_str(), ptr, 1)) {
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
+                            }
                         }
-                        CheckUndoRedoDrag(actionManager, ptr);
+                        CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
                         break;
                     }
                     case ComponentPropertyType::Bool: {
                         bool* ptr = static_cast<bool*>(prop.GetRawData());
                         bool oldVal = *ptr;
                         if (ImGui::Checkbox(hiddenName.c_str(), ptr)) {
-                            PushInstantUndo(actionManager, oldVal, *ptr, ptr);
+                            if (prop.onChanged) {
+                                prop.onChanged();
+                            }
+                            PushInstantUndo(actionManager, oldVal, *ptr, ptr, prop.onChanged);
                         }
                         break;
                     }
                     case ComponentPropertyType::Float2: {
                         Irufemi::Vector2* ptr = reinterpret_cast<Irufemi::Vector2*>(prop.GetRawData());
-                        ImGui::DragFloat2(hiddenName.c_str(), &ptr->x, 0.1f);
-                        CheckUndoRedoDrag(actionManager, ptr);
+                        if (ImGui::DragFloat2(hiddenName.c_str(), &ptr->x, 0.1f)) {
+                            if (prop.onChanged) {
+                                prop.onChanged();
+                            }
+                        }
+                        CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
                         break;
                     }
                     case ComponentPropertyType::Float3: {
                         Irufemi::Vector3* ptr = reinterpret_cast<Irufemi::Vector3*>(prop.GetRawData());
-                        ImGui::DragFloat3(hiddenName.c_str(), &ptr->x, 0.1f);
-                        CheckUndoRedoDrag(actionManager, ptr);
+                        if (ImGui::DragFloat3(hiddenName.c_str(), &ptr->x, 0.1f)) {
+                            if (prop.onChanged) {
+                                prop.onChanged();
+                            }
+                        }
+                        CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
                         break;
                     }
                     case ComponentPropertyType::Float4: {
                         Irufemi::Vector4* ptr = reinterpret_cast<Irufemi::Vector4*>(prop.GetRawData());
                         if (prop.name.find("Color") != std::string::npos ||
                             prop.name.find("color") != std::string::npos) {
-                            ImGui::ColorEdit4(hiddenName.c_str(), &ptr->x);
+                            if (ImGui::ColorEdit4(hiddenName.c_str(), &ptr->x)) {
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
+                            }
                         } else {
-                            ImGui::DragFloat4(hiddenName.c_str(), &ptr->x, 0.1f);
+                            if (ImGui::DragFloat4(hiddenName.c_str(), &ptr->x, 0.1f)) {
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
+                            }
                         }
-                        CheckUndoRedoDrag(actionManager, ptr);
+                        CheckUndoRedoDrag(actionManager, ptr, prop.onChanged);
                         break;
                     }
                     case ComponentPropertyType::String: {
@@ -514,8 +596,17 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                                     if (ImGui::Selectable(item.c_str(), isSelected)) {
                                         std::string oldVal = *str;
                                         *str = item;
+                                        auto cb = prop.onChanged;
+                                        if (cb) {
+                                            cb();
+                                        }
                                         actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
-                                            oldVal, *str, [str](const std::string& v) { *str = v; }));
+                                            oldVal, *str, [str, cb](const std::string& v) {
+                                                *str = v;
+                                                if (cb) {
+                                                    cb();
+                                                }
+                                            }));
                                     }
                                     if (isSelected) {
                                         ImGui::SetItemDefaultFocus();
@@ -527,17 +618,44 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             char buffer[256];
                             strncpy_s(buffer, sizeof(buffer), str->c_str(), _TRUNCATE);
 
+                            bool isPrefabProp = (lowerName.find("prefab") != std::string::npos);
+                            if (isPrefabProp) {
+                                ImGui::SetNextItemWidth((std::max)(50.0f, ImGui::GetContentRegionAvail().x - 70.0f));
+                            }
+
                             static std::string startStr;
                             if (ImGui::InputText(hiddenName.c_str(), buffer, sizeof(buffer))) {
                                 *str = buffer;
+                                if (prop.onChanged) {
+                                    prop.onChanged();
+                                }
                             }
                             if (ImGui::IsItemActivated()) {
                                 startStr = *str;
                             }
                             if (ImGui::IsItemDeactivatedAfterEdit()) {
                                 std::string endStr = *str;
+                                auto cb = prop.onChanged;
                                 actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<std::string>>(
-                                    startStr, endStr, [str](const std::string& v) { *str = v; }));
+                                    startStr, endStr, [str, cb](const std::string& v) {
+                                        *str = v;
+                                        if (cb) {
+                                            cb();
+                                        }
+                                    }));
+                            }
+
+                            if (isPrefabProp && !str->empty()) {
+                                ImGui::SameLine();
+                                if (ImGui::Button((std::string(ICON_FA_WRENCH " Open##") + prop.name).c_str(),
+                                                  ImVec2(65.0f, 0))) {
+                                    if (auto em = EditorManager::GetInstance()) {
+                                        em->EnterPrefabMode(*str);
+                                    }
+                                }
+                                if (ImGui::IsItemHovered()) {
+                                    ImGui::SetTooltip("Open in Prefab Edit Mode");
+                                }
                             }
                         }
 
