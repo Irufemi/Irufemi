@@ -5,7 +5,6 @@
 #include "Framework/Component/Renderer/MeshRendererComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "RailMechanics/RailShooterEnemyComponent.h"
 #include "Core/Math/Random/Random.h"
 #include "Framework/Component/Collider/SphereColliderComponent.h"
@@ -127,7 +126,8 @@ void EnemySpawnerComponent::Update() {
         }
     }
 
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }

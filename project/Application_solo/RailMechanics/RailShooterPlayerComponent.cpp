@@ -3,7 +3,6 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
-#include "Renderer/System/Core/BaseModel.h"
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <algorithm>
@@ -26,8 +25,13 @@ void RailShooterPlayerComponent::Update() {
         return;
     }
 
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
     // 1フレームの経過時間
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    float deltaTime = engine->GetGameDeltaTime();
     if (deltaTime <= 0.0f) {
         return;
     }
@@ -38,7 +42,10 @@ void RailShooterPlayerComponent::Update() {
     }
 
     // --- キー入力による上下左右の回避運動 ---
-    auto* input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto* input = engine->GetInputManager();
+    if (!input) {
+        return;
+    }
     Irufemi::Vector3 moveDir = {0.0f, 0.0f, 0.0f};
 
     // WASD または 矢印キーで移動方向を入力 (長押し判定のため IsKeyDownDIK を使用)

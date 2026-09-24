@@ -465,7 +465,7 @@ private:
 - [x] ~~`Text::s_fontManager_` / `Text::GetFontManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
 - [x] ~~`Primitive3DObject::s_textureManager_` / `Primitive3DObject::GetTextureManager()`~~ (Phase 3完了: コンポーネントDI・インスタンスメンバ移行)
 - `ParticleObject::s_textureManager_` / `ParticleObject::GetTextureManager()`
-- `BaseModel::s_engine_` / `BaseModel::GetIrufemiEngine()`
+- [x] ~~`BaseModel::s_engine_` / `BaseModel::GetIrufemiEngine()`~~ (完了: GetIrufemiEngine() を完全撤廃し、Component::GetEngine() 経由へ統一)
 - `GPUParticleSystem::s_engine_`, `s_textureManager_`
 - [x] ~~`Object2DResource::sTextureManager`, `Object3DResource::sTextureManager`, `GpuMaterial::sTextureManager`~~ (Phase 2完了: インスタンス所有へ移行)
 - [x] ~~`RenderContext` 基盤新設と全レンダーパス移行~~ (Phase 1完了: IRenderPass / RenderGraph 統合)

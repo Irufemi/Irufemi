@@ -4,7 +4,6 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Object/Line/LineClass.h"
 #include <algorithm>
 #include <cmath>
@@ -45,7 +44,12 @@ void SplineFollowerComponent::Update() {
         return;
     }
 
-    float deltaTime = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
+    float deltaTime = engine->GetGameDeltaTime();
     if (deltaTime <= 0.0f) {
         return;
     }

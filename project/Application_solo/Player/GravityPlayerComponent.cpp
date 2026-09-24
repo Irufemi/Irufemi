@@ -13,7 +13,6 @@
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Platform/Input/Mouse.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/Math/Random/Random.h"
 #include "Renderer/Camera/CameraManager.h"
 #include "Core/Math/MathFunction.h"
@@ -91,7 +90,12 @@ void GravityPlayerComponent::Update() {
         return;
     }
 
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
+    float dt = engine->GetGameDeltaTime();
     if (dt <= 0.0f) {
         return;
     }
@@ -122,7 +126,8 @@ void GravityPlayerComponent::Update() {
 }
 
 void GravityPlayerComponent::HandlePullInput() {
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }
@@ -219,7 +224,8 @@ void GravityPlayerComponent::HandleMarkInput() {
     if (!targetingComp_) {
         return;
     }
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }
@@ -240,7 +246,8 @@ void GravityPlayerComponent::HandleMarkInput() {
 }
 
 void GravityPlayerComponent::HandleThrowInput() {
-    auto input = BaseModel::GetIrufemiEngine()->GetInputManager();
+    auto engine = GetEngine();
+    auto input = engine ? engine->GetInputManager() : nullptr;
     if (!input) {
         return;
     }
@@ -275,8 +282,10 @@ void GravityPlayerComponent::UpdateThrowing() {
         return;
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
-    throwTimer_ += engine->GetGameDeltaTime();
+    auto engine = GetEngine();
+    if (engine) {
+        throwTimer_ += engine->GetGameDeltaTime();
+    }
 
     if (throwTimer_ >= throwInterval_) {
         throwTimer_ = 0.0f;

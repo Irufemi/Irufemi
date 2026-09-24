@@ -66,7 +66,7 @@ WaveManagerComponent::GetPreviewBatchRenderer(const std::string& modelPath) {
 
 void WaveManagerComponent::Draw() {
 #if defined(_DEBUG) || defined(EditorMode) || defined(DEVELOPMENT)
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     if (engine && engine->GetSelectedObject().get() == gameObject_) {
         auto scene = gameObject_->GetScene();
         if (!scene) {
@@ -186,7 +186,7 @@ void WaveManagerComponent::Update() {
         hasCachedSpawnPoints_ = true;
     }
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
     bool isPlayMode = engine && engine->IsPlayMode();
     if (!isPlayMode) {
         return; // エディタモードではイベントの消費とスポーンを行わない

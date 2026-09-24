@@ -143,7 +143,12 @@ void PlayerDamageVisualizerComponent::TriggerDeathVisuals() {
 }
 
 void PlayerDamageVisualizerComponent::Update() {
-    float dt = BaseModel::GetIrufemiEngine()->GetGameDeltaTime();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
+    float dt = engine->GetGameDeltaTime();
     if (dt <= 0.0f) {
         return;
     }

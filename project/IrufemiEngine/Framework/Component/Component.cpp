@@ -3,7 +3,6 @@
 #include "Framework/Component/ComponentFactory.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 
 class TransformComponent* Component::GetTransform() const {
     if (gameObject_) {
@@ -20,10 +19,10 @@ BaseScene* Component::GetScene() const {
 }
 
 IrufemiEngine* Component::GetEngine() const {
-    if (gameObject_ && gameObject_->GetScene() && gameObject_->GetScene()->GetEngine()) {
+    if (gameObject_ && gameObject_->GetScene()) {
         return gameObject_->GetScene()->GetEngine();
     }
-    return BaseModel::GetIrufemiEngine();
+    return nullptr;
 }
 
 std::shared_ptr<Component> Component::Clone() {

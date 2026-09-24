@@ -2,7 +2,6 @@
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Renderer/Pipeline/PSOManager.h"
 #include "Core/Utility/Ease.h"
 #include "Renderer/Camera/CameraManager.h"
@@ -18,8 +17,8 @@
 #include <unordered_map>
 
 void LockonMarkerUIComponent::Initialize() {
-    auto engine = BaseModel::GetIrufemiEngine();
-    IRUFEMI_ASSERT(engine != nullptr && "IrufemiEngine is null in Initialize");
+    auto engine = GetEngine();
+    IRUFEMI_ASSERT_MSG(engine != nullptr, "IrufemiEngine is null in Initialize");
 
     // 1. SpriteBatch の生成（テクスチャ指定）
     markerBatch_ = std::make_unique<SpriteBatch>();
@@ -73,8 +72,8 @@ void LockonMarkerUIComponent::Update() {
     // バッチへの登録をリセット
     markerBatch_->ClearInstances();
 
-    auto engine = BaseModel::GetIrufemiEngine();
-    IRUFEMI_ASSERT(engine != nullptr && "IrufemiEngine is null");
+    auto engine = GetEngine();
+    IRUFEMI_ASSERT_MSG(engine != nullptr, "IrufemiEngine is null");
     float deltaTime = engine->GetDeltaTime();
 
     auto cameraManager = engine->GetCameraManager();

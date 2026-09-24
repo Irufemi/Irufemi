@@ -161,7 +161,7 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
                                           const Irufemi::Vector3& railRight) {
     auto positions = CalculateSpawnPositions(manager, data, railPos, railForward, railRight);
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = manager ? manager->GetEngine() : nullptr;
     if (!engine) {
         return;
     }
@@ -221,7 +221,7 @@ void PlayBGMHandler::Execute(WaveManagerComponent* manager, const WaveEventData&
     Log::OutPutLog(std::cout, "[WaveManager] Playing BGM: " + track +
                                   " at distance: " + std::to_string(data.triggerDistance) + "\n");
 
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = manager ? manager->GetEngine() : nullptr;
     if (engine) {
         auto audioManager = engine->GetAudioManager();
         if (audioManager) {

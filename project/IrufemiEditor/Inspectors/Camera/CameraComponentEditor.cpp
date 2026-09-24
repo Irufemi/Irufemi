@@ -5,7 +5,6 @@
 #include "Framework/Component/Camera/CameraComponent.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Core/Math/MathFunction.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Renderer/Object/Line/LineClass.h"
 #include "UI/ComponentUIHelpers.h"
@@ -54,7 +53,7 @@ void CameraComponentEditor::Draw(Component* component, EditorActionManager* acti
     // --- Frustum Gizmo Draw ---
     auto transform = cameraComp->GetTransform();
     if (transform) {
-        auto* engine = BaseModel::GetIrufemiEngine();
+        auto* engine = cameraComp->GetEngine();
         float aspect = 16.0f / 9.0f;
         if (engine) {
             float w = static_cast<float>(engine->GetGameResolutionWidth());

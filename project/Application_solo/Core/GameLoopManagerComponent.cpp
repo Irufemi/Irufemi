@@ -103,7 +103,9 @@ void GameLoopManagerComponent::OnBossDied() {
             health->SetGodMode(true); // ゲームクリア時に被弾しないようにする
         }
     }
-    BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);
+    if (auto engine = GetEngine()) {
+        engine->SetTimeScale(timeScaleAtResult_);
+    }
 }
 
 void GameLoopManagerComponent::OnPlayerDied() {
@@ -112,10 +114,16 @@ void GameLoopManagerComponent::OnPlayerDied() {
     }
     state_ = State::Finished;
     isClear_ = false;
-    BaseModel::GetIrufemiEngine()->SetTimeScale(timeScaleAtResult_);
+    if (auto engine = GetEngine()) {
+        engine->SetTimeScale(timeScaleAtResult_);
+    }
 }
 
 void GameLoopManagerComponent::OnDeathSequenceFinished() {
     ResultScene::SetIsClear(isClear_);
-    BaseModel::GetIrufemiEngine()->GetSceneManager()->PushScene("Result");
+    if (auto engine = GetEngine()) {
+        if (auto sceneManager = engine->GetSceneManager()) {
+            sceneManager->PushScene("Result");
+        }
+    }
 }

@@ -62,7 +62,10 @@ void ResultManagerComponent::Initialize() {
 }
 
 void ResultManagerComponent::Update() {
-    auto engine = BaseModel::GetIrufemiEngine();
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
 
     // スローモーションの影響を受けないよう、RealDeltaTimeを使用する
     float dt = engine->GetRealDeltaTime();

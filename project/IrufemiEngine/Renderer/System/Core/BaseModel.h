@@ -307,14 +307,6 @@ public: // ゲッター・セッター
     static void SetIrufemiEngine(IrufemiEngine* engine) {
         engine_ = engine;
     }
-    /**
-     * @brief IrufemiEngine を取得する。
-     * @deprecated レンダラー基底を介した静的エンジンアクセスは非推奨です。Component::GetEngine() を使用してください。
-     * @return 取得された IrufemiEngine
-     */
-    static IrufemiEngine* GetIrufemiEngine() {
-        return engine_;
-    }
 
     /**
      * @brief CullingEnabled を設定する。

@@ -16,8 +16,7 @@ void PromptController::SetTarget(Sprite* targetSprite) {
     targetSprite_ = targetSprite;
 }
 
-void PromptController::Update(InputManager* input) {
-    float dt = BaseModel::GetIrufemiEngine()->GetDeltaTime();
+void PromptController::Update(InputManager* input, float dt) {
     animator_.Update(dt);
 
     if (!isDecided_) {
@@ -42,7 +41,6 @@ void PromptController::Update(InputManager* input) {
         }
     } else {
         // --- 決定後 ---
-        float dt = BaseModel::GetIrufemiEngine()->GetDeltaTime();
         transitionDelayTimer_ += dt;
 
         // 高速フラッシュ
