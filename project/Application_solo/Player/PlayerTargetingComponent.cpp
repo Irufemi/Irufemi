@@ -212,8 +212,8 @@ void PlayerTargetingComponent::UpdateHoverTarget() {
 
                                 cache.pendingTask = std::shared_ptr<std::future<std::pair<bool, RaycastHit>>>(
                                     new std::future<std::pair<bool, RaycastHit>>(
-                                        engine->GetCollisionManager()->RaycastAsync(engine->GetThreadPool(), ray,
-                                                                                    dist3D + 10.0f, 0xFFFFFFFF, playerObj)));
+                                        engine->GetCollisionManager()->RaycastAsync(
+                                            engine->GetThreadPool(), ray, dist3D + 10.0f, 0xFFFFFFFF, playerObj)));
                             }
                         }
 

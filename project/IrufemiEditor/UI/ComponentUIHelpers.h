@@ -37,11 +37,11 @@ public:
         if (ImGui::IsItemDeactivatedAfterEdit()) {
             T endValue = *valuePtr;
             if constexpr (std::is_invocable_v<Func, const T&>) {
-                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
-                    startValue, endValue, std::forward<Func>(callback)));
-            } else if constexpr (std::is_invocable_v<Func>) {
                 actionManager->PushAndExecute(
-                    std::make_unique<ChangeValueCommand<T>>(startValue, endValue, [valuePtr, cb = std::forward<Func>(callback)](const T& v) {
+                    std::make_unique<ChangeValueCommand<T>>(startValue, endValue, std::forward<Func>(callback)));
+            } else if constexpr (std::is_invocable_v<Func>) {
+                actionManager->PushAndExecute(std::make_unique<ChangeValueCommand<T>>(
+                    startValue, endValue, [valuePtr, cb = std::forward<Func>(callback)](const T& v) {
                         *valuePtr = v;
                         cb();
                     }));
