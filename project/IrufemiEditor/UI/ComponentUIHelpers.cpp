@@ -762,62 +762,20 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
 
         if (component->GetComponentName() == "SplineComponent") {
             ImGui::Spacing();
-            if (ImGui::Button("Add Rail Node", ImVec2(-1, 0))) {
-                auto* go = component->GetGameObject();
-                if (go) {
-                    auto newChild = std::make_shared<GameObject>();
-                    newChild->SetName("RailPoint_" + std::to_string(go->GetChildren().size() + 1));
-                    newChild->SetIsSerializable(true);
-                    newChild->GetTransform();
-                    newChild->AddComponent<SplineNodeComponent>();
-                    go->AddChild(newChild);
-
-                    Irufemi::Vector3 newPos = {0, 0, 0};
-                    auto children = go->GetChildren();
-                    if (children.size() >= 2) {
-                        auto t1 = children[children.size() - 2]->GetComponent<TransformComponent>();
-                        auto t2 = children[children.size() - 1]->GetComponent<TransformComponent>();
-                        if (t1 && t2) {
-                            Irufemi::Vector3 p1 = t1->GetPosition();
-                            Irufemi::Vector3 p2 = t2->GetPosition();
-                            Irufemi::Vector3 dir = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
-                            newPos = {p2.x + dir.x, p2.y + dir.y, p2.z + dir.z};
-                        }
-                    } else if (children.size() == 1) {
-                        if (auto t1 = children[0]->GetComponent<TransformComponent>()) {
-                            Irufemi::Vector3 p1 = t1->GetPosition();
-                            newPos = {p1.x, p1.y, p1.z + 5.0f};
-                        }
-                    } else {
-                        if (auto parentT = go->GetComponent<TransformComponent>()) {
-                            newPos = parentT->GetPosition();
-                        }
-                    }
-                    if (auto t = newChild->GetComponent<TransformComponent>()) {
-                        t->SetPosition(newPos);
-                    }
-                    newChild->SetScene(go->GetScene());
+            auto* spline = static_cast<SplineComponent*>(component);
+            if (ImGui::Button("Add Waypoint at End", ImVec2(-1, 0))) {
+                auto waypoints = spline->GetWaypoints();
+                Irufemi::Vector3 newPos = {0.0f, 15.0f, 0.0f};
+                if (waypoints.size() >= 2) {
+                    const auto& p1 = waypoints[waypoints.size() - 2];
+                    const auto& p2 = waypoints[waypoints.size() - 1];
+                    Irufemi::Vector3 dir = {p2.x - p1.x, p2.y - p1.y, p2.z - p1.z};
+                    newPos = {p2.x + dir.x, p2.y + dir.y, p2.z + dir.z};
+                } else if (waypoints.size() == 1) {
+                    newPos = {waypoints[0].x, waypoints[0].y, waypoints[0].z + 20.0f};
                 }
-            }
-            if (ImGui::Button("Convert waypoints_ to Nodes", ImVec2(-1, 0))) {
-                auto* go = component->GetGameObject();
-                if (go) {
-                    auto* spline = static_cast<SplineComponent*>(component);
-                    auto waypoints = spline->GetWaypoints();
-                    if (!waypoints.empty() && go->GetChildren().empty()) {
-                        int idx = 1;
-                        for (const auto& wp : waypoints) {
-                            auto newChild = std::make_shared<GameObject>();
-                            newChild->SetName("RailPoint_" + std::to_string(idx++));
-                            newChild->SetIsSerializable(true);
-                            auto transform = newChild->GetTransform();
-                            newChild->AddComponent<SplineNodeComponent>();
-                            transform->SetPosition(wp);
-                            newChild->SetScene(go->GetScene());
-                            go->AddChild(newChild);
-                        }
-                    }
-                }
+                waypoints.push_back(newPos);
+                spline->SetWaypoints(waypoints);
             }
         }
     }
