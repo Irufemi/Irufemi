@@ -105,14 +105,26 @@ public:
      */
     void Draw() override;
 
-    bool GetDrawDebugRail() const { return drawDebugRail_; }
-    void SetDrawDebugRail(bool enable) { drawDebugRail_ = enable; }
+    bool GetDrawDebugRail() const {
+        return drawDebugRail_;
+    }
+    void SetDrawDebugRail(bool enable) {
+        drawDebugRail_ = enable;
+    }
 
-    bool GetDrawDebugNodes() const { return drawDebugNodes_; }
-    void SetDrawDebugNodes(bool enable) { drawDebugNodes_ = enable; }
+    bool GetDrawDebugNodes() const {
+        return drawDebugNodes_;
+    }
+    void SetDrawDebugNodes(bool enable) {
+        drawDebugNodes_ = enable;
+    }
 
-    float GetNodeRadius() const { return nodeRadius_; }
-    void SetNodeRadius(float radius) { nodeRadius_ = radius; }
+    float GetNodeRadius() const {
+        return nodeRadius_;
+    }
+    void SetNodeRadius(float radius) {
+        nodeRadius_ = radius;
+    }
 
 private:
     std::vector<Irufemi::Vector3> waypoints_; ///< スプラインの制御点
@@ -120,7 +132,7 @@ private:
     float totalLength_ = 0.0f;       ///< スプラインの総距離
     int lastChildCount_ = -1;        ///< 子オブジェクト数のキャッシュ
     bool drawDebugRail_ = true;      ///< エディタやデバッグ時にレール曲線を描画するかどうか
-    bool drawDebugNodes_ = true;     ///< エディタやデバッグ時に各ウェイポイントの球体ギズモを描画するかどうか
-    float nodeRadius_ = 0.5f;        ///< ウェイポイント球体ギズモの描画半径
+    bool drawDebugNodes_ = true; ///< エディタやデバッグ時に各ウェイポイントの球体ギズモを描画するかどうか
+    float nodeRadius_ = 0.5f;                           ///< ウェイポイント球体ギズモの描画半径
     std::unique_ptr<class Line3DBatch> debugLineBatch_; ///< デバッグ描画用のラインバッチ
 };

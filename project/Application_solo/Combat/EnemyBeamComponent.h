@@ -57,12 +57,12 @@ private:
     float fireDuration_ = 0.8f;   // 発射時間
 
     // AOE予兆・ロックオンパラメータ
-    float lockLeadTime_ = 0.4f;   //!< 発射前何秒で射線を固定（ロック）するか
-    bool isAimLocked_ = false;    //!< 射線が固定されたかどうか
+    float lockLeadTime_ = 0.4f; //!< 発射前何秒で射線を固定（ロック）するか
+    bool isAimLocked_ = false;  //!< 射線が固定されたかどうか
     Irufemi::Vector4 telegraphColor_ = {1.0f, 0.1f, 0.1f, 0.7f}; //!< 予兆円柱の基本色
 
     // 当たり判定パラメータ
-    int beamDamage_ = 30;         //!< ビーム直撃ダメージ
+    int beamDamage_ = 30;               //!< ビーム直撃ダメージ
     float hitCheckRadiusMargin_ = 0.5f; //!< 当たり判定マージン（機体半径考慮）
 
     Irufemi::Vector4 chargeColor_ = {0.7f, 0.0f, 0.9f, 1.0f};
@@ -138,5 +138,5 @@ private:
 
     Irufemi::Vector3 muzzleLocalOffset_ = {0.0f, 0.0f, 0.0f}; //!< ボス本体から見た発射口のローカルオフセット
     bool hasHitCurrentBeam_ = false;                          //!< 現在のビーム照射で既にヒットしたか
-    std::weak_ptr<GameObject> mainCameraObj_;                 //!< メインカメラのキャッシュ（毎フレームのFindGameObject回避）
+    std::weak_ptr<GameObject> mainCameraObj_; //!< メインカメラのキャッシュ（毎フレームのFindGameObject回避）
 };

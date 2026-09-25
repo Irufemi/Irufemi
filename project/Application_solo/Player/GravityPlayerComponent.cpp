@@ -213,7 +213,8 @@ void GravityPlayerComponent::HandlePullInput() {
                     Irufemi::Vector3 forward = transform->GetWorldForward();
                     Irufemi::Vector3 emergencyPos = transform->GetWorldPosition() + forward * 15.0f;
                     debrisManager->SpawnDebrisCluster(emergencyPos, 1, 1.5f);
-                    debrisObj = debrisManager->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_ + 20.0f);
+                    debrisObj =
+                        debrisManager->ExtractNearestIdleDebris(transform->GetWorldPosition(), pullRadius_ + 20.0f);
                 }
 
                 if (debrisObj) {
