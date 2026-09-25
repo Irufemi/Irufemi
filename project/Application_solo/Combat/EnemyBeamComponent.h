@@ -130,4 +130,11 @@ private:
      * @brief プレイヤー GameObject を取得する
      */
     GameObject* GetPlayerObject();
+
+    /**
+     * @brief 現在のボスのワールド行列に基づき、最新の発射口ワールド座標を取得する
+     */
+    Irufemi::Vector3 GetCurrentMuzzlePosition() const;
+
+    Irufemi::Vector3 muzzleLocalOffset_ = {0.0f, 0.0f, 0.0f}; //!< ボス本体から見た発射口のローカルオフセット
 };

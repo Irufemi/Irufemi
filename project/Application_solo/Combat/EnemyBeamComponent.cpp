@@ -143,6 +143,14 @@ void EnemyBeamComponent::Fire(const Irufemi::Vector3& startPos, const Irufemi::V
     startPos_ = startPos;
     isAimLocked_ = false;
 
+    // ボス本体に対する発射口のローカルオフセットを計算・保持（移動中の前進に追従させるため）
+    if (gameObject_ && gameObject_->GetTransform()) {
+        Irufemi::Matrix4x4 invWorld = Irufemi::Math::Inverse(gameObject_->GetTransform()->GetWorldMatrix());
+        muzzleLocalOffset_ = Irufemi::Math::Transform(startPos, invWorld);
+    } else {
+        muzzleLocalOffset_ = {0.0f, 0.0f, 0.0f};
+    }
+
     // 発射方向の初期計算
     Irufemi::Vector3 diff = targetPos - startPos_;
     float diffDistSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
@@ -151,6 +159,15 @@ void EnemyBeamComponent::Fire(const Irufemi::Vector3& startPos, const Irufemi::V
     } else {
         direction_ = {0.0f, 0.0f, 1.0f};
     }
+}
+
+Irufemi::Vector3 EnemyBeamComponent::GetCurrentMuzzlePosition() const {
+    if (gameObject_) {
+        if (auto transform = gameObject_->GetTransform()) {
+            return Irufemi::Math::Transform(muzzleLocalOffset_, transform->GetWorldMatrix());
+        }
+    }
+    return startPos_;
 }
 
 GameObject* EnemyBeamComponent::GetPlayerObject() {
@@ -240,6 +257,9 @@ void EnemyBeamComponent::UpdateParameters() {
 
 void EnemyBeamComponent::UpdateCharging(float deltaTime) {
     auto engine = GetEngine();
+
+    // ボスの前進・旋回に合わせて発射口ワールド座標をリアルタイム同期
+    startPos_ = GetCurrentMuzzlePosition();
 
     // --- 溜め動作のアニメーション ---
     float t = std::min(stateTimer_ / chargeDuration_, 1.0f);
@@ -342,6 +362,9 @@ void EnemyBeamComponent::UpdateCharging(float deltaTime) {
 }
 
 void EnemyBeamComponent::UpdateFiring(float deltaTime) {
+    // ボスの前進・旋回に合わせて発射口ワールド座標をリアルタイム同期
+    startPos_ = GetCurrentMuzzlePosition();
+
     // --- ビーム発射動作のアニメーション ---
     float t = std::min(stateTimer_ / fireDuration_, 1.0f);
 
