@@ -206,9 +206,7 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                 auto drawResetButton = [&]() {
                     if (!prop.defaultValue.is_null()) {
                         bool isModified = false;
-                        auto isFloatDiff = [](float a, float b) {
-                            return std::abs(a - b) > 1e-5f;
-                        };
+                        auto isFloatDiff = [](float a, float b) { return std::abs(a - b) > 1e-5f; };
 
                         switch (prop.type) {
                         case ComponentPropertyType::Float: {
