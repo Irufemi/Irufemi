@@ -1,4 +1,5 @@
 #include "Framework/Component/Camera/TargetFollowComponent.h"
+#include "Framework/Component/Camera/CameraComponent.h"
 #include "Framework/GameObject/GameObject.h"
 #include "Framework/Component/TransformComponent.h"
 #include "Framework/Scene/BaseScene.h"
@@ -105,4 +106,9 @@ void TargetFollowComponent::Update() {
 
     // 次のコンポーネント（CameraComponent等）のために強制更新
     myTransform->UpdateMatrixImmediate();
+
+    // 同一GameObject内のCameraComponentへ最新座標・姿勢を即時同期（1フレーム遅れジッターを解消）
+    if (auto camComp = gameObject_->GetComponent<CameraComponent>()) {
+        camComp->Update();
+    }
 }

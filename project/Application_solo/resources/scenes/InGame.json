@@ -1551,6 +1551,7 @@
             },
             {
               "data": {
+                "Death Sequence Duration": 3.0,
                 "God Mode": false,
                 "Status Data Path": "resources/GameData/PlayerStatus.json"
               },
@@ -3481,8 +3482,8 @@
         },
         {
           "data": {
-            "Beam Offset Y": -2.0,
-            "Beam Offset Z": 25.0,
+            "Beam Offset Y": -1.0,
+            "Beam Offset Z": 4.0,
             "Status Data Path": "resources/GameData/BossStatus.json"
           },
           "type": "BossComponent"
@@ -3549,6 +3550,7 @@
               1.0
             ],
             "Beam Core Intensity": 40.0,
+            "Beam Damage": 30,
             "Beam Intensity": 6.0,
             "Beam Length": 200.0,
             "Beam Max Radius": 1.0,
@@ -3560,7 +3562,15 @@
               0.8999999761581421,
               1.0
             ],
-            "Fire Duration": 0.800000011920929
+            "Fire Duration": 0.800000011920929,
+            "Hit Check Margin": 0.5,
+            "Lock Lead Time": 0.4000000059604645,
+            "Telegraph Color": [
+              1.0,
+              0.10000000149011612,
+              0.10000000149011612,
+              0.699999988079071
+            ]
           },
           "type": "EnemyBeamComponent"
         },
@@ -3971,6 +3981,7 @@
         {
           "data": {
             "Editor Preview Distance": 0.0,
+            "Enemy Spawner": 0,
             "Level Data Path": "resources/GameData/WaveData_Stage1.json",
             "Target Spline": 8865338349013935913
           },

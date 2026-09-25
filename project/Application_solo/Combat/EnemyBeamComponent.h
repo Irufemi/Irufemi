@@ -137,4 +137,6 @@ private:
     Irufemi::Vector3 GetCurrentMuzzlePosition() const;
 
     Irufemi::Vector3 muzzleLocalOffset_ = {0.0f, 0.0f, 0.0f}; //!< ボス本体から見た発射口のローカルオフセット
+    bool hasHitCurrentBeam_ = false;                          //!< 現在のビーム照射で既にヒットしたか
+    std::weak_ptr<GameObject> mainCameraObj_;                 //!< メインカメラのキャッシュ（毎フレームのFindGameObject回避）
 };

@@ -142,6 +142,7 @@ void EnemyBeamComponent::Fire(const Irufemi::Vector3& startPos, const Irufemi::V
     stateTimer_ = 0.0f;
     startPos_ = startPos;
     isAimLocked_ = false;
+    hasHitCurrentBeam_ = false;
 
     // ボス本体に対する発射口のローカルオフセットを計算・保持（移動中の前進に追従させるため）
     if (gameObject_ && gameObject_->GetTransform()) {
@@ -186,6 +187,10 @@ GameObject* EnemyBeamComponent::GetPlayerObject() {
 }
 
 void EnemyBeamComponent::CheckBeamCollision() {
+    if (hasHitCurrentBeam_) {
+        return; // 今回の照射で既にヒット済みの場合は多重ダメージ＆多重シェイクを抑止
+    }
+
     auto player = GetPlayerObject();
     if (!player) {
         return;
@@ -218,14 +223,18 @@ void EnemyBeamComponent::CheckBeamCollision() {
     float hitRadius = beamMaxRadius_ + hitCheckRadiusMargin_;
 
     if (distSq <= hitRadius * hitRadius) {
+        hasHitCurrentBeam_ = true;
         health->TakeDamage(beamDamage_);
 
-        // 特大カメラシェイクを発火
-        if (auto scene = gameObject_->GetScene()) {
-            if (auto cam = scene->FindGameObject("MainCamera")) {
-                if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
-                    shake->PlayShake(2.0f, 25);
-                }
+        // 特大カメラシェイクを発火（キャッシュを利用してミューテックス競合を回避）
+        auto cam = mainCameraObj_.lock();
+        if (!cam && gameObject_ && gameObject_->GetScene()) {
+            cam = gameObject_->GetScene()->FindGameObject("MainCamera");
+            mainCameraObj_ = cam;
+        }
+        if (cam) {
+            if (auto shake = cam->GetComponent<CameraShakeComponent>()) {
+                shake->PlayShake(2.0f, 25);
             }
         }
     }
