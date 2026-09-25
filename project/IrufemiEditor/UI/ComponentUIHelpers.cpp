@@ -206,10 +206,14 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                 auto drawResetButton = [&]() {
                     if (!prop.defaultValue.is_null()) {
                         bool isModified = false;
+                        auto isFloatDiff = [](float a, float b) {
+                            return std::abs(a - b) > 1e-5f;
+                        };
+
                         switch (prop.type) {
                         case ComponentPropertyType::Float: {
                             if (auto* v = prop.GetData<float>()) {
-                                isModified = (*v != prop.defaultValue.get<float>());
+                                isModified = isFloatDiff(*v, prop.defaultValue.get<float>());
                             }
                             break;
                         }
@@ -242,7 +246,8 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             if (auto* v = prop.GetData<Irufemi::Vector2>()) {
                                 auto arr = prop.defaultValue;
                                 if (arr.is_array() && arr.size() >= 2) {
-                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>());
+                                    isModified = (isFloatDiff(v->x, arr[0].get<float>()) ||
+                                                  isFloatDiff(v->y, arr[1].get<float>()));
                                 }
                             }
                             break;
@@ -251,8 +256,9 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             if (auto* v = prop.GetData<Irufemi::Vector3>()) {
                                 auto arr = prop.defaultValue;
                                 if (arr.is_array() && arr.size() >= 3) {
-                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
-                                                  v->z != arr[2].get<float>());
+                                    isModified = (isFloatDiff(v->x, arr[0].get<float>()) ||
+                                                  isFloatDiff(v->y, arr[1].get<float>()) ||
+                                                  isFloatDiff(v->z, arr[2].get<float>()));
                                 }
                             }
                             break;
@@ -261,8 +267,10 @@ void ComponentUIHelpers::DrawFallbackPropertiesGUI(Component* component, EditorA
                             if (auto* v = prop.GetData<Irufemi::Vector4>()) {
                                 auto arr = prop.defaultValue;
                                 if (arr.is_array() && arr.size() >= 4) {
-                                    isModified = (v->x != arr[0].get<float>() || v->y != arr[1].get<float>() ||
-                                                  v->z != arr[2].get<float>() || v->w != arr[3].get<float>());
+                                    isModified = (isFloatDiff(v->x, arr[0].get<float>()) ||
+                                                  isFloatDiff(v->y, arr[1].get<float>()) ||
+                                                  isFloatDiff(v->z, arr[2].get<float>()) ||
+                                                  isFloatDiff(v->w, arr[3].get<float>()));
                                 }
                             }
                             break;
