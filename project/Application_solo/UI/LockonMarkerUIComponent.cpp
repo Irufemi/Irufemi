@@ -28,8 +28,8 @@ void LockonMarkerUIComponent::Initialize() {
         markerBatch_->Initialize("resources/reticle.jpg");
 
         // 2. カスタムシェーダー（輝度アルファ抜き）の適用 (名前指定によるホットリロード安全化)
-        markerBatch_->SetCustomPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal, PSOManager::DepthWrite::Off,
-                                   PSOManager::CullMode::None);
+        markerBatch_->SetCustomPSO("LuminanceAlpha2D", Irufemi::BlendMode::kBlendModeNormal,
+                                   PSOManager::DepthWrite::Off, PSOManager::CullMode::None);
     }
 }
 
