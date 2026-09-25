@@ -111,6 +111,9 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
     float combatDuration = data.parameters.value("CombatDuration", 7.5f);
     float targetDistance = data.parameters.value("TargetDistance", 65.0f);
     float scaleMultiplier = data.parameters.value("Scale", 1.0f);
+    float shootInterval = data.parameters.value("ShootInterval", 1.8f);
+    float bulletSpeed = data.parameters.value("BulletSpeed", 32.0f);
+    float speed = data.parameters.value("Speed", 15.0f);
 
     if (auto spawner = GetOrFindSpawner(manager)) {
         for (const auto& pos : positions) {
@@ -118,6 +121,9 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
                 if (auto enemyComp = enemyObj->GetComponent<RailShooterEnemyComponent>()) {
                     enemyComp->SetCombatDuration(combatDuration);
                     enemyComp->SetTargetDistance(targetDistance);
+                    enemyComp->SetShootInterval(shootInterval);
+                    enemyComp->SetBulletSpeed(bulletSpeed);
+                    enemyComp->SetSpeed(speed);
                 }
             }
         }
