@@ -31,7 +31,7 @@ class IrufemiEngine;
 /**
  * @brief 同時実行フレーム数 (トリプルバッファリング)
  */
-static const uint32_t kMaxFramesInFlight = 3;
+inline constexpr uint32_t kMaxFramesInFlight = 3;
 
 /**
  * @class DirectXCommon
