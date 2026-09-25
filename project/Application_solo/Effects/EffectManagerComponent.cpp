@@ -69,23 +69,26 @@ ObjectPool<GameObject>* EffectManagerComponent::GetOrCreatePool(const std::strin
 }
 
 void EffectManagerComponent::Update() {
-    for (auto it = activeEffects_.begin(); it != activeEffects_.end();) {
-        auto poolIt = effectPools_.find(it->effectKey);
+    for (size_t i = 0; i < activeEffects_.size();) {
+        auto& active = activeEffects_[i];
+        auto poolIt = effectPools_.find(active.effectKey);
         if (poolIt == effectPools_.end() || !poolIt->second) {
-            // プールがないか不明なエフェクト
-            it = activeEffects_.erase(it);
+            // プールがないか不明なエフェクト: Swap-and-Pop で O(1) 削除
+            active = std::move(activeEffects_.back());
+            activeEffects_.pop_back();
             continue;
         }
 
         auto* pool = poolIt->second.get();
-        auto obj = pool->Resolve(it->handle);
+        auto obj = pool->Resolve(active.handle);
         if (obj && !obj->GetIsActive()) {
-            pool->Release(it->handle);
-            it = activeEffects_.erase(it);
+            pool->Release(active.handle);
+            active = std::move(activeEffects_.back());
+            activeEffects_.pop_back();
             continue;
         }
 
-        ++it;
+        ++i;
     }
 }
 

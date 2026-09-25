@@ -54,7 +54,7 @@ std::vector<Irufemi::Vector3> SpawnEnemyHandler::CalculateSpawnPositions(WaveMan
         float oy = offsetJson.value("y", 0.0f);
         float oz = offsetJson.value("z", 0.0f);
 
-        Irufemi::Vector3 railUp = {0.0f, 1.0f, 0.0f};
+        Irufemi::Vector3 railUp = Irufemi::Math::Normalize(Irufemi::Math::Cross(railForward, railRight));
         spawnPos.x += railRight.x * ox + railUp.x * oy + railForward.x * oz;
         spawnPos.y += railRight.y * ox + railUp.y * oy + railForward.y * oz;
         spawnPos.z += railRight.z * ox + railUp.z * oy + railForward.z * oz;
