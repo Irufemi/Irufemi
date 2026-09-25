@@ -4,7 +4,6 @@
 #include "Framework/Component/TransformComponent.h"
 #include "Player/PlayerHealthComponent.h"
 #include "Effects/EffectManagerComponent.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Framework/Scene/BaseScene.h"
 
@@ -74,16 +73,20 @@ void EnemyBulletComponent::OnCollisionEnter(GameObject* other) {
 
             // 被弾エフェクトの再生
             if (auto transform = GetTransform()) {
-                auto effectGo = effectManagerObj_.lock();
-                if (!effectGo) {
-                    if (auto scene = gameObject_->GetScene()) {
-                        effectGo = scene->FindGameObject("EffectManager");
-                        effectManagerObj_ = effectGo;
+                if (auto effectMgr = EffectManagerComponent::GetInstance()) {
+                    effectMgr->PlayEffect("debris_dust_effect", transform->GetWorldPosition());
+                } else {
+                    auto effectGo = effectManagerObj_.lock();
+                    if (!effectGo) {
+                        if (auto scene = gameObject_->GetScene()) {
+                            effectGo = scene->FindGameObject("EffectManager");
+                            effectManagerObj_ = effectGo;
+                        }
                     }
-                }
-                if (effectGo) {
-                    if (auto effectMgr = effectGo->GetComponent<EffectManagerComponent>()) {
-                        effectMgr->PlayEffect("debris_dust_effect", transform->GetWorldPosition());
+                    if (effectGo) {
+                        if (auto effectMgrFallback = effectGo->GetComponent<EffectManagerComponent>()) {
+                            effectMgrFallback->PlayEffect("debris_dust_effect", transform->GetWorldPosition());
+                        }
                     }
                 }
             }

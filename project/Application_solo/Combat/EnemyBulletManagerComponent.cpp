@@ -8,7 +8,15 @@
 #include "Physics/CollisionManager.h"
 #include "Core/System/IrufemiEngine.h"
 
-EnemyBulletManagerComponent::EnemyBulletManagerComponent() = default;
+EnemyBulletManagerComponent::EnemyBulletManagerComponent() {
+    s_instance_ = this;
+}
+
+void EnemyBulletManagerComponent::OnRegisterProperties() {
+    Component::OnRegisterProperties();
+    RegisterProperty("Max Bullets", &maxBullets_);
+    RegisterProperty("Bullet Model Path", &bulletModelPath_);
+}
 
 void EnemyBulletManagerComponent::Initialize() {
     WarmupPool();
@@ -19,10 +27,16 @@ void EnemyBulletManagerComponent::Start() {
 }
 
 void EnemyBulletManagerComponent::OnDestroy() {
+    if (s_instance_ == this) {
+        s_instance_ = nullptr;
+    }
     bulletPool_.reset();
 }
 
 EnemyBulletManagerComponent* EnemyBulletManagerComponent::GetOrCreate(BaseScene* scene) {
+    if (s_instance_) {
+        return s_instance_;
+    }
     if (!scene) {
         return nullptr;
     }

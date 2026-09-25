@@ -8,10 +8,19 @@
 #include "Framework/Component/Effect/VoxelParticleComponent.h"
 #include "Framework/Component/Utility/LifetimeComponent.h"
 #include "Core/System/IrufemiEngine.h"
-#include "Renderer/System/Core/BaseModel.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Core/Utility/Log.h"
 #include <iostream>
+
+EffectManagerComponent::EffectManagerComponent() {
+    s_instance_ = this;
+}
+
+void EffectManagerComponent::OnDestroy() {
+    if (s_instance_ == this) {
+        s_instance_ = nullptr;
+    }
+}
 
 void EffectManagerComponent::OnRegisterProperties() {
     RegisterProperty("Hit Effect Path", &hitEffectPath_);
