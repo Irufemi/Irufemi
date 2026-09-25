@@ -1,11 +1,13 @@
 #include "Combat/Boss/BossStateCoreExposed.h"
 #include "Combat/Boss/BossStateDestroyed.h"
 #include "Combat/Boss/BossComponent.h"
+#include "Environment/DebrisManagerComponent.h"
+#include "Framework/GameObject/GameObject.h"
+#include "Framework/Component/TransformComponent.h"
 #include "Core/Utility/Log.h"
 #include <iostream>
 #include <memory>
 #include <string>
-#include "Framework/GameObject/GameObject.h"
 
 void BossStateCoreExposed::Enter(BossComponent* boss) {
     Log::OutPutLog(std::cout, "Boss entered CoreExposed State (Vulnerable)\n");
@@ -23,6 +25,12 @@ void BossStateCoreExposed::OnTakeDamage(BossComponent* boss, float damage) {
 
     // 被弾イベント通知（演出コンポーネントがカメラシェイク等を担当）
     boss->NotifyDamageTaken(damage);
+
+    // ボス装甲の被弾剥離（破片ドロップ連携）：弾丸ヒット時に破片を2個飛散させる
+    if (boss->debrisManager_ && boss->GetGameObject()) {
+        Irufemi::Vector3 bossPos = boss->GetGameObject()->GetTransform()->GetWorldPosition();
+        boss->debrisManager_->SpawnDebrisCluster(bossPos, 2, 4.0f);
+    }
 
     if (boss->hp_ <= 0) {
         boss->hp_ = 0;

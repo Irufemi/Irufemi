@@ -11,6 +11,7 @@
 #include "Player/TargetableComponent.h"
 #include "Framework/Prefab/PrefabUtility.h"
 #include "Core/Math/MathFunction.h"
+#include "Environment/DebrisManagerComponent.h"
 
 // AAAタイトルのアプローチ (Data-Oriented Design & Instancing)
 // 個々の敵オブジェクトにMeshRendererを持たせるのではなく、Spawnerが一括でModelBatchRendererComponentを管理します。
@@ -92,6 +93,20 @@ void EnemySpawnerComponent::Start() {
 
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
             enemyComp->SetOnDeathCallback([weakObj](GameObject* deadObj) {
+                // 敵撃破位置へガレキ（破片）をドロップ
+                if (deadObj) {
+                    if (auto deadTrans = deadObj->GetComponent<TransformComponent>()) {
+                        Irufemi::Vector3 deadPos = deadTrans->GetWorldPosition();
+                        if (auto scene = deadObj->GetScene()) {
+                            if (auto debrisMgrObj = scene->FindGameObject("DebrisManager")) {
+                                if (auto debrisMgr = debrisMgrObj->GetComponent<DebrisManagerComponent>()) {
+                                    debrisMgr->SpawnDebrisCluster(deadPos, 3, 3.5f);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 deadObj->SetIsActive(false);
                 // スポナーの生存確認（ダングリングポインタによるクラッシュを防止）
                 if (auto spawnerObj = weakObj.lock()) {

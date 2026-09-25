@@ -471,6 +471,7 @@
         },
         {
           "data": {
+            "Auto Supply Enabled": true,
             "Boss Aura Color": [
               0.800000011920929,
               0.0,
@@ -511,7 +512,10 @@
               0.800000011920929,
               1.0,
               0.4000000059604645
-            ]
+            ],
+            "Recycle Behind Distance": 25.0,
+            "Supply Check Interval": 0.5,
+            "Target Field Count": 30
           },
           "type": "DebrisManagerComponent"
         }
