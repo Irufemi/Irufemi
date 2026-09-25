@@ -31,7 +31,8 @@ Irufemi::OBB OBBColliderComponent::GetWorldOBB() const {
         obb.orientations[2] = transform->GetWorldForward();
 
         // 負のスケール（反転）適用時等に基底が左手系になるのを防ぎ、正規直交右手系を維持
-        if (Irufemi::Math::Dot(Irufemi::Math::Cross(obb.orientations[0], obb.orientations[1]), obb.orientations[2]) < 0.0f) {
+        if (Irufemi::Math::Dot(Irufemi::Math::Cross(obb.orientations[0], obb.orientations[1]), obb.orientations[2]) <
+            0.0f) {
             obb.orientations[2] = -obb.orientations[2];
         }
 
