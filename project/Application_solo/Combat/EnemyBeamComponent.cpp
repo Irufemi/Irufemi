@@ -313,8 +313,8 @@ void EnemyBeamComponent::UpdateCharging(float deltaTime) {
         // ロック中は激しく明滅させて危険度を最大化
         if (isAimLocked_) {
             float pulse = std::sin(stateTimer_ * 40.0f);
-            Irufemi::Vector4 c = (pulse > 0.0f) ? Irufemi::Vector4{1.0f, 0.2f, 0.2f, 0.9f}
-                                                : Irufemi::Vector4{1.0f, 1.0f, 1.0f, 0.95f};
+            Irufemi::Vector4 c =
+                (pulse > 0.0f) ? Irufemi::Vector4{1.0f, 0.2f, 0.2f, 0.9f} : Irufemi::Vector4{1.0f, 1.0f, 1.0f, 0.95f};
             telegraphCylinder_->SetColor(c);
         } else {
             telegraphCylinder_->SetColor(telegraphColor_);

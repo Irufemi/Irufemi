@@ -63,7 +63,8 @@ void SplineComponent::Draw() {
                     const Irufemi::Vector4 startColor = {0.0f, 0.8f, 1.0f, 1.0f};  // シアン (始点)
                     const Irufemi::Vector4 endColor = {1.0f, 0.2f, 0.2f, 1.0f};    // 赤 (終点)
                     for (size_t i = 0; i < waypoints_.size(); ++i) {
-                        Irufemi::Vector4 c = (i == 0) ? startColor : ((i == waypoints_.size() - 1) ? endColor : normalColor);
+                        Irufemi::Vector4 c =
+                            (i == 0) ? startColor : ((i == waypoints_.size() - 1) ? endColor : normalColor);
                         debugRenderer->AddSphere(waypoints_[i], nodeRadius_, c, DebugCategory::Path);
                     }
                 }
