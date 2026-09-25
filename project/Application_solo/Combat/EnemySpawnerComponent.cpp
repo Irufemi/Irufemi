@@ -10,6 +10,7 @@
 #include "Framework/Component/Collider/SphereColliderComponent.h"
 #include "Player/TargetableComponent.h"
 #include "Framework/Prefab/PrefabUtility.h"
+#include "Core/Math/MathFunction.h"
 
 // AAAタイトルのアプローチ (Data-Oriented Design & Instancing)
 // 個々の敵オブジェクトにMeshRendererを持たせるのではなく、Spawnerが一括でModelBatchRendererComponentを管理します。
@@ -135,7 +136,7 @@ void EnemySpawnerComponent::Update() {
     // '2'キーで敵をスポーン
     if (input->IsKeyPressed('2')) {
         Irufemi::Vector3 spawnPos = {0.0f, 0.0f, 50.0f};
-        Irufemi::Vector3 spawnRot = {0.0f, 3.14159f, 0.0f};
+        Irufemi::Vector3 spawnRot = {0.0f, Irufemi::Math::PI, 0.0f};
 
         auto scene = gameObject_->GetScene();
         if (scene) {
@@ -162,7 +163,7 @@ void EnemySpawnerComponent::Update() {
 
                     // プレイヤーと向かい合うように回転を設定（180度反転）
                     spawnRot = transform->GetWorldRotation();
-                    spawnRot.y += 3.14159f;
+                    spawnRot.y += Irufemi::Math::PI;
                 }
             }
         }

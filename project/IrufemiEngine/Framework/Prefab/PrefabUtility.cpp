@@ -26,6 +26,14 @@ PrefabMetrics PrefabUtility::ExtractMetrics(const std::string& prefabPath) {
                 metrics.baseScale.x = data["scale"][0].get<float>();
                 metrics.baseScale.y = data["scale"][1].get<float>();
                 metrics.baseScale.z = data["scale"][2].get<float>();
+            } else if (data.contains("Scale") && data["Scale"].is_array() && data["Scale"].size() >= 3) {
+                metrics.baseScale.x = data["Scale"][0].get<float>();
+                metrics.baseScale.y = data["Scale"][1].get<float>();
+                metrics.baseScale.z = data["Scale"][2].get<float>();
+            } else if (data.contains("Scale X") && data.contains("Scale Y") && data.contains("Scale Z")) {
+                metrics.baseScale.x = data["Scale X"].get<float>();
+                metrics.baseScale.y = data["Scale Y"].get<float>();
+                metrics.baseScale.z = data["Scale Z"].get<float>();
             }
         } else if (type == "SphereColliderComponent") {
             metrics.hasSphereCollider = true;

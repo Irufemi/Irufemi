@@ -3,6 +3,7 @@
 #include "Renderer/Pipeline/RenderGraph/RenderGraphBuilder.h"
 #include "Renderer/System/ParticleGPU/GPUParticleSystem.h"
 #include <iostream>
+#include <atomic>
 #include <Windows.h>
 #include <cstdio>
 #include "Renderer/Camera/CameraManager.h"
@@ -79,7 +80,7 @@ void GPUParticleSystem::Initialize(const std::string& textureName) {
     CreateBuffersAndViews();
 
     // 各GPUParticleSystemインスタンスごとに異なるシードを持たせて、乱数系列が完全に被るのを防ぐ
-    static uint32_t s_uniqueSeed = 0;
+    static std::atomic<uint32_t> s_uniqueSeed{0};
     emittersData_[0].randomSeed = ++s_uniqueSeed;
 
     // 形状の初期設定 (デフォルトは Quad/Irufemi::Plane)
