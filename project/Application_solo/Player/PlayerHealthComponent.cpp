@@ -35,6 +35,9 @@ void PlayerHealthComponent::OnRegisterProperties() {
 void PlayerHealthComponent::Initialize() {
     LoadStatusFromJson();
 
+    isDead_ = false;
+    deathTimer_ = 0.0f;
+    hasTriggeredDeathSequenceFinished_ = false;
     invincibilityTimer_ = 0.0f;
     onDamageTakenListeners_.clear();
     onPlayerDiedListeners_.clear();
@@ -73,8 +76,8 @@ void PlayerHealthComponent::Update() {
 
     if (isDead_) {
         if (!hasTriggeredDeathSequenceFinished_) {
-            float currentTime = engine->GetGameTime();
-            if (currentTime >= deathStartTime_ + deathSequenceDuration_) {
+            deathTimer_ += engine->GetRealDeltaTime();
+            if (deathTimer_ >= deathSequenceDuration_) {
                 hasTriggeredDeathSequenceFinished_ = true;
                 NotifyDeathSequenceFinished();
             }
@@ -116,7 +119,8 @@ void PlayerHealthComponent::TakeDamage(int damage) {
     if (hp_ <= 0) {
         hp_ = 0;
         isDead_ = true;
-        deathStartTime_ = GetEngine() ? GetEngine()->GetGameTime() : 0.0f;
+        deathTimer_ = 0.0f;
+        hasTriggeredDeathSequenceFinished_ = false;
 
         NotifyPlayerDied();
 

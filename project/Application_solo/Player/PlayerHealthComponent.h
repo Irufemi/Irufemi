@@ -113,9 +113,9 @@ private:
     bool isDead_ = false;
     bool isGodMode_ = false;
 
-    static constexpr float kDefaultDeathSequenceDuration = 3.0f;
+    static constexpr float kDefaultDeathSequenceDuration = 2.0f;
     float deathSequenceDuration_ = kDefaultDeathSequenceDuration;
-    float deathStartTime_ = 0.0f;
+    float deathTimer_ = 0.0f;
     bool hasTriggeredDeathSequenceFinished_ = false;
 
     // 被弾・無敵時間

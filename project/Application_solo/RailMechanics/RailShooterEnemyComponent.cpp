@@ -15,6 +15,8 @@
 #include "Physics/CollisionManager.h"
 #include "Core/Math/MathFunction.h"
 #include "Environment/DebrisComponent.h"
+#include "Renderer/Pipeline/PSOManager.h"
+#include "RHI/DirectX12/DirectXCommon.h"
 #include <cmath>
 #include <algorithm>
 
@@ -32,6 +34,11 @@ void RailShooterEnemyComponent::OnRegisterProperties() {
     RegisterProperty("CurrentDistanceOffset", &currentDistanceOffset_);
     RegisterProperty("BaseFormationOffsetX", &baseFormationOffset_.x);
     RegisterProperty("BaseFormationOffsetY", &baseFormationOffset_.y);
+    RegisterProperty("SniperTelegraphDuration", &sniperTelegraphDuration_);
+    RegisterProperty("SniperLockLeadTime", &sniperLockLeadTime_);
+    RegisterProperty("SniperLaserRadius", &sniperLaserRadius_);
+    RegisterProperty("SniperLaserLength", &sniperLaserLength_);
+    RegisterProperty("SniperLaserColor", &sniperLaserColor_);
 }
 
 void RailShooterEnemyComponent::Initialize() {
@@ -51,6 +58,9 @@ void RailShooterEnemyComponent::Initialize() {
     baseFormationOffset_ = {0.0f, 0.0f};
     currentLocalOffset_ = {0.0f, 0.0f};
     currentDistanceOffset_ = targetDistance_ + 20.0f;
+    isAimLocked_ = false;
+    lockedAimDir_ = {0.0f, 0.0f, -1.0f};
+    lockedTargetPos_ = {0.0f, 0.0f, 0.0f};
 
     auto targetable = gameObject_->GetComponent<TargetableComponent>();
     if (!targetable) {
@@ -185,7 +195,9 @@ void RailShooterEnemyComponent::Update() {
                 state_ = EnemyAIState::Combat;
             }
             stateTimer_ = 0.0f;
-            shootTimer_ = 0.6f; // 初弾タイマー
+            shootTimer_ = (behaviorType_ == static_cast<int>(EnemyBehaviorType::PredictiveSniper))
+                              ? (std::max)(sniperTelegraphDuration_, 1.2f)
+                              : 0.6f; // 初弾タイマー
         }
         break;
     }
@@ -198,19 +210,69 @@ void RailShooterEnemyComponent::Update() {
         currentLocalOffset_.x = baseFormationOffset_.x + std::sin(hoverTimer_ * 2.5f) * 4.0f;
         currentLocalOffset_.y = baseFormationOffset_.y + std::cos(hoverTimer_ * 2.0f) * 2.5f;
 
-        // 射撃処理
+        // 射撃および予兆（Telegraphing）処理
         shootTimer_ -= dt;
-        if (shootTimer_ <= 0.0f) {
-            if (playerObj && playerObj->GetTransform()) {
-                if (behaviorType_ == static_cast<int>(EnemyBehaviorType::PredictiveSniper)) {
-                    // スナイパー：プレイヤーの未来位置を先読みして偏差射撃
-                    ShootPredictiveAtPlayer(currentPlayerPos, playerVelocity_);
+
+        if (behaviorType_ == static_cast<int>(EnemyBehaviorType::PredictiveSniper)) {
+            // スナイパー：予兆期間中の射線更新およびロック判定
+            if (shootTimer_ <= sniperTelegraphDuration_ && shootTimer_ > 0.0f) {
+                if (shootTimer_ > sniperLockLeadTime_) {
+                    // [追従フェーズ] プレイヤーの未来位置をリアルタイム計算して射線を追従
+                    isAimLocked_ = false;
+                    Irufemi::Vector3 myPos = transform->GetWorldPosition();
+                    float dx = currentPlayerPos.x - myPos.x;
+                    float dy = currentPlayerPos.y - myPos.y;
+                    float dz = currentPlayerPos.z - myPos.z;
+                    float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+                    float travelTime = dist / (std::max)(bulletSpeed_, 1.0f);
+                    travelTime = std::clamp(travelTime, 0.0f, 1.2f); // 過剰な未来予測の暴走を防止
+
+                    lockedTargetPos_ = {
+                        currentPlayerPos.x + playerVelocity_.x * travelTime,
+                        currentPlayerPos.y + playerVelocity_.y * travelTime,
+                        currentPlayerPos.z + playerVelocity_.z * travelTime
+                    };
+
+                    Irufemi::Vector3 aimDiff = {
+                        lockedTargetPos_.x - myPos.x,
+                        lockedTargetPos_.y - myPos.y,
+                        lockedTargetPos_.z - myPos.z
+                    };
+                    float aimLen = std::sqrt(aimDiff.x * aimDiff.x + aimDiff.y * aimDiff.y + aimDiff.z * aimDiff.z);
+                    if (aimLen > 0.0001f) {
+                        lockedAimDir_ = {aimDiff.x / aimLen, aimDiff.y / aimLen, aimDiff.z / aimLen};
+                    } else {
+                        lockedAimDir_ = {0.0f, 0.0f, -1.0f};
+                    }
                 } else {
-                    // 通常機：自機狙い射撃
-                    ShootAtPlayer(currentPlayerPos);
+                    // [ロック固定フェーズ] 射線固定（追従停止。自機が動いても空間に射線が固定される）
+                    isAimLocked_ = true;
                 }
             }
-            shootTimer_ = shootInterval_;
+
+            if (shootTimer_ <= 0.0f) {
+                // 固定された射線ベクトルへ高威力の偏差弾を発射
+                Irufemi::Vector3 myPos = transform->GetWorldPosition();
+                if (!bulletManager_) {
+                    auto scene = gameObject_ ? gameObject_->GetScene() : nullptr;
+                    if (scene) {
+                        bulletManager_ = EnemyBulletManagerComponent::GetOrCreate(scene);
+                    }
+                }
+                if (bulletManager_) {
+                    bulletManager_->FireBullet(myPos, lockedAimDir_, bulletSpeed_, 15, bulletScale_);
+                }
+                shootTimer_ = shootInterval_;
+                ResetTelegraph();
+            }
+        } else {
+            // 通常機：自機狙い射撃
+            if (shootTimer_ <= 0.0f) {
+                if (playerObj && playerObj->GetTransform()) {
+                    ShootAtPlayer(currentPlayerPos);
+                }
+                shootTimer_ = shootInterval_;
+            }
         }
 
         // 一定時間経過で離脱フェーズへ移行
@@ -292,6 +354,104 @@ void RailShooterEnemyComponent::Update() {
     float pitch = std::asin(std::clamp(-lookDir.y, -1.0f, 1.0f));
     float currentRoll = (state_ == EnemyAIState::Dive) ? diveRollAngle_ : 0.0f;
     transform->SetWorldRotation(Irufemi::Vector3{pitch, yaw, currentRoll});
+}
+
+void RailShooterEnemyComponent::EnsureTelegraphResources() {
+    if (telegraphCylinder_) {
+        return;
+    }
+    auto engine = GetEngine();
+    if (!engine) {
+        return;
+    }
+
+    telegraphCylinder_ = std::make_unique<Primitive3DObject>();
+    telegraphCylinder_->Initialize(Irufemi::PrimitiveType::Cylinder);
+    telegraphCylinder_->SetColor(sniperLaserColor_);
+    telegraphCylinder_->SetCastShadows(false);
+    telegraphCylinder_->SetCullingEnabled(false);
+    telegraphCylinder_->SetIsTransparent(true);
+
+    auto dxCommon = engine->GetDirectXCommon();
+    if (dxCommon) {
+        aoeParamsBuffer_.Initialize(dxCommon);
+        aoeParamsData_ = AOEParams();
+        aoeParamsData_.shapeType = 2; // Cylinder用
+        aoeParamsData_.warningRatio = 0.0f;
+        aoeParamsBuffer_.UpdateAll(aoeParamsData_);
+    }
+}
+
+void RailShooterEnemyComponent::ResetTelegraph() {
+    isAimLocked_ = false;
+    lockedAimDir_ = {0.0f, 0.0f, -1.0f};
+    lockedTargetPos_ = {0.0f, 0.0f, 0.0f};
+}
+
+void RailShooterEnemyComponent::OnDisable() {
+    ResetTelegraph();
+}
+
+void RailShooterEnemyComponent::Draw() {
+    if (behaviorType_ != static_cast<int>(EnemyBehaviorType::PredictiveSniper)) {
+        return;
+    }
+    if (!isActive_ || !IsAlive() || state_ != EnemyAIState::Combat) {
+        return;
+    }
+    if (shootTimer_ > sniperTelegraphDuration_ || shootTimer_ <= 0.0f) {
+        return;
+    }
+
+    EnsureTelegraphResources();
+    if (!telegraphCylinder_) {
+        return;
+    }
+
+    auto engine = GetEngine();
+    if (!engine || !engine->GetDirectXCommon()) {
+        return;
+    }
+
+    auto transform = GetTransform();
+    if (!transform) {
+        return;
+    }
+
+    Irufemi::Vector3 myPos = transform->GetWorldPosition();
+    float warningRatio = std::clamp(1.0f - (shootTimer_ / sniperTelegraphDuration_), 0.0f, 1.0f);
+
+    // ロック固定中は赤と白の超高速パルス点滅で強烈に発射警告
+    if (isAimLocked_) {
+        float pulse = std::sin(shootTimer_ * 55.0f);
+        Irufemi::Vector4 flashColor = (pulse > 0.0f)
+            ? Irufemi::Vector4{1.0f, 0.15f, 0.15f, 0.95f}
+            : Irufemi::Vector4{1.0f, 0.95f, 0.95f, 1.0f};
+        telegraphCylinder_->SetColor(flashColor);
+        aoeParamsData_.warningRatio = 1.0f;
+    } else {
+        telegraphCylinder_->SetColor(sniperLaserColor_);
+        aoeParamsData_.warningRatio = warningRatio;
+    }
+
+    aoeParamsData_.shapeType = 2; // Cylinder
+    uint32_t frameIndex = engine->GetDirectXCommon()->GetCurrentBackBufferIndex();
+    aoeParamsBuffer_.Update(aoeParamsData_, frameIndex);
+
+    // シリンダーの姿勢・サイズ設定（高さ方向: Y軸(0, 1, 0)基準）
+    Irufemi::Matrix4x4 rotMat = Irufemi::Math::DirectionToDirection({0.0f, 1.0f, 0.0f}, lockedAimDir_);
+    Irufemi::Vector3 rotate = Irufemi::Math::ExtractEulerFromMatrix(rotMat);
+    Irufemi::Vector3 center = myPos + lockedAimDir_ * (sniperLaserLength_ * 0.5f);
+
+    telegraphCylinder_->SetPosition(center);
+    telegraphCylinder_->SetRotate(rotate);
+    telegraphCylinder_->SetScale({sniperLaserRadius_, sniperLaserLength_, sniperLaserRadius_});
+    telegraphCylinder_->Update();
+
+    telegraphCylinder_->SetCustomPSO("AOEWarning", Irufemi::BlendMode::kBlendModeAdd,
+                                     PSOManager::DepthWrite::Disable, PSOManager::CullMode::None);
+    telegraphCylinder_->SetCustomCBVAddress(aoeParamsBuffer_.GetGPUVirtualAddress(frameIndex));
+    telegraphCylinder_->Draw();
 }
 
 void RailShooterEnemyComponent::ShootPredictiveAtPlayer(const Irufemi::Vector3& playerPos,
@@ -426,6 +586,7 @@ void RailShooterEnemyComponent::TakeDamage(int damage) {
 
 void RailShooterEnemyComponent::NotifyDespawn(DespawnReason reason) {
     isActive_ = false;
+    ResetTelegraph();
     if (onDespawnListener_) {
         onDespawnListener_(gameObject_, reason);
     } else if (onDeathCallback_ &&

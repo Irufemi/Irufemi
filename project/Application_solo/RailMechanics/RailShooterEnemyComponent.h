@@ -2,7 +2,11 @@
 #include "Framework/Component/Component.h"
 #include "Combat/IDamageable.h"
 #include "Core/Math/Vector2.h"
+#include "Renderer/Data/AOEParams.h"
+#include "RHI/DirectX12/ConstantBuffer.h"
+#include "Renderer/Object/3D/Primitive/Primitive3DObject.h"
 #include <functional>
+#include <memory>
 
 /**
  * @enum EnemyAIState
@@ -56,6 +60,8 @@ public:
     void Initialize() override;
     void Start() override;
     void Update() override;
+    void Draw() override;
+    void OnDisable() override;
     void OnCollisionEnter(GameObject* other) override;
     void OnRegisterProperties() override;
 
@@ -151,6 +157,9 @@ private:
     void ShootPredictiveAtPlayer(const Irufemi::Vector3& playerPos, const Irufemi::Vector3& playerVel);
     GameObject* GetPlayerObject();
 
+    void EnsureTelegraphResources();
+    void ResetTelegraph();
+
 private:
     EnemyBulletManagerComponent* bulletManager_ = nullptr; //!< キャッシュされた弾マネージャー
     SplineComponent* cachedSpline_ = nullptr;              //!< キャッシュされたレールスプライン
@@ -158,6 +167,24 @@ private:
     float currentDistanceOffset_ = 85.0f;                  //!< レール上の自機からの現在相対距離 (m)
     Irufemi::Vector2 baseFormationOffset_ = {0.0f, 0.0f};  //!< フォーメーションによる基本XYオフセット
     Irufemi::Vector2 currentLocalOffset_ = {0.0f, 0.0f};   //!< 浮遊サイン波が付加された現在XYオフセット
+
+    // スナイパー用AOE予兆（Telegraphing）パラメータ
+    float sniperTelegraphDuration_ = 1.0f; //!< 射撃前の予兆レーザー照射時間（秒）
+    float sniperLockLeadTime_ = 0.25f;     //!< 射撃前の射線固定（ロック）時間（秒）
+    float sniperLaserRadius_ = 0.12f;      //!< 予兆レーザーの半径（細いレーザーサイト）
+    float sniperLaserLength_ = 200.0f;     //!< 予兆レーザーの最大到達長
+    Irufemi::Vector4 sniperLaserColor_ = {1.0f, 0.15f, 0.15f, 0.85f}; //!< レーザー基本色
+
+    // 内部予兆ステート
+    bool isAimLocked_ = false;                              //!< 射線が固定されているか
+    Irufemi::Vector3 lockedAimDir_ = {0.0f, 0.0f, -1.0f};   //!< 固定された射撃ベクトル
+    Irufemi::Vector3 lockedTargetPos_ = {0.0f, 0.0f, 0.0f}; //!< 固定された目標座標
+
+    // 描画リソース（スナイパー時のみ遅延初期化）
+    std::unique_ptr<Primitive3DObject> telegraphCylinder_ = nullptr;
+    ConstantBuffer<AOEParams> aoeParamsBuffer_;
+    AOEParams aoeParamsData_{};
+
 
     int behaviorType_ = 0;                                 //!< 戦術行動タイプ (0: Standard, 1: DiveBomber, 2: PredictiveSniper)
     EnemyAIState state_ = EnemyAIState::Approach;          //!< 現在のAIステート
