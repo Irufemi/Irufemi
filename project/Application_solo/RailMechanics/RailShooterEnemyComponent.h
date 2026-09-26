@@ -1,6 +1,7 @@
 #pragma once
 #include "Framework/Component/Component.h"
 #include "Combat/IDamageable.h"
+#include "Core/Math/Vector2.h"
 #include <functional>
 
 /**
@@ -15,6 +16,8 @@ enum class EnemyAIState {
 
 class GameObject;
 class EnemyBulletManagerComponent;
+class SplineComponent;
+class SplineFollowerComponent;
 
 /**
  * @class RailShooterEnemyComponent
@@ -50,6 +53,26 @@ public:
         onDeathCallback_ = std::move(callback);
     }
 
+    /**
+     * @brief レール追従パラメータを一括設定する（WaveEventHandlers等から呼び出し）
+     * @param spline レールスプライン
+     * @param follower プレイヤーのスプライン追従コンポーネント
+     * @param initialDistOffset 出現時のレール前方距離オフセット (m)
+     * @param targetDistOffset 交戦時に維持する目標レール距離 (m)
+     * @param formationOffset フォーメーションによるローカルXYオフセット
+     */
+    void SetRailTrackingParams(SplineComponent* spline, SplineFollowerComponent* follower,
+                               float initialDistOffset, float targetDistOffset,
+                               const Irufemi::Vector2& formationOffset);
+
+    void SetFormationOffset(const Irufemi::Vector2& offset) {
+        baseFormationOffset_ = offset;
+        currentLocalOffset_ = offset;
+    }
+    void SetDistanceOffset(float offset) {
+        currentDistanceOffset_ = offset;
+    }
+
     // パラメータ設定
     void SetSpeed(float speed) {
         speed_ = speed;
@@ -76,6 +99,12 @@ private:
 
 private:
     EnemyBulletManagerComponent* bulletManager_ = nullptr; //!< キャッシュされた弾マネージャー
+    SplineComponent* cachedSpline_ = nullptr;              //!< キャッシュされたレールスプライン
+    SplineFollowerComponent* playerFollower_ = nullptr;    //!< プレイヤーのスプライン追従情報
+    float currentDistanceOffset_ = 85.0f;                  //!< レール上の自機からの現在相対距離 (m)
+    Irufemi::Vector2 baseFormationOffset_ = {0.0f, 0.0f};  //!< フォーメーションによる基本XYオフセット
+    Irufemi::Vector2 currentLocalOffset_ = {0.0f, 0.0f};   //!< 浮遊サイン波が付加された現在XYオフセット
+
     EnemyAIState state_ = EnemyAIState::Approach;          //!< 現在のAIステート
     float stateTimer_ = 0.0f;                              //!< ステート内タイマー
     float combatDuration_ = 7.5f;                          //!< 滞空交戦の制限時間（秒）
