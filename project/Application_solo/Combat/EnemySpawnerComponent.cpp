@@ -21,15 +21,17 @@
 // CPUとGPUのオーバーヘッドが劇的に改善されます（Unreal EngineのHISMやUnityのDOTSに近いアーキテクチャ）。
 
 EnemySpawnerComponent::~EnemySpawnerComponent() {
-    if (enemyPool_) {
-        enemyPool_->ForEach([](const std::shared_ptr<GameObject>& enemy) {
-            if (enemy) {
-                if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
-                    enemyComp->SetOnDeathCallback(nullptr);
-                    enemyComp->SetOnDespawnListener(nullptr);
+    for (auto& pair : prefabPools_) {
+        if (pair.second && pair.second->pool) {
+            pair.second->pool->ForEach([](const std::shared_ptr<GameObject>& enemy) {
+                if (enemy) {
+                    if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
+                        enemyComp->SetOnDeathCallback(nullptr);
+                        enemyComp->SetOnDespawnListener(nullptr);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 }
 
@@ -43,61 +45,104 @@ void EnemySpawnerComponent::OnRegisterProperties() {
 }
 
 void EnemySpawnerComponent::Start() {
+    // 1. ステージで使用される全プレハブの事前プール生成（GPU Instancing & オブジェクトプール事前確保）
+    const std::vector<std::pair<std::string, uint32_t>> preloadConfigs = {
+        {enemyPrefabPath_, 20},
+        {"resources/prefabs/Enemy_DiveDrone.json", 30},
+        {"resources/prefabs/Enemy_SniperArtillery.json", 15}};
+
+    auto scene = gameObject_ ? gameObject_->GetScene() : nullptr;
+    auto voxelMgr = (scene && scene->GetEngine()) ? scene->GetEngine()->GetVoxelParticleManager() : nullptr;
+
+    for (const auto& [prefabPath, poolSize] : preloadConfigs) {
+        if (prefabPath.empty()) {
+            continue;
+        }
+
+        auto* poolData = GetOrCreatePrefabPool(prefabPath, poolSize);
+
+        // 2. エンジン既存のボクセル化プール事前確保APIを呼び出し、ロード画面中に完了待機させる
+        if (poolData && voxelMgr && !poolData->modelPath.empty()) {
+            voxelMgr->ReservePool(poolData->modelPath, {2, 2, 2}, 8);
+        }
+    }
+}
+
+EnemySpawnerComponent::PrefabPoolData* EnemySpawnerComponent::GetOrCreatePrefabPool(const std::string& prefabPath,
+                                                                                   uint32_t poolSize) {
+    if (prefabPath.empty()) {
+        return nullptr;
+    }
+
+    auto it = prefabPools_.find(prefabPath);
+    if (it != prefabPools_.end() && it->second) {
+        return it->second.get();
+    }
+
+    auto poolData = std::make_unique<PrefabPoolData>();
+    poolData->prefabPath = prefabPath;
+
     // プレハブ（Archetype）からモデル・基本スケール・当たり判定半径を自動解決
-    auto metrics = PrefabUtility::ExtractMetrics(enemyPrefabPath_);
+    auto metrics = PrefabUtility::ExtractMetrics(prefabPath);
     if (!metrics.modelPath.empty()) {
-        enemyModelPath_ = metrics.modelPath;
-    }
-    baseEnemyScale_ = metrics.baseScale;
-    if (metrics.hasSphereCollider) {
-        baseColliderRadius_ = (std::max)(metrics.colliderRadius, 1.6f);
+        poolData->modelPath = metrics.modelPath;
     } else {
-        baseColliderRadius_ = 1.8f;
+        poolData->modelPath = enemyModelPath_;
+    }
+    poolData->baseScale = metrics.baseScale;
+    if (metrics.hasSphereCollider) {
+        poolData->baseColliderRadius = (std::max)(metrics.colliderRadius, 1.3f);
+    } else {
+        poolData->baseColliderRadius = 1.6f;
     }
 
-    batchRenderer_ = gameObject_->AddComponent<ModelBatchRendererComponent>();
-    batchRenderer_->LoadModel(enemyModelPath_);
-
-    auto scene = gameObject_->GetScene();
-    if (!scene) {
-        return;
+    // プレハブ専用の ModelBatchRendererComponent をアタッチしてモデルをロード（Instancing描画）
+    if (gameObject_) {
+        poolData->batchRenderer = gameObject_->AddComponent<ModelBatchRendererComponent>();
+        poolData->batchRenderer->LoadModel(poolData->modelPath);
     }
 
-    auto weakObj = gameObject_->weak_from_this();
+    auto weakObj = gameObject_ ? gameObject_->weak_from_this() : std::weak_ptr<GameObject>();
+    std::string capturedPrefabPath = prefabPath;
+    std::string capturedModelPath = poolData->modelPath;
+    Irufemi::Vector3 capturedBaseScale = poolData->baseScale;
+    float capturedColliderRadius = poolData->baseColliderRadius;
 
-    enemyPool_ = std::make_unique<ObjectPool<GameObject>>(maxEnemies_, [this, weakObj]() {
+    uint32_t effectivePoolSize = (poolSize > 0) ? poolSize : static_cast<uint32_t>(maxEnemies_);
+
+    poolData->pool = std::make_unique<ObjectPool<GameObject>>(effectivePoolSize, [weakObj, capturedPrefabPath,
+                                                                                  capturedModelPath, capturedBaseScale,
+                                                                                  capturedColliderRadius]() {
         std::shared_ptr<GameObject> enemy = nullptr;
         if (auto spawnerObj = weakObj.lock()) {
-            enemy = spawnerObj->Instantiate(enemyPrefabPath_);
+            enemy = spawnerObj->Instantiate(capturedPrefabPath);
         }
         if (!enemy) {
-            enemy = std::make_shared<GameObject>("DebugEnemy");
+            enemy = std::make_shared<GameObject>("Enemy");
             enemy->AddComponent<RailShooterEnemyComponent>();
         }
 
-        enemy->SetIsSerializable(false); // セーブデータ（JSON）への混入を防止
+        enemy->SetIsSerializable(false); // セーブデータへの混入を防止
 
-        // スポナーの子オブジェクトとして登録しライフサイクルを同期
         if (auto spawnerObj = weakObj.lock()) {
             spawnerObj->AddChild(enemy);
         }
 
-        // プレハブ単体プレビュー用レンダラーがあれば削除し、SpawnerのBatchRenderer（Instancing）で一括描画
+        // プレハブ個別の MeshRenderer は削除し、Spawner側の ModelBatchRenderer（GPU Instancing）で一括描画
         if (auto meshRenderer = enemy->GetComponent<MeshRendererComponent>()) {
             enemy->RemoveComponent(meshRenderer);
         }
 
-        auto transform = enemy->GetTransform();
-        if (transform) {
-            transform->SetScale(baseEnemyScale_);
+        if (auto transform = enemy->GetTransform()) {
+            transform->SetScale(capturedBaseScale);
         }
 
         if (auto collider = enemy->GetComponent<SphereColliderComponent>()) {
-            collider->SetLocalRadius(baseColliderRadius_);
+            collider->SetLocalRadius(capturedColliderRadius);
         }
 
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
-            enemyComp->SetOnDespawnListener([weakObj](GameObject* deadObj, DespawnReason reason) {
+            enemyComp->SetOnDespawnListener([weakObj, capturedModelPath](GameObject* deadObj, DespawnReason reason) {
                 if (!deadObj) {
                     return;
                 }
@@ -129,14 +174,14 @@ void EnemySpawnerComponent::Start() {
                         }
                         int dropCount = (scaleMult >= 1.3f) ? 4 : 2;
 
-                        // 3. 自機手前方向への物理バーストドロップ（通常ガレキのランダム散乱）
+                        // 3. 自機手前方向への物理バーストドロップ
                         if (auto debrisMgrObj = scene->FindGameObject("DebrisManager")) {
                             if (auto debrisMgr = debrisMgrObj->GetComponent<DebrisManagerComponent>()) {
                                 debrisMgr->SpawnDebrisBurst(deadPos, playerPos, dropCount, 3.5f, 12.0f);
                             }
                         }
 
-                        // 4. 敵機体のVoxelメッシュ破砕演出
+                        // 4. 敵機体のVoxelメッシュ破砕演出（プレハブ固有のモデルメッシュから破砕）
                         if (auto engine = scene->GetEngine()) {
                             if (auto voxelMgr = engine->GetVoxelParticleManager()) {
                                 VoxelEmitter p{};
@@ -145,9 +190,9 @@ void EnemySpawnerComponent::Start() {
                                 p.gravity = 4.0f;
                                 p.dispersion = 14.0f;
                                 p.scale = {0.5f, 0.5f, 0.5f};
-                                p.startColor = {1.8f, 1.3f, 0.9f, 1.0f}; // 激しい火花・金属破砕光
+                                p.startColor = {1.8f, 1.3f, 0.9f, 1.0f};
                                 p.endColor = {0.1f, 0.1f, 0.1f, 1.0f};
-                                voxelMgr->PlayExplosion("Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj", deadPos,
+                                voxelMgr->PlayExplosion(capturedModelPath, deadPos,
                                                         {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, currentScale, p,
                                                         {2, 2, 2});
                             }
@@ -160,16 +205,18 @@ void EnemySpawnerComponent::Start() {
                     }
                 }
 
-                // プールへの返却（画面外離脱・タイムアウト時も安全にここへ合流して再利用）
+                // プールへの返却
                 deadObj->SetIsActive(false);
                 if (auto spawnerObj = weakObj.lock()) {
                     if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
-                        if (spawner->enemyPool_) {
-                            auto it = spawner->activeEnemyHandles_.find(deadObj);
-                            if (it != spawner->activeEnemyHandles_.end()) {
-                                spawner->enemyPool_->Release(it->second);
-                                spawner->activeEnemyHandles_.erase(it);
+                        auto it = spawner->activeEnemyHandles_.find(deadObj);
+                        if (it != spawner->activeEnemyHandles_.end()) {
+                            const std::string& pPath = it->second.first;
+                            auto pPoolIt = spawner->prefabPools_.find(pPath);
+                            if (pPoolIt != spawner->prefabPools_.end() && pPoolIt->second && pPoolIt->second->pool) {
+                                pPoolIt->second->pool->Release(it->second.second);
                             }
+                            spawner->activeEnemyHandles_.erase(it);
                         }
                     }
                 }
@@ -179,18 +226,30 @@ void EnemySpawnerComponent::Start() {
         enemy->SetIsActive(false);
         return enemy;
     });
+
+    PrefabPoolData* result = poolData.get();
+    prefabPools_[prefabPath] = std::move(poolData);
+    return result;
 }
 
 void EnemySpawnerComponent::Update() {
-    if (batchRenderer_) {
-        // 毎フレーム、バッチレンダラーのインスタンス（描画キュー）をクリアします。
-        batchRenderer_->ClearInstances();
+    // 1. 各プレハブ専用の ModelBatchRendererComponent インスタンス描画キューをクリア
+    for (auto& pair : prefabPools_) {
+        if (pair.second && pair.second->batchRenderer) {
+            pair.second->batchRenderer->ClearInstances();
+        }
+    }
 
-        // アクティブなすべての敵のトランスフォームを収集し、一括登録します（Instancing描画）。
-        for (const auto& pair : activeEnemyHandles_) {
-            GameObject* enemyObj = pair.first;
-            if (enemyObj && enemyObj->GetIsActive()) {
-                batchRenderer_->AddInstanceWorld(enemyObj->GetTransform()->GetWorldMatrix());
+    // 2. アクティブなすべての敵のワールド行列を、該当プレハブのバッチレンダラーへ一括登録
+    for (const auto& pair : activeEnemyHandles_) {
+        GameObject* enemyObj = pair.first;
+        if (enemyObj && enemyObj->GetIsActive()) {
+            const std::string& prefabPath = pair.second.first;
+            auto poolIt = prefabPools_.find(prefabPath);
+            if (poolIt != prefabPools_.end() && poolIt->second && poolIt->second->batchRenderer) {
+                if (auto transform = enemyObj->GetTransform()) {
+                    poolIt->second->batchRenderer->AddInstanceWorld(transform->GetWorldMatrix());
+                }
             }
         }
     }
@@ -201,7 +260,7 @@ void EnemySpawnerComponent::Update() {
         return;
     }
 
-    // '2'キーで敵をスポーン
+    // '2'キーで敵をスポーン（デバッグ用）
     if (input->IsKeyPressed('2')) {
         Irufemi::Vector3 spawnPos = {0.0f, 0.0f, 50.0f};
         Irufemi::Vector3 spawnRot = {0.0f, Irufemi::Math::PI, 0.0f};
@@ -211,14 +270,12 @@ void EnemySpawnerComponent::Update() {
             auto playerObj = scene->FindGameObject("Player");
             if (playerObj) {
                 if (auto transform = playerObj->GetComponent<TransformComponent>()) {
-                    // プレイヤーのワールド前方へ50m
                     spawnPos = transform->GetWorldPosition();
                     auto forward = transform->GetWorldForward();
                     spawnPos.x += forward.x * 50.0f;
                     spawnPos.y += forward.y * 50.0f;
                     spawnPos.z += forward.z * 50.0f;
 
-                    // プレイヤーの右方向と上方向に少し散らす
                     auto right = transform->GetWorldRight();
                     auto up = transform->GetWorldUp();
 
@@ -229,7 +286,6 @@ void EnemySpawnerComponent::Update() {
                     spawnPos.y += right.y * randX + up.y * randY;
                     spawnPos.z += right.z * randX + up.z * randY;
 
-                    // プレイヤーと向かい合うように回転を設定（180度反転）
                     spawnRot = transform->GetWorldRotation();
                     spawnRot.y += Irufemi::Math::PI;
                 }
@@ -242,31 +298,38 @@ void EnemySpawnerComponent::Update() {
 
 GameObject* EnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, const Irufemi::Vector3& rotation,
                                               float scaleMultiplier) {
-    if (!enemyPool_) {
+    return SpawnEnemyByPrefab(enemyPrefabPath_, position, rotation, scaleMultiplier);
+}
+
+GameObject* EnemySpawnerComponent::SpawnEnemyByPrefab(const std::string& prefabPath,
+                                                      const Irufemi::Vector3& position,
+                                                      const Irufemi::Vector3& rotation,
+                                                      float scaleMultiplier) {
+    auto poolData = GetOrCreatePrefabPool(prefabPath);
+    if (!poolData || !poolData->pool) {
         return nullptr;
     }
 
-    auto handle = enemyPool_->Acquire();
+    auto handle = poolData->pool->Acquire();
     if (!handle.IsValid()) {
         return nullptr;
     }
 
-    auto enemy = enemyPool_->Resolve(handle);
+    auto enemy = poolData->pool->Resolve(handle);
     if (enemy) {
-        activeEnemyHandles_[enemy.get()] = handle;
+        activeEnemyHandles_[enemy.get()] = {prefabPath, handle};
 
         if (auto transform = enemy->GetComponent<TransformComponent>()) {
             transform->SetWorldPosition(position);
             transform->SetWorldRotation(rotation);
-            transform->SetScale(baseEnemyScale_ * scaleMultiplier);
+            transform->SetScale(poolData->baseScale * scaleMultiplier);
         }
 
         if (auto collider = enemy->GetComponent<SphereColliderComponent>()) {
-            collider->SetLocalRadius(baseColliderRadius_ * scaleMultiplier);
+            collider->SetLocalRadius(poolData->baseColliderRadius * scaleMultiplier);
         }
 
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
-            // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ
             enemyComp->Initialize();
             enemyComp->SetScaleMultiplier(scaleMultiplier);
         }

@@ -130,6 +130,15 @@ void DebrisManagerComponent::Initialize() {
         variations_.emplace_back(std::move(var));
         varIndex++;
     }
+
+    // ガレキ破砕用ボクセルモデルを事前確保（エンジン既存のReservePoolを呼び出してロード画面中に完了待機）
+    if (auto scene = gameObject_ ? gameObject_->GetScene() : nullptr) {
+        if (auto engine = scene->GetEngine()) {
+            if (auto voxelMgr = engine->GetVoxelParticleManager()) {
+                voxelMgr->ReservePool("resources/model/Debris/Generic/Debris_Generic.obj", {2, 2, 2}, 16);
+            }
+        }
+    }
 }
 
 void DebrisManagerComponent::SpawnDebrisInFrontOfPlayer(int count) {

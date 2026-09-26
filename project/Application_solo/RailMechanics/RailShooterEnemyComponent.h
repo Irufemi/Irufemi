@@ -11,7 +11,18 @@
 enum class EnemyAIState {
     Approach, //!< 前方定位置への進入
     Combat,   //!< 自機と一定距離を保って滞空・射撃
+    Dive,     //!< 特攻急降下（DiveBomber専用: 自機へ向けて急加速突進）
     Disengage //!< 制限時間終了によるすれ違い離脱
+};
+
+/**
+ * @enum EnemyBehaviorType
+ * @brief 敵キャラクターの戦術行動タイプ
+ */
+enum class EnemyBehaviorType {
+    StandardGunner = 0,   //!< 従来の滞空・自機狙い射撃
+    DiveBomber = 1,       //!< 特攻急降下（射撃を行わず、高速で自機へ体当たり自爆）
+    PredictiveSniper = 2  //!< 偏差射撃（自機の移動ベクトルから未来予測位置を計算して射撃）
 };
 
 /**
@@ -128,9 +139,16 @@ public:
     void SetBulletSpeed(float speed) {
         bulletSpeed_ = speed;
     }
+    void SetBehaviorType(EnemyBehaviorType type) {
+        behaviorType_ = static_cast<int>(type);
+    }
+    EnemyBehaviorType GetBehaviorType() const {
+        return static_cast<EnemyBehaviorType>(behaviorType_);
+    }
 
 private:
     void ShootAtPlayer(const Irufemi::Vector3& playerPos);
+    void ShootPredictiveAtPlayer(const Irufemi::Vector3& playerPos, const Irufemi::Vector3& playerVel);
     GameObject* GetPlayerObject();
 
 private:
@@ -141,6 +159,7 @@ private:
     Irufemi::Vector2 baseFormationOffset_ = {0.0f, 0.0f};  //!< フォーメーションによる基本XYオフセット
     Irufemi::Vector2 currentLocalOffset_ = {0.0f, 0.0f};   //!< 浮遊サイン波が付加された現在XYオフセット
 
+    int behaviorType_ = 0;                                 //!< 戦術行動タイプ (0: Standard, 1: DiveBomber, 2: PredictiveSniper)
     EnemyAIState state_ = EnemyAIState::Approach;          //!< 現在のAIステート
     float stateTimer_ = 0.0f;                              //!< ステート内タイマー
     float combatDuration_ = 7.5f;                          //!< 滞空交戦の制限時間（秒）
@@ -151,6 +170,11 @@ private:
     int bodyDamage_ = 20;                                  //!< 体当たり衝突ダメージ
     float bulletScale_ = 0.3f;                             //!< 敵弾のスケール・コライダー半径
     float bulletSpeed_ = 32.0f;                            //!< 敵弾の飛翔速度
+
+    Irufemi::Vector3 lastPlayerPos_ = {0.0f, 0.0f, 0.0f};  //!< 前フレームのプレイヤー座標
+    Irufemi::Vector3 playerVelocity_ = {0.0f, 0.0f, 0.0f}; //!< プレイヤーの推定実効移動速度
+    bool hasLastPlayerPos_ = false;                        //!< 前フレーム座標の有効フラグ
+    float diveRollAngle_ = 0.0f;                           //!< 特攻急降下時のロール角
 
     float spawnProgress_ = 0.5f; //!< プレイヤーがどの進行度に達したらアクティブになるか (0.0 ~ 1.0)
     bool isActive_ = false;      //!< 現在活動中かどうか

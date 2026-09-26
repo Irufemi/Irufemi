@@ -84,6 +84,10 @@
 - [x] **フレームドロップ最適化 (Async & Zero Allocation)**
   - [x] 非同期レイキャスト (Async Raycast) の導入による視線判定のマルチスレッド化
   - [x] 毎フレーム生成されるコンテナのメンバ変数化（Zero Allocation化）によるGC負荷の根絶
+  - [x] **アセット完全事前初期化（Full Prewarm）とプレイ中ヒッチ・ロード画面突入の根絶**
+    - [x] `EnemySpawnerComponent::Start()` で登場全敵種別（ゴーレム・特攻ドローン・スナイパー砲台）のGPUバッチ描画とプレハブプール（各20/30/15体）を事前確保
+    - [x] `VoxelParticleManager::ReservePool()` を活用し、敵モデルおよびガレキモデルのボクセル化タスク・GPUコンピュートバッファをシーン開始前（`LoadingScreen` 表示中）に先行確定
+    - [x] `SceneManager::IsLoading()` のステート判定をシーン遷移待機フェーズ中に限定し、インゲームプレイ中への誤った `LoadingScreen` 強制割り込みを根本遮断
 
 ## 4. データ駆動設計 (Editor / Application)
 - [x] **外部データ（CSV/JSON）読み込み機構**
@@ -151,16 +155,16 @@
   - Unreal Engine の `Delegate` や汎用的な `EventBus` システムをエンジン側に新設し、「イベントの発行（Broadcast）」と「購読（Subscribe）」によってシステム間を完全に疎結合にする（例：`Event_PlayerTakeDamage` や `Event_PlayerDied` を投げるだけで全UIやマネージャーが一斉に反応する設計）。
 
 ## 10. エネミー多様化とプレハブ・データ駆動設計（Prefab-Based Enemy System）
-- [ ] **1. エネミープレハブ（Prefab）分離とアセット整備**
-  - [ ] TripoStudio等で生成したモデル（特攻機、スナイパー砲台機、重装甲機）の配置とマテリアル設定
-  - [ ] `resources/prefabs/` 配下に `Enemy_GravityGolem.json`（通常機）、`Enemy_DiveDrone.json`（特攻機）、`Enemy_SniperArtillery.json`（偏差機）等のプレハブを作成・パラメータ分離
-- [ ] **2. EnemySpawnerComponentのマルチモデル（Instancing）対応**
-  - [ ] プレハブパスに応じた動的スポーン機構（`SpawnEnemyByPrefab`）の導入
-  - [ ] モデル種別ごとに `ModelBatchRendererComponent` を自動管理し、GPU Instancing（DrawCall最小化）を維持したまま複数モデルを描画
-- [ ] **3. 敵AI戦術アルゴリズムの拡張（RailShooterEnemyComponent）**
-  - [ ] 行動タイプ列挙体 `EnemyBehaviorType`（`StandardGunner`, `DiveBomber`, `PredictiveSniper`）の実装
-  - [ ] 偏差射撃ルーチン（自機移動ベクトル $\vec{v}_p$ と弾速から着弾予測位置を計算して射撃）
-  - [ ] 急降下特攻ルーチン（弾を撃たず、旋回しながら自機座標へ高速ダイブして体当たりを試みる）
-- [ ] **4. WaveData_Stage1.jsonの刷新とレベルデザインの高度化**
-  - [ ] ウェーブ定義に `"Prefab"`（または `"EnemyType"`）パラメータを導入
-  - [ ] 序盤〜終盤の展開に合わせて「通常機編隊 ➔ 特攻急襲 ➔ 偏差狙撃 ➔ 複合編隊」へと起伏のあるゲームテンポを構築
+- [x] **1. エネミープレハブ（Prefab）分離とアセット整備**
+  - [x] TripoStudio等で生成したモデル（特攻機、スナイパー砲台機）の配置とマテリアル設定
+  - [x] `resources/prefabs/` 配下に `Enemy_GravityGolem.json`（通常機）、`Enemy_DiveDrone.json`（特攻機）、`Enemy_SniperArtillery.json`（偏差機）等のプレハブを作成・パラメータ分離
+- [x] **2. EnemySpawnerComponentのマルチモデル（Instancing）対応**
+  - [x] プレハブパスに応じた動的スポーン機構（`SpawnEnemyByPrefab`）の導入
+  - [x] モデル種別ごとに `ModelBatchRendererComponent` を自動管理し、GPU Instancing（DrawCall最小化）を維持したまま複数モデルを描画
+- [x] **3. 敵AI戦術アルゴリズムの拡張（RailShooterEnemyComponent）**
+  - [x] 行動タイプ列挙体 `EnemyBehaviorType`（`StandardGunner`, `DiveBomber`, `PredictiveSniper`）の実装
+  - [x] 偏差射撃ルーチン（自機移動ベクトル $\vec{v}_p$ と弾速から着弾予測位置を計算して射撃）
+  - [x] 急降下特攻ルーチン（弾を撃たず、旋回しながら自機座標へ高速ダイブして体当たりを試みる）
+- [x] **4. WaveData_Stage1.jsonの刷新とレベルデザインの高度化**
+  - [x] ウェーブ定義に `"Prefab"` および `"BehaviorType"` パラメータを導入
+  - [x] 序盤〜終盤の展開に合わせて「通常機編隊 ➔ 特攻急襲 ➔ 偏差狙撃 ➔ 複合編隊」へと起伏のあるゲームテンポを構築

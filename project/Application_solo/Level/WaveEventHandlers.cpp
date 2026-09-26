@@ -167,13 +167,25 @@ void SpawnEnemyHandler::Execute(WaveManagerComponent* manager, const WaveEventDa
             float initialDistOffset = oz - distanceBack;
             Irufemi::Vector2 formationOffset = {ox + distanceSide, oy};
 
-            if (auto enemyObj = spawner->SpawnEnemy(pos, spawnRot, scaleMultiplier)) {
+            std::string prefabPath = data.parameters.value("Prefab", "");
+            GameObject* enemyObj = nullptr;
+            if (!prefabPath.empty()) {
+                enemyObj = spawner->SpawnEnemyByPrefab(prefabPath, pos, spawnRot, scaleMultiplier);
+            } else {
+                enemyObj = spawner->SpawnEnemy(pos, spawnRot, scaleMultiplier);
+            }
+
+            if (enemyObj) {
                 if (auto enemyComp = enemyObj->GetComponent<RailShooterEnemyComponent>()) {
                     enemyComp->SetCombatDuration(combatDuration);
                     enemyComp->SetTargetDistance(targetDistance);
                     enemyComp->SetShootInterval(shootInterval);
                     enemyComp->SetBulletSpeed(bulletSpeed);
                     enemyComp->SetSpeed(speed);
+                    if (data.parameters.contains("BehaviorType")) {
+                        int bt = data.parameters["BehaviorType"].get<int>();
+                        enemyComp->SetBehaviorType(static_cast<EnemyBehaviorType>(bt));
+                    }
                     enemyComp->SetRailTrackingParams(spline, playerFollower, initialDistOffset, targetDistance,
                                                     formationOffset);
                 }
@@ -201,24 +213,20 @@ void SpawnEnemyHandler::DrawEditorPreview(WaveManagerComponent* manager, const W
         return;
     }
 
+    std::string prefabPath = data.parameters.value("Prefab", "resources/prefabs/Enemy_GravityGolem.json");
     std::string modelPath = "Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj";
     Irufemi::Vector3 baseScale = {1.2f, 1.2f, 1.2f};
     float baseRadius = 2.0f;
 
-    if (auto spawner = GetOrFindSpawner(manager)) {
+    auto metrics = PrefabUtility::ExtractMetrics(prefabPath);
+    if (!metrics.modelPath.empty()) {
+        modelPath = metrics.modelPath;
+    } else if (auto spawner = GetOrFindSpawner(manager)) {
         modelPath = spawner->GetEnemyModelPath();
-        baseScale = spawner->GetBaseEnemyScale();
-        baseRadius = spawner->GetBaseColliderRadius();
-    } else {
-        // スポナーが見つからない場合もプレハブから自動解決
-        auto metrics = PrefabUtility::ExtractMetrics("resources/prefabs/Enemy_GravityGolem.json");
-        if (!metrics.modelPath.empty()) {
-            modelPath = metrics.modelPath;
-        }
-        baseScale = metrics.baseScale;
-        if (metrics.hasSphereCollider) {
-            baseRadius = metrics.colliderRadius;
-        }
+    }
+    baseScale = metrics.baseScale;
+    if (metrics.hasSphereCollider) {
+        baseRadius = metrics.colliderRadius;
     }
 
     float scaleMultiplier = data.parameters.value("Scale", 1.0f);

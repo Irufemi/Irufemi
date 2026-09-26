@@ -19,6 +19,7 @@
 #include <algorithm>
 
 void RailShooterEnemyComponent::OnRegisterProperties() {
+    RegisterProperty("BehaviorType", &behaviorType_);
     RegisterProperty("SpawnProgress", &spawnProgress_);
     RegisterProperty("Speed", &speed_);
     RegisterProperty("HP", &hp_);
@@ -43,6 +44,8 @@ void RailShooterEnemyComponent::Initialize() {
     stateTimer_ = 0.0f;
     shootTimer_ = 0.6f;
     hoverTimer_ = 0.0f;
+    diveRollAngle_ = 0.0f;
+    hasLastPlayerPos_ = false;
     playerFollower_ = nullptr;
     cachedSpline_ = nullptr;
     baseFormationOffset_ = {0.0f, 0.0f};
@@ -137,6 +140,24 @@ void RailShooterEnemyComponent::Update() {
         return;
     }
 
+    // プレイヤーの実効移動速度を計測
+    Irufemi::Vector3 currentPlayerPos = {0.0f, 0.0f, 0.0f};
+    auto playerObj = GetPlayerObject();
+    if (playerObj && playerObj->GetTransform()) {
+        currentPlayerPos = playerObj->GetTransform()->GetWorldPosition();
+        if (hasLastPlayerPos_ && dt > 0.0001f) {
+            playerVelocity_ = {
+                (currentPlayerPos.x - lastPlayerPos_.x) / dt,
+                (currentPlayerPos.y - lastPlayerPos_.y) / dt,
+                (currentPlayerPos.z - lastPlayerPos_.z) / dt
+            };
+        } else {
+            playerVelocity_ = {0.0f, 0.0f, 0.0f};
+        }
+        lastPlayerPos_ = currentPlayerPos;
+        hasLastPlayerPos_ = true;
+    }
+
     float playerDist = playerFollower_->GetCurrentDistance();
 
     switch (state_) {
@@ -158,7 +179,11 @@ void RailShooterEnemyComponent::Update() {
 
         stateTimer_ += dt;
         if (std::abs(currentDistanceOffset_ - targetDistance_) < 2.0f || stateTimer_ >= 3.0f) {
-            state_ = EnemyAIState::Combat;
+            if (behaviorType_ == static_cast<int>(EnemyBehaviorType::DiveBomber)) {
+                state_ = EnemyAIState::Dive;
+            } else {
+                state_ = EnemyAIState::Combat;
+            }
             stateTimer_ = 0.0f;
             shootTimer_ = 0.6f; // 初弾タイマー
         }
@@ -173,12 +198,17 @@ void RailShooterEnemyComponent::Update() {
         currentLocalOffset_.x = baseFormationOffset_.x + std::sin(hoverTimer_ * 2.5f) * 4.0f;
         currentLocalOffset_.y = baseFormationOffset_.y + std::cos(hoverTimer_ * 2.0f) * 2.5f;
 
-        // 自機狙い弾の射撃
+        // 射撃処理
         shootTimer_ -= dt;
         if (shootTimer_ <= 0.0f) {
-            auto playerObj = GetPlayerObject();
             if (playerObj && playerObj->GetTransform()) {
-                ShootAtPlayer(playerObj->GetTransform()->GetWorldPosition());
+                if (behaviorType_ == static_cast<int>(EnemyBehaviorType::PredictiveSniper)) {
+                    // スナイパー：プレイヤーの未来位置を先読みして偏差射撃
+                    ShootPredictiveAtPlayer(currentPlayerPos, playerVelocity_);
+                } else {
+                    // 通常機：自機狙い射撃
+                    ShootAtPlayer(currentPlayerPos);
+                }
             }
             shootTimer_ = shootInterval_;
         }
@@ -188,6 +218,25 @@ void RailShooterEnemyComponent::Update() {
         if (stateTimer_ >= combatDuration_) {
             state_ = EnemyAIState::Disengage;
             stateTimer_ = 0.0f;
+        }
+        break;
+    }
+    case EnemyAIState::Dive: {
+        // 特攻機（DiveBomber）：自機前方から急加速して体当たり自爆コースへ突撃
+        currentDistanceOffset_ -= speed_ * 1.8f * dt;
+
+        // 突撃しながら自機の正面ラインへ向かって急激に収束
+        float tLerp = std::clamp(dt * 2.5f, 0.0f, 1.0f);
+        currentLocalOffset_.x = std::lerp(currentLocalOffset_.x, 0.0f, tLerp);
+        currentLocalOffset_.y = std::lerp(currentLocalOffset_.y, 0.0f, tLerp);
+
+        // 鋭いコルクスクリュー回転（ロール角加算）
+        diveRollAngle_ += dt * 14.0f;
+
+        // 自機後方に完全に抜けたら消滅
+        if (currentDistanceOffset_ < -30.0f) {
+            NotifyDespawn(DespawnReason::OutOfBounds);
+            return;
         }
         break;
     }
@@ -237,11 +286,60 @@ void RailShooterEnemyComponent::Update() {
     finalPos.z += right.z * currentLocalOffset_.x + up.z * currentLocalOffset_.y;
     transform->SetWorldPosition(finalPos);
 
-    // 自機と対面（-tangent）する姿勢制御
+    // 自機と対面（-tangent）する姿勢制御（Dive中はロール角を加算）
     Irufemi::Vector3 lookDir = {-tangent.x, -tangent.y, -tangent.z};
     float yaw = std::atan2(lookDir.x, lookDir.z);
     float pitch = std::asin(std::clamp(-lookDir.y, -1.0f, 1.0f));
-    transform->SetWorldRotation(Irufemi::Vector3{pitch, yaw, 0.0f});
+    float currentRoll = (state_ == EnemyAIState::Dive) ? diveRollAngle_ : 0.0f;
+    transform->SetWorldRotation(Irufemi::Vector3{pitch, yaw, currentRoll});
+}
+
+void RailShooterEnemyComponent::ShootPredictiveAtPlayer(const Irufemi::Vector3& playerPos,
+                                                         const Irufemi::Vector3& playerVel) {
+    if (!gameObject_) {
+        return;
+    }
+    auto scene = gameObject_->GetScene();
+    if (!scene) {
+        return;
+    }
+    auto transform = GetTransform();
+    if (!transform) {
+        return;
+    }
+
+    Irufemi::Vector3 myPos = transform->GetWorldPosition();
+    float dx = playerPos.x - myPos.x;
+    float dy = playerPos.y - myPos.y;
+    float dz = playerPos.z - myPos.z;
+    float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+    float travelTime = dist / (std::max)(bulletSpeed_, 1.0f);
+    travelTime = std::clamp(travelTime, 0.0f, 1.2f); // 過剰な未来予測の暴走を防止
+
+    // 自機の未来予測座標
+    Irufemi::Vector3 predictedTarget = {
+        playerPos.x + playerVel.x * travelTime,
+        playerPos.y + playerVel.y * travelTime,
+        playerPos.z + playerVel.z * travelTime
+    };
+
+    Irufemi::Vector3 dir = {predictedTarget.x - myPos.x, predictedTarget.y - myPos.y, predictedTarget.z - myPos.z};
+    float len = std::sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+    if (len > 0.0001f) {
+        dir.x /= len;
+        dir.y /= len;
+        dir.z /= len;
+    } else {
+        dir = {0.0f, 0.0f, -1.0f};
+    }
+
+    if (!bulletManager_) {
+        bulletManager_ = EnemyBulletManagerComponent::GetOrCreate(scene);
+    }
+    if (bulletManager_) {
+        // スナイパーは高威力(15)の高速弾
+        bulletManager_->FireBullet(myPos, dir, bulletSpeed_, 15, bulletScale_);
+    }
 }
 
 void RailShooterEnemyComponent::ShootAtPlayer(const Irufemi::Vector3& playerPos) {
