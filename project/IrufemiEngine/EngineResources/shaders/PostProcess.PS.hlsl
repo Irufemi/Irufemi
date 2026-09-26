@@ -18,6 +18,37 @@ SamplerState gSamplerPoint : register(s1);
 
 
 /**
+ * @brief 自機等の保護対象オブジェクトに対してスキップすべき視認性阻害エフェクトかどうかを判定する
+ * @param mode ポストプロセスモード
+ * @return true の場合、isProtected なピクセルではスキップされる
+ */
+bool IsDistortionOrBlurEffect(int32_t mode) {
+    switch (mode) {
+        case kPostProcessMode_Vignette:
+        case kPostProcessMode_Noise:
+        case kPostProcessMode_Slide:
+        case kPostProcessMode_Dissolve:
+        case kPostProcessMode_DepthBasedOutline:
+        case kPostProcessMode_RadialBlur:
+        case kPostProcessMode_Glitch:
+        case kPostProcessMode_LuminanceBasedOutline:
+        case kPostProcessMode_Pixelation:
+        case kPostProcessMode_Pointillism:
+        case kPostProcessMode_Posterization:
+        case kPostProcessMode_NightVision:
+        case kPostProcessMode_Kaleidoscope:
+        case kPostProcessMode_ChromaticAberration:
+        case kPostProcessMode_DisplacementMap:
+        case kPostProcessMode_DirectionalBlur:
+        case kPostProcessMode_Halftone:
+        case kPostProcessMode_DepthOfField:
+            return true;
+        default:
+            return false;
+    }
+}
+
+/**
  * @brief マスク（ID）ベースのカスタムアウトラインを適用する（AAAアプローチ）
  * 
  * 自身のピクセルだけでなく周囲のマスクIDをサンプリングし、エッジを検出します。
@@ -224,15 +255,16 @@ PixelShaderOutput main(VertexShaderOutput input) {
         }
     }
     
-    // 2. 保護フラグの判定 (保護されていればここで終了)
-    if (isProtected) {
-        PixelShaderOutput output;
-        output.color = color;
-        return output;
-    }
-
+    // 2. グローバルポストプロセスループ
     for (int32_t i = 0; i < gParams.effectCount; ++i) {
         int32_t mode = gParams.effects[i / 4][i % 4];
+
+        // 一線級エンジン基準: 自機保護フラグ(isProtected)がある場合、
+        // 視認性を損なう画面破壊系・ボケ系・歪み系エフェクトのみを選択的にスキップし、
+        // トーンマッピングやカラーグレーディングなどの色調・露出調整は自機にも適用して白浮きを防ぐ
+        if (isProtected && IsDistortionOrBlurEffect(mode)) {
+            continue;
+        }
 
         switch (mode) {
             case kPostProcessMode_Grayscale:
