@@ -86,7 +86,7 @@
   - [x] 毎フレーム生成されるコンテナのメンバ変数化（Zero Allocation化）によるGC負荷の根絶
   - [x] **アセット完全事前初期化（Full Prewarm）とプレイ中ヒッチ・ロード画面突入の根絶**
     - [x] `EnemySpawnerComponent::Start()` で登場全敵種別（ゴーレム・特攻ドローン・スナイパー砲台）のGPUバッチ描画とプレハブプール（各20/30/15体）を事前確保
-    - [x] `VoxelParticleManager::ReservePool()` を活用し、敵モデルおよびガレキモデルのボクセル化タスク・GPUコンピュートバッファをシーン開始前（`LoadingScreen` 表示中）に先行確定
+    - [x] `VoxelParticleManager::ReservePool()` を活用し、敵モデルおよびガレキモデルのボクセル化タスク・GPUコンピュートバッファをシーン開始前（`LoadingScreen` 表示中）に先行確定。薄型・オープンメッシュに対するポリゴン表面サンプリングフォールバックをエンジン（`ModelManager`）に導入し、ゼロボクセルエラー（Voxelization FAILED）を根絶
     - [x] `SceneManager::IsLoading()` のステート判定をシーン遷移待機フェーズ中に限定し、インゲームプレイ中への誤った `LoadingScreen` 強制割り込みを根本遮断
 
 ## 4. データ駆動設計 (Editor / Application)
@@ -164,6 +164,7 @@
 - [x] **3. 敵AI戦術アルゴリズムの拡張（RailShooterEnemyComponent）**
   - [x] 行動タイプ列挙体 `EnemyBehaviorType`（`StandardGunner`, `DiveBomber`, `PredictiveSniper`）の実装
   - [x] 偏差射撃ルーチン（自機移動ベクトル $\vec{v}_p$ と弾速から着弾予測位置を計算して射撃）
+  - [x] スナイパーエイム予告ライン（AOE Telegraphing）：`AOEWarning` PSOを用いた細い赤色レーザーサイト照射（1.0s前追尾 ➔ 0.25s前ロック固定・パルス点滅 ➔ 0.0s高速弾発射）により、先読み射撃のフェイント回避を可能にする駆け引き演出の実装
   - [x] 急降下特攻ルーチン（弾を撃たず、旋回しながら自機座標へ高速ダイブして体当たりを試みる）
 - [x] **4. WaveData_Stage1.jsonの刷新とレベルデザインの高度化**
   - [x] ウェーブ定義に `"Prefab"` および `"BehaviorType"` パラメータを導入

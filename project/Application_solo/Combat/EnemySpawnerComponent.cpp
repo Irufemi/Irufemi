@@ -63,7 +63,7 @@ void EnemySpawnerComponent::Start() {
 
         // 2. エンジン既存のボクセル化プール事前確保APIを呼び出し、ロード画面中に完了待機させる
         if (poolData && voxelMgr && !poolData->modelPath.empty()) {
-            voxelMgr->ReservePool(poolData->modelPath, {2, 2, 2}, 8);
+            voxelMgr->ReservePool(poolData->modelPath, {3, 3, 3}, 8);
         }
     }
 }
@@ -194,7 +194,7 @@ EnemySpawnerComponent::PrefabPoolData* EnemySpawnerComponent::GetOrCreatePrefabP
                                 p.endColor = {0.1f, 0.1f, 0.1f, 1.0f};
                                 voxelMgr->PlayExplosion(capturedModelPath, deadPos,
                                                         {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, currentScale, p,
-                                                        {2, 2, 2});
+                                                        {3, 3, 3});
                             }
                         }
 
