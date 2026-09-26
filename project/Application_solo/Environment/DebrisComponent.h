@@ -89,6 +89,9 @@ public:
         return variationIndex_;
     }
 
+    float GetBossDamage() const;
+    float GetEnemyDamage() const;
+
 private:
     friend class DebrisManagerComponent;
     DebrisState state_ = DebrisState::Idle;
@@ -104,8 +107,6 @@ private:
     float GetPullSpeed() const;
     float GetThrowSpeed() const;
     float GetOrbitSpeed() const;
-    float GetBossDamage() const;
-    float GetEnemyDamage() const;
     float GetCameraShakeIntensity() const;
     int GetCameraShakeDurationFrames() const;
     Irufemi::Vector4 GetPlayerAuraColor() const;

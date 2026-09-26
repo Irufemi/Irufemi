@@ -14,6 +14,7 @@
 #include "Framework/Scene/BaseScene.h"
 #include "Physics/CollisionManager.h"
 #include "Core/Math/MathFunction.h"
+#include "Environment/DebrisComponent.h"
 #include <cmath>
 #include <algorithm>
 
@@ -196,12 +197,7 @@ void RailShooterEnemyComponent::Update() {
 
         // 自機後方に完全に抜けたら消滅（画面外へ抜けるまで安全に生存）
         if (currentDistanceOffset_ < -30.0f) {
-            if (onDeathCallback_) {
-                onDeathCallback_(gameObject_);
-            } else {
-                gameObject_->SetIsActive(false);
-                gameObject_->Destroy();
-            }
+            NotifyDespawn(DespawnReason::OutOfBounds);
             return;
         }
         break;
@@ -285,13 +281,22 @@ void RailShooterEnemyComponent::OnCollisionEnter(GameObject* other) {
         return;
     }
 
-    // プレイヤー本体との接触時（体当たり）
+    // 1. 投擲されたガレキとの接触時
+    if (auto debris = other->GetComponent<DebrisComponent>()) {
+        if (debris->GetState() == DebrisState::Thrown) {
+            TakeDamage(debris->GetEnemyDamage());
+            return;
+        }
+    }
+
+    // 2. プレイヤー本体との接触時（体当たり）
     if (auto health = other->GetComponent<PlayerHealthComponent>()) {
         if (!health->IsInvincible()) {
             health->TakeDamage(bodyDamage_);
         }
         // 体当たり後は敵自身も自爆・撃破
-        TakeDamage(hp_);
+        hp_ = 0;
+        NotifyDespawn(DespawnReason::CollisionSuicide);
     }
 }
 
@@ -317,15 +322,19 @@ void RailShooterEnemyComponent::TakeDamage(int damage) {
     hp_ -= damage;
     if (hp_ <= 0) {
         hp_ = 0;
-        isActive_ = false;
-        if (gameObject_) {
-            auto callback = onDeathCallback_;
-            if (callback) {
-                callback(gameObject_);
-            } else {
-                gameObject_->SetIsActive(false);
-                gameObject_->Destroy();
-            }
-        }
+        NotifyDespawn(DespawnReason::KilledByPlayer);
+    }
+}
+
+void RailShooterEnemyComponent::NotifyDespawn(DespawnReason reason) {
+    isActive_ = false;
+    if (onDespawnListener_) {
+        onDespawnListener_(gameObject_, reason);
+    } else if (onDeathCallback_ &&
+               (reason == DespawnReason::KilledByPlayer || reason == DespawnReason::CollisionSuicide)) {
+        onDeathCallback_(gameObject_);
+    } else if (gameObject_) {
+        gameObject_->SetIsActive(false);
+        gameObject_->Destroy();
     }
 }

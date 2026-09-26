@@ -6,6 +6,7 @@
 #include "Framework/Scene/SceneSerializer.h"
 #include "Framework/Scene/BaseScene.h"
 #include "Environment/DebrisComponent.h"
+#include "Combat/IDamageable.h"
 #include "Core/System/IrufemiEngine.h"
 #include "Platform/Input/InputManager.h"
 #include "Core/Math/Random/Random.h"
@@ -210,17 +211,30 @@ void DebrisManagerComponent::SpawnDebrisInFrontOfPlayer(int count) {
     }
 }
 
-void DebrisManagerComponent::SpawnDebrisCluster(const Irufemi::Vector3& centerPos, int count, float spreadRadius) {
+void DebrisManagerComponent::SpawnDebrisCluster(const Irufemi::Vector3& centerPos, int count, float spreadRadius,
+                                                const std::string& specificVariationId) {
     if (count <= 0 || variations_.empty()) {
         return;
     }
 
-    int totalWeight = 0;
-    for (const auto& var : variations_) {
-        totalWeight += var.spawnWeight;
+    int forcedIndex = -1;
+    if (!specificVariationId.empty()) {
+        for (size_t v = 0; v < variations_.size(); ++v) {
+            if (variations_[v].id == specificVariationId) {
+                forcedIndex = static_cast<int>(v);
+                break;
+            }
+        }
     }
-    if (totalWeight <= 0) {
-        return;
+
+    int totalWeight = 0;
+    if (forcedIndex < 0) {
+        for (const auto& var : variations_) {
+            totalWeight += var.spawnWeight;
+        }
+        if (totalWeight <= 0) {
+            return;
+        }
     }
 
     for (int i = 0; i < count; ++i) {
@@ -230,15 +244,21 @@ void DebrisManagerComponent::SpawnDebrisCluster(const Irufemi::Vector3& centerPo
 
         Irufemi::Vector3 pos = {centerPos.x + offsetX, centerPos.y + offsetY, centerPos.z + offsetZ};
 
-        int randW = static_cast<int>(Irufemi::Random::GeneratorUint64(0, totalWeight - 1));
-        int selectedIndex = 0;
-        int currentW = 0;
-        for (size_t v = 0; v < variations_.size(); ++v) {
-            currentW += variations_[v].spawnWeight;
-            if (randW <= currentW) {
-                selectedIndex = static_cast<int>(v);
-                break;
+        int selectedIndex = forcedIndex;
+        if (selectedIndex < 0) {
+            int randW = static_cast<int>(Irufemi::Random::GeneratorUint64(0, totalWeight - 1));
+            int currentW = 0;
+            for (size_t v = 0; v < variations_.size(); ++v) {
+                currentW += variations_[v].spawnWeight;
+                if (randW <= currentW) {
+                    selectedIndex = static_cast<int>(v);
+                    break;
+                }
             }
+        }
+
+        if (selectedIndex < 0 || selectedIndex >= static_cast<int>(variations_.size())) {
+            continue;
         }
 
         auto& var = variations_[selectedIndex];
@@ -266,6 +286,30 @@ void DebrisManagerComponent::SpawnDebrisCluster(const Irufemi::Vector3& centerPo
             var.virtualManager->RemoveVirtualInstance(oldestId);
         }
     }
+}
+
+void DebrisManagerComponent::SpawnDebrisBurst(const Irufemi::Vector3& origin, const Irufemi::Vector3& targetPlayerPos,
+                                             int count, float spreadRadius, float forwardBias,
+                                             const std::string& specificVariationId) {
+    if (count <= 0 || variations_.empty()) {
+        return;
+    }
+
+    Irufemi::Vector3 toPlayer = {targetPlayerPos.x - origin.x, targetPlayerPos.y - origin.y, targetPlayerPos.z - origin.z};
+    float dist = std::sqrt(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y + toPlayer.z * toPlayer.z);
+
+    Irufemi::Vector3 burstCenter = origin;
+    if (dist > 15.0f && forwardBias > 0.0f) {
+        // 自機方向（手前）へ最大 forwardBias 分だけ寄せた位置を中心とする（引き寄せ有効射程内へ誘導）
+        float biasDist = (std::min)(forwardBias, dist - 15.0f);
+        Irufemi::Vector3 dir = {toPlayer.x / dist, toPlayer.y / dist, toPlayer.z / dist};
+        burstCenter.x += dir.x * biasDist;
+        burstCenter.y += dir.y * biasDist;
+        burstCenter.z += dir.z * biasDist;
+    }
+
+    // 算出した中心座標でクラスターをスポーン
+    SpawnDebrisCluster(burstCenter, count, spreadRadius, specificVariationId);
 }
 
 void DebrisManagerComponent::Update() {
@@ -704,17 +748,53 @@ void DebrisManagerComponent::UpdateThrownDebris(float deltaTime) {
                     Irufemi::Vector3 diff = {targetPos.x - pos.x, targetPos.y - pos.y, targetPos.z - pos.z};
                     float len = std::sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
                     float moveDist = throwSpeed * deltaTime;
-                    if (len > 0.001f) {
-                        if (len <= moveDist) {
-                            debris->throwDirection_ = {diff.x / len, diff.y / len, diff.z / len};
-                            pos.x += diff.x;
-                            pos.y += diff.y;
-                            pos.z += diff.z;
-                            transform->SetWorldPosition(pos);
-                            continue; // 衝突処理はOnCollisionEnterに任せるためここでは移動のみ
-                        } else {
-                            debris->throwDirection_ = {diff.x / len, diff.y / len, diff.z / len};
+                    // 到達判定（フレーム移動距離以内、または近接2.5m以内）
+                    if (len <= (std::max)(moveDist, 2.5f)) {
+                        pos = targetPos;
+                        transform->SetWorldPosition(pos);
+
+                        // ターゲットへのダメージ適用（シールドまたは敵本体）
+                        if (auto debrisComp = target->GetComponent<DebrisComponent>()) {
+                            if (debrisComp->GetState() == DebrisState::BossOrbiting) {
+                                debrisComp->DestroyAsShield();
+                            }
+                        } else if (auto damageable = target->GetComponentByInterface<IDamageable>()) {
+                            float damage = debris->GetEnemyDamage();
+                            if (damageable->GetDamageableType() == DamageableType::Boss) {
+                                damage = debris->GetBossDamage();
+                            }
+                            damageable->TakeDamage(damage);
                         }
+
+                        // ヒット演出（エフェクト＋ボクセル破砕）
+                        if (effectManager) {
+                            effectManager->PlayEffect(debris->hitEffectKey_, pos);
+                        }
+                        if (voxelManager) {
+                            VoxelEmitter p{};
+                            p.particleType = 5; // DebrisExplosive
+                            p.lifeTime = 1.0f;
+                            p.gravity = 5.0f;
+                            p.dispersion = 12.0f;
+                            p.scale = {0.5f, 0.5f, 0.5f};
+                            Irufemi::Vector4 aura = debris->GetPlayerAuraColor();
+                            Irufemi::Vector4 rockColor = {1.5f, 1.2f, 1.0f, 1.0f};
+                            p.startColor = {rockColor.x + aura.x * 2.0f, rockColor.y + aura.y * 2.0f,
+                                            rockColor.z + aura.z * 2.0f, 1.0f};
+                            p.endColor = {0.2f, 0.2f, 0.2f, 1.0f};
+                            p.dissolveEdgeColor = aura;
+                            voxelManager->PlayExplosion(debris->explosionModelPath_, pos, {0, 0, 0}, {0, 0, 0},
+                                                        {1, 1, 1}, p, {2, 2, 2});
+                        }
+
+                        // ガレキをプールへ安全に返却
+                        MarkForRelease(debris->gameObject_->shared_from_this());
+                        if (debris->virtualId_ >= 0) {
+                            MarkForDestroy(debris->virtualId_, debris->variationIndex_);
+                        }
+                        continue;
+                    } else if (len > 0.001f) {
+                        debris->throwDirection_ = {diff.x / len, diff.y / len, diff.z / len};
                     }
                     updatedWithTarget = true;
                 }

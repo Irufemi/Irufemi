@@ -12,6 +12,8 @@
 #include "Framework/Prefab/PrefabUtility.h"
 #include "Core/Math/MathFunction.h"
 #include "Environment/DebrisManagerComponent.h"
+#include "Effects/EffectManagerComponent.h"
+#include "Renderer/System/VoxelParticle/VoxelParticleManager.h"
 
 // AAAタイトルのアプローチ (Data-Oriented Design & Instancing)
 // 個々の敵オブジェクトにMeshRendererを持たせるのではなく、Spawnerが一括でModelBatchRendererComponentを管理します。
@@ -24,6 +26,7 @@ EnemySpawnerComponent::~EnemySpawnerComponent() {
             if (enemy) {
                 if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
                     enemyComp->SetOnDeathCallback(nullptr);
+                    enemyComp->SetOnDespawnListener(nullptr);
                 }
             }
         });
@@ -47,7 +50,9 @@ void EnemySpawnerComponent::Start() {
     }
     baseEnemyScale_ = metrics.baseScale;
     if (metrics.hasSphereCollider) {
-        baseColliderRadius_ = metrics.colliderRadius;
+        baseColliderRadius_ = (std::max)(metrics.colliderRadius, 1.6f);
+    } else {
+        baseColliderRadius_ = 1.8f;
     }
 
     batchRenderer_ = gameObject_->AddComponent<ModelBatchRendererComponent>();
@@ -92,23 +97,71 @@ void EnemySpawnerComponent::Start() {
         }
 
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
-            enemyComp->SetOnDeathCallback([weakObj](GameObject* deadObj) {
-                // 敵撃破位置へガレキ（破片）をドロップ
-                if (deadObj) {
-                    if (auto deadTrans = deadObj->GetComponent<TransformComponent>()) {
-                        Irufemi::Vector3 deadPos = deadTrans->GetWorldPosition();
-                        if (auto scene = deadObj->GetScene()) {
-                            if (auto debrisMgrObj = scene->FindGameObject("DebrisManager")) {
-                                if (auto debrisMgr = debrisMgrObj->GetComponent<DebrisManagerComponent>()) {
-                                    debrisMgr->SpawnDebrisCluster(deadPos, 3, 3.5f);
-                                }
+            enemyComp->SetOnDespawnListener([weakObj](GameObject* deadObj, DespawnReason reason) {
+                if (!deadObj) {
+                    return;
+                }
+
+                // プレイヤー撃破（または自爆体当たり）時のみ、残骸ガレキドロップ＆Voxel破砕演出を実行
+                if (reason == DespawnReason::KilledByPlayer || reason == DespawnReason::CollisionSuicide) {
+                    auto deadTrans = deadObj->GetComponent<TransformComponent>();
+                    Irufemi::Vector3 deadPos =
+                        deadTrans ? deadTrans->GetWorldPosition() : Irufemi::Vector3{0.0f, 0.0f, 0.0f};
+                    Irufemi::Vector3 currentScale =
+                        deadTrans ? deadTrans->GetScale() : Irufemi::Vector3{1.0f, 1.0f, 1.0f};
+
+                    auto scene = deadObj->GetScene();
+                    if (scene) {
+                        // 1. プレイヤー位置の取得
+                        Irufemi::Vector3 playerPos = deadPos;
+                        auto playerObj = scene->FindGameObject("PlayerCart");
+                        if (!playerObj) {
+                            playerObj = scene->FindGameObject("Player");
+                        }
+                        if (playerObj && playerObj->GetTransform()) {
+                            playerPos = playerObj->GetTransform()->GetWorldPosition();
+                        }
+
+                        // 2. スケール連動のドロップ個数決定（中型機は大量ドロップボーナス）
+                        float scaleMult = 1.0f;
+                        if (auto ec = deadObj->GetComponent<RailShooterEnemyComponent>()) {
+                            scaleMult = ec->GetScaleMultiplier();
+                        }
+                        int dropCount = (scaleMult >= 1.3f) ? 4 : 2;
+
+                        // 3. 自機手前方向への物理バーストドロップ（通常ガレキのランダム散乱）
+                        if (auto debrisMgrObj = scene->FindGameObject("DebrisManager")) {
+                            if (auto debrisMgr = debrisMgrObj->GetComponent<DebrisManagerComponent>()) {
+                                debrisMgr->SpawnDebrisBurst(deadPos, playerPos, dropCount, 3.5f, 12.0f);
                             }
+                        }
+
+                        // 4. 敵機体のVoxelメッシュ破砕演出
+                        if (auto engine = scene->GetEngine()) {
+                            if (auto voxelMgr = engine->GetVoxelParticleManager()) {
+                                VoxelEmitter p{};
+                                p.particleType = 5; // DebrisExplosive
+                                p.lifeTime = 1.2f;
+                                p.gravity = 4.0f;
+                                p.dispersion = 14.0f;
+                                p.scale = {0.5f, 0.5f, 0.5f};
+                                p.startColor = {1.8f, 1.3f, 0.9f, 1.0f}; // 激しい火花・金属破砕光
+                                p.endColor = {0.1f, 0.1f, 0.1f, 1.0f};
+                                voxelMgr->PlayExplosion("Enemy_GravityGolem_A/SM_Enemy_GravityGolem_A.obj", deadPos,
+                                                        {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, currentScale, p,
+                                                        {2, 2, 2});
+                            }
+                        }
+
+                        // 5. 撃破爆発エフェクトの再生
+                        if (auto effectMgr = EffectManagerComponent::GetInstance()) {
+                            effectMgr->PlayEffect("debris_dust_effect", deadPos);
                         }
                     }
                 }
 
+                // プールへの返却（画面外離脱・タイムアウト時も安全にここへ合流して再利用）
                 deadObj->SetIsActive(false);
-                // スポナーの生存確認（ダングリングポインタによるクラッシュを防止）
                 if (auto spawnerObj = weakObj.lock()) {
                     if (auto spawner = spawnerObj->GetComponent<EnemySpawnerComponent>()) {
                         if (spawner->enemyPool_) {
@@ -215,6 +268,7 @@ GameObject* EnemySpawnerComponent::SpawnEnemy(const Irufemi::Vector3& position, 
         if (auto enemyComp = enemy->GetComponent<RailShooterEnemyComponent>()) {
             // プールから復帰した際に必要な初期化（HPリセット等）を呼ぶ
             enemyComp->Initialize();
+            enemyComp->SetScaleMultiplier(scaleMultiplier);
         }
 
         enemy->SetIsActive(true);

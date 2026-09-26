@@ -30,14 +30,14 @@
     {
       "data": {
         "isStatic": false,
-        "isTrigger": false,
+        "isTrigger": true,
         "layer": 4,
         "localOffset": [
           0.0,
           0.0,
           0.0
         ],
-        "localRadius": 0.5,
+        "localRadius": 1.6,
         "mask": 18,
         "pushbackMask": [
           1.0,

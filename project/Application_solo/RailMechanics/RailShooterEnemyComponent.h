@@ -14,10 +14,24 @@ enum class EnemyAIState {
     Disengage //!< 制限時間終了によるすれ違い離脱
 };
 
+/**
+ * @enum DespawnReason
+ * @brief 敵キャラクターがシーンから退場・消滅する明確な理由（AAA基準ライフサイクル管理）
+ */
+enum class DespawnReason {
+    KilledByPlayer,   //!< プレイヤーの攻撃（ガレキ投擲・衝突）により撃破された
+    OutOfBounds,      //!< 画面外（自機後方 -30m 等）へすれ違い離脱した
+    Timeout,          //!< シーン遷移やウェーブ強制終了による消滅
+    CollisionSuicide  //!< プレイヤーへの直接体当たりによる自爆
+};
+
 class GameObject;
 class EnemyBulletManagerComponent;
 class SplineComponent;
 class SplineFollowerComponent;
+
+/// @brief 敵退場通知リスナー（オブジェクト、退場理由）
+using EnemyDespawnListener = std::function<void(GameObject*, DespawnReason)>;
 
 /**
  * @class RailShooterEnemyComponent
@@ -49,8 +63,30 @@ public:
         return hp_ > 0;
     }
 
+    /**
+     * @brief 敵撃破・消滅時のコールバックを設定する（レガシー互換用）
+     */
     void SetOnDeathCallback(std::function<void(GameObject*)> callback) {
         onDeathCallback_ = std::move(callback);
+    }
+
+    /**
+     * @brief 退場理由付きのライフサイクルリスナーを登録する（推奨）
+     */
+    void SetOnDespawnListener(EnemyDespawnListener listener) {
+        onDespawnListener_ = std::move(listener);
+    }
+
+    /**
+     * @brief 退場イベントを通知する
+     */
+    void NotifyDespawn(DespawnReason reason);
+
+    void SetScaleMultiplier(float scale) {
+        scaleMultiplier_ = scale;
+    }
+    float GetScaleMultiplier() const {
+        return scaleMultiplier_;
     }
 
     /**
@@ -122,4 +158,6 @@ private:
     int hp_ = 100;               //!< 耐久力
 
     std::function<void(GameObject*)> onDeathCallback_;
+    EnemyDespawnListener onDespawnListener_; //!< 退場理由付きライフサイクルリスナー
+    float scaleMultiplier_ = 1.0f;           //!< 敵のサイズ倍率（Lootドロップ量等の算出基準）
 };
